@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.virtualthread;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -266,7 +265,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
         Future<Void> fut = promise.future();
         fut.await();
         fail();
-      } catch (Throwable e) {
+      } catch (Exception e) {
         if (e instanceof InterruptedException) {
           interrupted.set(true);
         }

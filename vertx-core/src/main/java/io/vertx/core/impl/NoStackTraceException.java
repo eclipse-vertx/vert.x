@@ -15,7 +15,7 @@ import io.vertx.core.VertxException;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- * @deprecated instead use {@link io.vertx.core.VertxException}
+ * @deprecated for removal in Vert.x 6, instead catch {@link io.vertx.core.VertxException}
  */
 @Deprecated(forRemoval = true)
 public class NoStackTraceException extends VertxException {

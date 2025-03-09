@@ -12,7 +12,7 @@
 package io.vertx.tests.worker;
 
 import io.vertx.core.Context;
-import io.vertx.core.impl.NoStackTraceException;
+import io.vertx.core.VertxException;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -49,7 +49,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
         Thread.sleep(1000);
       } catch (Exception ignore) {
       }
-      throw new NoStackTraceException("failed!");
+      throw VertxException.noStackTrace("failed!");
     }).onComplete(onFailure(t -> {
       assertEquals("failed!", t.getMessage());
       testComplete();

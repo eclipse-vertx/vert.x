@@ -11,17 +11,19 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.VertxException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
- * @deprecated instead use {@link io.vertx.core.VertxException}
+ * @deprecated for removal in Vert.x 6, instead catch {@link io.vertx.core.VertxException}
  */
 @Deprecated(forRemoval = true)
-public class NoStackTraceThrowable extends Throwable {
+public class NoStackTraceThrowable extends VertxException {
 
   /**
    * @deprecated instead use {@link io.vertx.core.VertxException#noStackTrace(String)}
    */
   public NoStackTraceThrowable(String message) {
-    super(message, null, false, false);
+    super(message, null, true);
   }
 }
