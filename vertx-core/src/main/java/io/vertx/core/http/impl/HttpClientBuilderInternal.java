@@ -23,7 +23,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
-  private AddressResolver addressResolver;
+  private AddressResolver<?> addressResolver;
   private LoadBalancer loadBalancer = null;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
@@ -55,7 +55,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder withAddressResolver(AddressResolver resolver) {
+  public HttpClientBuilder withAddressResolver(AddressResolver<?> resolver) {
     this.addressResolver = resolver;
     return this;
   }
@@ -73,10 +73,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   private EndpointResolver endpointResolver(HttpClientOptions co) {
     LoadBalancer _loadBalancer = loadBalancer;
-    AddressResolver _addressResolver = addressResolver;
+    AddressResolver<?> _addressResolver = addressResolver;
     if (_loadBalancer != null) {
       if (_addressResolver == null) {
-        _addressResolver = vertx.hostnameResolver();
+        _addressResolver = vertx.nameResolver();
       }
     } else {
       if (_addressResolver != null) {

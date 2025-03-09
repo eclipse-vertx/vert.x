@@ -33,10 +33,7 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -214,7 +211,11 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         new VertxHttpResponseEncoder());
     vertxChannel.config().setAllocator(new Alloc());
 
-    ContextInternal context = vertx.createEventLoopContext(vertxChannel.eventLoop(), null, Thread.currentThread().getContextClassLoader());
+    ContextInternal context = vertx.contextBuilder()
+      .withThreadingModel(ThreadingModel.EVENT_LOOP)
+      .withEventLoop(vertxChannel.eventLoop())
+      .withClassLoader(Thread.currentThread().getContextClassLoader())
+      .build();
     Handler<HttpServerRequest> app = request -> {
       HttpServerResponse response = request.response();
       MultiMap headers = response.headers();

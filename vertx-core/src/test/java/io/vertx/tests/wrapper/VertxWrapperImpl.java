@@ -13,4 +13,5 @@ public class VertxWrapperImpl extends VertxWrapper {
   protected VertxWrapperImpl(VertxInternal delegate) {
     super(delegate);
   }
+
 }

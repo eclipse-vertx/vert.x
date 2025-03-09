@@ -220,7 +220,7 @@ public class SslContextManager {
       if (sslOptions.getCrlPaths() != null) {
         tmp.addAll(sslOptions.getCrlPaths()
           .stream()
-          .map(path -> ctx.owner().resolveFile(path).getAbsolutePath())
+          .map(path -> ctx.owner().fileResolver().resolve(path).getAbsolutePath())
           .map(ctx.owner().fileSystem()::readFileBlocking)
           .collect(Collectors.toList()));
       }

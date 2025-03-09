@@ -10,9 +10,9 @@
  */
 package io.vertx.core.impl;
 
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
+import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.concurrent.CountDownLatch;

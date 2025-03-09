@@ -77,7 +77,7 @@ class WebSocketGroup extends ManagedResource {
     if (ctx.isEventLoopContext()) {
       eventLoopContext = ctx;
     } else {
-      eventLoopContext = ctx.owner().createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+      eventLoopContext = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     }
     Future<HttpClientConnectionInternal> fut = connector.httpConnect(eventLoopContext);
     fut.onComplete(ar -> {

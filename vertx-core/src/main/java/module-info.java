@@ -93,6 +93,8 @@ module io.vertx.core {
   exports io.vertx.core.internal.concurrent;
   exports io.vertx.core.internal.resource;
   exports io.vertx.core.internal.streams;
+  exports io.vertx.core.internal.deployment;
+  exports io.vertx.core.internal.resolver;
 
   // Testing
 

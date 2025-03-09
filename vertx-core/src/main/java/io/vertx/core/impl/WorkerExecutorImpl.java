@@ -15,6 +15,8 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.WorkerExecutorInternal;
+import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -54,7 +56,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   }
 
   @Override
-  public WorkerPool getPool() {
+  public WorkerPool pool() {
     return pool;
   }
 
@@ -72,7 +74,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
     } else {
       orderedTasks = null;
     }
-    return pool.executeBlocking(context, blockingCodeHandler, orderedTasks);
+    return ExecuteBlocking.executeBlocking(pool, context, blockingCodeHandler, orderedTasks);
   }
 
   @Override

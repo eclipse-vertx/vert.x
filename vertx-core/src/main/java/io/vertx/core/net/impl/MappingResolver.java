@@ -20,17 +20,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class MappingResolver<B> implements EndpointResolver<Address, SocketAddress, MappingLookup<B>, B> {
+public class MappingResolver<A extends Address, B> implements EndpointResolver<A, SocketAddress, MappingLookup<A, B>, B> {
 
-  private final Function<Address, List<SocketAddress>> serviceMap;
+  private final Function<A, List<SocketAddress>> serviceMap;
 
-  public MappingResolver(Function<Address, List<SocketAddress>> serviceMap) {
+  public MappingResolver(Function<A, List<SocketAddress>> serviceMap) {
     this.serviceMap = Objects.requireNonNull(serviceMap);
   }
 
   @Override
-  public Address tryCast(Address address) {
-    return address;
+  public A tryCast(Address address) {
+    return (A) address;
   }
 
   @Override
@@ -39,12 +39,12 @@ public class MappingResolver<B> implements EndpointResolver<Address, SocketAddre
   }
 
   @Override
-  public Future<MappingLookup<B>> resolve(Address address, EndpointBuilder<B, SocketAddress> builder) {
+  public Future<MappingLookup<A, B>> resolve(A address, EndpointBuilder<B, SocketAddress> builder) {
     return Future.succeededFuture(new MappingLookup<>(address, builder));
   }
 
   @Override
-  public B endpoint(MappingLookup<B> state) {
+  public B endpoint(MappingLookup<A, B> state) {
     List<SocketAddress> endpoints = serviceMap.apply(state.address);
     synchronized (state) {
       if (!Objects.equals(state.endpoints, endpoints)) {
@@ -62,12 +62,12 @@ public class MappingResolver<B> implements EndpointResolver<Address, SocketAddre
   }
 
   @Override
-  public boolean isValid(MappingLookup<B> state) {
+  public boolean isValid(MappingLookup<A, B> state) {
     return true;
   }
 
   @Override
-  public void dispose(MappingLookup<B> data) {
+  public void dispose(MappingLookup<A, B> data) {
   }
 
   @Override

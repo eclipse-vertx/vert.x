@@ -68,7 +68,7 @@ public class MetricsOptionsTest extends VertxTestBase {
   public void testMetricsEnabledWithoutConfig() {
     vertx.close();
     vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
-    VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
+    VertxMetrics metrics = ((VertxInternal) vertx).metrics();
     assertNull(metrics);
   }
 
@@ -82,6 +82,6 @@ public class MetricsOptionsTest extends VertxTestBase {
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(new SimpleVertxMetricsFactory<>(metrics))
       .build();
-    assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
+    assertSame(metrics, ((VertxInternal) vertx).metrics());
   }
 }

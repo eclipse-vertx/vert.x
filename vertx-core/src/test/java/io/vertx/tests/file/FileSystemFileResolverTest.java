@@ -32,7 +32,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
 
   @Test
   public void testResolvePlusSignsOnName() {
-    File file = resolver.resolveFile("this+that");
+    File file = resolver.resolve("this+that");
     assertFalse(file.exists());
     assertEquals("this+that", file.getPath());
   }
@@ -60,7 +60,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
       };
       thread.setContextClassLoader(next);
       try {
-        File file = resolver.resolveFile(s);
+        File file = resolver.resolve(s);
         assertNotNull(file);
       } finally {
         thread.setContextClassLoader(prev);
@@ -90,7 +90,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
     };
     thread.setContextClassLoader(next);
     try {
-      File file = resolver.resolveFile("a/a.txt");
+      File file = resolver.resolve("a/a.txt");
       String content = Files.readString(file.toPath());
       assertEquals("the_content", content);
     } finally {

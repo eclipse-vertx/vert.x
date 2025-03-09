@@ -18,7 +18,6 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -259,7 +258,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     testSubsRemoved(latch -> {
       VertxInternal vi = (VertxInternal) vertices[1];
       Promise<Void> promise = vi.getOrCreateContext().promise();
-      vi.getClusterManager().leave(promise);
+      vi.clusterManager().leave(promise);
       promise.future().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
@@ -682,7 +681,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testPreserveMessageOrderingOnContext() {
     int num = 256;
     startNodes(2);
-    ClusterManager clusterManager = ((VertxInternal) vertices[0]).getClusterManager();
+    ClusterManager clusterManager = ((VertxInternal) vertices[0]).clusterManager();
     if (clusterManager instanceof FakeClusterManager) {
       // Other CM will exhibit latency for this one we must fake it
       FakeClusterManager fakeClusterManager = (FakeClusterManager) clusterManager;

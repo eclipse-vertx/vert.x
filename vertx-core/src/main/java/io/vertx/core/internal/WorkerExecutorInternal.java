@@ -8,9 +8,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.core.internal;
 
-import io.vertx.core.Closeable;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 
@@ -18,7 +17,11 @@ import io.vertx.core.WorkerExecutor;
  * @author Thomas Segismont
  */
 public interface WorkerExecutorInternal extends WorkerExecutor {
+
   Vertx vertx();
 
-  WorkerPool getPool();
+  /**
+   * @return the worker pool
+   */
+  WorkerPool pool();
 }

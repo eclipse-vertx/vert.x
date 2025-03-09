@@ -55,7 +55,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   protected volatile boolean started;
 
   public EventBusImpl(VertxInternal vertx) {
-    VertxMetrics metrics = vertx.metricsSPI();
+    VertxMetrics metrics = vertx.metrics();
     this.vertx = vertx;
     this.metrics = metrics != null ? metrics.createEventBusMetrics() : null;
   }

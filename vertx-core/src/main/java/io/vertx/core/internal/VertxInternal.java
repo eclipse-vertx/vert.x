@@ -12,13 +12,10 @@
 package io.vertx.core.internal;
 
 
-import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
-import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.DeploymentContext;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetServerInternal;
@@ -30,10 +27,7 @@ import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.io.File;
 import java.lang.ref.Cleaner;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -98,10 +92,6 @@ public interface VertxInternal extends Vertx {
     context.runOnContext(task);
   }
 
-  long maxEventLoopExecTime();
-
-  TimeUnit maxEventLoopExecTimeUnit();
-
   NetServerInternal createNetServer(NetServerOptions options);
 
   default NetServerInternal createNetServer() {
@@ -111,17 +101,17 @@ public interface VertxInternal extends Vertx {
   @Override
   ContextInternal getOrCreateContext();
 
-  EventLoopGroup getEventLoopGroup();
+  EventLoopGroup eventLoopGroup();
 
-  EventLoopGroup getAcceptorEventLoopGroup();
+  EventLoopGroup acceptorEventLoopGroup();
 
-  WorkerPool getWorkerPool();
+  WorkerPool workerPool();
 
-  WorkerPool getInternalWorkerPool();
+  WorkerPool internalWorkerPool();
 
   Map<ServerID, NetServerInternal> sharedTcpServers();
 
-  VertxMetrics metricsSPI();
+  VertxMetrics metrics();
 
   Transport transport();
 
@@ -135,44 +125,18 @@ public interface VertxInternal extends Vertx {
    */
   ContextInternal getContext();
 
-
-  // TODO
-  // ADD : CONFIG
-  ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, CloseFuture closeFuture, WorkerPool workerPool, DeploymentContext deployment, ClassLoader tccl);
-
   /**
-   * @return event loop context
+   * @return a new context builder
    */
-  default ContextInternal createContext(ThreadingModel threadingModel, DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(threadingModel, nettyEventLoopGroup().next(), closeFuture, workerPool, deployment, tccl);
-  }
+  ContextBuilder contextBuilder();
 
   /**
-   * @return event loop context
-   */
-  default ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(threadingModel, eventLoop, closeFuture(), workerPool, null, tccl);
-  }
-
-  /**
-   * @return event loop context
+   * @return context
    */
   default ContextInternal createContext(ThreadingModel threadingModel) {
-    return createContext(threadingModel, null, closeFuture(), null, Thread.currentThread().getContextClassLoader());
-  }
-
-  /**
-   * @return event loop context
-   */
-  default ContextInternal createEventLoopContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(ThreadingModel.EVENT_LOOP, deployment, closeFuture, workerPool, tccl);
-  }
-
-  /**
-   * @return event loop context
-   */
-  default ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, tccl);
+    return contextBuilder()
+      .withThreadingModel(threadingModel)
+      .build();
   }
 
   /**
@@ -185,50 +149,8 @@ public interface VertxInternal extends Vertx {
   /**
    * @return worker context
    */
-  default ContextInternal createWorkerContext(DeploymentContext deployment, CloseFuture closeFuture, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(ThreadingModel.WORKER, eventLoop, closeFuture, workerPool, deployment, tccl);
-  }
-
-  /**
-   * @return worker context
-   */
-  default ContextInternal createWorkerContext(DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(ThreadingModel.WORKER, deployment, closeFuture, workerPool, tccl);
-  }
-
-  /**
-   * @return worker context
-   */
-  default ContextInternal createWorkerContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(ThreadingModel.WORKER, eventLoop, workerPool, tccl);
-  }
-
-  /**
-   * @return worker context
-   */
   default ContextInternal createWorkerContext() {
     return createContext(ThreadingModel.WORKER);
-  }
-
-  /**
-   * @return virtual thread context
-   */
-  default ContextInternal createVirtualThreadContext(DeploymentContext deployment, CloseFuture closeFuture, EventLoop eventLoop, ClassLoader tccl) {
-    return createContext(ThreadingModel.VIRTUAL_THREAD, eventLoop, closeFuture, null, deployment, tccl);
-  }
-
-  /**
-   * @return virtual thread context
-   */
-  default ContextInternal createVirtualThreadContext(DeploymentContext deployment, CloseFuture closeFuture, ClassLoader tccl) {
-    return createContext(ThreadingModel.VIRTUAL_THREAD, deployment, closeFuture, null, tccl);
-  }
-
-  /**
-   * @return virtual thread context
-   */
-  default ContextInternal createVirtualThreadContext(EventLoop eventLoop, ClassLoader tccl) {
-    return createContext(ThreadingModel.VIRTUAL_THREAD, eventLoop, null, tccl);
   }
 
   /**
@@ -254,41 +176,17 @@ public interface VertxInternal extends Vertx {
 
   WorkerPool wrapWorkerPool(ExecutorService executor);
 
-  void simulateKill();
-
-  DeploymentContext getDeployment(String deploymentID);
-
-  void failoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler);
-
-  boolean isKilled();
-
-  void failDuringFailover(boolean fail);
-
-  File resolveFile(String fileName);
-
   default <T> Future<T> executeBlockingInternal(Callable<T> blockingCodeHandler) {
     ContextInternal context = getOrCreateContext();
     return context.executeBlockingInternal(blockingCodeHandler);
   }
 
-  ClusterManager getClusterManager();
-
-  HAManager haManager();
+  ClusterManager clusterManager();
 
   /**
-   * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
-   *
-   * @param hostname the hostname to resolve
-   * @return a future notified with the result
+   * @return the default name resolver
    */
-  Future<InetAddress> resolveAddress(String hostname);
-
-  /**
-   * @return the default hostname resolver
-   */
-  HostnameResolver hostnameResolver();
-
-  DnsAddressResolverProvider dnsAddressResolverProvider(InetSocketAddress addr);
+  NameResolver nameResolver();
 
   /**
    * @return the file resolver
@@ -303,11 +201,6 @@ public interface VertxInternal extends Vertx {
   EventLoopGroup nettyEventLoopGroup();
 
   /**
-   * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
-   */
-  AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
-
-  /**
    * @return an immutable list of this vertx instance context locals
    */
   List<ContextLocal<?>> contextLocals();
@@ -319,7 +212,7 @@ public interface VertxInternal extends Vertx {
   /**
    * @return the tracer
    */
-  VertxTracer tracer();
+  VertxTracer<?, ?> tracer();
 
   void addCloseHook(Closeable hook);
 

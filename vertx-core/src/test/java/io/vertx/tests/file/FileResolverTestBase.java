@@ -67,15 +67,19 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     resolver = new FileResolverImpl();
   }
 
-  protected ClassLoader resourcesLoader(File baseDir) throws Exception {
-    return Thread.currentThread().getContextClassLoader();
-  }
-
   @Override
   protected void tearDown() throws Exception {
     Thread.currentThread().setContextClassLoader(testCL);
     resolver.close();
     super.tearDown();
+  }
+
+  protected ClassLoader resourcesLoader(File baseDir) throws Exception {
+    return Thread.currentThread().getContextClassLoader();
+  }
+
+  private static File resolveFile(VertxInternal vertx, String na) {
+    return vertx.fileResolver().resolve(na);
   }
 
   @Test
@@ -91,21 +95,21 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveNotExistFile() {
-    File file = resolver.resolveFile("doesnotexist.txt");
+    File file = resolver.resolve("doesnotexist.txt");
     assertFalse(file.exists());
     assertEquals("doesnotexist.txt", file.getPath());
   }
 
   @Test
   public void testResolveNotExistDirectory() {
-    File file = resolver.resolveFile("somedir");
+    File file = resolver.resolve("somedir");
     assertFalse(file.exists());
     assertEquals("somedir", file.getPath());
   }
 
   @Test
   public void testResolveNotExistFileInDirectory() {
-    File file = resolver.resolveFile("somedir/doesnotexist.txt");
+    File file = resolver.resolve("somedir/doesnotexist.txt");
     assertFalse(file.exists());
     assertEquals("somedir" + File.separator + "doesnotexist.txt", file.getPath());
   }
@@ -113,7 +117,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveFileFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("afile.html");
+      File file = resolver.resolve("afile.html");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertFalse(file.isDirectory());
@@ -126,7 +130,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(true)));
     try {
       for (int i = 0; i < 2; i++) {
-        File file = vertx.resolveFile("afile.html");
+        File file = resolveFile(vertx, "afile.html");
         assertTrue(file.exists());
         assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
         assertFalse(file.isDirectory());
@@ -140,7 +144,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveFileWithSpacesFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("afile with spaces.html");
+      File file = resolver.resolve("afile with spaces.html");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertFalse(file.isDirectory());
@@ -152,7 +156,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   public void testResolveFileWithSpaceAtEndFromClasspath() {
     Assume.assumeFalse(Utils.isWindows());
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("afilewithspaceatend ");
+      File file = resolver.resolve("afilewithspaceatend ");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertFalse(file.isDirectory());
@@ -164,7 +168,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   public void testCacheDirIsPosix0700() throws Exception {
     Assume.assumeFalse(Utils.isWindows());
 
-    File file = resolver.resolveFile("afile with spaces.html");
+    File file = resolver.resolve("afile with spaces.html");
     assertTrue(file.exists());
     assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
     File parent = file.getParentFile(); // this should be the cache directory
@@ -176,7 +180,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveDirectoryFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("webroot");
+      File file = resolver.resolve("webroot");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertTrue(file.isDirectory());
@@ -186,7 +190,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveFileInDirectoryFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("webroot/somefile.html");
+      File file = resolver.resolve("webroot/somefile.html");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertFalse(file.isDirectory());
@@ -197,7 +201,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveSubDirectoryFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("webroot/subdir");
+      File file = resolver.resolve("webroot/subdir");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertTrue(file.isDirectory());
@@ -207,7 +211,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveFileInSubDirectoryFromClasspath() throws Exception {
     for (int i = 0; i < 2; i++) {
-      File file = resolver.resolveFile("webroot/subdir/subfile.html");
+      File file = resolver.resolve("webroot/subdir/subfile.html");
       assertTrue(file.exists());
       assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
       assertFalse(file.isDirectory());
@@ -217,7 +221,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testRecursivelyUnpack() throws Exception {
-    File file = resolver.resolveFile("webroot/subdir");
+    File file = resolver.resolve("webroot/subdir");
     assertTrue(file.exists());
     File sub = new File(file, "subfile.html");
     assertTrue(sub.exists());
@@ -226,7 +230,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testRecursivelyUnpack2() throws Exception {
-    File file = resolver.resolveFile("webroot/subdir");
+    File file = resolver.resolve("webroot/subdir");
     assertTrue(file.exists());
     File sub = new File(new File(file, "subdir2"), "subfile2.html");
     assertTrue(sub.exists());
@@ -236,7 +240,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testDeleteCacheDir() throws Exception {
     FileResolver resolver2 = new FileResolverImpl();
-    File file = resolver2.resolveFile("webroot/somefile.html");
+    File file = resolver2.resolve("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
@@ -247,7 +251,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testCacheDirDeletedOnVertxClose() {
     VertxInternal vertx2 = (VertxInternal) vertx();
-    File file = vertx2.resolveFile("webroot/somefile.html");
+    File file = resolveFile(vertx2, "webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
@@ -315,7 +319,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       Runnable runnable = () -> {
         try {
           start.await();
-          File file = resolver.resolveFile("temp");
+          File file = resolver.resolve("temp");
           byte[] data = Files.readAllBytes(file.toPath());
           Assert.assertArrayEquals(content, data);
         } catch (Exception e) {
@@ -360,10 +364,10 @@ public abstract class FileResolverTestBase extends VertxTestBase {
           return super.getResource(name);
         }
       });
-      File f = vertx.resolveFile("foo");
+      File f = resolveFile(vertx, "foo");
       assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
       Files.write(tmp.toPath(), "bar".getBytes());
-      f = vertx.resolveFile("foo");
+      f = resolveFile(vertx, "foo");
       if (enabled) {
         assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
       } else {
@@ -382,14 +386,14 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testResolveAfterCloseThrowsISE() throws Exception {
     FileResolver resolver2 = new FileResolverImpl();
-    File file = resolver2.resolveFile("webroot/somefile.html");
+    File file = resolver2.resolve("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
     resolver2.close();
     assertFalse(cacheDir.exists());
     try {
-      resolver2.resolveFile("webroot/somefile.html");
+      resolver2.resolve("webroot/somefile.html");
       fail("Should fail");
     } catch (IllegalStateException e) {
       // OK
@@ -398,14 +402,14 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveRelativeFileInDirectoryFromClasspath() {
-    File somefile = resolver.resolveFile("a/a.txt");
+    File somefile = resolver.resolve("a/a.txt");
     assertTrue(somefile.exists());
     assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
     assertFalse(somefile.isDirectory());
     // resolve a relative file
     File someotherfile = new File(new File(somefile.getParentFile().getParentFile(), "b"), "b.txt");
     assertFalse(someotherfile.exists()); // is hasn't been extracted yet
-    someotherfile = resolver.resolveFile(someotherfile.getAbsolutePath());
+    someotherfile = resolver.resolve(someotherfile.getAbsolutePath());
     assertTrue(someotherfile.exists()); // is should be rebased and extracted now
     assertTrue(someotherfile.getPath().startsWith(cacheBaseDir + "-"));
     assertFalse(someotherfile.isDirectory());
@@ -413,13 +417,13 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testDoNotResolveAbsoluteFileInDirectoryFromClasspath() {
-    File somefile = resolver.resolveFile("/a/a.txt");
+    File somefile = resolver.resolve("/a/a.txt");
     assertFalse(somefile.exists());
   }
 
   @Test
   public void testResolveCacheDir() {
-    File somefile = resolver.resolveFile("");
+    File somefile = resolver.resolve("");
     assertTrue(somefile.exists());
     assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
     assertTrue(somefile.isDirectory());
@@ -442,7 +446,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Test
   public void testBugEndWithSlash() {
     FileResolver resolver = ((VertxInternal) vertx).fileResolver();
-    File f = resolver.resolveFile("tree/");
+    File f = resolver.resolve("tree/");
     assertNotNull(f);
     assertTrue(f.isDirectory());
     assertEquals("tree", f.getName());

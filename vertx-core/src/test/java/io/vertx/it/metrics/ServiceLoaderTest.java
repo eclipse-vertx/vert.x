@@ -37,7 +37,7 @@ public class ServiceLoaderTest {
     MetricsOptions metricsOptions = new MetricsOptions().setEnabled(enabled);
     VertxOptions options = new VertxOptions().setMetricsOptions(metricsOptions);
     Vertx vertx = Vertx.vertx(options);
-    VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
+    VertxMetrics metrics = ((VertxInternal) vertx).metrics();
     if (enabled) {
       assertNotNull(metrics);
       assertTrue(metrics instanceof FakeVertxMetrics);
@@ -55,6 +55,6 @@ public class ServiceLoaderTest {
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(options -> metrics);
     Vertx vertx = builder.build();
-    assertSame(metrics, ((VertxInternal) vertx).metricsSPI());
+    assertSame(metrics, ((VertxInternal) vertx).metrics());
   }
 }

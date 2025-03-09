@@ -187,7 +187,9 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     if (context.isEventLoopContext()) {
       listenContext = context;
     } else {
-      listenContext = vertx.createEventLoopContext(context.nettyEventLoop(), context.workerPool(), context.classLoader());
+      listenContext = context.toBuilder()
+        .withThreadingModel(ThreadingModel.EVENT_LOOP)
+        .build();
     }
     NetServerInternal server = vertx.createNetServer(tcpOptions);
     Handler<Throwable> h = exceptionHandler;

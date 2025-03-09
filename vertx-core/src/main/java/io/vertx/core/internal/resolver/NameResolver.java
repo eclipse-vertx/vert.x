@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.core.internal.resolver;
 
 import io.netty.channel.EventLoop;
 import io.netty.resolver.AddressResolverGroup;
@@ -34,84 +34,83 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.vertx.core.impl.Utils.isLinux;
-
 /**
- * Resolves host names, using DNS and /etc/hosts config based on {@link AddressResolverOptions}
+ * Resolves host names, using DNS and {@code /etc/hosts config} based on {@link AddressResolverOptions}
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HostnameResolver implements AddressResolver {
+public class NameResolver implements AddressResolver<SocketAddress> {
 
-  private static final Logger log = LoggerFactory.getLogger(HostnameResolver.class);
+  private static final Logger log = LoggerFactory.getLogger(NameResolver.class);
 
   private static final String NDOTS_LABEL = "ndots:";
   private static final String ROTATE_LABEL = "rotate";
   private static final String OPTIONS_ROW_LABEL = "options";
-  public static final int DEFAULT_NDOTS_RESOLV_OPTION;
-  public static final boolean DEFAULT_ROTATE_RESOLV_OPTION;
-
 
   private static final int DEFAULT_NDOTS = 1;
   private static final boolean DEFAULT_ROTATE = false;
 
-  static {
-    if (isLinux()) {
-      ResolverOptions options = parseLinux(new File("/etc/resolv.conf"));
-      DEFAULT_NDOTS_RESOLV_OPTION = options.effectiveNdots();
-      DEFAULT_ROTATE_RESOLV_OPTION = options.isRotate();
-    } else {
-      DEFAULT_NDOTS_RESOLV_OPTION = DEFAULT_NDOTS;
-      DEFAULT_ROTATE_RESOLV_OPTION = DEFAULT_ROTATE;
-    }
-  }
-
+  private final AddressResolverOptions options;
   private final Vertx vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final AddressResolverProvider provider;
 
-  public HostnameResolver(Vertx vertx, AddressResolverOptions options) {
+  public NameResolver(Vertx vertx, AddressResolverOptions options) {
+    this.options = options;
     this.provider = AddressResolverProvider.factory(vertx, options);
     this.resolverGroup = provider.resolver(options);
     this.vertx = vertx;
   }
 
+  /**
+   * @return the options
+   */
+  public AddressResolverOptions options() {
+    return new AddressResolverOptions(options);
+  }
+
   @Override
-  public EndpointResolver<?, ?, ?, ?> endpointResolver(Vertx vertx) {
+  public EndpointResolver<SocketAddress, ?, ?, ?> endpointResolver(Vertx vertx) {
     return new Impl();
   }
 
-  public Future<InetAddress> resolveHostname(String hostname) {
+  /**
+   * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
+   *
+   * @param hostname the hostname to resolve
+   * @return a future notified with the result
+   */
+  public Future<InetAddress> resolve(String hostname) {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolveHostname(context.nettyEventLoop(), hostname);
+    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolve(context.nettyEventLoop(), hostname);
     PromiseInternal<InetSocketAddress> promise = context.promise();
     fut.addListener(promise);
     return promise.map(InetSocketAddress::getAddress);
   }
 
-  public io.netty.util.concurrent.Future<InetSocketAddress> resolveHostname(EventLoop eventLoop, String hostname) {
-    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = getResolver(eventLoop);
+  public io.netty.util.concurrent.Future<InetSocketAddress> resolve(EventLoop eventLoop, String hostname) {
+    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolver(eventLoop);
     return resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
   }
 
-  public void resolveHostnameAll(String hostname, Handler<AsyncResult<List<InetSocketAddress>>> resultHandler) {
+  public void resolveAll(String hostname, Handler<AsyncResult<List<InetSocketAddress>>> resultHandler) {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    io.netty.util.concurrent.Future<List<InetSocketAddress>> fut = resolveHostnameAll(context.nettyEventLoop(), hostname);
+    io.netty.util.concurrent.Future<List<InetSocketAddress>> fut = resolveAll(context.nettyEventLoop(), hostname);
     PromiseInternal<List<InetSocketAddress>> promise = context.promise();
     fut.addListener(promise);
     promise.future().onComplete(resultHandler);
   }
 
-  public io.netty.util.concurrent.Future<List<InetSocketAddress>> resolveHostnameAll(EventLoop eventLoop, String hostname) {
-    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = getResolver(eventLoop);
+  public io.netty.util.concurrent.Future<List<InetSocketAddress>> resolveAll(EventLoop eventLoop, String hostname) {
+    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolver(eventLoop);
     return resolver.resolveAll(InetSocketAddress.createUnresolved(hostname, 0));
   }
 
-  public io.netty.resolver.AddressResolver<InetSocketAddress> getResolver(EventLoop eventLoop){
+  private io.netty.resolver.AddressResolver<InetSocketAddress> resolver(EventLoop eventLoop){
     return resolverGroup.getResolver(eventLoop);
   }
 
-  AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
+  public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return resolverGroup;
   }
 
@@ -194,7 +193,7 @@ public class HostnameResolver implements AddressResolver {
     @Override
     public Future<L> resolve(SocketAddress address, EndpointBuilder<L, SocketAddress> builder) {
       Promise<L> promise = Promise.promise();
-      resolveHostnameAll(address.host(), ar -> {
+      resolveAll(address.host(), ar -> {
         EndpointBuilder<L, SocketAddress> builder2 = builder;
         if (ar.succeeded()) {
           for (InetSocketAddress addr : ar.result()) {
