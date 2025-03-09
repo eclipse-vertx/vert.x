@@ -140,7 +140,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) {
-    conn.endReadAndFlush();
+    conn.readComplete();
   }
 
   @Override

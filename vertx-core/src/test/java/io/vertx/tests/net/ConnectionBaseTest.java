@@ -10,12 +10,14 @@
  */
 package io.vertx.tests.net;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -31,6 +33,7 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,8 +44,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-
-import static org.junit.Assume.assumeTrue;
 
 public class ConnectionBaseTest extends VertxTestBase {
 
@@ -368,6 +369,85 @@ public class ConnectionBaseTest extends VertxTestBase {
   }
 
   @Test
+  public void testConsolidateFlushInDrainWhenResume() throws Exception {
+    connectHandler = conn -> {
+      VertxConnection vertxConn = (VertxConnection) conn;
+      ChannelHandlerContext ctx = conn.channelHandlerContext();
+      ChannelPipeline pipeline = ctx.pipeline();
+      pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+          switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
+            case "outbound-1":
+              vertxConn.doResume();
+              break;
+          }
+          ctx.write(msg);
+        }
+        @Override
+        public void flush(ChannelHandlerContext ctx) {
+          ctx.write(Unpooled.copiedBuffer("flush", StandardCharsets.UTF_8))
+            .addListener((ChannelFutureListener) future -> vertxConn.channelHandlerContext().close());
+          ctx.flush();
+        }
+      });
+      conn.messageHandler(msg -> {
+        switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
+          case "inbound-1":
+            vertxConn.doPause();
+            vertx.runOnContext(v -> {
+              pipeline.fireChannelRead(Unpooled.copiedBuffer("inbound-2", StandardCharsets.UTF_8));
+              pipeline.fireChannelReadComplete();
+              new Thread(() -> {
+                conn.writeMessage(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8));
+              }).start();
+            });
+            break;
+          case "inbound-2":
+            conn.writeMessage(Unpooled.copiedBuffer("outbound-2", StandardCharsets.UTF_8));
+            break;
+        }
+      });
+    };
+    NetSocket so = awaitFuture(client.connect(1234, "localhost"));
+    Buffer received = Buffer.buffer();
+    so.handler(received::appendBuffer);
+    so.closeHandler(v -> {
+      assertEquals("outbound-1outbound-2flush", received.toString());
+      testComplete();
+    });
+    so.write("inbound-1").await();
+    await();
+  }
+
+  @Test
+  public void testResumeWhenRead() throws Exception {
+    connectHandler = conn -> {
+      VertxConnection vertxConn = (VertxConnection) conn;
+      ChannelHandlerContext ctx = conn.channelHandlerContext();
+      ChannelPipeline pipeline = ctx.pipeline();
+      conn.messageHandler(msg -> {
+        switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
+          case "inbound-1":
+            vertxConn.doPause();
+            pipeline.fireChannelRead(Unpooled.copiedBuffer("inbound-2", StandardCharsets.UTF_8));
+            vertxConn.doResume();
+            break;
+          case "inbound-2":
+            conn.close();
+            break;
+        }
+      });
+    };
+    NetSocket so = awaitFuture(client.connect(1234, "localhost"));
+    so.closeHandler(v -> {
+      testComplete();
+    });
+    so.write("inbound-1").await();
+    await();
+  }
+
+  @Test
   public void testWriteQueueDrain() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     BufferInternal buffer = BufferInternal.buffer(TestUtils.randomAlphaString(1024));
@@ -653,10 +733,11 @@ public class ConnectionBaseTest extends VertxTestBase {
     assertEquals(0, count.get());
     assertTrue(ch.hasPendingTasks());
     ch.runPendingTasks();
-    assertEquals(1, count.get());
+    assertEquals(0, count.get());
     Object outbound = ch.readOutbound();
     assertNull(outbound);
     pipeline.fireChannelReadComplete();
+    assertEquals(1, count.get());
     outbound = ch.readOutbound();
     assertSame(expected, outbound);
   }
