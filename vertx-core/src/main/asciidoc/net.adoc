@@ -828,10 +828,10 @@ When SNI is active the server uses
 
 When the server additionally requires client authentication:
 
-* if {@link io.vertx.core.net.JksOptions} were used to set the trust options
- ({@link io.vertx.core.net.NetServerOptions#setTrustOptions options}) then an exact match with the trust store
- alias is done
+* when {@link io.vertx.core.net.JksOptions} is {@link io.vertx.core.net.NetServerOptions#setTrustOptions set on trust options} then an exact match with the trust store alias is done
 * otherwise the available CA certificates are used in the same way as if no SNI is in place
+
+CAUTION: the server fails to bind with an error reporting an incorrect alias
 
 You can enable SNI on the server by setting {@link io.vertx.core.net.NetServerOptions#setSni(boolean)} to `true` and
 configured the server with multiple key/certificate pairs.
