@@ -16,9 +16,8 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.deployment.Deployment;
-import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.Repeat;
@@ -169,7 +168,7 @@ public class ComplexHATest extends VertxTestBase {
 
   protected Set<DeploymentContext> takeDeploymentSnapshot(int pos) {
     Set<DeploymentContext> snapshot = ConcurrentHashMap.newKeySet();
-    VertxImpl v = (VertxImpl)vertices[pos];
+    VertxInternal v = (VertxInternal)vertices[pos];
     for (String depID: v.deploymentIDs()) {
       snapshot.add(v.deploymentManager().deployment(depID));
     }
@@ -232,7 +231,7 @@ public class ComplexHATest extends VertxTestBase {
     for (DeploymentContext prev: prevSet) {
       boolean contains = false;
       for (DeploymentContext curr: currSet) {
-        if (Deployment.unwrap(curr).identifier().equals(Deployment.unwrap(prev).identifier()) && Deployment.unwrap(curr).options().toJson().equals(Deployment.unwrap(prev).options().toJson())) {
+        if (curr.deployment().identifier().equals(prev.deployment().identifier()) && curr.deployment().options().toJson().equals(prev.deployment().options().toJson())) {
           contains = true;
           break;
         }

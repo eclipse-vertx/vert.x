@@ -14,7 +14,9 @@ package io.vertx.core.impl.deployment;
 import io.vertx.core.*;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 

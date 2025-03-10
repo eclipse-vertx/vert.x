@@ -15,7 +15,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
@@ -435,7 +435,7 @@ public interface ContextInternal extends Context {
     if (deployment == null) {
       return 0;
     }
-    return Deployment.unwrap(deployment).options().getInstances();
+    return deployment.deployment().options().getInstances();
   }
 
   CloseFuture closeFuture();

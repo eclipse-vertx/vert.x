@@ -19,6 +19,7 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetClient;
@@ -307,6 +308,11 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public ClusterManager clusterManager() {
     return delegate.clusterManager();
+  }
+
+  @Override
+  public DeploymentManager deploymentManager() {
+    return delegate.deploymentManager();
   }
 
   @Override
