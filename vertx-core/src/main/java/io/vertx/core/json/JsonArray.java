@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
@@ -20,7 +21,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.vertx.core.json.JsonObject.compareObjects;
+import static io.vertx.core.json.impl.JsonUtil.compare;
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
@@ -661,24 +662,29 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   @Override
   public boolean equals(Object o) {
     // null check
-    if (o == null)
+    if (o == null) {
       return false;
+    }
     // self check
-    if (this == o)
+    if (this == o) {
       return true;
+    }
     // type check and cast
-    if (getClass() != o.getClass())
+    if (getClass() != o.getClass()) {
       return false;
+    }
 
     JsonArray other = (JsonArray) o;
     // size check
-    if (this.size() != other.size())
+    int size = this.size();
+    if (size != other.size()) {
       return false;
+    }
     // value comparison
-    for (int i = 0; i < this.size(); i++) {
+    for (int i = 0; i < size; i++) {
       Object thisValue = this.getValue(i);
       Object otherValue = other.getValue(i);
-      if (thisValue != otherValue && !compareObjects(thisValue, otherValue)) {
+      if (thisValue != otherValue && !compare(thisValue, otherValue)) {
         return false;
       }
     }
@@ -688,7 +694,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
   @Override
   public int hashCode() {
-    return list.hashCode();
+    int h = 0;
+    for (Object value : this) {
+      h += JsonUtil.hashCode(value);
+    }
+    return h;
   }
 
   @Override
