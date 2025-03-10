@@ -52,4 +52,6 @@ public interface DeploymentContext {
    */
   String id();
 
+  Deployment deployment();
+
 }

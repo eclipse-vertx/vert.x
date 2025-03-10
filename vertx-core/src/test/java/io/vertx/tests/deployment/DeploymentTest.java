@@ -13,11 +13,9 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
-import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.deployment.DeploymentContext;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -537,8 +535,8 @@ public class DeploymentTest extends VertxTestBase {
     awaitLatch(deployLatch);
     assertWaitUntil(() -> deployCount.get() == numInstances);
     assertEquals(1, vertx.deploymentIDs().size());
-    DeploymentContext deployment = ((VertxImpl) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
-    Set<Deployable> verticles = Deployment.unwrap(deployment).instances();
+    DeploymentContext deployment = ((VertxInternal) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
+    Set<Deployable> verticles = deployment.deployment().instances();
     assertEquals(numInstances, verticles.size());
     CountDownLatch undeployLatch = new CountDownLatch(1);
     assertEquals(numInstances, deployCount.get());
@@ -1068,7 +1066,7 @@ public class DeploymentTest extends VertxTestBase {
     assertWaitUntil(() -> messageCount.get() == 3);
     assertEquals(9, totalReportedInstances.get());
     assertWaitUntil(() -> vertx.deploymentIDs().size() == 1);
-    DeploymentContext deployment = ((VertxImpl) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
+    DeploymentContext deployment = ((VertxInternal) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
     awaitFuture(vertx.undeploy(deployment.id()));
   }
 

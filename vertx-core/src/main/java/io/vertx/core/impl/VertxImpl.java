@@ -33,9 +33,10 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.impl.deployment.DefaultDeployment;
+import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
-import io.vertx.core.impl.deployment.DeploymentManager;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
 import io.vertx.core.internal.net.NetClientInternal;
@@ -788,16 +789,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public Future<String> deployVerticle(Class<? extends Deployable> verticleClass, DeploymentOptions options) {
     Callable<? extends Deployable> adapter = () -> verticleClass.getDeclaredConstructor().newInstance();
-    return deployVerticle(adapter, options);
+    return deployVerticle(adapter, options).map(DeploymentContext::id);
   }
 
   @Override
   public Future<String> deployVerticle(Supplier<? extends Deployable> supplier, DeploymentOptions options) {
     Callable<? extends Deployable> adapter = supplier::get;
-    return deployVerticle(adapter, options);
+    return deployVerticle(adapter, options).map(DeploymentContext::id);
   }
 
-  public Future<String> deployVerticle(Callable<? extends Deployable> supplier, DeploymentOptions options) {
+  private Future<DeploymentContext> deployVerticle(Callable<? extends Deployable> supplier, DeploymentOptions options) {
     boolean closed;
     synchronized (this) {
       closed = this.closed;
@@ -819,24 +820,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
       Deployment deployment;
       try {
-        deployment = Deployment.deployment(this, log, options, v -> "java:" + v.getClass().getName(), cl, supplier);
+        deployment = DefaultDeployment.deployment(this, log, options, v -> "java:" + v.getClass().getName(), cl, supplier);
       } catch (Exception e) {
         return currentContext.failedFuture(e);
       }
-      return deploymentManager.deploy(currentContext.deployment(), currentContext, deployment).
-        map(DeploymentContext::id);
+      return deploymentManager.deploy(currentContext.deployment(), currentContext, deployment);
     }
   }
 
   @Override
   public Future<String> deployVerticle(String name, DeploymentOptions options) {
+    Future<DeploymentContext> result;
     if (options.isHa() && haManager() != null) {
-      Promise<String> promise = getOrCreateContext().promise();
+      Promise<DeploymentContext> promise = getOrCreateContext().promise();
       haManager().deployVerticle(name, options, promise);
-      return promise.future();
+      result = promise.future();
     } else {
-      return verticleManager.deployVerticle(name, options).map(DeploymentContext::id);
+      result = verticleManager.deployVerticle(name, options);
     }
+    return result.map(DeploymentContext::id);
   }
 
   @Override

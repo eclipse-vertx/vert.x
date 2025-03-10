@@ -14,9 +14,10 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextBuilderImpl;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.WorkerPool;
+import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.logging.Logger;
 
@@ -25,18 +26,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
-public class Deployment {
+public class DefaultDeployment implements Deployment {
 
-  public static Deployment unwrap(DeploymentContext ctx) {
-    return ((DefaultDeploymentManager.DeploymentContextImpl)ctx).deployment();
-  }
-
-  public static Deployment deployment(VertxImpl vertx,
-                                      Logger log,
-                                      DeploymentOptions options,
-                                      Function<Deployable, String> identifierProvider,
-                                      ClassLoader tccl,
-                                      Callable<? extends Deployable> supplier) throws Exception {
+  public static DefaultDeployment deployment(VertxImpl vertx,
+                                             Logger log,
+                                             DeploymentOptions options,
+                                             Function<Deployable, String> identifierProvider,
+                                             ClassLoader tccl,
+                                             Callable<? extends Deployable> supplier) throws Exception {
     int numberOfInstances = options.getInstances();
     Set<Deployable> deployables = Collections.newSetFromMap(new IdentityHashMap<>());
     for (int i = 0; i < numberOfInstances;i++) {
@@ -69,7 +66,7 @@ public class Deployment {
       }
     }
     ArrayList<Deployable> list = new ArrayList<>(deployables);
-    return new Deployment(vertx, options, log, list, identifierProvider.apply(list.get(0)), mode, workerPool, tccl);
+    return new DefaultDeployment(vertx, options, log, list, identifierProvider.apply(list.get(0)), mode, workerPool, tccl);
   }
 
   private final VertxImpl vertx;
@@ -82,14 +79,14 @@ public class Deployment {
   private final List<Instance> instances = new CopyOnWriteArrayList<>();
   private final ClassLoader tccl;
 
-  public Deployment(VertxImpl vertx,
-                    DeploymentOptions options,
-                    Logger log,
-                    List<Deployable> deployables,
-                    String identifier,
-                    ThreadingModel threading,
-                    WorkerPool workerPool,
-                    ClassLoader tccl) {
+  public DefaultDeployment(VertxImpl vertx,
+                           DeploymentOptions options,
+                           Logger log,
+                           List<Deployable> deployables,
+                           String identifier,
+                           ThreadingModel threading,
+                           WorkerPool workerPool,
+                           ClassLoader tccl) {
     this.vertx = vertx;
     this.log = log;
     this.options = options;
@@ -117,7 +114,7 @@ public class Deployment {
   }
 
   public DeploymentOptions options() {
-    return options;
+    return new DeploymentOptions(options);
   }
 
   public String identifier() {
