@@ -40,9 +40,8 @@ open module io.vertx.core.tests {
   requires io.netty.incubator.codec.http3;
   requires io.netty.resolver.dns;
   requires io.netty.incubator.codec.classes.quic;
-    requires commons.math3;
 
-    provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
+  provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 
   // Cluster manager implementations overrides them (TCK)
   exports io.vertx.tests.ha;
