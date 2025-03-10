@@ -1548,22 +1548,22 @@ public class JsonObjectTest {
 
   @Test
   public void testNumberEquality() {
-    assertNumberEquals(4, 4);
-    assertNumberEquals(4, (long)4);
-    assertNumberEquals(4, 4f);
-    assertNumberEquals(4, 4D);
-    assertNumberEquals((long)4, (long)4);
-    assertNumberEquals((long)4, 4f);
-    assertNumberEquals((long)4, 4D);
-    assertNumberEquals(4f, 4f);
-    assertNumberEquals(4f, 4D);
-    assertNumberEquals(4D, 4D);
-    assertNumberEquals(4.1D, 4.1D);
-    assertNumberEquals(4.1f, 4.1f);
+    assertNumberEqualsAndHashCode(4, 4);
+    assertNumberEqualsAndHashCode(4, (long)4);
+    assertNumberEqualsAndHashCode(4, 4f);
+    assertNumberEqualsAndHashCode(4, 4D);
+    assertNumberEqualsAndHashCode((long)4, (long)4);
+    assertNumberEqualsAndHashCode((long)4, 4f);
+    assertNumberEqualsAndHashCode((long)4, 4D);
+    assertNumberEqualsAndHashCode(4f, 4f);
+    assertNumberEqualsAndHashCode(4f, 4D);
+    assertNumberEqualsAndHashCode(4D, 4D);
+    assertNumberEqualsAndHashCode(4.1D, 4.1D);
+    assertNumberEqualsAndHashCode(4.1f, 4.1f);
     assertNumberNotEquals(4.1f, 4.1D);
-    assertNumberEquals(4.5D, 4.5D);
-    assertNumberEquals(4.5f, 4.5f);
-    assertNumberEquals(4.5f, 4.5D);
+    assertNumberEqualsAndHashCode(4.5D, 4.5D);
+    assertNumberEqualsAndHashCode(4.5f, 4.5f);
+    assertNumberEqualsAndHashCode(4.5f, 4.5D);
     assertNumberNotEquals(4, 5);
     assertNumberNotEquals(4, (long)5);
     assertNumberNotEquals(4, 5D);
@@ -1574,34 +1574,39 @@ public class JsonObjectTest {
     assertNumberNotEquals(4f, 5f);
     assertNumberNotEquals(4f, 5D);
     assertNumberNotEquals(4D, 5D);
-    assertNumberEquals(2f, 2);
-    assertNumberEquals(2D, 2);
+    assertNumberEqualsAndHashCode(2f, 2);
+    assertNumberEqualsAndHashCode(2D, 2);
     assertNumberNotEquals(2.3D, 2);
     assertNumberNotEquals(2.3f, 2);
-    assertNumberEquals(2, new BigDecimal(2));
-    assertNumberEquals(new BigDecimal(2), 2);
-    assertNumberEquals(2D, new BigDecimal(2));
-    assertNumberEquals(new BigDecimal(2), 2D);
-    assertNumberEquals(2, BigInteger.valueOf(2));
-    assertNumberEquals(BigInteger.valueOf(2), 2);
-    assertNumberEquals(2D, BigInteger.valueOf(2));
-    assertNumberEquals(BigInteger.valueOf(2), 2D);
-    assertNumberEquals(BigInteger.valueOf(2), new BigDecimal(2));
-    assertNumberEquals(new BigDecimal(2), BigInteger.valueOf(2));
+    assertNumberEqualsAndHashCode(2, new BigDecimal(2));
+    assertNumberEqualsAndHashCode(new BigDecimal(2), 2);
+    assertNumberEqualsAndHashCode(2D, new BigDecimal(2));
+    assertNumberEqualsAndHashCode(new BigDecimal(2), 2D);
+    assertNumberEqualsAndHashCode(2, BigInteger.valueOf(2));
+    assertNumberEqualsAndHashCode(BigInteger.valueOf(2), 2);
+    assertNumberEqualsAndHashCode(2D, BigInteger.valueOf(2));
+    assertNumberEqualsAndHashCode(BigInteger.valueOf(2), 2D);
+    assertNumberEqualsAndHashCode(BigInteger.valueOf(2), new BigDecimal(2));
+    assertNumberEqualsAndHashCode(new BigDecimal(2), BigInteger.valueOf(2));
   }
 
-  private void assertNumberEquals(Number value1, Number value2) {
-    JsonObject o1 = new JsonObject().put("key", value1);
-    JsonObject o2 = new JsonObject().put("key", value2);
+  private void assertNumberEqualsAndHashCode(Number value1, Number value2) {
+    assertNumberEqualsAndHashCode(value1, value2, n -> new JsonObject().put("key", n));
+    assertNumberEqualsAndHashCode(value1, value2, n -> new JsonObject().put("key", Map.of("key", n)));
+    assertNumberEqualsAndHashCode(value1, value2, n -> new JsonArray().add(n));
+    assertNumberEqualsAndHashCode(value1, value2, n -> new JsonArray().add(List.of(n)));
+  }
+
+  private void assertNumberEqualsAndHashCode(Number value1, Number value2, Function<Number, Object> f) {
+    Object o1 = f.apply(value1);
+    Object o2 = f.apply(value2);
     if (!o1.equals(o2)) {
       fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
-          value2.getClass().getSimpleName() + ":" + value2);
+        value2.getClass().getSimpleName() + ":" + value2);
     }
-    JsonArray a1 = new JsonArray().add(value1);
-    JsonArray a2 = new JsonArray().add(value2);
-    if (!a1.equals(a2)) {
-      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " == " +
-          value2.getClass().getSimpleName() + ":" + value2);
+    if (o1.hashCode() != o2.hashCode()) {
+      fail("Was expecting " + value1.getClass().getSimpleName() + ":" + value1 + " and " +
+        value2.getClass().getSimpleName() + ":" + value2);
     }
   }
 
@@ -1905,7 +1910,7 @@ public class JsonObjectTest {
       1234567890123456789L,
       Short.MAX_VALUE
     }) {
-      assertNumberEquals(n, numbers.getNumber("missingKey", n));
+      assertNumberEqualsAndHashCode(n, numbers.getNumber("missingKey", n));
     }
   }
 
