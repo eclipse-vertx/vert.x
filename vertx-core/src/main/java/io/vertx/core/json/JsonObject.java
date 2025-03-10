@@ -11,6 +11,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
@@ -1162,19 +1163,23 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   @Override
   public boolean equals(Object o) {
     // null check
-    if (o == null)
+    if (o == null) {
       return false;
+    }
     // self check
-    if (this == o)
+    if (this == o) {
       return true;
+    }
     // type check and cast
-    if (getClass() != o.getClass())
+    if (getClass() != o.getClass()) {
       return false;
+    }
 
     JsonObject other = (JsonObject) o;
     // size check
-    if (this.size() != other.size())
+    if (this.size() != other.size()) {
       return false;
+    }
     // value comparison
     for (String key : map.keySet()) {
       if (!other.containsKey(key)) {
@@ -1183,7 +1188,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
       Object thisValue = this.getValue(key);
       Object otherValue = other.getValue(key);
-      if (thisValue != otherValue && !compareObjects(thisValue, otherValue)) {
+      if (thisValue != otherValue && !compare(thisValue, otherValue)) {
         return false;
       }
     }
@@ -1191,55 +1196,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return true;
   }
 
-  static boolean compareObjects(Object o1, Object o2) {
-    if (o1 instanceof Number && o2 instanceof Number) {
-      if (o1.getClass() == o2.getClass()) {
-        return o1.equals(o2);
-      } else {
-        // meaning that the numbers are different types
-        Number n1 = (Number) o1;
-        Number n2 = (Number) o2;
-        return compareNumbers(n1, n2);
-      }
-    } else if (o1 instanceof CharSequence && o2 instanceof CharSequence && o1.getClass() != o2.getClass()) {
-      return Objects.equals(o1.toString(), o2.toString());
-    } else {
-      return Objects.equals(o1, o2);
-    }
-  }
-
-  private static boolean compareNumbers(Number n1, Number n2) {
-    if (isDecimalNumber(n1) && isDecimalNumber(n2)) {
-      // compare as floating point double
-      return n1.doubleValue() == n2.doubleValue();
-    } else if (isWholeNumber(n1) && isWholeNumber(n2)) {
-      // compare as integer long
-      return n1.longValue() == n2.longValue();
-    } else if (isWholeNumber(n1) && isDecimalNumber(n2) ||
-      isDecimalNumber(n1) && isWholeNumber(n2)) {
-      // if its either integer or long and the other is float or double or vice versa,
-      // compare as floating point double
-      return n1.doubleValue() == n2.doubleValue();
-    } else {
-      if (isWholeNumber(n1)) {
-        return n1.longValue() == n2.longValue();
-      } else  {
-        return n1.doubleValue() == n2.doubleValue();
-      }
-    }
-  }
-
-  private static boolean isWholeNumber(Number thisValue) {
-    return thisValue instanceof Integer || thisValue instanceof Long;
-  }
-
-  private static boolean isDecimalNumber(Number thisValue) {
-    return thisValue instanceof Float || thisValue instanceof Double;
-  }
-
   @Override
   public int hashCode() {
-    return map.hashCode();
+    int h = 0;
+    for (Map.Entry<String, ?> entry : this) {
+      Object key = entry.getKey();
+      Object value = entry.getValue();
+      h += (key.hashCode() ^ JsonUtil.hashCode(value));
+    }
+    return h;
   }
 
   @Override
