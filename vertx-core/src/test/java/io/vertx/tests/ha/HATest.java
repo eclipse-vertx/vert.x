@@ -15,9 +15,9 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.deployment.Deployment;
-import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.deployment.Deployment;
+import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.VertxTestBase;
@@ -268,7 +268,7 @@ public class HATest extends VertxTestBase {
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
-    assertTrue(Deployment.unwrap(((VertxImpl) vertx1).deploymentManager().deployment(depID)).identifier().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxInternal) vertx1).deploymentManager().deployment(depID).deployment().identifier().equals("java:" + HAVerticle1.class.getName()));
   }
 
   @Test
@@ -296,7 +296,7 @@ public class HATest extends VertxTestBase {
 
     assertTrue(vertx1.deploymentIDs().size() == 1);
     String depID = vertx1.deploymentIDs().iterator().next();
-    assertTrue(Deployment.unwrap(((VertxImpl) vertx1).deploymentManager().deployment(depID)).identifier().equals("java:" + HAVerticle1.class.getName()));
+    assertTrue(((VertxInternal) vertx1).deploymentManager().deployment(depID).deployment().identifier().equals("java:" + HAVerticle1.class.getName()));
   }
 
   @Test
@@ -392,7 +392,7 @@ public class HATest extends VertxTestBase {
     VertxImpl vi = (VertxImpl) vertices[pos];
     for (String deploymentID: vi.deploymentIDs()) {
       DeploymentContext dep = vi.deploymentManager().deployment(deploymentID);
-      if (verticleName.equals(Deployment.unwrap(dep).identifier()) && options.toJson().equals(Deployment.unwrap(dep).options().toJson())) {
+      if (verticleName.equals(dep.deployment().identifier()) && options.toJson().equals(dep.deployment().options().toJson())) {
         return;
       }
     }

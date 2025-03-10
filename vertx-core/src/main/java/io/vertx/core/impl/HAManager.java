@@ -12,9 +12,9 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.impl.deployment.Deployment;
+import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
-import io.vertx.core.impl.deployment.DeploymentManager;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -161,7 +161,7 @@ public class HAManager {
   // Remove the information on the deployment from the cluster - this is called when an HA module is undeployed
   public void removeFromHA(String depID) {
     DeploymentContext deployment = deploymentManager.deployment(depID);
-    if (deployment == null || !Deployment.unwrap(deployment).options().isHa()) {
+    if (deployment == null || !deployment.deployment().options().isHa()) {
       return;
     }
     synchronized (haInfo) {
@@ -185,7 +185,7 @@ public class HAManager {
     }
   }
   // Deploy an HA verticle
-  public void deployVerticle(String verticleName, DeploymentOptions deploymentOptions, Promise<String> doneHandler) {
+  public void deployVerticle(String verticleName, DeploymentOptions deploymentOptions, Promise<DeploymentContext> doneHandler) {
     if (attainedQuorum) {
       doDeployVerticle(verticleName, deploymentOptions)
               .onComplete(doneHandler);
@@ -264,14 +264,14 @@ public class HAManager {
     failDuringFailover = fail;
   }
 
-  private Future<String> doDeployVerticle(String verticleName, DeploymentOptions deploymentOptions) {
+  private Future<DeploymentContext> doDeployVerticle(String verticleName, DeploymentOptions deploymentOptions) {
     return verticleFactoryManager
-            .deployVerticle(verticleName, deploymentOptions).map(DeploymentContext::id)
-            .compose(deploymentID -> vertx
+            .deployVerticle(verticleName, deploymentOptions)
+            .compose(deployment -> vertx
                     .executeBlocking(() -> {
                       // Tell the other nodes of the cluster about the verticle for HA purposes
-                      addToHA(deploymentID, verticleName, deploymentOptions);
-                      return deploymentID;
+                      addToHA(deployment.id(), verticleName, deploymentOptions);
+                      return deployment;
                     }, false));
   }
 
@@ -395,7 +395,7 @@ public class HAManager {
   }
 
   // Add the deployment to an internal list of deploymentIDs - these will be executed when a quorum is attained
-  private void addToHADeployList(String verticleName, DeploymentOptions deploymentOptions, Promise<String> doneHandler) {
+  private void addToHADeployList(String verticleName, DeploymentOptions deploymentOptions, Promise<DeploymentContext> doneHandler) {
     toDeployOnQuorum.add(() -> {
       ((VertxImpl)vertx).executeIsolated(v -> {
         deployVerticle(verticleName, deploymentOptions, doneHandler);
@@ -419,13 +419,13 @@ public class HAManager {
   private void undeployHADeployments() {
     for (DeploymentContext deployment: deploymentManager.deployments()) {
       if (deployment != null) {
-        String identifier = Deployment.unwrap(deployment).identifier();
-        if (Deployment.unwrap(deployment).options().isHa()) {
+        String identifier = deployment.deployment().identifier();
+        if (deployment.deployment().options().isHa()) {
           ((VertxImpl)vertx).executeIsolated(v -> {
             deploymentManager.undeploy(deployment.id()).onComplete(result -> {
               if (result.succeeded()) {
                 log.info("Successfully undeployed HA deployment " + deployment.id() + "-" + identifier + " as there is no quorum");
-                Future<String> fut = Future.future(promise -> addToHADeployList(identifier, Deployment.unwrap(deployment).options(), promise));
+                Future<DeploymentContext> fut = Future.future(promise -> addToHADeployList(identifier, deployment.deployment().options(), promise));
                 fut.onComplete(ar -> {
                   if (ar.succeeded()) {
                     log.info("Successfully redeployed verticle " + identifier + " after quorum was re-attained");

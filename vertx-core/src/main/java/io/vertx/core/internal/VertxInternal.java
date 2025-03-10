@@ -15,6 +15,7 @@ package io.vertx.core.internal;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.impl.*;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
@@ -181,10 +182,18 @@ public interface VertxInternal extends Vertx {
     return context.executeBlockingInternal(blockingCodeHandler);
   }
 
+  /**
+   * @return the cluster manager
+   */
   ClusterManager clusterManager();
 
   /**
-   * @return the default name resolver
+   * @return the deployment manager
+   */
+  DeploymentManager deploymentManager();
+
+  /**
+   * @return the name resolver
    */
   NameResolver nameResolver();
 
