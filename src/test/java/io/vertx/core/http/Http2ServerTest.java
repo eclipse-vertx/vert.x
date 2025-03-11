@@ -2638,74 +2638,61 @@ public class Http2ServerTest extends Http2TestBase {
     testUpgradeToClearText(HttpMethod.PUT, expected, options -> options.setCompressionSupported(true));
   }
 
+  @Test
+  public void testUpgradeToClearTextInvalidHost() throws Exception {
+    testUpgradeToClearText(new RequestOptions(requestOptions).putHeader("Host", "localhost:not"), options -> {})
+      .compose(req -> req.send()).onComplete(onFailure(failure -> {
+        assertEquals(StreamResetException.class, failure.getClass());
+        assertEquals(1L, ((StreamResetException)failure).getCode());
+        testComplete();
+      }));
+    await();
+  }
+
   private void testUpgradeToClearText(HttpMethod method, Buffer expected, Handler<HttpServerOptions> optionsConfig) throws Exception {
+    Future<HttpClientRequest> fut = testUpgradeToClearText(new RequestOptions(requestOptions).setMethod(method), optionsConfig);
+    fut.compose(req -> req.send(expected)
+      .andThen(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+      }))
+      .compose(resp -> resp.body())).onComplete(onSuccess(body -> {
+      assertEquals(expected, body);
+      testComplete();
+    }));
+    await();
+  }
+
+  private Future<HttpClientRequest> testUpgradeToClearText(RequestOptions request,
+                                      Handler<HttpServerOptions> optionsConfig) throws Exception {
     server.close();
-    AtomicInteger serverConnectionCount = new AtomicInteger();
     optionsConfig.handle(serverOptions);
     server = vertx.createHttpServer(serverOptions
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setUseAlpn(false)
       .setSsl(false)
-      .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)))
-      .connectionHandler(conn -> serverConnectionCount.incrementAndGet());
+      .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)));
     server.requestHandler(req -> {
       assertEquals("http", req.scheme());
-      assertEquals(method, req.method());
+      assertEquals(request.getMethod(), req.method());
       assertEquals(HttpVersion.HTTP_2, req.version());
       assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
       assertFalse(req.isSSL());
       req.bodyHandler(body -> {
-        assertEquals(expected, body);
         vertx.setTimer(10, id -> {
-          req.response().end();
+          req.response().end(body);
         });
       });
     }).connectionHandler(conn -> {
       assertNotNull(conn);
-      serverConnectionCount.incrementAndGet();
     });
     startServer(testAddress);
-    AtomicInteger clientConnectionCount = new AtomicInteger();
     client = vertx.createHttpClient(clientOptions.
         setUseAlpn(false).
         setSsl(false).
         setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
-    Promise<HttpClientResponse> p1 = Promise.promise();
-    p1.future().onComplete(onSuccess(resp -> {
-      assertEquals(HttpVersion.HTTP_2, resp.version());
-      // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-      assertEquals(1, serverConnectionCount.get());
-      assertEquals(1, clientConnectionCount.get());
-      Promise<HttpClientResponse> p2 = Promise.promise();
-      p2.future().onComplete(onSuccess(resp2 -> {
-        testComplete();
-      }));
-      doRequest(method, expected, null, p2);
-    }));
-    doRequest(method, expected, conn -> clientConnectionCount.incrementAndGet(), p1);
-    await();
-  }
-
-  private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Promise<HttpClientResponse> fut) {
-    if (connHandler != null) {
-      client.connectionHandler(connHandler);
-    }
-    client.request(new RequestOptions(requestOptions).setMethod(method)).onComplete(onSuccess(req -> {
-      req
-        .response(onSuccess(resp -> {
-          assertEquals(HttpVersion.HTTP_2, resp.version());
-          // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-          // assertEquals(1, serverConnectionCount.get());
-          // assertEquals(1, clientConnectionCount.get());
-          fut.tryComplete(resp);
-        }));
-      if (expected.length() > 0) {
-        req.end(expected);
-      } else {
-        req.end();
-      }
-    }));
+    return client.request(request);
   }
 
   @Test
@@ -2753,7 +2740,7 @@ public class Http2ServerTest extends Http2TestBase {
           req
             .putHeader("Upgrade", "h2c")
             .putHeader("Connection", "Upgrade")
-            .putHeader("HTTP2-Settings", "")
+            .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
             .send(handler);
         }));
     });
@@ -2768,7 +2755,7 @@ public class Http2ServerTest extends Http2TestBase {
         .setURI("/somepath"), onSuccess(req -> {
           req
             .putHeader("Upgrade", "h2c")
-            .putHeader("Connection", "Upgrade")
+            .putHeader("Connection", "Upgrade, HTTP2-Settings")
             .putHeader("HTTP2-Settings", "incorrect-settings")
             .send(handler);
         }));
@@ -2787,7 +2774,7 @@ public class Http2ServerTest extends Http2TestBase {
         .setURI("/somepath"), onSuccess(req -> {
           req
             .putHeader("Upgrade", "h2c")
-            .putHeader("Connection", "Upgrade")
+            .putHeader("Connection", "Upgrade, HTTP2-Settings")
             .putHeader("HTTP2-Settings", s)
             .send(handler);
       }));
@@ -2803,7 +2790,7 @@ public class Http2ServerTest extends Http2TestBase {
         .setURI("/somepath"), onSuccess(req -> {
         req
           .putHeader("Upgrade", "h2c")
-          .putHeader("Connection", "Upgrade")
+          .putHeader("Connection", "Upgrade, HTTP2-Settings")
           .send(handler);
       }));
     });
