@@ -45,7 +45,6 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
-  private VertxHttp2Stream upgraded;
 
   Http2ServerConnection(
     ContextInternal context,
@@ -165,21 +164,13 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     vertxStream.init(stream);
   }
 
-  VertxHttp2Stream<?> stream(int id) {
-    VertxHttp2Stream<?> stream = super.stream(id);
-    if (stream == null && id == 1 && handler.upgraded) {
-      return upgraded;
-    }
-    return stream;
-  }
-
   @Override
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    Http2ServerStream stream = (Http2ServerStream) stream(streamId);
-    if (stream == null) {
+    Http2Stream nettyStream = handler.connection().stream(streamId);
+    Http2ServerStream stream;
+    if (nettyStream.getProperty(streamKey) == null) {
       if (streamId == 1 && handler.upgraded) {
         stream = createStream(headers, true);
-        upgraded = stream;
       } else {
         stream = createStream(headers, endOfStream);
       }
@@ -191,6 +182,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
       stream.onHeaders(headers, streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
+      stream = nettyStream.getProperty(streamKey);
     }
     if (endOfStream) {
       stream.onEnd();
