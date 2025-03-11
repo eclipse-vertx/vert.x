@@ -1655,4 +1655,1057 @@ public class Http2ServerTest extends HttpServerTest {
   protected HttpClientOptions createBaseClientOptions() {
     return clientOptions;
   }
+
+  @Test
+  public void testNetSocketConnect() throws Exception {
+    waitFor(4);
+
+    server.requestHandler(req -> {
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        AtomicInteger status = new AtomicInteger();
+        socket.handler(buff -> {
+          switch (status.getAndIncrement()) {
+            case 0:
+              assertEquals(Buffer.buffer("some-data"), buff);
+              socket.write(buff).onComplete(onSuccess(v2 -> complete()));
+              break;
+            case 1:
+              assertEquals(Buffer.buffer("last-data"), buff);
+              break;
+            default:
+              fail();
+              break;
+          }
+        });
+        socket.endHandler(v1 -> {
+          assertEquals(2, status.getAndIncrement());
+          socket.end(Buffer.buffer("last-data")).onComplete(onSuccess(v2 -> complete()));
+        });
+        socket.closeHandler(v -> complete());
+      }));
+    });
+
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals("200", headers.status().toString());
+            assertFalse(endStream);
+          });
+          request.encoder.writeData(request.context, id, BufferInternal.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
+          request.context.flush();
+        }
+        StringBuilder received = new StringBuilder();
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String s = data.toString(StandardCharsets.UTF_8);
+          received.append(s);
+          if (received.toString().equals("some-data")) {
+            received.setLength(0);
+            vertx.runOnContext(v -> {
+              assertFalse(endOfStream);
+            });
+            request.encoder.writeData(request.context, id, BufferInternal.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+          } else if (endOfStream) {
+            vertx.runOnContext(v -> {
+              assertEquals("last-data", received.toString());
+              complete();
+            });
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, new DefaultHttp2Headers().method("CONNECT").authority("example.com:80"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  @DetectFileDescriptorLeaks
+  public void testNetSocketSendFile() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
+    File tmp = createTempFile(expected);
+    testNetSocketSendFile(expected, tmp.getAbsolutePath(), 0, expected.length());
+  }
+
+  @Test
+  public void testNetSocketSendFileRange() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
+    File tmp = createTempFile(expected);
+    int from = 200 * 1000;
+    int to = 700 * 1000;
+    testNetSocketSendFile(expected.slice(from, to), tmp.getAbsolutePath(), from, to - from);
+  }
+
+
+  private void testNetSocketSendFile(Buffer expected, String path, long offset, long length) throws Exception {
+    server.requestHandler(req -> {
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        socket.sendFile(path, offset, length).onComplete(onSuccess(v -> {
+          socket.end();
+        }));
+      }));
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals("200", headers.status().toString());
+            assertFalse(endStream);
+          });
+        }
+        Buffer received = Buffer.buffer();
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          byte[] tmp = new byte[data.readableBytes()];
+          data.getBytes(data.readerIndex(), tmp);
+          received.appendBytes(tmp);
+          if (endOfStream) {
+            vertx.runOnContext(v -> {
+              assertEquals(received, expected);
+              testComplete();
+            });
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testServerCloseNetSocket() throws Exception {
+    waitFor(2);
+    final AtomicInteger writeAcks = new AtomicInteger(0);
+    AtomicInteger status = new AtomicInteger();
+    server.requestHandler(req -> {
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        socket.handler(buff -> {
+          switch (status.getAndIncrement()) {
+            case 0:
+              assertEquals(Buffer.buffer("some-data"), buff);
+              socket.write(buff).onComplete(onSuccess(v -> writeAcks.incrementAndGet()));
+              socket.close();
+              break;
+            case 1:
+              assertEquals(Buffer.buffer("last-data"), buff);
+              break;
+            default:
+              fail();
+              break;
+          }
+        });
+        socket.endHandler(v -> {
+          assertEquals(2, status.getAndIncrement());
+        });
+        socket.closeHandler(v -> {
+          assertEquals(3, status.getAndIncrement());
+          complete();
+          assertEquals(1, writeAcks.get());
+        });
+      }));
+    });
+
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int c = count++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, c);
+          });
+          request.encoder.writeData(request.context, id, BufferInternal.buffer("some-data").getByteBuf(), 0, false, request.context.newPromise());
+          request.context.flush();
+        }
+        StringBuilder received = new StringBuilder();
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          String s = data.toString(StandardCharsets.UTF_8);
+          received.append(s);
+          if (endOfStream) {
+            request.encoder.writeData(request.context, id, BufferInternal.buffer("last-data").getByteBuf(), 0, true, request.context.newPromise());
+            vertx.runOnContext(v -> {
+              assertEquals("some-data", received.toString());
+              complete();
+            });
+          }
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testNetSocketHandleReset() throws Exception {
+    server.requestHandler(req -> {
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        AtomicInteger status = new AtomicInteger();
+        socket.exceptionHandler(err -> {
+          assertTrue(err instanceof StreamResetException);
+          StreamResetException ex = (StreamResetException) err;
+          assertEquals(0, ex.getCode());
+          assertEquals(0, status.getAndIncrement());
+        });
+        socket.endHandler(v -> {
+          // fail();
+        });
+        socket.closeHandler(v  -> {
+          assertEquals(1, status.getAndIncrement());
+          testComplete();
+        });
+      }));
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int count = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int c = count++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, c);
+          });
+          request.encoder.writeRstStream(ctx, streamId, 0, ctx.newPromise());
+          request.context.flush();
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testNetSocketPauseResume() throws Exception {
+    testStreamPauseResume(req -> req.toNetSocket().map(so -> so));
+  }
+
+  @Test
+  public void testNetSocketWritability() throws Exception {
+    testStreamWritability(req -> req.toNetSocket().map(so -> so));
+  }
+
+  @Test
+  public void testUnknownFrame() throws Exception {
+    Buffer expectedSend = TestUtils.randomBuffer(500);
+    Buffer expectedRecv = TestUtils.randomBuffer(500);
+    Context ctx = vertx.getOrCreateContext();
+    server.requestHandler(req -> {
+      req.customFrameHandler(frame -> {
+        assertOnIOContext(ctx);
+        assertEquals(10, frame.type());
+        assertEquals(253, frame.flags());
+        assertEquals(expectedSend, frame.payload());
+        HttpServerResponse resp = req.response();
+        resp.writeCustomFrame(12, 134, expectedRecv);
+        resp.end();
+      });
+    });
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+        int status = 0;
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          int s = status++;
+          vertx.runOnContext(v -> {
+            assertEquals(0, s);
+          });
+        }
+        @Override
+        public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) {
+          int s = status++;
+          byte[] tmp = new byte[payload.readableBytes()];
+          payload.getBytes(payload.readerIndex(), tmp);
+          Buffer recv = Buffer.buffer().appendBytes(tmp);
+          vertx.runOnContext(v -> {
+            assertEquals(1, s);
+            assertEquals(12, frameType);
+            assertEquals(134, flags.value());
+            assertEquals(expectedRecv, recv);
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          int len = data.readableBytes();
+          int s = status++;
+          vertx.runOnContext(v -> {
+            assertEquals(2, s);
+            assertEquals(0, len);
+            assertTrue(endOfStream);
+            testComplete();
+          });
+          return data.readableBytes() + padding;
+        }
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.encoder.writeFrame(request.context, (byte)10, id, new Http2Flags((short) 253), ((BufferInternal)expectedSend).getByteBuf(), request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearTextGet() throws Exception {
+    testUpgradeToClearText(HttpMethod.GET, Buffer.buffer(), options -> {});
+  }
+
+  @Test
+  public void testUpgradeToClearTextPut() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(20));
+    testUpgradeToClearText(HttpMethod.PUT, expected, options -> {});
+  }
+
+  @Test
+  public void testUpgradeToClearTextWithCompression() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
+    testUpgradeToClearText(HttpMethod.PUT, expected, options -> options.setCompressionSupported(true));
+  }
+
+  @Test
+  public void testUpgradeToClearTextInvalidHost() throws Exception {
+    testUpgradeToClearText(new RequestOptions(requestOptions).putHeader("Host", "localhost:not"), options -> {})
+      .compose(req -> req.send()).onComplete(onFailure(failure -> {
+        assertEquals(StreamResetException.class, failure.getClass());
+        assertEquals(1L, ((StreamResetException)failure).getCode());
+        testComplete();
+      }));
+    await();
+  }
+
+  private void testUpgradeToClearText(HttpMethod method, Buffer expected, Handler<HttpServerOptions> optionsConfig) throws Exception {
+    Future<HttpClientRequest> fut = testUpgradeToClearText(new RequestOptions(requestOptions).setMethod(method), optionsConfig);
+    fut.compose(req -> req.send(expected)
+      .andThen(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+      }))
+      .compose(resp -> resp.body())).onComplete(onSuccess(body -> {
+      assertEquals(expected, body);
+      testComplete();
+    }));
+    await();
+  }
+
+  private Future<HttpClientRequest> testUpgradeToClearText(RequestOptions request,
+                                      Handler<HttpServerOptions> optionsConfig) throws Exception {
+    server.close();
+    optionsConfig.handle(serverOptions);
+    server = vertx.createHttpServer(serverOptions
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setUseAlpn(false)
+      .setSsl(false)
+      .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)));
+    server.requestHandler(req -> {
+      assertEquals("http", req.scheme());
+      assertEquals(request.getMethod(), req.method());
+      assertEquals(HttpVersion.HTTP_2, req.version());
+      assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      assertFalse(req.isSSL());
+      req.bodyHandler(body -> {
+        vertx.setTimer(10, id -> {
+          req.response().end(body);
+        });
+      });
+    }).connectionHandler(conn -> {
+      assertNotNull(conn);
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(clientOptions.
+        setUseAlpn(false).
+        setSsl(false).
+        setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
+    return client.request(request);
+  }
+
+  @Test
+  public void testPushPromiseClearText() throws Exception {
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.
+        setHost(DEFAULT_HTTP_HOST).
+        setPort(DEFAULT_HTTP_PORT).
+        setUseAlpn(false).
+        setSsl(false));
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/resource").onComplete(onSuccess(resp -> {
+        resp.end("the-pushed-response");
+      }));
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.exceptionHandler(this::fail).pushHandler(pushedReq -> {
+        pushedReq.response().onComplete(onSuccess(pushResp -> {
+          pushResp.bodyHandler(buff -> {
+            assertEquals("the-pushed-response", buff.toString());
+            complete();
+          });
+        }));
+      }).send().onComplete(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        complete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")).onComplete(onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade")
+            .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
+            .send()
+            .onComplete(handler);
+        }));
+    });
+  }
+
+  @Test
+  public void testUpgradeToClearTextMalformedSettings() throws Exception {
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")).onComplete(onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade, HTTP2-Settings")
+            .putHeader("HTTP2-Settings", "incorrect-settings")
+            .send()
+            .onComplete(handler);
+        }));
+    });
+  }
+
+  @Test
+  public void testUpgradeToClearTextInvalidSettings() throws Exception {
+    Buffer buffer = Buffer.buffer();
+    buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
+    String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")).onComplete(onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade, HTTP2-Settings")
+            .putHeader("HTTP2-Settings", s)
+            .send()
+            .onComplete(handler);
+      }));
+    });
+  }
+
+  @Test
+  public void testUpgradeToClearTextMissingSettings() throws Exception {
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")).onComplete(onSuccess(req -> {
+        req
+          .putHeader("Upgrade", "h2c")
+          .putHeader("Connection", "Upgrade, HTTP2-Settings")
+          .send()
+          .onComplete(handler);
+      }));
+    });
+  }
+
+  @Test
+  public void testUpgradeToClearTextWorkerContext() throws Exception {
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")).onComplete(onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade")
+            .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
+            .send().onComplete(handler);
+        }));
+    });
+  }
+
+  private void testUpgradeFailure(Context context, BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> doRequest) throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(context);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
+    doRequest.accept(client, onSuccess(resp -> {
+      assertEquals(400, resp.statusCode());
+      assertEquals(HttpVersion.HTTP_1_1, resp.version());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testUpgradeToClearTextPartialFailure() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
+    CompletableFuture<Void> closeRequest = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      closeRequest.complete(null);
+      AtomicBoolean processed = new AtomicBoolean();
+      req.exceptionHandler(err -> {
+        if (processed.compareAndSet(false, true)) {
+          testComplete();
+        }
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
+      req
+        .putHeader("Upgrade", "h2c")
+        .putHeader("Connection", "Upgrade,HTTP2-Settings")
+        .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
+        .setChunked(true);
+      req.write("some-data");
+      closeRequest.thenAccept(v -> {
+        req.connection().close();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testIdleTimeout() throws Exception {
+    waitFor(5);
+    server.close();
+    server = vertx.createHttpServer(serverOptions.setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(2000));
+    server.requestHandler(req -> {
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof HttpClosedException);
+        complete();
+      });
+      req.response().closeHandler(v -> {
+        complete();
+      });
+      req.response().endHandler(v -> {
+        complete();
+      });
+      req.connection().closeHandler(v -> {
+        complete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.decoder.frameListener(new Http2EventAdapter() {
+      });
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    fut.channel().closeFuture().addListener(v1 -> {
+      vertx.runOnContext(v2 -> {
+        complete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testSendPing() throws Exception {
+    waitFor(2);
+    Buffer expected = TestUtils.randomBuffer(8);
+    Context ctx = vertx.getOrCreateContext();
+    server.connectionHandler(conn -> {
+      conn.ping(expected).onComplete(onSuccess(res -> {
+        assertSame(ctx, Vertx.currentContext());
+        assertEquals(expected, res);
+        complete();
+      }));
+    });
+    server.requestHandler(req -> fail());
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onPingRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
+          Buffer buffer = Buffer.buffer().appendLong(data);
+          vertx.runOnContext(v -> {
+            assertEquals(expected, buffer);
+            complete();
+          });
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testReceivePing() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(8);
+    Context ctx = vertx.getOrCreateContext();
+    server.connectionHandler(conn -> {
+      conn.pingHandler(buff -> {
+        assertOnIOContext(ctx);
+        assertEquals(expected, buff);
+        testComplete();
+      });
+    });
+    server.requestHandler(req -> fail());
+    startServer(ctx);
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.encoder.writePing(request.context, false, expected.getLong(0), request.context.newPromise());
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testPriorKnowledge() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().
+        setPort(DEFAULT_HTTP_PORT).
+        setHost(DEFAULT_HTTP_HOST)
+    );
+    server.requestHandler(req -> {
+      req.response().end("Hello World");
+    });
+    startServer();
+    TestClient client = new TestClient() {
+      @Override
+      protected ChannelInitializer channelInitializer(int port, String host, Consumer<Connection> handler) {
+        return new ChannelInitializer() {
+          @Override
+          protected void initChannel(Channel ch) throws Exception {
+            ChannelPipeline p = ch.pipeline();
+            Http2Connection connection = new DefaultHttp2Connection(false);
+            TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler);
+            TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
+            p.addLast(clientHandler);
+          }
+        };
+      }
+    };
+    ChannelFuture fut = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            testComplete();
+          });
+        }
+      });
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testConnectionWindowSize() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).setHttp2ConnectionWindowSize(65535 + 65535));
+    server.requestHandler(req  -> {
+      req.response().end();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(65535, windowSizeIncrement);
+            testComplete();
+          });
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testUpdateConnectionWindowSize() throws Exception {
+    server.connectionHandler(conn -> {
+      assertEquals(65535, conn.getWindowSize());
+      conn.setWindowSize(65535 + 10000);
+      assertEquals(65535 + 10000, conn.getWindowSize());
+      conn.setWindowSize(65535 + 65535);
+      assertEquals(65535 + 65535, conn.getWindowSize());
+    }).requestHandler(req  -> {
+      req.response().end();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(65535, windowSizeIncrement);
+            testComplete();
+          });
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  class TestHttp1xOrH2CHandler extends Http1xOrH2CHandler {
+
+    @Override
+    protected void configure(ChannelHandlerContext ctx, boolean h2c) {
+      if (h2c) {
+        ChannelPipeline p = ctx.pipeline();
+        p.addLast(new ChannelDuplexHandler() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            ctx.write(msg);
+          }
+          @Override
+          public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+            ctx.flush();
+          }
+        });
+      } else {
+        ChannelPipeline p = ctx.pipeline();
+        p.addLast(new HttpServerCodec());
+        p.addLast(new ChannelDuplexHandler() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            ctx.write(msg);
+          }
+          @Override
+          public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+            ctx.flush();
+          }
+        });
+      }
+    }
+  }
+
+  private static final ByteBuf HTTP_1_1_POST = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("POST /whatever HTTP/1.1\r\n\r\n", StandardCharsets.UTF_8));
+
+  @Test
+  public void testHttp1xOrH2CHandlerHttp1xRequest() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf buff = HTTP_1_1_POST.copy(0, HTTP_1_1_POST.readableBytes());
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    HttpRequest req = (HttpRequest) ch.outboundMessages().poll();
+    assertEquals("POST", req.method().name());
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+  @Test
+  public void testHttp1xOrH2CHandlerFragmentedHttp1xRequest() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf buff = HTTP_1_1_POST.copy(0, 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(0, ch.outboundMessages().size());
+    buff = HTTP_1_1_POST.copy(1, HTTP_1_1_POST.readableBytes() - 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    HttpRequest req = (HttpRequest) ch.outboundMessages().poll();
+    assertEquals("POST", req.method().name());
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+  @Test
+  public void testHttp1xOrH2CHandlerHttp2Request() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf expected = Unpooled.copiedBuffer(Http1xOrH2CHandler.HTTP_2_PREFACE, StandardCharsets.UTF_8);
+    ch.writeInbound(expected);
+    assertEquals(1, expected.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    ByteBuf res = (ByteBuf) ch.outboundMessages().poll();
+    assertEquals(Http1xOrH2CHandler.HTTP_2_PREFACE, res.toString(StandardCharsets.UTF_8));
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+  @Test
+  public void testHttp1xOrH2CHandlerFragmentedHttp2Request() throws Exception {
+    EmbeddedChannel ch =  new EmbeddedChannel(new TestHttp1xOrH2CHandler());
+    ByteBuf expected = Unpooled.copiedBuffer(Http1xOrH2CHandler.HTTP_2_PREFACE, StandardCharsets.UTF_8);
+    ByteBuf buff = expected.copy(0, 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(0, ch.outboundMessages().size());
+    buff = expected.copy(1, expected.readableBytes() - 1);
+    ch.writeInbound(buff);
+    assertEquals(0, buff.refCnt());
+    assertEquals(1, ch.outboundMessages().size());
+    ByteBuf res = (ByteBuf) ch.outboundMessages().poll();
+    assertEquals(1, res.refCnt());
+    assertEquals(Http1xOrH2CHandler.HTTP_2_PREFACE, res.toString(StandardCharsets.UTF_8));
+    assertNull(ch.pipeline().get(TestHttp1xOrH2CHandler.class));
+  }
+
+
+  @Test
+  public void testStreamPriority() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    waitFor(4);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals(requestStreamPriority, req.streamPriority());
+      resp.setStatusCode(200);
+      resp.setStreamPriority(responseStreamPriority);
+      resp.end("data");
+      complete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, true, request.context.newPromise());
+      request.context.flush();
+      request.decoder.frameListener(new Http2FrameAdapter() {
+          @Override
+          public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+                boolean endStream) throws Http2Exception {
+            vertx.runOnContext(v -> {
+                assertEquals(id, streamId);
+                assertEquals(responseStreamPriority.getDependency(), streamDependency);
+                assertEquals(responseStreamPriority.getWeight(), weight);
+                assertEquals(responseStreamPriority.isExclusive(), exclusive);
+                complete();
+              });
+          }
+          @Override
+          public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+            vertx.runOnContext(v -> {
+              assertEquals(id, streamId);
+              assertEquals(responseStreamPriority.getDependency(), streamDependency);
+              assertEquals(responseStreamPriority.getWeight(), weight);
+              assertEquals(responseStreamPriority.isExclusive(), exclusive);
+              complete();
+            });
+          }
+
+          @Override
+          public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+              if(endOfStream) {
+                vertx.runOnContext(v -> {
+                  complete();
+                });
+              }
+              return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+          }
+        });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityChange() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short) 45).setExclusive(true);
+    StreamPriority requestStreamPriority2 = new StreamPriority().setDependency(223).setWeight((short) 145).setExclusive(false);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short) 75).setExclusive(false);
+    StreamPriority responseStreamPriority2 = new StreamPriority().setDependency(253).setWeight((short) 175).setExclusive(true);
+    waitFor(6);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals(requestStreamPriority, req.streamPriority());
+      req.bodyHandler(b -> {
+          assertEquals(requestStreamPriority2, req.streamPriority());
+          resp.setStatusCode(200);
+          resp.setStreamPriority(responseStreamPriority);
+          resp.write("hello");
+          resp.setStreamPriority(responseStreamPriority2);
+          resp.end("world");
+          complete();
+      });
+      req.streamPriorityHandler(streamPriority -> {
+          assertEquals(requestStreamPriority2, streamPriority);
+          assertEquals(requestStreamPriority2, req.streamPriority());
+          complete();
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    Context context = vertx.getOrCreateContext();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, false, request.context.newPromise());
+      request.context.flush();
+      request.encoder.writePriority(request.context, id, requestStreamPriority2.getDependency(), requestStreamPriority2.getWeight(), requestStreamPriority2.isExclusive(), request.context.newPromise());
+      request.context.flush();
+      request.encoder.writeData(request.context, id, BufferInternal.buffer("hello").getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+              boolean endStream) throws Http2Exception {
+          super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
+          context.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(responseStreamPriority.getDependency(), streamDependency);
+            assertEquals(responseStreamPriority.getWeight(), weight);
+            assertEquals(responseStreamPriority.isExclusive(), exclusive);
+            complete();
+          });
+        }
+        int cnt;
+        @Override
+        public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+          context.runOnContext(v -> {
+            assertEquals(id, streamId);
+            switch (cnt++) {
+              case 0:
+                assertEquals(responseStreamPriority.getDependency(), streamDependency); // HERE
+                assertEquals(responseStreamPriority.getWeight(), weight);
+                assertEquals(responseStreamPriority.isExclusive(), exclusive);
+                complete();
+                break;
+              case 1:
+                assertEquals(responseStreamPriority2.getDependency(), streamDependency);
+                assertEquals(responseStreamPriority2.getWeight(), weight);
+                assertEquals(responseStreamPriority2.isExclusive(), exclusive);
+                complete();
+                break;
+              default:
+                fail();
+                break;
+            }
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+            if(endOfStream) {
+              context.runOnContext(v -> {
+                complete();
+              });
+            }
+            return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityNoChange() throws Exception {
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    waitFor(4);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals(requestStreamPriority, req.streamPriority());
+      req.bodyHandler(b -> {
+        assertEquals(requestStreamPriority, req.streamPriority());
+        resp.setStatusCode(200);
+        resp.setStreamPriority(responseStreamPriority);
+        resp.write("hello");
+        resp.setStreamPriority(responseStreamPriority);
+        resp.end("world");
+        complete();
+      });
+      req.streamPriorityHandler(streamPriority -> {
+        fail("Stream priority handler should not be called");
+      });
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, false, request.context.newPromise());
+      request.context.flush();
+      request.encoder.writePriority(request.context, id, requestStreamPriority.getDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), request.context.newPromise());
+      request.context.flush();
+      request.encoder.writeData(request.context, id, BufferInternal.buffer("hello").getByteBuf(), 0, true, request.context.newPromise());
+      request.context.flush();
+      request.decoder.frameListener(new Http2FrameAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+              boolean endStream) throws Http2Exception {
+          super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(responseStreamPriority.getDependency(), streamDependency);
+            assertEquals(responseStreamPriority.getWeight(), weight);
+            assertEquals(responseStreamPriority.isExclusive(), exclusive);
+            complete();
+          });
+        }
+        @Override
+        public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            assertEquals(id, streamId);
+            assertEquals(responseStreamPriority.getDependency(), streamDependency);
+            assertEquals(responseStreamPriority.getWeight(), weight);
+            assertEquals(responseStreamPriority.isExclusive(), exclusive);
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+            if(endOfStream) {
+              vertx.runOnContext(v -> {
+                complete();
+              });
+            }
+            return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+    });
+    fut.sync();
+    await();
+  }
+
+
 }
