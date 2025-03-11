@@ -124,57 +124,45 @@ public class DefaultDeployment implements Deployment {
   public Future<?> deploy(DeploymentContext deployment) {
     EventLoop workerLoop = null;
     List<Future<?>> futures = new ArrayList<>();
-    for (Deployable verticle: deployables) {
+    for (Deployable verticle : deployables) {
       CloseFuture closeFuture = new CloseFuture(log);
+      ContextBuilderImpl contextBuilder = ((ContextBuilderImpl) vertx.contextBuilder())
+        .withDeploymentContext(deployment)
+        .withCloseFuture(closeFuture)
+        .withClassLoader(tccl);
       ContextInternal context;
       switch (threading) {
         case WORKER:
           if (workerLoop == null) {
-            context = ((ContextBuilderImpl)vertx.contextBuilder())
+            context = contextBuilder
               .withThreadingModel(ThreadingModel.WORKER)
-              .withDeploymentContext(deployment)
-              .withCloseFuture(closeFuture)
               .withWorkerPool(workerPool)
-              .withClassLoader(tccl)
               .build();
             workerLoop = context.nettyEventLoop();
           } else {
-            context = ((ContextBuilderImpl)vertx.contextBuilder())
+            context = contextBuilder
               .withThreadingModel(ThreadingModel.WORKER)
               .withEventLoop(workerLoop)
-              .withDeploymentContext(deployment)
-              .withCloseFuture(closeFuture)
               .withWorkerPool(workerPool)
-              .withClassLoader(tccl)
               .build();
           }
           break;
         case VIRTUAL_THREAD:
           if (workerLoop == null) {
-            context = ((ContextBuilderImpl)vertx.contextBuilder())
+            context = contextBuilder
               .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
-              .withDeploymentContext(deployment)
-              .withCloseFuture(closeFuture)
-              .withClassLoader(tccl)
               .build();
             workerLoop = context.nettyEventLoop();
           } else {
-            context = ((ContextBuilderImpl)vertx.contextBuilder())
+            context = contextBuilder
               .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
               .withEventLoop(workerLoop)
-              .withDeploymentContext(deployment)
-              .withCloseFuture(closeFuture)
-              .withClassLoader(tccl)
               .build();
           }
           break;
         default:
-          context = ((ContextBuilderImpl)vertx.contextBuilder())
-            .withThreadingModel(ThreadingModel.EVENT_LOOP)
-            .withDeploymentContext(deployment)
-            .withCloseFuture(closeFuture)
+          context = contextBuilder
             .withWorkerPool(workerPool)
-            .withClassLoader(tccl)
             .build();
           break;
       }

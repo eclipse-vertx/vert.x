@@ -14,7 +14,8 @@ package io.vertx.tests.context;
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.core.internal.*;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
@@ -1005,13 +1006,11 @@ public class ContextTest extends VertxTestBase {
     VertxImpl impl = (VertxImpl) vertx;
     ContextInternal ctx1 = impl
       .contextBuilder()
-      .withThreadingModel(ThreadingModel.EVENT_LOOP)
       .withEventLoop(impl.eventLoopGroup().next())
       .withClassLoader(tccl1)
       .build();
     ContextInternal ctx2 = impl
       .contextBuilder()
-      .withThreadingModel(ThreadingModel.EVENT_LOOP)
       .withEventLoop(impl.eventLoopGroup().next())
       .withClassLoader(tccl2)
       .build();

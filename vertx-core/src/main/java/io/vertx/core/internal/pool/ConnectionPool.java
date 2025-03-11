@@ -13,7 +13,6 @@ package io.vertx.core.internal.pool;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 
@@ -34,7 +33,6 @@ public interface ConnectionPool<C> {
   Function<ContextInternal, ContextInternal> EVENT_LOOP_CONTEXT_PROVIDER = ctx -> {
     VertxInternal vertx = ctx.owner();
     return vertx.contextBuilder()
-      .withThreadingModel(ThreadingModel.EVENT_LOOP)
       .withEventLoop(ctx.nettyEventLoop())
       .withWorkerPool(vertx.workerPool())
       .build();
