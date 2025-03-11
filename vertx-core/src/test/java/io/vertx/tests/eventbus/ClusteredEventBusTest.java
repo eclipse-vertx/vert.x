@@ -19,14 +19,14 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
+import io.vertx.test.tls.Cert;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeSerializableObject;
-import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
-import io.vertx.test.core.TestUtils;
-import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
 import java.io.InvalidClassException;
@@ -694,7 +694,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       if (val == num - 1) {
         testComplete();
       }
-    });
+    }).completion().await();
     Context ctx = vertices[0].getOrCreateContext();
     ctx.runOnContext(v -> {
       for (int i = 0;i < num;i++) {
