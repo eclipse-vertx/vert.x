@@ -17,15 +17,14 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.transport.Transport;
@@ -602,7 +601,6 @@ public class ConnectionBaseTest extends VertxTestBase {
     return new EmbeddedChannel(VertxHandler.create(chctx -> {
       ContextInternal ctx = ((VertxInternal)vertx)
         .contextBuilder()
-        .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .withEventLoop(chctx.channel().eventLoop())
         .build();
       return connectionFactory.apply(ctx, chctx);
@@ -614,7 +612,6 @@ public class ConnectionBaseTest extends VertxTestBase {
     public TestConnection(ChannelHandlerContext chctx) {
       super(((VertxInternal)ConnectionBaseTest.this.vertx)
         .contextBuilder()
-        .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .withEventLoop((EventLoop) chctx.executor())
         .build(), chctx);
     }

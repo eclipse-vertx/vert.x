@@ -12,11 +12,15 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.internal.WorkerPool;
-import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextBuilder;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.WorkerPool;
+import io.vertx.core.internal.deployment.DeploymentContext;
+
+import java.util.Objects;
+
+import static io.vertx.core.ThreadingModel.EVENT_LOOP;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -31,30 +35,36 @@ public class ContextBuilderImpl implements ContextBuilder {
   private WorkerPool workerPool;
   private DeploymentContext deploymentContext;
 
-  public ContextBuilderImpl(VertxImpl vertx) {
-    this.vertx = vertx;
+  ContextBuilderImpl(VertxImpl vertx) {
+    this.vertx = Objects.requireNonNull(vertx);
+    this.threadingModel = EVENT_LOOP;
   }
 
+  @Override
   public ContextBuilderImpl withThreadingModel(ThreadingModel threadingModel) {
-    this.threadingModel = threadingModel;
+    this.threadingModel = Objects.requireNonNull(threadingModel);
     return this;
   }
 
+  @Override
   public ContextBuilderImpl withEventLoop(EventLoop eventLoop) {
     this.eventLoop = eventLoop;
     return this;
   }
 
+  @Override
   public ContextBuilderImpl withClassLoader(ClassLoader classLoader) {
     this.classLoader = classLoader;
     return this;
   }
 
+  @Override
   public ContextBuilderImpl withCloseFuture(CloseFuture closeFuture) {
     this.closeFuture = closeFuture;
     return this;
   }
 
+  @Override
   public ContextBuilderImpl withWorkerPool(WorkerPool workerPool) {
     this.workerPool = workerPool;
     return this;
@@ -65,6 +75,7 @@ public class ContextBuilderImpl implements ContextBuilder {
     return this;
   }
 
+  @Override
   public ContextInternal build() {
     EventLoop eventLoop = this.eventLoop;
     if (eventLoop == null) {

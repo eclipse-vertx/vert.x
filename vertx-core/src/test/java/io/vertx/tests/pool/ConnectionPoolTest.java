@@ -12,7 +12,6 @@ package io.vertx.tests.pool;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextImpl;
@@ -978,7 +977,6 @@ public class ConnectionPoolTest extends VertxTestBase {
     CountDownLatch latch3 = new CountDownLatch(1);
     ContextInternal context2 = vertx
       .contextBuilder()
-      .withThreadingModel(ThreadingModel.EVENT_LOOP)
       .withEventLoop(context1.nettyEventLoop())
       .withWorkerPool(context1.workerPool())
       .withClassLoader(context1.classLoader())
