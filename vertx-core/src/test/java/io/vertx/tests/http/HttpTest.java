@@ -2070,6 +2070,13 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSendFileUpperCaseSuffix() throws Exception {
+    String content = TestUtils.randomUnicodeString(10000);
+    sendFile("test-send-file.HTML", content, true,
+      () -> client.request(requestOptions));
+  }
+
+  @Test
   public void testSendFileWithHandler() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile("test-send-file.html", content, true,

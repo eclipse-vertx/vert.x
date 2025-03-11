@@ -614,6 +614,9 @@ Here's a very simple web server that serves files from the file system using sen
 {@link examples.HTTPExamples#example26}
 ----
 
+The HTTP response uses the file name extension to set the HTTP response content type header when the file name extension
+is well known by {@link io.vertx.core.http.MimeMapping} (lookup is case-insensitive).
+
 Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
 be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String)}.
 
