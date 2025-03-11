@@ -1014,7 +1014,7 @@ public final class MimeMapping {
   }
 
   /**
-   * @param ext the file name extension
+   * @param ext the file name extension in lower case format
    * @return the matching mime type for a file extension (e.g. {@code .mkv}) or {@code null}
    */
   public static String mimeTypeForExtension(String ext) {
@@ -1022,7 +1022,7 @@ public final class MimeMapping {
   }
 
   /**
-   * @param filename the file name
+   * @param filename the file name, the extension should be lower-case
    * @return the matching mime type for a file name or {@code null}, the file extension is used for lookup
    */
   public static String mimeTypeForFilename(String filename) {
