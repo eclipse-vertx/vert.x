@@ -12,6 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
@@ -323,5 +324,9 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
   @Override
   protected StreamPriorityBase createDefaultStreamPriority() {
     return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
+  }
+
+  ChannelFuture close() {
+    return streamChannel.close();
   }
 }
