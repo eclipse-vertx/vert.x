@@ -105,8 +105,6 @@ public abstract class NetTest extends VertxTestBase {
 
   protected abstract HttpClientOptions createBaseClientOptions();
 
-  protected abstract SocksProxy createSocksProxy();
-
   @Override
   public void setUp() throws Exception {
     super.setUp();
