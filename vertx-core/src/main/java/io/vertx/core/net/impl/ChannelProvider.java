@@ -36,6 +36,8 @@ import io.vertx.core.net.SocketAddress;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+import static io.vertx.core.net.impl.Http3ProxyProvider.*;
+
 /**
  * The logic for connecting to an host, this implementations performs a connection
  * to the host after resolving its internet address.
@@ -230,21 +232,21 @@ public final class ChannelProvider {
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
           proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions)
-            .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
+            .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 channelHandler.tryFailure(channelFuture.cause());
                 return;
               }
-              QuicChannel ch = channelFuture.get();
+              Channel ch = channelFuture.get();
               ChannelPipeline pipeline = ch.pipeline();
-              pipeline.addLast(new ChannelInboundHandlerAdapter() {
+              pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTION, new ChannelInboundHandlerAdapter() {
                 @Override
                 public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                   if (evt instanceof ProxyConnectionEvent) {
                     proxyProvider.removeProxyChannelHandlers(pipeline);
                     pipeline.remove(this);
 
-                    connected(ctx.channel(), channelHandler);
+                    connected(ctx.channel().parent(), channelHandler);
                   }
                   ctx.fireUserEventTriggered(evt);
                 }
@@ -262,14 +264,14 @@ public final class ChannelProvider {
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
-        ProxyHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr);
+        ChannelHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addFirst("proxy", proxy);
-            pipeline.addLast(new ChannelInboundHandlerAdapter() {
+            pipeline.addFirst(CHANNEL_HANDLER_PROXY, proxy);
+            pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTION, new ChannelInboundHandlerAdapter() {
               @Override
               public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                 if (evt instanceof ProxyConnectionEvent) {
