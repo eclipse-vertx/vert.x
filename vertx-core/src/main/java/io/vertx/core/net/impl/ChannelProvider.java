@@ -14,9 +14,9 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.handler.proxy.ProxyConnectionEvent;
-import io.netty.handler.proxy.ProxyHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClosedChannelException;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -246,7 +246,11 @@ public final class ChannelProvider {
                     proxyProvider.removeProxyChannelHandlers(pipeline);
                     pipeline.remove(this);
 
-                    connected(ctx.channel().parent(), channelHandler);
+                    Channel channel = ctx.channel();
+                    if (channel instanceof QuicStreamChannel) {
+                      channel = channel.parent();
+                    }
+                    connected(channel, channelHandler);
                   }
                   ctx.fireUserEventTriggered(evt);
                 }
