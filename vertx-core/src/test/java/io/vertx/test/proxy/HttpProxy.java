@@ -72,7 +72,8 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
-      String uri = request.uri();
+      String uri = request.authority().toString();
+//      String uri = request.uri();
       String username = nextUserName();
       if (username != null) {
         String auth = request.getHeader("Proxy-Authorization");
