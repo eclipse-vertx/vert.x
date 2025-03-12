@@ -29,8 +29,9 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.observability.HttpResponse;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -63,7 +64,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> bodyEndHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  private Future<NetSocket> netSocket;
+  private Promise<NetSocket> netSocket;
 
   public Http3ServerResponse(Http3ServerConnection conn,
                              Http3ServerStream stream,
@@ -369,17 +370,34 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
 
   Future<NetSocket> netSocket() {
     synchronized (conn) {
-      if (netSocket == null) {
-        status = HttpResponseStatus.OK;
-        if (!checkSendHeaders(false)) {
-          netSocket = stream.context.failedFuture("Response for CONNECT already sent");
-        } else {
-          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream.request, this);
-          netSocket = Future.succeededFuture(ns);
-        }
+      if (netSocket != null) {
+        return (Future<NetSocket>) netSocket;
       }
+      netSocket = stream.context.promise();
+      stream.context.execute(null, this::buildNetSocket);
     }
-    return netSocket;
+    return (Future<NetSocket>) netSocket;
+  }
+
+  private void buildNetSocket(Object ignore) {
+    status = HttpResponseStatus.OK;
+    if (!checkSendHeaders(false)) {
+      netSocket.tryFail("Response for CONNECT already sent");
+      return;
+    }
+
+    stream.close().addListener(future -> {
+      if (!future.isSuccess()) {
+        handleException(future.cause());
+        return;
+      }
+
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(stream.context, ctx,
+        null, conn.options.getSslOptions(), conn.metrics(), true));
+
+      ctx.channel().pipeline().replace("handler", "handler", handler);
+      netSocket.succeed(handler.getConnection());
+    });
   }
 
   Future<Void> write(ByteBuf chunk, boolean end) {
