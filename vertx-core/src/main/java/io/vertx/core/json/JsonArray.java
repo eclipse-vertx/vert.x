@@ -17,11 +17,13 @@ import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static io.vertx.core.json.impl.JsonUtil.compare;
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
@@ -694,9 +696,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
   @Override
   public int hashCode() {
-    int h = 0;
+    int h = 1;
     for (Object value : this) {
-      h += JsonUtil.hashCode(value);
+      h = 31 * h + JsonUtil.hashCode(value);
     }
     return h;
   }
