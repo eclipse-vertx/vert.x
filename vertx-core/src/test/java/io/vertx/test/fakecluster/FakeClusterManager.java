@@ -27,10 +27,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Predicate;
-
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class FakeClusterManager implements ClusterManager {
@@ -198,10 +194,15 @@ public class FakeClusterManager implements ClusterManager {
     List<RegistrationUpdateEvent> events = new ArrayList<>();
     registrations.keySet().forEach(address -> {
       List<RegistrationInfo> current = registrations.compute(address, (addr, infos) -> {
-        if (infos == null) return null;
-        return infos.stream()
-          .filter(info -> !info.nodeId().equals(nodeID))
-          .collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list));
+        List<RegistrationInfo> list = new ArrayList<>();
+        if (infos != null) {
+          for (RegistrationInfo info : infos) {
+            if (!info.nodeId().equals(nodeID)) {
+              list.add(info);
+            }
+          }
+        }
+        return list.isEmpty() ? null : list;
       });
       events.add(new RegistrationUpdateEvent(address, current));
     });
@@ -252,7 +253,7 @@ public class FakeClusterManager implements ClusterManager {
       if (infos == null) {
         res = new ArrayList<>();
       } else {
-        res = infos;
+        res = new ArrayList<>(infos);
       }
       res.add(registrationInfo);
       return res;
@@ -265,15 +266,15 @@ public class FakeClusterManager implements ClusterManager {
   @Override
   public void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
     List<RegistrationInfo> current = registrations.compute(address, (addrr, infos) -> {
-      List<RegistrationInfo> res;
-      if (infos == null) {
-        res = null;
-      } else {
-        res = infos.stream()
-          .filter(Predicate.isEqual(registrationInfo).negate())
-          .collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list));
+      List<RegistrationInfo> list = new ArrayList<>();
+      if (infos != null) {
+        for (RegistrationInfo info : infos) {
+          if (!Objects.equals(registrationInfo, info)) {
+            list.add(info);
+          }
+        }
       }
-      return res;
+      return list.isEmpty() ? null : list;
     });
     promise.complete();
     RegistrationUpdateEvent event = new RegistrationUpdateEvent(address, current);
