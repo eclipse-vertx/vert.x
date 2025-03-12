@@ -12,6 +12,7 @@ package io.vertx.tests.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -45,6 +46,7 @@ import org.junit.experimental.categories.Category;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.http.HttpTestBase.*;
@@ -215,7 +217,7 @@ public class Http3NetTest extends NetTest {
 
       internal.handler(buff -> fail());
       internal.messageHandler(obj -> {
-        System.out.println("obj msg handler = " + obj);
+        log.info("obj msg handler = " + obj);
         soi.channelHandlerContext().fireChannelRead(obj);
       });
     });
@@ -357,11 +359,11 @@ public class Http3NetTest extends NetTest {
 
     ProxyOptions proxyOptions = new ProxyOptions().setType(proxyType);
     proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions)
-      .addListener((GenericFutureListener<Future<QuicChannel>>) channelFuture -> {
+      .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
         if (!channelFuture.isSuccess()) {
           throw new RuntimeException(channelFuture.cause());
         }
-        QuicChannel quicChannel = channelFuture.get();
+        Channel quicChannel = channelFuture.get();
         quicChannel.pipeline().addLast(new ChannelInboundHandler());
         quicChannel.writeAndFlush(Unpooled.copiedBuffer(clientText.getBytes(StandardCharsets.UTF_8)))
           .addListener(future -> {
@@ -419,7 +421,8 @@ public class Http3NetTest extends NetTest {
   }
 
   private void testVertxH3Proxy_(ProxyType proxyType) throws Exception {
-    waitFor(3);
+    log.info("VertxH3Proxy is running with proxyType: " + proxyType);
+    waitFor(4);
     String clientText = "Hi, I'm client!";
     String serverText = "Hi, I'm server";
 
@@ -427,12 +430,11 @@ public class Http3NetTest extends NetTest {
 
     // Start of server part
     server.connectHandler((NetSocket sock) -> {
+      log.info("Created socket on server!");
       complete();
-      sock.handler(buf -> {
-        byte[]arr = new byte[buf.length()];
-        buf.getBytes(arr);
-        log.info(" client msg = " + new String(arr));
-        assertEquals(clientText, new String(arr));
+      sock.handler(buffer -> {
+        log.info("Client msg is: " + buffer.toString(StandardCharsets.UTF_8));
+        assertEquals(clientText, buffer.toString(StandardCharsets.UTF_8));
         sock.write(serverText);
         complete();
       });
@@ -444,7 +446,7 @@ public class Http3NetTest extends NetTest {
 
 
     // Start of proxy server part
-    switch (proxyType){
+    switch (proxyType) {
       case HTTP:
         proxy = new HttpProxy().http3(true);
         break;
@@ -455,14 +457,15 @@ public class Http3NetTest extends NetTest {
         proxy = new SocksProxy().http3(true);
         break;
       default:
-        throw new RuntimeException("Not Supported Proxy");
+        throw new RuntimeException("Not Supported!");
     }
 
     proxy.startProxy(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
+      log.info("Proxy started!");
     }));
 
-    latch.await();
+    latch.await(isDebug() ? 600 : 30, TimeUnit.SECONDS);
 
     // Start of client part
 
@@ -471,15 +474,23 @@ public class Http3NetTest extends NetTest {
       ;
     NetClient client = vertx.createNetClient(clientOptions);
     client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+      log.info("Sending a message to proxy server...");
       so.handler(buffer -> {
+        log.info("Server msg is : " + buffer);
         // make sure we have gone through the proxy
         assertEquals("localhost:1234", proxy.getLastUri());
+
         assertEquals(serverText, buffer.toString(StandardCharsets.UTF_8));
-        testComplete();
+        complete();
       });
-      so.write(clientText);
+      so.exceptionHandler(this::fail);
+
+      so.write(clientText).onComplete(onSuccess(e -> {
+        complete();
+      }));
     }));
-    await();
+
+    await(isDebug() ? 600 : 30, TimeUnit.SECONDS);
   }
 
   @Ignore
