@@ -282,7 +282,8 @@ public class Http3NetTest extends NetTest {
    * their functionality. It directly uses Http3ProxyProvider.
    */
   private void testH3Proxy_(ProxyType proxyType) throws Exception {
-    waitFor(3);
+    log.info("H3Proxy is running with proxyType: " + proxyType);
+    waitFor(4);
     String clientText = "Hi, I'm client!";
     String serverText = "Hi, I'm server";
 
@@ -290,12 +291,11 @@ public class Http3NetTest extends NetTest {
 
     // Start of server part
     server.connectHandler((NetSocket sock) -> {
+      log.info("Created socket on server!");
       complete();
-      sock.handler(buf -> {
-        byte[]arr = new byte[buf.length()];
-        buf.getBytes(arr);
-        log.info(" client msg = " + new String(arr));
-        assertEquals(clientText, new String(arr));
+      sock.handler(buffer -> {
+        log.info("Client msg is: " + buffer.toString(StandardCharsets.UTF_8));
+        assertEquals(clientText, buffer.toString(StandardCharsets.UTF_8));
         sock.write(serverText);
         complete();
       });
@@ -318,36 +318,18 @@ public class Http3NetTest extends NetTest {
         proxy = new SocksProxy().http3(true);
         break;
       default:
-        throw new RuntimeException("Not Supported Proxy");
+        throw new RuntimeException("Not Supported!");
     }
 
     proxy.startProxy(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
+      log.info("Proxy started!");
     }));
 
-    latch.await();
+    latch.await(isDebug() ? 600 : 30, TimeUnit.SECONDS);
 
     // Start of client part
     Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).getOrCreateContext().nettyEventLoop());
-
-    class ChannelInboundHandler extends ChannelInboundHandlerAdapter {
-      @Override
-      public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf msg0 = (ByteBuf) msg;
-        byte[] arr = new byte[msg0.readableBytes()];
-        msg0.copy().readBytes(arr);
-        log.info("Received msg is: " + new String(arr));
-        assertEquals(serverText, new String(arr));
-        super.channelRead(ctx, msg);
-      }
-
-      @Override
-      public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.error(cause);
-        ctx.close();
-        fail();
-      }
-    }
 
     InetSocketAddress proxyAddress = new InetSocketAddress("localhost", proxy.port());
     InetSocketAddress remoteAddress = new InetSocketAddress("localhost", server.actualPort());
@@ -356,14 +338,26 @@ public class Http3NetTest extends NetTest {
     proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions)
       .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
         if (!channelFuture.isSuccess()) {
-          throw new RuntimeException(channelFuture.cause());
+          fail(channelFuture.cause());
         }
         Channel quicChannel = channelFuture.get();
-        quicChannel.pipeline().addLast(new ChannelInboundHandler());
+        quicChannel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            ByteBuf msg0 = (ByteBuf) msg;
+            byte[] arr = new byte[msg0.readableBytes()];
+            msg0.copy().readBytes(arr);
+            log.info("Server msg is : " + new String(arr));
+            assertEquals(serverText, new String(arr));
+            assertEquals("localhost:1234", proxy.getLastUri());
+            complete();
+            super.channelRead(ctx, msg);
+          }
+        });
         quicChannel.writeAndFlush(Unpooled.copiedBuffer(clientText.getBytes(StandardCharsets.UTF_8)))
           .addListener(future -> {
             assertTrue(future.isSuccess());
-            log.info("Wrote to server successfully.");
+            log.info("Sending a message to proxy server...");
             complete();
           });
       });

@@ -27,6 +27,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.proxy.HttpProxyHandler;
 import io.vertx.core.internal.proxy.Socks5ProxyHandler;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -68,38 +69,58 @@ public class Http3ProxyProvider {
     io.vertx.core.internal.proxy.ProxyHandler proxyHandler = selectProxyHandler2(proxyOptions, proxyAddress,
       remoteAddress);
 
-    Promise<Channel> quicStreamChannelPromise = eventLoop.newPromise();
-
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel channel = (NioDatagramChannel) future.channel();
-        Http3Utils.newQuicChannel(channel, new ChannelInitializer<QuicChannel>() {
-            @Override
-            protected void initChannel(QuicChannel ch) {
-              ch.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
-                new Http3Utils.Http3ClientConnectionHandlerBuilder()
-                  .inboundControlStreamHandler(settingsFrame -> {
-                    quicStreamChannelPromise.addListener((GenericFutureListener<Future<Channel>>) quicStreamChannelFut -> {
-                      if (!quicStreamChannelFut.isSuccess()) {
-                        channelPromise.setFailure(quicStreamChannelFut.cause());
-                        return;
-                      }
-
-                      quicStreamChannelFut.get().pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
-                      channelPromise.setSuccess(quicStreamChannelFut.get());
-                    });
-                  }).build());
-            }
-          })
-          .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFuture -> {
-            if (!quicChannelFuture.isSuccess()) {
-              channelPromise.setFailure(quicChannelFuture.cause());
-              return;
-            }
-            Http3Utils.newRequestStream(quicChannelFuture.get(), quicStreamChannelPromise::setSuccess);
-          });
+        if (proxyOptions.getType() == ProxyType.HTTP) {
+          httpProxy(channel, proxyHandler, channelPromise);
+        } else {
+          socksProxy(channel, proxyHandler, channelPromise);
+        }
       });
     return channelPromise;
+  }
+
+  private void socksProxy(NioDatagramChannel channel, ChannelHandler proxyHandler, Promise<Channel> channelPromise) {
+    Http3Utils.newQuicChannel(channel, ch -> {
+        ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+      })
+      .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
+        if (!future1.isSuccess()) {
+          channelPromise.setFailure(future1.cause());
+          return;
+        }
+        channelPromise.setSuccess(future1.get());
+      });
+  }
+
+  private void httpProxy(NioDatagramChannel channel, io.vertx.core.internal.proxy.ProxyHandler proxyHandler, Promise<Channel> channelPromise) {
+    Promise<Channel> quicStreamChannelPromise = eventLoop.newPromise();
+    Http3Utils.newQuicChannel(channel, new ChannelInitializer<QuicChannel>() {
+        @Override
+        protected void initChannel(QuicChannel ch) {
+          ch.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
+            new Http3Utils.Http3ClientConnectionHandlerBuilder()
+              .inboundControlStreamHandler(settingsFrame -> {
+                quicStreamChannelPromise.addListener((GenericFutureListener<Future<Channel>>) quicStreamChannelFut -> {
+                  if (!quicStreamChannelFut.isSuccess()) {
+                    channelPromise.setFailure(quicStreamChannelFut.cause());
+                    return;
+                  }
+
+                  quicStreamChannelFut.get().pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+                  channelPromise.setSuccess(quicStreamChannelFut.get());
+                });
+              }).build());
+        }
+      })
+      .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFuture -> {
+        if (!quicChannelFuture.isSuccess()) {
+          channelPromise.setFailure(quicChannelFuture.cause());
+          return;
+        }
+        Http3Utils.newRequestStream(quicChannelFuture.get(), quicStreamChannelPromise::setSuccess);
+      });
   }
 
   public void removeProxyChannelHandlers(ChannelPipeline pipeline) {
