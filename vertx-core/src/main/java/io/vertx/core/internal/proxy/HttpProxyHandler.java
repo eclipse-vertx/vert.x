@@ -18,18 +18,20 @@ package io.vertx.core.internal.proxy;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelOutboundHandler;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.base64.Base64;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.HttpHeadersFactory;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
@@ -38,12 +40,22 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.proxy.ProxyConnectException;
+import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
+import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
+import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.ObjectUtil;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static io.vertx.core.net.impl.Http3ProxyProvider.*;
 
 //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
 // Actually this class is the same as netty ProxyHandler.
@@ -58,9 +70,12 @@ import java.net.SocketAddress;
  * tunneling proxy should not use this handler.
  */
 public final class HttpProxyHandler extends ProxyHandler {
+  private static final Logger log = LoggerFactory.getLogger(HttpProxyHandler.class);
 
     private static final String PROTOCOL = "http";
     private static final String AUTH_BASIC = "basic";
+    private static final String CHANNEL_HANDLER_CODEC_WRAPPER = "myCodecWrapperChannelHandler";
+    private static final String CHANNEL_HANDLER_HEADER_NORMALIZER = "myHeaderNormalizerChannelHandler";
 
     // Wrapper for the HttpClientCodec to prevent it to be removed by other handlers by mistake (for example the
     // WebSocket*Handshaker.
@@ -68,7 +83,7 @@ public final class HttpProxyHandler extends ProxyHandler {
     // See:
     // - https://github.com/netty/netty/issues/5201
     // - https://github.com/netty/netty/issues/5070
-    private final HttpClientCodecWrapper codecWrapper = new HttpClientCodecWrapper();
+    private final HttpClientCodecWrapper codecWrapper;
     private final String username;
     private final String password;
     private final CharSequence authorization;
@@ -94,6 +109,7 @@ public final class HttpProxyHandler extends ProxyHandler {
         authorization = null;
         this.outboundHeaders = headers;
         this.ignoreDefaultPortsInConnectHostHeader = ignoreDefaultPortsInConnectHostHeader;
+        this.codecWrapper = new HttpClientCodecWrapper(false);
     }
 
     public HttpProxyHandler(SocketAddress proxyAddress, String username, String password) {
@@ -116,6 +132,7 @@ public final class HttpProxyHandler extends ProxyHandler {
         this.authorization = createAuthorization(username, password);
         this.outboundHeaders = headers;
         this.ignoreDefaultPortsInConnectHostHeader = ignoreDefaultPortsInConnectHostHeader;
+        this.codecWrapper = new HttpClientCodecWrapper(false);
     }
 
     public HttpProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress) {
@@ -135,6 +152,7 @@ public final class HttpProxyHandler extends ProxyHandler {
         authorization = null;
         this.outboundHeaders = headers;
         this.ignoreDefaultPortsInConnectHostHeader = ignoreDefaultPortsInConnectHostHeader;
+        this.codecWrapper = new HttpClientCodecWrapper(true);
     }
 
     public HttpProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress, String username,
@@ -160,6 +178,7 @@ public final class HttpProxyHandler extends ProxyHandler {
         this.authorization = createAuthorization(username, password);
         this.outboundHeaders = headers;
         this.ignoreDefaultPortsInConnectHostHeader = ignoreDefaultPortsInConnectHostHeader;
+        this.codecWrapper = new HttpClientCodecWrapper(true);
     }
 
     private static CharSequence createAuthorization(String username, String password) {
@@ -199,17 +218,19 @@ public final class HttpProxyHandler extends ProxyHandler {
     protected void addCodec(ChannelHandlerContext ctx) throws Exception {
         ChannelPipeline p = ctx.pipeline();
         String name = ctx.name();
-        p.addBefore(name, null, codecWrapper);
+
+        p.addBefore(name, CHANNEL_HANDLER_CODEC_WRAPPER, codecWrapper);
+        p.addBefore(CHANNEL_HANDLER_CODEC_WRAPPER, CHANNEL_HANDLER_HEADER_NORMALIZER, new HeaderNormalizer());
     }
 
     @Override
     protected void removeEncoder(ChannelHandlerContext ctx) throws Exception {
-        codecWrapper.codec.removeOutboundHandler();
+        codecWrapper.removeEncoder(ctx);
     }
 
     @Override
     protected void removeDecoder(ChannelHandlerContext ctx) throws Exception {
-        codecWrapper.codec.removeInboundHandler();
+        codecWrapper.removeDecoder(ctx);
     }
 
     @Override
@@ -291,8 +312,18 @@ public final class HttpProxyHandler extends ProxyHandler {
         }
     }
 
-    private static final class HttpClientCodecWrapper implements ChannelInboundHandler, ChannelOutboundHandler {
-        final HttpClientCodec codec = new HttpClientCodec();
+    private static final class HttpClientCodecWrapper<T extends ChannelInboundHandler & ChannelOutboundHandler> implements ChannelInboundHandler, ChannelOutboundHandler {
+        private final T codec;
+        private final boolean http3;
+
+        public HttpClientCodecWrapper(boolean http3) {
+            this.http3 = http3;
+            if (http3) {
+              codec = (T) new Http3FrameToHttpObjectCodec(false, false);
+            } else {
+              codec = (T) new HttpClientCodec();
+            }
+        }
 
         @Override
         public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
@@ -389,6 +420,45 @@ public final class HttpProxyHandler extends ProxyHandler {
         @Override
         public void flush(ChannelHandlerContext ctx) throws Exception {
             codec.flush(ctx);
+        }
+
+        public void removeDecoder(ChannelHandlerContext ctx) throws Exception {
+            if (http3) {
+
+            } else {
+               ((HttpClientCodec)codec).removeInboundHandler();
+            }
+        }
+
+        public void removeEncoder(ChannelHandlerContext ctx) {
+            if (http3) {
+                log.trace("Channel handlers before removal: " + ctx.pipeline().names());
+                ChannelPipeline pipeline = ctx.pipeline();
+                List<ChannelHandler> removedHandlers = new ArrayList<>();
+                for (Map.Entry<String, ChannelHandler> entry : pipeline) {
+                  ChannelHandler handler = entry.getValue();
+                  if (!(CHANNEL_HANDLER_PROXY.equals(entry.getKey())) && !(CHANNEL_HANDLER_PROXY_CONNECTION.equals(entry.getKey()))) {
+                    removedHandlers.add(handler);
+                  }
+                }
+                removedHandlers.forEach(pipeline::remove);
+                log.trace("Channel handlers after removal: " + ctx.pipeline().names());
+            } else {
+                ((HttpClientCodec)codec).removeOutboundHandler();
+            }
+        }
+    }
+
+    private static class HeaderNormalizer extends ChannelOutboundHandlerAdapter {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            if (msg instanceof DefaultHttp3HeadersFrame) {
+                ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.PATH.value());
+                ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.SCHEME.value());
+                ((DefaultHttp3HeadersFrame) msg).headers().method(HttpMethod.CONNECT.name());
+                ((DefaultHttp3HeadersFrame) msg).headers().authority("localhost:1234");
+            }
+            super.write(ctx, msg, promise);
         }
     }
 }
