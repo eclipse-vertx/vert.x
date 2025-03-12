@@ -16,6 +16,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
@@ -26,6 +27,7 @@ import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.resolver.DefaultAddressResolverGroup;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
@@ -202,6 +204,10 @@ public class Http3Utils {
       this.inboundControlStreamHandler = inboundControlStreamHandler;
       return this;
     }
+    public Http3ClientConnectionHandlerBuilder inboundControlStreamHandler(Handler<Http3SettingsFrame> onSettingsReadHandler) {
+      this.inboundControlStreamHandler = new Http3ControlStreamChannelHandler(onSettingsReadHandler);
+      return this;
+    }
 
     public Http3ClientConnectionHandlerBuilder pushStreamHandlerFactory(LongFunction<ChannelHandler> pushStreamHandlerFactory) {
       this.pushStreamHandlerFactory = pushStreamHandlerFactory;
@@ -228,4 +234,37 @@ public class Http3Utils {
         unknownInboundStreamHandlerFactory, localSettings, disableQpackDynamicTable);
     }
   }
+
+  private final static class Http3ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
+    private final Handler<Http3SettingsFrame> onSettingsReadHandler;
+    private Http3SettingsFrame http3SettingsFrame;
+    private boolean settingsRead;
+
+    public Http3ControlStreamChannelHandler(Handler<Http3SettingsFrame> onSettingsReadHandler) {
+      this.onSettingsReadHandler = onSettingsReadHandler;
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (msg instanceof DefaultHttp3SettingsFrame) {
+        http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
+        ReferenceCountUtil.release(msg);
+        return;
+      }
+      super.channelRead(ctx, msg);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      synchronized (this) {
+        if (settingsRead) {
+          return;
+        }
+        settingsRead = true;
+      }
+    this.onSettingsReadHandler.handle(http3SettingsFrame);
+      super.channelReadComplete(ctx);
+    }
+  }
+
 }
