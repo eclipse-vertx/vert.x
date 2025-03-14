@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.internal.ArrayComparisonFailure;
 import org.junit.rules.TestName;
 
+import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -113,6 +114,15 @@ public class AsyncTestBase {
     }
     testCompleteCalled = true;
     latch.countDown();
+  }
+  public static boolean isDebug() {
+    String[] arguments = ManagementFactory.getRuntimeMXBean().getInputArguments().toArray(new String[0]);
+    for (String argument : arguments) {
+      if (argument.contains("jdwp")) {
+        return true;
+      }
+    }
+    return false;
   }
 
   protected void await() {
