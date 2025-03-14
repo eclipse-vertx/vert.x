@@ -7,33 +7,41 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MessageConsumerTest extends VertxTestBase {
 
 
   @Test
-  public void testMessageConsumptionStayOnWorkerThreadAfterResume() throws Exception {
-    TestVerticle verticle = new TestVerticle(2);
+  public void testMessageConsumptionStayOnWorkerThreadAfterResumeAndOnlyDispatchOneMessageAtOneMoment() throws Exception {
+    int numberOfExpectedMessages = 10;
+    TestVerticle verticle = new TestVerticle(numberOfExpectedMessages);
+    EchoVerticle echoVerticle = new EchoVerticle();
     Future<String> deployVerticle = vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+    Future<String> deployEchoVerticle = vertx.deployVerticle(echoVerticle, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
 
     CountDownLatch startLatch = new CountDownLatch(1);
-    deployVerticle.onComplete(onSuccess(cf -> startLatch.countDown()));
+    Future.all(deployVerticle, deployEchoVerticle)
+      .onComplete(onSuccess(cf -> startLatch.countDown()));
     awaitLatch(startLatch);
 
-    vertx.eventBus().send("testAddress", "message1");
-    vertx.eventBus().send("testAddress", "message2");
+    for (int i = 1; i <= numberOfExpectedMessages; i++) {
+      vertx.eventBus().send("testAddress", "message" + i);
+    }
 
     awaitLatch(verticle.msgLatch);
 
-    assertEquals(2, verticle.messageArrivedOnWorkerThread.size());
-    assertTrue("message1 should be processed on worker thread", verticle.messageArrivedOnWorkerThread.get("message1"));
-    assertTrue("message2 should be processed on worker thread", verticle.messageArrivedOnWorkerThread.get("message2"));
+    assertEquals(numberOfExpectedMessages, verticle.messageArrivedOnWorkerThread.size());
+    for (int i = 1; i <= numberOfExpectedMessages; i++) {
+      assertTrue("message" + i + " should be processed on worker thread", verticle.messageArrivedOnWorkerThread.get("message" + i));
+    }
   }
 
 
   private static class TestVerticle extends AbstractVerticle {
 
     private final CountDownLatch msgLatch;
+    private final AtomicBoolean messageProcessingOngoing = new AtomicBoolean();
 
     private final Map<String, Boolean> messageArrivedOnWorkerThread = new HashMap<>();
 
@@ -51,11 +59,34 @@ public class MessageConsumerTest extends VertxTestBase {
       consumer.handler(msg -> {
         consumer.pause();
         messageArrivedOnWorkerThread.putIfAbsent(msg.body(), Context.isOnWorkerThread());
-        msgLatch.countDown();
-        vertx.setTimer(20, id -> {
-          consumer.resume();
+        if (messageProcessingOngoing.compareAndSet(false, true)) {
+          msgLatch.countDown();
+        } else {
+          System.err.println("Received message while processing another message");
+        }
+        vertx.eventBus().request("echoAddress", 20)
+          .onComplete(ar -> {
+            messageProcessingOngoing.set(false);
+            consumer.resume();
+          });
+      });
+    }
+  }
+
+  private static class EchoVerticle extends AbstractVerticle {
+    @Override
+    public void start() {
+      MessageConsumer<Integer> consumer = vertx.eventBus().localConsumer("echoAddress");
+      handleMessages(consumer);
+    }
+
+    private void handleMessages(MessageConsumer<Integer> consumer) {
+      consumer.handler(msg -> {
+        vertx.setTimer(msg.body(), id -> {
+          msg.reply(msg.body());
         });
       });
     }
   }
+
 }
