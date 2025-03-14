@@ -1401,7 +1401,6 @@ public class LocalEventBusTest extends EventBusTestBase {
       eb.send(ADDRESS1, "val1");
       Context ctx = Vertx.currentContext();
       ctx.runOnContext(v -> {
-        consumer.resume();
         ((MessageConsumerImpl<?>) consumer).discardHandler(discarded -> {
           assertEquals("val1", discarded.body());
           testComplete();
