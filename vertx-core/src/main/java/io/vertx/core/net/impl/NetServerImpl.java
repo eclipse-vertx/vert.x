@@ -611,7 +611,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return bootstrap;
     }
     ServerBootstrap bootstrap = new ServerBootstrap();
-    bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+    bootstrap.group(vertx.acceptorEventLoopGroup(), channelBalancer.workers());
     if (options.isSsl()) {
       bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     } else {
@@ -619,6 +619,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
 
     bootstrap.childHandler(channelBalancer);
+    bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
     return bootstrap;
   }
