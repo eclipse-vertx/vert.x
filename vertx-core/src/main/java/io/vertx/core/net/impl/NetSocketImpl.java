@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -321,11 +322,10 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
             chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
-              ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions);
             } else {
-              sslHandler = provider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(),
-                sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
+              sslHandler = provider.createServerHandler(sslOptions,
+                HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()), null);
             }
             chctx.pipeline().addFirst("ssl", sslHandler);
             channelPromise.addListener(p);

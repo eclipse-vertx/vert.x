@@ -18,6 +18,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.transports.NioTransport;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
@@ -144,7 +145,7 @@ public interface Transport {
   }
 
   default void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
-    if (!domainSocket) {
+    if (!domainSocket && options.getProtocolVersion() != HttpVersion.HTTP_3) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
@@ -189,6 +190,12 @@ public interface Transport {
     }
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    }
+  }
+
+  default void configure(NetServerOptions options, Bootstrap serverBootstrap) {
+    if (options.getAcceptBacklog() != -1) {
+      serverBootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
   }
 }
