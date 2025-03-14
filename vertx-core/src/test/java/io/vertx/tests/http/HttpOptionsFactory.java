@@ -11,6 +11,7 @@
 
 package io.vertx.tests.http;
 
+import io.netty.incubator.codec.http3.Http3;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
