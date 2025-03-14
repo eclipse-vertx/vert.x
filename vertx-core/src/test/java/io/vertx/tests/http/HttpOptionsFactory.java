@@ -57,7 +57,7 @@ public class HttpOptionsFactory {
       .setKeyCertOptions(Cert.SERVER_JKS.get())
       .setHttp3(true)
       .getSslOptions()
-      .setApplicationLayerProtocols(List.of(Http3.supportedApplicationProtocols()));
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     return options;
   }
 
