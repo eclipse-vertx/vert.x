@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -597,6 +598,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   private AbstractBootstrap buildServerBootstrap(SocketAddress localAddress) {
     if (options.isHttp3()) {
+      // TODO: Alter the logic of this method based on the ServerBootstrap creation in a normal scenario without HTTP/3
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
       bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
@@ -613,13 +615,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(vertx.acceptorEventLoopGroup(), channelBalancer.workers());
     if (options.isSsl()) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+      bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     } else {
       bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
     }
-
     bootstrap.childHandler(channelBalancer);
-    bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
     return bootstrap;
   }

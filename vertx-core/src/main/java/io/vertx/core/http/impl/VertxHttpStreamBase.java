@@ -24,9 +24,10 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.internal.concurrent.OutboundMessageQueue;
+import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.OutboundMessageChannel;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.MessageWrite;
 
@@ -91,7 +92,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
           Buffer data = (Buffer) item;
           int len = data.length();
           conn.context.emit(null, v -> {
-            if (remoteSideOpen(channelStream)) {
+            if (remoteSideOpen(streamChannel)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2
               consumeCredits(streamChannel, len);
@@ -126,7 +127,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
       }
 
       @Override
-      protected void writeQueueDrained() {
+      protected void afterDrain() {
         context.emit(VertxHttpStreamBase.this, VertxHttpStreamBase::handleWriteQueueDrained);
       }
     };

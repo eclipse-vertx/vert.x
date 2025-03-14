@@ -167,7 +167,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   protected synchronized void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
                                             StreamPriorityBase streamPriority, boolean endOfStream,
                                             QuicStreamChannel streamChannel) {
-    //TODO: correct the following block logic
+    //TODO: Alter the logic of this method based on onHeadersRead method in the Http2ServerConnection class.
     Http3ServerStream stream0 = null;
     if (stream == null) {
 //      if (streamId == 1) {

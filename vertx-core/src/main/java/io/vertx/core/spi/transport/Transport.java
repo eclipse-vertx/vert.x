@@ -18,6 +18,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
