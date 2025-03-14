@@ -236,4 +236,8 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     });
     return handler;
   }
+
+  public HttpClientBase client() {
+    return client;
+  }
 }
