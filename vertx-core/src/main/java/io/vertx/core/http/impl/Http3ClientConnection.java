@@ -67,6 +67,11 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   }
 
   @Override
+  public HttpClientConnectionInternal invalidMessageHandler(Handler<Object> handler) {
+    return this;
+  }
+
+  @Override
   public Http3ClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     concurrencyChangeHandler = handler;
     return this;

@@ -249,7 +249,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
       });
     } catch (HttpException ex) {
       promise.fail(ex);
-      handleException(ex);
+      onException(ex);
     }
   }
 

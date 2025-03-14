@@ -100,6 +100,37 @@ public abstract class HttpServerTest extends HttpTestBase {
   protected HttpClientOptions clientOptions;
   protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
+  @Override
+  public void setUp() throws Exception {
+    eventLoopGroups.clear();
+    serverOptions = createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
+    super.setUp();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+    }
+  }
+
+  @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return serverOptions;
+  }
+
+  @Override
+  protected HttpClientOptions createBaseClientOptions() {
+    return clientOptions;
+  }
+
+  @Override
+  protected void configureDomainSockets() throws Exception {
+    // Nope
+  }
+
   private static Http2Headers headers(String method, String scheme, String path) {
     return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
   }
@@ -1265,6 +1296,27 @@ public abstract class HttpServerTest extends HttpTestBase {
           request.context.flush();
         }
       });
+    });
+    fut.sync();
+    await();
+  }
+
+  @Test
+  public void testHostHeaderInsteadOfAuthorityPseudoHeader() throws Exception {
+    // build the HTTP/2 headers, omit the ":authority" pseudo-header and include the "host" header instead
+    Http2Headers headers = new DefaultHttp2Headers().method("GET").scheme("https").path("/").set("host", DEFAULT_HTTPS_HOST_AND_PORT);
+    server.requestHandler(req -> {
+      // validate that the authority is properly populated
+      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
+      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
+      testComplete();
+    });
+    startServer();
+    TestClient client = new TestClient();
+    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      int id = request.nextStreamId();
+      Http2ConnectionEncoder encoder = request.encoder;
+      encoder.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
     });
     fut.sync();
     await();
@@ -2712,79 +2764,62 @@ public abstract class HttpServerTest extends HttpTestBase {
     testUpgradeToClearText(HttpMethod.PUT, expected, options -> options.setCompressionSupported(true));
   }
 
+  @Test
+  public void testUpgradeToClearTextInvalidHost() throws Exception {
+    testUpgradeToClearText(new RequestOptions(requestOptions).putHeader("Host", "localhost:not"), options -> {})
+      .compose(req -> req.send()).onComplete(onFailure(failure -> {
+        assertEquals(StreamResetException.class, failure.getClass());
+        assertEquals(1L, ((StreamResetException)failure).getCode());
+        testComplete();
+      }));
+    await();
+  }
+
   private void testUpgradeToClearText(HttpMethod method, Buffer expected, Handler<HttpServerOptions> optionsConfig) throws Exception {
+    Future<HttpClientRequest> fut = testUpgradeToClearText(new RequestOptions(requestOptions).setMethod(method), optionsConfig);
+    fut.compose(req -> req.send(expected)
+      .andThen(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+      }))
+      .compose(resp -> resp.body())).onComplete(onSuccess(body -> {
+      assertEquals(expected, body);
+      testComplete();
+    }));
+    await();
+  }
+
+  private Future<HttpClientRequest> testUpgradeToClearText(RequestOptions request,
+                                      Handler<HttpServerOptions> optionsConfig) throws Exception {
     server.close();
-    AtomicInteger serverConnectionCount = new AtomicInteger();
     optionsConfig.handle(serverOptions);
     server = vertx.createHttpServer(serverOptions
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setUseAlpn(false)
       .setSsl(false)
-      .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)))
-      .connectionHandler(conn -> serverConnectionCount.incrementAndGet());
+      .setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(20000)));
     server.requestHandler(req -> {
       assertEquals("http", req.scheme());
-      assertEquals(method, req.method());
+      assertEquals(request.getMethod(), req.method());
       assertEquals(HttpVersion.HTTP_2, req.version());
       assertEquals(10000,
         ((io.vertx.core.http.Http2Settings) req.connection().remoteHttpSettings()).getMaxConcurrentStreams());
       assertFalse(req.isSSL());
       req.bodyHandler(body -> {
-        assertEquals(expected, body);
         vertx.setTimer(10, id -> {
-          req.response().end();
+          req.response().end(body);
         });
       });
     }).connectionHandler(conn -> {
       assertNotNull(conn);
-      serverConnectionCount.incrementAndGet();
     });
     startServer(testAddress);
-    AtomicInteger clientConnectionCount = new AtomicInteger();
     client = vertx.createHttpClient(clientOptions.
         setUseAlpn(false).
         setSsl(false).
         setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
-    Promise<HttpClientResponse> p1 = Promise.promise();
-    p1.future().onComplete(onSuccess(resp -> {
-      assertEquals(HttpVersion.HTTP_2, resp.version());
-      // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-      assertEquals(1, serverConnectionCount.get());
-      assertEquals(1, clientConnectionCount.get());
-      Promise<HttpClientResponse> p2 = Promise.promise();
-      p2.future().onComplete(onSuccess(resp2 -> {
-        testComplete();
-      }));
-      doRequest(method, expected, null, p2);
-    }));
-    doRequest(method, expected, conn -> clientConnectionCount.incrementAndGet(), p1);
-    await();
-  }
-
-  private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Promise<HttpClientResponse> fut) {
-    if (connHandler != null) {
-      client.close();
-      client = vertx.httpClientBuilder()
-        .with(createBaseClientOptions())
-        .withConnectHandler(connHandler)
-        .build();
-    }
-    client.request(new RequestOptions(requestOptions).setMethod(method)).onComplete(onSuccess(req -> {
-      req
-        .response().onComplete(onSuccess(resp -> {
-          assertEquals(HttpVersion.HTTP_2, resp.version());
-          // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-          // assertEquals(1, serverConnectionCount.get());
-          // assertEquals(1, clientConnectionCount.get());
-          fut.tryComplete(resp);
-        }));
-      if (expected.length() > 0) {
-        req.end(expected);
-      } else {
-        req.end();
-      }
-    }));
+    return client.request(request);
   }
 
   @Test
@@ -2831,7 +2866,7 @@ public abstract class HttpServerTest extends HttpTestBase {
           req
             .putHeader("Upgrade", "h2c")
             .putHeader("Connection", "Upgrade")
-            .putHeader("HTTP2-Settings", "")
+            .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
             .send().onComplete(handler);
         }));
     });
@@ -2846,7 +2881,7 @@ public abstract class HttpServerTest extends HttpTestBase {
         .setURI("/somepath")).onComplete(onSuccess(req -> {
           req
             .putHeader("Upgrade", "h2c")
-            .putHeader("Connection", "Upgrade")
+            .putHeader("Connection", "Upgrade, HTTP2-Settings")
             .putHeader("HTTP2-Settings", "incorrect-settings")
             .send().onComplete(handler);
         }));
@@ -2865,7 +2900,7 @@ public abstract class HttpServerTest extends HttpTestBase {
         .setURI("/somepath")).onComplete(onSuccess(req -> {
           req
             .putHeader("Upgrade", "h2c")
-            .putHeader("Connection", "Upgrade")
+            .putHeader("Connection", "Upgrade, HTTP2-Settings")
             .putHeader("HTTP2-Settings", s)
             .send().onComplete(handler);
       }));
@@ -2881,7 +2916,7 @@ public abstract class HttpServerTest extends HttpTestBase {
         .setURI("/somepath")).onComplete(onSuccess(req -> {
         req
           .putHeader("Upgrade", "h2c")
-          .putHeader("Connection", "Upgrade")
+          .putHeader("Connection", "Upgrade, HTTP2-Settings")
           .send().onComplete(handler);
       }));
     });

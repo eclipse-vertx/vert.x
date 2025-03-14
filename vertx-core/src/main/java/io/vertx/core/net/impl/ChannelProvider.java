@@ -228,7 +228,7 @@ public final class ChannelProvider {
         Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
 
         if (sslOptions != null && sslOptions.isHttp3()) {
-          bootstrap.resolver(vertx.nettyAddressResolverGroup());
+          bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
           proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions)
