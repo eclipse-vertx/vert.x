@@ -158,6 +158,9 @@ public class Http3Utils {
     private Http3SettingsFrame localSettings;
     private boolean disableQpackDynamicTable = true;
 
+    private Http3ServerConnectionHandlerBuilder() {
+    }
+
     public Http3ServerConnectionHandlerBuilder requestStreamHandler(Handler<QuicStreamChannel> requestStreamHandler) {
       this.requestStreamHandler = requestStreamHandler;
       return this;
@@ -199,6 +202,9 @@ public class Http3Utils {
     private LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory;
     private Http3SettingsFrame localSettings;
     private boolean disableQpackDynamicTable = true;
+
+    private Http3ClientConnectionHandlerBuilder() {
+    }
 
     public Http3ClientConnectionHandlerBuilder inboundControlStreamHandler(ChannelHandler inboundControlStreamHandler) {
       this.inboundControlStreamHandler = inboundControlStreamHandler;
