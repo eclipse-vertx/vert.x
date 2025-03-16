@@ -98,12 +98,12 @@ public class Http3ProxyProvider {
               });
             }).build());
       })
-      .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFuture -> {
-        if (!quicChannelFuture.isSuccess()) {
-          channelPromise.setFailure(quicChannelFuture.cause());
+      .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
+        if (!quicChannelFut.isSuccess()) {
+          channelPromise.setFailure(quicChannelFut.cause());
           return;
         }
-        Http3Utils.newRequestStream(quicChannelFuture.get(), quicStreamChannelPromise::setSuccess);
+        Http3Utils.newRequestStream(quicChannelFut.get(), quicStreamChannelPromise::setSuccess);
       });
   }
 
@@ -124,7 +124,8 @@ public class Http3ProxyProvider {
   private void createNettyBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                     Promise<Channel> channelPromise) {
     Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
-      quicChannel.pipeline().addLast(new Http3Utils.Http3ClientConnectionHandlerBuilder().build());
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
+        new Http3Utils.Http3ClientConnectionHandlerBuilder().build());
     }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
       QuicChannel quicChannel = quicChannelFut.get();
 
