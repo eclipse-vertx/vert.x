@@ -37,8 +37,8 @@ import java.net.SocketAddress;
 public class Http3ProxyProvider {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3ProxyProvider.class);
   public static final String CHANNEL_HANDLER_PROXY = "myProxyHandler";
-  public static final String CHANNEL_HANDLER_PROXY_CONNECTION = "myProxyConnectionEventHandler";
-  private static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
+  public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
+  private static final String CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL = "mySecondProxyQuicChannelHandler";
   private static final String CHANNEL_HANDLER_CLIENT_CONNECTION = "myHttp3ClientConnectionHandler";
 
   //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
@@ -92,7 +92,7 @@ public class Http3ProxyProvider {
 
                 quicStreamChannelFut.get().pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
                 ChannelPipeline pipeline = quicStreamChannelFut.get().pipeline();
-                pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTION, new ProxyConnectionChannelHandler(channelPromise
+                pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
                   , Http3ProxyProvider.this::removeProxyChannelHandlers));
 
               });
@@ -129,11 +129,11 @@ public class Http3ProxyProvider {
       QuicChannel quicChannel = quicChannelFut.get();
 
       Http3Utils.newRequestStream(quicChannel, streamChannel -> {
-        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(datagramChannel));
+        streamChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL, new SecondaryProxyQuicChannelHandler(datagramChannel));
         streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
 
-        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTION,
-          new ProxyConnectionChannelHandler(channelPromise, this::removeProxyChannelHandlers));
+        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED,
+          new ProxyConnectedChannelHandler(channelPromise, this::removeProxyChannelHandlers));
       }).onComplete(event -> {
         if (!event.succeeded()) {
           channelPromise.setFailure(event.cause());
@@ -145,7 +145,7 @@ public class Http3ProxyProvider {
   private void createNettyBasedSocksProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                      Promise<Channel> channelPromise) {
     Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
-      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(datagramChannel));
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL, new SecondaryProxyQuicChannelHandler(datagramChannel));
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
     }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
       if (!quicChannelFut.isSuccess()) {
@@ -153,14 +153,14 @@ public class Http3ProxyProvider {
         return;
       }
       QuicChannel quicChannel = quicChannelFut.get();
-      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTION,
-        new ProxyConnectionChannelHandler(channelPromise, this::removeProxyChannelHandlers));
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED,
+        new ProxyConnectedChannelHandler(channelPromise, this::removeProxyChannelHandlers));
     });
   }
 
   private void removeProxyChannelHandlers(ChannelPipeline pipeline) {
-    if (pipeline.get(CHANNEL_HANDLER_PROXY_CONNECTED) != null) {
-      pipeline.remove(CHANNEL_HANDLER_PROXY_CONNECTED);
+    if (pipeline.get(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL) != null) {
+      pipeline.remove(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL);
     }
     pipeline.remove(CHANNEL_HANDLER_PROXY);
   }
@@ -249,10 +249,10 @@ public class Http3ProxyProvider {
   }
 
   //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  private static class ProxyConnectedHandler extends ChannelOutboundHandlerAdapter {
+  private static class SecondaryProxyQuicChannelHandler extends ChannelOutboundHandlerAdapter {
     private final NioDatagramChannel channel;
 
-    public ProxyConnectedHandler(NioDatagramChannel channel) {
+    public SecondaryProxyQuicChannelHandler(NioDatagramChannel channel) {
       this.channel = channel;
     }
 
@@ -384,13 +384,13 @@ public class Http3ProxyProvider {
     }
   }
 
-  private static class ProxyConnectionChannelHandler extends ChannelInboundHandlerAdapter {
+  private static class ProxyConnectedChannelHandler extends ChannelInboundHandlerAdapter {
 
     private final Promise<Channel> channelPromise;
     private final Handler<ChannelPipeline> proxyChannelHandlerRemover;
 
-    public ProxyConnectionChannelHandler(Promise<Channel> channelPromise,
-                                         Handler<ChannelPipeline> proxyChannelHandlerRemover) {
+    public ProxyConnectedChannelHandler(Promise<Channel> channelPromise,
+                                        Handler<ChannelPipeline> proxyChannelHandlerRemover) {
       this.channelPromise = channelPromise;
       this.proxyChannelHandlerRemover = proxyChannelHandlerRemover;
     }
