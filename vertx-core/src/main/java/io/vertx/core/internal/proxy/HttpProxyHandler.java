@@ -437,7 +437,7 @@ public final class HttpProxyHandler extends ProxyHandler {
                 List<ChannelHandler> removedHandlers = new ArrayList<>();
                 for (Map.Entry<String, ChannelHandler> entry : pipeline) {
                   ChannelHandler handler = entry.getValue();
-                  if (!(CHANNEL_HANDLER_PROXY.equals(entry.getKey())) && !(CHANNEL_HANDLER_PROXY_CONNECTION.equals(entry.getKey()))) {
+                  if (!(CHANNEL_HANDLER_PROXY.equals(entry.getKey())) && !(CHANNEL_HANDLER_PROXY_CONNECTED.equals(entry.getKey()))) {
                     removedHandlers.add(handler);
                   }
                 }

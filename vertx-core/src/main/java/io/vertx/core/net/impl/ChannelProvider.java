@@ -251,7 +251,7 @@ public final class ChannelProvider {
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline pipeline = ch.pipeline();
             pipeline.addFirst(CHANNEL_HANDLER_PROXY, proxy);
-            pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTION, new ChannelInboundHandlerAdapter() {
+            pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ChannelInboundHandlerAdapter() {
               @Override
               public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                 if (evt instanceof ProxyConnectionEvent) {
