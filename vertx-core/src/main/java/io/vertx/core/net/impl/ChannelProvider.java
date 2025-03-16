@@ -16,7 +16,6 @@ import io.netty.channel.*;
 import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClosedChannelException;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -237,30 +236,7 @@ public final class ChannelProvider {
                 channelHandler.tryFailure(channelFuture.cause());
                 return;
               }
-              Channel ch = channelFuture.get();
-              ChannelPipeline pipeline = ch.pipeline();
-              pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTION, new ChannelInboundHandlerAdapter() {
-                @Override
-                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-                  if (evt instanceof ProxyConnectionEvent) {
-                    proxyProvider.removeProxyChannelHandlers(pipeline);
-                    pipeline.remove(this);
-
-                    Channel channel = ctx.channel();
-                    if (channel instanceof QuicStreamChannel) {
-                      channel = channel.parent();
-                    }
-                    connected(channel, channelHandler);
-                  }
-                  ctx.fireUserEventTriggered(evt);
-                }
-
-                @Override
-                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                  log.error("Proxy connection failed!");
-                  channelHandler.tryFailure(cause);
-                }
-              });
+              connected(channelFuture.get(), channelHandler);
             });
           return;
         }
@@ -268,7 +244,7 @@ public final class ChannelProvider {
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
-        ChannelHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr);
+        ChannelHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr, null);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override
