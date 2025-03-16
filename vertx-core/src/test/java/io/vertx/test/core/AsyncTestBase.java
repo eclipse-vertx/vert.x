@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  */
 public class AsyncTestBase {
 
-  private static final Logger log = LoggerFactory.getLogger(AsyncTestBase.class);
+  protected final Logger log = LoggerFactory.getLogger(getClass());
 
   private CountDownLatch latch;
   private volatile Throwable throwable;
