@@ -62,7 +62,8 @@ public class Http3ProxyProvider {
         NioDatagramChannel datagramChannel = (NioDatagramChannel) future.channel();
         if (IS_NETTY_BASED_PROXY) {
           if (proxyOptions.getType() == ProxyType.HTTP) {
-            createNettyBasedHttpProxyQuicChannel(datagramChannel, proxyHandler, channelPromise);
+            createNettyBasedHttpProxyQuicChannel(datagramChannel, proxyHandler, channelPromise
+            );
           } else {
             createNettyBasedSocksProxyQuicChannel(datagramChannel, proxyHandler, channelPromise);
           }
@@ -79,19 +80,19 @@ public class Http3ProxyProvider {
 
   private void createVertxBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                     Promise<Channel> channelPromise) {
-    Promise<Channel> quicStreamChannelPromise = eventLoop.newPromise();
+    Promise<QuicStreamChannel> quicStreamChannelPromise = eventLoop.newPromise();
     Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
         quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
-          new Http3Utils.Http3ClientConnectionHandlerBuilder()
+          Http3Utils.newClientConnectionHandlerBuilder()
             .inboundControlStreamHandler(settingsFrame -> {
-              quicStreamChannelPromise.addListener((GenericFutureListener<Future<Channel>>) quicStreamChannelFut -> {
+              quicStreamChannelPromise.addListener((GenericFutureListener<Future<QuicStreamChannel>>) quicStreamChannelFut -> {
                 if (!quicStreamChannelFut.isSuccess()) {
                   channelPromise.setFailure(quicStreamChannelFut.cause());
                   return;
                 }
 
-                quicStreamChannelFut.get().pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
                 ChannelPipeline pipeline = quicStreamChannelFut.get().pipeline();
+                pipeline.addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
                 pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
                   , Http3ProxyProvider.this::removeProxyChannelHandlers));
 
@@ -123,22 +124,39 @@ public class Http3ProxyProvider {
 
   private void createNettyBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                     Promise<Channel> channelPromise) {
+    Promise<QuicStreamChannel> quicStreamChannelPromise = eventLoop.newPromise();
     Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL,
+        new SecondProxyQuicChannelHandler(datagramChannel));
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
-        new Http3Utils.Http3ClientConnectionHandlerBuilder().build());
+        Http3Utils.newClientConnectionHandlerBuilder()
+          .inboundControlStreamHandler(settingsFrame -> {
+            quicStreamChannelPromise.addListener((GenericFutureListener<Future<QuicStreamChannel>>) quicStreamChannelFut -> {
+              if (!quicStreamChannelFut.isSuccess()) {
+                channelPromise.setFailure(quicStreamChannelFut.cause());
+                return;
+              }
+            });
+          }).build());
     }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
+      if (!quicChannelFut.isSuccess()) {
+        channelPromise.setFailure(quicChannelFut.cause());
+        return;
+      }
+
       QuicChannel quicChannel = quicChannelFut.get();
 
-      Http3Utils.newRequestStream(quicChannel, streamChannel -> {
-        streamChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL, new SecondaryProxyQuicChannelHandler(datagramChannel));
-        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+      Http3Utils.newRequestStream(quicChannel, quicStreamChannelPromise::setSuccess).onComplete(event -> {
 
-        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED,
+        QuicStreamChannel streamChannel = event.result();
+        ChannelPipeline pipeline = streamChannel.pipeline();
+
+        pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED,
           new ProxyConnectedChannelHandler(channelPromise, this::removeProxyChannelHandlers));
-      }).onComplete(event -> {
-        if (!event.succeeded()) {
-          channelPromise.setFailure(event.cause());
-        }
+
       });
     });
   }
@@ -146,7 +164,8 @@ public class Http3ProxyProvider {
   private void createNettyBasedSocksProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                      Promise<Channel> channelPromise) {
     Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
-      quicChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL, new SecondaryProxyQuicChannelHandler(datagramChannel));
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL,
+        new SecondProxyQuicChannelHandler(datagramChannel));
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
     }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
       if (!quicChannelFut.isSuccess()) {
@@ -173,13 +192,12 @@ public class Http3ProxyProvider {
 
   private static class ProxyHandlerSelector {
     private final ProxyOptions proxyOptions;
-    private final InetSocketAddress proxyAddr;
-    private final InetSocketAddress destinationAddr;
+    private final SocketAddress proxyAddr;
+    private final SocketAddress destinationAddr;
     private final String username;
     private final String password;
 
-    public ProxyHandlerSelector(ProxyOptions proxyOptions, InetSocketAddress proxyAddr,
-                                InetSocketAddress destinationAddr) {
+    public ProxyHandlerSelector(ProxyOptions proxyOptions, SocketAddress proxyAddr, SocketAddress destinationAddr) {
       this.proxyOptions = proxyOptions;
       this.proxyAddr = proxyAddr;
       this.destinationAddr = destinationAddr;
@@ -250,10 +268,10 @@ public class Http3ProxyProvider {
   }
 
   //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  private static class SecondaryProxyQuicChannelHandler extends ChannelOutboundHandlerAdapter {
+  private static class SecondProxyQuicChannelHandler extends ChannelOutboundHandlerAdapter {
     private final NioDatagramChannel channel;
 
-    public SecondaryProxyQuicChannelHandler(NioDatagramChannel channel) {
+    public SecondProxyQuicChannelHandler(NioDatagramChannel channel) {
       this.channel = channel;
     }
 
