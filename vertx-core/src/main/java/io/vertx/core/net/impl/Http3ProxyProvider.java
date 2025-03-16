@@ -13,19 +13,18 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.proxy.ProxyHandler;
-import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicConnectionAddress;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.core.Handler;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.internal.proxy.HttpProxyHandler;
-import io.vertx.core.internal.proxy.Socks5ProxyHandler;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 
@@ -43,7 +42,7 @@ public class Http3ProxyProvider {
   private static final String CHANNEL_HANDLER_CLIENT_CONNECTION = "myHttp3ClientConnectionHandler";
 
   //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  public static boolean IS_NETTY_PROXY_HANDLER_ALTERED = false;
+  public static boolean IS_NETTY_BASED_PROXY = false;
 
   private final EventLoop eventLoop;
 
@@ -54,65 +53,50 @@ public class Http3ProxyProvider {
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   public Future<Channel> createProxyQuicChannel(InetSocketAddress proxyAddress, InetSocketAddress remoteAddress,
                                                 ProxyOptions proxyOptions) {
-    if (IS_NETTY_PROXY_HANDLER_ALTERED) {
-      return createProxyQuicChannelWithAlterationOnNetty(proxyAddress, remoteAddress, proxyOptions);
-    }
-    return createProxyQuicChannelWithoutAlterationOnNetty(proxyAddress, remoteAddress, proxyOptions);
-  }
-
-  private Future<Channel> createProxyQuicChannelWithAlterationOnNetty(InetSocketAddress proxyAddress,
-                                                                      InetSocketAddress remoteAddress,
-                                                                      ProxyOptions proxyOptions) {
-
     Promise<Channel> channelPromise = eventLoop.newPromise();
 
-    io.vertx.core.internal.proxy.ProxyHandler proxyHandler = selectProxyHandler2(proxyOptions, proxyAddress,
-      remoteAddress);
+    ChannelHandler proxyHandler = new ProxyHandlerSelector(proxyOptions, proxyAddress, remoteAddress).select();
 
     Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
       .addListener((ChannelFutureListener) future -> {
-        NioDatagramChannel channel = (NioDatagramChannel) future.channel();
-        if (proxyOptions.getType() == ProxyType.HTTP) {
-          httpProxy(channel, proxyHandler, channelPromise);
+        NioDatagramChannel datagramChannel = (NioDatagramChannel) future.channel();
+        if (IS_NETTY_BASED_PROXY) {
+          if (proxyOptions.getType() == ProxyType.HTTP) {
+            createNettyBasedHttpProxyQuicChannel(datagramChannel, proxyHandler, channelPromise);
+          } else {
+            createNettyBasedSocksProxyQuicChannel(datagramChannel, proxyHandler, channelPromise);
+          }
         } else {
-          socksProxy(channel, proxyHandler, channelPromise);
+          if (proxyOptions.getType() == ProxyType.HTTP) {
+            createVertxBasedHttpProxyQuicChannel(datagramChannel, proxyHandler, channelPromise);
+          } else {
+            createVertxBasedSocksProxyQuicChannel(datagramChannel, proxyHandler, channelPromise);
+          }
         }
       });
     return channelPromise;
   }
 
-  private void socksProxy(NioDatagramChannel channel, ChannelHandler proxyHandler, Promise<Channel> channelPromise) {
-    Http3Utils.newQuicChannel(channel, ch -> {
-        ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
-      })
-      .addListener((GenericFutureListener<Future<QuicChannel>>) future1 -> {
-        if (!future1.isSuccess()) {
-          channelPromise.setFailure(future1.cause());
-          return;
-        }
-        channelPromise.setSuccess(future1.get());
-      });
-  }
-
-  private void httpProxy(NioDatagramChannel channel, io.vertx.core.internal.proxy.ProxyHandler proxyHandler, Promise<Channel> channelPromise) {
+  private void createVertxBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
+                                                    Promise<Channel> channelPromise) {
     Promise<Channel> quicStreamChannelPromise = eventLoop.newPromise();
-    Http3Utils.newQuicChannel(channel, new ChannelInitializer<QuicChannel>() {
-        @Override
-        protected void initChannel(QuicChannel ch) {
-          ch.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
-            new Http3Utils.Http3ClientConnectionHandlerBuilder()
-              .inboundControlStreamHandler(settingsFrame -> {
-                quicStreamChannelPromise.addListener((GenericFutureListener<Future<Channel>>) quicStreamChannelFut -> {
-                  if (!quicStreamChannelFut.isSuccess()) {
-                    channelPromise.setFailure(quicStreamChannelFut.cause());
-                    return;
-                  }
+    Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+        quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
+          new Http3Utils.Http3ClientConnectionHandlerBuilder()
+            .inboundControlStreamHandler(settingsFrame -> {
+              quicStreamChannelPromise.addListener((GenericFutureListener<Future<Channel>>) quicStreamChannelFut -> {
+                if (!quicStreamChannelFut.isSuccess()) {
+                  channelPromise.setFailure(quicStreamChannelFut.cause());
+                  return;
+                }
 
-                  quicStreamChannelFut.get().pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
-                  channelPromise.setSuccess(quicStreamChannelFut.get());
-                });
-              }).build());
-        }
+                quicStreamChannelFut.get().pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+                ChannelPipeline pipeline = quicStreamChannelFut.get().pipeline();
+                pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTION, new ProxyConnectionChannelHandler(channelPromise
+                  , Http3ProxyProvider.this::removeProxyChannelHandlers));
+
+              });
+            }).build());
       })
       .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFuture -> {
         if (!quicChannelFuture.isSuccess()) {
@@ -123,40 +107,145 @@ public class Http3ProxyProvider {
       });
   }
 
-  public void removeProxyChannelHandlers(ChannelPipeline pipeline) {
+  private void createVertxBasedSocksProxyQuicChannel(NioDatagramChannel channel, ChannelHandler proxyHandler,
+                                                     Promise<Channel> channelPromise) {
+    Http3Utils.newQuicChannel(channel, ch -> {
+        ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+      })
+      .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
+        if (!quicChannelFut.isSuccess()) {
+          channelPromise.setFailure(quicChannelFut.cause());
+          return;
+        }
+        channelPromise.setSuccess(quicChannelFut.get());
+      });
+  }
+
+  private void createNettyBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
+                                                    Promise<Channel> channelPromise) {
+    Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+      quicChannel.pipeline().addLast(new Http3Utils.Http3ClientConnectionHandlerBuilder().build());
+    }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
+      QuicChannel quicChannel = quicChannelFut.get();
+
+      Http3Utils.newRequestStream(quicChannel, streamChannel -> {
+        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(datagramChannel));
+        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+
+        streamChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTION,
+          new ProxyConnectionChannelHandler(channelPromise, this::removeProxyChannelHandlers));
+      }).onComplete(event -> {
+        if (!event.succeeded()) {
+          channelPromise.setFailure(event.cause());
+        }
+      });
+    });
+  }
+
+  private void createNettyBasedSocksProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
+                                                     Promise<Channel> channelPromise) {
+    Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(datagramChannel));
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+    }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
+      if (!quicChannelFut.isSuccess()) {
+        channelPromise.setFailure(quicChannelFut.cause());
+        return;
+      }
+      QuicChannel quicChannel = quicChannelFut.get();
+      quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTION,
+        new ProxyConnectionChannelHandler(channelPromise, this::removeProxyChannelHandlers));
+    });
+  }
+
+  private void removeProxyChannelHandlers(ChannelPipeline pipeline) {
     if (pipeline.get(CHANNEL_HANDLER_PROXY_CONNECTED) != null) {
       pipeline.remove(CHANNEL_HANDLER_PROXY_CONNECTED);
     }
     pipeline.remove(CHANNEL_HANDLER_PROXY);
   }
 
-  private Promise<Channel> createProxyQuicChannelWithoutAlterationOnNetty(InetSocketAddress proxyAddress,
-                                                                          InetSocketAddress remoteAddress,
-                                                                          ProxyOptions proxyOptions) {
-    Promise<Channel> channelPromise = eventLoop.newPromise();
-    ChannelHandler proxyHandler = selectProxyHandler(proxyOptions, proxyAddress);
-    ProxyHandlerWrapper proxy = new ProxyHandlerWrapper((ProxyHandler) proxyHandler, remoteAddress);
+  public ChannelHandler selectProxyHandler(ProxyOptions proxyOptions, InetSocketAddress proxyAddr,
+                                           InetSocketAddress destinationAddr) {
+    return new ProxyHandlerSelector(proxyOptions, proxyAddr, destinationAddr).select();
+  }
 
-    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
-      .addListener((ChannelFutureListener) future -> {
-        NioDatagramChannel channel = (NioDatagramChannel) future.channel();
-        Http3Utils.newQuicChannel(channel, quicChannel -> {
-          quicChannel.pipeline().addLast(new Http3Utils.Http3ClientConnectionHandlerBuilder().build());
-        }).addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
-          QuicChannel quicChannel = quicChannelFut.get();
-          Http3Utils.newRequestStream(quicChannel, streamChannel -> {
-            quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedHandler(channel));
-            quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxy);
-          }).onComplete(event -> {
-            if (!event.succeeded()) {
-              channelPromise.setFailure(event.cause());
-              return;
-            }
-            channelPromise.setSuccess(event.result());
-          });
-        });
-      });
-    return channelPromise;
+  private static class ProxyHandlerSelector {
+    private final ProxyOptions proxyOptions;
+    private final InetSocketAddress proxyAddr;
+    private final InetSocketAddress destinationAddr;
+    private final String username;
+    private final String password;
+
+    public ProxyHandlerSelector(ProxyOptions proxyOptions, InetSocketAddress proxyAddr,
+                                InetSocketAddress destinationAddr) {
+      this.proxyOptions = proxyOptions;
+      this.proxyAddr = proxyAddr;
+      this.destinationAddr = destinationAddr;
+      this.username = proxyOptions.getUsername();
+      this.password = proxyOptions.getPassword();
+    }
+
+    public ChannelHandler select() {
+      if (IS_NETTY_BASED_PROXY) {
+        if (isHttp() && hasCredential()) {
+          return new ProxyHandlerWrapper(new io.netty.handler.proxy.HttpProxyHandler(proxyAddr, username, password),
+            destinationAddr);
+        }
+        if (isHttp() && !hasCredential()) {
+          return new ProxyHandlerWrapper(new io.netty.handler.proxy.HttpProxyHandler(proxyAddr), destinationAddr);
+        }
+        if (isSocks5() && hasCredential()) {
+          return new ProxyHandlerWrapper(new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddr, username, password)
+            , destinationAddr);
+        }
+        if (isSocks5() && !hasCredential()) {
+          return new ProxyHandlerWrapper(new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddr), destinationAddr);
+        }
+        if (isSocks4() && hasCredential()) {
+          return new ProxyHandlerWrapper(new io.netty.handler.proxy.Socks4ProxyHandler(proxyAddr, username),
+            destinationAddr);
+        }
+        if (isSocks4() && !hasCredential()) {
+          return new ProxyHandlerWrapper(new io.netty.handler.proxy.Socks4ProxyHandler(proxyAddr), destinationAddr);
+        }
+      }
+      if (isHttp() && hasCredential()) {
+        return new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr, username, password);
+      }
+      if (isHttp() && !hasCredential()) {
+        return new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr);
+      }
+      if (isSocks5() && hasCredential()) {
+        return new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, destinationAddr, username, password);
+      }
+      if (isSocks5() && !hasCredential()) {
+        return new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, destinationAddr);
+      }
+      if (isSocks4() && hasCredential()) {
+        return new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, destinationAddr, username);
+      }
+      if (isSocks4() && !hasCredential()) {
+        return new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, destinationAddr);
+      }
+      throw new RuntimeException("Not Supported");
+    }
+
+    private boolean isSocks4() {
+      return proxyOptions.getType() == ProxyType.SOCKS4;
+    }
+
+    private boolean isSocks5() {
+      return proxyOptions.getType() == ProxyType.SOCKS5;
+    }
+
+    private boolean isHttp() {
+      return proxyOptions.getType() == ProxyType.HTTP;
+    }
+
+    private boolean hasCredential() {
+      return username != null && (proxyOptions.getType() == ProxyType.SOCKS4 || password != null);
+    }
   }
 
   //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
@@ -177,57 +266,6 @@ public class Http3ProxyProvider {
           ctx.connect(proxyAddress, localAddress, promise);
         });
     }
-  }
-
-  public ChannelHandler selectProxyHandler(ProxyOptions proxyOptions, InetSocketAddress proxyAddr) {
-    ChannelHandler proxy;
-
-    switch (proxyOptions.getType()) {
-      default:
-      case HTTP:
-        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null
-          ? new HttpProxyHandler(proxyAddr, proxyOptions.getUsername(), proxyOptions.getPassword()) :
-          new HttpProxyHandler(proxyAddr);
-        break;
-      case SOCKS5:
-        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null
-          ? new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddr, proxyOptions.getUsername(),
-          proxyOptions.getPassword()) : new io.netty.handler.proxy.Socks5ProxyHandler(proxyAddr);
-        break;
-      case SOCKS4:
-        // SOCKS4 only supports a username and could authenticate the user via Ident
-        proxy = proxyOptions.getUsername() != null ? new Socks4ProxyHandler(proxyAddr, proxyOptions.getUsername())
-          : new Socks4ProxyHandler(proxyAddr);
-        break;
-    }
-    return proxy;
-  }
-
-  public io.vertx.core.internal.proxy.ProxyHandler selectProxyHandler2(ProxyOptions proxyOptions,
-                                                                       InetSocketAddress proxyAddr,
-                                                                       InetSocketAddress destinationAddr) {
-    io.vertx.core.internal.proxy.ProxyHandler proxy;
-
-    switch (proxyOptions.getType()) {
-      default:
-      case HTTP:
-        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null
-          ? new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr, proxyOptions.getUsername(),
-          proxyOptions.getPassword()) : new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr);
-        break;
-      case SOCKS5:
-        proxy = proxyOptions.getUsername() != null && proxyOptions.getPassword() != null ?
-          new Socks5ProxyHandler(proxyAddr, destinationAddr, proxyOptions.getUsername(), proxyOptions.getPassword())
-          : new Socks5ProxyHandler(proxyAddr, destinationAddr);
-        break;
-      case SOCKS4:
-        // SOCKS4 only supports a username and could authenticate the user via Ident
-        proxy = proxyOptions.getUsername() != null ? new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr,
-          destinationAddr, proxyOptions.getUsername())
-          : new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, destinationAddr);
-        break;
-    }
-    return proxy;
   }
 
   //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
@@ -343,6 +381,40 @@ public class Http3ProxyProvider {
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
       proxy.handlerRemoved(ctx);
+    }
+  }
+
+  private static class ProxyConnectionChannelHandler extends ChannelInboundHandlerAdapter {
+
+    private final Promise<Channel> channelPromise;
+    private final Handler<ChannelPipeline> proxyChannelHandlerRemover;
+
+    public ProxyConnectionChannelHandler(Promise<Channel> channelPromise,
+                                         Handler<ChannelPipeline> proxyChannelHandlerRemover) {
+      this.channelPromise = channelPromise;
+      this.proxyChannelHandlerRemover = proxyChannelHandlerRemover;
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+      ChannelPipeline pipeline = ctx.pipeline();
+      if (evt instanceof ProxyConnectionEvent) {
+        proxyChannelHandlerRemover.handle(pipeline);
+        pipeline.remove(this);
+
+        if (ctx.channel() instanceof QuicStreamChannel) {
+          channelPromise.setSuccess(ctx.channel().parent());
+        } else {
+          channelPromise.setSuccess(ctx.channel());
+        }
+      }
+      ctx.fireUserEventTriggered(evt);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+      logger.error("Proxy connection failed!");
+      channelPromise.tryFailure(cause);
     }
   }
 }
