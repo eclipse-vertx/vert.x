@@ -230,22 +230,22 @@ public class Http3ProxyProvider {
         }
       }
       if (isHttp() && hasCredential()) {
-        return new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr, username, password);
+        return new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, username, password).asHttp3().destinationAddress(destinationAddr);
       }
       if (isHttp() && !hasCredential()) {
-        return new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr, destinationAddr);
+        return new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr).asHttp3().destinationAddress(destinationAddr);
       }
       if (isSocks5() && hasCredential()) {
-        return new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, destinationAddr, username, password);
+        return new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, username, password).destinationAddress(destinationAddr);
       }
       if (isSocks5() && !hasCredential()) {
-        return new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, destinationAddr);
+        return new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr).destinationAddress(destinationAddr);
       }
       if (isSocks4() && hasCredential()) {
-        return new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, destinationAddr, username);
+        return new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, username).destinationAddress(destinationAddr);
       }
       if (isSocks4() && !hasCredential()) {
-        return new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr, destinationAddr);
+        return new io.vertx.core.internal.proxy.Socks4ProxyHandler(proxyAddr).destinationAddress(destinationAddr);
       }
       throw new RuntimeException("Not Supported");
     }

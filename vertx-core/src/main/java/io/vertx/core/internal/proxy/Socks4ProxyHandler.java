@@ -47,21 +47,15 @@ public final class Socks4ProxyHandler extends ProxyHandler {
     private String encoderName;
 
     public Socks4ProxyHandler(SocketAddress proxyAddress) {
-        this(proxyAddress, (String) null);
+        this(proxyAddress, null);
     }
 
     public Socks4ProxyHandler(SocketAddress proxyAddress, String username) {
         super(proxyAddress);
-        this.username = normalizeCredentials(username);
-    }
-
-    public Socks4ProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress) {
-        this(proxyAddress, destinationAddress, null);
-    }
-
-    public Socks4ProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress, String username) {
-        super(proxyAddress, destinationAddress);
-      this.username = normalizeCredentials(username);
+        if (username != null && username.isEmpty()) {
+            username = null;
+        }
+        this.username = username;
     }
 
     @Override
