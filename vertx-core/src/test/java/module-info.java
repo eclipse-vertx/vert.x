@@ -12,7 +12,6 @@ open module io.vertx.core.tests {
 
   requires junit;
   requires java.management;
-  requires java.logging;
 
   requires static apacheds.protocol.dns;
   requires static apacheds.i18n;
@@ -38,6 +37,8 @@ open module io.vertx.core.tests {
   requires static io.netty.codec.haproxy;
   requires io.netty.codec.http2;
   requires io.netty.resolver.dns;
+  requires testcontainers;
+  requires java.sql;
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 
