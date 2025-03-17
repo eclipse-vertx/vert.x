@@ -105,6 +105,12 @@ public abstract class NetTest extends VertxTestBase {
 
   protected abstract HttpClientOptions createBaseClientOptions();
 
+  protected abstract Socks4Proxy createSocks4Proxy();
+
+  protected abstract SocksProxy createSocksProxy();
+
+  protected abstract HttpProxy createHttpProxy();
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -3031,14 +3037,14 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy();
-    proxy.start(vertx);
-    server.listen(1234, "localhost")
-      .onComplete(onSuccess(v -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        // make sure we have gone through the proxy
-        assertEquals("localhost:1234", proxy.getLastUri());
-        testComplete();
+    proxy = createSocksProxy();
+    proxy.startProxy(vertx).onComplete(onSuccess(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(v -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        }));
       }));
     }));
     await();
@@ -3056,13 +3062,14 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy().username("username");
-    proxy.start(vertx);
-    server.listen(1234, "localhost").onComplete(onSuccess(c -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        testComplete();
+    proxy = createSocksProxy().username("username");
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(c -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3088,13 +3095,14 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy();
-    proxy.start(vertx);
-    server.listen().onComplete(onSuccess(v -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        testComplete();
+    proxy = createSocksProxy();
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen().onComplete(onSuccess(v -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3120,15 +3128,16 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new SocksProxy();
-    proxy.start(vertx);
-    server.listen().onComplete(onSuccess(v -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(ns -> {
-        ns.upgradeToSsl().onComplete(onSuccess(v2 -> {
-          testComplete();
+    proxy = createSocksProxy();
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen().onComplete(onSuccess(v -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(ns -> {
+          ns.upgradeToSsl().onComplete(onSuccess(v2 -> {
+            testComplete();
+          }));
         }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3145,15 +3154,16 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new HttpProxy();
-    proxy.start(vertx);
-    server.listen(1234, "localhost").onComplete(onSuccess(ar -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        // make sure we have gone through the proxy
-        assertEquals("localhost:1234", proxy.getLastUri());
-        testComplete();
+    proxy = createHttpProxy();
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(ar -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3168,15 +3178,16 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy();
-    proxy.start(vertx);
-    server.listen(1234, "localhost").onComplete(onSuccess(v -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        // make sure we have gone through the proxy
-        assertEquals("localhost:1234", proxy.getLastUri());
-        testComplete();
+    proxy = createSocks4Proxy();
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(v -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3192,15 +3203,16 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy().username("username");
-    proxy.start(vertx);
-    server.listen(1234, "localhost").onComplete(onSuccess(v -> {
-      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-        // make sure we have gone through the proxy
-        assertEquals("localhost:1234", proxy.getLastUri());
-        testComplete();
+    proxy = createSocks4Proxy().username("username");
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(v -> {
+        client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+          // make sure we have gone through the proxy
+          assertEquals("localhost:1234", proxy.getLastUri());
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3215,14 +3227,16 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new Socks4Proxy().start(vertx);
-    server.listen(1234, "localhost").onComplete(onSuccess(v -> {
-      client.connect(1234, "127.0.0.1").onComplete(onSuccess(so -> {
-        // make sure we have gone through the proxy
-        assertEquals("127.0.0.1:1234", proxy.getLastUri());
-        testComplete();
+    proxy = createSocks4Proxy();
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(v -> {
+        client.connect(1234, "127.0.0.1").onComplete(onSuccess(so -> {
+          // make sure we have gone through the proxy
+          assertEquals("127.0.0.1:1234", proxy.getLastUri());
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
@@ -3235,14 +3249,15 @@ public abstract class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
 
     });
-    proxy = new HttpProxy();
-    proxy.start(vertx);
-    server.listen(1234, "localhost").onComplete(onSuccess(s -> {
-      client.connect(1234, "example.com").onComplete(onSuccess(so -> {
-        assertNull(proxy.getLastUri());
-        testComplete();
+    proxy = createHttpProxy();
+    proxy.startProxy(vertx).onComplete(o -> {
+      server.listen(1234, "localhost").onComplete(onSuccess(s -> {
+        client.connect(1234, "example.com").onComplete(onSuccess(so -> {
+          assertNull(proxy.getLastUri());
+          testComplete();
+        }));
       }));
-    }));
+    });
     await();
   }
 
