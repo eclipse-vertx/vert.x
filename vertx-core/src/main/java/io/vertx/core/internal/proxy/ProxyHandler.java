@@ -42,7 +42,7 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
     static final String AUTH_NONE = "none";
 
     private final SocketAddress proxyAddress;
-    private boolean isDestinationSetOnInit = false;
+    private boolean isManuallySetDestination = false;
     private volatile SocketAddress destinationAddress;
     private volatile long connectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
 
@@ -64,12 +64,6 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
 
     protected ProxyHandler(SocketAddress proxyAddress) {
         this.proxyAddress = ObjectUtil.checkNotNull(proxyAddress, "proxyAddress");
-    }
-
-    protected ProxyHandler(SocketAddress proxyAddress, SocketAddress destinationAddress) {
-        this(proxyAddress);
-        this.destinationAddress = ObjectUtil.checkNotNull(destinationAddress, "destinationAddress");
-        this.isDestinationSetOnInit = true;
     }
 
     /**
@@ -168,7 +162,7 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
             ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
             ChannelPromise promise) throws Exception {
 
-        if (this.isDestinationSetOnInit) {
+        if (this.isManuallySetDestination) {
           ctx.connect(remoteAddress, localAddress, promise);
           return;
         }
@@ -457,10 +451,9 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
         }
     }
 
-    protected static String normalizeCredentials(String str) {
-      if (str != null && str.isEmpty()) {
-        return null;
-      }
-      return str;
-    }
+  public ProxyHandler destinationAddress(SocketAddress destinationAddress) {
+      this.isManuallySetDestination = true;
+      this.destinationAddress = destinationAddress;
+      return this;
+  }
 }
