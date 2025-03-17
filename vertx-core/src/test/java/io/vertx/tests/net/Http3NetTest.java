@@ -261,6 +261,7 @@ public class Http3NetTest extends NetTest {
 
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   @Category(Http3ProxyProvider.class)
+  @Ignore("It is not possible to use an HTTP proxy without modifying Netty.")
   @Test
   public void testNettyBasedHttpProxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;

@@ -20,6 +20,7 @@ import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.tests.http.HttpOptionsFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -90,6 +91,7 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
 
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   @Category(Http3ProxyProvider.class)
+  @Ignore("It is not possible to use an HTTP proxy without modifying Netty.")
   @Test
   public void testNettyBasedHttpProxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
