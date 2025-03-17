@@ -67,6 +67,21 @@ public class Http3NetTest extends NetTest {
     return HttpOptionsFactory.createH3HttpClientOptions();
   }
 
+  @Override
+  protected Socks4Proxy createSocks4Proxy() {
+    return new Socks4Proxy().http3(true);
+  }
+
+  @Override
+  protected SocksProxy createSocksProxy() {
+    return new SocksProxy().http3(true);
+  }
+
+  @Override
+  protected HttpProxy createHttpProxy() {
+    return new HttpProxy().http3(true);
+  }
+
   @Ignore("Host shortnames are not allowed in netty for QUIC.")
   @Override
   @Test

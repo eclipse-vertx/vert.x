@@ -18,6 +18,8 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.test.proxy.HttpProxy;
+import io.vertx.test.proxy.Socks4Proxy;
+import io.vertx.test.proxy.SocksProxy;
 import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -48,4 +50,17 @@ public class Http2NetTest extends NetTest {
   protected HttpServerOptions createBaseServerOptions() {
     return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
+
+  protected Socks4Proxy createSocks4Proxy() {
+    return new Socks4Proxy();
+  }
+
+  protected SocksProxy createSocksProxy() {
+    return new SocksProxy();
+  }
+
+  protected HttpProxy createHttpProxy() {
+    return new HttpProxy();
+  }
+
 }
