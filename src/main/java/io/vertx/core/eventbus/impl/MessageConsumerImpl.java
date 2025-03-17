@@ -133,14 +133,22 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   protected boolean doReceive(Message<T> message) {
+    Handler<Message<T>> theHandler;
     synchronized (this) {
       if (handler == null) {
         return false;
       }
       if (pending.size() < maxBufferedMessages) {
         pending.add(message);
-        checkNextTick();
-        return true;
+        if (demand == 0) {
+          return true;
+        } else {
+          if (demand != Long.MAX_VALUE) {
+            demand--;
+          }
+          message = pending.poll();
+          theHandler = handler;
+        }
       } else {
         discard(message);
         if (discardHandler != null) {
@@ -149,8 +157,10 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
           String pause = demand == 0 ? "paused" : "NOT paused";
           log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in " + pause + " consumer. address: " + address);
         }
+        return false;
       }
     }
+    deliver(theHandler, message);
     return true;
   }
 
@@ -172,7 +182,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (demand > 0L && !pending.isEmpty()) {
-      context.emit(__ -> {
+      context.execute(__ -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
         synchronized (MessageConsumerImpl.this) {
