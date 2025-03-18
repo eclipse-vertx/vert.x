@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.virtualthread;
 
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.internal.ContextInternal;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -20,11 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class VirtualThreadContextMountedOnEventLoopTest extends VirtualThreadContextTestBase {
-
-  protected ContextInternal createVirtualThreadContext() {
-    return vertx.createContext(ThreadingModel.VIRTUAL_THREAD_MOUNTED_ON_EVENT_LOOP);
-  }
+public abstract class VirtualThreadContextWithCustomSchedulerTest extends VirtualThreadContextTestBase {
 
   @Test
   @Ignore("Need to define behavior for this")

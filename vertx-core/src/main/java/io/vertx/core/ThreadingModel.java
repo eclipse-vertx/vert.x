@@ -33,7 +33,12 @@ public enum ThreadingModel {
   VIRTUAL_THREAD,
 
   /**
-   * Tasks are scheduled on a virtual thread mounted on a Vert.x event-loop thread
+   * Tasks are scheduled on a virtual thread mounted on a single thread.
+   */
+  VIRTUAL_THREAD_MOUNTED_ON_SINGLE_THREAD,
+
+  /**
+   * Tasks are scheduled on a virtual thread mounted on a Vert.x event-loop thread.
    */
   VIRTUAL_THREAD_MOUNTED_ON_EVENT_LOOP,
 

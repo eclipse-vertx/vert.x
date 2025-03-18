@@ -10,13 +10,11 @@
  */
 package io.vertx.core.impl;
 
-import io.netty.channel.EventLoop;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.internal.EventExecutor;
 
-import java.util.Deque;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 
@@ -25,7 +23,7 @@ import java.util.concurrent.ThreadFactory;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VirtualThreadMountedOnEventLoopExecutor implements EventExecutor {
+public class VirtualThreadMountedOnExecutor implements EventExecutor {
 
   private final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
   private final ExecutorService executor;
@@ -37,7 +35,7 @@ public class VirtualThreadMountedOnEventLoopExecutor implements EventExecutor {
   // not seem to recognize the enablePreview flag of the Maven compiler (sadly)
   private final ThreadLocal<Boolean> submission = new ThreadLocal<>();
 
-  public VirtualThreadMountedOnEventLoopExecutor(EventLoop carrier) {
+  public VirtualThreadMountedOnExecutor(Executor carrier) {
     ThreadFactory threadFactory = Thread.ofVirtual()
       .name("vert.x-virtual-thread-")
       .scheduler(task -> {

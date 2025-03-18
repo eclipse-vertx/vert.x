@@ -14,7 +14,6 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.EventExecutor;
@@ -92,8 +91,8 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     if (executor instanceof WorkerExecutor) {
       WorkerExecutor workerExec = (WorkerExecutor) executor;
       fut = fut.eventually(() -> Future.<Void>future(p -> workerExec.taskQueue().shutdown(eventLoop.eventLoop, p)));
-    } else if (executor instanceof VirtualThreadMountedOnEventLoopExecutor) {
-      VirtualThreadMountedOnEventLoopExecutor exec = (VirtualThreadMountedOnEventLoopExecutor) executor;
+    } else if (executor instanceof VirtualThreadMountedOnExecutor) {
+      VirtualThreadMountedOnExecutor exec = (VirtualThreadMountedOnExecutor) executor;
       exec.close();
     }
     return fut;
