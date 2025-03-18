@@ -43,6 +43,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.transport.Transport;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
 import org.junit.Ignore;

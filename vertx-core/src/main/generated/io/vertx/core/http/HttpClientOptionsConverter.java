@@ -69,6 +69,11 @@ public class HttpClientOptionsConverter {
             obj.setDefaultPort(((Number)member.getValue()).intValue());
           }
           break;
+        case "protocolVersion":
+          if (member.getValue() instanceof String) {
+            obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
+          }
+          break;
         case "maxChunkSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxChunkSize(((Number)member.getValue()).intValue());
@@ -87,11 +92,6 @@ public class HttpClientOptionsConverter {
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
-          }
-          break;
-        case "initialHttp3Settings":
-          if (member.getValue() instanceof JsonObject) {
-            obj.setInitialHttp3Settings(new io.vertx.core.http.Http3Settings((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "alpnVersions":
@@ -144,11 +144,6 @@ public class HttpClientOptionsConverter {
             obj.setName((String)member.getValue());
           }
           break;
-        case "http3MultiplexingLimit":
-          if (member.getValue() instanceof Number) {
-            obj.setHttp3MultiplexingLimit(((Number)member.getValue()).intValue());
-          }
-          break;
       }
     }
   }
@@ -171,14 +166,14 @@ public class HttpClientOptionsConverter {
       json.put("defaultHost", obj.getDefaultHost());
     }
     json.put("defaultPort", obj.getDefaultPort());
+    if (obj.getProtocolVersion() != null) {
+      json.put("protocolVersion", obj.getProtocolVersion().name());
+    }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
-    }
-    if (obj.getInitialHttp3Settings() != null) {
-      json.put("initialHttp3Settings", obj.getInitialHttp3Settings().toJson());
     }
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
@@ -197,6 +192,5 @@ public class HttpClientOptionsConverter {
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
-    json.put("http3MultiplexingLimit", obj.getHttp3MultiplexingLimit());
   }
 }

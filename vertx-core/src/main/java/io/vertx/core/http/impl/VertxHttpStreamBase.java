@@ -91,7 +91,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          conn.context.emit(null, v -> {
+          conn.context().emit(null, v -> {
             if (remoteSideOpen(streamChannel)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2

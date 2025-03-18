@@ -31,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.internal.buffer.BufferInternal;
