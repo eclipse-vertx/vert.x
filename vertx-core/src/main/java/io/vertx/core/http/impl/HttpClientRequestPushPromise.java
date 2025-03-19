@@ -206,7 +206,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public StreamPriority getStreamPriority() {
+  public StreamPriorityBase getStreamPriority() {
     return stream.priority();
   }
 

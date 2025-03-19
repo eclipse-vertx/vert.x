@@ -12,7 +12,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
@@ -63,7 +62,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   private Handler<Void> evictionHandler;
   private Handler<Object> invalidMessageHandler;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteHttpSettingsHandler;
 
   Http2UpgradeClientConnection(HttpClientBase client, Http1xClientConnection connection) {
     this.client = client;
@@ -150,7 +149,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
       return delegate.writeHead(request, chunked, buf, end, priority, connect);
     }
 
@@ -200,7 +199,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriority> handler) {
+    public void priorityHandler(Handler<StreamPriorityBase> handler) {
       delegate.priorityHandler(handler);
     }
 
@@ -235,12 +234,12 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public StreamPriority priority() {
+    public StreamPriorityBase priority() {
       return delegate.priority();
     }
 
     @Override
-    public void updatePriority(StreamPriority streamPriority) {
+    public void updatePriority(StreamPriorityBase streamPriority) {
       delegate.updatePriority(streamPriority);
     }
 
@@ -266,6 +265,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
       delegate.drainHandler(handler);
       return this;
     }
+
+    @Override
+    public StreamPriorityBase createDefaultStreamPriority() {
+      return HttpUtils.DEFAULT_STREAM_PRIORITY;
+    }
   }
 
   /**
@@ -281,7 +285,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> endHandler;
-    private Handler<StreamPriority> priorityHandler;
+    private Handler<StreamPriorityBase> priorityHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
@@ -309,7 +313,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
                           boolean chunked,
                           ByteBuf buf,
                           boolean end,
-                          StreamPriority priority,
+                          StreamPriorityBase priority,
                           boolean connect) {
       ChannelPipeline pipeline = upgradingConnection.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
@@ -410,7 +414,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
               conn.pingHandler(upgradedConnection.pingHandler);
               conn.goAwayHandler(upgradedConnection.goAwayHandler);
               conn.shutdownHandler(upgradedConnection.shutdownHandler);
-              conn.remoteSettingsHandler(upgradedConnection.remoteSettingsHandler);
+              conn.remoteHttpSettingsHandler(upgradedConnection.remoteHttpSettingsHandler);
               conn.evictionHandler(upgradedConnection.evictionHandler);
               conn.concurrencyChangeHandler(upgradedConnection.concurrencyChangeHandler);
               Handler<Long> concurrencyChangeHandler = upgradedConnection.concurrencyChangeHandler;
@@ -419,7 +423,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
               upgradedConnection.pingHandler = null;
               upgradedConnection.goAwayHandler = null;
               upgradedConnection.shutdownHandler = null;
-              upgradedConnection.remoteSettingsHandler = null;
+              upgradedConnection.remoteHttpSettingsHandler = null;
               upgradedConnection.evictionHandler = null;
               upgradedConnection.concurrencyChangeHandler = null;
               concurrencyChangeHandler.handle(conn.concurrency());
@@ -513,7 +517,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
                              boolean chunked,
                              ByteBuf buf,
                              boolean end,
-                             StreamPriority priority,
+                             StreamPriorityBase priority,
                              boolean connect,
                              Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
@@ -660,7 +664,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriority> handler) {
+    public void priorityHandler(Handler<StreamPriorityBase> handler) {
       if (upgradedStream != null) {
         upgradedStream.priorityHandler(handler);
       } else {
@@ -759,7 +763,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public StreamPriority priority() {
+    public StreamPriorityBase priority() {
       if (upgradedStream != null) {
         return upgradedStream.priority();
       } else {
@@ -768,12 +772,17 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void updatePriority(StreamPriority streamPriority) {
+    public void updatePriority(StreamPriorityBase streamPriority) {
       if (upgradedStream != null) {
         upgradedStream.updatePriority(streamPriority);
       } else {
         upgradingStream.updatePriority(streamPriority);
       }
+    }
+
+    @Override
+    public StreamPriorityBase createDefaultStreamPriority() {
+      return HttpUtils.DEFAULT_STREAM_PRIORITY;
     }
   }
 
@@ -796,11 +805,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
     if (current instanceof Http1xClientConnection) {
-      remoteSettingsHandler = handler;
+      remoteHttpSettingsHandler = handler;
     } else {
-      current.remoteSettingsHandler(handler);
+      current.remoteHttpSettingsHandler(handler);
     }
     return this;
   }
@@ -891,18 +900,18 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
-    return current.updateSettings(settings);
+  public Http2Settings httpSettings() {
+    return (Http2Settings) current.httpSettings();
   }
 
   @Override
-  public Http2Settings settings() {
-    return current.settings();
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return current.updateHttpSettings(settings);
   }
 
   @Override
-  public Http2Settings remoteSettings() {
-    return current.remoteSettings();
+  public HttpSettings remoteHttpSettings() {
+    return current.remoteHttpSettings();
   }
 
   @Override

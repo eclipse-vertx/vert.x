@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
@@ -64,21 +65,15 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
     return DEFAULT_PORT;
   }
 
-  /**
-   * Start the server.
-   *
-   * @param vertx
-   *          Vertx instance to use for creating the server and client
-   */
-  @Override
-  public HttpProxy start(Vertx vertx) throws Exception {
-    HttpServerOptions options = new HttpServerOptions();
+  protected Future<HttpServer> start0(Vertx vertx) {
+    HttpServerOptions options = createHttpServerOptions();
     options.setHost("localhost").setPort(port);
-    client = vertx.createNetClient();
+    client = vertx.createNetClient(createNetClientOptions());
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
-      String uri = request.uri();
+      //TODO: Investigate why request.uri() is null while request.authority() works.
+      String uri = request.authority().toString(); /* request.uri(); */
       String username = nextUserName();
       if (username != null) {
         String auth = request.getHeader("Proxy-Authorization");
@@ -188,9 +183,19 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
         request.response().setStatusCode(405).end("method not supported");
       }
     });
-    server
-      .listen()
-      .await(10, TimeUnit.SECONDS);
+    return server.listen();
+  }
+
+  /**
+   * Start the server.
+   *
+   * @param vertx
+   *          Vertx instance to use for creating the server and client
+   */
+  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
+  @Override
+  public HttpProxy start(Vertx vertx) throws Exception {
+    start0(vertx).await(10, TimeUnit.SECONDS);
     return this;
   }
 

@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.impl.NetSocketImpl;
@@ -38,7 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.core.http.HttpMethod.OPTIONS;
+import static io.vertx.core.http.HttpMethod.*;
+import static io.vertx.core.net.impl.ChannelProvider.*;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -119,9 +121,9 @@ public class HttpChannelConnector {
     // Remove all un-necessary handlers
     ChannelPipeline pipeline = so.channelHandlerContext().pipeline();
     List<ChannelHandler> removedHandlers = new ArrayList<>();
-    for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
-      ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler)) {
+    for (Map.Entry<String, ChannelHandler> entry : pipeline) {
+      ChannelHandler handler = entry.getValue();
+      if (!(handler instanceof SslHandler) && !(CLIENT_SSL_HANDLER_NAME.equals(entry.getKey()))) {
         removedHandlers.add(handler);
       }
     }
@@ -132,7 +134,10 @@ public class HttpChannelConnector {
     if (ssl) {
       String protocol = so.applicationLayerProtocol();
       if (useAlpn) {
-        if ("h2".equals(protocol)) {
+        if (protocol != null && protocol.startsWith("h3")) {
+          applyHttp3ConnectionOptions(ch.pipeline());
+          http3Connected(context, metric, ch, promise);
+        } else if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           http2Connected(context, metric, ch, promise);
         } else {
@@ -146,7 +151,10 @@ public class HttpChannelConnector {
         http1xConnected(version, server, true, context, metric, ch, promise);
       }
     } else {
-      if (version == HttpVersion.HTTP_2) {
+      if (version == HttpVersion.HTTP_3) {
+        applyHttp3ConnectionOptions(pipeline);
+        http3Connected(context, metric, ch, promise);
+      } else if (version == HttpVersion.HTTP_2) {
         if (this.options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
           http1xConnected(version, server, false, context, metric, ch, promise);
@@ -178,6 +186,16 @@ public class HttpChannelConnector {
     int writeIdleTimeout = options.getWriteIdleTimeout();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+    }
+  }
+
+  private void applyHttp3ConnectionOptions(ChannelPipeline pipeline) {
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout,
+        options.getIdleTimeoutUnit()));
     }
   }
 
@@ -262,6 +280,25 @@ public class HttpChannelConnector {
     try {
       clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled);
       ch.pipeline().addLast("handler", clientHandler);
+      ch.flush();
+    } catch (Exception e) {
+      connectFailed(ch, e, promise);
+      return;
+    }
+    clientHandler.connectFuture().addListener(promise);
+  }
+
+  private void http3Connected(ContextInternal context,
+                              Object metric,
+                              Channel ch,
+                              PromiseInternal<HttpClientConnectionInternal> promise) {
+    VertxHttp3ConnectionHandler<Http3ClientConnection> clientHandler;
+    try {
+      clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric
+        , authority, pooled);
+      ch.pipeline().addLast("handler", clientHandler.getHttp3ConnectionHandler());
+//      ch.pipeline().addLast(clientHandler.getUserEventHandler());
+      ch.pipeline().addLast(clientHandler);
       ch.flush();
     } catch (Exception e) {
       connectFailed(ch, e, promise);

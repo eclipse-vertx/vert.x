@@ -38,8 +38,8 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -290,6 +290,23 @@ public class TestUtils {
     settings.setMaxFrameSize(maxFrameSize);
     settings.setMaxHeaderListSize(maxHeaderListSize);
     settings.set('\u0007', (randomPositiveLong() & 0xFFFFFFFFL));
+    return settings;
+  }
+
+  /**
+   * Create random {@link Http3Settings} with valid values.
+   *
+   * @return the random settings
+   */
+  public static Http3Settings randomHttp3Settings() {
+    Http3Settings settings = new Http3Settings();
+    settings.setMaxFieldSectionSize(randomPositiveLong());
+    settings.setQpackMaxTableCapacity(randomPositiveLong());
+    settings.setQpackMaxBlockedStreams(randomPositiveLong());
+    settings.setH3Datagram(randomPositiveLong());
+    settings.setEnableConnectProtocol(randomPositiveLong());
+    settings.setEnableMetadata(randomPositiveLong());
+    settings.set(1000, randomPositiveInt());
     return settings;
   }
 
@@ -555,4 +572,5 @@ public class TestUtils {
   public static byte[] fromBase64String(String s) {
     return decoder.decode(s);
   }
+
 }
