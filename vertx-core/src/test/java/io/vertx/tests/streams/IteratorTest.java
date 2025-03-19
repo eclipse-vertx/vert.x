@@ -16,26 +16,23 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.streams.ReadStreamIterator;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
-import io.vertx.test.core.RepeatRule;
+import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakestream.FakeStream;
-import org.junit.Rule;
 import org.junit.Assume;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.CountDownLatch;
+import java.util.*;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class IteratorTest extends AsyncTestBase {
+public class IteratorTest extends VertxTestBase {
 
   @Test
   public void testIteratorResuming() {
@@ -87,7 +84,7 @@ public class IteratorTest extends AsyncTestBase {
       assertTrue(iterator.hasNext());
       iterator.next();
     }
-    assertFalse(iterator.hasNext());
+    assertTrue(iterator.hasNext());
     try {
       iterator.next();
       fail();
@@ -113,9 +110,6 @@ public class IteratorTest extends AsyncTestBase {
       consumer.join();
     }
   }
-
-  @Rule
-  public RepeatRule rule = new RepeatRule();
 
   @Repeat(times = 100)
   @Test
@@ -286,13 +280,9 @@ public class IteratorTest extends AsyncTestBase {
 
   @Test
   public void testVirtualThread() {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx();
-    try {
-      Assume.assumeTrue(vertx.isVirtualThreadAvailable());
-      doTestVirtualThread(vertx);
-    } finally {
-      vertx.close();
-    }
+    VertxInternal vertx = (VertxInternal) this.vertx;
+    Assume.assumeTrue(vertx.isVirtualThreadAvailable());
+    doTestVirtualThread(vertx);
   }
 
   private void doTestVirtualThread(VertxInternal vertx) {
@@ -311,5 +301,104 @@ public class IteratorTest extends AsyncTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testBlockingStreamFromVirtualThread() {
+    VertxInternal vertx = (VertxInternal) this.vertx;
+    Assume.assumeTrue(vertx.isVirtualThreadAvailable());
+    ContextInternal context = vertx.createVirtualThreadContext();
+    testBlockingStream(task -> {
+      context.runOnContext(v -> task.run());
+    });
+  }
+
+  @Test
+  public void testBlockingStreamFromVanillaThread() {
+    testBlockingStream(task -> {
+      Thread thread = new Thread(task);
+      thread.start();
+    });
+  }
+
+  @Test
+  public void testBlockingStreamFromVertxThread() {
+    VertxInternal vertx = (VertxInternal) this.vertx;
+    FakeStream<Integer> readStream = new FakeStream<>();
+    List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
+    Stream<Integer> blockingStream = readStream.blockingStream();
+    ContextInternal context = vertx.createEventLoopContext();
+    context.exceptionHandler(errors::add);
+    context.runOnContext(v -> {
+      blockingStream.forEach(elt -> {
+        fail();
+      });
+    });
+    assertWaitUntil(() -> errors.size() == 1);
+    assertEquals(IllegalStateException.class, errors.get(0).getClass());
+  }
+
+  private void testBlockingStream(Executor runner) {
+    int numItems = 4;
+    FakeStream<Integer> stream = new FakeStream<>();
+    Stream<Integer> blockingStream = stream.blockingStream();
+    List<Integer> expected = new ArrayList<>();
+    for (int i = 0;i < numItems;i++) {
+      expected.add(i);
+    }
+    List<Integer> items = Collections.synchronizedList(new ArrayList<>());
+    runner.execute(() -> items.addAll(blockingStream.collect(Collectors.toList())));
+    new Thread(() -> {
+      try {
+        for (int elt : expected) {
+          stream.write(elt);
+          Thread.sleep(10);
+        }
+        stream.end();
+      } catch (InterruptedException ignore) {
+      }
+    }).start();
+    assertWaitUntil(() -> items.equals(expected));
+  }
+
+  @Test
+  public void testBlockingStreamInterleavingFromVirtualThread() {
+    VertxInternal vertx = (VertxInternal) this.vertx;
+    Assume.assumeTrue(vertx.isVirtualThreadAvailable());
+    ContextInternal context = vertx.createVirtualThreadContext();
+    FakeStream<Integer> stream = new FakeStream<>();
+    Stream<Integer> blockingStream = stream.blockingStream();
+    int num = 32;
+    context.runOnContext(v -> {
+      AtomicInteger count = new AtomicInteger();
+      vertx.setPeriodic(5, id -> {
+        assertSame(context, ((ContextInternal) Vertx.currentContext()).unwrap());
+        int i = count.getAndIncrement();
+        if (i == num) {
+          vertx.cancelTimer(id);
+          stream.end();
+        } else {
+          stream.write(i);
+        }
+      });
+      List<Integer> collected = new ArrayList<>();
+      blockingStream.forEach(collected::add);
+      assertEquals(num, collected.size());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testStreamFailure() {
+    RuntimeException expected = new RuntimeException();
+    FakeStream<Integer> stream = new FakeStream<>();
+    Stream<Integer> blockingStream = stream.blockingStream();
+    stream.fail(expected);
+    try {
+      blockingStream.collect(Collectors.toList());
+    } catch (Exception e) {
+      assertSame(expected, e);
+    }
   }
 }
