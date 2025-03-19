@@ -116,7 +116,7 @@ public class ReadStreamIterator<E> implements Iterator<E>, Handler<E> {
           return true;
         }
         if (ended != null) {
-          return false;
+          return ended != END_SENTINEL;
         }
         awaitProgress();
       }
