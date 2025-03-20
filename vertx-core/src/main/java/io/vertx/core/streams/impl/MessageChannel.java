@@ -435,6 +435,7 @@ public abstract class MessageChannel<E> {
     public MpSc(Predicate<E> consumer) {
       this(consumer, DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK);
     }
+
     public MpSc(Predicate<E> consumer, int lowWaterMark, int highWaterMark) {
       super(PlatformDependent.newMpscQueue(), consumer, lowWaterMark, highWaterMark);
     }

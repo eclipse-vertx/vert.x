@@ -210,7 +210,7 @@ public class VertxConnection extends ConnectionBase {
   void channelWritabilityChanged() {
     channelWritable = chctx.channel().isWritable();
     if (channelWritable) {
-      messageQueue.drain();
+      messageQueue.tryDrain();
     }
   }
 
@@ -468,7 +468,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void disposeMessage(MessageWrite write) {
+    protected void handleDispose(MessageWrite write) {
       write.cancel(CLOSED_EXCEPTION);
     }
 
@@ -486,7 +486,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void afterDrain() {
+    protected void handleDrained() {
       VertxConnection.this.handleWriteQueueDrained();
     }
   }

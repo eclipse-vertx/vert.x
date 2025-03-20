@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
@@ -93,7 +92,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
         }
       }
       @Override
-      protected void disposeMessage(MessageWrite messageWrite) {
+      protected void handleDispose(MessageWrite messageWrite) {
         Throwable cause = failure;
         if (cause == null) {
           cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
@@ -101,7 +100,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
         messageWrite.cancel(cause);
       }
       @Override
-      protected void afterDrain() {
+      protected void handleDrained() {
         context.emit(VertxHttp2Stream.this, VertxHttp2Stream::handleWriteQueueDrained);
       }
     };
@@ -156,7 +155,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onWritabilityChanged() {
     writable = !writable;
     if (writable) {
-      outboundQueue.drain();
+      outboundQueue.tryDrain();
     }
   }
 
