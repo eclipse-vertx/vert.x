@@ -20,19 +20,9 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
   private volatile boolean eventuallyClosed;
 
   // State accessed exclusively by the event loop thread
-  private boolean overflow;
+  private boolean overflow; // Indicates channel ownership
+  private int draining = 0; // Indicates drain in progress
   private boolean closed;
-  private int reentrant = 0;
-
-  /**
-   * Create a channel.
-   *
-   * @param eventLoop the channel event-loop
-   */
-  public OutboundMessageChannel(EventLoop eventLoop, Predicate<M> predicate) {
-    this.eventLoop = eventLoop;
-    this.messageChannel = new MessageChannel.MpSc<>(predicate);
-  }
 
   /**
    * Create a channel.
@@ -42,6 +32,18 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
   public OutboundMessageChannel(EventLoop eventLoop) {
     this.eventLoop = eventLoop;
     this.messageChannel = new MessageChannel.MpSc<>(this);
+  }
+
+  /**
+   * Create a channel.
+   *
+   * @param eventLoop the channel event-loop
+   * @param lowWaterMark the low-water mark, must be positive
+   * @param highWaterMark the high-water mark, must be greater than the low-water mark
+   */
+  public OutboundMessageChannel(EventLoop eventLoop, int lowWaterMark, int highWaterMark) {
+    this.eventLoop = eventLoop;
+    this.messageChannel = new MessageChannel.MpSc<>(this, lowWaterMark, highWaterMark);
   }
 
   @Override
@@ -68,65 +70,73 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
     int flags;
     if (inEventLoop) {
       if (closed) {
-        disposeMessage(message);
+        handleDispose(message);
         return true;
       }
-      reentrant++;
-      try {
-        flags = messageChannel.add(message);
-        if ((flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0) {
-          flags = messageChannel.drain();
-          overflow |= (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-          if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
-            handleDrained(numberOfUnwritableSignals(flags));
-          }
-        }
-      } finally {
-        reentrant--;
-      }
-      if (reentrant == 0 && closed) {
-        releaseMessages();
+      flags = messageChannel.add(message);
+      if (draining == 0 && (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0) {
+        flags = drainMessageQueue();
       }
     } else {
       if (eventuallyClosed) {
-        disposeMessage(message);
+        handleDispose(message);
         return true;
       }
       flags = messageChannel.add(message);
       if ((flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0) {
-        eventLoop.execute(this::drainMessageChannel);
+        eventLoop.execute(this::drain);
       }
     }
+    int val;
     if ((flags & MessageChannel.UNWRITABLE_MASK) != 0) {
-      int val = numberOfUnwritableSignals.incrementAndGet();
-      return val <= 0;
+      val = numberOfUnwritableSignals.incrementAndGet();
     } else {
-      return numberOfUnwritableSignals.get() <= 0;
+      val = numberOfUnwritableSignals.get();
     }
+    return val <= 0;
   }
 
   /**
-   * Attempt to drain the queue Drain the queue.
+   * Synchronous message queue drain.
    */
-  public void drain() {
-    assert(eventLoop.inEventLoop());
-    if (overflow) {
-      startDraining();
-      reentrant++;
-      int flags;
-      try {
-        flags = messageChannel.drain();
-        overflow = (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-        if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
-          handleDrained(numberOfUnwritableSignals(flags));
-        }
-      } finally {
-        reentrant--;
+  private int drainMessageQueue() {
+    draining++;
+    try {
+      int flags = messageChannel.drain();
+      overflow |= (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
+      if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
+        handleDrained(numberOfUnwritableSignals(flags));
       }
-      stopDraining();
-      if (reentrant == 0 && closed) {
+      return flags;
+    } finally {
+      draining--;
+      if (draining == 0 && closed) {
         releaseMessages();
       }
+    }
+  }
+
+  private void drain() {
+    if (closed) {
+      return;
+    }
+    assert(draining == 0);
+    startDraining();
+    drainMessageQueue();
+    stopDraining();
+  }
+
+  /**
+   * Attempts to drain the queue.
+   */
+  public final boolean tryDrain() {
+    assert(eventLoop.inEventLoop());
+    if (overflow) {
+      overflow = false;
+      drain();
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -140,52 +150,30 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
     }
     closed = true;
     eventuallyClosed = true;
-    if (reentrant > 0) {
+    if (draining > 0) {
       return;
     }
     releaseMessages();
   }
 
-  private void drainMessageChannel() {
-    if (closed) {
-      return;
-    }
-    startDraining();
-    reentrant++;
-    int flags;
-    try {
-      flags = messageChannel.drain();
-      overflow = (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
-        handleDrained(numberOfUnwritableSignals(flags));
-      }
-    } finally {
-      reentrant--;
-    }
-    stopDraining();
-    if (reentrant == 0 && closed) {
-      releaseMessages();
-    }
-  }
-
   private void handleDrained(int numberOfSignals) {
     int val = numberOfUnwritableSignals.addAndGet(-numberOfSignals);
     if ((val + numberOfSignals) > 0 && val <= 0) {
-      afterDrain();
+      eventLoop.execute(this::handleDrained);
     }
   }
 
   private void releaseMessages() {
     List<M> messages = messageChannel.clear();
     for (M elt : messages) {
-      disposeMessage(elt);
+      handleDispose(elt);
     }
   }
 
   /**
    * Called when the channel becomes writable again.
    */
-  protected void afterDrain() {
+  protected void handleDrained() {
   }
 
   protected void startDraining() {
@@ -199,6 +187,6 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
    *
    * @param msg the message
    */
-  protected void disposeMessage(M msg) {
+  protected void handleDispose(M msg) {
   }
 }
