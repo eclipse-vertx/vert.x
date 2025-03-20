@@ -210,7 +210,7 @@ public class VertxConnection extends ConnectionBase {
   void channelWritabilityChanged() {
     channelWritable = chctx.channel().isWritable();
     if (channelWritable) {
-      messageQueue.drain();
+      messageQueue.tryDrain();
     }
   }
 

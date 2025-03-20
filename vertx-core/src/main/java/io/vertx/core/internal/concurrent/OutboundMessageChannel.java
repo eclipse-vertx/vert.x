@@ -20,19 +20,9 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
   private volatile boolean eventuallyClosed;
 
   // State accessed exclusively by the event loop thread
-  private boolean overflow;
+  private boolean overflow; // Indicates channel ownership
   private boolean closed;
   private int reentrant = 0;
-
-  /**
-   * Create a channel.
-   *
-   * @param eventLoop the channel event-loop
-   */
-  public OutboundMessageChannel(EventLoop eventLoop, Predicate<M> predicate) {
-    this.eventLoop = eventLoop;
-    this.messageChannel = new MessageChannel.MpSc<>(predicate);
-  }
 
   /**
    * Create a channel.
@@ -42,6 +32,18 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
   public OutboundMessageChannel(EventLoop eventLoop) {
     this.eventLoop = eventLoop;
     this.messageChannel = new MessageChannel.MpSc<>(this);
+  }
+
+  /**
+   * Create a channel.
+   *
+   * @param eventLoop the channel event-loop
+   * @param lowWaterMark the low-water mark, must be positive
+   * @param highWaterMark the high-water mark, must be greater than the low-water mark
+   */
+  public OutboundMessageChannel(EventLoop eventLoop, int lowWaterMark, int highWaterMark) {
+    this.eventLoop = eventLoop;
+    this.messageChannel = new MessageChannel.MpSc<>(this, lowWaterMark, highWaterMark);
   }
 
   @Override
@@ -71,21 +73,9 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
         disposeMessage(message);
         return true;
       }
-      reentrant++;
-      try {
-        flags = messageChannel.add(message);
-        if ((flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0) {
-          flags = messageChannel.drain();
-          overflow |= (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-          if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
-            handleDrained(numberOfUnwritableSignals(flags));
-          }
-        }
-      } finally {
-        reentrant--;
-      }
-      if (reentrant == 0 && closed) {
-        releaseMessages();
+      flags = messageChannel.add(message);
+      if ((flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0) {
+        flags = drainMessageQueue();
       }
     } else {
       if (eventuallyClosed) {
@@ -94,39 +84,57 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
       }
       flags = messageChannel.add(message);
       if ((flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0) {
-        eventLoop.execute(this::drainMessageChannel);
+        eventLoop.execute(this::drain);
       }
     }
+    int val;
     if ((flags & MessageChannel.UNWRITABLE_MASK) != 0) {
-      int val = numberOfUnwritableSignals.incrementAndGet();
-      return val <= 0;
+      val = numberOfUnwritableSignals.incrementAndGet();
     } else {
-      return numberOfUnwritableSignals.get() <= 0;
+      val = numberOfUnwritableSignals.get();
     }
+    return val <= 0;
   }
 
   /**
-   * Attempt to drain the queue Drain the queue.
+   * Synchronous message queue drain.
    */
-  public void drain() {
-    assert(eventLoop.inEventLoop());
-    if (overflow) {
-      startDraining();
-      reentrant++;
-      int flags;
-      try {
-        flags = messageChannel.drain();
-        overflow = (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-        if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
-          handleDrained(numberOfUnwritableSignals(flags));
-        }
-      } finally {
-        reentrant--;
+  private int drainMessageQueue() {
+    reentrant++;
+    try {
+      int flags = messageChannel.drain();
+      overflow |= (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
+      if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
+        handleDrained(numberOfUnwritableSignals(flags));
       }
-      stopDraining();
+      return flags;
+    } finally {
+      reentrant--;
       if (reentrant == 0 && closed) {
         releaseMessages();
       }
+    }
+  }
+
+  private void drain() {
+    if (closed) {
+      return;
+    }
+    startDraining();
+    drainMessageQueue();
+    stopDraining();
+  }
+
+  /**
+   * Attempts to drain the queue.
+   */
+  public final boolean tryDrain() {
+    assert(eventLoop.inEventLoop());
+    if (overflow) {
+      drain();
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -144,28 +152,6 @@ public class OutboundMessageChannel<M> implements Predicate<M> {
       return;
     }
     releaseMessages();
-  }
-
-  private void drainMessageChannel() {
-    if (closed) {
-      return;
-    }
-    startDraining();
-    reentrant++;
-    int flags;
-    try {
-      flags = messageChannel.drain();
-      overflow = (flags & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & MessageChannel.WRITABLE_MASK) != 0) {
-        handleDrained(numberOfUnwritableSignals(flags));
-      }
-    } finally {
-      reentrant--;
-    }
-    stopDraining();
-    if (reentrant == 0 && closed) {
-      releaseMessages();
-    }
   }
 
   private void handleDrained(int numberOfSignals) {
