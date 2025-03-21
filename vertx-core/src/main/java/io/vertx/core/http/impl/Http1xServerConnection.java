@@ -32,6 +32,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -198,20 +199,42 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write(HttpObject msg, PromiseInternal<Void> promise) {
-    writeToChannel(new MessageWrite() {
-      @Override
-      public void write() {
-        Http1xServerConnection.this.write(msg, false, promise == null ? voidPromise : wrap(promise));
-        if (msg instanceof LastHttpContent) {
-          responseComplete();
-        }
+  private class HttpObjectWrite extends FutureImpl<Void> implements MessageWrite, FutureListener<Void> {
+
+    private final HttpObject message;
+
+    public HttpObjectWrite(ContextInternal context, HttpObject message) {
+      super(context);
+
+      this.message = message;
+    }
+
+    public void write() {
+      Http1xServerConnection.this.write(message, false, wrap(this));
+      if (message instanceof LastHttpContent) {
+        responseComplete();
       }
-      @Override
-      public void cancel(Throwable cause) {
-        promise.fail(cause);
+    }
+
+    @Override
+    public void cancel(Throwable cause) {
+      tryFail(cause);
+    }
+
+    @Override
+    public void operationComplete(io.netty.util.concurrent.Future<Void> future) {
+      if (future.isSuccess()) {
+        tryComplete(future.getNow());
+      } else {
+        tryFail(future.cause());
       }
-    });
+    }
+  }
+
+  Future<Void> write(HttpObject msg) {
+    HttpObjectWrite write = new HttpObjectWrite(context, msg);
+    writeToChannel(write);
+    return write;
   }
 
   void responseComplete() {
