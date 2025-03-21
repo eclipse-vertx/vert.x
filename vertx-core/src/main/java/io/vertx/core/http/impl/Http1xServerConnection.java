@@ -12,11 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
@@ -26,6 +22,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -198,20 +195,34 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write(HttpObject msg, Promise<Void> promise) {
-    writeToChannel(new MessageWrite() {
-      @Override
-      public void write() {
-        Http1xServerConnection.this.write(msg, false, promise);
-        if (msg instanceof LastHttpContent) {
-          responseComplete();
-        }
+  private class HttpObjectWrite implements MessageWrite {
+
+    private final Promise<Void> promise;
+    private final AssembledHttpObject message;
+
+    public HttpObjectWrite(ContextInternal context, AssembledHttpObject message) {
+
+      this.promise = context.promise();
+      this.message = message;
+    }
+
+    public void write() {
+      Http1xServerConnection.this.write(message, false, promise);
+      if (message.last()) {
+        responseComplete();
       }
-      @Override
-      public void cancel(Throwable cause) {
-        promise.fail(cause);
-      }
-    });
+    }
+
+    @Override
+    public void cancel(Throwable cause) {
+      promise.tryFail(cause);
+    }
+  }
+
+  Future<Void> write(AssembledHttpObject msg) {
+    HttpObjectWrite write = new HttpObjectWrite(context, msg);
+    writeToChannel(write);
+    return write.promise.future();
   }
 
   void responseComplete() {
@@ -426,13 +437,13 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE), promise);
   }
 
-  void write103EarlyHints(HttpHeaders headers, Promise<Void> promise) {
+  void write103EarlyHints(HttpHeaders headers, PromiseInternal<Void> promise) {
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1,
       HttpResponseStatus.EARLY_HINTS,
       Unpooled.buffer(0),
       headers,
       EmptyHttpHeaders.INSTANCE
-    ), newChannelPromise(promise));
+    )).addListener(promise);
   }
 
   protected void handleClosed() {

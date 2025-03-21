@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.UnsupportedMessageTypeException;
 import io.netty.handler.codec.http.*;
@@ -23,15 +24,20 @@ import io.netty.handler.codec.http.*;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledHttpRequest implements HttpContent, HttpRequest {
+class AssembledHttpRequest extends AssembledHttpObject implements HttpContent, HttpRequest {
   private final HttpRequest request;
   protected final HttpContent content;
 
   AssembledHttpRequest(HttpRequest request, ByteBuf buf) {
-    this(request, new DefaultHttpContent(buf));
+    this(request, new DefaultHttpContent(buf), false);
   }
 
-  AssembledHttpRequest(HttpRequest request, HttpContent content) {
+  AssembledHttpRequest(HttpRequest request, ByteBuf buf, boolean last) {
+    this(request, new DefaultHttpContent(buf), last);
+  }
+
+  AssembledHttpRequest(HttpRequest request, HttpContent content, boolean last) {
+    super(last);
     this.request = request;
     this.content = content;
   }

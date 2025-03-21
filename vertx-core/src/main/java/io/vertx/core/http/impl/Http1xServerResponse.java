@@ -305,23 +305,17 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    PromiseInternal<Void> promise = context.promise();
-    write(((BufferInternal)chunk).getByteBuf(), promise);
-    return promise.future();
+    return write(((BufferInternal)chunk).getByteBuf());
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    PromiseInternal<Void> promise = context.promise();
-    write(BufferInternal.buffer(chunk, enc).getByteBuf(), promise);
-    return promise.future();
+    return write(BufferInternal.buffer(chunk, enc).getByteBuf());
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    PromiseInternal<Void> promise = context.promise();
-    write(BufferInternal.buffer(chunk).getByteBuf(), promise);
-    return promise.future();
+    return write(BufferInternal.buffer(chunk).getByteBuf());
   }
 
   @Override
@@ -360,12 +354,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    PromiseInternal<Void> promise = context.promise();
-    end(chunk, promise);
-    return promise.future();
+    return end_(chunk);
   }
 
-  private void end(Buffer chunk, PromiseInternal<Void> listener) {
+  private Future<Void> end_(Buffer chunk) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -373,7 +365,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       written = true;
       ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
-      HttpObject msg;
+      AssembledHttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
@@ -382,7 +374,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
-      conn.write(msg, listener);
+      Future<Void> ret = conn.write(msg);
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
@@ -392,6 +384,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       if (!keepAlive) {
         closed = true; // ?????
       }
+      return ret;
     }
   }
 
@@ -455,14 +448,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       bytesWritten = actualLength;
       written = true;
 
-      conn.write(new AssembledHttpResponse(head, version, status, headers), null);
+      conn.write(new AssembledHttpResponse(head, version, status, headers));
 
       ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
-          conn.write(LastHttpContent.EMPTY_LAST_CONTENT, null);
+          conn.write(new AssembledLastHttpContent(Unpooled.EMPTY_BUFFER, EmptyHttpHeaders.INSTANCE));
         }
 
         // signal body end handler
@@ -642,7 +635,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  private Http1xServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
+  private Future<Void> write(ByteBuf chunk) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
@@ -653,15 +646,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
       }
       bytesWritten += chunk.readableBytes();
-      HttpObject msg;
+      AssembledHttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
         msg = new AssembledHttpResponse(head, version, status, headers, chunk);
       } else {
-        msg = new DefaultHttpContent(chunk);
+        msg = new AssembledHttpContent( chunk);
       }
-      conn.write(msg, promise);
-      return this;
+      return conn.write(msg);
     }
   }
 
@@ -676,8 +668,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
-        PromiseInternal<Void> upgradePromise = context.promise();
-        conn.write(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.write(new AssembledHttpResponse(head, version, status, headers));
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();
