@@ -19,7 +19,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -91,7 +94,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
   }
 
   @Test
-  public void testReentrantOverflowThenDrain() {
+  public void testReentrantOverflowThenDrain1() {
     AtomicInteger drains = new AtomicInteger();
     queue = new OutboundMessageChannel<>(eventLoop) {
       int reentrant = 0;
@@ -124,6 +127,58 @@ public class OutboundMessageChannelTest extends VertxTestBase {
     eventLoop.execute(() -> {
       queue.write(0);
       assertEquals(1, drains.get());
+      List<Integer> expected = IntStream.range(0, 16).boxed().collect(Collectors.toList());
+      assertEquals(expected, output);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testReentrantOverflowThenDrain2() {
+    AtomicInteger drains = new AtomicInteger();
+    queue = new OutboundMessageChannel<>(eventLoop) {
+      int reentrant = 0;
+      @Override
+      public boolean test(Integer msg) {
+        assertEquals(0, reentrant++);
+        try {
+          output.add(msg);
+          switch (msg) {
+            case 0: {
+              int count = 1;
+              while (write(count++)) {
+              }
+              assertEquals(16, count);
+              assertEquals(0, drains.get());
+              break;
+            }
+            case 15: {
+              int count = 16;
+              while (write(count++)) {
+              }
+              assertEquals(17, count);
+              assertEquals(0, drains.get());
+              break;
+            }
+            default:
+              break;
+          }
+          return true;
+        } finally {
+          reentrant--;
+        }
+      }
+      @Override
+      protected void afterDrain() {
+        drains.incrementAndGet();
+      }
+    };
+    eventLoop.execute(() -> {
+      queue.write(0);
+      assertEquals(1, drains.get());
+      List<Integer> expected = IntStream.range(0, 17).boxed().collect(Collectors.toList());
+      assertEquals(expected, output);
       testComplete();
     });
     await();
@@ -189,5 +244,6 @@ public class OutboundMessageChannelTest extends VertxTestBase {
         testComplete();
       });
     });
-    await();  }
+    await();
+  }
 }

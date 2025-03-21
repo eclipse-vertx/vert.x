@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
@@ -156,7 +155,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onWritabilityChanged() {
     writable = !writable;
     if (writable) {
-      outboundQueue.drain();
+      outboundQueue.tryDrain();
     }
   }
 
