@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core-aggregator</artifactId>
-  <version>5.0.0-SNAPSHOT</version>
+  <version>5.0.0-tfb-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Vert.x Core Aggregator</name>
@@ -55,7 +55,7 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-dependencies</artifactId>
-        <version>${project.version}</version>
+        <version>5.0.0-SNAPSHOT</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
