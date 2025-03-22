@@ -86,30 +86,47 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
-  private final InboundMessageChannel<Object> queue;
+  private volatile InboundMessageChannel<Object> queue;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
-    this.queue = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
-      @Override
-      protected void handleMessage(Object elt) {
-        if (elt == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) elt);
+  }
+
+  private InboundMessageChannel<Object> queue() {
+    return queue(true);
+  }
+
+  private InboundMessageChannel<Object> queue(boolean create) {
+    InboundMessageChannel<Object> ref = queue;
+    if (create && ref == null) {
+      synchronized (this) {
+        ref = queue;
+        if (ref == null) {
+          ref = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
+            @Override
+            protected void handleMessage(Object elt) {
+              if (elt == InboundBuffer.END_SENTINEL) {
+                onEnd();
+              } else {
+                onData((Buffer) elt);
+              }
+            }
+            @Override
+            protected void handleResume() {
+              conn.doResume();
+            }
+            @Override
+            protected void handlePause() {
+              conn.doPause();
+            }
+          };
+          queue = ref;
         }
       }
-      @Override
-      protected void handleResume() {
-        conn.doResume();
-      }
-      @Override
-      protected void handlePause() {
-        conn.doPause();
-      }
-    };
+    }
+    return ref;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -136,6 +153,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   void handleContent(Buffer buffer) {
+    InboundMessageChannel<Object> queue = queue();
     boolean drain = queue.add(buffer);
     if (drain) {
       queue.drain();
@@ -143,6 +161,15 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   void handleEnd() {
+    InboundMessageChannel<Object> queue = queue(false);
+    if (queue != null) {
+      handleEnd(queue);
+    } else {
+      context.execute(this, Http1xServerRequest::onEnd);
+    }
+  }
+
+  private void handleEnd(InboundMessageChannel<Object> queue) {
     boolean drain = queue.add(InboundBuffer.END_SENTINEL);
     if (drain) {
       queue.drain();
@@ -334,13 +361,13 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public HttpServerRequest pause() {
-    queue.pause();
+    queue().pause();
     return this;
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    queue.fetch(amount);
+    queue().fetch(amount);
     return this;
   }
 
