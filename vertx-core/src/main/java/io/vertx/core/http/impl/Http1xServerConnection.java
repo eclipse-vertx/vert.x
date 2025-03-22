@@ -201,17 +201,18 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   private class HttpObjectWrite extends FutureImpl<Void> implements MessageWrite, FutureListener<Void> {
 
-    private final HttpObject message;
+    private final AssembledHttpObject message;
 
-    public HttpObjectWrite(ContextInternal context, HttpObject message) {
+    public HttpObjectWrite(ContextInternal context, AssembledHttpObject message) {
       super(context);
 
       this.message = message;
     }
 
     public void write() {
-      Http1xServerConnection.this.write(message, false, wrap(this));
-      if (message instanceof LastHttpContent) {
+      message.addListener(this);
+      Http1xServerConnection.this.write(message, false, message);
+      if (message.last()) {
         responseComplete();
       }
     }
@@ -231,7 +232,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  Future<Void> write(HttpObject msg) {
+  Future<Void> write(AssembledHttpObject msg) {
     HttpObjectWrite write = new HttpObjectWrite(context, msg);
     writeToChannel(write);
     return write;
