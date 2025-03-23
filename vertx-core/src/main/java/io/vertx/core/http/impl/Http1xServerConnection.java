@@ -91,7 +91,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
                                 ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
-    super(context, chctx);
+    super(context, chctx, options.isStrictMode());
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;

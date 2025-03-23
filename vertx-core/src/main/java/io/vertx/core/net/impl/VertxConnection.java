@@ -57,7 +57,7 @@ public class VertxConnection extends ConnectionBase {
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   public final VoidChannelPromise voidPromise;
-  private final OutboundMessageChannel<MessageWrite> messageQueue;
+  private final OutboundWriteQueue messageQueue;
   private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
@@ -72,9 +72,13 @@ public class VertxConnection extends ConnectionBase {
   private ScheduledFuture<?> shutdownTimeout;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
+    this(context, chctx, false);
+  }
+
+  public VertxConnection(ContextInternal context, ChannelHandlerContext chctx, boolean strictMode) {
     super(context, chctx);
     this.channelWritable = chctx.channel().isWritable();
-    this.messageQueue = new InternalMessageChannel(chctx.channel().eventLoop());
+    this.messageQueue = strictMode ? new StrictOutboundWriteQueue() : new InternalMessageChannel(chctx.channel().eventLoop());
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
     this.autoRead = true;
   }
@@ -487,10 +491,41 @@ public class VertxConnection extends ConnectionBase {
     return writeFuture;
   }
 
+  private interface OutboundWriteQueue {
+    boolean isWritable();
+    boolean write(MessageWrite msg);
+    boolean tryDrain();
+    void close();
+  }
+
+  private class StrictOutboundWriteQueue implements OutboundWriteQueue {
+
+    @Override
+    public boolean isWritable() {
+      return channelWritable;
+    }
+
+    @Override
+    public boolean write(MessageWrite msg) {
+      msg.write();
+      return true;
+    }
+
+    @Override
+    public boolean tryDrain() {
+      handleWriteQueueDrained();
+      return false;
+    }
+
+    @Override
+    public void close() {
+    }
+  }
+
   /**
    * Version of {@link OutboundMessageChannel} accessing internal connection base state.
    */
-  private class InternalMessageChannel extends OutboundMessageChannel<MessageWrite> implements Predicate<MessageWrite> {
+  private class InternalMessageChannel extends OutboundMessageChannel<MessageWrite> implements Predicate<MessageWrite>, OutboundWriteQueue {
 
     public InternalMessageChannel(EventLoop eventLoop) {
       super(eventLoop);
