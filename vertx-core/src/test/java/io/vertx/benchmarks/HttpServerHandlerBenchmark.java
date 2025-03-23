@@ -334,7 +334,9 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
       "-Dvertx.disableHttpHeadersValidation=true",
-      "-Dvertx.disableMetrics=true"
+      "-Dvertx.disableMetrics=true",
+      "-Dio.netty.buffer.checkAccessible=false",
+      "-Dio.netty.buffer.checkBounds=false"
   })
   @Benchmark
   public Object vertxOpt() {
@@ -347,7 +349,9 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     "-Dvertx.threadChecks=false",
     "-Dvertx.disableContextTimings=true",
     "-Dvertx.disableHttpHeadersValidation=true",
-    "-Dvertx.disableMetrics=false"
+    "-Dvertx.disableMetrics=false",
+    "-Dio.netty.buffer.checkAccessible=false",
+    "-Dio.netty.buffer.checkBounds=false"
   })
   @Benchmark
   public Object vertxOptMetricsOn() {
