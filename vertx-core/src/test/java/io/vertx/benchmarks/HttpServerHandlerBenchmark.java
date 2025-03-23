@@ -228,7 +228,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       Http1xServerConnection conn = new Http1xServerConnection(
         () -> context,
               null,
-        new HttpServerOptions(),
+        new HttpServerOptions().setStrictMode(true),
         chctx,
         context,
         "localhost",

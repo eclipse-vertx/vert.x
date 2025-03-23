@@ -14,6 +14,11 @@ public class HttpServerOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpServerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "strictMode":
+          if (member.getValue() instanceof Boolean) {
+            obj.setStrictMode((Boolean)member.getValue());
+          }
+          break;
         case "compressionSupported":
           if (member.getValue() instanceof Boolean) {
             obj.setCompressionSupported((Boolean)member.getValue());
@@ -188,6 +193,7 @@ public class HttpServerOptionsConverter {
   }
 
    static void toJson(HttpServerOptions obj, java.util.Map<String, Object> json) {
+    json.put("strictMode", obj.isStrictMode());
     json.put("compressionSupported", obj.isCompressionSupported());
     json.put("compressionLevel", obj.getCompressionLevel());
     json.put("compressionContentSizeThreshold", obj.getCompressionContentSizeThreshold());
