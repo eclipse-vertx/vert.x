@@ -421,6 +421,37 @@ public class ConnectionBaseTest extends VertxTestBase {
   }
 
   @Test
+  public void testReentrantRead() throws Exception {
+    connectHandler = conn -> {
+      VertxConnection vertxConn = (VertxConnection) conn;
+      ChannelHandlerContext ctx = conn.channelHandlerContext();
+      ChannelPipeline pipeline = ctx.pipeline();
+      AtomicInteger reentrant = new AtomicInteger();
+      conn.messageHandler(msg -> {
+        assertEquals(0, reentrant.getAndIncrement());
+        switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
+          case "inbound-1":
+            pipeline.fireChannelRead(Unpooled.copiedBuffer("inbound-2", StandardCharsets.UTF_8));
+            break;
+          case "inbound-2":
+            conn.end(Buffer.buffer("outbound-1"));
+            break;
+        }
+        reentrant.decrementAndGet();
+      });
+    };
+    NetSocket so = awaitFuture(client.connect(1234, "localhost"));
+    Buffer received = Buffer.buffer();
+    so.handler(received::appendBuffer);
+    so.closeHandler(v -> {
+      assertEquals("outbound-1", received.toString());
+      testComplete();
+    });
+    so.write("inbound-1").await();
+    await();
+  }
+
+  @Test
   public void testResumeWhenRead() throws Exception {
     connectHandler = conn -> {
       VertxConnection vertxConn = (VertxConnection) conn;
@@ -434,13 +465,16 @@ public class ConnectionBaseTest extends VertxTestBase {
             vertxConn.doResume();
             break;
           case "inbound-2":
-            conn.close();
+            conn.end(Buffer.buffer("outbound-1"));
             break;
         }
       });
     };
     NetSocket so = awaitFuture(client.connect(1234, "localhost"));
+    Buffer received = Buffer.buffer();
+    so.handler(received::appendBuffer);
     so.closeHandler(v -> {
+      assertEquals("outbound-1", received.toString());
       testComplete();
     });
     so.write("inbound-1").await();
