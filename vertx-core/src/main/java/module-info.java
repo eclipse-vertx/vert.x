@@ -1,7 +1,6 @@
 module io.vertx.core {
 
   requires io.vertx.core.logging;
-  requires com.fasterxml.jackson.core;
   requires io.netty.buffer;
   requires io.netty.codec;
   requires io.netty.codec.compression;
@@ -20,6 +19,7 @@ module io.vertx.core {
 
   // Optional
 
+  requires static com.fasterxml.jackson.core;
   requires static com.fasterxml.jackson.databind;
   requires static io.netty.transport.classes.io_uring;
   requires static io.netty.transport.classes.epoll;
@@ -95,6 +95,10 @@ module io.vertx.core {
   exports io.vertx.core.internal.streams;
   exports io.vertx.core.internal.deployment;
   exports io.vertx.core.internal.resolver;
+
+  // Jackson v3
+
+  exports io.vertx.core.json.impl to io.vertx.core.jacksonv3;
 
   // Testing
 
