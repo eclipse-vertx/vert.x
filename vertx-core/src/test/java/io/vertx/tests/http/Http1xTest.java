@@ -1000,6 +1000,50 @@ public class Http1xTest extends HttpTest {
   // Extra tests
 
   @Test
+  public void testServerPipelining() throws Exception {
+    server.requestHandler(req -> req.response().end("pong"));
+    startServer(testAddress);
+
+    NetClient client = vertx.createNetClient();
+    NetSocket socket = client.connect(testAddress).await();
+
+    int pipeliningLevel = 16;
+    int numIter = 100;
+
+    StringBuilder buffer = new StringBuilder();
+    socket.handler(new Handler<>() {
+      int numResp = 0;
+      int pos = 0;
+      @Override
+      public void handle(Buffer data) {
+        buffer.append(data.toString());
+        while (true) {
+          int idx = buffer.indexOf("\r\n\r\n", pos);
+          if (idx == -1) {
+            break;
+          }
+          pos = idx + 2;
+          numResp++;
+        }
+        if (numResp == pipeliningLevel * numIter) {
+          testComplete();
+        }
+      }
+    });
+
+    Buffer request = Buffer.buffer("GET / HTTP/1.1\r\ncontent-length:0\r\n\r\n");
+    Buffer batch = Buffer.buffer();
+    for (int i = 0;i < pipeliningLevel;i++) {
+      batch.appendBuffer(request);
+    }
+    for (int i = 0;i < numIter;i++) {
+      socket.write(batch).await();
+    }
+
+    await();
+  }
+
+  @Test
   public void testPipeliningOrder() throws Exception {
     // Does not pass with IO_Uring
     Assume.assumeTrue(((VertxInternal)vertx).transport().getClass().getName().startsWith("io.vertx.core"));
