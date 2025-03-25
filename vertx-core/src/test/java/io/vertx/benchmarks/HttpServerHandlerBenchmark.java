@@ -44,12 +44,7 @@ import io.vertx.core.http.impl.VertxHttpResponseEncoder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.VertxHandler;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -65,7 +60,10 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   public static void consume(final ByteBuf buf) {
   }
 
-  ByteBuf GET;
+  @Param({"1"})
+  public int pipelining;
+
+  ByteBuf requestsBytes;
   int readerIndex;
   int writeIndex;
   VertxInternal vertx;
@@ -316,17 +314,19 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     });
     nettyChannel.config().setAllocator(new Alloc());
 
-    GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
-      "GET / HTTP/1.1\r\n" +
-        "\r\n").getBytes()));
-    readerIndex = GET.readerIndex();
-    writeIndex = GET.writerIndex();
+    StringBuilder s = new StringBuilder();
+    for (int i = 0;i < pipelining;i++) {
+      s.append("GET / HTTP/1.1\r\n").append("\r\n");
+    }
+    requestsBytes = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((s.toString()).getBytes()));
+    readerIndex = requestsBytes.readerIndex();
+    writeIndex = requestsBytes.writerIndex();
   }
 
   @Benchmark
   public Object vertx() {
-    GET.setIndex(readerIndex, writeIndex);
-    vertxChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(requestsBytes);
     return vertxChannel.outboundMessages().poll();
   }
 
@@ -340,8 +340,8 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   })
   @Benchmark
   public Object vertxOpt() {
-    GET.setIndex(readerIndex, writeIndex);
-    vertxChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(requestsBytes);
     return vertxChannel.outboundMessages().poll();
   }
 
@@ -355,15 +355,15 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   })
   @Benchmark
   public Object vertxOptMetricsOn() {
-    GET.setIndex(readerIndex, writeIndex);
-    vertxChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(requestsBytes);
     return vertxChannel.outboundMessages().poll();
   }
 
   @Benchmark
   public Object netty() {
-    GET.setIndex(readerIndex, writeIndex);
-    nettyChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    nettyChannel.writeInbound(requestsBytes);
     return nettyChannel.outboundMessages().poll();
   }
 }
