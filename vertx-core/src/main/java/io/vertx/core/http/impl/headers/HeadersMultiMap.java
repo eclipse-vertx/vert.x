@@ -256,15 +256,10 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
 
   @Override
   public boolean containsValue(CharSequence name, CharSequence value, boolean ignoreCase) {
-    return containsInternal(name, value, false, ignoreCase);
+    return containsInternal(name, value, ignoreCase);
   }
 
-  @Override
-  public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
-    return containsInternal(name, value, true, ignoreCase);
-  }
-
-  private boolean containsInternal(CharSequence name, CharSequence value, boolean equals, boolean ignoreCase) {
+  private boolean containsInternal(CharSequence name, CharSequence value, boolean ignoreCase) {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     HeadersMultiMap.MapEntry e = entries[i];
@@ -272,35 +267,51 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         CharSequence other = e.getValue();
-        if (equals) {
-          if ((ignoreCase && AsciiString.contentEqualsIgnoreCase(value, other)) || (!ignoreCase && AsciiString.contentEquals(value, other))) {
+        int prev = 0;
+        while (true) {
+          final int idx = AsciiString.indexOf(other, ',', prev);
+          int to;
+          if (idx == -1) {
+            to = other.length();
+          } else {
+            to = idx;
+          }
+          while (to > prev && other.charAt(to - 1) == ' ') {
+            to--;
+          }
+          int from = prev;
+          while (from < to && other.charAt(from) == ' ') {
+            from++;
+          }
+          int len = to - from;
+          if (len > 0 && AsciiString.regionMatches(other, ignoreCase, from, value, 0, len)) {
             return true;
+          } else if (idx == -1) {
+            break;
           }
-        } else {
-          int prev = 0;
-          while (true) {
-            final int idx = AsciiString.indexOf(other, ',', prev);
-            int to;
-            if (idx == -1) {
-              to = other.length();
-            } else {
-              to = idx;
-            }
-            while (to > prev && other.charAt(to - 1) == ' ') {
-              to--;
-            }
-            int from = prev;
-            while (from < to && other.charAt(from) == ' ') {
-              from++;
-            }
-            int len = to - from;
-            if (len > 0 && AsciiString.regionMatches(other, ignoreCase, from, value, 0, len)) {
-              return true;
-            } else if (idx == -1) {
-              break;
-            }
-            prev = idx + 1;
-          }
+          prev = idx + 1;
+        }
+      }
+      e = e.next;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
+    return containsInternal_equals(name, value, ignoreCase);
+  }
+
+  private boolean containsInternal_equals(CharSequence name, CharSequence value, boolean ignoreCase) {
+    int h = AsciiString.hashCode(name);
+    int i = h & 0x0000000F;
+    HeadersMultiMap.MapEntry e = entries[i];
+    while (e != null) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
+        CharSequence other = e.getValue();
+        if ((ignoreCase && AsciiString.contentEqualsIgnoreCase(value, other)) || (!ignoreCase && AsciiString.contentEquals(value, other))) {
+          return true;
         }
       }
       e = e.next;
