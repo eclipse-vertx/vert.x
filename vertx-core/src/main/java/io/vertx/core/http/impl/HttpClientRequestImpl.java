@@ -177,7 +177,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized MultiMap headers() {
+  public synchronized HttpHeaders headers() {
     if (headers == null) {
       headers = HeadersMultiMap.httpHeaders();
     }

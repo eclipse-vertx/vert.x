@@ -313,4 +313,12 @@ public class VertxHttpHeadersTest extends HeadersTest {
       }
     }
   }
+
+  @Test
+  public void testMutability() {
+    HeadersMultiMap headers = newMultiMap();
+    headers.set("foo", "foo1");
+    headers.set("bar", Arrays.asList("bar1", "bar2"));
+    HeadersMultiMap copy = headers.copy(false);
+  }
 }

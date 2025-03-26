@@ -76,7 +76,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
   private boolean semicolonIsNormalCharInParams;
-  private MultiMap headers;
+  private io.vertx.core.http.HttpHeaders headers;
   private String absoluteURI;
 
   private HttpEventHandler eventHandler;
@@ -295,12 +295,12 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public MultiMap headers() {
-    MultiMap headers = this.headers;
+  public io.vertx.core.http.HttpHeaders headers() {
+    io.vertx.core.http.HttpHeaders headers = this.headers;
     if (headers == null) {
       HttpHeaders reqHeaders = request.headers();
-      if (reqHeaders instanceof MultiMap) {
-        headers = (MultiMap) reqHeaders;
+      if (reqHeaders instanceof io.vertx.core.http.HttpHeaders) {
+        headers = (io.vertx.core.http.HttpHeaders) reqHeaders;
       } else {
         headers = new HeadersAdaptor(reqHeaders);
       }

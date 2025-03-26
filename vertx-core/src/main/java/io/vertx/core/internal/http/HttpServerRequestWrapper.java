@@ -10,16 +10,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -126,7 +117,7 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public MultiMap headers() {
+  public HttpHeaders headers() {
     return delegate.headers();
   }
 

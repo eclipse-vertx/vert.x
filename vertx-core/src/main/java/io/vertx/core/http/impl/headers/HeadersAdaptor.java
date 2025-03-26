@@ -22,10 +22,17 @@ import java.util.Set;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class HeadersAdaptor implements MultiMap {
+public class HeadersAdaptor implements MultiMap, io.vertx.core.http.HttpHeaders {
+
+  private final boolean mutable;
   private final HttpHeaders headers;
 
   public HeadersAdaptor(HttpHeaders headers) {
+    this(true, headers);
+  }
+
+  private HeadersAdaptor(boolean mutable, HttpHeaders headers) {
+    this.mutable = mutable;
     this.headers = headers;
   }
 
@@ -60,19 +67,25 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap add(String name, String value) {
+  public HeadersAdaptor add(String name, String value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.add(name, value);
     return this;
   }
 
   @Override
-  public MultiMap add(String name, Iterable<String> values) {
+  public HeadersAdaptor add(String name, Iterable<String> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.add(name, values);
     return this;
   }
 
   @Override
-  public MultiMap addAll(MultiMap headers) {
+  public HeadersAdaptor addAll(MultiMap headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -80,7 +93,7 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap addAll(Map<String, String> map) {
+  public HeadersAdaptor addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -88,7 +101,10 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(String name, String value) {
+  public HeadersAdaptor set(String name, String value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (value != null) {
       headers.set(name, value);
     } else {
@@ -98,13 +114,16 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(String name, Iterable<String> values) {
+  public HeadersAdaptor set(String name, Iterable<String> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.set(name, values);
     return this;
   }
 
   @Override
-  public MultiMap setAll(MultiMap httpHeaders) {
+  public HeadersAdaptor setAll(MultiMap httpHeaders) {
     clear();
     for (Map.Entry<String, String> entry: httpHeaders) {
       add(entry.getKey(), entry.getValue());
@@ -113,13 +132,19 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap remove(String name) {
+  public HeadersAdaptor remove(String name) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.remove(name);
     return this;
   }
 
   @Override
-  public MultiMap clear() {
+  public HeadersAdaptor clear() {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.clear();
     return this;
   }
@@ -135,8 +160,8 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap setAll(Map<String, String> headers) {
-    clear();  
+  public HeadersAdaptor setAll(Map<String, String> headers) {
+    clear();
     for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -169,19 +194,28 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap add(CharSequence name, CharSequence value) {
+  public HeadersAdaptor add(CharSequence name, CharSequence value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.add(name, value);
     return this;
   }
 
   @Override
-  public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+  public HeadersAdaptor add(CharSequence name, Iterable<CharSequence> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.add(name, values);
     return this;
   }
 
   @Override
-  public MultiMap set(CharSequence name, CharSequence value) {
+  public HeadersAdaptor set(CharSequence name, CharSequence value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (value != null) {
       headers.set(name, value);
     } else {
@@ -191,15 +225,31 @@ public class HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+  public HeadersAdaptor set(CharSequence name, Iterable<CharSequence> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.set(name, values);
     return this;
   }
 
   @Override
-  public MultiMap remove(CharSequence name) {
+  public HeadersAdaptor remove(CharSequence name) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.remove(name);
     return this;
+  }
+
+  @Override
+  public boolean isMutable() {
+    return mutable;
+  }
+
+  @Override
+  public io.vertx.core.http.HttpHeaders copy(boolean mutable) {
+    return new HeadersAdaptor(mutable, headers.copy());
   }
 
   @Override

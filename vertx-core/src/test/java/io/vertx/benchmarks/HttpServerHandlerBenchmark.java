@@ -37,12 +37,12 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.VertxHttpRequestDecoder;
 import io.vertx.core.http.impl.VertxHttpResponseEncoder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerResponseInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import org.openjdk.jmh.annotations.*;
 
@@ -214,15 +214,16 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       .withEventLoop(vertxChannel.eventLoop())
       .withClassLoader(Thread.currentThread().getContextClassLoader())
       .build();
+    io.vertx.core.http.HttpHeaders headers = io.vertx.core.http.HttpHeaders
+      .headers()
+      .add(HEADER_CONTENT_TYPE, RESPONSE_TYPE_PLAIN)
+      .add(HEADER_SERVER, SERVER)
+      .add(HEADER_DATE, DATE_STRING)
+      .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH)
+      .copy(false);
     Handler<HttpServerRequest> app = request -> {
-      HttpServerResponse response = request.response();
-      MultiMap headers = response.headers();
-      headers
-          .add(HEADER_CONTENT_TYPE, RESPONSE_TYPE_PLAIN)
-          .add(HEADER_SERVER, SERVER)
-          .add(HEADER_DATE, DATE_STRING)
-          .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
-      response.end(HELLO_WORLD_BUFFER);
+      HttpServerResponseInternal response = (HttpServerResponseInternal) request.response();
+      response.headers(headers).end(HELLO_WORLD_BUFFER);
     };
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(

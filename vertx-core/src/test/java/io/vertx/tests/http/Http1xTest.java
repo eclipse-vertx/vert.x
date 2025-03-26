@@ -1001,7 +1001,14 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testServerPipelining() throws Exception {
-    server.requestHandler(req -> req.response().end("pong"));
+    io.vertx.core.http.HttpHeaders headers = io.vertx.core.http.HttpHeaders
+      .headers()
+      .add(HttpHeaders.CONTENT_TYPE, "text/plain")
+      .add(HttpHeaders.CONTENT_LENGTH, "4")
+      .copy(false);
+    server.requestHandler(req -> {
+      req.response().headers(headers).end("pong");
+    });
     startServer(testAddress);
 
     NetClient client = vertx.createNetClient();
