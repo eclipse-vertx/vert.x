@@ -32,12 +32,12 @@ class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpCo
   private DecoderResult result;
   private ByteBuf content;
 
-  AssembledLastHttpContent(ChannelHandlerContext chctx, ByteBuf content, HttpHeaders trailingHeaders) {
-    this(chctx, content, trailingHeaders, DecoderResult.SUCCESS);
+  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders) {
+    this(content, trailingHeaders, DecoderResult.SUCCESS);
   }
 
-  AssembledLastHttpContent(ChannelHandlerContext chctx, ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
-    super(chctx, true);
+  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
+    super(true);
     this.trailingHeaders = trailingHeaders;
     this.result = result;
     this.content = content;

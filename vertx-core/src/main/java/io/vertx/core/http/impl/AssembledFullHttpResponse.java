@@ -25,8 +25,8 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
 
   private HttpHeaders trailingHeaders;
 
-  public AssembledFullHttpResponse(ChannelHandlerContext chctx, boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf buf, HttpHeaders trailingHeaders) {
-    super(chctx, head, version, status, headers, buf, true);
+  public AssembledFullHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf buf, HttpHeaders trailingHeaders) {
+    super(head, version, status, headers, buf, true);
     this.trailingHeaders = trailingHeaders;
   }
 

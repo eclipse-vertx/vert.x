@@ -28,16 +28,16 @@ class AssembledHttpRequest extends AssembledHttpObject implements HttpContent, H
   private final HttpRequest request;
   protected final HttpContent content;
 
-  AssembledHttpRequest(ChannelHandlerContext chctx, HttpRequest request, ByteBuf buf) {
-    this(chctx, request, new DefaultHttpContent(buf), false);
+  AssembledHttpRequest(HttpRequest request, ByteBuf buf) {
+    this(request, new DefaultHttpContent(buf), false);
   }
 
-  AssembledHttpRequest(ChannelHandlerContext chctx, HttpRequest request, ByteBuf buf, boolean last) {
-    this(chctx, request, new DefaultHttpContent(buf), last);
+  AssembledHttpRequest(HttpRequest request, ByteBuf buf, boolean last) {
+    this(request, new DefaultHttpContent(buf), last);
   }
 
-  AssembledHttpRequest(ChannelHandlerContext chctx, HttpRequest request, HttpContent content, boolean last) {
-    super(chctx, last);
+  AssembledHttpRequest(HttpRequest request, HttpContent content, boolean last) {
+    super(last);
     this.request = request;
     this.content = content;
   }

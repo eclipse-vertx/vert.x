@@ -10,16 +10,11 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultChannelPromise;
-
-public class AssembledHttpObject extends DefaultChannelPromise {
+public class AssembledHttpObject {
 
   private final boolean last;
 
-  public AssembledHttpObject(ChannelHandlerContext chctx, boolean last) {
-    super(chctx.channel(), chctx.executor());
-
+  public AssembledHttpObject(boolean last) {
     this.last = last;
   }
 

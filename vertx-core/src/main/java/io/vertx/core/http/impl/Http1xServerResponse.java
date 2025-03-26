@@ -370,9 +370,9 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(conn.channelHandlerContext(), head, version, status, headers, data, trailingHeaders);
+        msg = new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders);
       } else {
-        msg = new AssembledLastHttpContent(conn.channelHandlerContext(), data, trailingHeaders);
+        msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
       Future<Void> ret = conn.write(msg);
       if (bodyEndHandler != null) {
@@ -448,14 +448,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       bytesWritten = actualLength;
       written = true;
 
-      conn.write(new AssembledHttpResponse(conn.channelHandlerContext(), head, version, status, headers));
+      conn.write(new AssembledHttpResponse(head, version, status, headers));
 
       ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
-          conn.write(new AssembledLastHttpContent(conn.channelHandlerContext(), Unpooled.EMPTY_BUFFER, EmptyHttpHeaders.INSTANCE));
+          conn.write(new AssembledLastHttpContent(Unpooled.EMPTY_BUFFER, EmptyHttpHeaders.INSTANCE));
         }
 
         // signal body end handler
@@ -649,9 +649,9 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       AssembledHttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
-        msg = new AssembledHttpResponse(conn.channelHandlerContext(), head, version, status, headers, chunk);
+        msg = new AssembledHttpResponse(head, version, status, headers, chunk);
       } else {
-        msg = new AssembledHttpContent(conn.channelHandlerContext(), chunk);
+        msg = new AssembledHttpContent( chunk);
       }
       return conn.write(msg);
     }
@@ -668,7 +668,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
-        conn.write(new AssembledHttpResponse(conn.channelHandlerContext(), head, version, status, headers));
+        conn.write(new AssembledHttpResponse(head, version, status, headers));
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();

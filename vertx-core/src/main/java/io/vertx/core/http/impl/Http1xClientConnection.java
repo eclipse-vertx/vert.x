@@ -202,12 +202,12 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
     if (end) {
       if (buf != null) {
-        request = new AssembledFullHttpRequest(chctx, request, buf);
+        request = new AssembledFullHttpRequest(request, buf);
       } else {
-        request = new AssembledFullHttpRequest(chctx, request);
+        request = new AssembledFullHttpRequest(request);
       }
     } else if (buf != null) {
-      request = new AssembledHttpRequest(chctx, request, buf);
+      request = new AssembledHttpRequest(request, buf);
     }
     return request;
   }

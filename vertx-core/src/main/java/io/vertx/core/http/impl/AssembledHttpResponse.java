@@ -34,20 +34,20 @@ class AssembledHttpResponse extends AssembledHttpObject implements io.netty.hand
   private final ByteBuf content;
   private DecoderResult result = DecoderResult.SUCCESS;
 
-  AssembledHttpResponse(ChannelHandlerContext chctx, boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
-    this(chctx, head, version, status, headers, Unpooled.EMPTY_BUFFER, false);
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
+    this(head, version, status, headers, Unpooled.EMPTY_BUFFER, false);
   }
 
-  AssembledHttpResponse(ChannelHandlerContext chctx, boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, boolean last) {
-    this(chctx, head, version, status, headers, Unpooled.EMPTY_BUFFER, last);
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, boolean last) {
+    this(head, version, status, headers, Unpooled.EMPTY_BUFFER, last);
   }
 
-  AssembledHttpResponse(ChannelHandlerContext chctx, boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content) {
-    this(chctx, head, version, status, headers, content, false);
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content) {
+    this(head, version, status, headers, content, false);
   }
 
-  AssembledHttpResponse(ChannelHandlerContext chctx, boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content, boolean last) {
-    super(chctx, last);
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content, boolean last) {
+    super(last);
     this.head = head;
     this.status = status;
     this.version = version;

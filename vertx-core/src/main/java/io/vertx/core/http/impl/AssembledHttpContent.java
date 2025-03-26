@@ -28,8 +28,8 @@ class AssembledHttpContent extends AssembledHttpObject implements HttpContent {
   private DecoderResult result;
   private final ByteBuf content;
 
-  AssembledHttpContent(ChannelHandlerContext chctx, ByteBuf content) {
-    super(chctx, false);
+  AssembledHttpContent(ByteBuf content) {
+    super(false);
     this.result = DecoderResult.SUCCESS;
     this.content = content;
   }

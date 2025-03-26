@@ -30,16 +30,16 @@ import io.netty.handler.codec.http.LastHttpContent;
  */
 class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpRequest {
 
-  public AssembledFullHttpRequest(ChannelHandlerContext chctx, HttpRequest request, LastHttpContent content) {
-    super(chctx, request, content, true);
+  public AssembledFullHttpRequest(HttpRequest request, LastHttpContent content) {
+    super(request, content, true);
   }
 
-  public AssembledFullHttpRequest(ChannelHandlerContext chctx, HttpRequest request) {
-    super(chctx, request, LastHttpContent.EMPTY_LAST_CONTENT, true);
+  public AssembledFullHttpRequest(HttpRequest request) {
+    super(request, LastHttpContent.EMPTY_LAST_CONTENT, true);
   }
 
-  public AssembledFullHttpRequest(ChannelHandlerContext chctx, HttpRequest request, ByteBuf buf) {
-    super(chctx, request, toLastContent(buf), true);
+  public AssembledFullHttpRequest(HttpRequest request, ByteBuf buf) {
+    super(request, toLastContent(buf), true);
   }
 
   private static LastHttpContent toLastContent(ByteBuf buf) {
