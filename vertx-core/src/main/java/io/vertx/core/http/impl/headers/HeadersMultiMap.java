@@ -13,6 +13,7 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
@@ -113,6 +114,7 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
   private final HeadersMultiMap.MapEntry[] entries = new HeadersMultiMap.MapEntry[16];
   private final HeadersMultiMap.MapEntry head = new HeadersMultiMap.MapEntry();
   private final boolean readOnly;
+  private byte[] encoded;
 
   public HeadersMultiMap() {
     this(true, (BiConsumer<CharSequence, CharSequence>) null);
@@ -520,9 +522,25 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
   }
 
   public void encode(ByteBuf buf) {
+    if (readOnly) {
+      byte[] o = encoded;
+      if (o == null) {
+        ByteBuf tmp = Unpooled.buffer();
+        encode0(tmp);
+        o = new byte[tmp.readableBytes()];
+        tmp.getBytes(0, o);
+        encoded = o;
+      }
+      buf.writeBytes(o);
+    } else {
+      encode0(buf);
+    }
+  }
+
+  private void encode0(ByteBuf buf) {
     HeadersMultiMap.MapEntry current = head.after;
     while (current != head) {
-      encoderHeader(current.key, current.value, buf);
+      encodeHeader(current.key, current.value, buf);
       current = current.after;
     }
   }
@@ -530,7 +548,7 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
   private static final int COLON_AND_SPACE_SHORT = (COLON << 8) | SP;
   static final int CRLF_SHORT = (CR << 8) | LF;
 
-  static void encoderHeader(CharSequence name, CharSequence value, ByteBuf buf) {
+  static void encodeHeader(CharSequence name, CharSequence value, ByteBuf buf) {
     final int nameLen = name.length();
     final int valueLen = value.length();
     final int entryLen = nameLen + valueLen + 4;
