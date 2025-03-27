@@ -18,6 +18,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -205,7 +206,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void handleEnd(MultiMap trailers) {
+  void handleEnd(HttpHeaders trailers) {
     halfClosedRemote = true;
     request.handleEnd(trailers);
   }

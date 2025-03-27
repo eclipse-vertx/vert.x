@@ -45,12 +45,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<StreamPriority> priorityHandler;
 
   // Cache these for performance
-  private MultiMap headers;
-  private MultiMap trailers;
+  private HttpHeaders headers;
+  private HttpHeaders trailers;
   private List<String> cookies;
   private NetSocket netSocket;
 
-  HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, MultiMap headers) {
+  HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, HttpHeaders headers) {
     this.version = version;
     this.statusCode = statusCode;
     this.statusMessage = statusMessage;
@@ -96,7 +96,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public MultiMap headers() {
+  public HttpHeaders headers() {
     return headers;
   }
 
@@ -111,7 +111,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public MultiMap trailers() {
+  public HttpHeaders trailers() {
     synchronized (conn) {
       if (trailers == null) {
         trailers = new HeadersAdaptor(new DefaultHttpHeaders());
@@ -234,7 +234,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleEnd(MultiMap trailers) {
+  void handleEnd(HttpHeaders trailers) {
     HttpEventHandler handler;
     synchronized (conn) {
       this.trailers = trailers;

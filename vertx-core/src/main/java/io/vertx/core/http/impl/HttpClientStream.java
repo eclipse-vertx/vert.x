@@ -71,7 +71,7 @@ public interface HttpClientStream extends WriteStream<Buffer> {
 
   void headHandler(Handler<HttpResponseHead> handler);
   void chunkHandler(Handler<Buffer> handler);
-  void endHandler(Handler<MultiMap> handler);
+  void endHandler(Handler<HttpHeaders> handler);
   void priorityHandler(Handler<StreamPriority> handler);
   void closeHandler(Handler<Void> handler);
 

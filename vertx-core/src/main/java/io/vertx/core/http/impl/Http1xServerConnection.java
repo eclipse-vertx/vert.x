@@ -12,11 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
@@ -26,6 +22,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -94,7 +91,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
                                 ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
-    super(context, chctx);
+    super(context, chctx, options.isStrictMode());
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;
@@ -198,20 +195,218 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write(HttpObject msg, PromiseInternal<Void> promise) {
-    writeToChannel(new MessageWrite() {
-      @Override
-      public void write() {
-        Http1xServerConnection.this.write(msg, false, promise == null ? voidPromise : wrap(promise));
-        if (msg instanceof LastHttpContent) {
-          responseComplete();
+  private class HttpObjectWrite implements MessageWrite, ChannelPromise {
+
+    private final Promise<Void> promise;
+    private final AssembledHttpObject message;
+    private ChannelPromise bridge;
+
+    public HttpObjectWrite(ContextInternal context, AssembledHttpObject message) {
+
+      this.promise = context.promise();
+      this.message = message;
+    }
+
+    public void write() {
+      Http1xServerConnection.this.write(message, false, this);
+      if (message.last()) {
+        responseComplete();
+      }
+    }
+
+    @Override
+    public void cancel(Throwable cause) {
+      promise.tryFail(cause);
+    }
+
+
+    @Override
+    public Channel channel() {
+      return Http1xServerConnection.this.channel();
+    }
+
+    @Override
+    public ChannelPromise setSuccess(Void result) {
+      promise.succeed();
+      return this;
+    }
+
+    @Override
+    public ChannelPromise setSuccess() {
+      promise.succeed();
+      return this;
+    }
+
+    @Override
+    public boolean trySuccess() {
+      return promise.tryComplete();
+    }
+
+    @Override
+    public ChannelPromise setFailure(Throwable cause) {
+      promise.fail(cause);
+      return this;
+    }
+
+    private ChannelPromise bridge() {
+      ChannelPromise p;
+      // Could use double-checked locking ?
+      synchronized (HttpObjectWrite.this) {
+        p = bridge;
+        if (p == null) {
+          ChannelPromise pr = chctx.newPromise();
+          p = pr;
+          promise.future().onComplete(ar -> {
+            if (ar.succeeded()) {
+              pr.setSuccess();
+            } else {
+              pr.setFailure(promise.future().cause());
+            }
+          });
+          bridge = p;
         }
       }
-      @Override
-      public void cancel(Throwable cause) {
-        promise.fail(cause);
-      }
-    });
+      return p;
+    }
+
+    @Override
+    public synchronized ChannelPromise addListener(GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>> listener) {
+      return this;
+    }
+
+    @Override
+    public ChannelPromise addListeners(GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>>... listeners) {
+      bridge().addListeners(listeners);
+      return this;
+    }
+
+    @Override
+    public ChannelPromise removeListener(GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>> listener) {
+      bridge().addListeners(listener);
+      return this;
+    }
+
+    @Override
+    public ChannelPromise removeListeners(GenericFutureListener<? extends io.netty.util.concurrent.Future<? super Void>>... listeners) {
+      bridge.removeListeners(listeners);
+      return this;
+    }
+
+    @Override
+    public ChannelPromise sync() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChannelPromise syncUninterruptibly() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChannelPromise await() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChannelPromise awaitUninterruptibly() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChannelPromise unvoid() {
+      return this;
+    }
+
+    @Override
+    public boolean isVoid() {
+      return false;
+    }
+
+    @Override
+    public boolean trySuccess(Void result) {
+      return promise.tryComplete();
+    }
+
+    @Override
+    public boolean tryFailure(Throwable cause) {
+      return promise.tryFail(cause);
+    }
+
+    @Override
+    public boolean setUncancellable() {
+      return true;
+    }
+
+    @Override
+    public boolean isSuccess() {
+      return promise.future().succeeded();
+    }
+
+    @Override
+    public boolean isCancellable() {
+      return false;
+    }
+
+    @Override
+    public Throwable cause() {
+      return promise.future().cause();
+    }
+
+    @Override
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean await(long timeoutMillis) throws InterruptedException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean awaitUninterruptibly(long timeout, TimeUnit unit) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean awaitUninterruptibly(long timeoutMillis) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Void getNow() {
+      return promise.future().result();
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return promise.future().isComplete();
+    }
+
+    @Override
+    public Void get() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Void get(long timeout, TimeUnit unit) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  Future<Void> write(AssembledHttpObject msg) {
+    HttpObjectWrite write = new HttpObjectWrite(context, msg);
+    writeToChannel(write);
+    return write.promise.future();
   }
 
   void responseComplete() {

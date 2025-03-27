@@ -61,8 +61,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.inboundQueue = new InboundMessageChannel<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
-        if (item instanceof MultiMap) {
-          handleEnd((MultiMap) item);
+        if (item instanceof io.vertx.core.http.HttpHeaders) {
+          handleEnd((io.vertx.core.http.HttpHeaders) item);
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
@@ -351,7 +351,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleCustomFrame(HttpFrame frame) {
   }
 
-  void handleEnd(MultiMap trailers) {
+  void handleEnd(io.vertx.core.http.HttpHeaders trailers) {
   }
 
   void handleReset(long errorCode) {

@@ -37,19 +37,14 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.VertxHttpRequestDecoder;
 import io.vertx.core.http.impl.VertxHttpResponseEncoder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerResponseInternal;
 import io.vertx.core.net.impl.VertxHandler;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -65,7 +60,10 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   public static void consume(final ByteBuf buf) {
   }
 
-  ByteBuf GET;
+  @Param({"1"})
+  public int pipelining;
+
+  ByteBuf requestsBytes;
   int readerIndex;
   int writeIndex;
   VertxInternal vertx;
@@ -193,10 +191,10 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   private static final String HELLO_WORLD = "Hello, world!";
   private static final Buffer HELLO_WORLD_BUFFER = Buffer.buffer(HELLO_WORLD);
 
-  private static final CharSequence HEADER_SERVER = io.vertx.core.http.HttpHeaders.createOptimized("server");
-  private static final CharSequence HEADER_DATE = io.vertx.core.http.HttpHeaders.createOptimized("date");
-  private static final CharSequence HEADER_CONTENT_TYPE = io.vertx.core.http.HttpHeaders.createOptimized("content-type");
-  private static final CharSequence HEADER_CONTENT_LENGTH = io.vertx.core.http.HttpHeaders.createOptimized("content-length");
+  private static final CharSequence HEADER_SERVER = io.vertx.core.http.HttpHeaders.SERVER;
+  private static final CharSequence HEADER_DATE = io.vertx.core.http.HttpHeaders.DATE;
+  private static final CharSequence HEADER_CONTENT_TYPE = io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
+  private static final CharSequence HEADER_CONTENT_LENGTH = io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
   private static final CharSequence HELLO_WORLD_LENGTH = io.vertx.core.http.HttpHeaders.createOptimized("" + HELLO_WORLD.length());
   private static final CharSequence SERVER = io.vertx.core.http.HttpHeaders.createOptimized("vert.x");
@@ -216,21 +214,22 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       .withEventLoop(vertxChannel.eventLoop())
       .withClassLoader(Thread.currentThread().getContextClassLoader())
       .build();
+    io.vertx.core.http.HttpHeaders headers = io.vertx.core.http.HttpHeaders
+      .headers()
+      .add(HEADER_CONTENT_TYPE, RESPONSE_TYPE_PLAIN)
+      .add(HEADER_SERVER, SERVER)
+      .add(HEADER_DATE, DATE_STRING)
+      .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH)
+      .copy(false);
     Handler<HttpServerRequest> app = request -> {
-      HttpServerResponse response = request.response();
-      MultiMap headers = response.headers();
-      headers
-          .add(HEADER_CONTENT_TYPE, RESPONSE_TYPE_PLAIN)
-          .add(HEADER_SERVER, SERVER)
-          .add(HEADER_DATE, DATE_STRING)
-          .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
-      response.end(HELLO_WORLD_BUFFER);
+      HttpServerResponseInternal response = (HttpServerResponseInternal) request.response();
+      response.headers(headers).end(HELLO_WORLD_BUFFER);
     };
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(
         () -> context,
               null,
-        new HttpServerOptions(),
+        new HttpServerOptions().setStrictMode(true),
         chctx,
         context,
         "localhost",
@@ -316,17 +315,19 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     });
     nettyChannel.config().setAllocator(new Alloc());
 
-    GET = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((
-      "GET / HTTP/1.1\r\n" +
-        "\r\n").getBytes()));
-    readerIndex = GET.readerIndex();
-    writeIndex = GET.writerIndex();
+    StringBuilder s = new StringBuilder();
+    for (int i = 0;i < pipelining;i++) {
+      s.append("GET / HTTP/1.1\r\n").append("\r\n");
+    }
+    requestsBytes = Unpooled.unreleasableBuffer(Unpooled.copiedBuffer((s.toString()).getBytes()));
+    readerIndex = requestsBytes.readerIndex();
+    writeIndex = requestsBytes.writerIndex();
   }
 
   @Benchmark
   public Object vertx() {
-    GET.setIndex(readerIndex, writeIndex);
-    vertxChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(requestsBytes);
     return vertxChannel.outboundMessages().poll();
   }
 
@@ -334,12 +335,14 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
       "-Dvertx.disableHttpHeadersValidation=true",
-      "-Dvertx.disableMetrics=true"
+      "-Dvertx.disableMetrics=true",
+      "-Dio.netty.buffer.checkAccessible=false",
+      "-Dio.netty.buffer.checkBounds=false"
   })
   @Benchmark
   public Object vertxOpt() {
-    GET.setIndex(readerIndex, writeIndex);
-    vertxChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(requestsBytes);
     return vertxChannel.outboundMessages().poll();
   }
 
@@ -347,19 +350,21 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     "-Dvertx.threadChecks=false",
     "-Dvertx.disableContextTimings=true",
     "-Dvertx.disableHttpHeadersValidation=true",
-    "-Dvertx.disableMetrics=false"
+    "-Dvertx.disableMetrics=false",
+    "-Dio.netty.buffer.checkAccessible=false",
+    "-Dio.netty.buffer.checkBounds=false"
   })
   @Benchmark
   public Object vertxOptMetricsOn() {
-    GET.setIndex(readerIndex, writeIndex);
-    vertxChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    vertxChannel.writeInbound(requestsBytes);
     return vertxChannel.outboundMessages().poll();
   }
 
   @Benchmark
   public Object netty() {
-    GET.setIndex(readerIndex, writeIndex);
-    nettyChannel.writeInbound(GET);
+    requestsBytes.setIndex(readerIndex, writeIndex);
+    nettyChannel.writeInbound(requestsBytes);
     return nettyChannel.outboundMessages().poll();
   }
 }

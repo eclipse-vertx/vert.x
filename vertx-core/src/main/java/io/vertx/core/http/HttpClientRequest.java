@@ -171,8 +171,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * @return The HTTP headers
    */
-  @CacheReturn
-  MultiMap headers();
+  HttpHeaders headers();
 
   /**
    * Put an HTTP header

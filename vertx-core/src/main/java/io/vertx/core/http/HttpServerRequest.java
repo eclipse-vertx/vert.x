@@ -76,6 +76,9 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
   };
 
   @Override
+  HttpHeaders headers();
+
+  @Override
   HttpServerRequest exceptionHandler(Handler<Throwable> handler);
 
   @Override

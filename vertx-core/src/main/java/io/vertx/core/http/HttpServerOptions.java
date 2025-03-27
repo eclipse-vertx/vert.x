@@ -44,6 +44,8 @@ import java.util.concurrent.TimeUnit;
 @JsonGen(publicConverter = false)
 public class HttpServerOptions extends NetServerOptions {
 
+  public static final boolean DEFAULT_STRICT_MODE = false;
+
   /**
    * Default port the server will listen on = 80
    */
@@ -200,6 +202,7 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final TimeUnit DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
+  private boolean strictMode;
   private boolean compressionSupported;
   private int compressionLevel;
   private int compressionContentSizeThreshold;
@@ -307,6 +310,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   private void init() {
+    strictMode = DEFAULT_STRICT_MODE;
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     compressionContentSizeThreshold = DEFAULT_COMPRESSION_CONTENT_SIZE_THRESHOLD;
@@ -534,6 +538,15 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
     return (HttpServerOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
+  public boolean isStrictMode() {
+    return strictMode;
+  }
+
+  public HttpServerOptions setStrictMode(boolean strictMode) {
+    this.strictMode = strictMode;
+    return this;
   }
 
   /**

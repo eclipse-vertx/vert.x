@@ -14,6 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.DefaultByteBufHolder;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -24,20 +26,21 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpContent {
+class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpContent {
 
   private final HttpHeaders trailingHeaders;
   private DecoderResult result;
+  private ByteBuf content;
 
-
-  AssembledLastHttpContent(ByteBuf buf, HttpHeaders trailingHeaders) {
-    this(buf, trailingHeaders, DecoderResult.SUCCESS);
+  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders) {
+    this(content, trailingHeaders, DecoderResult.SUCCESS);
   }
 
-  AssembledLastHttpContent(ByteBuf buf, HttpHeaders trailingHeaders, DecoderResult result) {
-    super(buf);
+  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
+    super(true);
     this.trailingHeaders = trailingHeaders;
     this.result = result;
+    this.content = content;
   }
 
   @Override
@@ -52,14 +55,34 @@ class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpC
 
   @Override
   public LastHttpContent retain(int increment) {
-    super.retain(increment);
+    content.retain(increment);
     return this;
   }
 
   @Override
   public LastHttpContent retain() {
-    super.retain();
+    content.retain();
     return this;
+  }
+
+  @Override
+  public ByteBuf content() {
+    return content;
+  }
+
+  @Override
+  public int refCnt() {
+    return content.refCnt();
+  }
+
+  @Override
+  public boolean release() {
+    return content.release();
+  }
+
+  @Override
+  public boolean release(int decrement) {
+    return content.release(decrement);
   }
 
   @Override
@@ -94,13 +117,13 @@ class AssembledLastHttpContent extends DefaultByteBufHolder implements LastHttpC
 
   @Override
   public AssembledLastHttpContent touch() {
-    super.touch();
+    content.touch();
     return this;
   }
 
   @Override
   public AssembledLastHttpContent touch(Object hint) {
-    super.touch(hint);
+    content.touch(hint);
     return this;
   }
 }

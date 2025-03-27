@@ -45,7 +45,11 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   protected ChannelPromise closePromise;
 
   Http1xConnection(ContextInternal context, ChannelHandlerContext chctx) {
-    super(context, chctx);
+    this(context, chctx, false);
+  }
+
+  Http1xConnection(ContextInternal context, ChannelHandlerContext chctx, boolean strictMode) {
+    super(context, chctx, strictMode);
   }
 
   @Override

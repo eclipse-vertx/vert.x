@@ -29,6 +29,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.HttpServerResponseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -42,7 +43,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
+public class Http2ServerResponse extends HttpServerResponseInternal implements HttpResponse {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
@@ -192,13 +193,19 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public MultiMap headers() {
+  public HttpHeaders headers() {
     synchronized (conn) {
       if (headersMap == null) {
         headersMap = new Http2HeadersAdaptor(headers);
       }
       return headersMap;
     }
+  }
+
+  @Override
+  public HttpServerResponse headers(HttpHeaders headers) {
+    headers().clear().setAll(headers);
+    return this;
   }
 
   @Override
@@ -238,7 +245,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public MultiMap trailers() {
+  public HttpHeaders trailers() {
     synchronized (conn) {
       if (trailedMap == null) {
         trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
