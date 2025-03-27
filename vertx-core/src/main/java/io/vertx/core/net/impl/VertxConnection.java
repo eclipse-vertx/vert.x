@@ -222,7 +222,7 @@ public class VertxConnection extends ConnectionBase {
       reportBytesRead(msg);
     }
     read = true;
-    if (!reentrant && !paused && pending == null) {
+    if (!reentrant && !paused && (pending == null || pending.isEmpty())) {
       // Fast path
       reentrant = true;
       try {
@@ -230,6 +230,8 @@ public class VertxConnection extends ConnectionBase {
       } finally {
         reentrant = false;
       }
+      // The pending queue could be not empty at this stage if a pending message was added by calling handleMessage
+      // Subsequent calls to read or readComplete will take care of these messages
     } else {
       addPending(msg);
     }
