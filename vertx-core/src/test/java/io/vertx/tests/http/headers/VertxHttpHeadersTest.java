@@ -11,17 +11,17 @@
 
 package io.vertx.tests.http.headers;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.Set;
 
 import static io.vertx.tests.http.impl.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
 import static org.junit.Assert.*;
@@ -320,5 +320,42 @@ public class VertxHttpHeadersTest extends HeadersTest {
     headers.set("foo", "foo1");
     headers.set("bar", Arrays.asList("bar1", "bar2"));
     HeadersMultiMap copy = headers.copy(false);
+  }
+
+  @Test
+  public void testListIterator() {
+    HeadersMultiMap headers = newMultiMap();
+    headers.add("foo", "foo1");
+    headers.add("bar", "bar1");
+    headers.add("bar", "bar2");
+    Map.Entry<CharSequence, CharSequence> entry;
+    Iterator<Map.Entry<CharSequence, CharSequence>> it = headers.iteratorCharSequence();
+    assertTrue(it.hasNext());
+    entry = it.next();
+    assertEquals("foo", entry.getKey().toString());
+    assertEquals("foo1", entry.getValue().toString());
+    assertTrue(it.hasNext());
+    entry = it.next();
+    assertEquals("bar", entry.getKey().toString());
+    assertEquals("bar1", entry.getValue().toString());
+    assertTrue(it.hasNext());
+    entry = it.next();
+    assertEquals("bar", entry.getKey().toString());
+    assertEquals("bar2", entry.getValue().toString());
+    assertFalse(it.hasNext());
+  }
+
+  @Test
+  public void testEncode() {
+    HeadersMultiMap headers = newMultiMap();
+    headers.add("foo", "foo1");
+    headers.add("bar", "bar1");
+    headers.add("bar", "bar2");
+    ByteBuf buf = Unpooled.buffer();
+    headers.encode(buf);
+    assertEquals(
+      "foo: foo1\r\n" +
+      "bar: bar1\r\n" +
+      "bar: bar2\r\n", buf.toString(StandardCharsets.UTF_8));
   }
 }

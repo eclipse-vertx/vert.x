@@ -87,12 +87,14 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
     if (headers instanceof HeadersMultiMap) {
       clear();
       HeadersMultiMap that = (HeadersMultiMap) headers;
-      MapEntry thatHead = that.head;
-      MapEntry curr = thatHead;
-      while (curr.after != thatHead) {
-        MapEntry next = curr.after;
-        add(next.key, next.value);
-        curr = next;
+      MapEntry head = that.head;
+      MapEntry e = head;
+      if (e != null) {
+        do {
+          add(e.key, e.value);
+          e = e.after;
+        }
+        while (e != head);
       }
       return this;
     } else {
@@ -112,8 +114,8 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
 
   private final BiConsumer<CharSequence, CharSequence> validator;
   private final HeadersMultiMap.MapEntry[] entries = new HeadersMultiMap.MapEntry[16];
-  private final HeadersMultiMap.MapEntry head = new HeadersMultiMap.MapEntry();
   private final boolean readOnly;
+  private HeadersMultiMap.MapEntry head = null;
   private byte[] encoded;
 
   public HeadersMultiMap() {
@@ -125,16 +127,12 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
   }
 
   private HeadersMultiMap(boolean mutable, BiConsumer<CharSequence, CharSequence> validator) {
-
-    head.before = head.after = head;
-
     this.readOnly = !mutable;
     this.validator = validator;
   }
 
   private HeadersMultiMap(boolean mutable, HeadersMultiMap that) {
 
-    head.before = head.after = head;
     setAll((MultiMap) that);
 
     this.readOnly = !mutable;
@@ -373,19 +371,25 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
 
   @Override
   public void forEach(Consumer<? super Map.Entry<String, String>> action) {
-    HeadersMultiMap.MapEntry e = head.after;
-    while (e != head) {
-      action.accept(e.stringEntry());
-      e = e.after;
+    MapEntry e = head;
+    if (e != null) {
+      do {
+        action.accept(e.stringEntry());
+        e = e.after;
+      }
+      while (e != head);
     }
   }
 
   @Override
   public void forEach(BiConsumer<String, String> action) {
-    HeadersMultiMap.MapEntry e = head.after;
-    while (e != head) {
-      action.accept(e.getKey().toString(), e.getValue().toString());
-      e = e.after;
+    MapEntry e = head;
+    if (e != null) {
+      do {
+        action.accept(e.getKey().toString(), e.getValue().toString());
+        e = e.after;
+      }
+      while (e != head);
     }
   }
 
@@ -394,56 +398,99 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
     return io.vertx.core.http.HttpHeaders.super.entries();
   }
 
+  private static abstract class IteratorBase<T> implements Iterator<T> {
+
+    private final MapEntry head;
+    private MapEntry curr;
+
+    public IteratorBase(MapEntry head) {
+      this.head = head;
+      this.curr = head;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return curr != null;
+    }
+
+    @Override
+    public T next() {
+      if (curr == null) {
+        throw new NoSuchElementException();
+      }
+      MapEntry e = curr;
+      MapEntry next = e.after;
+      curr = next == head ? null : next;
+      return map(e);
+    }
+
+    protected abstract T map(MapEntry e);
+
+  }
+
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return new Iterator<>() {
-      MapEntry curr = head;
-      @Override
-      public boolean hasNext() {
-        return curr.after != head;
-      }
-      @Override
-      public Map.Entry<String, String> next() {
-        MapEntry next = curr.after;
-        if (next == head){
-          throw new NoSuchElementException();
+    MapEntry h = head;
+    if (h == null) {
+      return Collections.emptyIterator();
+    } else {
+      return new IteratorBase<>(h) {
+        @Override
+        protected Map.Entry<String, String> map(MapEntry e) {
+          return new Map.Entry<>() {
+            @Override
+            public String getKey() {
+              return e.key.toString();
+            }
+            @Override
+            public String getValue() {
+              return e.value.toString();
+            }
+            @Override
+            public String setValue(String value) {
+              return e.setValue(value).toString();
+            }
+            @Override
+            public String toString() {
+              return getKey() + "=" + getValue();
+            }
+          };
         }
-        curr = next;
-        return new Map.Entry<>() {
-          @Override
-          public String getKey() {
-            return next.key.toString();
-          }
-          @Override
-          public String getValue() {
-            return next.value.toString();
-          }
-          @Override
-          public String setValue(String value) {
-            return next.setValue(value).toString();
-          }
-          @Override
-          public String toString() {
-            return getKey() + "=" + getValue();
-          }
-        };
+      };
+    }
+  }
+
+  @Override
+  public Iterator<Map.Entry<CharSequence, CharSequence>> iteratorCharSequence() {
+    MapEntry h = head;
+    if (h == null) {
+      return Collections.emptyIterator();
+    }
+    return new IteratorBase<>(h) {
+      @Override
+      protected Map.Entry<CharSequence, CharSequence> map(MapEntry e) {
+        return e;
       }
     };
   }
 
   @Override
   public boolean isEmpty() {
-    return head == head.after;
+    return head == null;
   }
 
   @Override
   public Set<String> names() {
+    HeadersMultiMap.MapEntry e = head;
+    if (e == null) {
+      return Collections.emptySet();
+    }
     Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-    HeadersMultiMap.MapEntry e = head.after;
-    while (e != head) {
+    do {
       names.add(e.getKey().toString());
       e = e.after;
     }
+    while (e != head);
     return names;
   }
 
@@ -453,7 +500,7 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
       throw new IllegalStateException("Read only");
     }
     Arrays.fill(entries, null);
-    head.before = head.after = head;
+    head = null;
     return this;
   }
 
@@ -496,23 +543,6 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
   }
 
   @Override
-  public Iterator<Map.Entry<CharSequence, CharSequence>> iteratorCharSequence() {
-    return new Iterator<Map.Entry<CharSequence, CharSequence>>() {
-      HeadersMultiMap.MapEntry current = head.after;
-      @Override
-      public boolean hasNext() {
-        return current != head;
-      }
-      @Override
-      public Map.Entry<CharSequence, CharSequence> next() {
-        Map.Entry<CharSequence, CharSequence> next = current;
-        current = current.after;
-        return next;
-      }
-    };
-  }
-
-  @Override
   public HttpHeaders addInt(CharSequence name, int value) {
     throw new UnsupportedOperationException();
   }
@@ -549,11 +579,16 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
   }
 
   private void encode0(ByteBuf buf) {
-    HeadersMultiMap.MapEntry current = head.after;
-    while (current != head) {
-      encodeHeader(current.key, current.value, buf);
-      current = current.after;
+    MapEntry h = head;
+    if (h == null) {
+      return;
     }
+    HeadersMultiMap.MapEntry c = h;
+    do {
+      encodeHeader(c.key, c.value, buf);
+      c = c.after;
+    }
+    while (c != h);
   }
 
   private static final int COLON_AND_SPACE_SHORT = (COLON << 8) | SP;
@@ -601,20 +636,6 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
       this.hash = hash;
       this.key = key;
       this.value = value;
-    }
-
-    void remove() {
-      before.after = after;
-      after.before = before;
-      after = null;
-      before = null;
-    }
-
-    void addBefore(HeadersMultiMap.MapEntry e) {
-      after  = e;
-      before = e.before;
-      before.after = this;
-      after.before = this;
     }
 
     @Override
@@ -671,7 +692,17 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
         } else {
           prev.next = next;
         }
-        e.remove();
+        if (e == head) {
+          if (head.after == head) {
+            head = null;
+          } else {
+            head = head.after;
+          }
+        }
+        e.before.after = e.after;
+        e.after.before = e.before;
+        e.after = null;
+        e.before = null;
       } else {
         prev = e;
       }
@@ -693,7 +724,16 @@ public final class HeadersMultiMap extends HttpHeaders implements io.vertx.core.
     newEntry.next = e;
 
     // Update the linked list.
-    newEntry.addBefore(head);
+    if (head == null) {
+      head = newEntry;
+      newEntry.after = newEntry;
+      newEntry.before = newEntry;
+    } else {
+      newEntry.after = head;
+      newEntry.before = head.before;
+      head.before.after = newEntry;
+      head.before = newEntry;
+    }
   }
 
   private HeadersMultiMap set0(final CharSequence name, final CharSequence strVal) {
