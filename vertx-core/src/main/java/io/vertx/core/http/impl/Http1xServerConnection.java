@@ -198,11 +198,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write(HttpObject msg, PromiseInternal<Void> promise) {
+  void write(HttpObject msg, Promise<Void> promise) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
-        Http1xServerConnection.this.write(msg, false, promise == null ? voidPromise : wrap(promise));
+        Http1xServerConnection.this.write(msg, false, promise);
         if (msg instanceof LastHttpContent) {
           responseComplete();
         }
@@ -236,7 +236,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
           }
         }
       } else {
-        ChannelPromise channelFuture = channelFuture();
+        ChannelPromise channelFuture = newChannelPromise();
         writeToChannel(Unpooled.EMPTY_BUFFER, channelFuture);
         channelFuture.addListener(fut -> fail(result.cause()));
       }
@@ -426,13 +426,13 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE), promise);
   }
 
-  void write103EarlyHints(HttpHeaders headers, PromiseInternal<Void> promise) {
+  void write103EarlyHints(HttpHeaders headers, Promise<Void> promise) {
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1,
       HttpResponseStatus.EARLY_HINTS,
       Unpooled.buffer(0),
       headers,
       EmptyHttpHeaders.INSTANCE
-    )).addListener(promise);
+    ), newChannelPromise(promise));
   }
 
   protected void handleClosed() {

@@ -425,8 +425,12 @@ public abstract class ConnectionBase {
     }
   }
 
-  public ChannelPromise channelFuture() {
+  public ChannelPromise newChannelPromise() {
     return chctx.newPromise();
+  }
+
+  public ChannelPromise newChannelPromise(Promise<Void> promise) {
+    return new DelegatingChannelPromise(promise, channel());
   }
 
   public String remoteName() {

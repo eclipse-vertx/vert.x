@@ -22,6 +22,7 @@ import io.netty.util.ReferenceCounted;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
@@ -142,7 +143,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   @Override
   public Future<Void> writeMessage(Object message) {
-    PromiseInternal<Void> promise = context.promise();
+    Promise<Void> promise = context.promise();
     writeToChannel(message, promise);
     return promise.future();
   }

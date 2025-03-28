@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
@@ -305,7 +306,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       if (isClosed()) {
         return context.failedFuture("WebSocket is closed");
       }
-      PromiseInternal<Void> promise = context.promise();
+      Promise<Void> promise = context.promise();
       conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
       return promise.future();
     }
