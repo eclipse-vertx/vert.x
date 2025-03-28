@@ -224,39 +224,52 @@ public class WebSocketConnectOptions extends RequestOptions {
     return (WebSocketConnectOptions) super.setIdleTimeout(timeout);
   }
 
+  @GenIgnore
   @Override
   public WebSocketConnectOptions addHeader(String key, String value) {
     return (WebSocketConnectOptions) super.addHeader(key, value);
   }
 
+  @GenIgnore
   @Override
   public WebSocketConnectOptions addHeader(CharSequence key, CharSequence value) {
     return (WebSocketConnectOptions) super.addHeader(key, value);
   }
 
+  @GenIgnore
   @Override
   public WebSocketConnectOptions addHeader(CharSequence key, Iterable<CharSequence> values) {
     return (WebSocketConnectOptions) super.addHeader(key, values);
   }
 
+  @GenIgnore
   @Override
   public WebSocketConnectOptions putHeader(String key, String value) {
     return (WebSocketConnectOptions) super.putHeader(key, value);
   }
 
+  @GenIgnore
   @Override
   public WebSocketConnectOptions putHeader(CharSequence key, CharSequence value) {
     return (WebSocketConnectOptions) super.putHeader(key, value);
   }
 
+  @GenIgnore
   @Override
   public WebSocketConnectOptions putHeader(CharSequence key, Iterable<CharSequence> values) {
     return (WebSocketConnectOptions) super.putHeader(key, values);
   }
 
+  @Deprecated
   @GenIgnore
   @Override
   public WebSocketConnectOptions setHeaders(MultiMap headers) {
+    return (WebSocketConnectOptions) super.setHeaders(headers);
+  }
+
+  @GenIgnore
+  @Override
+  public WebSocketConnectOptions setHeaders(HttpHeaders headers) {
     return (WebSocketConnectOptions) super.setHeaders(headers);
   }
 

@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
@@ -52,7 +53,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   protected final Http2ServerStream stream;
   protected final Http2ServerResponse response;
   private final String serverOrigin;
-  private final MultiMap headersMap;
+  private final HttpHeaders headersMap;
 
   // Accessed on context thread
   private Charset paramsCharset = StandardCharsets.UTF_8;
@@ -335,7 +336,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public MultiMap headers() {
+  public HttpHeaders headers() {
     return headersMap;
   }
 

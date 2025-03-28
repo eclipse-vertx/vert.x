@@ -64,6 +64,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.stream.IntStream;
 
+import static io.vertx.core.http.HttpHeaders.headers;
 import static io.vertx.core.http.HttpMethod.*;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
@@ -2612,28 +2613,28 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHeadAllowsContentLengthHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.set("content-length", "34"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.headers().set("content-length", "34"));
     assertEquals("34", respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
   @Test
   public void testHeadRemovesTransferEncodingHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.set("transfer-encoding", "chunked"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.HEAD, 200, HttpHeaders.headers().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
   @Test
   public void testNoContentRemovesContentLengthHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, HttpHeaders.set("content-length", "34"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, HttpHeaders.headers().set("content-length", "34"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
   @Test
   public void testNoContentRemovesTransferEncodingHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, HttpHeaders.set("transfer-encoding", "chunked"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 204, HttpHeaders.headers().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
@@ -2647,7 +2648,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testResetContentRemovesTransferEncodingHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, HttpHeaders.set("transfer-encoding", "chunked"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 205, HttpHeaders.headers().set("transfer-encoding", "chunked"));
     assertEquals("0", respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
@@ -2661,28 +2662,28 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testNotModifiedAllowsContentLengthHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.set("content-length", "34"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.headers().set("content-length", "34"));
     assertEquals("34", respHeaders.get("Content-Length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
   @Test
   public void testNotModifiedRemovesTransferEncodingHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.set("transfer-encoding", "chunked"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 304, HttpHeaders.headers().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
   @Test
   public void test1xxRemovesContentLengthHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, HttpHeaders.set("content-length", "34"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, HttpHeaders.headers().set("content-length", "34"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
   @Test
   public void test1xxRemovesTransferEncodingHeader() throws Exception {
-    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, HttpHeaders.set("transfer-encoding", "chunked"));
+    MultiMap respHeaders = checkEmptyHttpResponse(HttpMethod.GET, 102, HttpHeaders.headers().set("transfer-encoding", "chunked"));
     assertNull(respHeaders.get("content-length"));
     assertNull(respHeaders.get("transfer-encoding"));
   }
@@ -4419,7 +4420,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
-    MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
+    HttpHeaders headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://" + DEFAULT_HTTP_HOST_AND_PORT;
     class MockReq implements HttpClientRequest {
@@ -4439,7 +4440,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setURI(String uri) { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
       public String query() { throw new UnsupportedOperationException(); }
-      public MultiMap headers() { return headers; }
+      public HttpHeaders headers() { return headers; }
       public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
@@ -4483,11 +4484,11 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpVersion version() { throw new UnsupportedOperationException(); }
       public int statusCode() { return status; }
       public String statusMessage() { throw new UnsupportedOperationException(); }
-      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public HttpHeaders headers() { throw new UnsupportedOperationException(); }
       public String getHeader(String headerName) { return headers.get(headerName); }
       public String getHeader(CharSequence headerName) { return getHeader(headerName.toString()); }
       public String getTrailer(String trailerName) { throw new UnsupportedOperationException(); }
-      public MultiMap trailers() { throw new UnsupportedOperationException(); }
+      public HttpHeaders trailers() { throw new UnsupportedOperationException(); }
       public List<String> cookies() { throw new UnsupportedOperationException(); }
       public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }

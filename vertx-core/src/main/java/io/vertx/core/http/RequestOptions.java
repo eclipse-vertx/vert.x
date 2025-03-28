@@ -88,7 +88,7 @@ public class RequestOptions extends HttpConnectOptions {
 
   private HttpMethod method;
   private String uri;
-  private MultiMap headers;
+  private HttpHeaders headers;
   private boolean followRedirects;
   private long timeout;
   private long idleTimeout;
@@ -459,9 +459,23 @@ public class RequestOptions extends HttpConnectOptions {
    *
    * @param headers  the headers
    * @return  a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setHeaders(HttpHeaders)}
    */
+  @Deprecated
   @GenIgnore
   public RequestOptions setHeaders(MultiMap headers) {
+    this.headers = headers == null ? null : HttpHeaders.headers().setAll(headers);
+    return this;
+  }
+
+  /**
+   * Set request headers.
+   *
+   * @param headers  the headers
+   * @return  a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public RequestOptions setHeaders(HttpHeaders headers) {
     this.headers = headers;
     return this;
   }
@@ -472,7 +486,7 @@ public class RequestOptions extends HttpConnectOptions {
    * @return  the headers
    */
   @GenIgnore
-  public MultiMap getHeaders() {
+  public HttpHeaders getHeaders() {
     return headers;
   }
 

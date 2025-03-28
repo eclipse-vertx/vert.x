@@ -12,6 +12,7 @@ package io.vertx.core.internal.http;
 
 import io.vertx.core.Context;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.observability.HttpRequest;
 
@@ -21,6 +22,9 @@ import io.vertx.core.spi.observability.HttpRequest;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpServerRequestInternal implements HttpServerRequest {
+
+  @Override
+  public abstract HttpServerResponse response();
 
   /**
    * @return the Vert.x context associated with this server request

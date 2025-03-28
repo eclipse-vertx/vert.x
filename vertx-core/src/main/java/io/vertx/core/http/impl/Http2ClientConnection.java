@@ -240,7 +240,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private boolean responseEnded;
     protected Handler<HttpResponseHead> headHandler;
     protected Handler<Buffer> chunkHandler;
-    protected Handler<MultiMap> endHandler;
+    protected Handler<io.vertx.core.http.HttpHeaders> endHandler;
     protected Handler<StreamPriority> priorityHandler;
     protected Handler<Void> drainHandler;
     protected Handler<Void> continueHandler;
@@ -476,7 +476,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public void endHandler(Handler<io.vertx.core.http.HttpHeaders> handler) {
       endHandler = handler;
     }
 
@@ -496,7 +496,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleEnd(MultiMap trailers) {
+    void handleEnd(io.vertx.core.http.HttpHeaders trailers) {
       if (endHandler != null) {
         endHandler.handle(trailers);
       }

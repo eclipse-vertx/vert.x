@@ -20,7 +20,6 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.NetServer;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
@@ -385,7 +384,9 @@ public class HTTPExamples {
     HttpClientAgent client = vertx.createHttpClient();
 
     // Write some headers using the headers multi-map
-    MultiMap headers = HttpHeaders.set("content-type", "application/json").set("other-header", "foo");
+    MultiMap headers = HttpHeaders.headers()
+      .set("content-type", "application/json")
+      .set("other-header", "foo");
 
     client
       .request(HttpMethod.GET, "some-uri")
