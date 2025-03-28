@@ -322,8 +322,17 @@ public class VertxConnection extends ConnectionBase {
   /**
    * Like {@link #write(Object, boolean, ChannelPromise)}.
    */
-  public void write(Object msg, boolean forceFlush, FutureListener<Void> promise) {
-    write(msg, forceFlush, wrap(promise));
+  public final ChannelPromise write(Object msg, boolean forceFlush, Promise<Void> promise) {
+    ChannelPromise channelPromise = promise == null ? voidPromise : newChannelPromise(promise);
+    write(msg, forceFlush, channelPromise);
+    return channelPromise;
+  }
+
+  /**
+   * Like {@link #write(Object, boolean, ChannelPromise)}.
+   */
+  public final ChannelPromise write(Object msg, boolean forceFlush) {
+    return write(msg, forceFlush, voidPromise);
   }
 
   /**
@@ -335,7 +344,7 @@ public class VertxConnection extends ConnectionBase {
    * @param forceFlush flush when {@code true} or there is no read in progress
    * @param promise the promise receiving the completion event
    */
-  public void write(Object msg, boolean forceFlush, ChannelPromise promise) {
+  public final ChannelPromise write(Object msg, boolean forceFlush, ChannelPromise promise) {
     assert chctx.executor().inEventLoop();
     if (METRICS_ENABLED) {
       reportsBytesWritten(msg);
@@ -347,6 +356,7 @@ public class VertxConnection extends ConnectionBase {
     } else {
       chctx.write(msg, promise);
     }
+    return promise;
   }
 
   /**
@@ -368,8 +378,8 @@ public class VertxConnection extends ConnectionBase {
     return writeToChannel(obj, voidPromise);
   }
 
-  public final boolean writeToChannel(Object msg, FutureListener<Void> listener) {
-    return writeToChannel(msg, listener == null ? voidPromise : wrap(listener));
+  public final boolean writeToChannel(Object msg, Promise<Void> listener) {
+    return writeToChannel(msg, listener == null ? voidPromise : newChannelPromise(listener));
   }
 
   public final boolean writeToChannel(Object msg, ChannelPromise promise) {

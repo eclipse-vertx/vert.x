@@ -17,6 +17,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -45,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
-public class ConnectionBaseTest extends VertxTestBase {
+public class VertxConnectionTest extends VertxTestBase {
 
   private NetClient client;
   private NetServer server;
@@ -226,9 +227,8 @@ public class ConnectionBaseTest extends VertxTestBase {
       while (conn.writeToChannel(chunk.getByteBuf())) {
         num++;
       }
-      conn.writeToChannel(Unpooled.EMPTY_BUFFER, future -> {
-        ctx.emit(v -> testComplete());
-      });
+      Future.<Void>future(future -> conn.writeToChannel(Unpooled.EMPTY_BUFFER, future))
+        .onComplete(onSuccess(v1 -> ctx.emit(v2 -> testComplete())));
       drain.complete(null);
     };
     client.connect(1234, "localhost")
@@ -423,7 +423,6 @@ public class ConnectionBaseTest extends VertxTestBase {
   @Test
   public void testReentrantRead() throws Exception {
     connectHandler = conn -> {
-      VertxConnection vertxConn = (VertxConnection) conn;
       ChannelHandlerContext ctx = conn.channelHandlerContext();
       ChannelPipeline pipeline = ctx.pipeline();
       AtomicInteger reentrant = new AtomicInteger();
@@ -500,6 +499,32 @@ public class ConnectionBaseTest extends VertxTestBase {
     so.write("ping");
     awaitLatch(latch);
     so.resume();
+    await();
+  }
+
+  @Test
+  public void testChannelPromisePiggiesBackOnEventLoop() throws Exception {
+    waitFor(2);
+    disableThreadChecks();
+    connectHandler = conn -> {
+      Promise<Void> promise = Promise.promise();
+      ChannelPromise channelPromise = ((VertxConnection) conn).write(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8), false, promise);
+      Future<Void> future = promise.future();
+      future.onComplete(onSuccess(v -> {
+        new Thread(() -> {
+          Thread curr = Thread.currentThread();
+          future.onComplete(ar -> {
+            assertSame(curr, Thread.currentThread());
+            complete();
+          });
+          channelPromise.addListener((ChannelFutureListener) f -> {
+            assertTrue(channelPromise.channel().eventLoop().inEventLoop());
+            complete();
+          });
+        }).start();
+      }));
+    };
+    awaitFuture(client.connect(1234, "localhost"));
     await();
   }
 
@@ -644,7 +669,7 @@ public class ConnectionBaseTest extends VertxTestBase {
   private class TestConnection extends VertxConnection {
     Handler<Message> handler;
     public TestConnection(ChannelHandlerContext chctx) {
-      super(((VertxInternal)ConnectionBaseTest.this.vertx)
+      super(((VertxInternal) VertxConnectionTest.this.vertx)
         .contextBuilder()
         .withEventLoop((EventLoop) chctx.executor())
         .build(), chctx);
@@ -767,7 +792,7 @@ public class ConnectionBaseTest extends VertxTestBase {
     pipeline.fireChannelRead(factory.next());
     assertEquals(0, count.get());
     Object expected = new Object();
-    connection.write(expected, false, ch.newPromise());
+    connection.write(expected, false);
     connection.resume();
     assertEquals(0, count.get());
     assertTrue(ch.hasPendingTasks());
