@@ -39,7 +39,6 @@ import io.netty.handler.codec.http2.Http2EventAdapter;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameAdapter;
-import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
@@ -1071,9 +1070,10 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testPushPromiseHeaders() throws Exception {
     testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
-      resp.push(HttpMethod.GET, "/wibble", HttpHeaders.
-          set("foo", "foo_value").
-          set("bar", Arrays.<CharSequence>asList("bar_value_1", "bar_value_2"))).onComplete(handler);
+      resp.push(HttpMethod.GET, "/wibble", HttpHeaders
+        .headers()
+        .set("foo", "foo_value")
+        .set("bar", Arrays.<CharSequence>asList("bar_value_1", "bar_value_2"))).onComplete(handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
       assertEquals("https", headers.scheme().toString());

@@ -27,14 +27,14 @@ import java.util.function.Function;
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   private final HttpClientStream stream;
-  private final MultiMap headers;
+  private final HttpHeaders headers;
 
   public HttpClientRequestPushPromise(
     HttpConnection connection,
     HttpClientStream stream,
     HttpMethod method,
     String uri,
-    MultiMap headers) {
+    HttpHeaders headers) {
     super(connection, stream, stream.connection().context().promise(), method, uri);
     this.stream = stream;
     this.headers = headers;
@@ -61,7 +61,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public MultiMap headers() {
+  public HttpHeaders headers() {
     return headers;
   }
 

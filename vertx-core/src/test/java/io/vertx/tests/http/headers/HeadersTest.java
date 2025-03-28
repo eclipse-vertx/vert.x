@@ -30,16 +30,12 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotSame;
 
 public abstract class HeadersTest {
 
-  protected abstract MultiMap newMultiMap();
+  protected abstract HttpHeaders newMultiMap();
 
   @Test
   public void testCaseInsensitiveHeaders() {
@@ -685,5 +681,33 @@ public abstract class HeadersTest {
     map.forEach(consumed::put);
 
     assertThat(consumed).containsOnly(entry("accept", "text/html"), entry("content-type", "application/xml"));
+  }
+
+  @Test
+  public void testImmutableCopy() {
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", "foo1");
+    headers.set("bar", (Iterable<String>) Arrays.asList("bar1", "bar2"));
+    HttpHeaders copy = headers.copy(false);
+    assertNotSame(headers, copy);
+    assertEquals(headers.toString(), copy.toString());
+    try {
+      copy.set("foo", "foo2");
+    } catch (IllegalStateException expected) {
+      assertEquals("foo1", copy.get("foo"));
+    }
+  }
+
+  @Test
+  public void testMutableCopy() {
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", "foo1");
+    headers.set("bar", (Iterable<String>) Arrays.asList("bar1", "bar2"));
+    HttpHeaders copy = headers.copy(true);
+    assertNotSame(headers, copy);
+    assertEquals(headers.toString(), copy.toString());
+    copy.set("foo", "foo2");
+    assertEquals("foo1", headers.get("foo"));
+    assertEquals("foo2", copy.get("foo"));
   }
 }

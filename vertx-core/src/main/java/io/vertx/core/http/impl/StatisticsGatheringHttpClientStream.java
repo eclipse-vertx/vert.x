@@ -129,7 +129,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public void endHandler(Handler<MultiMap> handler) {
+  public void endHandler(Handler<io.vertx.core.http.HttpHeaders> handler) {
     if (handler != null) {
       delegate.endHandler(multimap -> {
         endpointRequest.reportResponseEnd();

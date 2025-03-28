@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -22,9 +23,9 @@ public class HttpResponseHead implements HttpResponse {
   public final HttpVersion version;
   public final int statusCode;
   public final String statusMessage;
-  public final MultiMap headers;
+  public final HttpHeaders headers;
 
-  public HttpResponseHead(HttpVersion version, int statusCode, String statusMessage, MultiMap headers) {
+  public HttpResponseHead(HttpVersion version, int statusCode, String statusMessage, HttpHeaders headers) {
     this.version = version;
     this.statusCode = statusCode;
     this.statusMessage = statusMessage;

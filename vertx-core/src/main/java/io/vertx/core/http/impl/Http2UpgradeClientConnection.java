@@ -24,6 +24,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -195,7 +196,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public void endHandler(Handler<HttpHeaders> handler) {
       delegate.endHandler(handler);
     }
 
@@ -280,7 +281,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     private HttpClientStream upgradedStream;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
-    private Handler<MultiMap> endHandler;
+    private Handler<HttpHeaders> endHandler;
     private Handler<StreamPriority> priorityHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> drainHandler;
@@ -640,7 +641,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public void endHandler(Handler<HttpHeaders> handler) {
       if (upgradedStream != null) {
         upgradedStream.endHandler(handler);
       } else {

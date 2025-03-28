@@ -110,8 +110,16 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * @return The HTTP headers
    */
-  @CacheReturn
-  MultiMap headers();
+  HttpHeaders headers();
+
+  /**
+   * Set the response headers to the specified {@code headers}, this overwrites any existing headers instance on this object.
+   *
+   * @param headers the headers to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse headers(HttpHeaders headers);
 
   /**
    * Put an HTTP header
@@ -147,8 +155,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * @return The HTTP trailers
    */
-  @CacheReturn
-  MultiMap trailers();
+  HttpHeaders trailers();
 
   /**
    * Put an HTTP trailer
@@ -312,7 +319,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a future notified when the last bytes of the response was sent
    */
   default Future<Void> send(ReadStream<Buffer> body) {
-    MultiMap headers = headers();
+    HttpHeaders headers = headers();
     if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       setChunked(true);
     }

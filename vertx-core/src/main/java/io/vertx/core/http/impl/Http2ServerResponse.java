@@ -192,13 +192,19 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public MultiMap headers() {
+  public HttpHeaders headers() {
     synchronized (conn) {
       if (headersMap == null) {
         headersMap = new Http2HeadersAdaptor(headers);
       }
       return headersMap;
     }
+  }
+
+  @Override
+  public HttpServerResponse headers(HttpHeaders headers) {
+    headers().clear().setAll(headers);
+    return this;
   }
 
   @Override
@@ -238,7 +244,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public MultiMap trailers() {
+  public HttpHeaders trailers() {
     synchronized (conn) {
       if (trailedMap == null) {
         trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());

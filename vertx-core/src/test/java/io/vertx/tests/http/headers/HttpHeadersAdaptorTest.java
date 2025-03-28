@@ -13,6 +13,7 @@ package io.vertx.tests.http.headers;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 
 /**
@@ -21,7 +22,7 @@ import io.vertx.core.http.impl.headers.HeadersAdaptor;
 public class HttpHeadersAdaptorTest extends HeadersTest {
 
   @Override
-  protected MultiMap newMultiMap() {
+  protected HttpHeaders newMultiMap() {
     return new HeadersAdaptor(new DefaultHttpHeaders());
   }
 

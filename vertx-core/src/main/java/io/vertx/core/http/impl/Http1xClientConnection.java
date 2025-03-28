@@ -419,7 +419,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
-    private Handler<MultiMap> endHandler;
+    private Handler<io.vertx.core.http.HttpHeaders> endHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
 
@@ -442,10 +442,10 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         }
         @Override
         protected void handleMessage(Object item) {
-          if (item instanceof MultiMap) {
-            Handler<MultiMap> handler = endHandler;
+          if (item instanceof io.vertx.core.http.HttpHeaders) {
+            Handler<io.vertx.core.http.HttpHeaders> handler = endHandler;
             if (handler != null) {
-              context.dispatch((MultiMap) item, handler);
+              context.dispatch((io.vertx.core.http.HttpHeaders) item, handler);
             }
           } else {
             Buffer buffer = (Buffer) item;
@@ -661,7 +661,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public void endHandler(Handler<io.vertx.core.http.HttpHeaders> handler) {
       endHandler = handler;
     }
 

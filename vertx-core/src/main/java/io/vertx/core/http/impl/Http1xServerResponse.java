@@ -14,13 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.EmptyHttpHeaders;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -29,6 +24,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
@@ -76,9 +74,9 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean closed;
-  private final HeadersMultiMap headers;
+  private HeadersMultiMap headers;
   private CookieJar cookies;
-  private MultiMap trailers;
+  private HttpHeaders trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
@@ -94,7 +92,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.conn = conn;
     this.context = context;
     this.version = request.protocolVersion();
-    this.headers = HeadersMultiMap.httpHeaders();
+    this.headers = null;
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
@@ -103,12 +101,32 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public MultiMap headers() {
-    return headers;
+  public HeadersMultiMap headers() {
+    return headers(true);
+  }
+
+  private HeadersMultiMap headers(boolean modifiable) {
+    HeadersMultiMap h = headers;
+    if (h == null) {
+      headers = h = HeadersMultiMap.httpHeaders();
+    } else if (modifiable && !h.isMutable()) {
+      headers = h = h.copy(true);
+    }
+    return h;
   }
 
   @Override
-  public MultiMap trailers() {
+  public HttpServerResponse headers(HttpHeaders headers) {
+    if (headers instanceof HeadersMultiMap && !headers.isMutable()) {
+      this.headers = (HeadersMultiMap) headers;
+    } else if (headers != null) {
+      this.headers = (HeadersMultiMap) headers.copy();
+    }
+    return this;
+  }
+
+  @Override
+  public HttpHeaders trailers() {
     if (trailers == null) {
       HeadersMultiMap v = HeadersMultiMap.httpHeaders();
       trailers = v;
@@ -157,7 +175,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       checkHeadWritten();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
       if (version != HttpVersion.HTTP_1_0) {
-        headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
+        headers(true).set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
       }
       return this;
     }
@@ -166,7 +184,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public boolean isChunked() {
     synchronized (conn) {
-      return headers.contains(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED, true);
+      return headers != null && headers.contains(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED, true);
     }
   }
 
@@ -174,7 +192,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public Http1xServerResponse putHeader(String key, String value) {
     synchronized (conn) {
       checkHeadWritten();
-      headers.set(key, value);
+      headers(true).set(key, value);
       return this;
     }
   }
@@ -183,7 +201,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public Http1xServerResponse putHeader(String key, Iterable<String> values) {
     synchronized (conn) {
       checkHeadWritten();
-      headers.set(key, values);
+      headers(true).set(key, values);
       return this;
     }
   }
@@ -210,7 +228,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     synchronized (conn) {
       checkHeadWritten();
-      headers.set(name, value);
+      headers(true).set(name, value);
       return this;
     }
   }
@@ -219,7 +237,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     synchronized (conn) {
       checkHeadWritten();
-      headers.set(name, values);
+      headers(true).set(name, values);
       return this;
     }
   }
@@ -422,10 +440,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       return context.failedFuture("length : " + length + " (expected: >= 0)");
     }
     synchronized (conn) {
+      checkHeadWritten();
       checkValid();
-      if (headWritten) {
-        throw new IllegalStateException("Head already written");
-      }
       File file = vertx.fileResolver().resolve(filename);
       RandomAccessFile raf;
       try {
@@ -445,17 +461,17 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + file.length());
       }
 
-      if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      if (headers == null || !headers.contains(HttpHeaders.CONTENT_TYPE)) {
         String contentType = MimeMapping.mimeTypeForFilename(filename);
         if (contentType != null) {
-          headers.set(HttpHeaders.CONTENT_TYPE, contentType);
+          headers(true).set(HttpHeaders.CONTENT_TYPE, contentType);
         }
       }
       prepareHeaders(actualLength);
       bytesWritten = actualLength;
       written = true;
 
-      conn.write(new AssembledHttpResponse(head, version, status, headers), null);
+      conn.write(new AssembledHttpResponse(head, version, status, headers()), null);
 
       ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
       channelFut.addListener(future -> {
@@ -600,19 +616,19 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private void prepareHeaders(long contentLength) {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
-      headers.set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
+      headers(true).set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
     } else if (version == HttpVersion.HTTP_1_1 && !keepAlive) {
-      headers.set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
+      headers(true).set(HttpHeaders.CONNECTION, HttpHeaders.CLOSE);
     }
     if (head || status == HttpResponseStatus.NOT_MODIFIED) {
       // For HEAD request or NOT_MODIFIED response
       // don't set automatically the content-length
       // and remove the transfer-encoding
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+      headers(true).remove(HttpHeaders.TRANSFER_ENCODING);
     } else {
       // Set content-length header automatically
-      if (contentLength >= 0 && !headers.contains(HttpHeaders.CONTENT_LENGTH) && !headers.contains(HttpHeaders.TRANSFER_ENCODING)) {
-        headers.set(HttpHeaders.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
+      if (contentLength >= 0 && (headers == null || (!headers.contains(HttpHeaders.CONTENT_LENGTH) && !headers.contains(HttpHeaders.TRANSFER_ENCODING)))) {
+        headers(true).set(HttpHeaders.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
       }
     }
     if (headersEndHandler != null) {
@@ -631,7 +647,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private void setCookies() {
     for (ServerCookie cookie: cookies) {
       if (cookie.isChanged()) {
-        headers.add(SET_COOKIE, cookie.encode());
+        headers(true).add(SET_COOKIE, cookie.encode());
       }
     }
   }
@@ -646,7 +662,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
-      } else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      } else if (!headWritten && headers != null && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
           throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
@@ -677,7 +693,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
-        conn.write(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.write(new AssembledHttpResponse(head, version, status, headers()), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();

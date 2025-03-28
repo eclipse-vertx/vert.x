@@ -14,12 +14,9 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
-
-import java.util.List;
 
 /**
  * Represents a client-side HTTP response.
@@ -34,6 +31,9 @@ import java.util.List;
  */
 @VertxGen
 public interface HttpClientResponse extends ReadStream<Buffer>, HttpResponseHead {
+
+  @Override
+  HttpHeaders headers();
 
   @Override
   HttpClientResponse fetch(long amount);
@@ -71,7 +71,7 @@ public interface HttpClientResponse extends ReadStream<Buffer>, HttpResponseHead
    * @return the trailers
    */
   @CacheReturn
-  MultiMap trailers();
+  HttpHeaders trailers();
 
   /**
    * Convenience method for receiving the entire request body in one piece.

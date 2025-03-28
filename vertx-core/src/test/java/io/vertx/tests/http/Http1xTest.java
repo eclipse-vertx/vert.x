@@ -11,11 +11,11 @@
 
 package io.vertx.tests.http;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.TooLongHttpHeaderException;
 import io.vertx.core.Future;
 import io.vertx.core.*;
@@ -5842,5 +5842,43 @@ public class Http1xTest extends HttpTest {
     client.request(requestOptions);
 
     await();
+  }
+
+  @Test
+  public void testImmutableHeaders() throws Exception {
+    AtomicReference<HttpHeaders> headersRef = new AtomicReference<>();
+    server.connectionHandler(conn -> {
+      HttpServerConnection serverConn = (HttpServerConnection) conn;
+      ChannelPipeline pipeline = serverConn.channelHandlerContext().pipeline();
+      pipeline.addBefore("handler", "bilto", new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+          if (msg instanceof HttpResponse) {
+            HttpResponse response = (HttpResponse) msg;
+            headersRef.set((HttpHeaders) response.headers());
+          }
+          super.write(ctx, msg, promise);
+        }
+      });
+    });
+    server.requestHandler(request -> {
+      HttpHeaders headers = HttpHeaders
+        .headers()
+        .set(HttpHeaders.CONTENT_LENGTH, "11")
+        .set(HttpHeaders.CONTENT_TYPE, "text/plain")
+        .copy(false);
+      request
+        .response()
+        .headers(headers)
+        .end("Hello World");
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end)
+      ).await();
+    assertFalse(headersRef.get().isMutable());
   }
 }
