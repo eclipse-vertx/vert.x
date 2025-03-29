@@ -27,8 +27,8 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
-import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -59,6 +59,7 @@ public class HttpChannelConnector {
   private final HostAndPort authority;
   private final SocketAddress server;
   private final boolean pooled;
+  private final long maxLifetime;
 
   public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
@@ -70,7 +71,8 @@ public class HttpChannelConnector {
                               boolean useAlpn,
                               HostAndPort authority,
                               SocketAddress server,
-                              boolean pooled) {
+                              boolean pooled,
+                              long maxLifetime) {
     this.client = client;
     this.netClient = netClient;
     this.metrics = metrics;
@@ -83,6 +85,7 @@ public class HttpChannelConnector {
     this.authority = authority;
     this.server = server;
     this.pooled = pooled;
+    this.maxLifetime = maxLifetime;
   }
 
   public SocketAddress server() {
@@ -213,7 +216,7 @@ public class HttpChannelConnector {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, metrics, pooled);
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, metrics, pooled, maxLifetime);
       if (met != null) {
         conn.metric(socketMetric);
         met.endpointConnected(metrics);
@@ -224,7 +227,7 @@ public class HttpChannelConnector {
       if (upgrade) {
         boolean preflightRequest = options.isHttp2ClearTextUpgradeWithPreflightRequest();
         if (preflightRequest) {
-          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(client, conn);
+          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(client, conn, maxLifetime);
           conn2.concurrencyChangeHandler(concurrency -> {
             // Ignore
           });
@@ -245,7 +248,7 @@ public class HttpChannelConnector {
             }
           });
         } else {
-          future.complete(new Http2UpgradeClientConnection(client, conn));
+          future.complete(new Http2UpgradeClientConnection(client, conn, maxLifetime));
         }
       } else {
         future.complete(conn);
@@ -260,7 +263,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnectionInternal> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
     try {
-      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled);
+      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
