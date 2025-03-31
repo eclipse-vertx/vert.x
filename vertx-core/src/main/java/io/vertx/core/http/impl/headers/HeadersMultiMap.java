@@ -66,6 +66,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   private HeadersMultiMap.MapEntry head;
   private HeadersMultiMap.MapEntry tail;
   private int modCount = 0;
+  private byte[] rendition;
 
   public HeadersMultiMap() {
     this(false, (BiConsumer<CharSequence, CharSequence>) null);
@@ -574,6 +575,29 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   public void encode(ByteBuf buf) {
+    if (readOnly) {
+      byte[] r = rendition;
+      if (r == null) {
+        int from = buf.writerIndex();
+        encode0(buf);
+        int to = buf.writerIndex();
+        byte[] bytes = new byte[to - from];
+        buf.getBytes(from, bytes);
+        rendition = bytes;
+      } else {
+        buf.writeBytes(rendition);
+      }
+    } else {
+      HeadersMultiMap r = ref;
+      if (r != null) {
+        r.encode(buf);
+      } else {
+        encode0(buf);
+      }
+    }
+  }
+
+  private void encode0(ByteBuf buf) {
     for (MapEntry c = head;c != null;c = c.after) {
       encodeHeader(c.key, c.value, buf);
     }
