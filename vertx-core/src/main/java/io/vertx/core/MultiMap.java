@@ -286,4 +286,26 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    */
   int size();
 
+  /**
+   * @return whether this instance can be mutated.
+   */
+  boolean isMutable();
+
+  /**
+   * Returns a copy of this instance.
+   *
+   * @param mutable whether the copy can be mutated
+   * @return a copy of this instance
+   */
+  MultiMap copy(boolean mutable);
+
+  /**
+   * Returns a mutable copy of this instance.
+   *
+   * @return a mutable copy of this instance
+   */
+  default MultiMap copy() {
+    return copy(true);
+  }
+
 }

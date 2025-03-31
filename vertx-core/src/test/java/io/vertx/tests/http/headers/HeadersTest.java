@@ -30,12 +30,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotSame;
 
 public abstract class HeadersTest {
 
@@ -685,5 +681,47 @@ public abstract class HeadersTest {
     map.forEach(consumed::put);
 
     assertThat(consumed).containsOnly(entry("accept", "text/html"), entry("content-type", "application/xml"));
+  }
+
+  @Test
+  public void testImmutableCopy() {
+    MultiMap mutable = newMultiMap();
+    mutable.set("foo", "foo1");
+    mutable.set("bar", (Iterable<String>) Arrays.asList("bar1", "bar2"));
+    MultiMap immutableCopy = mutable.copy(false);
+    assertNotSame(mutable, immutableCopy);
+    assertEquals(mutable.toString(), immutableCopy.toString());
+    try {
+      immutableCopy.set("foo", "foo2");
+    } catch (IllegalStateException expected) {
+      assertEquals("foo1", immutableCopy.get("foo"));
+    }
+    mutable.add("foo", "foo2");
+    assertNotEquals(mutable.toString(), immutableCopy.toString());
+    assertSame(immutableCopy, immutableCopy.copy(false));
+    MultiMap mutableCopy = immutableCopy.copy(true);
+    assertNotSame(immutableCopy, mutableCopy);
+    assertEquals(immutableCopy.toString(), mutableCopy.toString());
+    mutableCopy.add("foo", "foo2");
+    assertEquals(mutable.toString(), mutableCopy.toString());
+  }
+
+  @Test
+  public void testMutableCopy() {
+    MultiMap mutable = newMultiMap();
+    mutable.set("foo", "foo1");
+    mutable.set("bar", (Iterable<String>) Arrays.asList("bar1", "bar2"));
+    MultiMap mutableCopy = mutable.copy(true);
+    assertNotSame(mutable, mutableCopy);
+    assertEquals(mutable.toString(), mutableCopy.toString());
+    mutableCopy.set("foo", "foo2");
+    assertEquals("foo1", mutable.get("foo"));
+    assertEquals("foo2", mutableCopy.get("foo"));
+  }
+
+  @Test
+  public void testContainsKeyAndValueEmpty() {
+    MultiMap map = newMultiMap();
+    assertFalse(map.contains("foo", "bar", false));
   }
 }

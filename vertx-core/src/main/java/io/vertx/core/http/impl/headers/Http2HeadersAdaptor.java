@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
@@ -29,9 +30,14 @@ import java.util.stream.Collectors;
  */
 public class Http2HeadersAdaptor implements MultiMap {
 
+  private final boolean mutable;
   private final Http2Headers headers;
 
   public Http2HeadersAdaptor(Http2Headers headers) {
+    this(true, headers);
+  }
+
+  private Http2HeadersAdaptor(boolean mutable, Http2Headers headers) {
 
     List<CharSequence> cookies = headers.getAll(HttpHeaderNames.COOKIE);
     if (cookies != null && cookies.size() > 1) {
@@ -41,6 +47,7 @@ public class Http2HeadersAdaptor implements MultiMap {
       headers.set(HttpHeaderNames.COOKIE, value);
     }
 
+    this.mutable = mutable;
     this.headers = headers;
   }
 
@@ -93,7 +100,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap add(String name, String value) {
+  public Http2HeadersAdaptor add(String name, String value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -102,7 +112,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap add(String name, Iterable<String> values) {
+  public Http2HeadersAdaptor add(String name, Iterable<String> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -111,7 +124,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap addAll(MultiMap headers) {
+  public Http2HeadersAdaptor addAll(MultiMap headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -119,7 +132,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap addAll(Map<String, String> map) {
+  public Http2HeadersAdaptor addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -127,7 +140,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(String name, String value) {
+  public Http2HeadersAdaptor set(String name, String value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -141,7 +157,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(String name, Iterable<String> values) {
+  public Http2HeadersAdaptor set(String name, Iterable<String> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -150,7 +169,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap setAll(MultiMap httpHeaders) {
+  public Http2HeadersAdaptor setAll(MultiMap httpHeaders) {
     clear();
     for (Map.Entry<String, String> entry: httpHeaders) {
       add(entry.getKey(), entry.getValue());
@@ -159,13 +178,19 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap remove(String name) {
+  public Http2HeadersAdaptor remove(String name) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.remove(HttpUtils.toLowerCase(name));
     return this;
   }
 
   @Override
-  public MultiMap clear() {
+  public Http2HeadersAdaptor clear() {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.clear();
     return this;
   }
@@ -192,6 +217,9 @@ public class Http2HeadersAdaptor implements MultiMap {
           }
           @Override
           public String setValue(String value) {
+            if (!mutable) {
+              throw new IllegalStateException("Read only");
+            }
             String old = next.getValue().toString();
             next.setValue(value);
             return old;
@@ -211,7 +239,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap setAll(Map<String, String> headers) {
+  public Http2HeadersAdaptor setAll(Map<String, String> headers) {
     clear();
     for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
@@ -242,7 +270,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap add(CharSequence name, CharSequence value) {
+  public Http2HeadersAdaptor add(CharSequence name, CharSequence value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -251,7 +282,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+  public Http2HeadersAdaptor add(CharSequence name, Iterable<CharSequence> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -260,7 +294,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(CharSequence name, CharSequence value) {
+  public Http2HeadersAdaptor set(CharSequence name, CharSequence value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -274,7 +311,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+  public Http2HeadersAdaptor set(CharSequence name, Iterable<CharSequence> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -283,7 +323,10 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public MultiMap remove(CharSequence name) {
+  public Http2HeadersAdaptor remove(CharSequence name) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.remove(HttpUtils.toLowerCase(name));
     return this;
   }
@@ -295,5 +338,18 @@ public class Http2HeadersAdaptor implements MultiMap {
       sb.append(header).append('\n');
     }
     return sb.toString();
+  }
+
+  @Override
+  public boolean isMutable() {
+    return mutable;
+  }
+
+  @Override
+  public MultiMap copy(boolean mutable) {
+    if (!this.mutable && ! mutable) {
+      return this;
+    }
+    return new Http2HeadersAdaptor(mutable, new DefaultHttp2Headers().setAll(headers));
   }
 }
