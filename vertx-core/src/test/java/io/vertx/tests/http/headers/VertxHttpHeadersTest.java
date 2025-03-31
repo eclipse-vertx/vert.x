@@ -13,15 +13,13 @@ package io.vertx.tests.http.headers;
 
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.Set;
 
 import static io.vertx.tests.http.impl.HttpUtilsTest.HEADER_NAME_ALLOWED_CHARS;
 import static org.junit.Assert.*;
@@ -311,6 +309,96 @@ public class VertxHttpHeadersTest extends HeadersTest {
       } else {
         consumer.accept(val);
       }
+    }
+  }
+
+  @Test
+  @Override
+  public void testImmutableCopy() {
+    super.testImmutableCopy();
+    MultiMap mutable = newMultiMap();
+    MultiMap immutableCopy = mutable.copy(false);
+    assertSame(immutableCopy, immutableCopy.copy(false));
+  }
+
+  @Test
+  public void testIterateCopyOnWrite() {
+    MultiMap mutable = newMultiMap();
+    mutable.set("foo", "foo1");
+    mutable.set("bar", "bar1");
+    mutable.set("juu", "juu1");
+    mutable.set("daa", "daa1");
+    MultiMap immutable = mutable.copy(false);
+    MultiMap copy = immutable.copy(true);
+    Iterator<Map.Entry<String, String>> it = copy.iterator();
+    Map.Entry<String, String> entry1 = it.next();
+    Map.Entry<String, String> entry2 = it.next();
+    Map.Entry<String, String> entry3 = it.next();
+    assertTrue(it.hasNext());
+    assertEquals("bar", entry2.getKey());
+    assertEquals("bar1", entry2.getValue());
+    entry2.setValue("bar2");
+    assertEquals("bar2", copy.get("bar"));
+    entry2.setValue("bar3");
+    assertEquals("bar3", copy.get("bar"));
+    try {
+      entry1.setValue("foo2");
+      fail();
+    } catch (ConcurrentModificationException expected) {
+    }
+    try {
+      entry3.setValue("juu2");
+      fail();
+    } catch (ConcurrentModificationException expected) {
+    }
+    Map.Entry<String, String> entry4 = it.next();
+    entry4.setValue("daa2");
+    assertEquals("daa2", copy.get("daa"));
+    assertEquals("daa2", entry4.getValue());
+
+    copy = immutable.copy(true);
+    it = copy.iterator();
+    it.next();
+    it.next();
+    it.next();
+    entry4 = it.next();
+    assertFalse(it.hasNext());
+    entry4.setValue("daa2");
+    assertEquals("daa2", entry4.getValue());
+    assertFalse(it.hasNext());
+  }
+
+
+  @Test
+  public void testMakeCOW() {
+    HeadersMultiMap immutable = newMultiMap()
+      .set("foo", "foo1")
+      .set("bar", "bar1")
+      .copy(false);
+    HeadersMultiMap mutable = newMultiMap();
+    mutable.setAll((MultiMap) immutable);
+    assertEquals(immutable.toString(), mutable.toString());
+    assertSame(immutable.iteratorCharSequence().next(), mutable.iteratorCharSequence().next());
+  }
+
+  @Test
+  public void testConcurrentModification() {
+    MultiMap map = newMultiMap();
+    map.set("foo", "foo1");
+    map.set("bar", "bar1");
+    map.set("juu", "juu1");
+    Iterator<Map.Entry<String, String>> it = map.iterator();
+    Map.Entry<String, String> entry = it.next();
+    map.set("daa", "daa1");
+    try {
+      it.next();
+      fail();
+    } catch (ConcurrentModificationException expected) {
+    }
+    try {
+      entry.setValue("foo2");
+      fail();
+    } catch (ConcurrentModificationException expected) {
     }
   }
 }
