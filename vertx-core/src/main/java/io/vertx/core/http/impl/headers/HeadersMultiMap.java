@@ -680,34 +680,41 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
               return true;
             }
           } else {
-            int prev = 0;
-            while (true) {
-              final int idx = AsciiString.indexOf(other, ',', prev);
-              int to;
-              if (idx == -1) {
-                to = other.length();
-              } else {
-                to = idx;
-              }
-              while (to > prev && other.charAt(to - 1) == ' ') {
-                to--;
-              }
-              int from = prev;
-              while (from < to && other.charAt(from) == ' ') {
-                from++;
-              }
-              int len = to - from;
-              if (len > 0 && AsciiString.regionMatches(other, ignoreCase, from, value, 0, len)) {
-                return true;
-              } else if (idx == -1) {
-                break;
-              }
-              prev = idx + 1;
+            if (contains(value, ignoreCase, other)) {
+              return true;
             }
           }
         }
         e = e.next;
       }
+    }
+    return false;
+  }
+
+  private static boolean contains(CharSequence s, boolean ignoreCase, CharSequence sub) {
+    int prev = 0;
+    while (true) {
+      final int idx = AsciiString.indexOf(sub, ',', prev);
+      int to;
+      if (idx == -1) {
+        to = sub.length();
+      } else {
+        to = idx;
+      }
+      while (to > prev && sub.charAt(to - 1) == ' ') {
+        to--;
+      }
+      int from = prev;
+      while (from < to && sub.charAt(from) == ' ') {
+        from++;
+      }
+      int len = to - from;
+      if (len > 0 && AsciiString.regionMatches(sub, ignoreCase, from, s, 0, len)) {
+        return true;
+      } else if (idx == -1) {
+        break;
+      }
+      prev = idx + 1;
     }
     return false;
   }
