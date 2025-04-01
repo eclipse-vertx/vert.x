@@ -12,7 +12,9 @@
 package io.vertx.core.net;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
@@ -43,11 +45,24 @@ public class ProxyOptions {
    */
   public static final String DEFAULT_HOST = "localhost";
 
+  /**
+   * The default value of proxy connect timeout = 10
+   */
+  public static final long DEFAULT_CONNECT_TIMEOUT = 10L;
+
+  /**
+   * Default proxy connect timeout time unit = SECONDS
+   */
+  public static final TimeUnit DEFAULT_CONNECT_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+
   private String host;
   private int port;
   private String username;
   private String password;
   private ProxyType type;
+  private long connectTimeout;
+  private TimeUnit connectTimeoutUnit;
+
 
   /**
    * Default constructor.
@@ -56,6 +71,8 @@ public class ProxyOptions {
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     type = DEFAULT_TYPE;
+    connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    connectTimeoutUnit = DEFAULT_CONNECT_TIMEOUT_TIME_UNIT;
   }
 
   /**
@@ -69,6 +86,8 @@ public class ProxyOptions {
     username = other.getUsername();
     password = other.getPassword();
     type = other.getType();
+    connectTimeout = other.connectTimeout;
+    connectTimeoutUnit = other.connectTimeoutUnit;
   }
 
   /**
@@ -198,6 +217,48 @@ public class ProxyOptions {
   public ProxyOptions setType(ProxyType type) {
     Objects.requireNonNull(type, "Proxy type may not be null");
     this.type = type;
+    return this;
+  }
+
+  /**
+   * Get proxy connect timeout.
+   *
+   * @return  connect timeout
+   */
+  public long getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  /**
+   * Set proxy connect timeout.
+   *
+   * @param connectTimeout the proxy connect timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions setConnectTimeout(long connectTimeout) {
+    ObjectUtil.checkPositive(connectTimeout , "connectTimeout");
+    this.connectTimeout = connectTimeout;
+    return this;
+  }
+
+  /**
+   * Get connect timeout unit.
+   *
+   * @return connect timeout unit
+   */
+  public TimeUnit getConnectTimeoutUnit() {
+    return connectTimeoutUnit;
+  }
+
+  /**
+   * Set connect timeout unit.
+   *
+   * @param connectTimeoutUnit the proxy connect timeout unit
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions setConnectTimeoutUnit(TimeUnit connectTimeoutUnit) {
+    Objects.requireNonNull(connectTimeoutUnit, "ConnectTimeoutUnit may not be null");
+    this.connectTimeoutUnit = connectTimeoutUnit;
     return this;
   }
 }
