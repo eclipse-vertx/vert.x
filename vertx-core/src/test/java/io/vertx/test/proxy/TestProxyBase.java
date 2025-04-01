@@ -129,7 +129,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
-  public <T>Future<T> startProxy(Vertx vertx) {
+  public <T>Future<T> startAsync(Vertx vertx) {
     return (Future<T>) start0(vertx).onComplete(event -> {
       log.debug(TestProxyBase.this.getClass().getSimpleName() + " server started");
     });
