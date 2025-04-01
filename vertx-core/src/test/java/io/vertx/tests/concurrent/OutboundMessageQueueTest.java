@@ -12,9 +12,8 @@ package io.vertx.tests.concurrent;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageChannel;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -28,10 +27,10 @@ import java.util.stream.IntStream;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class OutboundMessageChannelTest extends VertxTestBase {
+public class OutboundMessageQueueTest extends VertxTestBase {
 
   private List<Integer> output = Collections.synchronizedList(new ArrayList<>());
-  private OutboundMessageChannel<Integer> queue;
+  private OutboundMessageQueue<Integer> queue;
   private EventLoop eventLoop;
 
   @Override
@@ -44,7 +43,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
 
   @Test
   public void testReentrantWriteAccept() {
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       int reentrant = 0;
       @Override
       public boolean test(Integer msg) {
@@ -70,7 +69,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
 
   @Test
   public void testReentrantWriteReject() {
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       int reentrant = 0;
       @Override
       public boolean test(Integer msg) {
@@ -96,7 +95,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
 
   @Test
   public void testReentrantOverflowThenDrain1() {
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       int reentrant = 0;
       int draining = 0;
       int drained = 0;
@@ -147,7 +146,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
 
   @Test
   public void testReentrantOverflowThenDrain2() {
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       int reentrant = 0;
       int draining = 0;
       int drained = 0;
@@ -208,7 +207,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
   @Test
   public void testReentrantTryDrain() {
     AtomicBoolean overflow = new AtomicBoolean();
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       int draining;
       @Override
       protected void startDraining() {
@@ -244,7 +243,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
     AtomicBoolean paused = new AtomicBoolean();
     AtomicInteger count = new AtomicInteger();
     AtomicInteger test = new AtomicInteger();
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       @Override
       protected void handleDrained() {
         int msg = count.getAndIncrement();
@@ -270,7 +269,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
 
   @Test
   public void testReentrantClose() {
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       @Override
       public boolean test(Integer msg) {
         if (msg == 0) {
@@ -299,7 +298,7 @@ public class OutboundMessageChannelTest extends VertxTestBase {
   @Test
   public void testCloseWhileDrainScheduled() {
     AtomicInteger drains = new AtomicInteger();
-    queue = new OutboundMessageChannel<>(eventLoop) {
+    queue = new OutboundMessageQueue<>(eventLoop) {
       @Override
       public boolean test(Integer msg) {
         return false;

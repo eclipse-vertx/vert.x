@@ -15,7 +15,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
-public abstract class InboundMessageChannelTest extends VertxTestBase {
+public abstract class InboundMessageQueueTest extends VertxTestBase {
 
   private volatile Thread producerThread;
   private volatile Thread consumerThread;
@@ -35,10 +35,10 @@ public abstract class InboundMessageChannelTest extends VertxTestBase {
   TestChannel queue;
   final AtomicInteger sequence = new AtomicInteger();
 
-  InboundMessageChannelTest() {
+  InboundMessageQueueTest() {
   }
 
-  class TestChannel extends InboundMessageChannel<Integer> {
+  class TestChannel extends InboundMessageQueue<Integer> {
 
     final IntConsumer consumer;
     private Handler<Void> drainHandler;

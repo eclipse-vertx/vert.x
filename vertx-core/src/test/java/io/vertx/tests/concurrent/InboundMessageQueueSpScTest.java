@@ -13,7 +13,7 @@ package io.vertx.tests.concurrent;
 import io.vertx.core.Context;
 import io.vertx.core.internal.VertxInternal;
 
-public class InboundMessageChannelSpScTest extends InboundMessageChannelTest {
+public class InboundMessageQueueSpScTest extends InboundMessageQueueTest {
 
   @Override
   protected Context createContext(VertxInternal vertx) {

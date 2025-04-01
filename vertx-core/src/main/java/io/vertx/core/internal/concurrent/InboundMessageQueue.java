@@ -12,22 +12,22 @@ package io.vertx.core.internal.concurrent;
 
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.EventExecutor;
-import io.vertx.core.streams.impl.MessageChannel;
+import io.vertx.core.streams.impl.MessagePassingQueue;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
- * Inbound message channel for event-loop and read stream like structures.
+ * Inbound message queue for event-loop and read stream like structures.
  */
-public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
+public class InboundMessageQueue<M> implements Predicate<M>, Runnable {
 
-  private static final AtomicLongFieldUpdater<InboundMessageChannel<?>> DEMAND_UPDATER = (AtomicLongFieldUpdater<InboundMessageChannel<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(InboundMessageChannel.class, "demand");
+  private static final AtomicLongFieldUpdater<InboundMessageQueue<?>> DEMAND_UPDATER = (AtomicLongFieldUpdater<InboundMessageQueue<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(InboundMessageQueue.class, "demand");
 
   private final EventExecutor consumer;
   private final EventExecutor producer;
-  private final MessageChannel<M> messageChannel;
+  private final MessagePassingQueue<M> mqp;
 
   // Accessed by produced thread
   private boolean producerClosed;
@@ -40,32 +40,32 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
   // Any thread
   private volatile long demand = Long.MAX_VALUE;
 
-  public InboundMessageChannel(EventExecutor producer, EventExecutor consumer) {
-    MessageChannel.Factory messageChannelFactory;
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer) {
+    MessagePassingQueue.Factory messageQueueFactory;
     if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
-      messageChannelFactory = MessageChannel.SINGLE_THREAD;
+      messageQueueFactory = MessagePassingQueue.SINGLE_THREAD;
     } else {
-      messageChannelFactory = MessageChannel.SPSC;
+      messageQueueFactory = MessagePassingQueue.SPSC;
     }
-    this.messageChannel = messageChannelFactory.create(this);
+    this.mqp = messageQueueFactory.create(this);
     this.consumer = consumer;
     this.producer = producer;
   }
 
-  public InboundMessageChannel(EventExecutor producer, EventExecutor consumer, MessageChannel.Factory messageChannelFactory) {
-    this.messageChannel = messageChannelFactory.create(this);
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, MessagePassingQueue.Factory factory) {
+    this.mqp = factory.create(this);
     this.consumer = consumer;
     this.producer = producer;
   }
 
-  public InboundMessageChannel(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
-    MessageChannel.Factory messageChannelFactory;
+  public InboundMessageQueue(EventExecutor producer, EventExecutor consumer, int lowWaterMark, int highWaterMark) {
+    MessagePassingQueue.Factory factory;
     if (consumer instanceof EventLoopExecutor && producer instanceof EventLoopExecutor && ((EventLoopExecutor)consumer).eventLoop() == ((EventLoopExecutor)producer).eventLoop()) {
-      messageChannelFactory = MessageChannel.SINGLE_THREAD;
+      factory = MessagePassingQueue.SINGLE_THREAD;
     } else {
-      messageChannelFactory = MessageChannel.SPSC;
+      factory = MessagePassingQueue.SPSC;
     }
-    this.messageChannel = messageChannelFactory.create(this, lowWaterMark, highWaterMark);
+    this.mqp = factory.create(this, lowWaterMark, highWaterMark);
     this.consumer = consumer;
     this.producer = producer;
   }
@@ -89,7 +89,7 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Add a message to the channel
+   * Add a message to the queue
    *
    * @param msg the message
    * @return {@code true} when a {@link #drain()} should be called.
@@ -100,11 +100,11 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
       handleDispose(msg);
       return false;
     }
-    int res = messageChannel.add(msg);
-    if ((res & MessageChannel.UNWRITABLE_MASK) != 0) {
+    int res = mqp.add(msg);
+    if ((res & MessagePassingQueue.UNWRITABLE_MASK) != 0) {
       handlePause();
     }
-    return (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
+    return (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
   }
 
   /**
@@ -165,12 +165,12 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
     }
     draining = true;
     try {
-      int res = messageChannel.drain();
+      int res = mqp.drain();
       if (consumerClosed) {
         releaseMessages();
       } else {
-        needsDrain = (res & MessageChannel.DRAIN_REQUIRED_MASK) != 0;
-        if ((res & MessageChannel.WRITABLE_MASK) != 0) {
+        needsDrain = (res & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
+        if ((res & MessagePassingQueue.WRITABLE_MASK) != 0) {
           if (producer.inThread()) {
             handleResume();
           } else {
@@ -215,7 +215,7 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Close the channel.
+   * Close the queue.
    */
   public final void close() {
     if (!producer.inThread()) {
@@ -256,7 +256,7 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
   }
 
   private void releaseMessages() {
-    List<M> messages = messageChannel.clear();
+    List<M> messages = mqp.clear();
     for (M elt : messages) {
       handleDispose(elt);
     }
@@ -283,7 +283,7 @@ public class InboundMessageChannel<M> implements Predicate<M>, Runnable {
   }
 
   /**
-   * Dispose a message, this is called when the channel has been closed and message resource cleanup. No specific
+   * Dispose a message, this is called when the queue has been closed and message resource cleanup. No specific
    * thread assumption can be made on this callback.
    *
    * @param msg the message to dispose
