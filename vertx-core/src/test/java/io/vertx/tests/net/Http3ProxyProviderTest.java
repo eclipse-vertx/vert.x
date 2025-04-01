@@ -147,7 +147,7 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
       log.info("Proxy started!");
     }));
 
-    latch.await(isDebug() ? 600 : 30, TimeUnit.SECONDS);
+    awaitLatch(latch);
 
     // Start of client part
     Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).getOrCreateContext().nettyEventLoop());
