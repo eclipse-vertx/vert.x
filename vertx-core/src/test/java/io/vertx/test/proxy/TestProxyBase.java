@@ -129,12 +129,6 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
-  public <T>Future<T> startAsync(Vertx vertx) {
-    return (Future<T>) start0(vertx).onComplete(event -> {
-      log.debug(TestProxyBase.this.getClass().getSimpleName() + " server started");
-    });
-  }
-
   protected NetClientOptions createNetClientOptions() {
     return http3 ? HttpOptionsFactory.createH3NetClientOptions() : new NetClientOptions();
   }
@@ -165,6 +159,12 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     fut.get(10, TimeUnit.SECONDS);
     log.debug(this.getClass().getSimpleName() + " server started");
     return this;
+  }
+
+  public <T>Future<T> startAsync(Vertx vertx) {
+    return (Future<T>) start0(vertx).onComplete(event -> {
+      log.debug(TestProxyBase.this.getClass().getSimpleName() + " server started");
+    });
   }
 
   public abstract void stop();
