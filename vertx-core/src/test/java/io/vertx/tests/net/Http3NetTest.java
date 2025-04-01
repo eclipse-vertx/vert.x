@@ -327,8 +327,7 @@ public class Http3NetTest extends NetTest {
       latch.countDown();
       log.info("Proxy started!");
     }));
-
-    latch.await(isDebug() ? 600 : 30, TimeUnit.SECONDS);
+    awaitLatch(latch);
 
     // Start of client part
 
@@ -353,7 +352,7 @@ public class Http3NetTest extends NetTest {
       }));
     }));
 
-    await(isDebug() ? 600 : 30, TimeUnit.SECONDS);
+    await();
   }
 
   @Ignore
