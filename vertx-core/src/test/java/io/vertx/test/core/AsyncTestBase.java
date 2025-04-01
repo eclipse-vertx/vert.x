@@ -370,7 +370,7 @@ public class AsyncTestBase {
   protected void assertEquals(Object expected, Object actual) {
     checkThread();
     try {
-      Assert.assertEquals(expected, actual);
+      Assert. assertEquals(expected, actual);
     } catch (AssertionError e) {
       handleThrowable(e);
     }

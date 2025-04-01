@@ -836,21 +836,6 @@ public class Http3NetTest extends NetTest {
 
   //TODO: resolve group3
 
-
-  @Ignore
-  @Override
-  @Test
-  public void testWithSocks5Proxy() throws Exception {
-    super.testWithSocks5Proxy();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testWithHttpConnectProxy() throws Exception {
-    super.testWithHttpConnectProxy();
-  }
-
   @Ignore
   @Override
   @Test
