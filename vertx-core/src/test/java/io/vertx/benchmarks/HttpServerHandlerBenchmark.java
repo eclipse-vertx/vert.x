@@ -191,10 +191,10 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   private static final String HELLO_WORLD = "Hello, world!";
   private static final Buffer HELLO_WORLD_BUFFER = Buffer.buffer(HELLO_WORLD);
 
-  private static final CharSequence HEADER_SERVER = io.vertx.core.http.HttpHeaders.createOptimized("server");
-  private static final CharSequence HEADER_DATE = io.vertx.core.http.HttpHeaders.createOptimized("date");
-  private static final CharSequence HEADER_CONTENT_TYPE = io.vertx.core.http.HttpHeaders.createOptimized("content-type");
-  private static final CharSequence HEADER_CONTENT_LENGTH = io.vertx.core.http.HttpHeaders.createOptimized("content-length");
+  private static final CharSequence HEADER_SERVER = io.vertx.core.http.HttpHeaders.SERVER;
+  private static final CharSequence HEADER_DATE = io.vertx.core.http.HttpHeaders.DATE;
+  private static final CharSequence HEADER_CONTENT_TYPE = io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
+  private static final CharSequence HEADER_CONTENT_LENGTH = io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
   private static final CharSequence HELLO_WORLD_LENGTH = io.vertx.core.http.HttpHeaders.createOptimized("" + HELLO_WORLD.length());
   private static final CharSequence SERVER = io.vertx.core.http.HttpHeaders.createOptimized("vert.x");
@@ -214,14 +214,15 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       .withEventLoop(vertxChannel.eventLoop())
       .withClassLoader(Thread.currentThread().getContextClassLoader())
       .build();
+    MultiMap headers = io.vertx.core.http.HttpHeaders.headers()
+      .add(HEADER_CONTENT_TYPE, RESPONSE_TYPE_PLAIN)
+      .add(HEADER_SERVER, SERVER)
+      .add(HEADER_DATE, DATE_STRING)
+      .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH)
+      .copy(false);
     Handler<HttpServerRequest> app = request -> {
       HttpServerResponse response = request.response();
-      MultiMap headers = response.headers();
-      headers
-          .add(HEADER_CONTENT_TYPE, RESPONSE_TYPE_PLAIN)
-          .add(HEADER_SERVER, SERVER)
-          .add(HEADER_DATE, DATE_STRING)
-          .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
+      response.headers().setAll(headers);
       response.end(HELLO_WORLD_BUFFER);
     };
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {

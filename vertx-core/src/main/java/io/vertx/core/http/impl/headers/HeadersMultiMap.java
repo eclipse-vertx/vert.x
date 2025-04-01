@@ -589,7 +589,6 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
         buf.getBytes(from, bytes);
         renderedBytesRef = new SoftReference<>(bytes);
       } else {
-        System.out.println("reuse");
         buf.writeBytes(bytes);
       }
     } else {
