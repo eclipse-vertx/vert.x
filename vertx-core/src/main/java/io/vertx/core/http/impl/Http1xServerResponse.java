@@ -102,6 +102,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
   }
 
+  private void checkThread() {
+    if (conn.strictThreadMode && !context.executor().inThread()) {
+      throw new IllegalStateException("Only the context thread can write a message");
+    }
+  }
+
   @Override
   public MultiMap headers() {
     return headers;
@@ -326,13 +332,15 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeContinue() {
+    checkThread();
     Promise<Void> promise = context.promise();
-    conn.write100Continue((FutureListener<Void>) promise);
+    conn.write100Continue(promise);
     return promise.future();
   }
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
+    checkThread();
     PromiseInternal<Void> promise = context.promise();
     HeadersMultiMap headersMultiMap;
     if (headers instanceof HeadersMultiMap) {
@@ -366,6 +374,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
+    checkThread();
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -643,6 +652,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private Http1xServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
+    checkThread();
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
@@ -666,6 +676,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
+    checkThread();
     synchronized (conn) {
       if (netSocket == null) {
         if (headWritten) {

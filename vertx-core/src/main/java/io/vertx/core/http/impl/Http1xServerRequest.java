@@ -151,7 +151,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   private void check100() {
     if (HttpUtil.is100ContinueExpected(request)) {
-      conn.write100Continue(null);
+      response.writeContinue();
     }
   }
 

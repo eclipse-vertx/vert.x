@@ -15,6 +15,7 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -200,6 +201,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final TimeUnit DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
+  /**
+   * Strict thread mode = false.
+   */
+  public static final boolean DEFAULT_STRICT_THREAD_MODE_STRICT = false;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private int compressionContentSizeThreshold;
@@ -232,6 +238,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int http2RstFloodMaxRstFramePerWindow;
   private int http2RstFloodWindowDuration;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
+  private boolean strictThreadMode;
 
   /**
    * Default constructor
@@ -281,6 +288,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.http2RstFloodMaxRstFramePerWindow = other.http2RstFloodMaxRstFramePerWindow;
     this.http2RstFloodWindowDuration = other.http2RstFloodWindowDuration;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
+    this.strictThreadMode = other.strictThreadMode;
   }
 
   /**
@@ -307,6 +315,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   private void init() {
+    strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     compressionContentSizeThreshold = DEFAULT_COMPRESSION_CONTENT_SIZE_THRESHOLD;
@@ -1249,10 +1258,31 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return
+   * @return whether the strict thread mode is used
    */
   @GenIgnore
   public boolean isFileRegionEnabled() {
     return !compressionSupported;
+  }
+
+  /**
+   * @return whether to use the strict thread mode.
+   */
+  @Unstable("Experimental")
+  public boolean getStrictThreadMode() {
+    return strictThreadMode;
+  }
+
+  /**
+   * Indicates the server that the HTTP request/response interactions will happen exclusively on the expected thread when
+   * the threading model is event-loop.
+   *
+   * @param strictThreadMode whether to use the strict thread mode
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Unstable("Experimental")
+  public HttpServerOptions setStrictThreadMode(boolean strictThreadMode) {
+    this.strictThreadMode = strictThreadMode;
+    return this;
   }
 }
