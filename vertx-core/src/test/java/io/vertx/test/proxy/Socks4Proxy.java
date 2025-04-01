@@ -117,27 +117,6 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
     });
     return server.listen();
   }
-  /**
-   * Start the server.
-   *
-   * @param vertx
-   *          Vertx instance to use for creating the server and client
-   */
-  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
-  @Override
-  public Socks4Proxy start(Vertx vertx) throws Exception {
-    CompletableFuture<Void> fut = new CompletableFuture<>();
-    start0(vertx).onComplete(ar -> {
-      if (ar.succeeded()) {
-        fut.complete(null);
-      } else {
-        fut.completeExceptionally(ar.cause());
-      }
-    });
-    fut.get(10, TimeUnit.SECONDS);
-    log.debug("socks4a server started");
-    return this;
-  }
 
   private String getString(Buffer buffer) {
     String string = buffer.toString();

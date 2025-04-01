@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -156,7 +158,20 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     allowing the user to inspect it. Additionally, the test can count down the status of the result
    */
   @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
-  public abstract TestProxyBase start(Vertx vertx) throws Exception;
+  public TestProxyBase start(Vertx vertx) throws Exception {
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    start0(vertx).onComplete(ar -> {
+      if (ar.succeeded()) {
+        fut.complete(null);
+      } else {
+        fut.completeExceptionally(ar.cause());
+      }
+    });
+    fut.get(10, TimeUnit.SECONDS);
+    log.debug(this.getClass().getSimpleName() + " server started");
+    return this;
+  }
+
   public abstract void stop();
 
 }

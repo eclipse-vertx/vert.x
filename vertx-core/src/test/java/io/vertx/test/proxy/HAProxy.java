@@ -1,5 +1,6 @@
 package io.vertx.test.proxy;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
@@ -12,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-public class HAProxy {
+public class HAProxy extends TestProxyBase {
   private static final Logger log = LoggerFactory.getLogger(HAProxy.class);
   private static final String HOST = "localhost";
   private static final int PORT = 11080;
@@ -34,11 +35,17 @@ public class HAProxy {
     this(SocketAddress.inetSocketAddress(port, host), header);
   }
 
-  public HAProxy start(Vertx vertx) throws Exception {
-    NetServerOptions options = new NetServerOptions();
+  @Override
+  public int defaultPort() {
+    return PORT;
+  }
+
+  @Override
+  protected Future<NetServer> start0(Vertx vertx) {
+    NetServerOptions options = createNetServerOptions();
     options.setHost(HOST).setPort(PORT);
     server = vertx.createNetServer(options);
-    client = vertx.createNetClient();
+    client = vertx.createNetClient(createNetClientOptions());
     server.connectHandler(socket -> {
       socket.pause();
       client.connect(remoteAddress).onComplete(result -> {
@@ -65,17 +72,7 @@ public class HAProxy {
       });
     });
 
-    CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen().onComplete(ar -> {
-      if (ar.succeeded()) {
-        fut.complete(null);
-      } else {
-        fut.completeExceptionally(ar.cause());
-      }
-    });
-    fut.get(10, TimeUnit.SECONDS);
-    log.debug("HAProxy server started");
-    return this;
+    return server.listen();
   }
 
   public void stop() {
