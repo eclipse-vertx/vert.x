@@ -82,6 +82,7 @@ public abstract class HttpTest extends HttpTestBase {
   protected abstract HttpVersion serverAlpnProtocolVersion();
   protected abstract NetClientOptions createNetClientOptions();
   protected abstract NetServerOptions createNetServerOptions();
+  protected abstract HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header);
 
   @Test
   public void testCloseMulti() throws Exception {

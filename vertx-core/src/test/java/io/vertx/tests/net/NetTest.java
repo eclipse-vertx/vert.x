@@ -107,6 +107,8 @@ public abstract class NetTest extends VertxTestBase {
 
   protected abstract HttpProxy createHttpProxy();
 
+  protected abstract HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header);
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -4154,7 +4156,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolIdleTimeout() throws Exception {
-    HAProxy proxy = new HAProxy(testAddress, Buffer.buffer());
+    HAProxy proxy = createHAProxy(testAddress, Buffer.buffer());
     proxy.start(vertx);
 
     server.close();
@@ -4182,7 +4184,7 @@ public abstract class NetTest extends VertxTestBase {
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
-    HAProxy proxy = new HAProxy(testAddress, header);
+    HAProxy proxy = createHAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -4212,7 +4214,7 @@ public abstract class NetTest extends VertxTestBase {
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
-    HAProxy proxy = new HAProxy(testAddress, header);
+    HAProxy proxy = createHAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -4317,7 +4319,7 @@ public abstract class NetTest extends VertxTestBase {
      * server request remote address.
      * */
     waitFor(2);
-    HAProxy proxy = new HAProxy(testAddress, header);
+    HAProxy proxy = createHAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -4374,7 +4376,7 @@ public abstract class NetTest extends VertxTestBase {
 
   private void testHAProxyProtocolRejected(Buffer header) throws Exception {
     waitFor(2);
-    HAProxy proxy = new HAProxy(testAddress, header);
+    HAProxy proxy = createHAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -4417,7 +4419,7 @@ public abstract class NetTest extends VertxTestBase {
 
   private void testHAProxyProtocolIllegal(Buffer header) throws Exception {
     waitFor(2);
-    HAProxy proxy = new HAProxy(testAddress, header);
+    HAProxy proxy = createHAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();

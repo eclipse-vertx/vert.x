@@ -34,6 +34,7 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -76,6 +77,11 @@ public class Http1xTest extends HttpTest {
 
   protected NetServerOptions createNetServerOptions() {
     return HttpOptionsFactory.createH2NetServerOptions();
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    return new HAProxy(remoteAddress, header);
   }
 
   @Override

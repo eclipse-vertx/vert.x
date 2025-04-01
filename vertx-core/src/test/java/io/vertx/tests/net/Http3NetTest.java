@@ -23,12 +23,14 @@ import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.Http3ProxyProvider;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
@@ -39,7 +41,6 @@ import org.junit.experimental.categories.Category;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.http.HttpTestBase.*;
@@ -80,6 +81,13 @@ public class Http3NetTest extends NetTest {
   @Override
   protected HttpProxy createHttpProxy() {
     return new HttpProxy().http3(true);
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    HAProxy haProxy = new HAProxy(remoteAddress, header);
+    haProxy.http3(true);
+    return haProxy;
   }
 
   @Ignore("Host shortnames are not allowed in netty for QUIC.")

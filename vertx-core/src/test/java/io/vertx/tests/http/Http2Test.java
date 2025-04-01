@@ -22,8 +22,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.proxy.HAProxy;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -41,12 +43,19 @@ public class Http2Test extends HttpCommonTest {
     return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
+  @Override
   protected NetClientOptions createNetClientOptions() {
     return HttpOptionsFactory.createH2NetClientOptions();
   }
 
+  @Override
   protected NetServerOptions createNetServerOptions() {
     return HttpOptionsFactory.createH2NetServerOptions();
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    return new HAProxy(remoteAddress, header);
   }
 
   @Override
