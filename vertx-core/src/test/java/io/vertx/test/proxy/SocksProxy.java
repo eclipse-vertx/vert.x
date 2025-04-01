@@ -168,28 +168,6 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
     return server.listen();
   }
 
-  /**
-   * Start the server.
-   *
-   * @param vertx
-   *          Vertx instance to use for creating the server and client
-   */
-  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
-  @Override
-  public SocksProxy start(Vertx vertx) throws Exception {
-    CompletableFuture<Void> fut = new CompletableFuture<>();
-    start0(vertx).onComplete(ar -> {
-      if (ar.succeeded()) {
-        fut.complete(null);
-      } else {
-        fut.completeExceptionally(ar.cause());
-      }
-    });
-    fut.get(10, TimeUnit.SECONDS);
-    log.debug("socks5 server started");
-    return this;
-  }
-
   private String toHex(Buffer buffer) {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < buffer.length(); i++) {

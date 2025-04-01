@@ -187,19 +187,6 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
   }
 
   /**
-   * Start the server.
-   *
-   * @param vertx
-   *          Vertx instance to use for creating the server and client
-   */
-  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
-  @Override
-  public HttpProxy start(Vertx vertx) throws Exception {
-    start0(vertx).await(10, TimeUnit.SECONDS);
-    return this;
-  }
-
-  /**
    * Stop the server.
    * <p>
    * Doesn't wait for the close operation to finish
