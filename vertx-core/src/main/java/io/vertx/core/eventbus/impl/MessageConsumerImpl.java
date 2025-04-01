@@ -15,7 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.streams.ReadStream;
@@ -31,7 +31,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
   private final int maxBufferedMessages;
-  private final InboundMessageChannel<Message<T>> pending;
+  private final InboundMessageQueue<Message<T>> pending;
   private Promise<Void> result;
   private boolean registered;
   private boolean full;
@@ -41,7 +41,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     this.localOnly = localOnly;
     this.result = context.promise();
     this.maxBufferedMessages = maxBufferedMessages;
-    this.pending = new InboundMessageChannel<>(context.executor(), context.executor(), maxBufferedMessages, maxBufferedMessages) {
+    this.pending = new InboundMessageQueue<>(context.executor(), context.executor(), maxBufferedMessages, maxBufferedMessages) {
       @Override
       protected void handleResume() {
         full = false;

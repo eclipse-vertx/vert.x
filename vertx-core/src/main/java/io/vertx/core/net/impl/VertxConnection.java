@@ -24,7 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageChannel;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
@@ -57,7 +57,7 @@ public class VertxConnection extends ConnectionBase {
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   public final VoidChannelPromise voidPromise;
-  private final OutboundMessageChannel<MessageWrite> messageQueue;
+  private final OutboundMessageQueue<MessageWrite> outboundMessageQueue;
   private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
@@ -74,7 +74,7 @@ public class VertxConnection extends ConnectionBase {
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
     this.channelWritable = chctx.channel().isWritable();
-    this.messageQueue = new InternalMessageChannel(chctx.channel().eventLoop());
+    this.outboundMessageQueue = new InternalMessageChannel(chctx.channel().eventLoop());
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
     this.autoRead = true;
   }
@@ -194,7 +194,7 @@ public class VertxConnection extends ConnectionBase {
       shutdownTimeout = null;
       timeout.cancel(false);
     }
-    messageQueue.close();
+    outboundMessageQueue.close();
     super.handleClosed();
   }
 
@@ -210,7 +210,7 @@ public class VertxConnection extends ConnectionBase {
   void channelWritabilityChanged() {
     channelWritable = chctx.channel().isWritable();
     if (channelWritable) {
-      messageQueue.tryDrain();
+      outboundMessageQueue.tryDrain();
     }
   }
 
@@ -401,7 +401,7 @@ public class VertxConnection extends ConnectionBase {
   }
 
   public final boolean writeToChannel(MessageWrite msg) {
-    return messageQueue.write(msg);
+    return outboundMessageQueue.write(msg);
   }
 
   /**
@@ -433,7 +433,7 @@ public class VertxConnection extends ConnectionBase {
    * @return the write queue writability status
    */
   public boolean writeQueueFull() {
-    return !messageQueue.isWritable();
+    return !outboundMessageQueue.isWritable();
   }
 
   /**
@@ -487,9 +487,9 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
-   * Version of {@link OutboundMessageChannel} accessing internal connection base state.
+   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
    */
-  private class InternalMessageChannel extends OutboundMessageChannel<MessageWrite> implements Predicate<MessageWrite> {
+  private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite> {
 
     public InternalMessageChannel(EventLoop eventLoop) {
       super(eventLoop);

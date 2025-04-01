@@ -27,8 +27,8 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
-import io.vertx.core.internal.concurrent.OutboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
 
 /**
@@ -38,8 +38,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
-  private final OutboundMessageChannel<MessageWrite> outboundQueue;
-  private final InboundMessageChannel<Object> inboundQueue;
+  private final OutboundMessageQueue<MessageWrite> outboundQueue;
+  private final InboundMessageQueue<Object> inboundQueue;
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -58,7 +58,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
-    this.inboundQueue = new InboundMessageChannel<>(conn.context().eventLoop(), context.executor()) {
+    this.inboundQueue = new InboundMessageQueue<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
         if (item instanceof MultiMap) {
@@ -80,7 +80,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.isConnect = false;
     this.writable = true;
-    this.outboundQueue = new OutboundMessageChannel<>(conn.context().nettyEventLoop()) {
+    this.outboundQueue = new OutboundMessageQueue<>(conn.context().nettyEventLoop()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {

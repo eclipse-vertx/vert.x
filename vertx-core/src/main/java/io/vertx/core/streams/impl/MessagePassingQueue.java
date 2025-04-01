@@ -18,55 +18,55 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.function.Predicate;
 
 /**
- * A concurrent back-pressured channel fronting a single consumer back-pressured system that comes with three flavors
+ * A concurrent back-pressured queue fronting a single consumer back-pressured system that comes with three flavors
  *
  * <ul>
- *   <li>{@link MessageChannel.MpSc multiple producer / single consumer}</li>
- *   <li>{@link MessageChannel.SpSc single producer / single consumer}</li>
- *   <li>{@link MessageChannel.SingleThread single thread producer and consumer}</li>
+ *   <li>{@link MessagePassingQueue.MpSc multiple producer / single consumer}</li>
+ *   <li>{@link MessagePassingQueue.SpSc single producer / single consumer}</li>
+ *   <li>{@link MessagePassingQueue.SingleThread single thread producer and consumer}</li>
  * </ul>
  *
- * The channel lets the producer ({@link #add}) elements to the consumer with back-pressure to signal the producer
+ * The queue lets the producer ({@link #add}) elements to the consumer with back-pressure to signal the producer
  * when it should stop emitting. The consumer should consume elements with {@link #drain()}.
  *
  * <h4>Producing elements</h4>
  *
- * <p>We call producer any thread allowed to call {@link #add(Object)} according to the channel flavor.</p>
+ * <p>We call producer any thread allowed to call {@link #add(Object)} according to the queue flavor.</p>
  *
- * <p>The producer adds elements to the channel with {@link #add}. When the producer adds an element to the channel it attempts
- * to acquire the ownership of the channel. When the producer acquires ownership, it must signal the consumer that the
- * channel needs to be drained.</p>
+ * <p>The producer adds elements to the queue with {@link #add}. When the producer adds an element to the queue it attempts
+ * to acquire the ownership of the queue. When the producer acquires ownership, it must signal the consumer that the
+ * queue needs to be drained.</p>
  *
  * <h3>Consuming element</h3>
  *
  * <p>The consumer uses a {@link Predicate} to handle an element and decide whether to accept it. When a consumer predicate
- * refuses an element, the channel will propose it again later when the consumer signals it can accept again.</p>
+ * refuses an element, the queue will propose it again later when the consumer signals it can accept again.</p>
  *
- * <p>The consumer drains elements from the channel with {@link #drain}. The consumer can only drain elements when it has
- * ownership of the channel. Ownership of the channel should be signaled by a producer thread that acquired it, or because
- * the {@link #drain()} indicated that the predicate refused an element and the channel should be drained again later.</p>.
+ * <p>The consumer drains elements from the queue with {@link #drain}. The consumer can only drain elements when it has
+ * ownership of the queue. Ownership of the queue should be signaled by a producer thread that acquired it, or because
+ * the {@link #drain()} indicated that the predicate refused an element and the queue should be drained again later.</p>.
  *
- * <h3>Channel ownership</h3>
+ * <h3>Queue ownership</h3>
  *
- * Channel interactions  ({@link #add} and {@link #drain}) returns a set of flags, one of them {@link #DRAIN_REQUIRED_MASK}
+ * Queue interactions  ({@link #add} and {@link #drain}) returns a set of flags, one of them {@link #DRAIN_REQUIRED_MASK}
  * is ownership. When such interaction returns the {@link #DRAIN_REQUIRED_MASK} bit set, ownership has been acquired and
  * drain should be attempted.
  *
  * <ul>
- *   <li>When {@link #add} acquires ownership, the producer should signal the consumer that the channel must be drained.</li>
- *   <li>{@link #drain} must be called only with ownership, its return code can maintain the ownership: the channel consumer
- *   predicate refused an element and the consumer keeps ownership of the channel.</li>
+ *   <li>When {@link #add} acquires ownership, the producer should signal the consumer that the queue must be drained.</li>
+ *   <li>{@link #drain} must be called only with ownership, its return code can maintain the ownership: the queue consumer
+ *   predicate refused an element and the consumer keeps ownership of the queue.</li>
  * </ul>
  *
  * <h3>Back-pressure</h3>
  *
  * <p>Producers emission flow cannot reliably be controlled by the consumer back-pressure probe since producers
  * emissions are transferred to the consumer thread: the consumer back-pressure controller does not take in account the
- * inflight elements between producers and consumer. This channel is designed to provide reliable signals to control
+ * inflight elements between producers and consumer. This queue is designed to provide reliable signals to control
  * producers emission based on the consumer back-pressure probe and the number of inflight elements between
  * producers and the consumer.</p>
  *
- * The channel maintains an internal queue of elements initially empty and can be filled when
+ * The queue maintains an internal queue of elements initially empty and can be filled when
  * <ul>
  *   <li>A producer thread {@link #add)} to the queue above the {@link #highWaterMark}</li>
  *   <li>the {@link #consumer} refuses an element</li>
@@ -75,31 +75,31 @@ import java.util.function.Predicate;
  * <p>When the internal queue grows above {@link #highWaterMark}, the queue is considered as {@code unwritable}.
  * {@link #add} returns {@link #UNWRITABLE_MASK} to signal producers should stop emitting.</p>
  *
- * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the channel is considered as {@code writable}.
+ * <p>After a drain if the internal queue has shrunk under {@link #lowWaterMark}, the queue is considered as {@code writable}.
  * {@link #add}/{@link #drain} methods return {@link #WRITABLE_MASK} to signal producers should start emitting again. Note
  * that the consumer thread handles this signal and should forward it to the producers.</p>
  *
  * <p>When {@link #WRITABLE_MASK} is signalled, the number of {@link #UNWRITABLE_MASK} signals emitted is encoded
  * in the flags. This number allows the producer flow controller to correctly account the producer writability:
  * {@link #WRITABLE_MASK}/{@link #UNWRITABLE_MASK} signals are observed by different threads, therefore a good
- * practice to compute the channel writability is to increment/decrement an atomic counter for each signal received.</p>
+ * practice to compute the queue writability is to increment/decrement an atomic counter for each signal received.</p>
  */
-public abstract class MessageChannel<E> {
+public abstract class MessagePassingQueue<E> {
 
   /**
-   * When the masked bit is set, the channel became unwritable, this triggers only when the channel transitions
+   * When the masked bit is set, the queue became unwritable, this triggers only when the chanqueuenel transitions
    * from the <i>writable</i>> state to the <i>unwritable</i>> state.
    */
   public static final int UNWRITABLE_MASK = 0x01;
 
   /**
-   * When the masked bit is set, the channel became writable, this triggers only when the channel transitions
+   * When the masked bit is set, the queue became writable, this triggers only when the queue transitions
    * from the <i>unwritable</i>> state to the <i>writable</i> state.
    */
   public static final int WRITABLE_MASK = 0x02;
 
   /**
-   * When the masked bit is set, the caller has acquired the ownership of the channel and must drain it
+   * When the masked bit is set, the caller has acquired the ownership of the queue and must drain it
    * to attempt to release the ownership.
    */
   public static final int DRAIN_REQUIRED_MASK = 0x04;
@@ -126,7 +126,7 @@ public abstract class MessageChannel<E> {
 
   // The element refused by the consumer (null <=> overflow)
   // it is shared between producer/consumer and visibility is ensured with the ownership flag
-  // when the add method acquires ownership, it signals the consumer to drain the channel and therefore
+  // when the add method acquires ownership, it signals the consumer to drain the queue and therefore
   // implies a happens-before relationship:
   // 1. producer writes overflow
   // 2. producer signals consumer ownership
@@ -134,7 +134,7 @@ public abstract class MessageChannel<E> {
   private E overflow;
 
   // Consumer thread only
-  // The number of times the channel was observed to be unwritable, this is accessed from consumer
+  // The number of times the queue was observed to be unwritable, this is accessed from consumer
   // todo : false sharing between overflow and writeQueueFull
   private int numberOfUnwritableTimes;
 
@@ -148,7 +148,7 @@ public abstract class MessageChannel<E> {
    * @throws NullPointerException if consumer is null
    * @throws IllegalArgumentException if any mark violates the condition
    */
-  public MessageChannel(Queue<E> queue, Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
+  public MessagePassingQueue(Queue<E> queue, Predicate<E> consumer, long lowWaterMark, long highWaterMark) {
     Arguments.require(lowWaterMark > 0, "The low-water mark must be > 0");
     Arguments.require(lowWaterMark <= highWaterMark, "The high-water mark must greater or equals to the low-water mark");
     this.queue = queue;
@@ -158,28 +158,28 @@ public abstract class MessageChannel<E> {
   }
 
   /**
-   * @return the channel high-water mark
+   * @return the queue high-water mark
    */
   public long highWaterMark() {
     return highWaterMark;
   }
 
   /**
-   * @return the channel low-water mark
+   * @return the queue low-water mark
    */
   public long lowWaterMark() {
     return lowWaterMark;
   }
 
   /**
-   * Let the producer add an {@code element} to the channel.
+   * Let the producer add an {@code element} to the queue.
    *
    * A set of flags is returned
    * <ul>
-   *   <li>When {@link #UNWRITABLE_MASK} is set, the channel is writable and new elements can be added to the channel,
-   *   otherwise no elements <i>should</i> be added to the channel nor submitted, however it is a soft condition</li>
-   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer has acquired the ownership of the channel and should
-   *   {@link #drain()} the channel.</li>
+   *   <li>When {@link #UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
+   *   otherwise no elements <i>should</i> be added to the queue nor submitted, however it is a soft condition</li>
+   *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the producer has acquired the ownership of the queue and should
+   *   {@link #drain()} the queue.</li>
    * </ul>
    *
    * @param element the element to add
@@ -211,8 +211,8 @@ public abstract class MessageChannel<E> {
   }
 
   /**
-   * Let the consumer thread drain the channel until it becomes not writable or empty, this requires
-   * the ownership of the channel acquired by {@link #DRAIN_REQUIRED_MASK} flag.
+   * Let the consumer thread drain the queue until it becomes not writable or empty, this requires
+   * the ownership of the queue acquired by {@link #DRAIN_REQUIRED_MASK} flag.
    *
    * @return a bitset of [{@link #DRAIN_REQUIRED_MASK}, {@link #WRITABLE_MASK}] flags
    */
@@ -244,20 +244,20 @@ public abstract class MessageChannel<E> {
    * The main drain loop, entering this loop requires a few conditions:
    * <ul>
    *   <li>{@link #overflow} must be {@code null}, the consumer still accepts elements</li>
-   *   <li>{@link #wip} is greater than zero (ownership of the channel)</li>
+   *   <li>{@link #wipGet()} is greater than zero (ownership of the queue)</li>
    *   <li>only the consumer thread can execute it</li>
    * </ul>
    *
-   * The loop drains elements from the channel until
+   * The loop drains elements from the queue until
    *
    * <ul>
-   *   <li>the channel is empty (wip == 0) which releases the channel ownership</li>
+   *   <li>the queue is empty (wip == 0) which releases the queue ownership</li>
    *   <li>the {@link #consumer} rejects an element</li>
    * </ul>
    *
    * When the {@link #consumer} rejects an element, the rejected element is parked
-   * in the {@link #overflow} field and the channel ownership is not released. At this point
-   * the {@link #drain()} shall be called to try again to drain the channel.
+   * in the {@link #overflow} field and the queue ownership is not released. At this point
+   * the {@link #drain()} shall be called to try again to drain the queue.
    *
    * @return a bitset of [{@link {@link #WRITABLE_MASK }, {@link #CONSUMER_PAUSED_MASK }}] flags
    */
@@ -314,7 +314,7 @@ public abstract class MessageChannel<E> {
   }
 
   /**
-   * Clear the channel and return all the removed elements.
+   * Clear the queue and return all the removed elements.
    *
    * @return the removed elements.
    */
@@ -376,14 +376,14 @@ public abstract class MessageChannel<E> {
   protected abstract long wipAddAndGet(long delta);
 
   /**
-   * Factory for {@link MessageChannel}.
+   * Factory for {@link MessagePassingQueue}.
    */
   public interface Factory {
-    <E> MessageChannel<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
-    <E> MessageChannel<E> create(Predicate<E> consumer);
+    <E> MessagePassingQueue<E> create(Predicate<E> consumer, int lowWaterMark, int highWaterMark);
+    <E> MessagePassingQueue<E> create(Predicate<E> consumer);
   }
 
-  public static class SingleThread<E> extends MessageChannel<E> {
+  public static class SingleThread<E> extends MessagePassingQueue<E> {
 
     private long wip;
 
@@ -425,9 +425,9 @@ public abstract class MessageChannel<E> {
     }
   }
 
-  public static class MpSc<E> extends MessageChannel<E> {
+  public static class MpSc<E> extends MessagePassingQueue<E> {
 
-    private static final AtomicLongFieldUpdater<MessageChannel.MpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessageChannel.MpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessageChannel.MpSc.class, "wip");
+    private static final AtomicLongFieldUpdater<MessagePassingQueue.MpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessagePassingQueue.MpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessagePassingQueue.MpSc.class, "wip");
 
     // Todo : check false sharing
     private volatile long wip;
@@ -441,13 +441,13 @@ public abstract class MessageChannel<E> {
     }
 
     /**
-     * Let the consumer thread add the {@code element} to the channel.
+     * Let the consumer thread add the {@code element} to the queue.
      *
      * A set of flags is returned
      * <ul>
-     *   <li>When {@link #UNWRITABLE_MASK} is set, the channel is writable and new elements can be added to the channel,
-     *   otherwise no elements <i>should</i> be added to the channel nor submitted but it is a soft condition</li>
-     *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the channel contains at least one element and must be drained</li>
+     *   <li>When {@link #UNWRITABLE_MASK} is set, the queue is writable and new elements can be added to the queue,
+     *   otherwise no elements <i>should</i> be added to the queue nor submitted but it is a soft condition</li>
+     *   <li>When {@link #DRAIN_REQUIRED_MASK} is set, the queue contains at least one element and must be drained</li>
      * </ul>
      *
      * @param element the element to add
@@ -488,9 +488,9 @@ public abstract class MessageChannel<E> {
     }
   }
 
-  public static class SpSc<E> extends MessageChannel<E> {
+  public static class SpSc<E> extends MessagePassingQueue<E> {
 
-    private static final AtomicLongFieldUpdater<MessageChannel.SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessageChannel.SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessageChannel.SpSc.class, "wip");
+    private static final AtomicLongFieldUpdater<MessagePassingQueue.SpSc<?>> WIP_UPDATER = (AtomicLongFieldUpdater<MessagePassingQueue.SpSc<?>>) (AtomicLongFieldUpdater)AtomicLongFieldUpdater.newUpdater(MessagePassingQueue.SpSc.class, "wip");
 
     // Todo : check false sharing
     private volatile long wip;
@@ -529,43 +529,43 @@ public abstract class MessageChannel<E> {
   }
 
   /**
-   * Factory for a channel assuming distinct single consumer thread / single producer thread
+   * Factory for a queue assuming distinct single consumer thread / single producer thread
    */
   public static final Factory MPSC = new Factory() {
     @Override
-    public <T> MessageChannel<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+    public <T> MessagePassingQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
       return new MpSc<>(consumer, lowWaterMark, highWaterMark);
     }
     @Override
-    public <T> MessageChannel<T> create(Predicate<T> consumer) {
+    public <T> MessagePassingQueue<T> create(Predicate<T> consumer) {
       return new MpSc<>(consumer);
     }
   };
 
   /**
-   * Factory for a channel assuming distinct single consumer thread / single producer thread
+   * Factory for a queue assuming distinct single consumer thread / single producer thread
    */
   public static final Factory SPSC = new Factory() {
     @Override
-    public <T> MessageChannel<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+    public <T> MessagePassingQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
       return new SpSc<>(consumer, lowWaterMark, highWaterMark);
     }
     @Override
-    public <T> MessageChannel<T> create(Predicate<T> consumer) {
+    public <T> MessagePassingQueue<T> create(Predicate<T> consumer) {
       return new SpSc<>(consumer);
     }
   };
 
   /**
-   * Factory for a channel assuming a same single consumer thread / single producer thread
+   * Factory for a queue assuming a same single consumer thread / single producer thread
    */
   public static final Factory SINGLE_THREAD = new Factory() {
     @Override
-    public <T> MessageChannel<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
+    public <T> MessagePassingQueue<T> create(Predicate<T> consumer, int lowWaterMark, int highWaterMark) {
       return new SingleThread<>(consumer, lowWaterMark, highWaterMark);
     }
     @Override
-    public <T> MessageChannel<T> create(Predicate<T> consumer) {
+    public <T> MessagePassingQueue<T> create(Predicate<T> consumer) {
       return new SingleThread<>(consumer);
     }
   };
