@@ -153,11 +153,6 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
 
   protected abstract<T> Future<T> start0(Vertx vertx);
 
-  /*
-    This method is deprecated. Please use the 'startProxy' method instead, as it returns the result of the operation,
-    allowing the user to inspect it. Additionally, the test can count down the status of the result
-   */
-  @Deprecated(since = "This method is deprecated. Please use the 'startProxy' method instead.")
   public TestProxyBase start(Vertx vertx) throws Exception {
     CompletableFuture<Void> fut = new CompletableFuture<>();
     start0(vertx).onComplete(ar -> {
