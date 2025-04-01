@@ -109,6 +109,10 @@ public abstract class NetTest extends VertxTestBase {
 
   protected abstract HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header);
 
+  protected ProxyOptions createProxyOptions() {
+    return new ProxyOptions().setConnectTimeout(isDebug() ? 6000 : 10);
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
@@ -3028,7 +3032,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testWithSocks5Proxy() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(11080));
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS5).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -3052,7 +3056,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testWithSocks5ProxyAuth() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setPort(11080)
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS5).setPort(11080)
             .setUsername("username").setPassword("username"));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
@@ -3085,7 +3089,7 @@ public abstract class NetTest extends VertxTestBase {
     NetClientOptions clientOptions = createNetClientOptions()
         .setHostnameVerificationAlgorithm("HTTPS")
         .setSsl(true)
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
         .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
@@ -3118,7 +3122,7 @@ public abstract class NetTest extends VertxTestBase {
 
     NetClientOptions clientOptions = createNetClientOptions()
         .setHostnameVerificationAlgorithm("HTTPS")
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS5).setHost("127.0.0.1").setPort(11080))
         .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
@@ -3145,7 +3149,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testWithHttpConnectProxy() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setPort(13128));
+        .setProxyOptions(createProxyOptions().setType(ProxyType.HTTP).setPort(13128));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -3169,7 +3173,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testWithSocks4aProxy() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -3193,7 +3197,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testWithSocks4aProxyAuth() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080)
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS4).setPort(11080)
             .setUsername("username"));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
@@ -3218,7 +3222,7 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testWithSocks4LocalResolver() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
-        .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
+        .setProxyOptions(createProxyOptions().setType(ProxyType.SOCKS4).setPort(11080));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
@@ -3240,7 +3244,7 @@ public abstract class NetTest extends VertxTestBase {
   public void testNonProxyHosts() throws Exception {
     NetClientOptions clientOptions = createNetClientOptions()
       .addNonProxyHost("example.com")
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setPort(13128));
+      .setProxyOptions(createProxyOptions().setType(ProxyType.HTTP).setPort(13128));
     NetClient client = vertx.createNetClient(clientOptions);
     server.connectHandler(sock -> {
 
