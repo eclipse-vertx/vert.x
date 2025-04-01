@@ -340,7 +340,7 @@ public class Http3NetTest extends NetTest {
     // Start of client part
 
     NetClientOptions clientOptions = createNetClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(proxyType).setPort(proxy.port()))
+      .setProxyOptions(createProxyOptions().setType(proxyType).setPort(proxy.port()))
       ;
     NetClient client = vertx.createNetClient(clientOptions);
     client.connect(1234, "localhost").onComplete(onSuccess(so -> {

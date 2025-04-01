@@ -224,6 +224,7 @@ public class Http3ProxyProvider {
         } else {
           throw new RuntimeException("Not Supported");
         }
+        proxyHandler.setConnectTimeoutMillis(proxyOptions.getConnectTimeoutUnit().toMillis(proxyOptions.getConnectTimeout()));
         return new ProxyHandlerWrapper(proxyHandler, destinationAddr);
       }
       io.vertx.core.internal.proxy.ProxyHandler proxyHandler;
@@ -243,6 +244,7 @@ public class Http3ProxyProvider {
       } else {
         throw new RuntimeException("Not Supported");
       }
+      proxyHandler.setConnectTimeoutMillis(proxyOptions.getConnectTimeoutUnit().toMillis(proxyOptions.getConnectTimeout()));
       proxyHandler.destinationAddress(destinationAddr);
       return proxyHandler;
     }
