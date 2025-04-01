@@ -22,6 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
@@ -5908,5 +5909,54 @@ public class Http1xTest extends HttpTest {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end)
       ).await();
+  }
+
+  @Test
+  public void testRequestHeadersConstant() throws Exception {
+    System.setProperty(SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.name, "true");
+    try {
+      server.requestHandler(request -> {
+        IdentityHashMap<CharSequence, CharSequence> expected = new IdentityHashMap<>();
+        expected.put(HttpHeaders.CONNECTION, HttpHeaders.CONNECTION);
+        expected.put(HttpHeaders.ACCEPT, HttpHeaders.ACCEPT);
+        expected.put(HttpHeaders.CONTENT_TYPE, HttpHeaders.CONTENT_TYPE);
+        expected.put(HttpHeaders.CONTENT_LENGTH, HttpHeaders.CONTENT_LENGTH);
+        expected.put(HttpHeaders.HOST, HttpHeaders.HOST);
+        io.netty.handler.codec.http.HttpHeaders nettyHeaders = (io.netty.handler.codec.http.HttpHeaders) request.headers();
+        Iterator<Map.Entry<CharSequence, CharSequence>> it = nettyHeaders.iteratorCharSequence();
+        while (it.hasNext()) {
+          Map.Entry<CharSequence, CharSequence> entry = it.next();
+          expected.remove(entry.getKey());
+        }
+        assertEquals(Collections.emptySet(), expected.keySet());
+        request.response().end();
+      });
+      startServer(testAddress);
+
+      client.request(requestOptions)
+        .compose(request -> request
+          .putHeader("host", "localhost:8080")
+          .putHeader("connection", "keep-alive")
+          .putHeader("accept", "text/plain")
+          .putHeader("content-type", "text/plain")
+          .putHeader("content-length", "11")
+          .send("Hello World")
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end)
+        ).await();
+      client.request(requestOptions)
+        .compose(request -> request
+          .putHeader("Host", "localhost:8080")
+          .putHeader("Connection", "keep-alive")
+          .putHeader("Accept", "text/plain")
+          .putHeader("Content-Type", "text/plain")
+          .putHeader("Content-Length", "11")
+          .send("Hello World")
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end)
+        ).await();
+    } finally {
+      System.clearProperty(SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.name);
+    }
   }
 }
