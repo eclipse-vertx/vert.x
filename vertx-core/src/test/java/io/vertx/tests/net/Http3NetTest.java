@@ -865,29 +865,6 @@ public class Http3NetTest extends NetTest {
     super.testUpgradeSSLWithSocks5Proxy();
   }
 
-  @Ignore
-  @Override
-  @Test
-  public void testWithSocks4aProxyAuth() throws Exception {
-    super.testWithSocks4aProxyAuth();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testWithSocks4aProxy() throws Exception {
-    super.testWithSocks4aProxy();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testWithSocks5ProxyAuth() throws Exception {
-    super.testWithSocks5ProxyAuth();
-  }
-
-
-
 
   //TODO: resolve group5
 
