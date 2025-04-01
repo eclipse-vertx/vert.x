@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
 import java.io.File;
@@ -17,7 +18,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 /**
- * Vert.x known system properties.
+ * Vert.x system properties, most of them are internal and not supported.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -64,7 +65,6 @@ public enum SysProps {
 
   /**
    * Default value of {@link io.vertx.core.file.FileSystemOptions#DEFAULT_FILE_CACHING_DIR}
-   *
    */
   FILE_CACHE_DIR("vertx.cacheDirBase") {
     @Override
@@ -80,6 +80,12 @@ public enum SysProps {
       return val;
     }
   },
+
+  /**
+   * Enable caching of HTTP/1.x response headers when they are immutable.
+   */
+  @Unstable
+  ENABLE_IMMUTABLE_HTTP_RESPONSE_HEADERS_CACHING("vertx.enableHttpResponseHeadersCaching"),
 
   /**
    * Configure the Vert.x logger.

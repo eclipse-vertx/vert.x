@@ -18,8 +18,10 @@ import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -66,6 +68,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   private HeadersMultiMap.MapEntry head;
   private HeadersMultiMap.MapEntry tail;
   private int modCount = 0;
+  private WeakReference<byte[]> renderedBytesRef;
 
   public HeadersMultiMap() {
     this(false, (BiConsumer<CharSequence, CharSequence>) null);
@@ -573,7 +576,33 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     return (HeadersMultiMap) MultiMap.super.copy();
   }
 
-  public void encode(ByteBuf buf) {
+  public void encode(ByteBuf buf, boolean cache) {
+    if (cache && readOnly) {
+      WeakReference<byte[]> r = renderedBytesRef;
+      byte[] bytes;
+      if (r == null || (bytes = r.get()) == null) {
+        System.out.println("rendition");
+        int from = buf.writerIndex();
+        encode0(buf);
+        int to = buf.writerIndex();
+        bytes = new byte[to - from];
+        buf.getBytes(from, bytes);
+        renderedBytesRef = new WeakReference<>(bytes);
+      } else {
+        System.out.println("reuse");
+        buf.writeBytes(bytes);
+      }
+    } else {
+      HeadersMultiMap r = ref;
+      if (r != null) {
+        r.encode(buf, cache);
+      } else {
+        encode0(buf);
+      }
+    }
+  }
+
+  private void encode0(ByteBuf buf) {
     for (MapEntry c = head;c != null;c = c.after) {
       encodeHeader(c.key, c.value, buf);
     }
