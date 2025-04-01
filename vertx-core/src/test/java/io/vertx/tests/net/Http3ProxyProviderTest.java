@@ -33,7 +33,7 @@ import static io.vertx.test.http.HttpTestBase.*;
 public class Http3ProxyProviderTest extends ProxyProviderTest {
 
   protected NetServerOptions createNetServerOptions() {
-    return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.hostAddress()).setPort(testAddress.port());
+    return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.host()).setPort(testAddress.port());
   }
 
   protected NetClientOptions createNetClientOptions() {
