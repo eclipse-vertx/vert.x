@@ -43,7 +43,7 @@ public class Http3ProxyProvider {
   private static final String CHANNEL_HANDLER_CLIENT_CONNECTION = "myHttp3ClientConnectionHandler";
 
   //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  public static boolean IS_NETTY_BASED_PROXY = false;
+  public static boolean IS_NETTY_BASED_PROXY =  false;
 
   private final EventLoop eventLoop;
 
@@ -113,13 +113,14 @@ public class Http3ProxyProvider {
                                                      Promise<Channel> channelPromise) {
     Http3Utils.newQuicChannel(channel, ch -> {
         ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
+        ch.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
+          , Http3ProxyProvider.this::removeProxyChannelHandlers));
       })
       .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
         if (!quicChannelFut.isSuccess()) {
           channelPromise.setFailure(quicChannelFut.cause());
           return;
         }
-        channelPromise.setSuccess(quicChannelFut.get());
       });
   }
 
