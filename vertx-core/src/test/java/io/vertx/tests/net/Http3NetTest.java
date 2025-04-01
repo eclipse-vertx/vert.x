@@ -323,7 +323,7 @@ public class Http3NetTest extends NetTest {
         throw new RuntimeException("Not Supported!");
     }
 
-    proxy.startProxy(vertx).onComplete(onSuccess(v -> {
+    proxy.startAsync(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
       log.info("Proxy started!");
     }));

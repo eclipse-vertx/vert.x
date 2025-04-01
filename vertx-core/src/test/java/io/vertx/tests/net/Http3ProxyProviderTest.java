@@ -27,7 +27,6 @@ import org.junit.experimental.categories.Category;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static io.vertx.test.http.HttpTestBase.*;
 
@@ -142,7 +141,7 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
         throw new RuntimeException("Not Supported!");
     }
 
-    proxy.startProxy(vertx).onComplete(onSuccess(v -> {
+    proxy.startAsync(vertx).onComplete(onSuccess(v -> {
       latch.countDown();
       log.info("Proxy started!");
     }));
