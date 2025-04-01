@@ -11,10 +11,13 @@
 
 package io.vertx.tests.http;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.test.proxy.HAProxy;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,6 +33,7 @@ public class Http3Test extends HttpCommonTest {
     return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
+  @Override
   protected NetClientOptions createNetClientOptions() {
     return HttpOptionsFactory.createH3NetClientOptions();
   }
@@ -37,6 +41,13 @@ public class Http3Test extends HttpCommonTest {
   @Override
   protected NetServerOptions createNetServerOptions() {
     return HttpOptionsFactory.createH3NetServerOptions();
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    HAProxy haProxy = new HAProxy(remoteAddress, header);
+    haProxy.http3(true);
+    return haProxy;
   }
 
   @Override

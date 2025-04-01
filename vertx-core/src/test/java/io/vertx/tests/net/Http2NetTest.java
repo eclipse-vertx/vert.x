@@ -10,13 +10,11 @@
  */
 package io.vertx.tests.net;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.*;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
@@ -61,6 +59,11 @@ public class Http2NetTest extends NetTest {
 
   protected HttpProxy createHttpProxy() {
     return new HttpProxy();
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    return new HAProxy(remoteAddress, header);
   }
 
 }
