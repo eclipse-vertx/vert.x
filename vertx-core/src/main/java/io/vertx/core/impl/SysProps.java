@@ -82,10 +82,25 @@ public enum SysProps {
   },
 
   /**
-   * Enable caching of HTTP/1.x response headers when they are immutable.
+   * Enable bytes caching of HTTP/1.x immutable response headers.
    */
   @Unstable
-  ENABLE_IMMUTABLE_HTTP_RESPONSE_HEADERS_CACHING("vertx.enableHttpResponseHeadersCaching"),
+  CACHE_IMMUTABLE_HTTP_RESPONSE_HEADERS("vertx.cacheImmutableHttpResponseHeaders"),
+
+  /**
+   * Enable common HTTP/1.x request headers to their lower case version
+   *
+   * <ul>
+   *   <li>host/Host: {@link io.vertx.core.http.HttpHeaders#HOST}</li>
+   *   <li>accept/Accept: {@link io.vertx.core.http.HttpHeaders#ACCEPT}</li>
+   *   <li>content-type/Content-Type: {@link io.vertx.core.http.HttpHeaders#CONTENT_TYPE}</li>
+   *   <li>content-length/Content-Length: {@link io.vertx.core.http.HttpHeaders#CONTENT_LENGTH}</li>
+   *   <li>connection/Connection: {@link io.vertx.core.http.HttpHeaders#CONNECTION}</li>
+   * </ul>
+   *
+   */
+  @Unstable
+  INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE("vertx.internCommonHttpRequestHeadersToLowerCase"),
 
   /**
    * Configure the Vert.x logger.

@@ -32,13 +32,13 @@ import io.vertx.core.impl.SysProps;
  */
 public final class VertxHttpResponseEncoder extends HttpResponseEncoder {
 
-  private final boolean cacheImmutableHttpResponseHeaders = SysProps.ENABLE_IMMUTABLE_HTTP_RESPONSE_HEADERS_CACHING.getBoolean();
+  private final boolean cacheImmutableResponseHeaders = SysProps.CACHE_IMMUTABLE_HTTP_RESPONSE_HEADERS.getBoolean();
 
   @Override
   protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
     if (headers instanceof HeadersMultiMap) {
       HeadersMultiMap vertxHeaders = (HeadersMultiMap) headers;
-      vertxHeaders.encode(buf, cacheImmutableHttpResponseHeaders);
+      vertxHeaders.encode(buf, cacheImmutableResponseHeaders);
     } else {
       super.encodeHeaders(headers, buf);
     }
