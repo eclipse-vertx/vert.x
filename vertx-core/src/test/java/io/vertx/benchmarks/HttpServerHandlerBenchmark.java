@@ -335,6 +335,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       "-Dvertx.disableContextTimings=true",
       "-Dvertx.disableHttpHeadersValidation=true",
       "-Dvertx.disableMetrics=true",
+      "-Dvertx.enableHttpResponseHeadersCaching=true",
       "-Dio.netty.buffer.checkAccessible=false",
       "-Dio.netty.buffer.checkBounds=false"
   })
