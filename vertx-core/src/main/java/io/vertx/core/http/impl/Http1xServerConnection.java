@@ -26,10 +26,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -86,6 +83,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   final boolean handle100ContinueAutomatically;
   final HttpServerOptions options;
   final SslContextManager sslContextManager;
+  final boolean strictThreadMode;
 
   public Http1xServerConnection(Supplier<ContextInternal> streamContextSupplier,
                                 SslContextManager sslContextManager,
@@ -94,7 +92,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
                                 ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
-    super(context, chctx);
+    super(context, chctx, options.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP);
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;
@@ -103,6 +101,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
     this.wantClose = false;
+    this.strictThreadMode = options.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP;
   }
 
   @Override
@@ -421,18 +420,16 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write100Continue(FutureListener<Void> listener) {
-    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
-    chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE), promise);
+  void write100Continue(Promise<Void> promise) {
+    write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE), promise);
   }
 
   void write103EarlyHints(HttpHeaders headers, Promise<Void> promise) {
-    chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1,
-      HttpResponseStatus.EARLY_HINTS,
-      Unpooled.buffer(0),
-      headers,
-      EmptyHttpHeaders.INSTANCE
-    ), newChannelPromise(promise));
+    write(new DefaultFullHttpResponse(HTTP_1_1,
+        HttpResponseStatus.EARLY_HINTS,
+        Unpooled.buffer(0),
+        headers,
+        EmptyHttpHeaders.INSTANCE), promise);
   }
 
   protected void handleClosed() {

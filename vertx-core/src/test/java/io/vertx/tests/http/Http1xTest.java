@@ -5881,4 +5881,32 @@ public class Http1xTest extends HttpTest {
       ).await();
     assertSame(((HeadersMultiMap) headersRef.get()).iteratorCharSequence().next(), ((HeadersMultiMap) headers).iteratorCharSequence().next());
   }
+
+  @Test
+  public void testStrictThreadMode() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setStrictThreadMode(true));
+    server.requestHandler(request -> {
+      Context ctx = vertx.getOrCreateContext();
+      new Thread(() -> {
+        HttpServerResponse response = request.response();
+        try {
+          response.end();
+          fail();
+        } catch (IllegalStateException e) {
+          ctx.runOnContext(v -> {
+            response.end();
+          });
+        }
+      }).start();
+    });
+    startServer(testAddress);
+
+    client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end)
+      ).await();
+  }
 }
