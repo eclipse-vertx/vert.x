@@ -363,6 +363,74 @@ public class Http3NetTest extends NetTest {
     await();
   }
 
+  @Override
+  @Test
+  public void testWithSocks5Proxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    super.testWithSocks5Proxy();
+  }
+
+  @Test
+  public void testWithSocks5ProxyNettyBased() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    super.testWithSocks5Proxy();
+  }
+
+  @Override
+  @Test
+  public void testWithHttpConnectProxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    super.testWithHttpConnectProxy();
+  }
+
+  @Ignore
+  @Test
+  public void testWithHttpConnectProxyNettyBased() throws Exception {
+    //TODO: correct this issue
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    super.testWithHttpConnectProxy();
+  }
+
+  @Override
+  @Test
+  public void testWithSocks4aProxyAuth() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    super.testWithSocks4aProxyAuth();
+  }
+
+  @Test
+  public void testWithSocks4aProxyAuthNettyBased() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    super.testWithSocks4aProxyAuth();
+  }
+
+  @Override
+  @Test
+  public void testWithSocks4aProxy() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    super.testWithSocks4aProxy();
+  }
+
+  @Test
+  public void testWithSocks4aProxyNettyBased() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    super.testWithSocks4aProxy();
+  }
+
+  @Override
+  @Test
+  public void testWithSocks5ProxyAuth() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    super.testWithSocks5ProxyAuth();
+  }
+
+  @Test
+  public void testWithSocks5ProxyAuthNettyBased() throws Exception {
+    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    super.testWithSocks5ProxyAuth();
+  }
+
+
   @Ignore
   @Override
   @Test
