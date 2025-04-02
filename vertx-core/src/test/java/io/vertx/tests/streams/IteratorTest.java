@@ -30,6 +30,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class IteratorTest extends VertxTestBase {
@@ -400,5 +401,31 @@ public class IteratorTest extends VertxTestBase {
     } catch (Exception e) {
       assertSame(expected, e);
     }
+  }
+
+  @Test
+  public void testDeadlockFromVirtualStream() {
+    VertxInternal vertx = (VertxInternal) this.vertx;
+    Assume.assumeTrue(vertx.isVirtualThreadAvailable());
+    ContextInternal context = vertx.createVirtualThreadContext();
+    FakeStream<Integer> stream = new FakeStream<>();
+    Stream<Integer> blockingStream = stream.blockingStream();
+    int num = 32;
+    List<Integer> expected = IntStream.range(0, num).boxed().collect(Collectors.toList());
+    AtomicInteger count = new AtomicInteger();
+    context.setPeriodic(1, id -> {
+      int val = count.incrementAndGet();
+      stream.write(val - 1);
+      if (val == num) {
+        vertx.cancelTimer(id);
+        stream.end();
+      }
+    });
+    context.runOnContext(v -> {
+      List<Integer> result = blockingStream.collect(Collectors.toList());
+      assertEquals(expected, result);
+      testComplete();
+    });
+    await();
   }
 }
