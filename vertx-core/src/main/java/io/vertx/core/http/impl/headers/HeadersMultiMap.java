@@ -51,14 +51,21 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
    * @return a case-insensitive multimap suited for HTTP header validation
    */
   public static HeadersMultiMap httpHeaders() {
-    return new HeadersMultiMap(HTTP_VALIDATOR);
+    return new HeadersMultiMap(false, HTTP_VALIDATOR);
+  }
+
+  /**
+   * @return a case-insensitive multimap suited for HTTP header validation
+   */
+  public static HeadersMultiMap httpHeaders(BiConsumer<CharSequence, CharSequence> validator) {
+    return new HeadersMultiMap(false, validator);
   }
 
   /**
    * @return a all-purpose case-insensitive multimap that does not perform validation
    */
   public static HeadersMultiMap caseInsensitive() {
-    return new HeadersMultiMap();
+    return new HeadersMultiMap(false, (BiConsumer<CharSequence, CharSequence>) null);
   }
 
   private final BiConsumer<CharSequence, CharSequence> validator;
@@ -70,16 +77,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   private int modCount = 0;
   private Reference<byte[]> renderedBytesRef;
 
-  public HeadersMultiMap() {
-    this(false, (BiConsumer<CharSequence, CharSequence>) null);
-  }
-
-  public HeadersMultiMap(BiConsumer<CharSequence, CharSequence> validator) {
-    this(false, validator);
-  }
-
   private HeadersMultiMap(boolean readOnly, BiConsumer<CharSequence, CharSequence> validator) {
-
     this.head = null;
     this.entries = null;
     this.readOnly = readOnly;
@@ -88,7 +86,6 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   private HeadersMultiMap(boolean readOnly, HeadersMultiMap that) {
-
     this.head = null;
     this.entries = null;
     this.validator = that.validator;
@@ -100,7 +97,6 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   private HeadersMultiMap(boolean readOnly, MapEntry[] entries, MapEntry head, BiConsumer<CharSequence, CharSequence> validator, HeadersMultiMap ref) {
-
     this.readOnly = readOnly;
     this.head = head;
     this.entries = entries;

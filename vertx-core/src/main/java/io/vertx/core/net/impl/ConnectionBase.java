@@ -62,6 +62,7 @@ public abstract class ConnectionBase {
 
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
+  protected final Channel channel;
   protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
@@ -88,6 +89,7 @@ public abstract class ConnectionBase {
 
     this.vertx = context.owner();
     this.chctx = chctx;
+    this.channel = chctx.channel();
     this.context = context;
     this.closeFuture = f;
   }
@@ -146,7 +148,7 @@ public abstract class ConnectionBase {
    */
   public final Future<Void> close(Object reason, long timeout, TimeUnit unit) {
     EventExecutor exec = chctx.executor();
-    CloseChannelPromise promise = new CloseChannelPromise(chctx.channel(), reason, timeout, unit);
+    CloseChannelPromise promise = new CloseChannelPromise(channel, reason, timeout, unit);
     if (exec.inEventLoop()) {
       close(promise);
     } else {
@@ -158,9 +160,7 @@ public abstract class ConnectionBase {
   }
 
   private void close(CloseChannelPromise promise) {
-    chctx
-      .channel()
-      .close(promise);
+    channel.close(promise);
   }
 
   final void handleClose(ChannelPromise promise) {
@@ -179,8 +179,7 @@ public abstract class ConnectionBase {
         closeInitiated = promise;
         handleClose(closeReason, promise);
       } else {
-        chctx
-          .channel()
+        channel
           .closeFuture()
           .addListener(future -> {
             if (future.isSuccess()) {
@@ -228,7 +227,7 @@ public abstract class ConnectionBase {
    * @return the Netty channel - for internal usage only
    */
   public final Channel channel() {
-    return chctx.channel();
+    return channel;
   }
 
   public final ChannelHandlerContext channelHandlerContext() {
@@ -418,8 +417,8 @@ public abstract class ConnectionBase {
   }
 
   public String indicatedServerName() {
-    if (chctx.channel().hasAttr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR)) {
-      return chctx.channel().attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).get();
+    if (channel.hasAttr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR)) {
+      return channel.attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).get();
     } else {
       return null;
     }
@@ -430,11 +429,11 @@ public abstract class ConnectionBase {
   }
 
   public ChannelPromise newChannelPromise(Promise<Void> promise) {
-    return new DelegatingChannelPromise(promise, channel());
+    return new DelegatingChannelPromise(promise, channel);
   }
 
   public String remoteName() {
-    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    java.net.SocketAddress addr = channel.remoteAddress();
     if (addr instanceof InetSocketAddress) {
       // Use hostString that does not trigger a DNS resolution
       return ((InetSocketAddress)addr).getHostString();
@@ -443,13 +442,12 @@ public abstract class ConnectionBase {
   }
 
   private SocketAddress channelRemoteAddress() {
-    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    java.net.SocketAddress addr = channel.remoteAddress();
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
   private SocketAddress socketAdressOverride(AttributeKey<SocketAddress> key) {
-    Channel ch = chctx.channel();
-    return ch.hasAttr(key) ? ch.attr(key).getAndSet(null) : null;
+    return channel.hasAttr(key) ? channel.attr(key).getAndSet(null) : null;
   }
 
   public SocketAddress remoteAddress() {
@@ -485,7 +483,7 @@ public abstract class ConnectionBase {
   }
 
   private SocketAddress channelLocalAddress() {
-    java.net.SocketAddress addr = chctx.channel().localAddress();
+    java.net.SocketAddress addr = channel.localAddress();
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 

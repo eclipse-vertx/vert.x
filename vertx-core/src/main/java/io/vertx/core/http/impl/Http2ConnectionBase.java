@@ -381,7 +381,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       return;
     }
     handler.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
-    ChannelFuture fut = channel().close();
+    ChannelFuture fut = channel.close();
     fut.addListener(promise);
   }
 
