@@ -577,7 +577,6 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
       Reference<byte[]> r = renderedBytesRef;
       byte[] bytes;
       if (r == null || (bytes = r.get()) == null) {
-        System.out.println("rendition");
         int from = buf.writerIndex();
         encode0(buf);
         int to = buf.writerIndex();

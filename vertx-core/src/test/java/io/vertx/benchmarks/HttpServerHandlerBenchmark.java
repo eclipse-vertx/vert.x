@@ -203,7 +203,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   @Setup
   public void setup() {
     vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setDisableTCCL(true));
-    HttpServerOptions options = new HttpServerOptions();
+    HttpServerOptions options = new HttpServerOptions().setStrictThreadMode(true);
     vertxChannel = new EmbeddedChannel(
         new VertxHttpRequestDecoder(options),
         new VertxHttpResponseEncoder());
@@ -229,7 +229,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       Http1xServerConnection conn = new Http1xServerConnection(
         () -> context,
               null,
-        new HttpServerOptions().setStrictThreadMode(true),
+        options,
         chctx,
         context,
         "localhost",
@@ -332,7 +332,6 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   }
 
   @Fork(value = 1, jvmArgsAppend = {
-      "-Dvertx.threadChecks=false",
       "-Dvertx.disableContextTimings=true",
       "-Dvertx.disableHttpHeadersValidation=true",
       "-Dvertx.disableMetrics=true",
