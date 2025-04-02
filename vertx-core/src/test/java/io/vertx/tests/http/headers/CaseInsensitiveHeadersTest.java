@@ -27,6 +27,11 @@ public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
     sameBucket2 = "R";
   }
 
+  @Override
+  protected HeadersMultiMap newMultiMap() {
+    return (HeadersMultiMap) MultiMap.caseInsensitiveMultiMap();
+  }
+
   @Test
   public void checkNameCollision() {
     assertEquals(hash(sameHash1), hash(sameHash2));
