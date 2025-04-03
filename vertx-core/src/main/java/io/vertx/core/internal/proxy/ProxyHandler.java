@@ -163,8 +163,8 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
             ChannelPromise promise) throws Exception {
 
         if (this.isManuallySetDestination) {
-          ctx.connect(remoteAddress, localAddress, promise);
-          return;
+            ctx.connect(remoteAddress, localAddress, promise);
+            return;
         }
         if (destinationAddress != null) {
             promise.setFailure(new ConnectionPendingException());
@@ -451,9 +451,8 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
         }
     }
 
-  public ProxyHandler destinationAddress(SocketAddress destinationAddress) {
-      this.isManuallySetDestination = true;
-      this.destinationAddress = destinationAddress;
-      return this;
-  }
+    public final void setDestinationAddress(SocketAddress destinationAddress) {
+        this.isManuallySetDestination = true;
+        this.destinationAddress = destinationAddress;
+    }
 }
