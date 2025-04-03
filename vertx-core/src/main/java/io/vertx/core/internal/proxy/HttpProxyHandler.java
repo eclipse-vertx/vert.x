@@ -21,16 +21,16 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelOutboundHandler;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.CombinedChannelDuplexHandler;
 import io.netty.handler.codec.base64.Base64;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.DefaultHttpHeadersFactory;
 import io.netty.handler.codec.http.HttpHeadersFactory;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponse;
@@ -38,10 +38,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+
 import io.netty.handler.proxy.ProxyConnectException;
-import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
-import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
-import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.ObjectUtil;
@@ -65,8 +63,6 @@ public final class HttpProxyHandler extends ProxyHandler {
 
     private static final String PROTOCOL = "http";
     private static final String AUTH_BASIC = "basic";
-    private static final String CHANNEL_HANDLER_CODEC_WRAPPER = "myCodecWrapperChannelHandler";
-    private static final String CHANNEL_HANDLER_HEADER_NORMALIZER = "myHeaderNormalizerChannelHandler";
 
     // Wrapper for the HttpClientCodec to prevent it to be removed by other handlers by mistake (for example the
     // WebSocket*Handshaker.
@@ -74,8 +70,7 @@ public final class HttpProxyHandler extends ProxyHandler {
     // See:
     // - https://github.com/netty/netty/issues/5201
     // - https://github.com/netty/netty/issues/5070
-    private final HttpClientCodec codec = new HttpClientCodec();
-    private final Http3FrameToHttpObjectCodec http3Codec = new Http3FrameToHttpObjectCodec(false, false);
+    private HttpClientCodecWrapper codecWrapper = new HttpClientCodecWrapper<>(new HttpClientCodec());
     private final String username;
     private final String password;
     private final CharSequence authorization;
@@ -83,7 +78,6 @@ public final class HttpProxyHandler extends ProxyHandler {
     private final boolean ignoreDefaultPortsInConnectHostHeader;
     private HttpResponseStatus status;
     private HttpHeaders inboundHeaders;
-    private boolean http3;
 
     public HttpProxyHandler(SocketAddress proxyAddress) {
         this(proxyAddress, null);
@@ -161,23 +155,20 @@ public final class HttpProxyHandler extends ProxyHandler {
     protected void addCodec(ChannelHandlerContext ctx) throws Exception {
         ChannelPipeline p = ctx.pipeline();
         String name = ctx.name();
-        p.addBefore(name, CHANNEL_HANDLER_CODEC_WRAPPER, http3 ? new HttpClientCodecWrapper<>(http3Codec) : new HttpClientCodecWrapper<>(codec));
-        if (http3) {
-            p.addBefore(CHANNEL_HANDLER_CODEC_WRAPPER, CHANNEL_HANDLER_HEADER_NORMALIZER, new HeaderNormalizer());
-        }
+        p.addBefore(name, null, codecWrapper);
     }
 
     @Override
     protected void removeEncoder(ChannelHandlerContext ctx) throws Exception {
-        if (!this.http3) {
-            codec.removeOutboundHandler();
+        if (codecWrapper.codec instanceof CombinedChannelDuplexHandler) {
+            ((CombinedChannelDuplexHandler) codecWrapper.codec).removeOutboundHandler();
         }
     }
 
     @Override
     protected void removeDecoder(ChannelHandlerContext ctx) throws Exception {
-        if (!this.http3) {
-            codec.removeInboundHandler();
+        if (codecWrapper.codec instanceof CombinedChannelDuplexHandler) {
+            ((CombinedChannelDuplexHandler) codecWrapper.codec).removeInboundHandler();
         }
     }
 
@@ -260,17 +251,16 @@ public final class HttpProxyHandler extends ProxyHandler {
         }
     }
 
-    public HttpProxyHandler asHttp3() {
-        this.http3 = true;
-        return this;
+    public <T extends ChannelInboundHandler & ChannelOutboundHandler> void setCodec(T codec) {
+        this.codecWrapper = new HttpClientCodecWrapper(codec);
     }
 
-    private static final class HttpClientCodecWrapper<T extends ChannelInboundHandler & ChannelOutboundHandler> implements ChannelInboundHandler,
-        ChannelOutboundHandler {
+    private static final class HttpClientCodecWrapper<T extends ChannelInboundHandler & ChannelOutboundHandler>
+        implements ChannelInboundHandler, ChannelOutboundHandler {
         private final T codec;
 
         public HttpClientCodecWrapper(T codec) {
-          this.codec = codec;
+            this.codec = codec;
         }
 
         @Override
@@ -368,19 +358,6 @@ public final class HttpProxyHandler extends ProxyHandler {
         @Override
         public void flush(ChannelHandlerContext ctx) throws Exception {
             codec.flush(ctx);
-        }
-    }
-
-    private static class HeaderNormalizer extends ChannelOutboundHandlerAdapter {
-        @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-            if (msg instanceof DefaultHttp3HeadersFrame) {
-                ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.PATH.value());
-                ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.SCHEME.value());
-                ((DefaultHttp3HeadersFrame) msg).headers().method(HttpMethod.CONNECT.name());
-                ((DefaultHttp3HeadersFrame) msg).headers().authority("localhost:1234");
-            }
-            super.write(ctx, msg, promise);
         }
     }
 }

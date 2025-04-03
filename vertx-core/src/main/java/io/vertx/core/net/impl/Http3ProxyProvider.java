@@ -13,7 +13,11 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
+import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
+import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicConnectionAddress;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -37,6 +41,7 @@ import java.net.SocketAddress;
  */
 public class Http3ProxyProvider {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3ProxyProvider.class);
+  public static final String CHANNEL_HANDLER_HEADER_NORMALIZER = "vertxHeaderNormalizerChannelHandler";
   public static final String CHANNEL_HANDLER_PROXY = "myProxyHandler";
   public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
   private static final String CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL = "mySecondProxyQuicChannelHandler";
@@ -93,6 +98,7 @@ public class Http3ProxyProvider {
                 }
 
                 ChannelPipeline pipeline = quicStreamChannelFut.get().pipeline();
+                pipeline.addLast(CHANNEL_HANDLER_HEADER_NORMALIZER, new HeaderNormalizer());
                 pipeline.addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
                 pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
                   , Http3ProxyProvider.this::removeProxyChannelHandlers));
@@ -231,9 +237,13 @@ public class Http3ProxyProvider {
       io.vertx.core.internal.proxy.ProxyHandler proxyHandler;
 
       if (isHttp() && hasCredential()) {
-        proxyHandler = new HttpProxyHandler(proxyAddr, username, password).asHttp3();
+        HttpProxyHandler httpProxyHandler = new HttpProxyHandler(proxyAddr, username, password);
+        httpProxyHandler.setCodec(new Http3FrameToHttpObjectCodec(false, false));
+        proxyHandler = httpProxyHandler;
       } else if (isHttp() && !hasCredential()) {
-        proxyHandler = new io.vertx.core.internal.proxy.HttpProxyHandler(proxyAddr).asHttp3();
+        HttpProxyHandler httpProxyHandler = new HttpProxyHandler(proxyAddr);
+        httpProxyHandler.setCodec(new Http3FrameToHttpObjectCodec(false, false));
+        proxyHandler = httpProxyHandler;
       } else if (isSocks5() && hasCredential()) {
         proxyHandler = new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, username, password);
       } else if (isSocks5() && !hasCredential()) {
@@ -246,7 +256,7 @@ public class Http3ProxyProvider {
         throw new RuntimeException("Not Supported");
       }
       proxyHandler.setConnectTimeoutMillis(proxyOptions.getConnectTimeoutUnit().toMillis(proxyOptions.getConnectTimeout()));
-      proxyHandler.destinationAddress(destinationAddr);
+      proxyHandler.setDestinationAddress(destinationAddr);
       return proxyHandler;
     }
 
@@ -436,4 +446,18 @@ public class Http3ProxyProvider {
       channelPromise.tryFailure(cause);
     }
   }
+
+  private static class HeaderNormalizer extends ChannelOutboundHandlerAdapter {
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+      if (msg instanceof DefaultHttp3HeadersFrame) {
+        ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.PATH.value());
+        ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.SCHEME.value());
+        ((DefaultHttp3HeadersFrame) msg).headers().method(HttpMethod.CONNECT.name());
+        ((DefaultHttp3HeadersFrame) msg).headers().authority("localhost:1234");
+      }
+      super.write(ctx, msg, promise);
+    }
+  }
+
 }
