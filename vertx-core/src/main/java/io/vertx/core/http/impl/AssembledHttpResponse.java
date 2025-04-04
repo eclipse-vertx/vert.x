@@ -13,6 +13,8 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 
@@ -23,7 +25,7 @@ import io.netty.handler.codec.http.*;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledHttpResponse implements io.netty.handler.codec.http.HttpResponse, HttpContent {
+class AssembledHttpResponse extends AssembledHttpObject implements io.netty.handler.codec.http.HttpResponse, HttpContent {
 
   private boolean head;
   private HttpResponseStatus status;
@@ -33,10 +35,15 @@ class AssembledHttpResponse implements io.netty.handler.codec.http.HttpResponse,
   private DecoderResult result = DecoderResult.SUCCESS;
 
   AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
-    this(head, version, status, headers, Unpooled.EMPTY_BUFFER);
+    this(head, version, status, headers, Unpooled.EMPTY_BUFFER, false);
   }
 
   AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content) {
+    this(head, version, status, headers, content, false);
+  }
+
+  AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content, boolean ended) {
+    super(ended);
     this.head = head;
     this.status = status;
     this.version = version;
