@@ -404,6 +404,7 @@ public class VertxConnection extends ConnectionBase {
     });
   }
 
+  // Write to channel boolean return for now is not used so avoids reading a volatile
   public final boolean writeToChannel(MessageWrite msg) {
     return outboundMessageQueue.write(msg);
   }

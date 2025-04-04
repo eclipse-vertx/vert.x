@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocketHandshake;
@@ -197,12 +196,12 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write(HttpObject msg, Promise<Void> promise) {
+  void write(AssembledHttpObject msg, Promise<Void> promise) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
         Http1xServerConnection.this.write(msg, false, promise);
-        if (msg instanceof LastHttpContent) {
+        if (msg.isEnded()) {
           responseComplete();
         }
       }
@@ -422,15 +421,24 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   void write100Continue(Promise<Void> promise) {
-    write(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE), promise);
+    write(new AssembledFullHttpResponse(
+      false,
+      HTTP_1_1,
+      CONTINUE,
+      Unpooled.buffer(0),
+      DefaultHttpHeadersFactory.headersFactory().newHeaders(),
+      DefaultHttpHeadersFactory.trailersFactory().newHeaders(),
+      false), promise);
   }
 
   void write103EarlyHints(HttpHeaders headers, Promise<Void> promise) {
-    write(new DefaultFullHttpResponse(HTTP_1_1,
-        HttpResponseStatus.EARLY_HINTS,
-        Unpooled.buffer(0),
-        headers,
-        EmptyHttpHeaders.INSTANCE), promise);
+    write(new AssembledFullHttpResponse(false,
+      HTTP_1_1,
+      HttpResponseStatus.EARLY_HINTS,
+      Unpooled.buffer(0),
+      headers,
+      EmptyHttpHeaders.INSTANCE,
+      false), promise);
   }
 
   protected void handleClosed() {
