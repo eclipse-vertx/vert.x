@@ -278,6 +278,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   void createWebSocket(Http1xServerRequest request, PromiseInternal<ServerWebSocketHandshake> promise) {
+    wantClose = false;
     context.execute(() -> {
       if (request != responseInProgress) {
         promise.fail("Invalid request");

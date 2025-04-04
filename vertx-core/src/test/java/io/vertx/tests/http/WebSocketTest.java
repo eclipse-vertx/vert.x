@@ -2858,8 +2858,10 @@ public class WebSocketTest extends VertxTestBase {
 
   private void testServerWebSocketHandshakeWithNonPersistentConnection(HttpVersion  version) {
     server = vertx.createHttpServer();
+    AtomicBoolean webSocketClose = new AtomicBoolean();
     server.webSocketHandler(ws -> {
       ws.frameHandler(frame -> {
+        webSocketClose.set(true);
         ws.close();
       });
     });
@@ -2882,6 +2884,7 @@ public class WebSocketTest extends VertxTestBase {
             pipeline.remove("codec");
             Future<Void> pingSent = soi.writeMessage(new PingWebSocketFrame());
             soi.closeHandler(v2 -> {
+              assertTrue(webSocketClose.get());
               assertTrue(pingSent.succeeded());
               testComplete();
             });
