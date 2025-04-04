@@ -32,6 +32,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -1002,8 +1003,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPipeliningOrder() throws Exception {
-    // Does not pass with IO_Uring
-    Assume.assumeTrue(((VertxInternal)vertx).transport().getClass().getName().startsWith("io.vertx.core"));
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
     int requests = 100;
@@ -5327,9 +5327,9 @@ public class Http1xTest extends HttpTest {
           so.write("ping");
           so.handler(buff -> {
             assertEquals("pong", buff.toString());
-            so.close().onComplete(onSuccess(v -> {
+            so.close().onComplete(ar -> {
               testComplete();
-            }));
+            });
           });
         }));
         if (payload != null) {
