@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClosedChannelException;
@@ -162,39 +163,31 @@ public final class ChannelProvider {
         }
         return;
       }
-      Channel nioDatagramChannel = fut.channel();
+      NioDatagramChannel nioDatagramChannel = (NioDatagramChannel) fut.channel();
 
-      QuicChannel.newBootstrap(nioDatagramChannel)
-        .handler(new ChannelInitializer<>() {
-          @Override
-          protected void initChannel(Channel quicChannel) {
-            ChannelPipeline pipeline = quicChannel.pipeline();
-            Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
-            promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
-              if (!future.isSuccess()) {
-                channelHandler.setFailure(future.cause());
-                return;
-              }
-
-              ChannelHandlerContext ctx = future.get();
-              connected(ctx.channel(), channelHandler);
-            });
-
-            pipeline.addLast(new HttpSslHandshaker(promise));
-          }
-        })
-        .localAddress(nioDatagramChannel.localAddress())
-        .remoteAddress(nioDatagramChannel.remoteAddress())
-        .connect()
-        .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
+      Http3Utils.newQuicChannel(nioDatagramChannel, quicChannel -> {
+        Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
+        promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
           if (!future.isSuccess()) {
-            Throwable cause = future.cause();
-            if(future.cause() instanceof QuicClosedChannelException) {
-              cause = new ConnectTimeoutException(future.cause().getMessage());
-            }
-            channelHandler.tryFailure(cause);
+            channelHandler.setFailure(future.cause());
+            return;
           }
+
+          ChannelHandlerContext ctx = future.get();
+          connected(ctx.channel(), channelHandler);
         });
+
+        quicChannel.pipeline().addLast(new HttpSslHandshaker(promise));
+      })
+      .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
+        if (!future.isSuccess()) {
+          Throwable cause = future.cause();
+          if(future.cause() instanceof QuicClosedChannelException) {
+            cause = new ConnectTimeoutException(future.cause().getMessage());
+          }
+          channelHandler.tryFailure(cause);
+        }
+      });
     });
   }
 
