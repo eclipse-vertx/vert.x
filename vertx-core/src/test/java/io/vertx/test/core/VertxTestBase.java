@@ -115,6 +115,9 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   @Rule
+  public TestParameterizationRule testParameterizationRule = new TestParameterizationRule();
+
+  @Rule
   public RepeatRule repeatRule = new RepeatRule();
 
   @Rule
