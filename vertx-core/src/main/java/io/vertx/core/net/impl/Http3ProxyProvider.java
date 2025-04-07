@@ -18,6 +18,7 @@ import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.incubator.codec.http3.Http3Headers;
+import io.netty.incubator.codec.http3.Http3HeadersFrame;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicConnectionAddress;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -41,14 +42,14 @@ import java.net.SocketAddress;
  */
 public class Http3ProxyProvider {
   private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3ProxyProvider.class);
-  public static final String CHANNEL_HANDLER_HEADER_NORMALIZER = "vertxHeaderNormalizerChannelHandler";
+  public static final String CHANNEL_HANDLER_CONNECT_REQUEST_HEADER_CLEANER = "vertxConnectRequestHeaderCleaner";
   public static final String CHANNEL_HANDLER_PROXY = "myProxyHandler";
   public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
   private static final String CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL = "mySecondProxyQuicChannelHandler";
   private static final String CHANNEL_HANDLER_CLIENT_CONNECTION = "myHttp3ClientConnectionHandler";
 
   //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-  public static boolean IS_NETTY_BASED_PROXY =  false;
+  public static boolean IS_NETTY_BASED_PROXY = false;
 
   private final EventLoop eventLoop;
 
@@ -98,7 +99,7 @@ public class Http3ProxyProvider {
                 }
 
                 ChannelPipeline pipeline = quicStreamChannelFut.get().pipeline();
-                pipeline.addLast(CHANNEL_HANDLER_HEADER_NORMALIZER, new HeaderNormalizer());
+                pipeline.addLast(CHANNEL_HANDLER_CONNECT_REQUEST_HEADER_CLEANER, new ConnectRequestHeaderCleaner());
                 pipeline.addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
                 pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
                   , Http3ProxyProvider.this::removeProxyChannelHandlers));
@@ -447,14 +448,12 @@ public class Http3ProxyProvider {
     }
   }
 
-  private static class HeaderNormalizer extends ChannelOutboundHandlerAdapter {
+  private static class ConnectRequestHeaderCleaner extends ChannelOutboundHandlerAdapter {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-      if (msg instanceof DefaultHttp3HeadersFrame) {
+      if (msg instanceof Http3HeadersFrame && ((Http3HeadersFrame) msg).headers().method() == HttpMethod.CONNECT.asciiName()) {
         ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.PATH.value());
         ((DefaultHttp3HeadersFrame) msg).headers().remove(Http3Headers.PseudoHeaderName.SCHEME.value());
-        ((DefaultHttp3HeadersFrame) msg).headers().method(HttpMethod.CONNECT.name());
-        ((DefaultHttp3HeadersFrame) msg).headers().authority("localhost:1234");
       }
       super.write(ctx, msg, promise);
     }
