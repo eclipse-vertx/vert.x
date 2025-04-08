@@ -35,7 +35,7 @@ public @interface ParameterizedTest {
   }
 
   @Retention(RetentionPolicy.RUNTIME)
-  @Target({ElementType.FIELD, ElementType.METHOD})
+  @Target(ElementType.FIELD)
   @interface Parameter {
     String value();
   }
