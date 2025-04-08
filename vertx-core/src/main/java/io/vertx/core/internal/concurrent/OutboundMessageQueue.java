@@ -1,6 +1,6 @@
 package io.vertx.core.internal.concurrent;
 
-import io.netty.channel.EventLoop;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.streams.impl.MessagePassingQueue;
 
 import java.util.List;
@@ -14,7 +14,7 @@ import static io.vertx.core.streams.impl.MessagePassingQueue.numberOfUnwritableS
  */
 public class OutboundMessageQueue<M> implements Predicate<M> {
 
-  private final EventLoop eventLoop;
+  private final EventExecutor consumer;
   private final AtomicInteger numberOfUnwritableSignals = new AtomicInteger();
   private final MessagePassingQueue.MpSc<M> mqp;
   private volatile boolean eventuallyClosed;
@@ -27,22 +27,22 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   /**
    * Create a queue.
    *
-   * @param eventLoop the queue event-loop
+   * @param consumer the queue event-loop
    */
-  public OutboundMessageQueue(EventLoop eventLoop) {
-    this.eventLoop = eventLoop;
+  public OutboundMessageQueue(EventExecutor consumer) {
+    this.consumer = consumer;
     this.mqp = new MessagePassingQueue.MpSc<>(this);
   }
 
   /**
    * Create a queue.
    *
-   * @param eventLoop the queue event-loop
+   * @param consumer the queue event-loop
    * @param lowWaterMark the low-water mark, must be positive
    * @param highWaterMark the high-water mark, must be greater than the low-water mark
    */
-  public OutboundMessageQueue(EventLoop eventLoop, int lowWaterMark, int highWaterMark) {
-    this.eventLoop = eventLoop;
+  public OutboundMessageQueue(EventExecutor consumer, int lowWaterMark, int highWaterMark) {
+    this.consumer = consumer;
     this.mqp = new MessagePassingQueue.MpSc<>(this, lowWaterMark, highWaterMark);
   }
 
@@ -54,7 +54,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   /**
    * @return whether the queue is writable, this can be called from any thread
    */
-  public boolean isWritable() {
+  public final boolean isWritable() {
     // Can be negative temporarily
     return numberOfUnwritableSignals.get() <= 0;
   }
@@ -66,7 +66,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    * @return whether the writer can continue/stop writing to the queue
    */
   public final boolean write(M message) {
-    boolean inEventLoop = eventLoop.inEventLoop();
+    boolean inEventLoop = consumer.inThread();
     int flags;
     if (inEventLoop) {
       if (closed) {
@@ -84,7 +84,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       }
       flags = mqp.add(message);
       if ((flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0) {
-        eventLoop.execute(this::drain);
+        consumer.execute(this::drain);
       }
     }
     int val;
@@ -130,7 +130,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    * Attempts to drain the queue.
    */
   public final boolean tryDrain() {
-    assert(eventLoop.inEventLoop());
+    assert(consumer.inThread());
     if (overflow) {
       overflow = false;
       drain();
@@ -144,7 +144,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    * Close the queue.
    */
   public final void close() {
-    assert(eventLoop.inEventLoop());
+    assert(consumer.inThread());
     if (closed) {
       return;
     }
@@ -159,7 +159,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
   private void handleDrained(int numberOfSignals) {
     int val = numberOfUnwritableSignals.addAndGet(-numberOfSignals);
     if ((val + numberOfSignals) > 0 && val <= 0) {
-      eventLoop.execute(this::handleDrained);
+      consumer.execute(this::handleDrained);
     }
   }
 

@@ -12,6 +12,7 @@ package io.vertx.tests.concurrent;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -31,14 +32,14 @@ public class OutboundMessageQueueTest extends VertxTestBase {
 
   private List<Integer> output = Collections.synchronizedList(new ArrayList<>());
   private OutboundMessageQueue<Integer> queue;
-  private EventLoop eventLoop;
+  private EventExecutor eventLoop;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
     disableThreadChecks();
     output = Collections.synchronizedList(new ArrayList<>());
-    eventLoop = ((ContextInternal)vertx.getOrCreateContext()).nettyEventLoop();
+    eventLoop = ((ContextInternal)vertx.getOrCreateContext()).executor();
   }
 
   @Test
