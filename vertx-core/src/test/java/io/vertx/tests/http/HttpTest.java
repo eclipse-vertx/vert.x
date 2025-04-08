@@ -35,7 +35,6 @@ import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
-import io.vertx.test.core.ParameterizedTest;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.fakestream.FakeStream;
@@ -1466,20 +1465,9 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  public static final String CLI_TEST_DATA_PARAMETER = "ClientExceptionField";
-  public static final String CLI_TEST_DATA_PARAMETERS = "ClientExceptionMethod";
-  @ParameterizedTest.Parameter(CLI_TEST_DATA_PARAMETER)
-  public Object cliTestParameter;
-
-  @ParameterizedTest.Parameters(CLI_TEST_DATA_PARAMETERS)
-  protected List<String> cliTestParameters() {
-    return Arrays.asList("cli1", "cli2", "cli3", "cli4", "cli5", "cli6", "cli7", "cli8", "cli9", "cli10");
-  }
-
-  @ParameterizedTest(parameters = CLI_TEST_DATA_PARAMETERS, parameter = CLI_TEST_DATA_PARAMETER)
+  @Repeat(times = 10)
   @Test
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
-    System.out.println("Client exception attr is : " + cliTestParameter);
     int numReqs = 10;
     waitFor(numReqs);
     server.requestHandler(request -> {
