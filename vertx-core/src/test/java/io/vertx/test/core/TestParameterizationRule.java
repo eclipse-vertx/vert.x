@@ -21,8 +21,9 @@ import org.junit.runners.model.Statement;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.lang.reflect.Modifier;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,62 +58,108 @@ public class TestParameterizationRule implements MethodRule {
     Statement result = statement;
     TestParameterization parameterized = method.getAnnotation(TestParameterization.class);
     if (parameterized != null) {
-      Field field = findTestDataField(target, parameterized);
-      List<Object> testData = findTestData(target, parameterized);
+      Field field = locateTestDataField(target, parameterized);
+      Method method0 = locateTestDataMethod(target, parameterized);
+      List<Object> testData = invoke(target, method0);
       result = new ParameterizedTestStatement(target, statement, field, testData);
     }
     return result;
   }
 
-  private static Field findTestDataField(Object target, TestParameterization parameterized) {
-    Field field = locateTestDataField(target, parameterized);
+  private static Field locateTestDataField(Object target, TestParameterization parameterized) {
+    Field field = null;
+    for (Field field0 : getAccessibleFields(target)) {
+      if (field0.isAnnotationPresent(TestParameterization.TestDataField.class) &&
+        field0.getAnnotation(TestParameterization.TestDataField.class).value().equals(parameterized.targetField())) {
+        field = field0;
+        break;
+      }
+    }
+    if (field == null) {
+      throw new RuntimeException("Field annotated with " + TestParameterization.TestDataField.class +
+        " and named '" + parameterized.targetField() + "' not found.");
+    }
     return field;
   }
 
-  private static Field locateTestDataField(Object target, TestParameterization parameterized) {
-    List<Field> fields = combine(target.getClass().getDeclaredFields(), target.getClass().getFields());
-    for (Field field : fields) {
-      TestParameterization.TestDataField dataFieldAnnotation =
-        field.getAnnotation(TestParameterization.TestDataField.class);
-      if (dataFieldAnnotation != null && dataFieldAnnotation.value().equals(parameterized.targetField())) {
-        return field;
-      }
-    }
-    throw new RuntimeException("Field annotated with " + TestParameterization.TestDataField.class +
-      " and named '" + parameterized.targetField() + "' not found.");
-  }
-
-  private static List<Object> findTestData(Object target, TestParameterization parameterized) {
-    Method method = locateTestDataMethod(target, parameterized);
-    List<Object> testData = invoke(target, method);
-    return testData;
-  }
-
   private static Method locateTestDataMethod(Object target, TestParameterization parameterized) {
-    List<Method> methods = combine(target.getClass().getDeclaredMethods(), target.getClass().getMethods());
-    for (Method method : methods) {
-      TestParameterization.TestDataMethod dataMethodAnnotation =
-        method.getAnnotation(TestParameterization.TestDataMethod.class);
-      if (dataMethodAnnotation != null && dataMethodAnnotation.value().equals(parameterized.dataMethod())) {
-        return method;
+    Method method = null;
+    for (Method method0 : getAccessibleMethods(target)) {
+      if (method0.isAnnotationPresent(TestParameterization.TestDataMethod.class) &&
+        method0.getAnnotation(TestParameterization.TestDataMethod.class).value().equals(parameterized.dataMethod())) {
+        method = method0;
+        break;
       }
     }
-    throw new RuntimeException("Method annotated with " + TestParameterization.TestDataMethod.class + " and named '"
-      + parameterized.dataMethod() + "' not found.");
+
+    if (method == null) {
+      throw new RuntimeException("Method annotated with " + TestParameterization.TestDataMethod.class + " and named '"
+        + parameterized.dataMethod() + "' not found.");
+    }
+    if (method.getReturnType() != List.class) {
+      throw new RuntimeException("Test data method must return a List. Method '" + method.getName() + "' returns " +
+        method.getReturnType().getName());
+    }
+    if (method.getParameterCount() != 0) {
+      throw new RuntimeException("Test data method should not have parameters. Method '" + method.getName() + "' " +
+        "has " + method.getParameterCount() + " parameter(s).");
+    }
+    method.trySetAccessible();
+    return method;
   }
 
-  private static <T> T invoke(Object target, Method method) {
+  private static List<Field> getAccessibleFields(Object target) {
+    List<Field> fields = new LinkedList<>();
+    Class<?> clazz = target.getClass();
+    while (clazz != null && clazz != Object.class) {
+      for (Field field : clazz.getDeclaredFields()) {
+        if (isMemberAccessible(target.getClass(), field)) {
+          fields.add(field);
+        }
+      }
+      clazz = clazz.getSuperclass();
+    }
+    return fields;
+  }
+
+  private static List<Method> getAccessibleMethods(Object target) {
+    List<Method> methods = new LinkedList<>();
+    Class<?> clazz = target.getClass();
+    while (clazz != null && clazz != Object.class) {
+      for (Method method : clazz.getDeclaredMethods()) {
+        if (isMemberAccessible(target.getClass(), method)) {
+          methods.add(method);
+        }
+      }
+      clazz = clazz.getSuperclass();
+    }
+    return methods;
+  }
+
+  private static <T> T invoke(Object target, Method method, Object... args) {
     try {
-      return (T) method.invoke(target);
+      return (T) method.invoke(target, args);
     } catch (IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static <T> List<T> combine(T[] array1, T[] array2) {
-    List<T> data = new LinkedList<>();
-    data.addAll(Arrays.asList(array1));
-    data.addAll(Arrays.asList(array2));
-    return data;
+  private static boolean isMemberAccessible(Class<?> clazz, Member member) {
+    if (Modifier.isPublic(member.getModifiers())) {
+      return true;
+    }
+    if (Modifier.isProtected(member.getModifiers()) && isSamePackage(clazz, member)) {
+      return true;
+    }
+    if (Modifier.isPrivate(member.getModifiers()) && clazz.equals(member.getDeclaringClass())) {
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean isSamePackage(Class<?> clazz, Member field) {
+    Package classPackage = clazz.getPackage();
+    Package fieldPackage = field.getDeclaringClass().getPackage();
+    return classPackage != null && classPackage.equals(fieldPackage);
   }
 }
