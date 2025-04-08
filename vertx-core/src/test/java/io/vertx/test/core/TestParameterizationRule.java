@@ -70,6 +70,7 @@ public class TestParameterizationRule implements MethodRule {
       throw new RuntimeException("Field annotated with " + TestParameterization.TestDataField.class +
         " and named '" + parameterized.targetField() + "' not found.");
     }
+    field.trySetAccessible();
     return field;
   }
 
