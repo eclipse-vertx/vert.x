@@ -30,22 +30,22 @@ public class TestParameterizationRule implements MethodRule {
   private static class ParameterizedTestStatement extends Statement {
 
     private final Statement statement;
-    private final Field testDataField;
-    private final List<Object> testData;
+    private final Field parameter;
+    private final List<Object> parameters;
     private final Object target;
 
-    private ParameterizedTestStatement(Object target, Statement statement, Field testDataField, List<Object> testData) {
+    private ParameterizedTestStatement(Object target, Statement statement, Field parameter, List<Object> parameters) {
       this.target = target;
       this.statement = statement;
-      this.testDataField = testDataField;
-      this.testData = testData;
+      this.parameter = parameter;
+      this.parameters = parameters;
     }
 
     @Override
     public void evaluate() throws Throwable {
-      for (int i = 0; i < testData.size(); i++) {
-        System.out.println("*** Iteration " + (i + 1) + "/" + testData.size() + " of test");
-        testDataField.set(target, testData.get(i));
+      for (int i = 0; i < parameters.size(); i++) {
+        System.out.println("*** Iteration " + (i + 1) + "/" + parameters.size() + " of test");
+        parameter.set(target, parameters.get(i));
         statement.evaluate();
       }
     }
@@ -54,59 +54,59 @@ public class TestParameterizationRule implements MethodRule {
   @Override
   public Statement apply(Statement statement, FrameworkMethod method, Object target) {
     Statement result = statement;
-    TestParameterization parameterized = method.getAnnotation(TestParameterization.class);
+    ParameterizedTest parameterized = method.getAnnotation(ParameterizedTest.class);
     if (parameterized != null) {
-      Field field = locateTestDataField(target, parameterized);
-      Method method0 = locateTestDataMethod(target, parameterized);
-      List<Object> testData = invoke(target, method0);
-      result = new ParameterizedTestStatement(target, statement, field, testData);
+      Field field = locateTestParameterMember(target, parameterized);
+      Method method0 = locateTestParametersMember(target, parameterized);
+      List<Object> parameters = invoke(target, method0);
+      result = new ParameterizedTestStatement(target, statement, field, parameters);
     }
     return result;
   }
 
-  private static Field locateTestDataField(Object target, TestParameterization parameterized) {
-    Field field = getTestDataField(target, parameterized);
-    if (field == null) {
-      throw new RuntimeException("Field annotated with " + TestParameterization.TestDataField.class +
-        " and named '" + parameterized.targetField() + "' not found.");
+  private static Field locateTestParameterMember(Object instance, ParameterizedTest parameterized) {
+    Field parameter = getTestParameterMember(instance, parameterized);
+    if (parameter == null) {
+      throw new RuntimeException("Member annotated with " + ParameterizedTest.Parameter.class +
+        " and named '" + parameterized.parameter() + "' not found.");
     }
-    field.trySetAccessible();
-    return field;
+    parameter.trySetAccessible();
+    return parameter;
   }
 
-  private static Field getTestDataField(Object target, TestParameterization parameterized) {
-    for (Field field0 : getAccessibleFields(target)) {
-      if (field0.isAnnotationPresent(TestParameterization.TestDataField.class) &&
-        field0.getAnnotation(TestParameterization.TestDataField.class).value().equals(parameterized.targetField())) {
+  private static Field getTestParameterMember(Object instance, ParameterizedTest parameterized) {
+    for (Field field0 : getAccessibleFields(instance)) {
+      if (field0.isAnnotationPresent(ParameterizedTest.Parameter.class) &&
+        field0.getAnnotation(ParameterizedTest.Parameter.class).value().equals(parameterized.parameter())) {
         return field0;
       }
     }
     return null;
   }
 
-  private static Method locateTestDataMethod(Object target, TestParameterization parameterized) {
-    Method method = getTestDataMethod(target, parameterized);
+  private static Method locateTestParametersMember(Object instance, ParameterizedTest parameterized) {
+    Method method = getTestParametersMember(instance, parameterized);
 
     if (method == null) {
-      throw new RuntimeException("Method annotated with " + TestParameterization.TestDataMethod.class + " and named '"
-        + parameterized.dataMethod() + "' not found.");
+      throw new RuntimeException("Method annotated with " + ParameterizedTest.Parameters.class + " and named '"
+        + parameterized.parameters() + "' not found.");
     }
     if (method.getReturnType() != List.class) {
-      throw new RuntimeException("Test data method must return a List. Method '" + method.getName() + "' returns " +
+      throw new RuntimeException("Method must return a List. Method '" + method.getName() + "' returns " +
         method.getReturnType().getName());
     }
     if (method.getParameterCount() != 0) {
-      throw new RuntimeException("Test data method should not have parameters. Method '" + method.getName() + "' " +
-        "has " + method.getParameterCount() + " parameter(s).");
+      throw new RuntimeException("Method should not have parameters. Method '" + method.getName() + "' " +
+        "has " + method.getParameterCount() + " param(s).");
     }
     method.trySetAccessible();
     return method;
   }
 
-  private static Method getTestDataMethod(Object target, TestParameterization parameterized) {
-    for (Method method0 : getAccessibleMethods(target)) {
-      if (method0.isAnnotationPresent(TestParameterization.TestDataMethod.class) &&
-        method0.getAnnotation(TestParameterization.TestDataMethod.class).value().equals(parameterized.dataMethod())) {
+  private static Method getTestParametersMember(Object instance, ParameterizedTest parameterized) {
+    for (Method method0 : getAccessibleMethods(instance)) {
+      if (method0.isAnnotationPresent(ParameterizedTest.Parameters.class) &&
+        method0.getAnnotation(ParameterizedTest.Parameters.class).value().equals(parameterized.parameters())) {
         return method0;
       }
     }

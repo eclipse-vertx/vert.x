@@ -9,12 +9,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ReflectionUtils {
-  public static List<Field> getAccessibleFields(Object target) {
+  public static List<Field> getAccessibleFields(Object instance) {
     List<Field> fields = new LinkedList<>();
-    Class<?> clazz = target.getClass();
+    Class<?> clazz = instance.getClass();
     while (clazz != null && clazz != Object.class) {
       for (Field field : clazz.getDeclaredFields()) {
-        if (isMemberAccessible(target.getClass(), field)) {
+        if (isMemberAccessible(instance.getClass(), field)) {
           fields.add(field);
         }
       }
@@ -23,12 +23,12 @@ public class ReflectionUtils {
     return fields;
   }
 
-  public static List<Method> getAccessibleMethods(Object target) {
+  public static List<Method> getAccessibleMethods(Object instance) {
     List<Method> methods = new LinkedList<>();
-    Class<?> clazz = target.getClass();
+    Class<?> clazz = instance.getClass();
     while (clazz != null && clazz != Object.class) {
       for (Method method : clazz.getDeclaredMethods()) {
-        if (isMemberAccessible(target.getClass(), method)) {
+        if (isMemberAccessible(instance.getClass(), method)) {
           methods.add(method);
         }
       }
@@ -37,9 +37,9 @@ public class ReflectionUtils {
     return methods;
   }
 
-  public static <T> T invoke(Object target, Method method, Object... args) {
+  public static <T> T invoke(Object instance, Method method, Object... args) {
     try {
-      return (T) method.invoke(target, args);
+      return (T) method.invoke(instance, args);
     } catch (IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
     }

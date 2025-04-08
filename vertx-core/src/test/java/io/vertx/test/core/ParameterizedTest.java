@@ -22,21 +22,21 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-public @interface TestParameterization {
+public @interface ParameterizedTest {
 
-  String dataMethod();
+  String parameters();
 
-  String targetField();
+  String parameter();
 
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)
-  @interface TestDataMethod {
+  @interface Parameters {
     String value();
   }
 
   @Retention(RetentionPolicy.RUNTIME)
-  @Target(ElementType.FIELD)
-  @interface TestDataField {
+  @Target({ElementType.FIELD, ElementType.METHOD})
+  @interface Parameter {
     String value();
   }
 }

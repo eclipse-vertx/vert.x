@@ -35,7 +35,7 @@ import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
-import io.vertx.test.core.TestParameterization;
+import io.vertx.test.core.ParameterizedTest;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.fakestream.FakeStream;
@@ -1466,20 +1466,20 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  public static final String CLIENT_EXCEPTION_TEST_DATA_FIELD = "ClientExceptionField";
-  public static final String CLIENT_EXCEPTION_TEST_DATA_METHOD = "ClientExceptionMethod";
-  @TestParameterization.TestDataField(CLIENT_EXCEPTION_TEST_DATA_FIELD)
-  public Object clientExceptionField;
+  public static final String CLI_TEST_DATA_PARAMETER = "ClientExceptionField";
+  public static final String CLI_TEST_DATA_PARAMETERS = "ClientExceptionMethod";
+  @ParameterizedTest.Parameter(CLI_TEST_DATA_PARAMETER)
+  public Object cliTestParameter;
 
-  @TestParameterization.TestDataMethod(CLIENT_EXCEPTION_TEST_DATA_METHOD)
-  protected List<String> clientExceptionData() {
-    return Arrays.asList("cli1", "cli2", "cli3","cli4", "cli5", "cli6", "cli7","cli8", "cli9", "cli10");
+  @ParameterizedTest.Parameters(CLI_TEST_DATA_PARAMETERS)
+  protected List<String> cliTestParameters() {
+    return Arrays.asList("cli1", "cli2", "cli3", "cli4", "cli5", "cli6", "cli7", "cli8", "cli9", "cli10");
   }
 
-  @TestParameterization(dataMethod = CLIENT_EXCEPTION_TEST_DATA_METHOD, targetField = CLIENT_EXCEPTION_TEST_DATA_FIELD)
+  @ParameterizedTest(parameters = CLI_TEST_DATA_PARAMETERS, parameter = CLI_TEST_DATA_PARAMETER)
   @Test
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
-    System.out.println("Client exception attr is : " + clientExceptionField);
+    System.out.println("Client exception attr is : " + cliTestParameter);
     int numReqs = 10;
     waitFor(numReqs);
     server.requestHandler(request -> {
