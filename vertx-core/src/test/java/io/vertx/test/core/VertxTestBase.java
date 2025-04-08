@@ -25,7 +25,6 @@ import io.vertx.core.transport.Transport;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import junit.framework.AssertionFailedError;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Rule;
 
 import javax.net.ssl.SSLContext;
@@ -115,7 +114,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   @Rule
-  public TestParameterizationRule testParameterizationRule = new TestParameterizationRule();
+  public ParameterizedTest.Rule parameterizationTestRule = new ParameterizedTest.Rule();
 
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
