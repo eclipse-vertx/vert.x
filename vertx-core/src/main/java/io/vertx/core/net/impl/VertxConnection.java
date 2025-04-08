@@ -23,6 +23,8 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
@@ -77,8 +79,16 @@ public class VertxConnection extends ConnectionBase {
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx, boolean strictThreadMode) {
     super(context, chctx);
+
+    EventLoopExecutor executor;
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP) {
+      executor = (EventLoopExecutor) context.executor();
+    } else {
+      executor = new EventLoopExecutor(context.nettyEventLoop());
+    }
+
     this.channelWritable = chctx.channel().isWritable();
-    this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(chctx.channel().eventLoop());
+    this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
     this.autoRead = true;
   }
@@ -527,7 +537,7 @@ public class VertxConnection extends ConnectionBase {
    */
   private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite>, OutboundWriteQueue {
 
-    public InternalMessageChannel(EventLoop eventLoop) {
+    public InternalMessageChannel(io.vertx.core.internal.EventExecutor eventLoop) {
       super(eventLoop);
     }
 

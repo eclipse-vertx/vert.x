@@ -80,7 +80,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.isConnect = false;
     this.writable = true;
-    this.outboundQueue = new OutboundMessageQueue<>(conn.context().nettyEventLoop()) {
+    this.outboundQueue = new OutboundMessageQueue<>(conn.context().executor()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {
