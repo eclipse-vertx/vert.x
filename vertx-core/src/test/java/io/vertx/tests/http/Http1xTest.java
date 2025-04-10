@@ -5959,4 +5959,29 @@ public class Http1xTest extends HttpTest {
       System.clearProperty(SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.name);
     }
   }
+
+  @Test
+  public void testEagerCreateRequestInboundQueueForWorkers() throws Exception {
+    server.requestHandler(req -> {
+      AtomicBoolean paused = new AtomicBoolean(true);
+      req.pause();
+      req.endHandler(v -> {
+        assertFalse(paused.get());
+        req.response().end();
+      });
+      vertx.runOnContext(v1 -> {
+        paused.set(false);
+        req.resume();
+      });
+    });
+    Context ctx = ((VertxInternal)vertx).createWorkerContext();
+    startServer(testAddress, ctx, server);
+
+    client.request(requestOptions).compose(req -> req
+      .send()
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body))
+      .await();
+  }
+
 }
