@@ -71,6 +71,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private final String serverOrigin;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final TracingPolicy tracingPolicy;
+  private final boolean eagerCreateRequestQueue;
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
@@ -84,14 +85,15 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   final SslContextManager sslContextManager;
   final boolean strictThreadMode;
 
-  public Http1xServerConnection(Supplier<ContextInternal> streamContextSupplier,
+  public Http1xServerConnection(ThreadingModel threadingModel,
+                                Supplier<ContextInternal> streamContextSupplier,
                                 SslContextManager sslContextManager,
                                 HttpServerOptions options,
                                 ChannelHandlerContext chctx,
                                 ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
-    super(context, chctx, options.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP);
+    super(context, chctx, options.getStrictThreadMode() && threadingModel == ThreadingModel.EVENT_LOOP);
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
     this.options = options;
@@ -100,7 +102,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
     this.wantClose = false;
-    this.strictThreadMode = options.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP;
+    this.strictThreadMode = options.getStrictThreadMode() && threadingModel == ThreadingModel.EVENT_LOOP;
+    this.eagerCreateRequestQueue = threadingModel != ThreadingModel.EVENT_LOOP;
   }
 
   @Override
@@ -147,6 +150,9 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       ContextInternal requestCtx = streamContextSupplier.get();
       Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
+      if (eagerCreateRequestQueue) {
+        req.resume();
+      }
       requestInProgress = req;
       if (responseInProgress != null) {
         doPause();
