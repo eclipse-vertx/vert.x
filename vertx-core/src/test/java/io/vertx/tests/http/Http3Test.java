@@ -118,6 +118,90 @@ public class Http3Test extends HttpCommonTest {
     super.testListenSocketAddress();
   }
 
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolIdleTimeout() throws Exception {
+    super.testHAProxyProtocolIdleTimeout();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
+    super.testHAProxyProtocolIdleTimeoutNotHappened();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion1TCP4() throws Exception {
+    super.testHAProxyProtocolVersion1TCP4();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion1TCP6() throws Exception {
+    super.testHAProxyProtocolVersion1TCP6();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion1Unknown() throws Exception {
+    super.testHAProxyProtocolVersion1Unknown();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2TCP4() throws Exception {
+    super.testHAProxyProtocolVersion2TCP4();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2TCP6() throws Exception {
+    super.testHAProxyProtocolVersion2TCP6();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
+    super.testHAProxyProtocolVersion2UnixSocket();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2Unknown() throws Exception {
+    super.testHAProxyProtocolVersion2Unknown();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2UDP4() throws Exception {
+    super.testHAProxyProtocolVersion2UDP4();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2UDP6() throws Exception {
+    super.testHAProxyProtocolVersion2UDP6();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
+    super.testHAProxyProtocolVersion2UnixDataGram();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolEmptyHeader() throws Exception {
+    super.testHAProxyProtocolEmptyHeader();
+  }
+
+  @Test
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  public void testHAProxyProtocolIllegalHeader() throws Exception {
+    super.testHAProxyProtocolIllegalHeader();
+  }
+
   @Ignore
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
@@ -295,104 +379,6 @@ public class Http3Test extends HttpCommonTest {
   public void testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler() throws Exception {
     //TODO: resolve this test issue.
     super.testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolIdleTimeout() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolIdleTimeout();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolIdleTimeoutNotHappened();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion1TCP4() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion1TCP4();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion1TCP6() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion1TCP6();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion1Unknown() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion1Unknown();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2TCP4() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2TCP4();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2TCP6() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2TCP6();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2UnixSocket();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2Unknown() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2Unknown();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2UDP4() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2UDP4();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2UDP6() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2UDP6();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolVersion2UnixDataGram();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolEmptyHeader() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolEmptyHeader();
-  }
-
-  @Test
-  @Ignore
-  public void testHAProxyProtocolIllegalHeader() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testHAProxyProtocolIllegalHeader();
   }
 
   @Test
