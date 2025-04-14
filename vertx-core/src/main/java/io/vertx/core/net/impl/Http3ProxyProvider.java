@@ -238,13 +238,9 @@ public class Http3ProxyProvider {
       io.vertx.core.internal.proxy.ProxyHandler proxyHandler;
 
       if (isHttp() && hasCredential()) {
-        HttpProxyHandler httpProxyHandler = new HttpProxyHandler(proxyAddr, username, password);
-        httpProxyHandler.setCodec(new Http3FrameToHttpObjectCodec(false, false));
-        proxyHandler = httpProxyHandler;
+        proxyHandler = new H3HttpProxyHandler(proxyAddr, username, password, isHttp3);
       } else if (isHttp() && !hasCredential()) {
-        HttpProxyHandler httpProxyHandler = new HttpProxyHandler(proxyAddr);
-        httpProxyHandler.setCodec(new Http3FrameToHttpObjectCodec(false, false));
-        proxyHandler = httpProxyHandler;
+        proxyHandler = new H3HttpProxyHandler(proxyAddr, isHttp3);
       } else if (isSocks5() && hasCredential()) {
         proxyHandler = new io.vertx.core.internal.proxy.Socks5ProxyHandler(proxyAddr, username, password);
       } else if (isSocks5() && !hasCredential()) {
@@ -459,4 +455,19 @@ public class Http3ProxyProvider {
     }
   }
 
+  private static class H3HttpProxyHandler extends HttpProxyHandler {
+    public H3HttpProxyHandler(SocketAddress proxyAddress, String username, String password, boolean isHttp3) {
+      super(proxyAddress, username, password);
+      if (isHttp3) {
+        setCodec(new Http3FrameToHttpObjectCodec(false, false));
+      }
+    }
+
+    public H3HttpProxyHandler(SocketAddress proxyAddress, boolean isHttp3) {
+      super(proxyAddress);
+      if (isHttp3) {
+        setCodec(new Http3FrameToHttpObjectCodec(false, false));
+      }
+    }
+  }
 }
