@@ -58,7 +58,7 @@ import java.net.SocketAddress;
  * <a href="https://datatracker.ietf.org/doc/html/rfc7230#page-10">message-forwarding HTTP proxy agent</a> instead of a
  * tunneling proxy should not use this handler.
  */
-public final class HttpProxyHandler extends ProxyHandler {
+public class HttpProxyHandler extends ProxyHandler {
 
     private static final String PROTOCOL = "http";
     private static final String AUTH_BASIC = "basic";
@@ -250,7 +250,7 @@ public final class HttpProxyHandler extends ProxyHandler {
         }
     }
 
-    public <T extends ChannelInboundHandler & ChannelOutboundHandler> void setCodec(T codec) {
+    protected <T extends ChannelInboundHandler & ChannelOutboundHandler> void setCodec(T codec) {
         this.codecWrapper = new HttpClientCodecWrapper(codec);
     }
 
