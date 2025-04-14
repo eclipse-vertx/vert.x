@@ -397,6 +397,110 @@ public class Http3NetTest extends NetTest {
     super.testWithSocks5ProxyAuth();
   }
 
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion1TCP4() throws Exception {
+    super.testHAProxyProtocolVersion1TCP4();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion1TCP6() throws Exception {
+    super.testHAProxyProtocolVersion1TCP6();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2TCP4() throws Exception {
+    super.testHAProxyProtocolVersion2TCP4();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2TCP6() throws Exception {
+    super.testHAProxyProtocolVersion2TCP6();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2UDP4() throws Exception {
+    super.testHAProxyProtocolVersion2UDP4();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2UDP6() throws Exception {
+    super.testHAProxyProtocolVersion2UDP6();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolIllegalHeader1() throws Exception {
+    super.testHAProxyProtocolIllegalHeader1();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolIllegalHeader2() throws Exception {
+    super.testHAProxyProtocolIllegalHeader2();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolIdleTimeout() throws Exception {
+    super.testHAProxyProtocolIdleTimeout();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
+    super.testHAProxyProtocolVersion2UnixDataGram();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
+    super.testHAProxyProtocolVersion2UnixSocket();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolConnectSSL() throws Exception {
+    super.testHAProxyProtocolConnectSSL();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
+    super.testHAProxyProtocolIdleTimeoutNotHappened();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion1Unknown() throws Exception {
+    super.testHAProxyProtocolVersion1Unknown();
+  }
+
+  @Ignore("HAProxy protocol is TCP-based and not applicable to Netty's HTTP/3 (UDP/QUIC) transport.")
+  @Override
+  @Test
+  public void testHAProxyProtocolVersion2Unknown() throws Exception {
+    super.testHAProxyProtocolVersion2Unknown();
+  }
 
   @Ignore
   @Override
@@ -695,111 +799,6 @@ public class Http3NetTest extends NetTest {
 
   //TODO: resolve group2
 
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion1TCP4() throws Exception {
-    super.testHAProxyProtocolVersion1TCP4();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion1TCP6() throws Exception {
-    super.testHAProxyProtocolVersion1TCP6();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2TCP4() throws Exception {
-    super.testHAProxyProtocolVersion2TCP4();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2TCP6() throws Exception {
-    super.testHAProxyProtocolVersion2TCP6();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2UDP4() throws Exception {
-    super.testHAProxyProtocolVersion2UDP4();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2UDP6() throws Exception {
-    super.testHAProxyProtocolVersion2UDP6();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolIllegalHeader1() throws Exception {
-    super.testHAProxyProtocolIllegalHeader1();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolIllegalHeader2() throws Exception {
-    super.testHAProxyProtocolIllegalHeader2();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolIdleTimeout() throws Exception {
-    super.testHAProxyProtocolIdleTimeout();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
-    super.testHAProxyProtocolVersion2UnixDataGram();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
-    super.testHAProxyProtocolVersion2UnixSocket();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolConnectSSL() throws Exception {
-    super.testHAProxyProtocolConnectSSL();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
-    super.testHAProxyProtocolIdleTimeoutNotHappened();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion1Unknown() throws Exception {
-    super.testHAProxyProtocolVersion1Unknown();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testHAProxyProtocolVersion2Unknown() throws Exception {
-    super.testHAProxyProtocolVersion2Unknown();
-  }
 
   //TODO: resolve group3
 
