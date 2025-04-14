@@ -376,54 +376,21 @@ public class Http3NetTest extends NetTest {
     super.testWithSocks5Proxy();
   }
 
-  @Override
   @Test
-  public void testWithHttpConnectProxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
-    super.testWithHttpConnectProxy();
-  }
-
-  @Ignore
-  @Test
-  public void testWithHttpConnectProxyNettyBased() throws Exception {
-    //TODO: correct this issue
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
-    super.testWithHttpConnectProxy();
-  }
-
-  @Override
-  @Test
-  public void testWithSocks4aProxyAuth() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
-    super.testWithSocks4aProxyAuth();
-  }
-
-  @Test
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   public void testWithSocks4aProxyAuthNettyBased() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
     super.testWithSocks4aProxyAuth();
   }
 
-  @Override
-  @Test
-  public void testWithSocks4aProxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
-    super.testWithSocks4aProxy();
-  }
-
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   @Test
   public void testWithSocks4aProxyNettyBased() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
     super.testWithSocks4aProxy();
   }
 
-  @Override
-  @Test
-  public void testWithSocks5ProxyAuth() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
-    super.testWithSocks5ProxyAuth();
-  }
-
+  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   @Test
   public void testWithSocks5ProxyAuthNettyBased() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
