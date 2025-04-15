@@ -11,12 +11,14 @@
 
 package io.vertx.tests.http;
 
+import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.proxy.HAProxy;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -91,6 +93,70 @@ public class Http3Test extends HttpCommonTest {
     return options.setInitialHttp3Settings(new Http3Settings());
   }
 
+  @Override
+  protected void assertEqualsStreamPriority(StreamPriorityBase expectedStreamPriority,
+                                            StreamPriorityBase actualStreamPriority) {
+    assertEquals(expectedStreamPriority.urgency(), actualStreamPriority.urgency());
+    assertEquals(expectedStreamPriority.isIncremental(), actualStreamPriority.isIncremental());
+  }
+
+  @Override
+  protected StreamPriorityBase generateStreamPriority() {
+    return new Http3StreamPriority(new QuicStreamPriority(TestUtils.randomPositiveInt(127), TestUtils.randomBoolean()));
+  }
+
+  @Override
+  protected StreamPriorityBase defaultStreamPriority() {
+    return new Http3StreamPriority(new QuicStreamPriority(0, false));
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testStreamPriority() throws Exception {
+    super.testStreamPriority();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testStreamPriorityChange() throws Exception {
+    super.testStreamPriorityChange();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testServerStreamPriorityNoChange() throws Exception {
+    super.testServerStreamPriorityNoChange();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testClientStreamPriorityNoChange() throws Exception {
+    super.testClientStreamPriorityNoChange();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testStreamPriorityInheritance() throws Exception {
+    super.testStreamPriorityInheritance();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testDefaultPriority() throws Exception {
+    super.testDefaultPriority();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testStreamPriorityPushPromise() throws Exception {
+    super.testStreamPriorityPushPromise();
+  }
+
+  @Override
+  @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
+  public void testStreamPriorityInheritancePushPromise() throws Exception {
+    super.testStreamPriorityInheritancePushPromise();
+  }
 
   @Test
   @Ignore
