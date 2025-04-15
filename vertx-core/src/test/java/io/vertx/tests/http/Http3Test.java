@@ -110,66 +110,60 @@ public class Http3Test extends HttpCommonTest {
     return new Http3StreamPriority(new QuicStreamPriority(0, false));
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testStreamPriority() throws Exception {
     super.testStreamPriority();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testStreamPriorityChange() throws Exception {
     super.testStreamPriorityChange();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testServerStreamPriorityNoChange() throws Exception {
     super.testServerStreamPriorityNoChange();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testClientStreamPriorityNoChange() throws Exception {
     super.testClientStreamPriorityNoChange();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testStreamPriorityInheritance() throws Exception {
     super.testStreamPriorityInheritance();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testDefaultPriority() throws Exception {
     super.testDefaultPriority();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testStreamPriorityPushPromise() throws Exception {
     super.testStreamPriorityPushPromise();
   }
 
+  @Test
   @Override
   @Ignore("Stream priority exchange for HTTP/3 is not fully supported by Netty.")
   public void testStreamPriorityInheritancePushPromise() throws Exception {
     super.testStreamPriorityInheritancePushPromise();
-  }
-
-  @Test
-  @Ignore
-  public void testClientDrainHandler() throws Exception {
-    //TODO: resolve this test issue.
-    super.testClientDrainHandler();
-  }
-
-  @Test
-  @Ignore
-  public void testServerDrainHandler() throws Exception {
-    //TODO: resolve this test issue.
-    super.testServerDrainHandler();
   }
 
   @Ignore("This test is ignored because UDP is based on a single connectionless protocol.")
@@ -446,4 +440,19 @@ public class Http3Test extends HttpCommonTest {
     //TODO: resolve this test issue.
     super.testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler();
   }
+
+  @Test
+  @Ignore
+  public void testClientDrainHandler() throws Exception {
+    //TODO: resolve this test issue.
+    super.testClientDrainHandler();
+  }
+
+  @Test
+  @Ignore
+  public void testServerDrainHandler() throws Exception {
+    //TODO: resolve this test issue.
+    super.testServerDrainHandler();
+  }
+
 }
