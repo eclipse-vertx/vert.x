@@ -237,7 +237,7 @@ public final class ChannelProvider {
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
-        ChannelHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr, null);
+        ChannelHandler proxy = proxyProvider.selectProxyHandler(proxyOptions, proxyAddr, null, false);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override
