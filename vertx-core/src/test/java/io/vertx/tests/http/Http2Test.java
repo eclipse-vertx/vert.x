@@ -149,99 +149,12 @@ public class Http2Test extends HttpCommonTest {
       .setExclusive(false);
   }
 
-  @Test
-  public void testDefaultStreamWeightAndDependency() throws Exception {
-    int defaultStreamDependency = 0;
-    short defaultStreamWeight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
-    waitFor(2);
-    server.requestHandler(req -> {
-      assertEquals(defaultStreamWeight, req.streamPriority().getWeight());
-      assertEquals(defaultStreamDependency, req.streamPriority().getDependency());
-      req.response().end();
-      complete();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(defaultStreamWeight, req.getStreamPriority().getWeight());
-        assertEquals(defaultStreamDependency, req.getStreamPriority().getDependency());
-        complete();
-      }));
-    }));
-    await();
-  }
-
-  @Test
-  public void testStreamWeightAndDependencyPushPromise() throws Exception {
-    int pushStreamDependency = 456;
-    short pushStreamWeight = 14;
-    waitFor(4);
-    server.requestHandler(req -> {
-      req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(pushedResp -> {
-        pushedResp.setStreamPriority(new Http2StreamPriority()
-          .setDependency(pushStreamDependency)
-          .setWeight(pushStreamWeight)
-          .setExclusive(false));
-        pushedResp.end();
-      }));
-      req.response().end();
-      complete();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .pushHandler(pushReq -> {
-          complete();
-          pushReq.response().onComplete(onSuccess(pushResp -> {
-            assertEquals(pushStreamDependency, pushResp.request().getStreamPriority().getDependency());
-            assertEquals(pushStreamWeight, pushResp.request().getStreamPriority().getWeight());
-            complete();
-          }));
-        })
-        .send().onComplete(onSuccess(resp -> {
-          complete();
-        }));
-    }));
-    await();
-  }
-
-  @Test
-  public void testStreamWeightAndDependencyInheritancePushPromise() throws Exception {
-    int reqStreamDependency = 556;
-    short reqStreamWeight = 84;
-    waitFor(4);
-    server.requestHandler(req -> {
-      req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(HttpServerResponse::end));
-      req.response().end();
-      complete();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req
-        .pushHandler(pushReq -> {
-          complete();
-          pushReq.response().onComplete(onSuccess(pushResp -> {
-            assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
-            assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
-            complete();
-          }));
-        }).setStreamPriority(
-          new Http2StreamPriority()
-            .setDependency(reqStreamDependency)
-            .setWeight(reqStreamWeight)
-            .setExclusive(false))
-        .send()
-        .onComplete(onSuccess(resp -> {
-          complete();
-        }));
-    }));
-    await();
+  @Override
+  protected void assertEqualsStreamPriority(StreamPriorityBase expectedStreamPriority,
+                                            StreamPriorityBase actualStreamPriority) {
+    assertEquals(expectedStreamPriority.getWeight(), actualStreamPriority.getWeight());
+    assertEquals(expectedStreamPriority.getDependency(), actualStreamPriority.getDependency());
+    assertEquals(expectedStreamPriority.isExclusive(), actualStreamPriority.isExclusive());
   }
 
 
