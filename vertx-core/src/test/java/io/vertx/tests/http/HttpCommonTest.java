@@ -21,7 +21,6 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
@@ -45,6 +44,11 @@ public abstract class HttpCommonTest extends HttpTest {
   protected abstract void addMoreOptions(HttpServerOptions opts);
   protected abstract HttpServerOptions setMaxConcurrentStreamsSettings(HttpServerOptions options,
                                                                        int maxConcurrentStreams);
+
+  protected abstract void assertEqualsStreamPriority(StreamPriorityBase expectedStreamPriority,
+                                                     StreamPriorityBase actualStreamPriority);
+  protected abstract StreamPriorityBase generateStreamPriority();
+  protected abstract StreamPriorityBase defaultStreamPriority();
 
   @Test
   @Override
@@ -499,6 +503,254 @@ public abstract class HttpCommonTest extends HttpTest {
           testComplete();
         });
       }));
+    }));
+    await();
+  }
+
+
+  @Test
+  public void testStreamPriority() throws Exception {
+    waitFor(2);
+    StreamPriorityBase requestStreamPriority = generateStreamPriority();
+    StreamPriorityBase responseStreamPriority = generateStreamPriority();
+    server.requestHandler(req -> {
+      assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
+      req.response().setStreamPriority(responseStreamPriority.copy());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .setStreamPriority(requestStreamPriority.copy())
+        .send().onComplete(onSuccess(resp -> {
+          assertEqualsStreamPriority(responseStreamPriority, resp.request().getStreamPriority());
+          complete();
+        }));
+    }));
+    await();
+  }
+
+
+  @Test
+  public void testStreamPriorityChange() throws Exception {
+    StreamPriorityBase requestStreamPriority = generateStreamPriority();
+    StreamPriorityBase requestStreamPriority2 = generateStreamPriority();
+    StreamPriorityBase responseStreamPriority = generateStreamPriority();
+    StreamPriorityBase responseStreamPriority2 = generateStreamPriority();
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.streamPriorityHandler(sp -> {
+        assertEqualsStreamPriority(requestStreamPriority2, sp);
+        assertEqualsStreamPriority(requestStreamPriority2, req.streamPriority());
+        complete();
+      });
+      assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
+      req.response().setStreamPriority(responseStreamPriority.copy());
+      req.response().write("hello");
+      req.response().setStreamPriority(responseStreamPriority2.copy());
+      req.response().drainHandler(h -> {
+      });
+      req.response().end("world");
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .setStreamPriority(requestStreamPriority.copy())
+        .response()
+        .onComplete(onSuccess(resp -> {
+          assertEqualsStreamPriority(responseStreamPriority, resp.request().getStreamPriority());
+          resp.streamPriorityHandler(sp -> {
+            assertEqualsStreamPriority(responseStreamPriority2, sp);
+            assertEqualsStreamPriority(responseStreamPriority2, resp.request().getStreamPriority());
+            complete();
+          });
+          complete();
+        }));
+      req
+        .sendHead()
+        .onComplete(h -> {
+          req.setStreamPriority(requestStreamPriority2.copy());
+          req.end();
+        });
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerStreamPriorityNoChange() throws Exception {
+    StreamPriorityBase streamPriority = generateStreamPriority();
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.streamPriorityHandler(sp -> {
+        fail("Stream priority handler should not be called " + sp);
+      });
+      assertEqualsStreamPriority(streamPriority, req.streamPriority());
+      req.response().end();
+      req.endHandler(v -> {
+        complete();
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .response().onComplete(onSuccess(resp -> {
+          resp.endHandler(v -> {
+            complete();
+          });
+        }));
+      req.setStreamPriority(streamPriority.copy());
+      req
+        .sendHead()
+        .onComplete(h -> {
+          req.setStreamPriority(streamPriority.copy());
+          req.end();
+        });
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientStreamPriorityNoChange() throws Exception {
+    StreamPriorityBase streamPriority = generateStreamPriority();
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().setStreamPriority(streamPriority.copy());
+      req.response().write("hello");
+      req.response().setStreamPriority(streamPriority.copy());
+      req.response().end("world");
+      req.endHandler(v -> {
+        complete();
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .send()
+        .onComplete(onSuccess(resp -> {
+          assertEqualsStreamPriority(streamPriority, resp.request().getStreamPriority());
+          resp.streamPriorityHandler(sp -> {
+            fail("Stream priority handler should not be called");
+          });
+          resp.endHandler(v -> {
+            complete();
+          });
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityInheritance() throws Exception {
+    StreamPriorityBase requestStreamPriority = generateStreamPriority();
+
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .setStreamPriority(requestStreamPriority.copy())
+        .send()
+        .onComplete(onSuccess(resp -> {
+          assertEqualsStreamPriority(requestStreamPriority, resp.request().getStreamPriority());
+          complete();
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testDefaultPriority() throws Exception {
+    StreamPriorityBase defaultStreamPriority = defaultStreamPriority();
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEqualsStreamPriority(defaultStreamPriority, req.streamPriority());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        assertEqualsStreamPriority(defaultStreamPriority, req.getStreamPriority());
+        complete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityPushPromise() throws Exception {
+    StreamPriorityBase pushStreamPriority = generateStreamPriority();
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(pushedResp -> {
+        pushedResp.setStreamPriority(pushStreamPriority.copy());
+        pushedResp.end();
+      }));
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .pushHandler(pushReq -> {
+          complete();
+          pushReq.response().onComplete(onSuccess(pushResp -> {
+            assertEqualsStreamPriority(pushStreamPriority, pushResp.request().getStreamPriority());
+            complete();
+          }));
+        })
+        .send().onComplete(onSuccess(resp -> {
+          complete();
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testStreamPriorityInheritancePushPromise() throws Exception {
+    StreamPriorityBase reqStreamPriority = generateStreamPriority();
+    waitFor(4);
+    server.requestHandler(req -> {
+      req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(HttpServerResponse::end));
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req
+        .pushHandler(pushReq -> {
+          complete();
+          pushReq.response().onComplete(onSuccess(pushResp -> {
+            assertEqualsStreamPriority(reqStreamPriority, pushResp.request().getStreamPriority());
+            complete();
+          }));
+        }).setStreamPriority(reqStreamPriority.copy())
+        .send()
+        .onComplete(onSuccess(resp -> {
+          complete();
+        }));
     }));
     await();
   }
