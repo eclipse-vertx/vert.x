@@ -446,18 +446,4 @@ public class Http3Test extends HttpCommonTest {
     //TODO: resolve this test issue.
     super.testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler();
   }
-
-  @Test
-  @Ignore
-  public void testDnsClientSideLoadBalancingDisabled() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testDnsClientSideLoadBalancingDisabled();
-  }
-
-  @Test
-  @Ignore
-  public void testDnsClientSideLoadBalancingEnabled() throws Exception {
-    //TODO: Resolve this test issue. It fails on 5.x version, regardless of HTTP/3.
-    super.testDnsClientSideLoadBalancingEnabled();
-  }
 }
