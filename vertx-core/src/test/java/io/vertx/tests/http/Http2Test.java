@@ -137,7 +137,7 @@ public class Http2Test extends HttpCommonTest {
   protected StreamPriorityBase generateStreamPriority() {
     return new Http2StreamPriority()
       .setDependency(TestUtils.randomPositiveInt())
-      .setWeight(TestUtils.randomShort())
+      .setWeight((short) TestUtils.randomPositiveInt(255))
       .setExclusive(TestUtils.randomBoolean());
   }
 
