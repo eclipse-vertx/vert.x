@@ -184,6 +184,18 @@ public class TestUtils {
   }
 
   /**
+   * @return a random positive int
+   */
+  public static int randomPositiveInt(int bound) {
+    while (true) {
+      int rand = random.nextInt(bound);
+      if (rand > 0) {
+        return rand;
+      }
+    }
+  }
+
+  /**
    * @return a random positive long
    */
   public static long randomPositiveLong() {
