@@ -83,4 +83,14 @@ public class FutureAwaitTest extends VertxTestBase {
       assertSame(msg, expected.getMessage());
     }
   }
+
+  @Test
+  public void testAwaitThrowsTimeoutException() {
+    TimeoutException failure = new TimeoutException();
+    try {
+      Future.failedFuture(failure).await();
+      fail();
+    } catch (Exception expected) {
+    }
+  }
 }
