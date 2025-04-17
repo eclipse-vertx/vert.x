@@ -30,3 +30,5 @@ jobs:
       - name: Maven deploy
         if: ${{ endsWith(env.PROJECT_VERSION, '-SNAPSHOT') }}
         run: mvn deploy -s .github/maven-cd-settings.xml -DskipTests -B
+        env:
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_API_TOKEN }}
