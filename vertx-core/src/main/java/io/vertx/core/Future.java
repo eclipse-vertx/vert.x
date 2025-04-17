@@ -21,7 +21,6 @@ import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -677,6 +676,32 @@ public interface Future<T> extends AsyncResult<T> {
     return promise.future();
   }
 
+  private CountDownLatch trySuspend() {
+    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
+    CountDownLatch latch;
+    if (executor != null) {
+      WorkerExecutor.Execution execution = executor.currentExecution();
+      onComplete(ar -> execution.resume());
+      latch = execution.trySuspend();
+    } else {
+      latch = new CountDownLatch(1);
+      onComplete(ar -> latch.countDown());
+    }
+    return latch;
+  }
+
+  private T getOrFail() {
+    if (succeeded()) {
+      return result();
+    } else if (failed()) {
+      Utils.throwAsUnchecked(cause());
+      return null;
+    } else {
+      Utils.throwAsUnchecked(new InterruptedException("Context closed"));
+      return null;
+    }
+  }
+
   /**
    * Park the current thread until the {@code future} is completed, when the future
    * is completed the thread is un-parked and
@@ -692,12 +717,16 @@ public interface Future<T> extends AsyncResult<T> {
    * @throws IllegalStateException when called from a vertx event-loop or worker thread
    */
   default T await() {
-    try {
-      return await(-1, null);
-    } catch (TimeoutException e) {
-      // Not a possible case
-      return null;
+    CountDownLatch continuation = trySuspend();
+    if (continuation != null) {
+      try {
+        continuation.await();
+      } catch (InterruptedException e) {
+        Utils.throwAsUnchecked(e);
+        return null;
+      }
     }
+    return getOrFail();
   }
 
   /**
@@ -710,43 +739,21 @@ public interface Future<T> extends AsyncResult<T> {
    * @throws IllegalStateException when called from a vertx event-loop or worker thread
    */
   default T await(long timeout, TimeUnit unit) throws TimeoutException {
-    if (timeout >= 0L && unit == null) {
-      throw new NullPointerException();
+    if (unit == null) {
+      throw new NullPointerException("Unit must not be null");
     }
-    io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
-    CountDownLatch latch;
-    if (executor != null) {
-      WorkerExecutor.Execution execution = executor.currentExecution();
-      onComplete(ar -> execution.resume());
-      latch = execution.trySuspend();
-    } else {
-      latch = new CountDownLatch(1);
-      onComplete(ar -> latch.countDown());
-    }
-    if (latch != null) {
+    CountDownLatch continuation = trySuspend();
+    if (continuation != null) {
       try {
-        if (timeout >= 0) {
-          Objects.requireNonNull(unit);
-          if (!latch.await(timeout, unit)) {
-            throw new TimeoutException();
-          }
-        } else {
-          latch.await();
+        if (!continuation.await(timeout, unit)) {
+          throw new TimeoutException();
         }
       } catch (InterruptedException e) {
         Utils.throwAsUnchecked(e);
         return null;
       }
     }
-    if (succeeded()) {
-      return result();
-    } else if (failed()) {
-      Utils.throwAsUnchecked(cause());
-      return null;
-    } else {
-      Utils.throwAsUnchecked(new InterruptedException("Context closed"));
-      return null;
-    }
+    return getOrFail();
   }
 
   /**
