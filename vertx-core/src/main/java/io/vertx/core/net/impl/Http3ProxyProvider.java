@@ -253,7 +253,9 @@ public class Http3ProxyProvider {
         throw new RuntimeException("Not Supported");
       }
       proxyHandler.setConnectTimeoutMillis(proxyOptions.getConnectTimeoutUnit().toMillis(proxyOptions.getConnectTimeout()));
-      proxyHandler.setDestinationAddress(destinationAddr);
+      if (isHttp3) {
+        proxyHandler.setDestinationAddress(destinationAddr);
+      }
       return proxyHandler;
     }
 
