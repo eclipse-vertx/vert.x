@@ -31,10 +31,11 @@ public class Http2ClientTest extends HttpClientTest {
   @Override
   public void setUp() throws Exception {
     eventLoopGroups.clear();
-    serverOptions =  HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    serverOptions = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
     clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
     super.setUp();
   }
+
   @Override
   protected void configureDomainSockets() throws Exception {
     // Nope
@@ -72,6 +73,7 @@ public class Http2ClientTest extends HttpClientTest {
       protected Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, io.netty.handler.codec.http2.Http2Settings initialSettings) throws Exception {
         return new Handler(decoder, encoder, initialSettings);
       }
+
       @Override
       public Handler build() {
         return super.build();
@@ -180,6 +182,7 @@ public class Http2ClientTest extends HttpClientTest {
           ctx.flush();
         });
       }
+
       @Override
       public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
         vertx.runOnContext(v -> {
@@ -197,12 +200,14 @@ public class Http2ClientTest extends HttpClientTest {
         encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, false, ctx.newPromise());
         ctx.flush();
       }
+
       @Override
       public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         encoder.writeData(ctx, streamId, Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8), 0, endServer, ctx.newPromise());
         ctx.flush();
         return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
+
       @Override
       public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
         vertx.runOnContext(v -> {
@@ -225,8 +230,8 @@ public class Http2ClientTest extends HttpClientTest {
         // normal frame    : 00 00 12 00 08 00 00 00 03 0c 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
         // corrupted frame : 00 00 12 00 08 00 00 00 03 1F 68 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 00
         ctx.channel().write(BufferInternal.buffer(new byte[]{
-            0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, (byte)(streamId & 0xFF), 0x1F, 0x68, 0x65, 0x6c, 0x6c,
-            0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+          0x00, 0x00, 0x12, 0x00, 0x08, 0x00, 0x00, 0x00, (byte) (streamId & 0xFF), 0x1F, 0x68, 0x65, 0x6c, 0x6c,
+          0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         }).getByteBuf());
         ctx.flush();
       }
@@ -307,7 +312,7 @@ public class Http2ClientTest extends HttpClientTest {
           assertEquals(requestStreamPriority.isExclusive(), exclusive);
           encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), responseStreamPriority.getDependency(), responseStreamPriority.getWeight(), responseStreamPriority.isExclusive(), 0, true, ctx.newPromise());
           ctx.flush();
-          if(endStream)
+          if (endStream)
             complete();
         });
       }
@@ -317,7 +322,7 @@ public class Http2ClientTest extends HttpClientTest {
   @Override
   protected ServerBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
     return createH2Server((decoder, encoder_) -> {
-      Http2ConnectionEncoder encoder = (Http2ConnectionEncoder)encoder_;
+      Http2ConnectionEncoder encoder = (Http2ConnectionEncoder) encoder_;
 
       return new Http2EventAdapter() {
         @Override
@@ -373,21 +378,23 @@ public class Http2ClientTest extends HttpClientTest {
           assertFalse(endStream);
           latch.complete();
         });
-        encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"),0, true, ctx.newPromise());
+        encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
         ctx.flush();
       }
+
       @Override
       public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
         fail("Priority frame should not be sent");
       }
+
       @Override
       public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-          if(endOfStream) {
-            vertx.runOnContext(v -> {
-              complete();
-            });
-          }
-          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        if (endOfStream) {
+          vertx.runOnContext(v -> {
+            complete();
+          });
+        }
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
   }
@@ -402,6 +409,7 @@ public class Http2ClientTest extends HttpClientTest {
         encoder.writeData(ctx, streamId, BufferInternal.buffer("hello").getByteBuf(), 0, true, ctx.newPromise());
         ctx.flush();
       }
+
       @Override
       public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
         fail("Priority frame should not be sent");
