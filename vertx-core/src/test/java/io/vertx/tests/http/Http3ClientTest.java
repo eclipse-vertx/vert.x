@@ -1,9 +1,13 @@
 package io.vertx.tests.http;
 
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.EventLoopGroup;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.StreamPriorityBase;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -39,4 +43,63 @@ public class Http3ClientTest extends HttpClientTest {
     return clientOptions;
   }
 
+  @Override
+  protected ServerBootstrap createServerForGet() {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForClientResetServerStream(boolean endServer) {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForStreamError() {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForConnectionDecodeError() {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForInvalidServerResponse() {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForClearText(List<String> requests, boolean withUpgrade) {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForConnectionWindowSize() {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForUpdateConnectionWindowSize() {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
+    return null;
+  }
+
+  @Override
+  protected ServerBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
+    return null;
+  }
 }
