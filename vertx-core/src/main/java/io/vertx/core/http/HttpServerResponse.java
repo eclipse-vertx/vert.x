@@ -19,6 +19,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import java.nio.channels.FileChannel;
 
 import java.util.Set;
 
@@ -358,6 +359,51 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> sendFile(String filename, long offset, long length);
 
   /**
+   * Same as {@link #sendFile(FileChannel, String, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * file.
+   *
+   * @param channel the file channel to the file to serve
+   * @param extension the file extension if known
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<Void> sendFile(FileChannel channel, String extension) {
+    return sendFile(channel, extension, 0);
+  }
+
+  /**
+   * Same as {@link #sendFile(FileChannel, String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * file.
+   *
+   * @param channel the file channel to the file to serve
+   * @param extension the file extension if known
+   * @param offset offset to start serving from
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<Void> sendFile(FileChannel channel, String extension, long offset) {
+    return sendFile(channel, extension, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Ask the OS to stream a file as specified by {@code channel} directly
+   * from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system). Contrary to {@link #sendFile(String, long, long)},
+   * the caller is responsible to close {@code channel} when no more needed.
+   * This is a very efficient way to serve files.<p>
+   * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   *
+   * @param channel the file channel to the file to serve
+   * @param offset offset to start serving from
+   * @param length the number of bytes to send
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
+    return Future.failedFuture("not implemented for HTTP/2");
+  }
+
+  /**
    * @return has the response already ended?
    */
   boolean ended();
@@ -496,7 +542,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
-      return this;
+    return this;
   }
 
   /**
