@@ -374,7 +374,6 @@ public class VertxConnectionTest extends VertxTestBase {
   @Test
   public void testConsolidateFlushInDrainWhenResume() throws Exception {
     connectHandler = conn -> {
-      VertxConnection vertxConn = (VertxConnection) conn;
       ChannelHandlerContext ctx = conn.channelHandlerContext();
       ChannelPipeline pipeline = ctx.pipeline();
       pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
@@ -382,7 +381,7 @@ public class VertxConnectionTest extends VertxTestBase {
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
           switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
             case "outbound-1":
-              vertxConn.doResume();
+              conn.resume();
               break;
           }
           ctx.write(msg);
@@ -390,14 +389,14 @@ public class VertxConnectionTest extends VertxTestBase {
         @Override
         public void flush(ChannelHandlerContext ctx) {
           ctx.write(Unpooled.copiedBuffer("flush", StandardCharsets.UTF_8))
-            .addListener((ChannelFutureListener) future -> vertxConn.channelHandlerContext().close());
+            .addListener((ChannelFutureListener) future -> conn.channelHandlerContext().close());
           ctx.flush();
         }
       });
       conn.messageHandler(msg -> {
         switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
           case "inbound-1":
-            vertxConn.doPause();
+            conn.pause();
             vertx.runOnContext(v -> {
               pipeline.fireChannelRead(Unpooled.copiedBuffer("inbound-2", StandardCharsets.UTF_8));
               pipeline.fireChannelReadComplete();
@@ -456,15 +455,14 @@ public class VertxConnectionTest extends VertxTestBase {
   @Test
   public void testResumeWhenRead() throws Exception {
     connectHandler = conn -> {
-      VertxConnection vertxConn = (VertxConnection) conn;
       ChannelHandlerContext ctx = conn.channelHandlerContext();
       ChannelPipeline pipeline = ctx.pipeline();
       conn.messageHandler(msg -> {
         switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
           case "inbound-1":
-            vertxConn.doPause();
+            conn.pause();
             pipeline.fireChannelRead(Unpooled.copiedBuffer("inbound-2", StandardCharsets.UTF_8));
-            vertxConn.doResume();
+            conn.resume();
             break;
           case "inbound-2":
             conn.end(Buffer.buffer("outbound-1"));
@@ -671,6 +669,7 @@ public class VertxConnectionTest extends VertxTestBase {
 
   private class TestConnection extends VertxConnection {
     Handler<Message> handler;
+    Handler<Void> readCompleteHandler;
     public TestConnection(ChannelHandlerContext chctx) {
       super(((VertxInternal) VertxConnectionTest.this.vertx)
         .contextBuilder()
@@ -682,6 +681,14 @@ public class VertxConnectionTest extends VertxTestBase {
       Handler<Message> h = handler;
       if (h != null) {
         h.handle((Message) msg);
+      }
+    }
+
+    @Override
+    protected void handleReadComplete() {
+      Handler<Void> h = readCompleteHandler;
+      if (h != null) {
+        h.handle(null);
       }
     }
 
@@ -745,10 +752,9 @@ public class VertxConnectionTest extends VertxTestBase {
     assertTrue(ch.hasPendingTasks());
     connection.handler = msg -> {
       connection.writeToChannel(msg);
-      // Try to consume the messages (if it was flushed)
-      while (ch.readOutbound() != null) {
-
-      }
+    };
+    connection.readCompleteHandler = v -> {
+      connection.writeToChannel("read-complete");
     };
     ch.runPendingTasks();
     List<Object> flushed = new ArrayList<>();
@@ -756,8 +762,9 @@ public class VertxConnectionTest extends VertxTestBase {
     while ((outbound = ch.readOutbound()) != null) {
       flushed.add(outbound);
     }
-    assertEquals(8, flushed.size());
+    assertEquals(9, flushed.size());
     assertTrue(ch.config().isAutoRead());
+    assertEquals("read-complete", flushed.get(8));
   }
 
   @Test

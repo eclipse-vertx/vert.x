@@ -21,6 +21,7 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Future;
 import io.vertx.core.*;
@@ -3519,15 +3520,19 @@ public class NetTest extends VertxTestBase {
       ChannelPipeline pipeline = chctx.pipeline();
       pipeline.addBefore("handler", "http", new HttpServerCodec());
       internal.handler(buff -> fail());
+      AtomicBoolean last = new AtomicBoolean();
       internal.messageHandler(obj -> {
-        if (obj instanceof LastHttpContent) {
-          DefaultFullHttpResponse response = new DefaultFullHttpResponse(
-            HttpVersion.HTTP_1_1,
-            HttpResponseStatus.OK,
-            Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
-          response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
-          internal.writeMessage(response).onComplete(onSuccess(v -> complete()));
-        }
+        last.set(obj instanceof LastHttpContent);
+        ReferenceCountUtil.release(obj);
+      });
+      internal.readCompletionHandler(v1 -> {
+        assertTrue(last.get());
+        DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+          HttpVersion.HTTP_1_1,
+          HttpResponseStatus.OK,
+          Unpooled.copiedBuffer("Hello World", StandardCharsets.UTF_8));
+        response.headers().set(HttpHeaderNames.CONTENT_LENGTH, "11");
+        internal.writeMessage(response).onComplete(onSuccess(v2 -> complete()));
       });
     });
     startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
