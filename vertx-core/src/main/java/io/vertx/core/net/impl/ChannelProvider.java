@@ -178,6 +178,13 @@ public final class ChannelProvider {
         });
 
         quicChannel.pipeline().addLast(new HttpSslHandshaker(promise));
+        quicChannel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+          @Override
+          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+            log.info(String.format("%s triggered in QuicChannel handler", evt.getClass().getSimpleName()));
+            super.userEventTriggered(ctx, evt);
+          }
+        });
       })
       .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
         if (!future.isSuccess()) {
