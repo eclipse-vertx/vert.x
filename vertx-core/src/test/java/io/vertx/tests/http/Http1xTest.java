@@ -42,6 +42,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -4932,6 +4933,99 @@ public class Http1xTest extends HttpTest {
     sendFile("test-send-file.html", content, false,
       () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
   }
+
+  @Test
+  public void testSendFileWithFileChannel() throws Exception {
+    int expected = 16 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", expected);
+    FileChannel channel = FileChannel.open(file.toPath());
+    server.close().await();
+    server = vertx
+      .createHttpServer()
+      .requestHandler(
+        req -> {
+          req.response().sendFile(channel, null);
+        });
+    startServer(testAddress);
+    int[] length = {0};
+    Integer len = client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
+          resp.handler(buff -> {
+            length[0] += buff.length();
+          });
+          resp.exceptionHandler(this::fail);
+          return resp.end();
+        }))
+      .map(v -> length[0]).await();
+    assertEquals((int)len, file.length());
+  }
+
+  @Test
+  public void testSendFileWithFileChannelAndExtension() throws Exception {
+    int expected = 16 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", expected);
+    FileChannel channel = FileChannel.open(file.toPath());
+    server.close().await();
+    server = vertx
+      .createHttpServer()
+      .requestHandler(
+        req -> {
+          req.response().sendFile(channel, "mp4");
+        });
+    startServer(testAddress);
+    Object[] res = {0, ""};
+    Object[] r = client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
+          resp.handler(buff -> {
+            Integer length = (Integer) res[0];
+            length += buff.length();
+            res[0] = length;
+          });
+          res[1] = resp.getHeader("Content-Type");
+          resp.exceptionHandler(this::fail);
+          return resp.end();
+        }))
+      .map(v -> res).await();
+    assertEquals((int)r[0], file.length());
+    assertEquals(r[1], "video/mp4");
+  }
+
+  @Test
+  public void testSendFileWithFileChannelRange() throws Exception {
+    int fileLength = 16 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", fileLength);
+    FileChannel channel = FileChannel.open(file.toPath());
+    int offset = 1024 * 4;
+    int expectedRange = fileLength - offset;
+    server.close().await();
+    server = vertx
+      .createHttpServer()
+      .requestHandler(
+        req -> {
+          req.response().sendFile(channel, "mp4", offset, expectedRange);
+        });
+    startServer(testAddress);
+    Object[] res = {0, ""};
+    Object[] r = client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
+          resp.handler(buff -> {
+            Integer length = (Integer) res[0];
+            length += buff.length();
+            res[0] = length;
+          });
+          res[1] = resp.getHeader("Content-Type");
+          resp.exceptionHandler(this::fail);
+          return resp.end();
+        }))
+      .map(v -> res).await();
+    assertEquals(expectedRange, (int)r[0]);
+    assertEquals("video/mp4", r[1]);
+  }
+
+
 
   @Test
   public void testResponseEndHandlersConnectionClose() throws Exception {
