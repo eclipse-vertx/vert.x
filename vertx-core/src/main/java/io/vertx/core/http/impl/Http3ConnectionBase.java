@@ -227,7 +227,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   //  @Override
-  public void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
+  public void onSettingsRead(Http3SettingsFrame settings) {
     Handler<HttpSettings> handler;
     synchronized (this) {
       remoteSettings = settings;

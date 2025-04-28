@@ -88,9 +88,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return chctx;
   }
 
-  void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
+  void onSettingsRead(Http3SettingsFrame settings) {
     settingsRead = true;
-    this.connection.onSettingsRead(ctx, settings);
+    this.connection.onSettingsRead(settings);
     if (isServer) {
       onConnectSuccessful();
     } else {
@@ -192,7 +192,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     connection.onGoAwaySent(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(debugData)));
   }
 
-  void onGoAwayReceived(DefaultHttp3GoAwayFrame http3GoAwayFrame) {
+  void onGoAwayReceived(Http3GoAwayFrame http3GoAwayFrame) {
     int lastStreamId = (int) http3GoAwayFrame.id();
     logger.debug("{} - onGoAwayReceived() called for streamId: {}", agentType, lastStreamId);
     connection.onGoAwayReceived(new GoAway().setErrorCode(-1).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(Unpooled.EMPTY_BUFFER)));
@@ -474,12 +474,16 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       return Http3Utils
         .newServerConnectionHandlerBuilder()
         .requestStreamHandler(quicStreamChannelHandler)
-        .inboundControlStreamHandler(new Http3ControlStreamChannelHandler(this))
+        .agentType(this.agentType)
+        .http3GoAwayFrameHandler(this::onGoAwayReceived)
+        .http3SettingsFrameHandler(this::onSettingsRead)
         .build();
     }
     return Http3Utils
       .newClientConnectionHandlerBuilder()
-      .inboundControlStreamHandler(new Http3ControlStreamChannelHandler(this))
+      .agentType(this.agentType)
+      .http3GoAwayFrameHandler(this::onGoAwayReceived)
+      .http3SettingsFrameHandler(this::onSettingsRead)
       .build();
   }
 
@@ -527,9 +531,5 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     if (vertxStream != null) {
       connection.onStreamClosed(vertxStream);
     }
-  }
-
-  String getAgentType() {
-    return agentType;
   }
 }
