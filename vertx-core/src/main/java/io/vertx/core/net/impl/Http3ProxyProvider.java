@@ -91,7 +91,7 @@ public class Http3ProxyProvider {
     Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
         quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
           Http3Utils.newClientConnectionHandlerBuilder()
-            .inboundControlStreamHandler(settingsFrame -> {
+            .http3SettingsFrameHandler(settingsFrame -> {
               quicStreamChannelPromise.addListener((GenericFutureListener<Future<QuicStreamChannel>>) quicStreamChannelFut -> {
                 if (!quicStreamChannelFut.isSuccess()) {
                   channelPromise.setFailure(quicStreamChannelFut.cause());
@@ -142,7 +142,7 @@ public class Http3ProxyProvider {
 
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
         Http3Utils.newClientConnectionHandlerBuilder()
-          .inboundControlStreamHandler(settingsFrame -> {
+          .http3SettingsFrameHandler(settingsFrame -> {
             quicStreamChannelPromise.addListener((GenericFutureListener<Future<QuicStreamChannel>>) quicStreamChannelFut -> {
               if (!quicStreamChannelFut.isSuccess()) {
                 channelPromise.setFailure(quicStreamChannelFut.cause());
