@@ -89,16 +89,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   void onSettingsRead(ChannelHandlerContext ctx, Http3SettingsFrame settings) {
-    this.connection.onSettingsRead(ctx, settings);
-  }
-
-  synchronized void onSettingsReadDone() {
-    if (settingsRead) {
-      return;
-    }
-
     settingsRead = true;
-
+    this.connection.onSettingsRead(ctx, settings);
     if (isServer) {
       onConnectSuccessful();
     } else {

@@ -5,6 +5,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.logging.InternalLogger;
@@ -16,6 +17,8 @@ class Http3ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
 
   private final VertxHttp3ConnectionHandler handler;
   private final String agentType;
+  private Http3SettingsFrame http3SettingsFrame;
+  private boolean settingsRead;
 
   public Http3ControlStreamChannelHandler(VertxHttp3ConnectionHandler handler) {
     this.handler = handler;
@@ -34,8 +37,9 @@ class Http3ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
     logger.debug("{} - channelRead() called with msg type: {}", agentType, msg.getClass().getSimpleName());
 
     if (msg instanceof DefaultHttp3SettingsFrame) {
-      DefaultHttp3SettingsFrame http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
-      handler.onSettingsRead(ctx, http3SettingsFrame);
+      if (http3SettingsFrame == null) {
+        http3SettingsFrame = (DefaultHttp3SettingsFrame) msg;
+      }
 //        VertxHttp3ConnectionHandler.this.connection.updateHttpSettings(HttpUtils.toVertxSettings(http3SettingsFrame));
       ReferenceCountUtil.release(msg);
     } else if (msg instanceof DefaultHttp3GoAwayFrame) {
@@ -59,7 +63,13 @@ class Http3ControlStreamChannelHandler extends ChannelInboundHandlerAdapter {
     logger.debug("{} - ChannelReadComplete called for channelId: {}, streamId: {}", agentType,
       ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId());
 
-    handler.onSettingsReadDone();
+    synchronized (this) {
+      if (http3SettingsFrame != null && !settingsRead) {
+        settingsRead = true;
+        handler.onSettingsRead(ctx, http3SettingsFrame);
+      }
+    }
+
     super.channelReadComplete(ctx);
   }
 
