@@ -1,11 +1,23 @@
 package io.vertx.tests.http;
 
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.incubator.codec.http3.*;
+import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
+import io.netty.incubator.codec.quic.QuicSslContext;
+import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.test.tls.Cert;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -43,9 +55,103 @@ public class Http3ClientTest extends HttpClientTest {
     return clientOptions;
   }
 
+  private Http3ConnectionHandler createHttpConnectionHandler(Http3RequestStreamInboundHandler requestStreamHandler, Handler<Http3GoAwayFrame> goAwayHandler) {
+    return Http3Utils
+      .newServerConnectionHandlerBuilder()
+      .requestStreamHandler(streamChannel -> {
+        //    streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
+        streamChannel.pipeline().addLast(requestStreamHandler);
+      })
+      .http3GoAwayFrameHandler(goAwayHandler)
+      .build();
+  }
+
+  private AbstractBootstrap createH3Server(Http3RequestStreamInboundHandler requestStreamHandler, Handler<Http3GoAwayFrame> goAwayHandler) {
+    AbstractBootstrap bootstrap = new Bootstrap();
+
+    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    eventLoopGroups.add(eventLoopGroup);
+    bootstrap.group(eventLoopGroup);
+    bootstrap.channel(NioDatagramChannel.class);
+
+    QuicSslContext sslContext = null;
+    try {
+      sslContext = QuicSslContextBuilder.forServer(Cert.SERVER_JKS.get().getKeyManagerFactory(vertx), null)
+        .applicationProtocols(Http3.supportedApplicationProtocols()).build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    ChannelHandler codec = Http3.newQuicServerCodecBuilder()
+      .sslContext(sslContext)
+      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+      .initialMaxData(10000000)
+      .initialMaxStreamDataBidirectionalLocal(1000000)
+      .initialMaxStreamDataBidirectionalRemote(1000000)
+      .initialMaxStreamDataUnidirectional(1000000000000L)
+      .initialMaxStreamsUnidirectional(1000000000)
+      .initialMaxStreamsBidirectional(100)
+      .initialMaxStreamsUnidirectional(100)
+
+      .datagram(2000000, 2000000)
+
+      .maxRecvUdpPayloadSize(1000000000000L)  // 1 MB for receiving UDP payloads
+      .maxSendUdpPayloadSize(1000000000000L)  // 1 MB for sending UDP payloads
+
+      .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
+      .handler(new ChannelInitializer<>() {
+        @Override
+        protected void initChannel(Channel channel) throws Exception {
+          channel.pipeline().addLast(createHttpConnectionHandler(requestStreamHandler, goAwayHandler));
+          channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+            @Override
+            public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+              System.out.println(String.format("%s triggered in QuicChannel handler", evt.getClass().getSimpleName()));
+              super.userEventTriggered(ctx, evt);
+            }
+          });
+        }
+      })
+      .build();
+
+    bootstrap.handler(codec);
+
+    return bootstrap;
+  }
+
   @Override
-  protected ServerBootstrap createServerForGet() {
-    return null;
+  protected AbstractBootstrap createServerForGet() {
+    return createH3Server(new Http3RequestStreamInboundHandler() {
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+        vertx.runOnContext(v -> {
+          QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
+          ChannelPromise promise = streamChannel.newPromise();
+          promise.addListener(future -> streamChannel.close());
+          streamChannel.write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
+          streamChannel.flush();
+        });
+      }
+
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+        fail("No data should have been sent, and this method should not have been called.");
+      }
+
+      @Override
+      protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+      }
+
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        System.out.println(String.format("%s triggered in request stream handler", evt.getClass().getSimpleName()));
+        super.userEventTriggered(ctx, evt);
+      }
+    }, goAwayFrame -> {
+      vertx.runOnContext(v -> {
+        testComplete();
+      });
+    });
   }
 
   @Override

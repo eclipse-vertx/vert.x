@@ -11,6 +11,8 @@
 
 package io.vertx.tests.http;
 
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -231,11 +233,11 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract ServerBootstrap createServerForGet();
+  protected abstract AbstractBootstrap createServerForGet();
 
   @Test
   public void testGet() throws Exception {
-    ServerBootstrap bootstrap = createServerForGet();
+    AbstractBootstrap bootstrap = createServerForGet();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -766,11 +768,11 @@ public abstract class HttpClientTest extends HttpTestBase {
     testClientResetServerStream(false, true);
   }
 
-  protected abstract ServerBootstrap createServerForClientResetServerStream(boolean endServer);
+  protected abstract AbstractBootstrap createServerForClientResetServerStream(boolean endServer);
 
   private void testClientResetServerStream(boolean endClient, boolean endServer) throws Exception {
     waitFor(1);
-    ServerBootstrap bootstrap = createServerForClientResetServerStream(endServer);
+    AbstractBootstrap bootstrap = createServerForClientResetServerStream(endServer);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       if (endClient) {
@@ -1086,12 +1088,12 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract ServerBootstrap createServerForStreamError();
+  protected abstract AbstractBootstrap createServerForStreamError();
 
   @Test
   public void testStreamError() throws Exception {
     waitFor(3);
-    ServerBootstrap bootstrap = createServerForStreamError();
+    AbstractBootstrap bootstrap = createServerForStreamError();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.close();
@@ -1139,12 +1141,12 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract ServerBootstrap createServerForConnectionDecodeError();
+  protected abstract AbstractBootstrap createServerForConnectionDecodeError();
 
   @Test
   public void testConnectionDecodeError() throws Exception {
     waitFor(3);
-    ServerBootstrap bootstrap = createServerForConnectionDecodeError();
+    AbstractBootstrap bootstrap = createServerForConnectionDecodeError();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
@@ -1190,11 +1192,11 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract ServerBootstrap createServerForInvalidServerResponse();
+  protected abstract AbstractBootstrap createServerForInvalidServerResponse();
 
   @Test
   public void testInvalidServerResponse() throws Exception {
-    ServerBootstrap bootstrap = createServerForInvalidServerResponse();
+    AbstractBootstrap bootstrap = createServerForInvalidServerResponse();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       Context ctx = vertx.getOrCreateContext();
@@ -1505,12 +1507,12 @@ public abstract class HttpClientTest extends HttpTestBase {
     Assert.assertEquals(Arrays.asList("GET", "GET"), requests);
   }
 
-  protected abstract ServerBootstrap createServerForClearText(List<String> requests, boolean withUpgrade);
+  protected abstract AbstractBootstrap createServerForClearText(List<String> requests, boolean withUpgrade);
 
   private List<String> testClearText(boolean withUpgrade, boolean withPreflightRequest) throws Exception {
     Assume.assumeTrue(testAddress.isInetSocket());
     List<String> requests = new ArrayList<>();
-    ServerBootstrap bootstrap = createServerForClearText(requests, withUpgrade);
+    AbstractBootstrap bootstrap = createServerForClearText(requests, withUpgrade);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.close();
@@ -1826,11 +1828,11 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract ServerBootstrap createServerForConnectionWindowSize();
+  protected abstract AbstractBootstrap createServerForConnectionWindowSize();
 
   @Test
   public void testConnectionWindowSize() throws Exception {
-    ServerBootstrap bootstrap = createServerForConnectionWindowSize();
+    AbstractBootstrap bootstrap = createServerForConnectionWindowSize();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions(clientOptions).setHttp2ConnectionWindowSize(65535 * 2));
@@ -1838,11 +1840,11 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract ServerBootstrap createServerForUpdateConnectionWindowSize();
+  protected abstract AbstractBootstrap createServerForUpdateConnectionWindowSize();
 
   @Test
   public void testUpdateConnectionWindowSize() throws Exception {
-    ServerBootstrap bootstrap = createServerForUpdateConnectionWindowSize();
+    AbstractBootstrap bootstrap = createServerForUpdateConnectionWindowSize();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     client.close();
     client = vertx.httpClientBuilder()
@@ -1889,14 +1891,14 @@ public abstract class HttpClientTest extends HttpTestBase {
   }
 */
 
-  protected abstract ServerBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority);
+  protected abstract AbstractBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority);
 
   @Test
   public void testStreamPriority() throws Exception {
     StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
     waitFor(2);
-    ServerBootstrap bootstrap = createServerForStreamPriority(requestStreamPriority, responseStreamPriority);
+    AbstractBootstrap bootstrap = createServerForStreamPriority(requestStreamPriority, responseStreamPriority);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -1917,7 +1919,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract ServerBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2);
+  protected abstract AbstractBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2);
 
   @Test
   public void testStreamPriorityChange() throws Exception {
@@ -1926,7 +1928,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
     StreamPriorityBase responseStreamPriority2 = new Http2StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
     waitFor(5);
-    ServerBootstrap bootstrap = createServerForStreamPriorityChange(requestStreamPriority, responseStreamPriority, requestStreamPriority2, responseStreamPriority2);
+    AbstractBootstrap bootstrap = createServerForStreamPriorityChange(requestStreamPriority, responseStreamPriority, requestStreamPriority2, responseStreamPriority2);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.request(new RequestOptions()
@@ -1962,7 +1964,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract ServerBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch);
+  protected abstract AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch);
 
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
@@ -1970,7 +1972,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(2);
     Promise<Void> latch = Promise.promise();
-    ServerBootstrap bootstrap = createServerForClientStreamPriorityNoChange(streamPriority, latch);
+    AbstractBootstrap bootstrap = createServerForClientStreamPriorityNoChange(streamPriority, latch);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.request(new RequestOptions()
@@ -1996,14 +1998,14 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract ServerBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority);
+  protected abstract AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority);
 
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
   public void testServerStreamPriorityNoChange() throws Exception {
     StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(1);
-    ServerBootstrap bootstrap = createServerForServerStreamPriorityNoChange(streamPriority);
+    AbstractBootstrap bootstrap = createServerForServerStreamPriorityNoChange(streamPriority);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.request(requestOptions).onComplete(onSuccess(req -> {

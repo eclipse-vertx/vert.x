@@ -11,6 +11,8 @@
 
 package io.vertx.tests.http;
 
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -95,7 +97,7 @@ public class Http2ClientTest extends HttpClientTest {
     return builder.build();
   }
 
-  private ServerBootstrap createH2Server(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
+  private AbstractBootstrap createH2Server(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.channel(NioServerSocketChannel.class);
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -183,7 +185,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForGet() {
+  protected AbstractBootstrap createServerForGet() {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -204,7 +206,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForClientResetServerStream(boolean endServer) {
+  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -230,7 +232,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForStreamError() {
+  protected AbstractBootstrap createServerForStreamError() {
     return createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -250,7 +252,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForConnectionDecodeError() {
+  protected AbstractBootstrap createServerForConnectionDecodeError() {
     return createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -262,7 +264,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForInvalidServerResponse() {
+  protected AbstractBootstrap createServerForInvalidServerResponse() {
     return createH2Server((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -273,7 +275,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForClearText(List<String> requests, boolean withUpgrade) {
+  protected AbstractBootstrap createServerForClearText(List<String> requests, boolean withUpgrade) {
     return createH2CServer((dec, enc) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -287,7 +289,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForConnectionWindowSize() {
+  protected AbstractBootstrap createServerForConnectionWindowSize() {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
@@ -300,7 +302,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForUpdateConnectionWindowSize() {
+  protected AbstractBootstrap createServerForUpdateConnectionWindowSize() {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
@@ -313,7 +315,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
+  protected AbstractBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -331,7 +333,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
+  protected AbstractBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
     return createH2Server((decoder, encoder_) -> {
       Http2ConnectionEncoder encoder = (Http2ConnectionEncoder) encoder_;
 
@@ -378,7 +380,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
+  protected AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -411,7 +413,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
+  protected AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
