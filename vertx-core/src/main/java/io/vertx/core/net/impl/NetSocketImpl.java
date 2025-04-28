@@ -62,7 +62,8 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   private volatile Handler<Void> drainHandler;
   private MessageConsumer registration;
   private Handler<Buffer> handler;
-  private Handler<Object> messageHandler;
+  private MessageHandler messageHandler;
+  private Handler<Void> readCompletionHandler;
   private Handler<Object> eventHandler;
 
   public NetSocketImpl(ContextInternal context,
@@ -184,7 +185,37 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
-    messageHandler = handler == null ? new DataMessageHandler() : msg -> context.emit(msg, handler);
+    if (handler == null) {
+      messageHandler = new DataMessageHandler();
+    } else {
+      messageHandler = new MessageHandler() {
+        @Override
+        public void pause() {
+          doPause();
+        }
+        @Override
+        public void fetch(long amount) {
+          if (amount != Long.MAX_VALUE) {
+            throw new IllegalArgumentException("Only accepts resume");
+          }
+          doResume();
+        }
+        @Override
+        public void handle(Object msg) {
+          context.emit(msg, handler);
+        }
+      };
+    }
+    return this;
+  }
+
+  private synchronized Handler<Void> readCompletionHandler() {
+    return readCompletionHandler;
+  }
+
+  @Override
+  public synchronized NetSocketInternal readCompletionHandler(Handler<Void> handler) {
+    readCompletionHandler = handler;
     return this;
   }
 
@@ -196,13 +227,13 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   @Override
   public synchronized NetSocket pause() {
-    pending.pause();
+    messageHandler.pause();
     return this;
   }
 
   @Override
   public NetSocket fetch(long amount) {
-    pending.fetch(amount);
+    messageHandler.fetch(amount);
     return this;
   }
 
@@ -366,6 +397,14 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   }
 
   @Override
+  protected void handleReadComplete() {
+    Handler<Void> handler = readCompletionHandler();
+    if (handler != null) {
+      context.emit(handler);
+    }
+  }
+
+  @Override
   protected void handleEvent(Object event) {
     Handler<Object> handler;
     synchronized (this) {
@@ -384,7 +423,12 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     return this;
   }
 
-  private class DataMessageHandler implements Handler<Object> {
+  interface MessageHandler extends Handler<Object> {
+    void pause();
+    void fetch(long amount);
+  }
+
+  private class DataMessageHandler implements MessageHandler {
 
     @Override
     public void handle(Object msg) {
@@ -394,6 +438,16 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
       } else {
         handleInvalid(msg);
       }
+    }
+
+    @Override
+    public void pause() {
+      pending.pause();
+    }
+
+    @Override
+    public void fetch(long amount) {
+      pending.fetch(amount);
     }
 
     private void handleInvalid(Object msg) {
