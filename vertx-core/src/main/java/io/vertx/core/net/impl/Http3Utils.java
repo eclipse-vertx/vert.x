@@ -27,6 +27,8 @@ import io.netty.incubator.codec.http3.Http3GoAwayFrame;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicError;
+import io.netty.incubator.codec.quic.QuicException;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -157,7 +159,7 @@ public class Http3Utils {
     }
   }
 
-  public abstract static class Http3ConnectionHandlerBuilder {
+  public abstract static class Http3ConnectionHandlerBuilderBase {
     protected String agentType;
     protected Handler<Http3GoAwayFrame> http3GoAwayFrameHandler;
     protected Handler<Http3SettingsFrame> http3SettingsFrameHandler;
@@ -165,43 +167,51 @@ public class Http3Utils {
     protected Http3SettingsFrame localSettings;
     protected boolean disableQpackDynamicTable = true;
 
-    private Http3ConnectionHandlerBuilder() {
+    private Http3ConnectionHandlerBuilderBase() {
     }
 
-    public Http3ConnectionHandlerBuilder unknownInboundStreamHandlerFactory(LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory) {
+    public Http3ConnectionHandlerBuilderBase unknownInboundStreamHandlerFactory(LongFunction<ChannelHandler> unknownInboundStreamHandlerFactory) {
       this.unknownInboundStreamHandlerFactory = unknownInboundStreamHandlerFactory;
       return this;
     }
 
-    public Http3ConnectionHandlerBuilder localSettings(Http3SettingsFrame localSettings) {
+    public Http3ConnectionHandlerBuilderBase localSettings(Http3SettingsFrame localSettings) {
       this.localSettings = localSettings;
       return this;
     }
 
-    public Http3ConnectionHandlerBuilder disableQpackDynamicTable(boolean disableQpackDynamicTable) {
+    public Http3ConnectionHandlerBuilderBase disableQpackDynamicTable(boolean disableQpackDynamicTable) {
       this.disableQpackDynamicTable = disableQpackDynamicTable;
       return this;
     }
 
-    public Http3ConnectionHandlerBuilder agentType(String agentType) {
+    public Http3ConnectionHandlerBuilderBase agentType(String agentType) {
       this.agentType = agentType;
       return this;
     }
 
-    public Http3ConnectionHandlerBuilder http3GoAwayFrameHandler(Handler<Http3GoAwayFrame> http3GoAwayFrameHandler) {
+    public Http3ConnectionHandlerBuilderBase http3GoAwayFrameHandler(Handler<Http3GoAwayFrame> http3GoAwayFrameHandler) {
       this.http3GoAwayFrameHandler = http3GoAwayFrameHandler;
       return this;
     }
 
-    public Http3ConnectionHandlerBuilder http3SettingsFrameHandler(Handler<Http3SettingsFrame> http3SettingsFrameHandler) {
+    public Http3ConnectionHandlerBuilderBase http3SettingsFrameHandler(Handler<Http3SettingsFrame> http3SettingsFrameHandler) {
       this.http3SettingsFrameHandler = http3SettingsFrameHandler;
       return this;
+    }
+
+    Http3ControlStreamChannelHandler buildHttp3ControlStreamChannelHandler() {
+      return new Http3ControlStreamChannelHandler()
+        .http3GoAwayFrameHandler(http3GoAwayFrameHandler)
+        .http3SettingsFrameHandler(http3SettingsFrameHandler)
+        .streamResetHandler(streamResetHandler)
+        .agentType(agentType);
     }
 
     public abstract Http3ConnectionHandler build();
   }
 
-  public static class Http3ServerConnectionHandlerBuilder extends Http3ConnectionHandlerBuilder {
+  public static class Http3ServerConnectionHandlerBuilder extends Http3ConnectionHandlerBuilderBase {
     private Handler<QuicStreamChannel> requestStreamHandler;
 
     private Http3ServerConnectionHandlerBuilder() {
@@ -213,22 +223,16 @@ public class Http3Utils {
     }
 
     public Http3ServerConnectionHandler build() {
-      Http3ControlStreamChannelHandler http3ControlStreamChannelHandler = new Http3ControlStreamChannelHandler()
-        .http3GoAwayFrameHandler(http3GoAwayFrameHandler)
-        .http3SettingsFrameHandler(http3SettingsFrameHandler)
-        .agentType(agentType);
-
-
       return new Http3ServerConnectionHandler(new ChannelInitializer<QuicStreamChannel>() {
         @Override
         protected void initChannel(QuicStreamChannel streamChannel) {
           requestStreamHandler.handle(streamChannel);
         }
-      }, http3ControlStreamChannelHandler, unknownInboundStreamHandlerFactory, localSettings, disableQpackDynamicTable);
+      }, buildHttp3ControlStreamChannelHandler(), unknownInboundStreamHandlerFactory, localSettings, disableQpackDynamicTable);
     }
   }
 
-  public static class Http3ClientConnectionHandlerBuilder extends Http3ConnectionHandlerBuilder {
+  public static class Http3ClientConnectionHandlerBuilder extends Http3ConnectionHandlerBuilderBase {
     private LongFunction<ChannelHandler> pushStreamHandlerFactory;
 
     private Http3ClientConnectionHandlerBuilder() {
@@ -240,12 +244,7 @@ public class Http3Utils {
     }
 
     public Http3ClientConnectionHandler build() {
-      Http3ControlStreamChannelHandler http3ControlStreamChannelHandler = new Http3ControlStreamChannelHandler()
-        .http3GoAwayFrameHandler(http3GoAwayFrameHandler)
-        .http3SettingsFrameHandler(http3SettingsFrameHandler)
-        .agentType(agentType);
-
-      return new Http3ClientConnectionHandler(http3ControlStreamChannelHandler, pushStreamHandlerFactory,
+      return new Http3ClientConnectionHandler(buildHttp3ControlStreamChannelHandler(), pushStreamHandlerFactory,
         unknownInboundStreamHandlerFactory, localSettings, disableQpackDynamicTable);
     }
   }
