@@ -62,6 +62,7 @@ public class Http3ClientTest extends HttpClientTest {
         //    streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
         streamChannel.pipeline().addLast(requestStreamHandler);
       })
+      .agentType("SERVER-TEST_MODE")
       .http3GoAwayFrameHandler(goAwayHandler)
       .build();
   }
@@ -108,6 +109,12 @@ public class Http3ClientTest extends HttpClientTest {
             public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
               System.out.println(String.format("%s triggered in QuicChannel handler", evt.getClass().getSimpleName()));
               super.userEventTriggered(ctx, evt);
+            }
+
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+              System.out.println(String.format("Caught exception in QuicChannel handler, %s", cause.getMessage()));
+              super.exceptionCaught(ctx, cause);
             }
           });
         }
