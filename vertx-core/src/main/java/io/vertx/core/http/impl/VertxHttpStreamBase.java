@@ -375,8 +375,8 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     } else {
       // Reset happening before stream allocation
       handleReset(code);
+      promise.complete();
     }
-    promise.complete();
   }
 
   void handleWriteQueueDrained() {
