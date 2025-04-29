@@ -467,13 +467,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   public Http3ConnectionHandler getHttp3ConnectionHandler() {
     //TODO: implement settings
     if (isServer) {
-      Handler<QuicStreamChannel> quicStreamChannelHandler = streamChannel -> {
-        streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
-        streamChannel.pipeline().addLast(new StreamChannelHandler());
-      };
       return Http3Utils
         .newServerConnectionHandlerBuilder()
-        .requestStreamHandler(quicStreamChannelHandler)
+        .requestStreamHandler(streamChannel -> {
+          streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
+          streamChannel.pipeline().addLast(new StreamChannelHandler());
+        })
         .agentType(this.agentType)
         .http3GoAwayFrameHandler(this::onGoAwayReceived)
         .http3SettingsFrameHandler(this::onSettingsRead)
