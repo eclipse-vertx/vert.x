@@ -16,7 +16,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>21</version>
+    <version>22</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
