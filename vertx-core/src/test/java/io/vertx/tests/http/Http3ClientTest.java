@@ -3,14 +3,18 @@ package io.vertx.tests.http;
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
+import io.netty.incubator.codec.quic.QuicError;
+import io.netty.incubator.codec.quic.QuicException;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
@@ -19,6 +23,7 @@ import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.tls.Cert;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -162,8 +167,48 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForClientResetServerStream(boolean endServer) {
-    return null;
+  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
+    return createH3Server(
+      new Http3RequestStreamInboundHandler() {
+        @Override
+        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+          QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
+          ChannelPromise promise = streamChannel.newPromise();
+//          promise.addListener(future -> streamChannel.close());
+          streamChannel.write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
+          streamChannel.flush();
+        }
+
+        @Override
+        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+          QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
+          ChannelPromise promise = streamChannel.newPromise();
+//          promise.addListener(future -> streamChannel.close());
+          streamChannel.write(new DefaultHttp3DataFrame(Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8)), promise);
+          streamChannel.flush();
+          ReferenceCountUtil.release(frame);
+        }
+
+        @Override
+        protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+          fail("Channel input should not have been closed.");
+        }
+
+        @Override
+        protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
+        System.out.println(String.format("Caught exception in QuicStreamChannel handler, %s", exception.getMessage()));
+          if (exception.error() == QuicError.STREAM_RESET) {
+            vertx.runOnContext(v -> {
+//              assertEquals(10L, exception.error());
+              complete();
+            });
+          }
+          super.handleQuicException(ctx, exception);
+        }
+      }, goAwayFrame -> {
+        System.out.println("GoAwayFrame received: " + goAwayFrame);
+      });
+
   }
 
   @Override
