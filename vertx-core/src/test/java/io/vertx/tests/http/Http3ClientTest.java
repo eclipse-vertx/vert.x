@@ -196,7 +196,7 @@ public class Http3ClientTest extends HttpClientTest {
 
         @Override
         protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
-        System.out.println(String.format("Caught exception in QuicStreamChannel handler, %s", exception.getMessage()));
+          System.out.println(String.format("Caught exception in QuicStreamChannel handler, %s", exception.getMessage()));
           if (exception.error() == QuicError.STREAM_RESET) {
             vertx.runOnContext(v -> {
 //              assertEquals(10L, exception.error());
