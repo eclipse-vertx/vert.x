@@ -22,6 +22,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.tls.Cert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -237,8 +239,22 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
+  @Test
+  @Ignore("Test ignored: HTTP/3 handles flow control at the QUIC layer; no WINDOW_UPDATE equivalent in HTTP/3")
+  public void testConnectionWindowSize() throws Exception {
+    super.testConnectionWindowSize();
+  }
+
+  @Override
   protected ServerBootstrap createServerForUpdateConnectionWindowSize() {
     return null;
+  }
+
+  @Override
+  @Test
+  @Ignore("Test ignored: HTTP/3 handles flow control at the QUIC layer; no WINDOW_UPDATE equivalent in HTTP/3")
+  public void testUpdateConnectionWindowSize() throws Exception {
+    super.testUpdateConnectionWindowSize();
   }
 
   @Override
