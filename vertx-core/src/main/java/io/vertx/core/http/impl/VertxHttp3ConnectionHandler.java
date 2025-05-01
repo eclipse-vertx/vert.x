@@ -212,11 +212,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     }
 
     if (end) {
-      if (isServer) {
-        promise.addListener(future -> streamChannel.close());
-      } else {
-        promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
-      }
+      promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
     }
     streamChannel.write(new DefaultHttp3HeadersFrame(http3Headers), promise);
 
