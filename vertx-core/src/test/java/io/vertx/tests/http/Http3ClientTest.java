@@ -229,8 +229,64 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testClearTextUpgrade() throws Exception {
+    super.testClearTextUpgrade();
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testClearTextUpgradeWithPreflightRequest() throws Exception {
+    super.testClearTextUpgradeWithPreflightRequest();
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testClearTextWithPriorKnowledge() throws Exception {
+    super.testClearTextWithPriorKnowledge();
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testRejectClearTextUpgrade() throws Exception {
+    super.testRejectClearTextUpgrade();
+  }
+
+  @Override
   protected ServerBootstrap createServerForClearText(List<String> requests, boolean withUpgrade) {
     return null;
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testRejectClearTextDirect() throws Exception {
+    super.testRejectClearTextDirect();
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testIdleTimeoutClearTextUpgrade() throws Exception {
+    super.testIdleTimeoutClearTextUpgrade();
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testIdleTimeoutClearTextDirect() throws Exception {
+    super.testIdleTimeoutClearTextDirect();
+  }
+
+  @Override
+  @Test
+  @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
+  public void testDisableIdleTimeoutClearTextUpgrade() throws Exception {
+    super.testDisableIdleTimeoutClearTextUpgrade();
   }
 
   @Override
