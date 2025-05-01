@@ -575,13 +575,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testConnectTimeout() {
-    super.testConnectTimeout();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testStartTLSServerSSLEnginePeerHost() throws Exception {
     super.testStartTLSServerSSLEnginePeerHost();
   }
@@ -627,14 +620,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testWriteHandlerFailure() throws Exception {
     super.testWriteHandlerFailure();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testWithSocks4LocalResolver() throws Exception {
-    super.testWithSocks4LocalResolver();
   }
 
   @Ignore
@@ -837,16 +822,22 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testTLSHostnameCertCheckIncorrect() {
-    super.testTLSHostnameCertCheckIncorrect();
+  public void testWithHttpConnectProxy() throws Exception {
+    super.testWithHttpConnectProxy();
   }
-
 
   @Ignore
   @Override
   @Test
-  public void testClientShutdown() throws Exception {
-    super.testClientShutdown();
+  public void testWorkerServer() {
+    super.testWorkerServer();
+  }
+
+  @Ignore
+  @Override
+  @Test
+  public void testTLSHostnameCertCheckIncorrect() {
+    super.testTLSHostnameCertCheckIncorrect();
   }
 
 }

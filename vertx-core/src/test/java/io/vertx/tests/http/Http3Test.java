@@ -166,12 +166,6 @@ public class Http3Test extends HttpCommonTest {
     super.testStreamPriorityInheritancePushPromise();
   }
 
-  @Ignore("This test is ignored because UDP is based on a single connectionless protocol.")
-  @Test
-  public void testCloseMulti() throws Exception {
-    super.testCloseMulti();
-  }
-
   @Ignore("This test assumes an HTTP/1.1 connection, which isn't compatible with HTTP/3")
   @Test
   public void testListenSocketAddress() throws Exception {
@@ -404,20 +398,6 @@ public class Http3Test extends HttpCommonTest {
   public void testDisableIdleTimeoutInPool() throws Exception {
     //TODO: resolve this test issue.
     super.testDisableIdleTimeoutInPool();
-  }
-
-  @Test
-  @Ignore
-  public void testNetSocketConnectSuccessClientInitiatesCloseImmediately() throws Exception {
-    //TODO: resolve this test issue.
-    super.testNetSocketConnectSuccessClientInitiatesCloseImmediately();
-  }
-
-  @Test
-  @Ignore
-  public void testNetSocketConnectSuccessServerInitiatesCloseOnReply() throws Exception {
-    //TODO: resolve this test issue.
-    super.testNetSocketConnectSuccessServerInitiatesCloseOnReply();
   }
 
   @Test
