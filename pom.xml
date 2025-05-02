@@ -48,7 +48,6 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>4.5.15-SNAPSHOT</stack.version>
     <jmh.version>1.36</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
@@ -60,7 +59,7 @@
       <dependency>
         <groupId>io.vertx</groupId>
         <artifactId>vertx-dependencies</artifactId>
-        <version>${stack.version}</version>
+        <version>${project.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
