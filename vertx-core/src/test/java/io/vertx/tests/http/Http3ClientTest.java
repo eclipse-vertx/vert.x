@@ -2,30 +2,24 @@ package io.vertx.tests.http;
 
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.incubator.codec.http3.*;
-import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
-import io.netty.incubator.codec.quic.QuicError;
-import io.netty.incubator.codec.quic.QuicException;
-import io.netty.incubator.codec.quic.QuicSslContext;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
+import io.netty.incubator.codec.quic.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -218,10 +212,9 @@ public class Http3ClientTest extends HttpClientTest {
     return null;
   }
 
-  @Override
-  protected ServerBootstrap createServerForConnectionDecodeError() {
-    return null;
-  }
+      @Override
+      protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+      }
 
   @Override
   protected ServerBootstrap createServerForInvalidServerResponse() {
@@ -257,11 +250,6 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForClearText(List<String> requests, boolean withUpgrade) {
-    return null;
-  }
-
-  @Override
   @Test
   @Ignore("Ignoring test: not applicable in HTTP/3 (QUIC-based protocol with no upgrade from HTTP/1.1 or HTTP/2)")
   public void testRejectClearTextDirect() throws Exception {
@@ -290,11 +278,6 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForConnectionWindowSize() {
-    return null;
-  }
-
-  @Override
   @Test
   @Ignore("Test ignored: HTTP/3 handles flow control at the QUIC layer; no WINDOW_UPDATE equivalent in HTTP/3")
   public void testConnectionWindowSize() throws Exception {
@@ -302,35 +285,10 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected ServerBootstrap createServerForUpdateConnectionWindowSize() {
-    return null;
-  }
-
-  @Override
   @Test
   @Ignore("Test ignored: HTTP/3 handles flow control at the QUIC layer; no WINDOW_UPDATE equivalent in HTTP/3")
   public void testUpdateConnectionWindowSize() throws Exception {
     super.testUpdateConnectionWindowSize();
-  }
-
-  @Override
-  protected ServerBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
-    return null;
-  }
-
-  @Override
-  protected ServerBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
-    return null;
-  }
-
-  @Override
-  protected ServerBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
-    return null;
-  }
-
-  @Override
-  protected ServerBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
-    return null;
   }
 
   @Test
