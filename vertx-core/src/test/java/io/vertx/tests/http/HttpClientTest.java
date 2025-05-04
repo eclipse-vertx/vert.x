@@ -12,8 +12,6 @@
 package io.vertx.tests.http;
 
 import io.netty.bootstrap.AbstractBootstrap;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -233,7 +231,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract AbstractBootstrap createServerForGet();
+  protected AbstractBootstrap createServerForGet() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testGet() throws Exception {
@@ -768,7 +768,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     testClientResetServerStream(false, true);
   }
 
-  protected abstract AbstractBootstrap createServerForClientResetServerStream(boolean endServer);
+  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   private void testClientResetServerStream(boolean endClient, boolean endServer) throws Exception {
     waitFor(1);
@@ -1088,7 +1090,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract AbstractBootstrap createServerForStreamError();
+  protected AbstractBootstrap createServerForStreamError() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testStreamError() throws Exception {
@@ -1128,7 +1132,7 @@ public abstract class HttpClientTest extends HttpTestBase {
             }));
           req.exceptionHandler(err -> {
               assertOnIOContext(ctx);
-              if (err instanceof Http2Exception) {
+              if (err instanceof HttpClosedException) {
                 complete();
               }
             })
@@ -1141,7 +1145,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract AbstractBootstrap createServerForConnectionDecodeError();
+  protected AbstractBootstrap createServerForConnectionDecodeError() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testConnectionDecodeError() throws Exception {
@@ -1192,7 +1198,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract AbstractBootstrap createServerForInvalidServerResponse();
+  protected AbstractBootstrap createServerForInvalidServerResponse() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testInvalidServerResponse() throws Exception {
@@ -1507,7 +1515,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     Assert.assertEquals(Arrays.asList("GET", "GET"), requests);
   }
 
-  protected abstract AbstractBootstrap createServerForClearText(List<String> requests, boolean withUpgrade);
+  protected AbstractBootstrap createServerForClearText(List<String> requests, boolean withUpgrade) {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   private List<String> testClearText(boolean withUpgrade, boolean withPreflightRequest) throws Exception {
     Assume.assumeTrue(testAddress.isInetSocket());
@@ -1691,7 +1701,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions()
+    client = vertx.createHttpClient(new HttpClientOptions()  //TODO: move this creation to child classes
       .setIdleTimeout(2)
       .setProtocolVersion(HttpVersion.HTTP_2)
       .setDefaultPort(DEFAULT_HTTP_PORT)
@@ -1828,7 +1838,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract AbstractBootstrap createServerForConnectionWindowSize();
+  protected AbstractBootstrap createServerForConnectionWindowSize() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testConnectionWindowSize() throws Exception {
@@ -1840,7 +1852,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     await();
   }
 
-  protected abstract AbstractBootstrap createServerForUpdateConnectionWindowSize();
+  protected AbstractBootstrap createServerForUpdateConnectionWindowSize() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testUpdateConnectionWindowSize() throws Exception {
@@ -1891,7 +1905,9 @@ public abstract class HttpClientTest extends HttpTestBase {
   }
 */
 
-  protected abstract AbstractBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority);
+  protected AbstractBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testStreamPriority() throws Exception {
@@ -1919,7 +1935,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract AbstractBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2);
+  protected AbstractBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Test
   public void testStreamPriorityChange() throws Exception {
@@ -1964,7 +1982,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch);
+  protected AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
@@ -1998,7 +2018,9 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected abstract AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority);
+  protected AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
 
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
