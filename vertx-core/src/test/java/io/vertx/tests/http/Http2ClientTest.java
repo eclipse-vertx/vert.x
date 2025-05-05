@@ -12,7 +12,6 @@
 package io.vertx.tests.http;
 
 import io.netty.bootstrap.AbstractBootstrap;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -27,11 +26,13 @@ import io.netty.handler.ssl.*;
 import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.http.Http2StreamPriority;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 
 import java.nio.charset.StandardCharsets;
@@ -47,6 +48,22 @@ public class Http2ClientTest extends HttpClientTest {
     serverOptions = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
     clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
     super.setUp();
+  }
+
+    @Override
+  protected StreamPriorityBase generateStreamPriority() {
+    return new Http2StreamPriority()
+      .setDependency(TestUtils.randomPositiveInt())
+      .setWeight((short) TestUtils.randomPositiveInt(255))
+      .setExclusive(TestUtils.randomBoolean());
+  }
+
+  @Override
+  protected StreamPriorityBase defaultStreamPriority() {
+    return new Http2StreamPriority()
+      .setDependency(0)
+      .setWeight(Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT)
+      .setExclusive(false);
   }
 
   @Override
