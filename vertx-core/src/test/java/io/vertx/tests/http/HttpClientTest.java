@@ -59,6 +59,9 @@ public abstract class HttpClientTest extends HttpTestBase {
   protected HttpClientOptions clientOptions;
   protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
+  protected abstract StreamPriorityBase generateStreamPriority();
+  protected abstract StreamPriorityBase defaultStreamPriority();
+
   @Test
   public void testClientSettings() throws Exception {
     waitFor(2);
@@ -1911,8 +1914,9 @@ public abstract class HttpClientTest extends HttpTestBase {
 
   @Test
   public void testStreamPriority() throws Exception {
-    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
-    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriorityBase requestStreamPriority = generateStreamPriority();
+    StreamPriorityBase responseStreamPriority = generateStreamPriority();
+
     waitFor(2);
     AbstractBootstrap bootstrap = createServerForStreamPriority(requestStreamPriority, responseStreamPriority);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
