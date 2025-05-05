@@ -187,7 +187,7 @@ public final class ChannelProvider {
         });
       })
       .addListener((io.netty.util.concurrent.Future<QuicChannel> future) -> {
-        if (!future.isSuccess()) {
+        if (!future.isSuccess() && !channelHandler.isDone()) {
           Throwable cause = future.cause();
           if(future.cause() instanceof QuicClosedChannelException) {
             cause = new ConnectTimeoutException(future.cause().getMessage());
