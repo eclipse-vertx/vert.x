@@ -5,6 +5,9 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.concurrent.Promise;
 
+import java.net.ConnectException;
+import java.net.PortUnreachableException;
+
 class ExceptionHandlingChannelHandler implements ChannelHandler {
   private final Promise<Channel> channelHandler;
 
@@ -14,6 +17,9 @@ class ExceptionHandlingChannelHandler implements ChannelHandler {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) throws Exception {
+    if (throwable instanceof PortUnreachableException) {
+      throwable = new VertxConnectException(throwable);
+    }
     channelHandler.tryFailure(throwable);
     channelHandlerContext.close();
   }
@@ -24,5 +30,12 @@ class ExceptionHandlingChannelHandler implements ChannelHandler {
 
   @Override
   public void handlerRemoved(ChannelHandlerContext channelHandlerContext) {
+  }
+
+  private static class VertxConnectException extends ConnectException {
+    public VertxConnectException(Throwable cause) {
+      super(cause.getMessage());
+      initCause(cause);
+    }
   }
 }

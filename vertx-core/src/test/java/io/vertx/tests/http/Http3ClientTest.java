@@ -352,14 +352,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void testConnectionFailed() throws Exception {
-    //TODO: correct me
-    super.testConnectionFailed();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testServerShutdownConnection() throws Exception {
     //TODO: correct me
     super.testServerShutdownConnection();
