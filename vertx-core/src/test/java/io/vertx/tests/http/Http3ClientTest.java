@@ -11,8 +11,10 @@ import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
+import io.vertx.core.http.Http3StreamPriority;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
@@ -31,6 +33,16 @@ public class Http3ClientTest extends HttpClientTest {
     serverOptions = HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
     clientOptions = HttpOptionsFactory.createH3HttpClientOptions();
     super.setUp();
+  }
+
+  @Override
+  protected StreamPriorityBase generateStreamPriority() {
+    return new Http3StreamPriority(new QuicStreamPriority(TestUtils.randomPositiveInt(127), TestUtils.randomBoolean()));
+  }
+
+  @Override
+  protected StreamPriorityBase defaultStreamPriority() {
+    return new Http3StreamPriority(new QuicStreamPriority(0, false));
   }
 
   @Override
@@ -293,6 +305,20 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Test
   @Override
+  @Ignore("Ignored because stream priority is not exchanged in HTTP/3 as it is in HTTP/2.")
+  public void testStreamPriorityChange() throws Exception {
+    super.testStreamPriorityChange();
+  }
+
+  @Test
+  @Override
+  @Ignore("Ignored because stream priority is not exchanged in HTTP/3 as it is in HTTP/2.")
+  public void testStreamPriority() throws Exception {
+    super.testStreamPriority();
+  }
+
+  @Test
+  @Override
   @Ignore
   public void testFallbackOnHttp1() throws Exception {
     //TODO: correct me
@@ -310,14 +336,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void testStreamPriorityChange() throws Exception {
-    //TODO: correct me
-    super.testStreamPriorityChange();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testPushPromise() throws Exception {
     //TODO: correct me
     super.testPushPromise();
@@ -329,14 +347,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testResetPushPromiseNoHandler() throws Exception {
     //TODO: correct me
     super.testResetPushPromiseNoHandler();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testStreamPriority() throws Exception {
-    //TODO: correct me
-    super.testStreamPriority();
   }
 
   @Test
