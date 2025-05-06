@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * <p>The following can be expected of a shadow context
  * <ul>
- *   <li>{@link #threadingModel()} returns the {@link ThreadingModel#OTHER}</li>
+ *   <li>{@link #threadingModel()} returns the {@link ThreadingModel#EXTERNAL}</li>
  *   <li>{@link #nettyEventLoop()} returns an event-loop of the {@link #owner()}</li>
  *   <li>{@link #owner()} returns the Vertx instance that created it</li>
  *   <li>{@link #executor()} returns the event executor of the shadowed context</li>
@@ -171,7 +171,7 @@ public final class ShadowContext extends ContextBase {
 
   @Override
   public ThreadingModel threadingModel() {
-    return ThreadingModel.OTHER;
+    return ThreadingModel.EXTERNAL;
   }
 
   @Override

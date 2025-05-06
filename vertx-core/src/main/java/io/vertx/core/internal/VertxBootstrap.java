@@ -51,6 +51,14 @@ public interface VertxBootstrap {
   VertxBootstrap options(VertxOptions options);
 
   /**
+   * Set whether to enable shadow contexts.
+   *
+   * @param option the value
+   * @return this builder instance
+   */
+  VertxBootstrap enableShadowContext(boolean option);
+
+  /**
    * Set an event executor {@code provider} to use.
    *
    * @param provider a provider to use

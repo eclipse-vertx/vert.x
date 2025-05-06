@@ -45,6 +45,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private static final Logger log = LoggerFactory.getLogger(VertxBootstrapImpl.class);
 
   private VertxOptions options;
+  private boolean enableShadowContext;
   private JsonObject config;
   private Transport transport;
   private EventExecutorProvider eventExecutorProvider;
@@ -61,10 +62,12 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   public VertxBootstrapImpl(JsonObject config) {
     this(new VertxOptions(config));
     this.config = config;
+    this.enableShadowContext = false;
   }
 
   public VertxBootstrapImpl(VertxOptions options) {
     this.options = options;
+    this.enableShadowContext = false;
   }
 
   public VertxBootstrapImpl() {
@@ -78,6 +81,12 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   @Override
   public VertxBootstrap options(VertxOptions options) {
     this.options = options;
+    return this;
+  }
+
+  @Override
+  public VertxBootstrap enableShadowContext(boolean option) {
+    this.enableShadowContext = option;
     return this;
   }
 
@@ -230,7 +239,8 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       fileResolver,
       threadFactory,
       executorServiceFactory,
-      eventExecutorProvider);
+      eventExecutorProvider,
+      enableShadowContext);
   }
 
   public Vertx vertx() {

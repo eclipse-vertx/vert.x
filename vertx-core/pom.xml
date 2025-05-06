@@ -192,6 +192,13 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Scope test to declare soft dependency related to maven-compiler-plugin usage -->
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <!-- JMH -->
     <dependency>
       <groupId>org.openjdk.jmh</groupId>

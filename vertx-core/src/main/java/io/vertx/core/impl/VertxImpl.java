@@ -174,11 +174,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ThreadLocal<WeakReference<EventLoop>> stickyEventLoop = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
+  private final boolean shadowContext;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, Throwable transportUnavailabilityCause,
             FileResolver fileResolver, VertxThreadFactory threadFactory, ExecutorServiceFactory executorServiceFactory,
-            EventExecutorProvider eventExecutorProvider) {
+            EventExecutorProvider eventExecutorProvider, boolean enableShadowContext) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -239,6 +240,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.deploymentManager = new DefaultDeploymentManager(this);
     this.verticleManager = new VerticleManager(this, DefaultDeploymentManager.log, deploymentManager);
     this.eventExecutorProvider = eventExecutorProvider;
+    this.shadowContext = enableShadowContext;
   }
 
   void init() {
@@ -528,7 +530,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.EXTERNAL, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread().getContextClassLoader());
       } else {
         ctx = createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
@@ -716,13 +718,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         } else {
           throw new UnsupportedOperationException("????");
         }
-      } else {
+      } else if (((VertxImpl) context.owner()).shadowContext) {
         EventLoop eventLoop = stickyEventLoop();
         return new ShadowContext(this, new EventLoopExecutor(eventLoop), context);
       }
-    } else {
-      return null;
     }
+    return null;
   }
 
   public ClusterManager clusterManager() {

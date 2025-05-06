@@ -34,7 +34,7 @@ public interface EventExecutorProvider extends VertxServiceProvider {
    *
    * @param thread the thread for which an executor is required
    * @return an executor suitable for the given thread, tasks executed on this executor will be declared as
-   * running on {@link io.vertx.core.ThreadingModel#OTHER}.
+   * running on {@link io.vertx.core.ThreadingModel#EXTERNAL}.
    */
   java.util.concurrent.Executor eventExecutorFor(Thread thread);
 
