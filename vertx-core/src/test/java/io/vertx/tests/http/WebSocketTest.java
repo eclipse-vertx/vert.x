@@ -1036,7 +1036,7 @@ public class WebSocketTest extends VertxTestBase {
     // client needs to ask for it
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
-      assertEquals("permessage-deflate;client_max_window_bits", ws.headers().get("sec-websocket-extensions"));
+      assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
       ws.writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(buff, true));
     });
 
