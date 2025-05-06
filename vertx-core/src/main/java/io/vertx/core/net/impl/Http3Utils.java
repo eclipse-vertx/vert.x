@@ -27,8 +27,6 @@ import io.netty.incubator.codec.http3.Http3GoAwayFrame;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicError;
-import io.netty.incubator.codec.quic.QuicException;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -204,7 +202,6 @@ public class Http3Utils {
       return new Http3ControlStreamChannelHandler()
         .http3GoAwayFrameHandler(http3GoAwayFrameHandler)
         .http3SettingsFrameHandler(http3SettingsFrameHandler)
-        .streamResetHandler(streamResetHandler)
         .agentType(agentType);
     }
 
