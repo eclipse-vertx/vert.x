@@ -430,7 +430,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
           handler.clientUpgrade(ctx);
         }
       };
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536) {
+      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, upgradedConnection.client.options().getHttp2UpgradeMaxContentLength()) {
 
         private long bufferedSize = 0;
         private Deque<Object> buffered = new ArrayDeque<>();
