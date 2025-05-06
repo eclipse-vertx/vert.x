@@ -13,9 +13,12 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.http.Http3StreamPriority;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -43,6 +46,11 @@ public class Http3ClientTest extends HttpClientTest {
   @Override
   protected StreamPriorityBase defaultStreamPriority() {
     return new Http3StreamPriority(new QuicStreamPriority(0, false));
+  }
+
+  @Override
+  protected HttpFrame generateCustomFrame() {
+    return new HttpFrameImpl(TestUtils.randomPositiveInt(50) + 64, 0, TestUtils.randomBuffer(500));
   }
 
   @Override
@@ -355,14 +363,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testServerShutdownConnection() throws Exception {
     //TODO: correct me
     super.testServerShutdownConnection();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testUnknownFrame() throws Exception {
-    //TODO: correct me
-    super.testUnknownFrame();
   }
 
   @Test

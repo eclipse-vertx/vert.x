@@ -61,6 +61,7 @@ public abstract class HttpClientTest extends HttpTestBase {
 
   protected abstract StreamPriorityBase generateStreamPriority();
   protected abstract StreamPriorityBase defaultStreamPriority();
+  protected abstract HttpFrame generateCustomFrame();
 
   @Test
   public void testClientSettings() throws Exception {
@@ -1461,15 +1462,13 @@ public abstract class HttpClientTest extends HttpTestBase {
 
   @Test
   public void testUnknownFrame() throws Exception {
-    Buffer expectedSend = TestUtils.randomBuffer(500);
-    Buffer expectedRecv = TestUtils.randomBuffer(500);
+    HttpFrame expectedSendCustomFrame = generateCustomFrame();
+    HttpFrame expectedRecvCustomFrame = generateCustomFrame();
     server.requestHandler(req -> {
       req.customFrameHandler(frame -> {
-        assertEquals(10, frame.type());
-        assertEquals(253, frame.flags());
-        assertEquals(expectedSend, frame.payload());
+        assertEquals(expectedSendCustomFrame, frame);
         HttpServerResponse resp = req.response();
-        resp.writeCustomFrame(12, 134, expectedRecv);
+        resp.writeCustomFrame(expectedRecvCustomFrame);
         resp.end();
       });
     });
@@ -1482,9 +1481,7 @@ public abstract class HttpClientTest extends HttpTestBase {
         resp.customFrameHandler(frame -> {
           assertOnIOContext(ctx);
           assertEquals(1, status.getAndIncrement());
-          assertEquals(12, frame.type());
-          assertEquals(134, frame.flags());
-          assertEquals(expectedRecv, frame.payload());
+          assertEquals(expectedRecvCustomFrame, frame);
         });
         resp.endHandler(v -> {
           assertEquals(2, status.getAndIncrement());
@@ -1492,8 +1489,8 @@ public abstract class HttpClientTest extends HttpTestBase {
         });
       }));
       req.sendHead().onComplete(onSuccess(version -> {
-        assertSame(HttpVersion.HTTP_2, req.version());
-        req.writeCustomFrame(10, 253, expectedSend);
+        assertSame(clientOptions.getProtocolVersion(), req.version());
+        req.writeCustomFrame(expectedSendCustomFrame);
         req.end();
       }));
     }));

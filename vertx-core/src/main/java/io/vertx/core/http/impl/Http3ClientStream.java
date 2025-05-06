@@ -77,11 +77,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void writeFrame(QuicStreamChannel stream, byte type, short flags, ByteBuf payload, Promise<Void> promise) {
-    if (HTTP3_DATA_FRAME.type() == type) {
-      conn.handler.writeData(stream, payload, false, (FutureListener<Void>) promise);
-      return;
-    }
-    throw new RuntimeException("Not supported type");
+    conn.handler.writeFrame(stream, type, flags, payload, (FutureListener<Void>) promise);
   }
 
   @Override
