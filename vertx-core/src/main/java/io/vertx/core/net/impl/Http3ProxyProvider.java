@@ -11,7 +11,16 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.proxy.ProxyConnectionEvent;
@@ -25,8 +34,6 @@ import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -41,7 +48,7 @@ import java.net.SocketAddress;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http3ProxyProvider {
-  private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3ProxyProvider.class);
+  private static final Logger log = LoggerFactory.getLogger(Http3ProxyProvider.class);
   public static final String CHANNEL_HANDLER_CONNECT_REQUEST_HEADER_CLEANER = "vertxConnectRequestHeaderCleaner";
   public static final String CHANNEL_HANDLER_PROXY = "myProxyHandler";
   public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
@@ -287,7 +294,7 @@ public class Http3ProxyProvider {
     @Override
     public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
                         ChannelPromise promise) {
-      logger.trace("Connect method called.");
+      log.trace("Connect method called.");
       Http3Utils.newQuicChannel(channel, new Http3Utils.MyChannelInitializer())
         .addListener((GenericFutureListener<Future<QuicChannel>>) newQuicChannelFut -> {
           QuicConnectionAddress proxyAddress = newQuicChannelFut.get().remoteAddress();
@@ -441,7 +448,7 @@ public class Http3ProxyProvider {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-      logger.error("Proxy connection failed!");
+      log.error("Proxy connection failed!");
       channelPromise.tryFailure(cause);
     }
   }

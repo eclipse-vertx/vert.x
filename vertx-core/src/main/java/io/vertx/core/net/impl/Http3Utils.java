@@ -33,8 +33,6 @@ import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.PromiseInternal;
@@ -51,7 +49,7 @@ import java.util.function.LongFunction;
  */
 public class Http3Utils {
 
-  private static final InternalLogger logger = InternalLoggerFactory.getInstance(Http3Utils.class);
+  private static final Logger log = LoggerFactory.getLogger(Http3Utils.class);
 
   public static Http3ServerConnectionHandlerBuilder newServerConnectionHandlerBuilder() {
     return new Http3ServerConnectionHandlerBuilder();
@@ -146,13 +144,13 @@ public class Http3Utils {
       ByteBuf msg0 = (ByteBuf) msg;
       byte[] arr = new byte[msg0.readableBytes()];
       msg0.copy().readBytes(arr);
-      logger.info("Received msg is: {}", new String(arr));
+      log.info(String.format("Received msg is: %s", new String(arr)));
       super.channelRead(ctx, msg);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-      logger.error(cause);
+      log.error(cause);
       ctx.close();
     }
   }
