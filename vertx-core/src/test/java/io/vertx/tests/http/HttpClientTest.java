@@ -1305,7 +1305,7 @@ public abstract class HttpClientTest extends HttpTestBase {
           req.end(Buffer.buffer("request-body"));
         });
         req.sendHead().onComplete(version -> {
-          assertEquals(1, req.streamId());
+          assertEquals(clientOptions.getProtocolVersion() == HttpVersion.HTTP_2 ? 1 : 0, req.streamId());
         });
       }));
     await();
