@@ -342,8 +342,15 @@ public class TaskQueueTest extends AsyncTestBase {
       execution.resume();
       CountDownLatch latch = execution.trySuspend();
       assertNull(latch);
+      try {
+        Thread.sleep(5);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        fail();
+      }
+      assertEquals(2, seq.get());
     }, exec);
     pending.poll().run();
-    assertEquals(2, seq.get());
+    assertTrue(seq.get() >= 2);
   }
 }
