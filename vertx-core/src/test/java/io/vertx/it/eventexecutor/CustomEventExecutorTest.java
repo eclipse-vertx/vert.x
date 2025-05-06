@@ -41,7 +41,7 @@ public class CustomEventExecutorTest {
     });
     thread.start();
     thread.join();
-    assertEquals(ThreadingModel.OTHER, context.threadingModel());
+    assertEquals(ThreadingModel.EXTERNAL, context.threadingModel());
     int[] executions = new int[1];
     context.runOnContext(v -> {
       executions[0]++;
