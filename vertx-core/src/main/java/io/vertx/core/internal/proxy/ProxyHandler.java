@@ -30,8 +30,8 @@ import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.ObjectUtil;
-import io.netty.util.internal.logging.InternalLogger;
-import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.nio.channels.ConnectionPendingException;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class ProxyHandler extends ChannelDuplexHandler {
 
-    private static final InternalLogger logger = InternalLoggerFactory.getInstance(ProxyHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ProxyHandler.class);
 
     /**
      * The default connect timeout: 10 seconds.
@@ -326,7 +326,7 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
             removeDecoder(ctx);
             return true;
         } catch (Exception e) {
-            logger.warn("Failed to remove proxy decoders:", e);
+            log.warn("Failed to remove proxy decoders:", e);
         }
 
         return false;
@@ -337,7 +337,7 @@ public abstract class ProxyHandler extends ChannelDuplexHandler {
             removeEncoder(ctx);
             return true;
         } catch (Exception e) {
-            logger.warn("Failed to remove proxy encoders:", e);
+            log.warn("Failed to remove proxy encoders:", e);
         }
 
         return false;
