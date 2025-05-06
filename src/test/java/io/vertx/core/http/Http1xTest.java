@@ -182,6 +182,13 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHttp2MultiplexingLimit(-1));
     assertEquals(-1, options.getHttp2MultiplexingLimit());
 
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH, options.getHttp2UpgradeMaxContentLength());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2UpgradeMaxContentLength(rand));
+    assertEquals(rand, options.getHttp2UpgradeMaxContentLength());
+    assertEquals(options, options.setHttp2UpgradeMaxContentLength(-1));
+    assertEquals(-1, options.getHttp2UpgradeMaxContentLength());
+
     assertEquals(HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setHttp2ConnectionWindowSize(rand));
@@ -445,6 +452,7 @@ public class Http1xTest extends HttpTest {
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
+    int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
     boolean decompressionSupported = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxChunkSize = TestUtils.randomPositiveInt();
@@ -501,6 +509,7 @@ public class Http1xTest extends HttpTest {
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
     options.setKeepAliveTimeout(keepAliveTimeout);
     options.setHttp2KeepAliveTimeout(http2KeepAliveTimeout);
+    options.setHttp2UpgradeMaxContentLength(http2UpgradeMaxContentLength);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -563,6 +572,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
     assertEquals(def.getKeepAliveTimeout(), json.getKeepAliveTimeout());
     assertEquals(def.getHttp2KeepAliveTimeout(), json.getHttp2KeepAliveTimeout());
+    assertEquals(def.getHttp2UpgradeMaxContentLength(), json.getHttp2UpgradeMaxContentLength());
   }
 
   @Test
@@ -615,6 +625,7 @@ public class Http1xTest extends HttpTest {
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
     int keepAliveTimeout = TestUtils.randomPositiveInt();
     int http2KeepAliveTimeout = TestUtils.randomPositiveInt();
+    int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -661,7 +672,8 @@ public class Http1xTest extends HttpTest {
       .put("localAddress", localAddress)
       .put("decoderInitialBufferSize", decoderInitialBufferSize)
       .put("keepAliveTimeout", keepAliveTimeout)
-      .put("http2KeepAliveTimeout", http2KeepAliveTimeout);
+      .put("http2KeepAliveTimeout", http2KeepAliveTimeout)
+      .put("http2UpgradeMaxContentLength", http2UpgradeMaxContentLength);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
