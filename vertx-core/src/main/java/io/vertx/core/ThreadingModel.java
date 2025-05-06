@@ -34,8 +34,8 @@ public enum ThreadingModel {
 
   /**
    * Tasks are scheduled on threads not managed by the current vertx instance, the nature of the thread is unknown
-   * to the vertx instance. Note that an event-loop thread of another vertx instance falls in this category.
+   * to the vertx instance. An event-loop thread of another vertx instance falls in this category.
    */
-  OTHER
+  EXTERNAL
 }
 
