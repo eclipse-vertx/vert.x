@@ -28,9 +28,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.Http2StreamPriority;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
@@ -50,7 +52,7 @@ public class Http2ClientTest extends HttpClientTest {
     super.setUp();
   }
 
-    @Override
+  @Override
   protected StreamPriorityBase generateStreamPriority() {
     return new Http2StreamPriority()
       .setDependency(TestUtils.randomPositiveInt())
@@ -64,6 +66,11 @@ public class Http2ClientTest extends HttpClientTest {
       .setDependency(0)
       .setWeight(Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT)
       .setExclusive(false);
+  }
+
+  @Override
+  protected HttpFrame generateCustomFrame() {
+    return new HttpFrameImpl(TestUtils.randomPositiveInt(50), new Http2Flags().ack(true).endOfStream(true).value(), TestUtils.randomBuffer(500));
   }
 
   @Override

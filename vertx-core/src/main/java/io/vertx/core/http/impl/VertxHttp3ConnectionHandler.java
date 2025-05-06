@@ -263,6 +263,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     return chctx.channel().attr(LAST_STREAM_ID_KEY).get();
   }
 
+  void writeFrame(QuicStreamChannel streamChannel, byte type, short flags, ByteBuf payload, FutureListener<Void> listener) {
+    ChannelPromise promise = listener == null ? streamChannel.voidPromise() : streamChannel.newPromise().addListener(listener);
+    streamChannel.write(new DefaultHttp3UnknownFrame(type, payload), promise);
+    checkFlush();
+  }
+
   public void writeReset(QuicStreamChannel streamChannel, long code, FutureListener<Void> listener) {
     ChannelPromise promise = streamChannel.newPromise().addListener(future -> checkFlush());
     if (listener != null) {
@@ -440,6 +446,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       if (logger.isDebugEnabled()) {
         logger.debug("{} - Received frame http3UnknownFrame : {}", agentType, byteBufToString(frame.content()));
       }
+
+      VertxHttpStreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(ctx);
+      connection.onUnknownFrame(ctx, (byte) frame.type(), vertxStream, frame.content());
       super.channelRead(ctx, frame);
     }
 

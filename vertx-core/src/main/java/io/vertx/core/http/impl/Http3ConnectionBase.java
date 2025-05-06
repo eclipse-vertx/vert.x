@@ -252,14 +252,13 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
 //  @Override
-//  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, VertxHttpStreamBase<?, ?> stream,
-//                             Http2Flags flags, ByteBuf payload) {
-//    VertxHttpStreamBase<?, ?, Http2Headers> stream = stream(streamId);
-//    if (stream != null) {
-//      Buffer buff = Buffer.buffer(safeBuffer(payload));
-//      stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
-//    }
-//  }
+  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, VertxHttpStreamBase<?, ?> stream,
+                             ByteBuf payload) {
+    if (stream != null) {
+      Buffer buff = BufferInternal.buffer(safeBuffer(payload));
+      stream.onCustomFrame(new HttpFrameImpl(frameType, 0, buff));
+    }
+  }
 
   //  @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, long errorCode) {
