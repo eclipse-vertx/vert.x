@@ -24,6 +24,16 @@ public class PoolOptionsConverter {
             obj.setHttp2MaxSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxLifetimeUnit":
+          if (member.getValue() instanceof String) {
+            obj.setMaxLifetimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
+        case "maxLifetime":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxLifetime(((Number)member.getValue()).intValue());
+          }
+          break;
         case "cleanerPeriod":
           if (member.getValue() instanceof Number) {
             obj.setCleanerPeriod(((Number)member.getValue()).intValue());
@@ -50,6 +60,10 @@ public class PoolOptionsConverter {
    static void toJson(PoolOptions obj, java.util.Map<String, Object> json) {
     json.put("http1MaxSize", obj.getHttp1MaxSize());
     json.put("http2MaxSize", obj.getHttp2MaxSize());
+    if (obj.getMaxLifetimeUnit() != null) {
+      json.put("maxLifetimeUnit", obj.getMaxLifetimeUnit().name());
+    }
+    json.put("maxLifetime", obj.getMaxLifetime());
     json.put("cleanerPeriod", obj.getCleanerPeriod());
     json.put("eventLoopSize", obj.getEventLoopSize());
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
