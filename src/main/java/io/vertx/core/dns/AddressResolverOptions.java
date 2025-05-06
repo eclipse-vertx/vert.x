@@ -103,6 +103,11 @@ public class AddressResolverOptions {
    */
   public static final boolean DEFAULT_ROUND_ROBIN_INET_ADDRESS = false;
 
+  /**
+   * The default retry with TCP on timeout = false
+   */
+  public static final boolean DEFAULT_RETRY_WITH_TCP_ON_TIMEOUT = false;
+
   private String hostsPath;
   private Buffer hostsValue;
   private int hostsRefreshPeriod;
@@ -118,6 +123,7 @@ public class AddressResolverOptions {
   private int ndots;
   private boolean rotateServers;
   private boolean roundRobinInetAddress;
+  private boolean retryWithTcpOnTimeout;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -133,6 +139,7 @@ public class AddressResolverOptions {
     rotateServers = DEFAULT_ROTATE_SERVERS;
     roundRobinInetAddress = DEFAULT_ROUND_ROBIN_INET_ADDRESS;
     hostsRefreshPeriod = DEFAULT_HOSTS_REFRESH_PERIOD;
+    retryWithTcpOnTimeout = DEFAULT_RETRY_WITH_TCP_ON_TIMEOUT;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -151,6 +158,7 @@ public class AddressResolverOptions {
     this.ndots = other.ndots;
     this.rotateServers = other.rotateServers;
     this.roundRobinInetAddress = other.roundRobinInetAddress;
+    this.retryWithTcpOnTimeout = other.retryWithTcpOnTimeout;
   }
 
   public AddressResolverOptions(JsonObject json) {
@@ -493,6 +501,23 @@ public class AddressResolverOptions {
    */
   public AddressResolverOptions setRoundRobinInetAddress(boolean roundRobinInetAddress) {
     this.roundRobinInetAddress = roundRobinInetAddress;
+    return this;
+  }
+
+  /**
+   * @return the value of retry with TCP on timeout flag
+   */
+  public boolean isRetryWithTcpOnTimeout() {
+    return retryWithTcpOnTimeout;
+  }
+
+  /**
+   * Set retry with TCP on timeout flag.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setRetryWithTcpOnTimeout(boolean retryWithTcpOnTimeout) {
+    this.retryWithTcpOnTimeout = retryWithTcpOnTimeout;
     return this;
   }
 
