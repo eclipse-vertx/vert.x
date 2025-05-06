@@ -504,14 +504,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void test100Continue() throws Exception {
-    //TODO: correct me
-    super.test100Continue();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testSendPing() throws Exception {
     //TODO: correct me
     super.testSendPing();
