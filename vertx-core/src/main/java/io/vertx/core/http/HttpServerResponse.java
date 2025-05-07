@@ -19,7 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-import java.nio.channels.FileChannel;
 
 import java.util.Set;
 
@@ -38,7 +37,10 @@ import java.util.Set;
  * outgoing HTTP connection, bypassing user space altogether (where supported by
  * the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one
- * from the file and written to the outgoing socket.
+ * from the file and written to the outgoing socket. If the developer want to use directly a
+ * {@link java.nio.channels.Channel} and manage its lifecycle use {@link #asFileChannelSender()}.
+ * The channel will be a {@link java.nio.channels.FileChannel} for {@link io.vertx.core.http.impl.Http1xServerResponse}
+ * and {@link java.nio.channels.AsynchronousFileChannel} for {@link io.vertx.core.http.impl.Http1xServerResponse}.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
@@ -358,50 +360,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   Future<Void> sendFile(String filename, long offset, long length);
 
-  /**
-   * Same as {@link #sendFile(FileChannel, String, long)} using length @code{Long.MAX_VALUE} which means until the end of the
-   * file.
-   *
-   * @param channel the file channel to the file to serve
-   * @param extension the file extension if known
-   * @return a future completed with the body result
-   */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  default Future<Void> sendFile(FileChannel channel, String extension) {
-    return sendFile(channel, extension, 0);
-  }
-
-  /**
-   * Same as {@link #sendFile(FileChannel, String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
-   * file.
-   *
-   * @param channel the file channel to the file to serve
-   * @param extension the file extension if known
-   * @param offset offset to start serving from
-   * @return a future completed with the body result
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  default Future<Void> sendFile(FileChannel channel, String extension, long offset) {
-    return sendFile(channel, extension, offset, Long.MAX_VALUE);
-  }
-
-  /**
-   * Ask the OS to stream a file as specified by {@code channel} directly
-   * from disk to the outgoing connection, bypassing userspace altogether
-   * (where supported by the underlying operating system). Contrary to {@link #sendFile(String, long, long)},
-   * the caller is responsible to close {@code channel} when no more needed.
-   * This is a very efficient way to serve files.<p>
-   * The actual serve is asynchronous and may not complete until some time after this method has returned.
-   *
-   * @param channel the file channel to the file to serve
-   * @param offset offset to start serving from
-   * @param length the number of bytes to send
-   * @return a future completed with the body result
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  default Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
-    return Future.failedFuture("not implemented for HTTP/2");
-  }
+  FileSender asFileChannelSender();
 
   /**
    * @return has the response already ended?
