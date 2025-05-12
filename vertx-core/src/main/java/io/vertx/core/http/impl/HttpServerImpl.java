@@ -225,19 +225,19 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     });
     tcpServer = server;
 
-    List<Closeable> closeables = new ArrayList<>();
-    closeables.add(p -> doClose(server, p));
-    closeables.add(p -> doShutdown(server, p));
+    List<Closeable> sequence = new ArrayList<>();
+    sequence.add(p -> doClose(server, p));
+    sequence.add(p -> doShutdown(server, p));
 
     if (requestHandler instanceof Closeable) {
-      closeables.add((Closeable) requestHandler);
+      sequence.add((Closeable) requestHandler);
     }
 
     if (webSocketHandler instanceof Closeable) {
-      closeables.add((Closeable) webSocketHandler);
+      sequence.add((Closeable) webSocketHandler);
     }
 
-    closeSequence = new CloseSequence(closeables.toArray(new Closeable[0]));
+    closeSequence = new CloseSequence(sequence.toArray(new Closeable[0]));
     Promise<HttpServer> result = context.promise();
     tcpServer.listen(listenContext, address).onComplete(ar -> {
       if (ar.succeeded()) {
