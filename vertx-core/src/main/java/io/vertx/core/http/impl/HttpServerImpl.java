@@ -24,6 +24,7 @@ import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -223,7 +224,20 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       initializer.configurePipeline(soi.channel(), null, null);
     });
     tcpServer = server;
-    closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
+
+    List<Closeable> closeables = new ArrayList<>();
+    closeables.add(p -> doClose(server, p));
+    closeables.add(p -> doShutdown(server, p));
+
+    if (requestHandler instanceof Closeable) {
+      closeables.add((Closeable) requestHandler);
+    }
+
+    if (webSocketHandler instanceof Closeable) {
+      closeables.add((Closeable) webSocketHandler);
+    }
+
+    closeSequence = new CloseSequence(closeables.toArray(new Closeable[0]));
     Promise<HttpServer> result = context.promise();
     tcpServer.listen(listenContext, address).onComplete(ar -> {
       if (ar.succeeded()) {
