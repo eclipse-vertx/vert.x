@@ -147,7 +147,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     unregister().onComplete(completion);
   }
 }

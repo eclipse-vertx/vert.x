@@ -12,7 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Closeable;
-import io.vertx.core.Promise;
+import io.vertx.core.Completable;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.shareddata.LocalMap;
@@ -73,7 +73,7 @@ class SharedResourceHolder<C> implements Shareable {
     }
 
     @Override
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
       LocalMap<String, SharedResourceHolder<C>> localMap1 = vertx.sharedData().getLocalMap(resourceKey);
       SharedResourceHolder<C> res = localMap1.compute(resourceName, (key, value) -> {
         if (value == null) {
@@ -87,7 +87,7 @@ class SharedResourceHolder<C> implements Shareable {
       if (res == null) {
         closeFuture.close(completion);
       } else {
-        completion.complete();
+        completion.succeed();
       }
     }
   }

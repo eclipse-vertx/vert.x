@@ -11,6 +11,7 @@
 package io.vertx.tests.vertx;
 
 import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.CloseFuture;
@@ -29,11 +30,11 @@ public class CloseFutureTest extends AsyncTestBase {
   @Test
   public void testHookCompletion() {
     CloseFuture cf = new CloseFuture();
-    AtomicReference<Promise<Void>> ref = new AtomicReference<>();
+    AtomicReference<Completable<Void>> ref = new AtomicReference<>();
     cf.add(completion -> ref.set(completion));
     assertFalse(cf.close().succeeded());
     assertNotNull(ref.get());
-    ref.get().complete();
+    ref.get().succeed();
     assertTrue(cf.close().succeeded());
   }
 
@@ -49,9 +50,9 @@ public class CloseFutureTest extends AsyncTestBase {
 
   @Test
   public void testCloseFutureDuplicateClose() {
-    AtomicReference<Promise<Void>> ref = new AtomicReference<>();
+    AtomicReference<Completable<Void>> ref = new AtomicReference<>();
     CloseFuture fut = new CloseFuture();
-    fut.add(ref::set);
+    fut.add(newValue -> ref.set(newValue));
     Promise<Void> p1 = Promise.promise();
     fut.close(p1);
     assertNotNull(ref.get());
@@ -59,7 +60,7 @@ public class CloseFutureTest extends AsyncTestBase {
     fut.close(p2);
     assertFalse(p1.future().isComplete());
     assertFalse(p2.future().isComplete());
-    ref.get().complete();
+    ref.get().succeed();
     assertTrue(p1.future().isComplete());
     assertTrue(p2.future().isComplete());
   }
@@ -118,9 +119,9 @@ public class CloseFutureTest extends AsyncTestBase {
     private AtomicBoolean closed = new AtomicBoolean();
 
     @Override
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
       closed.set(true);
-      completion.complete();
+      completion.succeed();
     }
 
     @Override

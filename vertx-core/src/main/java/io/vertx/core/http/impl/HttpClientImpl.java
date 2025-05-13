@@ -11,10 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -154,7 +151,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  protected void doShutdown(Promise<Void> p) {
+  protected void doShutdown(Completable<Void> p) {
     synchronized (this) {
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
@@ -166,7 +163,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  protected void doClose(Promise<Void> p) {
+  protected void doClose(Completable<Void> p) {
     httpCM.close();
     super.doClose(p);
   }

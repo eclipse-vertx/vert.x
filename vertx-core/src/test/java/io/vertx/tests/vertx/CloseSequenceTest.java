@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.vertx;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.CloseFuture;
@@ -22,9 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class CloseSequenceTest extends AsyncTestBase {
 
-  private AtomicReference<Promise<Void>> ref1;
-  private AtomicReference<Promise<Void>> ref2;
-  private AtomicReference<Promise<Void>> ref3;
+  private AtomicReference<Completable<Void>> ref1;
+  private AtomicReference<Completable<Void>> ref2;
+  private AtomicReference<Completable<Void>> ref3;
   private CloseSequence seq;
 
   @Override
@@ -34,7 +35,7 @@ public class CloseSequenceTest extends AsyncTestBase {
     ref1 = new AtomicReference<>();
     ref2 = new AtomicReference<>();
     ref3 = new AtomicReference<>();
-    seq = new CloseSequence(ref3::set, ref2::set, ref1::set);
+    seq = new CloseSequence(newValue -> ref3.set(newValue), newValue1 -> ref2.set(newValue1), newValue2 -> ref1.set(newValue2));
   }
 
   @Test
@@ -44,7 +45,7 @@ public class CloseSequenceTest extends AsyncTestBase {
     assertNotNull(ref1.get());
     assertNull(ref2.get());
     assertNull(ref3.get());
-    ref1.get().complete();
+    ref1.get().succeed();
     assertTrue(f1.succeeded());
     assertNotNull(ref1.get());
     assertNull(ref2.get());
@@ -54,7 +55,7 @@ public class CloseSequenceTest extends AsyncTestBase {
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
     assertNull(ref3.get());
-    ref2.get().complete();
+    ref2.get().succeed();
     assertTrue(f2.succeeded());
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
@@ -64,7 +65,7 @@ public class CloseSequenceTest extends AsyncTestBase {
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
     assertNotNull(ref3.get());
-    ref3.get().complete();
+    ref3.get().succeed();
     assertTrue(f3.succeeded());
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
@@ -78,12 +79,12 @@ public class CloseSequenceTest extends AsyncTestBase {
     assertNotNull(ref1.get());
     assertNull(ref2.get());
     assertNull(ref3.get());
-    ref1.get().complete();
+    ref1.get().succeed();
     assertFalse(fut2.isComplete());
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
     assertNull(ref3.get());
-    ref2.get().complete();
+    ref2.get().succeed();
     assertTrue(fut2.isComplete());
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
@@ -99,13 +100,13 @@ public class CloseSequenceTest extends AsyncTestBase {
     assertNotNull(ref1.get());
     assertNull(ref2.get());
     assertNull(ref3.get());
-    ref1.get().complete();
+    ref1.get().succeed();
     assertTrue(fut1.isComplete());
     assertFalse(fut2.isComplete());
     assertNotNull(ref1.get());
     assertNotNull(ref2.get());
     assertNull(ref3.get());
-    ref2.get().complete();
+    ref2.get().succeed();
     assertTrue(fut1.isComplete());
     assertTrue(fut2.isComplete());
     assertNotNull(ref1.get());
@@ -118,9 +119,9 @@ public class CloseSequenceTest extends AsyncTestBase {
     CloseFuture closeFuture = new CloseFuture();
     closeFuture.add(seq);
     seq.close();
-    ref1.get().complete();
-    ref2.get().complete();
-    ref3.get().complete();
+    ref1.get().succeed();
+    ref2.get().succeed();
+    ref3.get().succeed();
     assertFalse(closeFuture.remove(seq));
   }
 }

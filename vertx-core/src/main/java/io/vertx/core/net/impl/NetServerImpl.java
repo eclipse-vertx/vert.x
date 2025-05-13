@@ -94,7 +94,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     // 2: a {@link CloseEvent} event is broadcast to each channel, channels should react accordingly
     // 1: grace period completed when all channels are inactive or the shutdown timeout is fired
     // 0: sockets are closed
-    CloseSequence closeSequence = new CloseSequence(this::doClose, this::doGrace, this::doShutdown);
+    CloseSequence closeSequence = new CloseSequence(completion -> doClose(completion), completion1 -> doGrace(completion1), completion2 -> doShutdown(completion2));
 
     this.vertx = vertx;
     this.options = options;
@@ -161,7 +161,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   @Override
-  public synchronized void close(Promise<Void> completion) {
+  public synchronized void close(Completable<Void> completion) {
     shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
   }
 
@@ -593,9 +593,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return actualServer != null ? actualServer.metrics : null;
   }
 
-  private void doShutdown(Promise<Void> completion) {
+  private void doShutdown(Completable<Void> completion) {
     if (!listening) {
-      completion.complete();
+      completion.succeed();
       return;
     }
     if (closeEvent == null) {
@@ -623,42 +623,42 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
   }
 
-  private void broadcastShutdownEvent(Promise<Void> completion) {
+  private void broadcastShutdownEvent(Completable<Void> completion) {
     for (Channel ch : channelGroup) {
       ch.pipeline().fireUserEventTriggered(closeEvent);
     }
-    completion.complete();
+    completion.succeed();
   }
 
-  private void doGrace(Promise<Void> completion) {
+  private void doGrace(Completable<Void> completion) {
     if (!listening) {
-      completion.complete();
+      completion.succeed();
       return;
     }
     if (closeEvent.timeout() > 0L) {
       long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
-        completion.complete();
+        completion.succeed();
       });
       graceFuture.addListener(future -> {
         if (vertx.cancelTimer(timerID)) {
-          completion.complete();
+          completion.succeed();
         }
       });
     } else {
-      completion.complete();
+      completion.succeed();
     }
   }
 
-  private void doClose(Promise<Void> completion) {
+  private void doClose(Completable<Void> completion) {
     if (!listening) {
-      completion.complete();
+      completion.succeed();
       return;
     }
     listening = false;
     ChannelGroupFuture f = channelGroup.close();
 //    f.addListener(future -> {
 //    });
-    completion.complete();
+    completion.succeed();
   }
 
   private void actualClose(Promise<Void> done) {

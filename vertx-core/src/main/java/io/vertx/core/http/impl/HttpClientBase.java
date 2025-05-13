@@ -65,7 +65,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     this.vertx = vertx;
     this.metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
-    this.closeSequence = new CloseSequence(this::doClose, this::doShutdown);
+    this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(p1));
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null)).metrics(metrics).build();
     this.defaultSslOptions = options.getSslOptions();
@@ -93,7 +93,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return closeSequence.future();
   }
 
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     closeSequence.close(completion);
   }
 
@@ -153,11 +153,11 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return metrics;
   }
 
-  protected void doShutdown(Promise<Void> p) {
+  protected void doShutdown(Completable<Void> p) {
     netClient.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
   }
 
-  protected void doClose(Promise<Void> p) {
+  protected void doClose(Completable<Void> p) {
     netClient.close().onComplete(p);
   }
 

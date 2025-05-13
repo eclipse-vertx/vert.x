@@ -11,8 +11,8 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.spi.metrics.Metrics;
@@ -83,7 +83,7 @@ public class CleanableWebSocketClient implements WebSocketClient, MetricsProvide
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     ((Closeable)delegate).close(completion);
   }
 
