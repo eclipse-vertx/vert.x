@@ -117,16 +117,14 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
 
   protected void checkExpired() {
     pool
-      .evict(conn -> !conn.isValid())
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          List<HttpClientConnectionInternal> lst = ar.result();
+      .evict(conn -> !conn.isValid(), (lst, err) -> {
+        if (err == null) {
           lst.forEach(HttpConnection::close);
         }
       });
   }
 
-  private class Request implements PoolWaiter.Listener<HttpClientConnectionInternal>, Handler<AsyncResult<Lease<HttpClientConnectionInternal>>> {
+  private class Request implements PoolWaiter.Listener<HttpClientConnectionInternal>, Completable<Lease<HttpClientConnectionInternal>> {
 
     private final ContextInternal context;
     private final HttpVersion protocol;
@@ -151,27 +149,24 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     public void onConnect(PoolWaiter<HttpClientConnectionInternal> waiter) {
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
-          pool.cancel(waiter)
-            .onComplete(ar -> {
-              if (ar.succeeded() && ar.result()) {
-                promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server()));
-              }
+          pool.cancel(waiter, (res, err) -> {
+            if (err == null & res)
+              promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server()));
             });
         });
       }
     }
 
     @Override
-    public void handle(AsyncResult<Lease<HttpClientConnectionInternal>> ar) {
+    public void complete(Lease<HttpClientConnectionInternal> result, Throwable failure) {
       if (timerID >= 0) {
         context.owner().cancelTimer(timerID);
       }
-      promise.handle(ar);
+      promise.complete(result, failure);
     }
 
     void acquire() {
-      pool.acquire(context, this, protocol == HttpVersion.HTTP_2 ? 1 : 0)
-        .onComplete(this);
+      pool.acquire(context, this, protocol == HttpVersion.HTTP_2 ? 1 : 0, this);
     }
   }
 
@@ -197,7 +192,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
 
   @Override
   protected void handleClose() {
-    pool.close();
+    pool.close((res, err) -> {});
   }
 
   @Override
