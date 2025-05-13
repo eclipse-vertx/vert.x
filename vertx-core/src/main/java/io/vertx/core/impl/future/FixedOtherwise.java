@@ -29,6 +29,6 @@ class FixedOtherwise<T> extends Operation<T> implements Completable<T> {
 
   @Override
   public void complete(T result, Throwable failure) {
-    handleInternal(failure != null ? fallback : result, null);
+    completeInternal(failure != null ? fallback : result, null);
   }
 }

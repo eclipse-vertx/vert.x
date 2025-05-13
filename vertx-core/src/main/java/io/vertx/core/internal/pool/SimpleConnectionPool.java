@@ -928,17 +928,19 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   static class LazyFuture<T> extends io.vertx.core.impl.future.FutureBase<T> implements Promise<T> {
 
-    private List<Completable<T>> handlers = new ArrayList<>();
+    private final List<Completable<? super T>> handlers = new ArrayList<>();
     private Future<T> fut = null;
 
     @Override
     public boolean tryComplete(T result) {
-      throw new UnsupportedOperationException();
+      handle(Future.succeededFuture(result));
+      return true;
     }
 
     @Override
     public boolean tryFail(Throwable cause) {
-      throw new UnsupportedOperationException();
+      handle(Future.failedFuture(cause));
+      return true;
     }
 
     @Override
@@ -949,12 +951,12 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public void handle(AsyncResult<T> event) {
       Future<T> f = (Future<T>) event;
-      List<Completable<T>> h;
+      List<Completable<? super T>> h;
       synchronized (this) {
         fut = f;
         h = handlers;
       }
-      for (Completable<T> t : h) {
+      for (Completable<? super T> t : h) {
         t.complete(event.result(), event.cause());
       }
     }
@@ -990,7 +992,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       return fut != null && fut.failed();
     }
     @Override
-    public void addListener(Completable<T> listener) {
+    public void addListener(Completable<? super T> listener) {
       Future<T> f;
       synchronized (this) {
         f = fut;
@@ -1002,7 +1004,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       listener.complete(f.result(), f.cause());
     }
     @Override
-    public void removeListener(Completable<T> listener) {
+    public void removeListener(Completable<? super T> listener) {
       synchronized (this) {
         handlers.remove(listener);
       }

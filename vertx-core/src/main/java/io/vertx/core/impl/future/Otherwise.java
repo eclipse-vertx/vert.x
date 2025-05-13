@@ -35,6 +35,6 @@ class Otherwise<T> extends Operation<T> implements Completable<T> {
         failure = e;
       }
     }
-    handleInternal(result, failure);
+    completeInternal(result, failure);
   }
 }

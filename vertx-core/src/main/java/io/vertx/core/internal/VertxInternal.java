@@ -76,7 +76,7 @@ public interface VertxInternal extends Vertx {
    * @return a promise associated with the context returned by {@link #getOrCreateContext()} or the {@code handler}
    *         if that handler is already an instance of {@code PromiseInternal}
    */
-  default <T> PromiseInternal<T> promise(Promise<T> p) {
+  default <T> PromiseInternal<T> promise(Completable<T> p) {
     if (p instanceof PromiseInternal) {
       PromiseInternal<T> promise = (PromiseInternal<T>) p;
       if (promise.context() != null) {

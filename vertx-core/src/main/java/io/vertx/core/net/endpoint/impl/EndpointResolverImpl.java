@@ -10,18 +10,15 @@
  */
 package io.vertx.core.net.endpoint.impl;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
-import io.vertx.core.net.endpoint.ServerEndpoint;
-import io.vertx.core.net.endpoint.ServerInteraction;
+import io.vertx.core.net.endpoint.*;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.net.endpoint.InteractionMetrics;
-import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.internal.resource.ManagedResource;
-import io.vertx.core.net.endpoint.ServerSelector;
 import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
@@ -73,7 +70,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     return vertx.future(promise -> lookupEndpoint(address, promise));
   }
 
-  public void lookupEndpoint(Address address, Promise<io.vertx.core.net.endpoint.Endpoint> promise) {
+  public void lookupEndpoint(Address address, Completable<Endpoint> promise) {
     A casted = endpointResolver.tryCast(address);
     if (casted == null) {
       promise.fail("Cannot resolve address " + address);

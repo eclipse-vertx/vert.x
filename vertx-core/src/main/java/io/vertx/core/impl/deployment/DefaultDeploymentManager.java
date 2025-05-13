@@ -220,7 +220,7 @@ public class DefaultDeploymentManager implements DeploymentManager {
         return undeployingContext.future(p -> {
           undeployFutures.onComplete(ar -> {
             if (ar.succeeded()) {
-              p.complete();
+              p.succeed();
             } else {
               p.fail(ar.cause());
             }

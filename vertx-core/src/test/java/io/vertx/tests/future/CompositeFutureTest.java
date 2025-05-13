@@ -530,14 +530,14 @@ public class CompositeFutureTest extends FutureTestBase {
   }
 
   private static final class MonitoringFuture extends FutureImpl<Void> {
-    Set<Completable<Void>> listeners = new HashSet<>();
+    Set<Completable<? super Void>> listeners = new HashSet<>();
     @Override
-    public void addListener(Completable<Void> listener) {
+    public void addListener(Completable<? super Void> listener) {
       listeners.add(listener);
       super.addListener(listener);
     }
     @Override
-    public void removeListener(Completable<Void> listener) {
+    public void removeListener(Completable<? super Void> listener) {
       listeners.remove(listener);
       super.removeListener(listener);
     }
