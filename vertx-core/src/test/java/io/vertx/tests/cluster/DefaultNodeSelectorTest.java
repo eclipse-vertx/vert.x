@@ -11,7 +11,6 @@
 package io.vertx.tests.cluster;
 
 import io.vertx.core.Completable;
-import io.vertx.core.Promise;
 import io.vertx.core.spi.cluster.ClusteredNode;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.RegistrationInfo;
@@ -30,6 +29,15 @@ public class DefaultNodeSelectorTest {
 
   private static List<RegistrationInfo> registrations(String... nodeIds) {
     return Stream.of(nodeIds).map((nodeId -> new RegistrationInfo(nodeId, 0, false))).collect(Collectors.toList());
+  }
+
+  @SafeVarargs
+  private static <T> void assertIterable(Iterable<T> iterable, T... elements) {
+    Set<T> set = new HashSet<>();
+    for (T elt : iterable) {
+      set.add(elt);
+    }
+    assertEquals(new HashSet<>(Arrays.asList(elements)), set);
   }
 
   private static class ClusterView implements ClusteredNode {
@@ -52,7 +60,7 @@ public class DefaultNodeSelectorTest {
       }
     }
 
-    private Deque<Op> log = new ArrayDeque<>();
+    private final Deque<Op> log = new ArrayDeque<>();
 
     private GetRegistrationsOp assertGetRegistration() {
       Op op = log.poll();
@@ -97,18 +105,16 @@ public class DefaultNodeSelectorTest {
     ClusterView view = new ClusterView();
     ns.init(view);
     List<String> completions = new ArrayList<>();
-    Completable<String> p1 = (result, failure) -> {
+    ns.selectForSend("the-address", (result, failure) -> {
       if (result != null) {
         completions.add("p1");
       }
-    };
-    Completable<String> p2 = (result, failure) -> {
+    });
+    ns.selectForSend("the-address", (result, failure) -> {
       if (result != null) {
         completions.add("p2");
       }
-    };
-    ns.selectForSend("the-address", p1);
-    ns.selectForSend("the-address", p2);
+    });
     assertEquals(1, view.log.size());
     ClusterView.GetRegistrationsOp op = view.assertGetRegistration();
     assertEquals("the-address", op.address);
@@ -124,18 +130,15 @@ public class DefaultNodeSelectorTest {
     ClusterView view = new ClusterView();
     ns.init(view);
     List<String> completions = new ArrayList<>();
-    Completable<String> p3 = (result, failure) -> {
-      completions.add("p3");
-    };
-    Completable<String> p1 = (result, failure) -> {
+    ns.selectForSend("the-address", (result1, failure1) -> {
       completions.add("p1");
-      ns.selectForSend("the-address", p3);
-    };
-    Completable<String> p2 = (result, failure) -> {
+      ns.selectForSend("the-address", (result2, failure2) -> {
+        completions.add("p3");
+      });
+    });
+    ns.selectForSend("the-address", (result, failure) -> {
       completions.add("p2");
-    };
-    ns.selectForSend("the-address", p1);
-    ns.selectForSend("the-address", p2);
+    });
     assertEquals(1, view.log.size());
     ClusterView.GetRegistrationsOp op = view.assertGetRegistration();
     assertEquals("the-address", op.address);
@@ -214,15 +217,20 @@ public class DefaultNodeSelectorTest {
     DefaultNodeSelector ns = new DefaultNodeSelector();
     ClusterView view = new ClusterView();
     ns.init(view);
-    ns.selectForSend("the-address", (result, failure) -> {
+    AtomicInteger status = new AtomicInteger();
+    ns.selectForPublish("the-address", (result, failure) -> {
+      assertIterable(result, "node1");
+      status.compareAndSet(0, 1);
     });
     ClusterView.GetRegistrationsOp get = view.assertGetRegistration();
-    try {
-      ns.registrationsUpdated(new RegistrationUpdateEvent("the-address", registrations("node1")));
-      fail();
-    } catch (UnsupportedOperationException expected) {
-      // Is this a valid case ?
-    }
+    ns.registrationsUpdated(new RegistrationUpdateEvent("the-address", registrations("node1", "node2")));
+    ns.selectForPublish("the-address", (result, failure) -> {
+      assertIterable(result, "node1", "node2");
+      status.compareAndSet(1, 2);
+    });
+    view.assertEmpty();
+    get.succeed("node1");
+    assertEquals(2, status.get());
   }
 
   @Test
@@ -252,5 +260,28 @@ public class DefaultNodeSelectorTest {
     get = view.assertGetRegistration();
     assertEquals("the-address", get.address);
     view.assertEmpty();
+  }
+
+  @Test
+  public void testUpdateEventWhileBroadcastingSuccess() {
+    AtomicInteger status = new AtomicInteger();
+    DefaultNodeSelector ns = new DefaultNodeSelector();
+    ClusterView view = new ClusterView();
+    ns.init(view);
+    ns.selectForPublish("the-address", (result1, failure) -> {
+      assertIterable(result1, "node1");
+      status.compareAndSet(0, 1);
+      ns.registrationsUpdated(new RegistrationUpdateEvent("the-address", registrations("node1", "node2")));
+      ns.selectForPublish("the-address", (result2, failure2) -> {
+        assertIterable(result2, "node1", "node2");
+        status.compareAndSet(2, 3);
+      });
+    });
+    ns.selectForPublish("the-address", (result, failure) -> {
+      assertIterable(result, "node1");
+      status.compareAndSet(1, 2);
+    });
+    ClusterView.GetRegistrationsOp get = view.assertGetRegistration();
+    get.succeed("node1");
   }
 }
