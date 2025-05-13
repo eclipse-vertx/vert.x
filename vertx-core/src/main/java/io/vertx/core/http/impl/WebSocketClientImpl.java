@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -42,12 +43,12 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     this.webSocketCM = new ResourceManager<>();
   }
 
-  protected void doShutdown(Promise<Void> p) {
+  protected void doShutdown(Completable<Void> p) {
     webSocketCM.shutdown();
     super.doShutdown(p);
   }
 
-  protected void doClose(Promise<Void> p) {
+  protected void doClose(Completable<Void> p) {
     webSocketCM.close();
     super.doClose(p);
   }

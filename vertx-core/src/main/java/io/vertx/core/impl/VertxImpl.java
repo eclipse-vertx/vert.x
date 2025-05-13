@@ -1050,9 +1050,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     // Called via Context close hook when Verticle is undeployed
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
       tryCancel();
-      completion.complete();
+      completion.succeed();
     }
   }
 
@@ -1098,7 +1098,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
       cf.add(completion -> {
         pool.close();
-        completion.complete();
+        completion.succeed();
       });
       return pool;
     });

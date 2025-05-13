@@ -58,11 +58,11 @@ public class VertxTest extends AsyncTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(Future.succeededFuture());
+      completionHandler.succeed();
     };
     Closeable myCloseable2 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(Future.succeededFuture());
+      completionHandler.succeed();
     };
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
     vertx.addCloseHook(myCloseable1);
@@ -82,11 +82,11 @@ public class VertxTest extends AsyncTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     class Hook implements Closeable {
       @Override
-      public void close(Promise<Void> completion) {
+      public void close(Completable<Void> completion) {
         if (closedCount.incrementAndGet() == 1) {
           throw new RuntimeException("Don't be afraid");
         } else {
-          completion.handle(Future.succeededFuture());
+          completion.succeed();
         }
       }
     }
@@ -108,12 +108,12 @@ public class VertxTest extends AsyncTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     class Hook implements Closeable {
       @Override
-      public void close(Promise<Void> completion) {
+      public void close(Completable<Void> completion) {
         if (closedCount.incrementAndGet() == 1) {
-          completion.handle(Future.succeededFuture());
+          completion.succeed();
           throw new RuntimeException();
         } else {
-          completion.handle(Future.succeededFuture());
+          completion.succeed();
         }
       }
     }
@@ -422,9 +422,9 @@ public class VertxTest extends AsyncTestBase {
   @Test
   public void testCloseVertxShouldWaitConcurrentCloseHook() throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
-    AtomicReference<Promise<Void>> ref = new AtomicReference<>();
+    AtomicReference<Completable<Void>> ref = new AtomicReference<>();
     CloseFuture fut = new CloseFuture();
-    fut.add(ref::set);
+    fut.add(newValue -> ref.set(newValue));
     vertx.addCloseHook(fut);
     Promise<Void> p = Promise.promise();
     fut.close(p);
@@ -432,7 +432,7 @@ public class VertxTest extends AsyncTestBase {
     vertx.close().onComplete(ar -> closed.set(true));
     Thread.sleep(500);
     assertFalse(closed.get());
-    ref.get().complete();
+    ref.get().succeed();
     assertWaitUntil(closed::get);
   }
 
