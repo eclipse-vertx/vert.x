@@ -29,6 +29,6 @@ class FixedMapping<T, U> extends Operation<U> implements Completable<T> {
 
   @Override
   public void complete(T result, Throwable failure) {
-    handleInternal(this.value, failure);
+    completeInternal(this.value, failure);
   }
 }

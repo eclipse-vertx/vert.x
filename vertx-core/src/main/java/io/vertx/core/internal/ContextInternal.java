@@ -79,7 +79,7 @@ public interface ContextInternal extends Context {
    * @return a {@link Promise} associated with this context or the {@code handler}
    *         if that handler is already an instance of {@code PromiseInternal}
    */
-  default <T> PromiseInternal<T> promise(Promise<T> p) {
+  default <T> PromiseInternal<T> promise(Completable<T> p) {
     if (p instanceof PromiseInternal) {
       PromiseInternal<T> promise = (PromiseInternal<T>) p;
       if (promise.context() != null) {

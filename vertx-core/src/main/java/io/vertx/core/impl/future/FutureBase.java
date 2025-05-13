@@ -57,12 +57,22 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
         ContextInternal prev = context.beginDispatch();
         try {
           listener.complete(result, cause);
+        } catch (Throwable t) {
+          context.reportException(t);
         } finally {
           context.endDispatch(prev);
         }
       });
     } else {
-      listener.complete(result, cause);
+      try {
+        listener.complete(result, cause);
+      } catch (Throwable t) {
+        if (context != null) {
+          context.reportException(t);
+        } else {
+          throw t;
+        }
+      }
     }
   }
 
@@ -159,12 +169,12 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
    *
    * @param listener the listener
    */
-  public abstract void addListener(Completable<T> listener);
+  public abstract void addListener(Completable<? super T> listener);
 
   /**
    * Remove a listener to the future result.
    *
    * @param listener the listener
    */
-  public abstract void removeListener(Completable<T> listener);
+  public abstract void removeListener(Completable<? super T> listener);
 }
