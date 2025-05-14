@@ -27,9 +27,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 
 public class Http3ClientTest extends HttpClientTest {
+
+  public static final String AGENT_SERVER = "SERVER-TEST_MODE";
+
   @Override
   public void setUp() throws Exception {
     eventLoopGroups.clear();
@@ -76,19 +80,25 @@ public class Http3ClientTest extends HttpClientTest {
     return clientOptions;
   }
 
-  private Http3ConnectionHandler createHttpConnectionHandler(Http3RequestStreamInboundHandler requestStreamHandler, Handler<Http3GoAwayFrame> goAwayHandler) {
+  private static String byteBufToString(ByteBuf content) {
+    byte[] arr = new byte[content.readableBytes()];
+    content.getBytes(content.readerIndex(), arr);
+    return new String(arr);
+  }
+
+  private Http3ConnectionHandler createHttpConnectionHandler(Supplier<Http3RequestStreamInboundHandler> requestStreamHandler, Handler<Http3GoAwayFrame> goAwayHandler) {
     return Http3Utils
       .newServerConnectionHandlerBuilder()
       .requestStreamHandler(streamChannel -> {
         //    streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
-        streamChannel.pipeline().addLast(requestStreamHandler);
+        streamChannel.pipeline().addLast(requestStreamHandler.get());
       })
-      .agentType("SERVER-TEST_MODE")
+      .agentType(AGENT_SERVER)
       .http3GoAwayFrameHandler(goAwayHandler)
       .build();
   }
 
-  private AbstractBootstrap createH3Server(Http3RequestStreamInboundHandler requestStreamHandler, Handler<Http3GoAwayFrame> goAwayHandler) {
+  private AbstractBootstrap createH3Server(Supplier<Http3RequestStreamInboundHandler> requestStreamHandler, Handler<Http3GoAwayFrame> goAwayHandler) {
     AbstractBootstrap bootstrap = new Bootstrap();
 
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -128,13 +138,13 @@ public class Http3ClientTest extends HttpClientTest {
           channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
             public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-              System.out.println(String.format("%s triggered in QuicChannel handler", evt.getClass().getSimpleName()));
+              log.debug(String.format("%s - %s triggered in QuicChannel handler", AGENT_SERVER, evt.getClass().getSimpleName()));
               super.userEventTriggered(ctx, evt);
             }
 
             @Override
             public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-              System.out.println(String.format("Caught exception in QuicChannel handler, %s", cause.getMessage()));
+              log.debug(String.format("%s - Caught exception in QuicChannel handler, %s", AGENT_SERVER, cause.getMessage()));
               super.exceptionCaught(ctx, cause);
             }
           });
@@ -149,13 +159,17 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForGet() {
-    return createH3Server(new Http3RequestStreamInboundHandler() {
+    return createH3Server(() -> new Http3RequestStreamInboundHandler() {
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+        log.debug(String.format("%s - Received Header frame for channelId: %s", AGENT_SERVER, ctx.channel().id()));
+        if (log.isDebugEnabled()) {
+          log.debug(String.format("%s - Header is: %s", AGENT_SERVER, frame.headers()));
+        }
         vertx.runOnContext(v -> {
           QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
           ChannelPromise promise = streamChannel.newPromise();
-          promise.addListener(future -> streamChannel.close());
+          promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
           streamChannel.write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
           streamChannel.flush();
         });
@@ -172,7 +186,7 @@ public class Http3ClientTest extends HttpClientTest {
 
       @Override
       public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        System.out.println(String.format("%s triggered in request stream handler", evt.getClass().getSimpleName()));
+        log.debug(String.format("%s - %s triggered in request stream handler", AGENT_SERVER, evt.getClass().getSimpleName()));
         super.userEventTriggered(ctx, evt);
       }
     }, goAwayFrame -> {
@@ -212,7 +226,7 @@ public class Http3ClientTest extends HttpClientTest {
 
         @Override
         protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
-          System.out.println(String.format("Caught exception in QuicStreamChannel handler, %s", exception.getMessage()));
+          log.debug(String.format("Caught exception in QuicStreamChannel handler, %s", exception.getMessage()));
           if (exception.error() == QuicError.STREAM_RESET) {
             vertx.runOnContext(v -> {
 //              assertEquals(10L, exception.error());
@@ -222,7 +236,7 @@ public class Http3ClientTest extends HttpClientTest {
           super.handleQuicException(ctx, exception);
         }
       }, goAwayFrame -> {
-        System.out.println("GoAwayFrame received: " + goAwayFrame);
+        log.debug("GoAwayFrame received: " + goAwayFrame);
       });
 
   }
@@ -509,20 +523,63 @@ public class Http3ClientTest extends HttpClientTest {
     super.testSendPing();
   }
 
-  @Test
   @Override
-  @Ignore
-  public void testClientResetServerStream2() throws Exception {
-    //TODO: correct me
-    super.testClientResetServerStream2();
-  }
+  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
+    return createH3Server(() -> new Http3RequestStreamInboundHandler() {
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
+        log.debug(String.format("%s - Received Header frame for channelId: %s", AGENT_SERVER, ctx.channel().id()));
+        QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
+        ChannelPromise promise = streamChannel.newPromise();
+        streamChannel.write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
+        streamChannel.flush();
+        ReferenceCountUtil.release(frame);
+      }
 
-  @Test
-  @Override
-  @Ignore
-  public void testClientResetServerStream3() throws Exception {
-    //TODO: correct me
-    super.testClientResetServerStream3();
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
+        log.debug(String.format("%s - Received Data frame for channelId: %s", AGENT_SERVER, ctx.channel().id()));
+        if (log.isDebugEnabled()) {
+          log.debug(String.format("%s - Frame data is: %s", AGENT_SERVER, byteBufToString(frame.content())));
+        }
+
+        QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
+        ChannelPromise promise = streamChannel.newPromise();
+        if (endServer) {
+          promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+        }
+
+        streamChannel.write(new DefaultHttp3DataFrame(Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8)), promise);
+        streamChannel.flush();
+        ReferenceCountUtil.release(frame);
+      }
+
+      @Override
+      protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+        log.debug(String.format("%s - ChannelInputClosed called for channelId: %s, streamId: %s", AGENT_SERVER, ctx.channel().id(),
+        ((QuicStreamChannel) ctx.channel()).streamId()));
+      }
+
+      @Override
+      protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
+        log.debug(String.format("%s - Caught exception in QuicStreamChannel handler, %s", AGENT_SERVER, exception.getMessage()));
+        if (exception.error() == QuicError.STREAM_RESET) {
+//              assertEquals(10L, exception.error());
+          vertx.runOnContext(v -> {
+            complete();
+          });
+        }
+        super.handleQuicException(ctx, exception);
+      }
+
+      @Override
+      public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        log.debug(String.format("%s - %s triggered in request stream handler", AGENT_SERVER, evt.getClass().getSimpleName()));
+        super.userEventTriggered(ctx, evt);
+      }
+    }, goAwayFrame -> {
+      log.debug(String.format("%s GoAwayFrame received: %s", AGENT_SERVER, goAwayFrame));
+    });
   }
 
   @Test
