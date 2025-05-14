@@ -603,6 +603,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         @Override
         protected void initChannel(NioDatagramChannel ch) throws Exception {
           datagramChannel = ch;
+          applyConnectionOptions(ch);
           configureChannelSslHandler(datagramChannel, sslContextProvider.result(), NetServerImpl.this.channelBalancer);
         }
       });
@@ -617,6 +618,28 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
     return bootstrap;
+  }
+
+  private void applyConnectionOptions(NioDatagramChannel datagramChannel) {
+    DatagramSocketOptions datagramSocketOptions = new DatagramSocketOptions();
+
+    datagramSocketOptions.setLogActivity(options.getLogActivity());
+    datagramSocketOptions.setSendBufferSize(options.getSendBufferSize());
+    datagramSocketOptions.setReceiveBufferSize(options.getReceiveBufferSize());
+    datagramSocketOptions.setReuseAddress(options.isReuseAddress());
+    datagramSocketOptions.setReusePort(options.isReusePort());
+    datagramSocketOptions.setTrafficClass(options.getTrafficClass());
+    datagramSocketOptions.setLogActivity(options.getLogActivity());
+    datagramSocketOptions.setActivityLogDataFormat(options.getActivityLogDataFormat());
+
+    //TODO: set the following attrs
+//    datagramSocketOptions.setBrsetIpV6();
+//    datagramSocketOptions.setLoopbackModeDsetIpV6();
+//    datagramSocketOptions.setMulticastTimsetIpV6();
+//    datagramSocketOptions.setMulticastNetworkInsetIpV6();
+//    datagramSocketOptions.setIpV6();
+
+    vertx.transport().configure(datagramChannel, datagramSocketOptions);
   }
 
   private void configureChannelSslHandler(Channel channel, SslContextProvider sslContextProvider, ChannelInitializer http3ChannelInitializer) {
