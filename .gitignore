@@ -21,3 +21,6 @@ test-tmp
 *.swp
 .vertx
 .java-version
+
+# Develocity
+.mvn/.develocity/develocity-workspace-id
