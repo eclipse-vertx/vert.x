@@ -37,7 +37,10 @@ import java.util.Set;
  * outgoing HTTP connection, bypassing user space altogether (where supported by
  * the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one
- * from the file and written to the outgoing socket.
+ * from the file and written to the outgoing socket. If the developer want to use directly a
+ * {@link java.nio.channels.Channel} and manage its lifecycle use {@link #asFileChannelSender()}.
+ * The channel will be a {@link java.nio.channels.FileChannel} for {@link io.vertx.core.http.impl.Http1xServerResponse}
+ * and {@link java.nio.channels.AsynchronousFileChannel} for {@link io.vertx.core.http.impl.Http1xServerResponse}.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
@@ -357,6 +360,9 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   Future<Void> sendFile(String filename, long offset, long length);
 
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  FileSender asFileChannelSender();
+
   /**
    * @return has the response already ended?
    */
@@ -496,7 +502,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
-      return this;
+    return this;
   }
 
   /**
