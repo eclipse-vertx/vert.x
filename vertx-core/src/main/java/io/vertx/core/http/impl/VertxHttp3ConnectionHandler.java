@@ -13,10 +13,9 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -51,6 +50,7 @@ import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -67,8 +67,6 @@ import java.util.function.Function;
  */
 class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends ChannelDuplexHandler {
   private static final Logger log = LoggerFactory.getLogger(VertxHttp3ConnectionHandler.class);
-  private static final Handler<QuicStreamChannel> NULL_HANDLER = e -> {
-  };
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private C connection;
@@ -210,7 +208,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       } else if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
       } else if (evt instanceof QuicConnectionCloseEvent) {
-        connection.handleClosed();
+        connection.onGoAwayReceived(new GoAway());
       }
     }
   }
@@ -424,7 +422,13 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       super.handleQuicException(ctx, exception);
       Exception exception_ = exception;
       if (exception.error() == QuicError.STREAM_RESET) {
-        exception_ = new StreamResetException(0, exception);
+
+        VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+        if (vertxStream != null) {
+          vertxStream.onReset(20);  //TODO : It is invalid to use ordinal as error code!
+        } else {
+          exception_ = new StreamResetException(0, exception);
+        }
       }
       connection.onConnectionError(exception_);
       if (!settingsRead) {
@@ -555,6 +559,8 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   private void handleOnStreamChannelClosed(QuicStreamChannel streamChannel) {
+    log.debug(String.format("%s - called handleOnStreamChannelClosed for streamChannel with id: %s, streamId: %s",
+        agentType, streamChannel.id(), streamChannel.streamId()));
     VertxHttpStreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(streamChannel);
     if (vertxStream != null) {
       connection.onStreamClosed(vertxStream);
