@@ -30,6 +30,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
@@ -53,16 +54,22 @@ public final class ChannelProvider {
   private final Bootstrap bootstrap;
   private final SslContextProvider sslContextProvider;
   private final ContextInternal context;
+  private final NetClientOptions clientOptions;
+  private final int connectTimeout;
   private ProxyOptions proxyOptions;
   private Handler<Channel> handler;
   private HttpVersion version;
 
   public ChannelProvider(Bootstrap bootstrap,
                          SslContextProvider sslContextProvider,
-                         ContextInternal context) {
+                         ContextInternal context,
+                         NetClientOptions clientOptions,
+                         int connectTimeout) {
     this.bootstrap = bootstrap;
     this.context = context;
     this.sslContextProvider = sslContextProvider;
+    this.clientOptions = clientOptions;
+    this.connectTimeout = connectTimeout;
   }
 
   /**
@@ -166,6 +173,7 @@ public final class ChannelProvider {
       NioDatagramChannel nioDatagramChannel = (NioDatagramChannel) fut.channel();
 
       Http3Utils.newQuicChannel(nioDatagramChannel, quicChannel -> {
+        context.owner().transport().configure(clientOptions, connectTimeout, quicChannel);
         Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
         promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
           if (!future.isSuccess()) {

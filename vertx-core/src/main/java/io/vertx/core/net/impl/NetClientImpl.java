@@ -317,7 +317,7 @@ class NetClientImpl implements NetClientInternal {
         }
       }
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context, options, connectTimeout)
         .proxyOptions(proxyOptions).version(options.getProtocolVersion());;
 
       SocketAddress captured = remoteAddress;
@@ -435,4 +435,3 @@ class NetClientImpl implements NetClientInternal {
     context.emit(th, connectHandler::tryFail);
   }
 }
-

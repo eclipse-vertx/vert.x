@@ -29,6 +29,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
@@ -605,6 +606,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         @Override
         protected void initChannel(NioDatagramChannel ch) throws Exception {
           datagramChannel = ch;
+          applyConnectionOptions(ch);
           configureChannelSslHandler(datagramChannel, sslContextProvider.result(), NetServerImpl.this.channelBalancer);
         }
       });
@@ -622,6 +624,28 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     bootstrap.childHandler(channelBalancer);
     applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
     return bootstrap;
+  }
+
+  private void applyConnectionOptions(NioDatagramChannel datagramChannel) {
+    DatagramSocketOptions datagramSocketOptions = new DatagramSocketOptions();
+
+    datagramSocketOptions.setLogActivity(options.getLogActivity());
+    datagramSocketOptions.setSendBufferSize(options.getSendBufferSize());
+    datagramSocketOptions.setReceiveBufferSize(options.getReceiveBufferSize());
+    datagramSocketOptions.setReuseAddress(options.isReuseAddress());
+    datagramSocketOptions.setReusePort(options.isReusePort());
+    datagramSocketOptions.setTrafficClass(options.getTrafficClass());
+    datagramSocketOptions.setLogActivity(options.getLogActivity());
+    datagramSocketOptions.setActivityLogDataFormat(options.getActivityLogDataFormat());
+
+    //TODO: set the following attrs
+//    datagramSocketOptions.setBrsetIpV6();
+//    datagramSocketOptions.setLoopbackModeDsetIpV6();
+//    datagramSocketOptions.setMulticastTimsetIpV6();
+//    datagramSocketOptions.setMulticastNetworkInsetIpV6();
+//    datagramSocketOptions.setIpV6();
+
+    vertx.transport().configure(datagramChannel, datagramSocketOptions);
   }
 
   private void configureChannelSslHandler(Channel channel, SslContextProvider sslContextProvider, ChannelInitializer http3ChannelInitializer) {
