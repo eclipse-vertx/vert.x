@@ -12,7 +12,7 @@
 package io.vertx.core.spi.cluster;
 
 
-import io.vertx.core.Promise;
+import io.vertx.core.Completable;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.shareddata.AsyncMap;
@@ -20,7 +20,6 @@ import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
 import io.vertx.core.spi.VertxServiceProvider;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -60,7 +59,7 @@ public interface ClusterManager extends VertxServiceProvider, ClusteredNode {
   /**
    * Return an {@link AsyncMap} for the given {@code name}.
    */
-  <K, V> void getAsyncMap(String name, Promise<AsyncMap<K, V>> promise);
+  <K, V> void getAsyncMap(String name, Completable<AsyncMap<K, V>> promise);
 
   /**
    * Return a synchronous map for the given {@code name}.
@@ -70,12 +69,12 @@ public interface ClusterManager extends VertxServiceProvider, ClusteredNode {
   /**
    * Attempts to acquire a {@link Lock} for the given {@code name} within {@code timeout} milliseconds.
    */
-  void getLockWithTimeout(String name, long timeout, Promise<Lock> promise);
+  void getLockWithTimeout(String name, long timeout, Completable<Lock> promise);
 
   /**
    * Return a {@link Counter} for the given {@code name}.
    */
-  void getCounter(String name, Promise<Counter> promise);
+  void getCounter(String name, Completable<Counter> promise);
 
   /**
    * Set a listener that will be called when a node joins or leaves the cluster.
@@ -85,17 +84,17 @@ public interface ClusterManager extends VertxServiceProvider, ClusteredNode {
   /**
    * Store the details about this clustered node.
    */
-  void setNodeInfo(NodeInfo nodeInfo, Promise<Void> promise);
+  void setNodeInfo(NodeInfo nodeInfo, Completable<Void> promise);
 
   /**
    * Join the cluster.
    */
-  void join(Promise<Void> promise);
+  void join(Completable<Void> promise);
 
   /**
    * Leave the cluster.
    */
-  void leave(Promise<Void> promise);
+  void leave(Completable<Void> promise);
 
   /**
    * Is the cluster manager active?
@@ -115,12 +114,12 @@ public interface ClusterManager extends VertxServiceProvider, ClusteredNode {
   /**
    * Share a new messaging handler registration with other nodes in the cluster.
    */
-  void addRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
+  void addRegistration(String address, RegistrationInfo registrationInfo, Completable<Void> promise);
 
   /**
    * Signal removal of a messaging handler registration to other nodes in the cluster.
    */
-  void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
+  void removeRegistration(String address, RegistrationInfo registrationInfo, Completable<Void> promise);
 
   /**
    * If the cluster manager has its own server for data/membership, this returns the host it is listening to.

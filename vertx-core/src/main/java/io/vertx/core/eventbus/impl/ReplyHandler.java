@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -22,6 +23,8 @@ import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
+
+  private static final Completable<Void> NULL_COMPLETABLE = (res, err) -> {};
 
   private final Promise<Message<T>> result;
   private final long timeoutID;
@@ -76,7 +79,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   void register() {
-    register(false, false, null);
+    register(false, false, NULL_COMPLETABLE);
   }
 
   @Override

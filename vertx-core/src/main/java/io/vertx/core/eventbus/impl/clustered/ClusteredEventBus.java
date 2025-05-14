@@ -11,10 +11,7 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
@@ -196,7 +193,7 @@ public final class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Completable<Void> promise) {
     RegistrationInfo registrationInfo = new RegistrationInfo(
       nodeId,
       handlerHolder.getSeq(),
@@ -211,15 +208,13 @@ public final class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
+  protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Completable<Void> completionHandler) {
     RegistrationInfo registrationInfo = new RegistrationInfo(
       nodeId,
       handlerHolder.getSeq(),
       handlerHolder.isLocalOnly()
     );
-    Promise<Void> promise = Promise.promise();
-    clusterManager.removeRegistration(handlerHolder.getHandler().address(), registrationInfo, promise);
-    promise.future().onComplete(completionHandler);
+    clusterManager.removeRegistration(handlerHolder.getHandler().address(), registrationInfo, completionHandler);
   }
 
   @Override

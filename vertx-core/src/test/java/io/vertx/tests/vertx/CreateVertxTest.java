@@ -11,10 +11,7 @@
 
 package io.vertx.tests.vertx;
 
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -53,7 +50,7 @@ public class CreateVertxTest extends VertxTestBase {
   public void testCreateClusteredVertxAsyncDetectJoinFailure() {
     ClusterManager clusterManager = new FakeClusterManager(){
       @Override
-      public void join(Promise<Void> promise) {
+      public void join(Completable<Void> promise) {
         promise.fail("joinfailure");
       }
     };

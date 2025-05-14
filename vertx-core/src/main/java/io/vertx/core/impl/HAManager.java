@@ -215,11 +215,12 @@ public class HAManager {
     if (!stopped) {
       killed = true;
       CountDownLatch latch = new CountDownLatch(1);
-      Promise<Void> promise = Promise.promise();
-      clusterManager.leave(promise);
-      promise.future()
-        .onFailure(t -> log.error("Failed to leave cluster", t))
-        .onComplete(ar -> latch.countDown());
+      clusterManager.leave((res, err) -> {
+        if (err != null) {
+          log.error("Failed to leave cluster", err);
+        }
+        latch.countDown();
+      });
       long timerID = checkQuorumTimerID;
       if (timerID >= 0L) {
         checkQuorumTimerID = -1L;
