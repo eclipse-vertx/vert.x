@@ -12,10 +12,7 @@
 package io.vertx.tests.vertx;
 
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -65,7 +62,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
     Exception expected = new Exception();
     FakeClusterManager clusterManager = new FakeClusterManager() {
       @Override
-      public void join(Promise<Void> promise) {
+      public void join(Completable<Void> promise) {
         promise.fail(expected);
       }
     };

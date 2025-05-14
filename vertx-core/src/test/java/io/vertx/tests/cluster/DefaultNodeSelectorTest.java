@@ -71,7 +71,7 @@ public class DefaultNodeSelectorTest {
     }
 
     @Override
-    public void getRegistrations(String address, Promise<List<RegistrationInfo>> promise) {
+    public void getRegistrations(String address, Completable<List<RegistrationInfo>> promise) {
       log.add(new GetRegistrationsOp(address, promise));
     }
 
@@ -81,7 +81,7 @@ public class DefaultNodeSelectorTest {
     }
 
     @Override
-    public void getNodeInfo(String nodeId, Promise<NodeInfo> promise) {
+    public void getNodeInfo(String nodeId, Completable<NodeInfo> promise) {
       throw new UnsupportedOperationException();
     }
 

@@ -255,15 +255,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     clusterManager.registrationListener(nodeSelector);
     clusterManager.init(this);
     Promise<Void> initPromise = Promise.promise();
-    Promise<Void> joinPromise = Promise.promise();
-    joinPromise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
+    clusterManager.join((res, err) -> {
+      if (err == null) {
         createHaManager(options, initPromise);
       } else {
-        initPromise.fail(ar.cause());
+        initPromise.fail(err);
       }
     });
-    clusterManager.join(joinPromise);
     return initPromise
       .future()
       .transform(ar -> {

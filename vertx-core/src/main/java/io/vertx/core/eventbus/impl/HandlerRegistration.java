@@ -60,7 +60,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
-  synchronized void register(boolean broadcast, boolean localOnly, Promise<Void> promise) {
+  synchronized void register(boolean broadcast, boolean localOnly, Completable<Void> promise) {
     if (registered != null) {
       throw new IllegalStateException();
     }
