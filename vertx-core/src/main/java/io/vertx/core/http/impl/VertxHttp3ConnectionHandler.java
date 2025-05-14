@@ -65,7 +65,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends ChannelInboundHandlerAdapter {
+class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends ChannelDuplexHandler {
   private static final Logger log = LoggerFactory.getLogger(VertxHttp3ConnectionHandler.class);
   private static final Handler<QuicStreamChannel> NULL_HANDLER = e -> {
   };
@@ -156,16 +156,21 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     super.handlerAdded(ctx);
     chctx = ctx;
 
-    chctx.channel().pipeline().addLast(new ChannelOutboundHandlerAdapter() {
-      @Override
-      public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-        connection.goAway(0);
-        super.close(ctx, promise);
-      }
-    });
-
     connectFuture = new DefaultPromise<>(ctx.executor());
     connection = connectionFactory.apply(this);
+  }
+
+  @Override
+  public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    log.debug(String.format("%s - close on channelId : %s!", agentType, ctx.channel().id()));
+
+    if (chctx.channel().isOpen() && chctx.channel().isActive()) {
+      if (!isServer) {  // TODO: find a better solution instead of checking isServer!
+        connection.goAway(0);  // TODO: goAway make issue for http3Proxies!
+      }
+    }
+
+    super.close(ctx, promise);
   }
 
   @Override
