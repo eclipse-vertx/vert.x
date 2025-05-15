@@ -11,11 +11,7 @@ import io.netty.incubator.codec.http3.*;
 import io.netty.incubator.codec.quic.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
-import io.vertx.core.http.Http3StreamPriority;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.core.TestUtils;
@@ -24,8 +20,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -317,9 +311,8 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Test
   @Override
-  @Ignore
+  @Ignore("Cannot fallback from HTTP/3 to HTTP/1 or HTTP/2 due to protocol differences: UDP vs TCP")
   public void testFallbackOnHttp1() throws Exception {
-    //TODO: correct me
     super.testFallbackOnHttp1();
   }
 
