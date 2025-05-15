@@ -289,6 +289,34 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Test
   @Override
+  @Ignore("Push message will be implemented in the next PR")
+  public void testResetActivePushPromise() throws Exception {
+    super.testResetActivePushPromise();
+  }
+
+  @Test
+  @Override
+  @Ignore("Push message will be implemented in the next PR")
+  public void testPushPromise() throws Exception {
+    super.testPushPromise();
+  }
+
+  @Test
+  @Override
+  @Ignore("Push message will be implemented in the next PR")
+  public void testResetPushPromiseNoHandler() throws Exception {
+    super.testResetPushPromiseNoHandler();
+  }
+
+  @Test
+  @Override
+  @Ignore("Push message will be implemented in the next PR")
+  public void testResetPendingPushPromise() throws Exception {
+    super.testResetPendingPushPromise();
+  }
+
+  @Test
+  @Override
   @Ignore
   public void testFallbackOnHttp1() throws Exception {
     //TODO: correct me
@@ -301,22 +329,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testClientResponsePauseResume() throws Exception {
     //TODO: correct me
     super.testClientResponsePauseResume();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testPushPromise() throws Exception {
-    //TODO: correct me
-    super.testPushPromise();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testResetPushPromiseNoHandler() throws Exception {
-    //TODO: correct me
-    super.testResetPushPromiseNoHandler();
   }
 
   @Test
@@ -365,14 +377,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testHeaders() throws Exception {
     //TODO: correct me
     super.testHeaders();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testResetPendingPushPromise() throws Exception {
-    //TODO: correct me
-    super.testResetPendingPushPromise();
   }
 
   @Test
@@ -514,11 +518,4 @@ public class Http3ClientTest extends HttpClientTest {
     });
   }
 
-  @Test
-  @Override
-  @Ignore
-  public void testResetActivePushPromise() throws Exception {
-    //TODO: correct me
-    super.testResetActivePushPromise();
-  }
 }
