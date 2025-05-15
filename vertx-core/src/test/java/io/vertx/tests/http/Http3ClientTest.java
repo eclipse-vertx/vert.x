@@ -239,20 +239,11 @@ public class Http3ClientTest extends HttpClientTest {
         log.debug("GoAwayFrame received: " + goAwayFrame);
       });
 
-  }
-
+  @Test
   @Override
-  protected ServerBootstrap createServerForStreamError() {
-    return null;
-  }
-
-      @Override
-      protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
-      }
-
-  @Override
-  protected ServerBootstrap createServerForInvalidServerResponse() {
-    return null;
+  @Ignore("It is not possible to create a corrupted frame in HTTP/3 as easily as in HTTP/2")
+  public void testStreamError() throws Exception {
+    super.testStreamError();
   }
 
   @Override
@@ -441,14 +432,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testSendHeadersCompletionHandler() throws Exception {
     //TODO: correct me
     super.testSendHeadersCompletionHandler();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testStreamError() throws Exception {
-    //TODO: correct me
-    super.testStreamError();
   }
 
   @Test
