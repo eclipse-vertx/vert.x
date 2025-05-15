@@ -196,49 +196,6 @@ public class Http3ClientTest extends HttpClientTest {
     });
   }
 
-  @Override
-  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
-    return createH3Server(
-      new Http3RequestStreamInboundHandler() {
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
-          QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
-          ChannelPromise promise = streamChannel.newPromise();
-//          promise.addListener(future -> streamChannel.close());
-          streamChannel.write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
-          streamChannel.flush();
-        }
-
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
-          QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
-          ChannelPromise promise = streamChannel.newPromise();
-//          promise.addListener(future -> streamChannel.close());
-          streamChannel.write(new DefaultHttp3DataFrame(Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8)), promise);
-          streamChannel.flush();
-          ReferenceCountUtil.release(frame);
-        }
-
-        @Override
-        protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
-          fail("Channel input should not have been closed.");
-        }
-
-        @Override
-        protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
-          log.debug(String.format("Caught exception in QuicStreamChannel handler, %s", exception.getMessage()));
-          if (exception.error() == QuicError.STREAM_RESET) {
-            vertx.runOnContext(v -> {
-//              assertEquals(10L, exception.error());
-              complete();
-            });
-          }
-          super.handleQuicException(ctx, exception);
-        }
-      }, goAwayFrame -> {
-        log.debug("GoAwayFrame received: " + goAwayFrame);
-      });
-
   @Test
   @Override
   @Ignore("It is not possible to create a corrupted frame in HTTP/3 as easily as in HTTP/2")
