@@ -53,6 +53,11 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
+  protected HttpVersion httpVersion() {
+    return HttpVersion.HTTP_2;
+  }
+
+  @Override
   protected StreamPriorityBase generateStreamPriority() {
     return new Http2StreamPriority()
       .setDependency(TestUtils.randomPositiveInt())

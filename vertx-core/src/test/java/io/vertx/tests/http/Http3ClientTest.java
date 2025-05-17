@@ -35,6 +35,11 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
+  protected HttpVersion httpVersion() {
+    return HttpVersion.HTTP_3;
+  }
+
+  @Override
   protected StreamPriorityBase generateStreamPriority() {
     return new Http3StreamPriority(new QuicStreamPriority(TestUtils.randomPositiveInt(127), TestUtils.randomBoolean()));
   }

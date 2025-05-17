@@ -62,6 +62,7 @@ public abstract class HttpClientTest extends HttpTestBase {
   protected abstract StreamPriorityBase generateStreamPriority();
   protected abstract StreamPriorityBase defaultStreamPriority();
   protected abstract HttpFrame generateCustomFrame();
+  protected abstract HttpVersion httpVersion();
 
   @Test
   public void testClientSettings() throws Exception {
@@ -296,9 +297,14 @@ public abstract class HttpClientTest extends HttpTestBase {
         req.send().onComplete(onSuccess(resp -> {
           Context ctx = vertx.getOrCreateContext();
           assertOnIOContext(ctx);
-          assertEquals(1, resp.request().streamId());
+          if (httpVersion() == HttpVersion.HTTP_3) {
+            assertEquals(0, resp.request().streamId());
+            assertEquals(HttpVersion.HTTP_3, resp.version());
+          } else {
+            assertEquals(1, resp.request().streamId());
+            assertEquals(HttpVersion.HTTP_2, resp.version());
+          }
           assertEquals(1, reqCount.get());
-          assertEquals(HttpVersion.HTTP_2, resp.version());
           assertEquals(200, resp.statusCode());
           assertEquals("OK", resp.statusMessage());
           assertEquals("text/plain", resp.getHeader("content-type"));
