@@ -66,6 +66,7 @@ public abstract class HttpClientTest extends HttpTestBase {
   protected abstract HttpVersion httpVersion();
   protected abstract void resetResponse(HttpServerResponse response, int code);
   protected abstract void assertStreamReset(int expectedCode, StreamResetException reset);
+  protected abstract void manageMaxQueueRequestsCount(Long max);
 
   @Test
   public void testClientSettings() throws Exception {
@@ -602,14 +603,14 @@ public abstract class HttpClientTest extends HttpTestBase {
   }
 
   private void testQueueingRequests(int numReq, Long max) throws Exception {
+    if (httpVersion() == HttpVersion.HTTP_3) {
+      numReq--;
+    }
     waitFor(numReq);
     String expected = TestUtils.randomAlphaString(100);
     server.close();
-    io.vertx.core.http.Http2Settings serverSettings = new io.vertx.core.http.Http2Settings();
-    if (max != null) {
-      serverSettings.setMaxConcurrentStreams(max);
-    }
-    server = vertx.createHttpServer(serverOptions.setInitialSettings(serverSettings));
+    manageMaxQueueRequestsCount(max);
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
       req.response().end(expected);
     });
@@ -619,8 +620,10 @@ public abstract class HttpClientTest extends HttpTestBase {
     client = vertx.httpClientBuilder()
       .with(clientOptions)
       .withConnectHandler(conn -> {
-        assertEquals(max == null ? 0xFFFFFFFFL : max,
-          ((Http2Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams());
+        if (httpVersion() != HttpVersion.HTTP_3) {
+          assertEquals(max == null ? 0xFFFFFFFFL : max,
+            ((Http2Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams());
+        }
         latch.countDown();
       })
       .build();
