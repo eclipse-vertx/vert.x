@@ -734,7 +734,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     Promise<Void> doReset = Promise.promise();
     server.requestHandler(req -> {
       doReset.future().onComplete(onSuccess(v -> {
-        req.response().reset(8);
+        resetResponse(req.response(), 8);
       }));
       req.response().setChunked(true).write(Buffer.buffer(chunk));
     });
@@ -744,7 +744,7 @@ public abstract class HttpClientTest extends HttpTestBase {
       assertOnIOContext(ctx);
       if (err instanceof StreamResetException) {
         StreamResetException reset = (StreamResetException) err;
-        assertEquals(8, reset.getCode());
+        assertStreamReset(8, reset);
         complete();
       }
     };
