@@ -353,13 +353,6 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Test
   @Override
-  public void testInvalidServerResponse() throws Exception {
-    //TODO: correct me
-    super.testInvalidServerResponse();
-  }
-
-  @Test
-  @Override
   @Ignore
   public void testSendPing() throws Exception {
     //TODO: correct me
