@@ -64,6 +64,8 @@ public abstract class HttpClientTest extends HttpTestBase {
   protected abstract StreamPriorityBase defaultStreamPriority();
   protected abstract HttpFrame generateCustomFrame();
   protected abstract HttpVersion httpVersion();
+  protected abstract void resetResponse(HttpServerResponse response, int code);
+  protected abstract void assertStreamReset(int expectedCode, StreamResetException reset);
 
   @Test
   public void testClientSettings() throws Exception {
@@ -704,7 +706,7 @@ public abstract class HttpClientTest extends HttpTestBase {
     String chunk = TestUtils.randomAlphaString(1024);
     server.requestHandler(req -> {
       req.handler(buf -> {
-        req.response().reset(8);
+        resetResponse(req.response(), 8);
       });
     });
     startServer(testAddress);
@@ -716,7 +718,7 @@ public abstract class HttpClientTest extends HttpTestBase {
           assertOnIOContext(ctx);
           assertTrue(err instanceof StreamResetException);
           StreamResetException reset = (StreamResetException) err;
-          assertEquals(8, reset.getCode());
+          assertStreamReset(8, reset);
           testComplete();
         })
         .setChunked(true)

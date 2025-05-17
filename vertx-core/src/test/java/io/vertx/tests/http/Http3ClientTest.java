@@ -78,6 +78,16 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
+  protected void resetResponse(HttpServerResponse response, int code) {
+    response.reset();
+  }
+
+  @Override
+  protected void assertStreamReset(int expectedCode, StreamResetException reset) {
+    assertEquals(0, reset.getCode());
+  }
+
+  @Override
   protected AbstractBootstrap createServerForGet() {
     return new H3ServerBuilder(this)
       .headerHandler(headersHolder -> {
@@ -344,14 +354,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testClientRequestWriteability() throws Exception {
     //TODO: correct me
     super.testClientRequestWriteability();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testServerResetClientStreamDuringRequest() throws Exception {
-    //TODO: correct me
-    super.testServerResetClientStreamDuringRequest();
   }
 
   @Test

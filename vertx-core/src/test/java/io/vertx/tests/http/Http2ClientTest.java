@@ -30,8 +30,10 @@ import io.vertx.core.http.Http2StreamPriority;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.test.core.TestUtils;
@@ -99,6 +101,16 @@ public class Http2ClientTest extends HttpClientTest {
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return clientOptions;
+  }
+
+  @Override
+  protected void resetResponse(HttpServerResponse response, int code) {
+    response.reset(code);
+  }
+
+  @Override
+  protected void assertStreamReset(int expectedCode, StreamResetException reset) {
+    assertEquals(expectedCode, reset.getCode());
   }
 
   private Http2ConnectionHandler createHttpConnectionHandler(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {

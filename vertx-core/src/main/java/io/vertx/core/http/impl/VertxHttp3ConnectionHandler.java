@@ -425,7 +425,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
         VertxHttpStreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
         if (vertxStream != null) {
-          vertxStream.onReset(20);  //TODO : It is invalid to use ordinal as error code!
+          vertxStream.onReset();
         } else {
           exception_ = new StreamResetException(0, exception);
         }
