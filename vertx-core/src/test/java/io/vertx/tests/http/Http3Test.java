@@ -330,13 +330,6 @@ public class Http3Test extends HttpCommonTest {
     super.testUnsupportedAlpnVersion();
   }
 
-  @Ignore
-  @Test
-  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
-    //TODO: resolve this test issue.
-    super.testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed();
-  }
-
   @Test
   @Ignore
   public void testDeliverPausedBufferWhenResume() throws Exception {

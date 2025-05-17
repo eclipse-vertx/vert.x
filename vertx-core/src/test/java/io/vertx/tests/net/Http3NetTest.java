@@ -647,13 +647,6 @@ public class Http3NetTest extends NetTest {
   @Ignore
   @Override
   @Test
-  public void testReconnectAttemptsInfinite() {
-    super.testReconnectAttemptsInfinite();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
     super.testNetClientInternalTLSWithSuppliedSSLContext();
   }
@@ -670,13 +663,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testStartTLSClientCertClientNotTrusted() throws Exception {
     super.testStartTLSClientCertClientNotTrusted();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testReconnectAttemptsMany() {
-    super.testReconnectAttemptsMany();
   }
 
   @Ignore
