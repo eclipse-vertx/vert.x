@@ -102,6 +102,15 @@ public class Http2ClientTest extends HttpClientTest {
     assertEquals(expectedCode, reset.getCode());
   }
 
+  @Override
+  protected void manageMaxQueueRequestsCount(Long max) {
+    io.vertx.core.http.Http2Settings serverSettings = new io.vertx.core.http.Http2Settings();
+    if (max != null) {
+      serverSettings.setMaxConcurrentStreams(max);
+    }
+    serverOptions.setInitialSettings(serverSettings);
+  }
+
   private Http2ConnectionHandler createHttpConnectionHandler(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
 
     class Handler extends Http2ConnectionHandler {

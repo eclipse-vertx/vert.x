@@ -88,6 +88,16 @@ public class Http3ClientTest extends HttpClientTest {
   }
 
   @Override
+  protected void manageMaxQueueRequestsCount(Long max) {
+    if (max != null) {
+      serverOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
+      clientOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
+    }
+    Http3Settings serverSettings = new Http3Settings();
+    serverOptions.setInitialHttp3Settings(serverSettings);
+  }
+
+  @Override
   protected AbstractBootstrap createServerForGet() {
     return new H3ServerBuilder(this)
       .headerHandler(headersHolder -> {
@@ -343,14 +353,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void testQueueingRequests() throws Exception {
-    //TODO: correct me
-    super.testQueueingRequests();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testClientRequestWriteability() throws Exception {
     //TODO: correct me
     super.testClientRequestWriteability();
@@ -362,14 +364,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testReduceMaxConcurrentStreams() throws Exception {
     //TODO: correct me
     super.testReduceMaxConcurrentStreams();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testQueueingRequestsMaxConcurrentStream() throws Exception {
-    //TODO: correct me
-    super.testQueueingRequestsMaxConcurrentStream();
   }
 
 }
