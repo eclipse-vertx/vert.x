@@ -372,12 +372,4 @@ public class Http3ClientTest extends HttpClientTest {
     super.testQueueingRequestsMaxConcurrentStream();
   }
 
-  @Test
-  @Override
-  @Ignore
-  public void testServerResetClientStreamDuringResponse() throws Exception {
-    //TODO: correct me
-    super.testServerResetClientStreamDuringResponse();
-  }
-
 }
