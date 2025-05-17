@@ -153,6 +153,10 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     context.emit(cause, this::handleException);
   }
 
+  void onReset() {
+    this.onReset(0);
+  }
+
   void onReset(long code) {
     reset = code;
     context.emit(code, this::handleReset);
