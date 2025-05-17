@@ -290,14 +290,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void testHeaders() throws Exception {
-    //TODO: correct me
-    super.testHeaders();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testQueueingRequests() throws Exception {
     //TODO: correct me
     super.testQueueingRequests();
