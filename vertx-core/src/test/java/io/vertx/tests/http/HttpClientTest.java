@@ -1459,7 +1459,7 @@ public abstract class HttpClientTest extends HttpTestBase {
         }));
       req.sendHead().onComplete(onSuccess(version -> {
         assertEquals(0, status.getAndIncrement());
-        assertSame(HttpVersion.HTTP_2, req.version());
+        assertSame(httpVersion(), req.version());
         req.end();
       }));
     }));
