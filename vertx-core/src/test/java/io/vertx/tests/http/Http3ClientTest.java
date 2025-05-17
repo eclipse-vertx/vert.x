@@ -234,17 +234,21 @@ public class Http3ClientTest extends HttpClientTest {
   @Override
   @Ignore("No PING handling needed in HTTP/3 — QUIC manages liveness.")
   public void testReceivePing() throws Exception {
-    //TODO: correct me
     super.testReceivePing();
   }
 
+  @Test
+  @Override
+  @Ignore("Settings are not exchanged at the connection level in HTTP/3.")
+  public void testClientSettings() throws Exception {
+    super.testClientSettings();
+  }
 
   @Test
   @Override
-  @Ignore
-  public void testClientResponsePauseResume() throws Exception {
-    //TODO: correct me
-    super.testClientResponsePauseResume();
+  @Ignore("Settings are not exchanged at the connection level in HTTP/3.")
+  public void testServerSettings() throws Exception {
+    super.testServerSettings();
   }
 
   @Override
@@ -266,6 +270,14 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
+  public void testClientResponsePauseResume() throws Exception {
+    //TODO: correct me
+    super.testClientResponsePauseResume();
+  }
+
+  @Test
+  @Override
+  @Ignore
   public void testResponseCompressionEnabled() throws Exception {
     //TODO: correct me
     super.testResponseCompressionEnabled();
@@ -277,22 +289,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testMaxConcurrencyMultipleConnections() throws Exception {
     //TODO: correct me
     super.testMaxConcurrencyMultipleConnections();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testClientSettings() throws Exception {
-    //TODO: correct me
-    super.testClientSettings();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testServerSettings() throws Exception {
-    //TODO: correct me
-    super.testServerSettings();
   }
 
   @Test
