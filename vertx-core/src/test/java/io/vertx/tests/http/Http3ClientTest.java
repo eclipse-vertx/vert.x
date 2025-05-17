@@ -247,12 +247,20 @@ public class Http3ClientTest extends HttpClientTest {
     super.testClientResponsePauseResume();
   }
 
-  @Test
   @Override
-  @Ignore
-  public void testConnectionDecodeError() throws Exception {
-    //TODO: correct me
-    super.testConnectionDecodeError();
+  protected AbstractBootstrap createServerForConnectionDecodeError() {
+    return new H3ServerBuilder(this)
+      .headerHandler(headersHolder -> {
+        vertx.runOnContext(v -> {
+          ChannelPromise promise1 = headersHolder.streamChannel().newPromise();
+          ChannelPromise promise2 = headersHolder.streamChannel().newPromise();
+          headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise1);
+          headersHolder.streamChannel().shutdownOutput(21, promise2);
+          headersHolder.streamChannel().flush();
+        });
+      })
+      .dataHandler(ignored -> fail())
+      .build();
   }
 
   @Test

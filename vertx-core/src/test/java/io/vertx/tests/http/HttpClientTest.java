@@ -19,6 +19,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.incubator.codec.quic.QuicException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -1174,7 +1175,7 @@ public abstract class HttpClientTest extends HttpTestBase {
           .withConnectHandler(conn -> {
             conn.exceptionHandler(err -> {
               assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
-              if (err instanceof Http2Exception) {
+              if ((httpVersion() == HttpVersion.HTTP_2 && err instanceof Http2Exception) || (httpVersion() == HttpVersion.HTTP_3 && err instanceof QuicException)) {
                 complete();
               }
             });
@@ -1188,14 +1189,14 @@ public abstract class HttpClientTest extends HttpTestBase {
           req.response().onComplete(onSuccess(resp -> {
             resp.exceptionHandler(err -> {
               assertOnIOContext(ctx);
-              if (err instanceof Http2Exception) {
+              if ((httpVersion() == HttpVersion.HTTP_2 && err instanceof Http2Exception) || (httpVersion() == HttpVersion.HTTP_3 && err instanceof StreamResetException)) {
                 complete();
               }
             });
           }));
           req.exceptionHandler(err -> {
               assertOnIOContext(ctx);
-              if (err instanceof Http2Exception) {
+              if ((httpVersion() == HttpVersion.HTTP_2 && err instanceof Http2Exception) || (httpVersion() == HttpVersion.HTTP_3 && err instanceof StreamResetException)) {
                 complete();
               }
             })
