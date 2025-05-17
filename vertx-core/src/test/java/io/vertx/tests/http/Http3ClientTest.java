@@ -97,6 +97,61 @@ public class Http3ClientTest extends HttpClientTest {
       .build();
   }
 
+  @Override
+  protected AbstractBootstrap createServerForInvalidServerResponse() {
+    return new H3ServerBuilder(this)
+      .headerHandler(headersHolder -> {
+        ChannelPromise promise = headersHolder.streamChannel().newPromise();
+        promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+        headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("xyz")), promise);
+        headersHolder.streamChannel().flush();
+      })
+      .dataHandler(ignored -> fail("Unexpected data received: this handler should never have been invoked during the test."))
+      .build();
+  }
+
+  @Override
+  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
+    return new H3ServerBuilder(this)
+      .headerHandler(headersHolder -> {
+        ChannelPromise promise = headersHolder.streamChannel().newPromise();
+        headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
+        headersHolder.streamChannel().flush();
+      })
+      .dataHandler(dataHolder -> {
+        ChannelPromise promise = dataHolder.streamChannel().newPromise();
+        if (endServer) {
+          promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+        }
+
+        dataHolder.streamChannel().write(new DefaultHttp3DataFrame(Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8)), promise);
+        dataHolder.streamChannel().flush();
+      })
+      .streamResetHandler(ctx -> {
+        //              assertEquals(10L, exception.error());
+        vertx.runOnContext(v -> {
+          complete();
+        });
+      })
+      .build();
+  }
+
+  @Override
+  protected AbstractBootstrap createServerForConnectionDecodeError() {
+    return new H3ServerBuilder(this)
+      .headerHandler(headersHolder -> {
+        vertx.runOnContext(v -> {
+          ChannelPromise promise1 = headersHolder.streamChannel().newPromise();
+          ChannelPromise promise2 = headersHolder.streamChannel().newPromise();
+          headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise1);
+          headersHolder.streamChannel().shutdownOutput(21, promise2);
+          headersHolder.streamChannel().flush();
+        });
+      })
+      .dataHandler(ignored -> fail())
+      .build();
+  }
+
   @Test
   @Override
   @Ignore("It is not possible to create a corrupted frame in HTTP/3 as easily as in HTTP/2")
@@ -251,22 +306,6 @@ public class Http3ClientTest extends HttpClientTest {
     super.testServerSettings();
   }
 
-  @Override
-  protected AbstractBootstrap createServerForConnectionDecodeError() {
-    return new H3ServerBuilder(this)
-      .headerHandler(headersHolder -> {
-        vertx.runOnContext(v -> {
-          ChannelPromise promise1 = headersHolder.streamChannel().newPromise();
-          ChannelPromise promise2 = headersHolder.streamChannel().newPromise();
-          headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise1);
-          headersHolder.streamChannel().shutdownOutput(21, promise2);
-          headersHolder.streamChannel().flush();
-        });
-      })
-      .dataHandler(ignored -> fail())
-      .build();
-  }
-
   @Test
   @Override
   @Ignore
@@ -337,45 +376,6 @@ public class Http3ClientTest extends HttpClientTest {
   public void testServerResetClientStreamDuringResponse() throws Exception {
     //TODO: correct me
     super.testServerResetClientStreamDuringResponse();
-  }
-
-  @Override
-  protected AbstractBootstrap createServerForInvalidServerResponse() {
-    return new H3ServerBuilder(this)
-      .headerHandler(headersHolder -> {
-        ChannelPromise promise = headersHolder.streamChannel().newPromise();
-        promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
-        headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("xyz")), promise);
-        headersHolder.streamChannel().flush();
-      })
-      .dataHandler(ignored -> fail("Unexpected data received: this handler should never have been invoked during the test."))
-      .build();
-  }
-
-  @Override
-  protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
-    return new H3ServerBuilder(this)
-      .headerHandler(headersHolder -> {
-        ChannelPromise promise = headersHolder.streamChannel().newPromise();
-        headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
-        headersHolder.streamChannel().flush();
-      })
-      .dataHandler(dataHolder -> {
-        ChannelPromise promise = dataHolder.streamChannel().newPromise();
-        if (endServer) {
-          promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
-        }
-
-        dataHolder.streamChannel().write(new DefaultHttp3DataFrame(Unpooled.copiedBuffer("pong", 0, 4, StandardCharsets.UTF_8)), promise);
-        dataHolder.streamChannel().flush();
-      })
-      .streamResetHandler(ctx -> {
-        //              assertEquals(10L, exception.error());
-        vertx.runOnContext(v -> {
-          complete();
-        });
-      })
-      .build();
   }
 
 }
