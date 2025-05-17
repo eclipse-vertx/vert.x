@@ -220,6 +220,22 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Test
   @Override
+  @Ignore("No PING handling needed in HTTP/3 — QUIC manages liveness.")
+  public void testSendPing() throws Exception {
+    super.testSendPing();
+  }
+
+  @Test
+  @Override
+  @Ignore("No PING handling needed in HTTP/3 — QUIC manages liveness.")
+  public void testReceivePing() throws Exception {
+    //TODO: correct me
+    super.testReceivePing();
+  }
+
+
+  @Test
+  @Override
   @Ignore
   public void testClientResponsePauseResume() throws Exception {
     //TODO: correct me
@@ -330,14 +346,6 @@ public class Http3ClientTest extends HttpClientTest {
     super.testServerResetClientStreamDuringResponse();
   }
 
-  @Test
-  @Override
-  @Ignore
-  public void testReceivePing() throws Exception {
-    //TODO: correct me
-    super.testReceivePing();
-  }
-
   @Override
   protected AbstractBootstrap createServerForInvalidServerResponse() {
     return new H3ServerBuilder(this)
@@ -349,14 +357,6 @@ public class Http3ClientTest extends HttpClientTest {
       })
       .dataHandler(ignored -> fail("Unexpected data received: this handler should never have been invoked during the test."))
       .build();
-  }
-
-  @Test
-  @Override
-  @Ignore
-  public void testSendPing() throws Exception {
-    //TODO: correct me
-    super.testSendPing();
   }
 
   @Override
