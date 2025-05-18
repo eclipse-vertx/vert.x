@@ -345,14 +345,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void testMaxConcurrencyMultipleConnections() throws Exception {
-    //TODO: correct me
-    super.testMaxConcurrencyMultipleConnections();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testClientRequestWriteability() throws Exception {
     //TODO: correct me
     super.testClientRequestWriteability();
