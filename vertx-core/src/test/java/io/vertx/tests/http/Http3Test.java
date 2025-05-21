@@ -332,34 +332,6 @@ public class Http3Test extends HttpCommonTest {
 
   @Test
   @Ignore
-  public void testDeliverPausedBufferWhenResume() throws Exception {
-    //TODO: resolve this test issue.
-    super.testDeliverPausedBufferWhenResume();
-  }
-
-  @Test
-  @Ignore
-  public void testDeliverPausedBufferWhenResumeOnOtherThread() throws Exception {
-    //TODO: resolve this test issue.
-    super.testDeliverPausedBufferWhenResumeOnOtherThread();
-  }
-
-  @Test
-  @Ignore
-  public void testPausedHttpServerRequest() throws Exception {
-    //TODO: resolve this test issue.
-    super.testPausedHttpServerRequest();
-  }
-
-  @Test
-  @Ignore
-  public void testClientReadStreamInWorker() throws Exception {
-    //TODO: resolve this test issue.
-    super.testClientReadStreamInWorker();
-  }
-
-  @Test
-  @Ignore
   public void testDumpManyRequestsOnQueue() throws Exception {
     //TODO: resolve this test issue.
     super.testDumpManyRequestsOnQueue();
