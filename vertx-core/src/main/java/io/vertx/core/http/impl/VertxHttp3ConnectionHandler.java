@@ -365,16 +365,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
     @Override
     public synchronized void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-      if (channelWritabilityChangedCounter++ == 0) return;
-
-      log2.debug("%String.format(s - ChannelWritabilityChanged called for channelId: %s, streamId: %s and counter is : %s",
-        agentType, ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId(),
-        channelWritabilityChangedCounter));
+      log.debug(String.format("%s - ChannelWritabilityChanged called for channelId: %s, streamId: %s",
+        agentType, ctx.channel().id(), ((QuicStreamChannel) ctx.channel()).streamId()));
 
       connection.onStreamWritabilityChanged(getVertxStreamFromStreamChannel(ctx));
       super.channelWritabilityChanged(ctx);
     }
-*/
 
     @Override
     protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) throws Exception {
