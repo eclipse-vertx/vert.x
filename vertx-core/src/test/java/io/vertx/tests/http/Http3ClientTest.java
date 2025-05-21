@@ -329,14 +329,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Test
   @Override
   @Ignore
-  public void testClientResponsePauseResume() throws Exception {
-    //TODO: correct me
-    super.testClientResponsePauseResume();
-  }
-
-  @Test
-  @Override
-  @Ignore
   public void testResponseCompressionEnabled() throws Exception {
     //TODO: correct me
     super.testResponseCompressionEnabled();
