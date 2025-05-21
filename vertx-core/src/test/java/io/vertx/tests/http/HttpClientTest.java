@@ -544,6 +544,8 @@ public abstract class HttpClientTest extends HttpTestBase {
     Buffer expected = Buffer.buffer();
     Promise<Void> whenFull = Promise.promise();
     AtomicBoolean drain = new AtomicBoolean();
+    Promise<Void> receivedLast = Promise.promise();
+
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.putHeader("content-type", "text/plain");
@@ -554,7 +556,10 @@ public abstract class HttpClientTest extends HttpTestBase {
             Buffer last = Buffer.buffer("last");
             expected.appendBuffer(last);
             resp.end(last);
-            assertEquals(expected.toString().getBytes().length, resp.bytesWritten());
+            receivedLast.future().onComplete(ignored -> {
+              assertEquals(expected.toString().getBytes().length, resp.bytesWritten());
+              testComplete();
+            });
           });
           vertx.cancelTimer(timerID);
           drain.set(true);
@@ -567,9 +572,27 @@ public abstract class HttpClientTest extends HttpTestBase {
       });
     });
     startServer();
+
+    client.close();
+
+    // TODO: correct this issue
+    /*
+     * Investigate HTTP/3 bug where client and server on the same Vert.x instance
+     * interfere with each other. The server's stream channel capacity appears to be
+     * affected by the client. Using separate Vert.x instances avoids the issue, but
+     * root cause needs analysis.
+     */
+
+    VertxOptions optionsClient = getOptions();
+    if (isDebug()) {
+      optionsClient.setBlockedThreadCheckInterval(3600000);
+    }
+    Vertx vertxClient = vertx(optionsClient);
+
+    client = vertxClient.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
-        Context ctx = vertx.getOrCreateContext();
+        Context ctx = vertxClient.getOrCreateContext();
         Buffer received = Buffer.buffer();
         resp.pause();
         resp.handler(buff -> {
@@ -582,7 +605,7 @@ public abstract class HttpClientTest extends HttpTestBase {
         });
         resp.endHandler(v -> {
           assertEquals(expected.toString().length(), received.toString().length());
-          testComplete();
+          receivedLast.complete();
         });
         whenFull.future().onComplete(v -> {
           resp.resume();
