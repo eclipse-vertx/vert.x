@@ -360,7 +360,7 @@ public class BareCommand extends ClasspathHandler {
     return eventBusOptions;
   }
 
-  private static final ThreadLocal<Logger> configureFromSystemProperties = new ThreadLocal<>();
+  protected static final ThreadLocal<Logger> configureFromSystemProperties = new ThreadLocal<>();
 
   /**
    * This is used as workaround to retain the existing behavior of the Vert.x CLI and won't be executed
