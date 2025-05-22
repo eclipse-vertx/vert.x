@@ -1,0 +1,16 @@
+name: CI/CD (5.x-stable)
+on:
+  push:
+    branches:
+      - '5.[0-9]+'
+  pull_request:
+    branches:
+      - '5.[0-9]+'
+  schedule:
+    - cron: '0 6 * * *'
+jobs:
+  CI-CD:
+    uses: ./.github/workflows/ci-matrix-5.x.yml
+    secrets: inherit
+    with:
+      branch: ${{ github.event_name == 'schedule' && vars.VERTX_5_STABLE_BRANCH || github.event.pull_request.head.sha || github.ref_name }}
