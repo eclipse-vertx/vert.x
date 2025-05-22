@@ -1,4 +1,4 @@
-name: vertx-core (5.x)
+name: CI/CD (5.x)
 on:
   push:
     branches:
@@ -9,41 +9,8 @@ on:
   schedule:
     - cron: '0 5 * * *'
 jobs:
-  CI:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            jdk: 11
-          - os: ubuntu-latest
-            jdk: 11
-            profile: '-PNativeEpoll'
-#          - os: ubuntu-latest
-#            jdk: 11
-#            profile: '-PNativeIoUring'
-          - os: ubuntu-latest
-            jdk: 11
-            profile: '-PNativeEpoll+DomainSockets'
-          - os: ubuntu-latest
-            jdk: 21
-          - os: windows-latest
-            jdk: 11
-            stable: true
-#          - os: macos-latest
-#            jdk: 11
-#            profile: '-PNativeKQueue'
-    uses: ./.github/workflows/ci.yml
+  CI-CD:
+    uses: ./.github/workflows/ci-matrix-5.x.yml
+    secrets: inherit
     with:
       branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
-      jdk: ${{ matrix.jdk }}
-      os: ${{ matrix.os }}
-      profile: ${{ matrix.profile }}
-    secrets: inherit
-  Deploy:
-    if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
-    needs: CI
-    uses: ./.github/workflows/deploy.yml
-    with:
-      branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
-      jdk: 11
-    secrets: inherit
