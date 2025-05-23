@@ -1,4 +1,4 @@
-name: CI/CD (5.x-stable)
+name: vert.x (5.x-stable)
 on:
   push:
     branches:
