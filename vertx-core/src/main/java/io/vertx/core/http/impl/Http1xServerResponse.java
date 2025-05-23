@@ -17,10 +17,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
@@ -41,14 +38,17 @@ import io.vertx.core.spi.observability.HttpResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse, FileSender<FileChannel> {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
@@ -420,39 +420,85 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    RandomAccessFile raf;
+    File file = vertx.fileResolver().resolve(filename);
+    try {
+      raf = new RandomAccessFile(file, "r");
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    Future<Void> result = sendFileInternal(filename, offset,
+      length,
+      MimeMapping::mimeTypeForFilename,
+      (r) -> {
+        try {
+          return r.length();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      },
+      () -> raf,
+      conn::sendFile);
+    if (result.failed()) {
+      try {
+        raf.close();
+      } catch (IOException ignored) {
+      }
+    }
+    return result;
+  }
+
+  @Override
+  public FileSender asFileChannelSender() {
+    return this;
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
+    return sendFileInternal(extension, offset,
+      length,
+      MimeMapping::mimeTypeForExtension,
+      (c) -> {
+        try {
+          return c.size();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      },
+      () -> channel,
+      conn::sendFile);
+  }
+
+  private <F> Future<Void> sendFileInternal(String nameOrExtension, long offset, long length, Function<String, String> contentTypeMapper, Function<F, Long> lengthSupplier, Supplier<F> fileSupplier, TriFunction<F, Long, Long, ChannelFuture> sendFileSupplier) {
     ContextInternal ctx = vertx.getOrCreateContext();
     if (offset < 0) {
-      return context.failedFuture("offset : " + offset + " (expected: >= 0)");
+      return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
     }
     if (length < 0) {
-      return context.failedFuture("length : " + length + " (expected: >= 0)");
+      return ctx.failedFuture("length : " + length + " (expected: >= 0)");
     }
     synchronized (conn) {
       checkValid();
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
-      File file = vertx.fileResolver().resolve(filename);
-      RandomAccessFile raf;
+
+      long size;
       try {
-        raf = new RandomAccessFile(file, "r");
+        size = lengthSupplier.apply(fileSupplier.get());
       } catch (Exception e) {
         return ctx.failedFuture(e);
       }
-      long actualLength = Math.min(length, file.length() - offset);
-      long actualOffset = Math.min(offset, file.length());
+      long actualLength = Math.min(length, size - offset);
+      long actualOffset = Math.min(offset, size);
 
       // fail early before status code/headers are written to the response
       if (actualLength < 0) {
-        try {
-          raf.close();
-        } catch (IOException ignore) {
-        }
-        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + file.length());
+        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
       }
 
       if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
-        String contentType = MimeMapping.mimeTypeForFilename(filename);
+        String contentType = contentTypeMapper.apply(nameOrExtension);
         if (contentType != null) {
           headers.set(HttpHeaders.CONTENT_TYPE, contentType);
         }
@@ -463,7 +509,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
       conn.write(new AssembledHttpResponse(head, version, status, headers), null);
 
-      ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
+      ChannelFuture channelFut = sendFileSupplier.apply(fileSupplier.get(), actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
@@ -477,7 +523,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.emit(handler);
+          ctx.emit(handler);
         }
 
         // allow to write next response
@@ -489,7 +535,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
           end = !closed ? endHandler : null;
         }
         if (null != end) {
-          context.emit(end);
+          ctx.emit(end);
         }
       });
 
