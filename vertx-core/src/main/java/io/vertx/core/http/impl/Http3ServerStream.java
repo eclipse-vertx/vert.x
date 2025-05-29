@@ -270,7 +270,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(streamChannel, priority.urgency(), priority.isIncremental());
+    conn.handler.writePriority(streamChannel, priority);
   }
 
   @Override

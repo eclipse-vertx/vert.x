@@ -90,7 +90,7 @@ class Http2ClientStream extends HttpStreamImpl<Http2ClientConnection, Http2Strea
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(streamChannel, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+    conn.handler.writePriority(streamChannel, priority);
   }
 
   @Override

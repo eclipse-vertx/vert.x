@@ -284,7 +284,7 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(streamChannel, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+    conn.handler.writePriority(streamChannel, priority);
   }
 
   @Override
