@@ -14,8 +14,6 @@ import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.tracing.TracingPolicy;
 
-import static io.vertx.core.http.impl.Http3ServerStream.*;
-
 class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStreamChannel> {
   private static final MultiMap EMPTY = new Http3HeadersAdaptor();
   private int headerReceivedCount = 0;
@@ -110,8 +108,6 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, QuicStreamChannel quicStreamChannel) {
-    this.streamChannel = quicStreamChannel;
-    this.writable = quicStreamChannel.isWritable();
     this.conn.quicStreamChannels.put(quicStreamChannel.streamId(), quicStreamChannel);
     VertxHttp3ConnectionHandler.setVertxStreamOnStreamChannel(quicStreamChannel, this);
     VertxHttp3ConnectionHandler.setLastStreamIdOnConnection(quicStreamChannel.parent(), quicStreamChannel.streamId());
@@ -133,8 +129,8 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public boolean isWritable_() {
-    return writable;
+  protected boolean evaluateChannelWritability(QuicStreamChannel streamChannel) {
+    return streamChannel.isWritable();
   }
 
   @Override
