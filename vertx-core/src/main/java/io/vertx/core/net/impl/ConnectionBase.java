@@ -392,11 +392,10 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null || isHttp3SslHandler(chctx);
+    return chctx.pipeline().get(SslHandler.class) != null || isHttp3SslHandler();
   }
 
-  private boolean isHttp3SslHandler(ChannelHandlerContext chctx) {
-    Channel channel = chctx.channel();
+  private boolean isHttp3SslHandler() {
     ChannelPipeline pipeline = getDatagramChannelPipeline(channel);
     return pipeline != null && pipeline.names().contains(ChannelProvider.CLIENT_SSL_HANDLER_NAME);
   }
@@ -411,8 +410,8 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
-    if (isHttp3SslHandler(chctx)) {
-      return ((QuicChannel) chctx.channel()).sslEngine().getSession();
+    if (isHttp3SslHandler()) {
+      return ((QuicChannel) channel).sslEngine().getSession();
     }
 
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
