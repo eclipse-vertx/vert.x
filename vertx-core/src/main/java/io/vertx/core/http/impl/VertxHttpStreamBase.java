@@ -26,9 +26,9 @@ import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
-import io.vertx.core.internal.concurrent.OutboundMessageChannel;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
 
 /**
@@ -36,8 +36,8 @@ import io.vertx.core.net.impl.MessageWrite;
  */
 abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
-  private final OutboundMessageChannel<MessageWrite> outboundQueue;
-  private final InboundMessageChannel<Object> inboundQueue;
+  private final OutboundMessageQueue<MessageWrite> outboundQueue;
+  private final InboundMessageQueue<Object> inboundQueue;
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
@@ -83,7 +83,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
-    this.inboundQueue = new InboundMessageChannel<>(conn.context().eventLoop(), context.executor()) {
+    this.inboundQueue = new InboundMessageQueue<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
         if (item instanceof MultiMap) {
@@ -105,7 +105,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     this.priority = createDefaultStreamPriority();
     this.isConnect = false;
     this.writable = true;
-    this.outboundQueue = new OutboundMessageChannel<>(conn.context().nettyEventLoop()) {
+    this.outboundQueue = new OutboundMessageQueue<>(conn.context().executor()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {
@@ -116,18 +116,16 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
           return false;
         }
       }
-
       @Override
-      protected void disposeMessage(MessageWrite messageWrite) {
+      protected void handleDispose(MessageWrite messageWrite) {
         Throwable cause = failure;
         if (cause == null) {
           cause = HttpUtils.STREAM_CLOSED_EXCEPTION;
         }
         messageWrite.cancel(cause);
       }
-
       @Override
-      protected void afterDrain() {
+      protected void handleDrained() {
         context.emit(VertxHttpStreamBase.this, VertxHttpStreamBase::handleWriteQueueDrained);
       }
     };
@@ -186,7 +184,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   void onWritabilityChanged() {
     writable = !writable;
     if (writable) {
-      outboundQueue.drain();
+      outboundQueue.tryDrain();
     }
   }
 
@@ -265,8 +263,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     writeFrame(streamChannel, (byte) type, (short) flags, payload, promise);
   }
 
-  final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush,
-                          Promise<Void> promise) {
+  final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first) {
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
@@ -280,7 +277,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
         public void write() {
           doWriteHeaders(headers, end, checkFlush, promise);
         }
-
         @Override
         public void cancel(Throwable cause) {
           promise.fail(cause);
@@ -317,7 +313,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
       public void write() {
         doWriteData(chunk, end, promise);
       }
-
       @Override
       public void cancel(Throwable cause) {
         promise.fail(cause);
@@ -383,9 +378,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   }
 
   void handleWriteQueueDrained() {
-  }
-
-  void handleWritabilityChanged(boolean writable) {
   }
 
   void handleData(Buffer buf) {
