@@ -515,17 +515,17 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       .build();
   }
 
-  private void _writePriority(QuicStreamChannel streamChannel, int urgency, boolean incremental) {
-    streamChannel.updatePriority(new QuicStreamPriority(urgency, incremental));
+  private void _writePriority(QuicStreamChannel streamChannel, StreamPriorityBase priority) {
+    streamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
   }
 
-  public void writePriority(QuicStreamChannel streamChannel, int urgency, boolean incremental) {
+  public void writePriority(QuicStreamChannel streamChannel, StreamPriorityBase priority) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
-      _writePriority(streamChannel, urgency, incremental);
+      _writePriority(streamChannel, priority);
     } else {
       executor.execute(() -> {
-        _writePriority(streamChannel, urgency, incremental);
+        _writePriority(streamChannel, priority);
       });
     }
   }

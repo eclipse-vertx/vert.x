@@ -23,7 +23,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpSettings;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.GoAway;
@@ -456,17 +456,17 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     throw new UnsupportedOperationException();
   }
 
-  private void _writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
-      encoder().writePriority(chctx, stream.id(), streamDependency, weight, exclusive, chctx.newPromise());
+  private void _writePriority(Http2Stream stream, StreamPriorityBase priority) {
+      encoder().writePriority(chctx, stream.id(), priority.getDependency(), priority.getWeight(), priority.isExclusive(), chctx.newPromise());
   }
 
-  void writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
+  void writePriority(Http2Stream stream, StreamPriorityBase priority) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
-      _writePriority(stream, streamDependency, weight, exclusive);
+      _writePriority(stream, priority);
     } else {
       executor.execute(() -> {
-        _writePriority(stream, streamDependency, weight, exclusive);
+        _writePriority(stream, priority);
       });
     }
   }

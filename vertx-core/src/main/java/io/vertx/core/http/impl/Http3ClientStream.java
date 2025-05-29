@@ -88,7 +88,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   public void writePriorityFrame(StreamPriorityBase priority) {
-    conn.handler.writePriority(streamChannel, priority.urgency(), priority.isIncremental());
+    conn.handler.writePriority(streamChannel, priority);
   }
 
   @Override
