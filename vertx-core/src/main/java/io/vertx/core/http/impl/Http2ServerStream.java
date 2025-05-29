@@ -299,8 +299,6 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
 
   @Override
   public void init_(VertxHttpStreamBase vertxHttpStream, Http2Stream http2Stream) {
-    this.streamChannel = http2Stream;
-    this.writable = this.conn.handler.encoder().flowController().isWritable(this.streamChannel);
     http2Stream.setProperty(conn.streamKey, vertxHttpStream);
   }
 
@@ -320,8 +318,8 @@ class Http2ServerStream extends VertxHttpStreamBase<Http2ServerConnection, Http2
   }
 
   @Override
-  public boolean isWritable_() {
-    return writable;
+  protected boolean evaluateChannelWritability(Http2Stream streamChannel) {
+    return this.conn.handler.encoder().flowController().isWritable(streamChannel);
   }
 
   @Override

@@ -74,7 +74,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   protected abstract MultiMap getEmptyHeaders();
 
-  protected abstract boolean isWritable_();
+  protected abstract boolean evaluateChannelWritability(S streamChannel);
 
   protected abstract boolean isTrailersReceived();
 
@@ -136,7 +136,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     synchronized (this) {
       this.streamChannel = streamChannel;
     }
-    this.writable = this.isWritable_();
+    this.writable = this.evaluateChannelWritability(streamChannel);
     this.init_(this, streamChannel);
   }
 
