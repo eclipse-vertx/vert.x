@@ -10,8 +10,10 @@
  */
 package io.vertx.core.http.impl.headers;
 
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.Http3Headers;
+import io.vertx.core.MultiMap;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -28,6 +30,10 @@ public class Http3HeadersAdaptor extends HttpHeadersAdaptor<Http3Headers> {
 
   public Http3HeadersAdaptor(Http3Headers headers) {
     super(headers);
+  }
+
+  public Http3HeadersAdaptor(boolean mutable, Http3Headers headers) {
+    super(mutable, headers);
   }
 
   @Override
@@ -93,5 +99,13 @@ public class Http3HeadersAdaptor extends HttpHeadersAdaptor<Http3Headers> {
   @Override
   public Http3Headers getHeaders() {
     return headers;
+  }
+
+  @Override
+  public MultiMap copy(boolean mutable) {
+    if (!isMutable() && ! mutable) {
+      return this;
+    }
+    return new Http3HeadersAdaptor(mutable, new DefaultHttp3Headers().setAll(headers));
   }
 }

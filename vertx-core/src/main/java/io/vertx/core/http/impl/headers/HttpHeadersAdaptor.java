@@ -16,7 +16,12 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -24,11 +29,16 @@ import java.util.stream.Collectors;
  */
 abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, T>> implements VertxHttpHeaders {
 
+  private final boolean mutable;
   protected final T headers;
 
   protected abstract boolean containsHeader(CharSequence name, CharSequence value, boolean caseInsensitive);
 
   public HttpHeadersAdaptor(T headers) {
+    this(true, headers);
+  }
+
+  protected HttpHeadersAdaptor(boolean mutable, T headers) {
 
     List<CharSequence> cookies = headers.getAll(HttpHeaderNames.COOKIE);
     if (cookies != null && cookies.size() > 1) {
@@ -38,6 +48,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
       headers.set(HttpHeaderNames.COOKIE, value);
     }
 
+    this.mutable = mutable;
     this.headers = headers;
   }
 
@@ -56,7 +67,6 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
         public String get(int index) {
           return all.get(index).toString();
         }
-
         @Override
         public int size() {
           return all.size();
@@ -92,6 +102,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(String name, String value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -101,6 +114,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(String name, Iterable<String> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -110,7 +126,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap addAll(MultiMap headers) {
-    for (Map.Entry<String, String> entry : headers.entries()) {
+    for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -118,7 +134,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap addAll(Map<String, String> map) {
-    for (Map.Entry<String, String> entry : map.entrySet()) {
+    for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -126,6 +142,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(String name, String value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -140,6 +159,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(String name, Iterable<String> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -150,7 +172,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
   @Override
   public MultiMap setAll(MultiMap httpHeaders) {
     clear();
-    for (Map.Entry<String, String> entry : httpHeaders) {
+    for (Map.Entry<String, String> entry: httpHeaders) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -158,12 +180,18 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap remove(String name) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.remove(HttpUtils.toLowerCase(name));
     return this;
   }
 
   @Override
   public MultiMap clear() {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.clear();
     return this;
   }
@@ -176,7 +204,6 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
       public boolean hasNext() {
         return i.hasNext();
       }
-
       @Override
       public Map.Entry<String, String> next() {
         Map.Entry<CharSequence, CharSequence> next = i.next();
@@ -185,19 +212,19 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
           public String getKey() {
             return next.getKey().toString();
           }
-
           @Override
           public String getValue() {
             return next.getValue().toString();
           }
-
           @Override
           public String setValue(String value) {
+            if (!mutable) {
+              throw new IllegalStateException("Read only");
+            }
             String old = next.getValue().toString();
             next.setValue(value);
             return old;
           }
-
           @Override
           public String toString() {
             return next.toString();
@@ -215,7 +242,7 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
   @Override
   public MultiMap setAll(Map<String, String> headers) {
     clear();
-    for (Map.Entry<String, String> entry : headers.entrySet()) {
+    for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
     return this;
@@ -245,6 +272,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -254,6 +284,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -263,6 +296,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -277,6 +313,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     if (!HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
@@ -286,6 +325,9 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
   @Override
   public MultiMap remove(CharSequence name) {
+    if (!mutable) {
+      throw new IllegalStateException("Read only");
+    }
     headers.remove(HttpUtils.toLowerCase(name));
     return this;
   }
@@ -297,5 +339,10 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
       sb.append(header).append('\n');
     }
     return sb.toString();
+  }
+
+  @Override
+  public boolean isMutable() {
+    return mutable;
   }
 }

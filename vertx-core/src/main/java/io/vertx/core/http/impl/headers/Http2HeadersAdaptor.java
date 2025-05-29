@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.MultiMap;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -28,6 +29,10 @@ public class Http2HeadersAdaptor extends HttpHeadersAdaptor<Http2Headers> {
 
   public Http2HeadersAdaptor(Http2Headers headers) {
     super(headers);
+  }
+
+  public Http2HeadersAdaptor(boolean mutable, Http2Headers headers) {
+    super(mutable, headers);
   }
 
   @Override
@@ -95,4 +100,11 @@ public class Http2HeadersAdaptor extends HttpHeadersAdaptor<Http2Headers> {
     return headers;
   }
 
+  @Override
+  public MultiMap copy(boolean mutable) {
+    if (!isMutable() && ! mutable) {
+      return this;
+    }
+    return new Http2HeadersAdaptor(mutable, new DefaultHttp2Headers().setAll(headers));
+  }
 }

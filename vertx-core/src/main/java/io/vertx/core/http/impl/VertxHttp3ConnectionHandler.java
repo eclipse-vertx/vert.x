@@ -359,7 +359,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
 
   private class StreamChannelHandler extends Http3RequestStreamInboundHandler {
     private boolean headerReceived = false;
-/*
+
     //TODO: commented because connection will be closed on file transfer.
     private int channelWritabilityChangedCounter = 0;
 

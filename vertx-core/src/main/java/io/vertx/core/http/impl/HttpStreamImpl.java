@@ -153,10 +153,6 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  void handleWritabilityChanged(boolean writable) {
-  }
-
-  @Override
   void handleCustomFrame(HttpFrame frame) {
     if (unknownFrameHandler != null) {
       unknownFrameHandler.handle(frame);

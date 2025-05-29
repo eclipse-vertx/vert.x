@@ -299,7 +299,7 @@ class Http3ServerStream extends VertxHttpStreamBase<Http3ServerConnection, QuicS
 
   @Override
   public boolean remoteSideOpen(QuicStreamChannel stream) {
-    return stream.isOpen();
+    return !stream.closeFuture().isDone();
   }
 
   @Override
