@@ -29,7 +29,6 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageD
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -41,7 +40,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.*;
@@ -235,7 +234,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static boolean isZstdAvailable() {
     return Zstd.isAvailable();
   }
-  private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> promise) {
+  private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
     request.id = stream.id;
     request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
@@ -262,18 +261,16 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
   }
 
-  private void writeBuffer(Stream s, ByteBuf buff, boolean end, FutureListener<Void> listener) {
+  private void writeBufferToChannel(Stream s, ByteBuf buff, boolean end, Promise<Void> listener) {
     s.bytesWritten += buff != null ? buff.readableBytes() : 0L;
     Object msg;
     if (isConnect) {
       msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
       if (end) {
-        write(msg, false, channelFuture()
-          .addListener(listener)
-          .addListener(v -> closeInternal())
-        );
+        write(msg, false, listener)
+          .addListener(v -> closeInternal());
       } else {
-        write(msg, false, voidPromise);
+        write(msg, false);
       }
     } else {
       if (end) {
@@ -333,7 +330,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return false;
   }
 
-  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, PromiseInternal<Void> listener) {
+  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
@@ -351,7 +348,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     });
   }
 
-  private void writeBuffer(Stream stream, ByteBuf buff, boolean end, PromiseInternal<Void> listener) {
+  private void writeBuffer(Stream stream, ByteBuf buff, boolean end, Promise<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
@@ -359,7 +356,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
           listener.fail("Stream reset");
           return;
         }
-        writeBuffer(stream, buff, end, (FutureListener<Void>)listener);
+        writeBufferToChannel(stream, buff, end, listener);
       }
 
       @Override
@@ -418,7 +415,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static class StreamImpl extends Stream implements HttpClientStream {
 
     private final Http1xClientConnection conn;
-    private final InboundMessageChannel<Object> queue;
+    private final InboundMessageQueue<Object> queue;
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -434,7 +431,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       super(context, promise, id);
 
       this.conn = conn;
-      this.queue = new InboundMessageChannel<>(conn.context.eventLoop(), context.executor()) {
+      this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
         @Override
         protected void handleResume() {
           conn.doResume();
@@ -558,7 +555,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     @Override
     public Future<Void> writeBuffer(ByteBuf buff, boolean end) {
       if (buff != null || end) {
-        PromiseInternal<Void> listener = context.promise();
+        Promise<Void> listener = context.promise();
         conn.writeBuffer(this, buff, end, listener);
         return listener.future();
       } else {

@@ -23,8 +23,10 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageChannel;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
@@ -57,11 +59,12 @@ public class VertxConnection extends ConnectionBase {
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
   public final VoidChannelPromise voidPromise;
-  private final OutboundMessageChannel<MessageWrite> messageQueue;
+  private final OutboundWriteQueue outboundMessageQueue;
   private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
-  private final Deque<Object> pending;
+  private Deque<Object> pending;
+  private boolean reentrant;
   private boolean read;
   private boolean needsFlush;
   private boolean draining;
@@ -71,11 +74,22 @@ public class VertxConnection extends ConnectionBase {
   private ScheduledFuture<?> shutdownTimeout;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
+    this(context, chctx, false);
+  }
+
+  public VertxConnection(ContextInternal context, ChannelHandlerContext chctx, boolean strictThreadMode) {
     super(context, chctx);
+
+    EventLoopExecutor executor;
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP) {
+      executor = (EventLoopExecutor) context.executor();
+    } else {
+      executor = new EventLoopExecutor(context.nettyEventLoop());
+    }
+
     this.channelWritable = chctx.channel().isWritable();
-    this.messageQueue = new InternalMessageChannel(chctx.channel().eventLoop());
+    this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
-    this.pending = new ArrayDeque<>();
     this.autoRead = true;
   }
 
@@ -194,7 +208,7 @@ public class VertxConnection extends ConnectionBase {
       shutdownTimeout = null;
       timeout.cancel(false);
     }
-    messageQueue.close();
+    outboundMessageQueue.close();
     super.handleClosed();
   }
 
@@ -210,7 +224,7 @@ public class VertxConnection extends ConnectionBase {
   void channelWritabilityChanged() {
     channelWritable = chctx.channel().isWritable();
     if (channelWritable) {
-      messageQueue.drain();
+      outboundMessageQueue.tryDrain();
     }
   }
 
@@ -218,12 +232,33 @@ public class VertxConnection extends ConnectionBase {
    * This method is exclusively called by {@code VertxHandler} to read a message on the event-loop thread.
    */
   final void read(Object msg) {
-    read = true;
     if (METRICS_ENABLED) {
       reportBytesRead(msg);
     }
+    read = true;
+    if (!reentrant && !paused && (pending == null || pending.isEmpty())) {
+      // Fast path
+      reentrant = true;
+      try {
+        handleMessage(msg);
+      } finally {
+        reentrant = false;
+      }
+      // The pending queue could be not empty at this stage if a pending message was added by calling handleMessage
+      // Subsequent calls to read or readComplete will take care of these messages
+    } else {
+      addPending(msg);
+    }
+  }
+
+  private void addPending(Object msg) {
+    if (pending == null) {
+      pending = new ArrayDeque<>();
+    }
     pending.add(msg);
-    checkPendingMessages();
+    if (!reentrant) {
+      checkPendingMessages();
+    }
   }
 
   /**
@@ -231,10 +266,24 @@ public class VertxConnection extends ConnectionBase {
    */
   final void readComplete() {
     if (read) {
-      checkPendingMessages();
+      if (pending != null) {
+        checkPendingMessages();
+      }
       read = false;
       checkFlush();
       checkAutoRead();
+    }
+  }
+
+  private void checkPendingMessages() {
+    Object msg;
+    reentrant = true;
+    try {
+      while (!paused && (msg = pending.poll()) != null) {
+        handleMessage(msg);
+      }
+    } finally {
+      reentrant = false;
     }
   }
 
@@ -272,30 +321,32 @@ public class VertxConnection extends ConnectionBase {
 
   private void checkAutoRead() {
     if (autoRead) {
-      if (pending.size() >= 8) {
+      if (pending != null && pending.size() >= 8) {
         autoRead = false;
         chctx.channel().config().setAutoRead(false);
       }
     } else {
-      if (pending.isEmpty()) {
+      if (pending == null || pending.isEmpty()) {
         autoRead = true;
         chctx.channel().config().setAutoRead(true);
       }
     }
   }
 
-  private void checkPendingMessages() {
-    Object msg;
-    while (!paused && (msg = pending.poll()) != null) {
-      handleMessage(msg);
-    }
+  /**
+   * Like {@link #write(Object, boolean, ChannelPromise)}.
+   */
+  public final ChannelPromise write(Object msg, boolean forceFlush, Promise<Void> promise) {
+    ChannelPromise channelPromise = promise == null ? voidPromise : newChannelPromise(promise);
+    write(msg, forceFlush, channelPromise);
+    return channelPromise;
   }
 
   /**
    * Like {@link #write(Object, boolean, ChannelPromise)}.
    */
-  public void write(Object msg, boolean forceFlush, FutureListener<Void> promise) {
-    write(msg, forceFlush, wrap(promise));
+  public final ChannelPromise write(Object msg, boolean forceFlush) {
+    return write(msg, forceFlush, voidPromise);
   }
 
   /**
@@ -307,7 +358,7 @@ public class VertxConnection extends ConnectionBase {
    * @param forceFlush flush when {@code true} or there is no read in progress
    * @param promise the promise receiving the completion event
    */
-  public void write(Object msg, boolean forceFlush, ChannelPromise promise) {
+  public final ChannelPromise write(Object msg, boolean forceFlush, ChannelPromise promise) {
     assert chctx.executor().inEventLoop();
     if (METRICS_ENABLED) {
       reportsBytesWritten(msg);
@@ -319,6 +370,7 @@ public class VertxConnection extends ConnectionBase {
     } else {
       chctx.write(msg, promise);
     }
+    return promise;
   }
 
   /**
@@ -340,8 +392,8 @@ public class VertxConnection extends ConnectionBase {
     return writeToChannel(obj, voidPromise);
   }
 
-  public final boolean writeToChannel(Object msg, FutureListener<Void> listener) {
-    return writeToChannel(msg, listener == null ? voidPromise : wrap(listener));
+  public final boolean writeToChannel(Object msg, Promise<Void> listener) {
+    return writeToChannel(msg, listener == null ? voidPromise : newChannelPromise(listener));
   }
 
   public final boolean writeToChannel(Object msg, ChannelPromise promise) {
@@ -362,8 +414,9 @@ public class VertxConnection extends ConnectionBase {
     });
   }
 
+  // Write to channel boolean return for now is not used so avoids reading a volatile
   public final boolean writeToChannel(MessageWrite msg) {
-    return messageQueue.write(msg);
+    return outboundMessageQueue.write(msg);
   }
 
   /**
@@ -395,7 +448,7 @@ public class VertxConnection extends ConnectionBase {
    * @return the write queue writability status
    */
   public boolean writeQueueFull() {
-    return !messageQueue.isWritable();
+    return !outboundMessageQueue.isWritable();
   }
 
   /**
@@ -448,12 +501,43 @@ public class VertxConnection extends ConnectionBase {
     return writeFuture;
   }
 
-  /**
-   * Version of {@link OutboundMessageChannel} accessing internal connection base state.
-   */
-  private class InternalMessageChannel extends OutboundMessageChannel<MessageWrite> implements Predicate<MessageWrite> {
+  private interface OutboundWriteQueue {
+    boolean isWritable();
+    boolean write(MessageWrite msg);
+    boolean tryDrain();
+    void close();
+  }
 
-    public InternalMessageChannel(EventLoop eventLoop) {
+  private final class DirectOutboundMessageQueue implements OutboundWriteQueue {
+
+    @Override
+    public boolean isWritable() {
+      return channelWritable;
+    }
+
+    @Override
+    public boolean write(MessageWrite msg) {
+      msg.write();
+      return true;
+    }
+
+    @Override
+    public boolean tryDrain() {
+      handleWriteQueueDrained();
+      return false;
+    }
+
+    @Override
+    public void close() {
+    }
+  }
+
+  /**
+   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
+   */
+  private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite>, OutboundWriteQueue {
+
+    public InternalMessageChannel(io.vertx.core.internal.EventExecutor eventLoop) {
       super(eventLoop);
     }
 
@@ -468,7 +552,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void disposeMessage(MessageWrite write) {
+    protected void handleDispose(MessageWrite write) {
       write.cancel(CLOSED_EXCEPTION);
     }
 
@@ -486,7 +570,7 @@ public class VertxConnection extends ConnectionBase {
     }
 
     @Override
-    protected void afterDrain() {
+    protected void handleDrained() {
       VertxConnection.this.handleWriteQueueDrained();
     }
   }

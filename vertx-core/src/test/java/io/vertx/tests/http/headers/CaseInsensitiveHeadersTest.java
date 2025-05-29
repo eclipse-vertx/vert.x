@@ -27,8 +27,9 @@ public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
     sameBucket2 = "R";
   }
 
+  @Override
   protected HeadersMultiMap newMultiMap() {
-    return new HeadersMultiMap();
+    return (HeadersMultiMap) MultiMap.caseInsensitiveMultiMap();
   }
 
   @Test

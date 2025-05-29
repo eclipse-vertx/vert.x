@@ -32,7 +32,7 @@ import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -86,30 +86,47 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
-  private final InboundMessageChannel<Object> queue;
+  private volatile InboundMessageQueue<Object> queue;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
     this.context = context;
     this.request = request;
-    this.queue = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
-      @Override
-      protected void handleMessage(Object elt) {
-        if (elt == InboundBuffer.END_SENTINEL) {
-          onEnd();
-        } else {
-          onData((Buffer) elt);
+  }
+
+  private InboundMessageQueue<Object> queue() {
+    return queue(true);
+  }
+
+  private InboundMessageQueue<Object> queue(boolean create) {
+    InboundMessageQueue<Object> ref = queue;
+    if (create && ref == null) {
+      synchronized (this) {
+        ref = queue;
+        if (ref == null) {
+          ref = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
+            @Override
+            protected void handleMessage(Object elt) {
+              if (elt == InboundBuffer.END_SENTINEL) {
+                onEnd();
+              } else {
+                onData((Buffer) elt);
+              }
+            }
+            @Override
+            protected void handleResume() {
+              conn.doResume();
+            }
+            @Override
+            protected void handlePause() {
+              conn.doPause();
+            }
+          };
+          queue = ref;
         }
       }
-      @Override
-      protected void handleResume() {
-        conn.doResume();
-      }
-      @Override
-      protected void handlePause() {
-        conn.doPause();
-      }
-    };
+    }
+    return ref;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -136,6 +153,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   void handleContent(Buffer buffer) {
+    InboundMessageQueue<Object> queue = queue();
     boolean drain = queue.add(buffer);
     if (drain) {
       queue.drain();
@@ -143,6 +161,15 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   void handleEnd() {
+    InboundMessageQueue<Object> queue = queue(false);
+    if (queue != null) {
+      handleEnd(queue);
+    } else {
+      context.execute(this, Http1xServerRequest::onEnd);
+    }
+  }
+
+  private void handleEnd(InboundMessageQueue<Object> queue) {
     boolean drain = queue.add(InboundBuffer.END_SENTINEL);
     if (drain) {
       queue.drain();
@@ -151,7 +178,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   private void check100() {
     if (HttpUtil.is100ContinueExpected(request)) {
-      conn.write100Continue(null);
+      response.writeContinue();
     }
   }
 
@@ -334,13 +361,13 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public HttpServerRequest pause() {
-    queue.pause();
+    queue().pause();
     return this;
   }
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    queue.fetch(amount);
+    queue().fetch(amount);
     return this;
   }
 

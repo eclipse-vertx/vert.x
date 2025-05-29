@@ -6,7 +6,7 @@ You still write the traditional Vert.x code processing events, but you have the 
 
 === Introduction
 
-The non-blocking nature of Vert.x leads to asynchronous APIs. 
+The non-blocking nature of Vert.x leads to asynchronous APIs.
 Asynchronous APIs can take various forms including callback style, promises and reactive extensions.
 
 In some cases, programming using asynchronous APIs can be more challenging than using a direct synchronous style, in particular if you have several operations that you want to do sequentially.
@@ -55,6 +55,13 @@ or on a JDK `CompletionStage`
 [source,java]
 ----
 {@link examples.VirtualThreadExamples#awaitingFutures2}
+----
+
+You can also transform a Vert.x `ReadStream` to a Java blocking stream:
+
+[source,java]
+----
+{@link examples.VirtualThreadExamples#blockingStream}
 ----
 
 ==== Field visibility

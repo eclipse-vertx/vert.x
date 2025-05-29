@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
 import java.io.File;
@@ -17,7 +18,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 /**
- * Vert.x known system properties.
+ * Vert.x system properties, most of them are internal and not supported.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -64,7 +65,6 @@ public enum SysProps {
 
   /**
    * Default value of {@link io.vertx.core.file.FileSystemOptions#DEFAULT_FILE_CACHING_DIR}
-   *
    */
   FILE_CACHE_DIR("vertx.cacheDirBase") {
     @Override
@@ -80,6 +80,27 @@ public enum SysProps {
       return val;
     }
   },
+
+  /**
+   * Enable bytes caching of HTTP/1.x immutable response headers.
+   */
+  @Unstable
+  CACHE_IMMUTABLE_HTTP_RESPONSE_HEADERS("vertx.cacheImmutableHttpResponseHeaders"),
+
+  /**
+   * Enable common HTTP/1.x request headers to their lower case version
+   *
+   * <ul>
+   *   <li>host/Host: {@link io.vertx.core.http.HttpHeaders#HOST}</li>
+   *   <li>accept/Accept: {@link io.vertx.core.http.HttpHeaders#ACCEPT}</li>
+   *   <li>content-type/Content-Type: {@link io.vertx.core.http.HttpHeaders#CONTENT_TYPE}</li>
+   *   <li>content-length/Content-Length: {@link io.vertx.core.http.HttpHeaders#CONTENT_LENGTH}</li>
+   *   <li>connection/Connection: {@link io.vertx.core.http.HttpHeaders#CONNECTION}</li>
+   * </ul>
+   *
+   */
+  @Unstable
+  INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE("vertx.internCommonHttpRequestHeadersToLowerCase"),
 
   /**
    * Configure the Vert.x logger.

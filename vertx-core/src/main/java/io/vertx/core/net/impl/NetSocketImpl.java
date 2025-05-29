@@ -22,6 +22,7 @@ import io.netty.util.ReferenceCounted;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
@@ -30,7 +31,7 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
@@ -55,7 +56,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
-  private final InboundMessageChannel<Object> pending;
+  private final InboundMessageQueue<Object> pending;
   private final String negotiatedApplicationLayerProtocol;
   private Handler<Void> endHandler;
   private volatile Handler<Void> drainHandler;
@@ -89,7 +90,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
-    this.pending = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
+    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleResume() {
         NetSocketImpl.this.doResume();
@@ -142,7 +143,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
 
   @Override
   public Future<Void> writeMessage(Object message) {
-    PromiseInternal<Void> promise = context.promise();
+    Promise<Void> promise = context.promise();
     writeToChannel(message, promise);
     return promise.future();
   }

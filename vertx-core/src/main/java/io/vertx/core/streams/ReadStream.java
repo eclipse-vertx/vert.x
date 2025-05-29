@@ -19,9 +19,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.streams.ReadStreamIterator;
 import io.vertx.core.streams.impl.PipeImpl;
 
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Represents a stream of items that can be read from.
@@ -133,6 +139,18 @@ public interface ReadStream<T> extends StreamBase {
     });
     exceptionHandler(promise::tryFail);
     return promise.future();
+  }
+
+  /**
+   * Adapt this {@code ReadStream} to a blocking sequential {@code Stream}, the return stream usage is restricted to
+   * non vertx threads or vertx virtual threads.
+   *
+   * @return a blocking stream
+   */
+  @GenIgnore
+  default Stream<T> blockingStream() {
+    Iterator<T> iterator = ReadStreamIterator.iterator(this);
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);
   }
 
   /**

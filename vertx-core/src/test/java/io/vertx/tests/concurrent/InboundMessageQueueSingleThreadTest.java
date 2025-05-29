@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntConsumer;
 
-public class InboundMessageChannelSingleThreadTest extends InboundMessageChannelTest {
+public class InboundMessageQueueSingleThreadTest extends InboundMessageQueueTest {
 
   @Override
   protected Context createContext(VertxInternal vertx) {

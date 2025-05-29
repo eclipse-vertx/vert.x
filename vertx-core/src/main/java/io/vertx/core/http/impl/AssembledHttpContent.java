@@ -12,12 +12,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 
 /**
@@ -26,26 +23,15 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpContent {
+class AssembledHttpContent extends AssembledHttpObject implements HttpContent {
 
-  private final HttpHeaders trailingHeaders;
   private DecoderResult result;
-  private ByteBuf content;
+  private final ByteBuf content;
 
-  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders) {
-    this(content, trailingHeaders, DecoderResult.SUCCESS);
-  }
-
-  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
-    super(true);
-    this.trailingHeaders = trailingHeaders;
-    this.result = result;
+  AssembledHttpContent(ByteBuf content) {
+    super(false);
+    this.result = DecoderResult.SUCCESS;
     this.content = content;
-  }
-
-  @Override
-  public HttpHeaders trailingHeaders() {
-    return trailingHeaders;
   }
 
   @Override
@@ -54,13 +40,13 @@ class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpCo
   }
 
   @Override
-  public LastHttpContent retain(int increment) {
+  public HttpContent retain(int increment) {
     content.retain(increment);
     return this;
   }
 
   @Override
-  public LastHttpContent retain() {
+  public HttpContent retain() {
     content.retain();
     return this;
   }
@@ -116,13 +102,13 @@ class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpCo
   }
 
   @Override
-  public AssembledLastHttpContent touch() {
+  public AssembledHttpContent touch() {
     content.touch();
     return this;
   }
 
   @Override
-  public AssembledLastHttpContent touch(Object hint) {
+  public AssembledHttpContent touch(Object hint) {
     content.touch(hint);
     return this;
   }

@@ -23,6 +23,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.impl.SysProps;
 
 /**
  * {@link io.netty.handler.codec.http.HttpResponseEncoder} which forces the usage of direct buffers for max performance.
@@ -31,11 +32,13 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
  */
 public final class VertxHttpResponseEncoder extends HttpResponseEncoder {
 
+  private final boolean cacheImmutableResponseHeaders = SysProps.CACHE_IMMUTABLE_HTTP_RESPONSE_HEADERS.getBoolean();
+
   @Override
   protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
     if (headers instanceof HeadersMultiMap) {
       HeadersMultiMap vertxHeaders = (HeadersMultiMap) headers;
-      vertxHeaders.encode(buf);
+      vertxHeaders.encode(buf, cacheImmutableResponseHeaders);
     } else {
       super.encodeHeaders(headers, buf);
     }

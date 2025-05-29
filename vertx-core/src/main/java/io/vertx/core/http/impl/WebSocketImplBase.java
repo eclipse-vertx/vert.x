@@ -23,6 +23,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
@@ -32,10 +33,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.net.impl.VertxConnection;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -62,7 +62,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final VertxConnection conn;
   private ChannelHandlerContext chctx;
   protected final ContextInternal context;
-  private final InboundMessageChannel<WebSocketFrameInternal> pending;
+  private final InboundMessageQueue<WebSocketFrameInternal> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -99,7 +99,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
+    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleResume() {
         conn.doResume();
@@ -305,7 +305,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
       if (isClosed()) {
         return context.failedFuture("WebSocket is closed");
       }
-      PromiseInternal<Void> promise = context.promise();
+      Promise<Void> promise = context.promise();
       conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), promise);
       return promise.future();
     }

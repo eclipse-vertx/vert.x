@@ -52,7 +52,7 @@ public class HeadersSetBenchmark extends BenchmarkBase {
   @Setup
   public void setup() {
     nettySmallHeaders = new DefaultHttpHeaders(validate);
-    vertxSmallHeaders = new HeadersMultiMap(validate? HttpUtils::validateHeader : null);
+    vertxSmallHeaders = HeadersMultiMap.httpHeaders(validate? HttpUtils::validateHeader : null);
   }
 
   @Benchmark

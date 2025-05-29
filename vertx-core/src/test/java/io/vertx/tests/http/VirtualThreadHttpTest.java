@@ -21,7 +21,15 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 public class VirtualThreadHttpTest extends VertxTestBase {
 
@@ -85,6 +93,43 @@ public class VirtualThreadHttpTest extends VertxTestBase {
       server.close().await();
       client.close().await();
     }
+  }
+
+  @Test
+  public void testHttpClient3() throws Exception {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    HttpServer server = vertx.createHttpServer();
+    int numChunks = 10;
+    List<String> expected = IntStream.range(0, numChunks).mapToObj(idx -> "chunk-" + idx).collect(Collectors.toList());
+    server.requestHandler(req -> {
+      HttpServerResponse response = req.response();
+      response.setChunked(true);
+      Deque<String> toSend = new ArrayDeque<>(expected);
+      vertx.setPeriodic(10, id -> {
+        String chunk = toSend.poll();
+        if (chunk != null) {
+          response.write(chunk);
+        } else {
+          vertx.cancelTimer(id);
+          response.end();
+        }
+      });
+    });
+    server.listen(8088, "localhost").await(10, TimeUnit.SECONDS);
+    vertx.createVirtualThreadContext().runOnContext(v -> {
+      HttpClient client = vertx.createHttpClient();
+      for (int i = 0; i < 10; ++i) {
+        HttpClientRequest req = client.request(HttpMethod.GET, 8088, "localhost", "/").await();
+        HttpClientResponse resp = req.send().await();
+        List<String> chunks = new ArrayList<>();
+        resp.blockingStream().forEach(chunk -> {
+          chunks.add(chunk.toString());
+        });
+        assertEquals(expected, chunks);
+      }
+      testComplete();
+    });
+    await();
   }
 
   @Test

@@ -815,7 +815,8 @@
                           <directory>${project.build.testOutputDirectory}</directory>
                           <includes>
                             <include>io/vertx/benchmarks/**</include>
-                            <include>META-INF/</include>
+                            <include>META-INF/BenchmarkList</include>
+                            <include>META-INF/CompilerHints</include>
                           </includes>
                           <outputDirectory>/</outputDirectory>
                         </fileSet>
@@ -823,8 +824,21 @@
                       <dependencySets>
                         <dependencySet>
                           <outputDirectory>/</outputDirectory>
-                          <unpack>true</unpack>
                           <scope>test</scope>
+                          <includes>
+                            <include>io.netty:*</include>
+                            <include>com.fasterxml.jackson.core:*</include>
+                            <include>io.vertx:*</include>
+                            <include>org.openjdk.jmh:*</include>
+                            <include>net.sf.jopt-simple:*</include>
+                            <include>org.apache.commons:*</include>
+                          </includes>
+                          <unpack>true</unpack>
+                          <unpackOptions>
+                            <excludes>
+                              <exclude>**/module-info.class</exclude>
+                            </excludes>
+                          </unpackOptions>
                         </dependencySet>
                       </dependencySets>
                     </inlineDescriptor>

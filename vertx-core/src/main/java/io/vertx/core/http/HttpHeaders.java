@@ -13,12 +13,14 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 
 /**
  * Contains a bunch of useful HTTP headers stuff:
@@ -363,6 +365,7 @@ public interface HttpHeaders {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   CharSequence CHUNKED = HttpHeaderValues.CHUNKED;
+
   /**
    * close header value
    */
@@ -380,6 +383,7 @@ public interface HttpHeaders {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   CharSequence IDENTITY = HttpHeaderValues.IDENTITY;
+
   /**
    * keep-alive header value
    */
@@ -480,8 +484,27 @@ public interface HttpHeaders {
     return new AsciiString(value);
   }
 
+  /**
+   * @return a {@link MultiMap} backing an HTTP headers structure optimized for {@code HTTP/1.x}
+   */
   static MultiMap headers() {
     return HeadersMultiMap.httpHeaders();
+  }
+
+  /**
+   * @param version version HTTP protocol hint for which the returned instance is optimized for
+   * @return a {@link MultiMap} backing an HTTP headers structure optimized for the {@code version} hint
+   */
+  static MultiMap headers(HttpVersion version) {
+    switch (version) {
+      case HTTP_1_0:
+      case HTTP_1_1:
+        return HeadersMultiMap.httpHeaders();
+      case HTTP_2:
+        return new Http2HeadersAdaptor(new DefaultHttp2Headers());
+      default:
+        throw new AssertionError();
+    }
   }
 
   static MultiMap set(String name, String value) {

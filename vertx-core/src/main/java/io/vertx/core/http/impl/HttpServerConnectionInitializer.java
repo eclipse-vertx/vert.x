@@ -24,6 +24,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -46,6 +47,7 @@ import java.util.function.Supplier;
 class HttpServerConnectionInitializer {
 
   private final ContextInternal context;
+  private final ThreadingModel threadingModel;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxInternal vertx;
   private final HttpServerImpl server;
@@ -61,6 +63,7 @@ class HttpServerConnectionInitializer {
   private final Function<String, String> encodingDetector;
 
   HttpServerConnectionInitializer(ContextInternal context,
+                                  ThreadingModel threadingModel,
                                   Supplier<ContextInternal> streamContextSupplier,
                                   HttpServerImpl server,
                                   VertxInternal vertx,
@@ -82,6 +85,7 @@ class HttpServerConnectionInitializer {
     }
 
     this.context = context;
+    this.threadingModel = threadingModel;
     this.streamContextSupplier = streamContextSupplier;
     this.server = server;
     this.vertx = vertx;
@@ -316,6 +320,7 @@ class HttpServerConnectionInitializer {
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(
+        threadingModel,
         streamContextSupplier,
         sslContextManager,
         options,

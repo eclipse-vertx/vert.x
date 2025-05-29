@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpContent;
@@ -29,16 +30,12 @@ import io.netty.handler.codec.http.LastHttpContent;
  */
 class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpRequest {
 
-  public AssembledFullHttpRequest(HttpRequest request, LastHttpContent content) {
-    super(request, content);
-  }
-
   public AssembledFullHttpRequest(HttpRequest request) {
-    super(request, LastHttpContent.EMPTY_LAST_CONTENT);
+    super(request, LastHttpContent.EMPTY_LAST_CONTENT, true);
   }
 
   public AssembledFullHttpRequest(HttpRequest request, ByteBuf buf) {
-    super(request, toLastContent(buf));
+    super(request, toLastContent(buf), true);
   }
 
   private static LastHttpContent toLastContent(ByteBuf buf) {

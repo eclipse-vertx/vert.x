@@ -16,6 +16,7 @@ import io.vertx.core.http.*;
 import io.vertx.docgen.Source;
 
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 @Source
 public class VirtualThreadExamples {
@@ -91,6 +92,18 @@ public class VirtualThreadExamples {
 
   public void awaitingFutures2(HttpClientResponse response, CompletionStage<Buffer> completionStage) {
     Buffer body = Future.fromCompletionStage(completionStage).await();
+  }
+
+  public void blockingStream(HttpServer server) {
+    server.requestHandler(request -> {
+      Stream<Buffer> blockingStream = request.blockingStream();
+      HttpServerResponse response = request.response();
+      response.setChunked(true);
+      blockingStream
+        .map(buff -> "" + buff.length())
+        .forEach(size -> response.write(size));
+      response.end();
+    });
   }
 
   private Future<String> getRemoteString() {

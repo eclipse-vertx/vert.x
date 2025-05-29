@@ -116,7 +116,7 @@ public class ReadStreamIterator<E> implements Iterator<E>, Handler<E> {
           return true;
         }
         if (ended != null) {
-          return false;
+          return ended != END_SENTINEL;
         }
         awaitProgress();
       }
@@ -132,8 +132,10 @@ public class ReadStreamIterator<E> implements Iterator<E>, Handler<E> {
       CountDownLatch latch = execution.trySuspend();
       try {
         consumerProgress.await();
+        lock.unlock();
         execution.resume();
         latch.await();
+        lock.lock();
       } catch (InterruptedException e) {
         Utils.throwAsUnchecked(e);
       }

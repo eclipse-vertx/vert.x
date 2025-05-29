@@ -211,6 +211,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         exceptionHandler);
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
+        context.threadingModel(),
         streamContextSupplier,
         this,
         vertx,

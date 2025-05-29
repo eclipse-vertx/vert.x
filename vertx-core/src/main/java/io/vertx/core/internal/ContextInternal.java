@@ -312,7 +312,9 @@ public interface ContextInternal extends Context {
 
   /**
    * @return the {@link ConcurrentMap} used to store local context data
+   * @deprecated instead use {@link #getLocal}/{@link #putLocal}/{@link #removeLocal} methods
    */
+  @Deprecated(forRemoval = true)
   default ConcurrentMap<Object, Object> localContextData() {
     return LOCAL_MAP.get(this, ConcurrentHashMap::new);
   }

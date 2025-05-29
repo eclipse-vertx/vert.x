@@ -14,14 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.EmptyHttpHeaders;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,6 +23,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
@@ -100,6 +97,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.requestMetric = requestMetric;
     this.keepAlive = keepAlive;
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
+  }
+
+  private void checkThread() {
+    if (conn.strictThreadMode && !context.executor().inThread()) {
+      throw new IllegalStateException("Only the context thread can write a message");
+    }
   }
 
   @Override
@@ -326,13 +329,15 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeContinue() {
+    checkThread();
     Promise<Void> promise = context.promise();
-    conn.write100Continue((FutureListener<Void>) promise);
+    conn.write100Continue(promise);
     return promise.future();
   }
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
+    checkThread();
     PromiseInternal<Void> promise = context.promise();
     HeadersMultiMap headersMultiMap;
     if (headers instanceof HeadersMultiMap) {
@@ -366,6 +371,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
+    checkThread();
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -373,12 +379,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       written = true;
       ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
-      HttpObject msg;
+      AssembledHttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders);
+        msg = new AssembledFullHttpResponse(head, version, status, data, headers, trailingHeaders);
       } else {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
@@ -462,7 +468,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
-          conn.write(LastHttpContent.EMPTY_LAST_CONTENT, null);
+          conn.write(new AssembledLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), null);
         }
 
         // signal body end handler
@@ -643,6 +649,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private Http1xServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
+    checkThread();
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
@@ -653,12 +660,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
       }
       bytesWritten += chunk.readableBytes();
-      HttpObject msg;
+      AssembledHttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
         msg = new AssembledHttpResponse(head, version, status, headers, chunk);
       } else {
-        msg = new DefaultHttpContent(chunk);
+        msg = new AssembledHttpContent(chunk);
       }
       conn.write(msg, promise);
       return this;
@@ -666,6 +673,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
+    checkThread();
     synchronized (conn) {
       if (netSocket == null) {
         if (headWritten) {

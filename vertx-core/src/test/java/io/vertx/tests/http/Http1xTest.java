@@ -11,17 +11,18 @@
 
 package io.vertx.tests.http;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.TooLongHttpHeaderException;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
@@ -31,6 +32,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -1025,8 +1027,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPipeliningOrder() throws Exception {
-    // Does not pass with IO_Uring
-    Assume.assumeTrue(((VertxInternal)vertx).transport().getClass().getName().startsWith("io.vertx.core"));
+    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
     int requests = 100;
@@ -5350,9 +5351,9 @@ public class Http1xTest extends HttpTest {
           so.write("ping");
           so.handler(buff -> {
             assertEquals("pong", buff.toString());
-            so.close().onComplete(onSuccess(v -> {
+            so.close().onComplete(ar -> {
               testComplete();
-            }));
+            });
           });
         }));
         if (payload != null) {
@@ -5867,4 +5868,144 @@ public class Http1xTest extends HttpTest {
 
     await();
   }
+
+  @Test
+  public void testImmutableHeaders() throws Exception {
+    MultiMap headers = HttpHeaders
+      .headers()
+      .set(HttpHeaders.CONTENT_LENGTH, "11")
+      .set(HttpHeaders.CONTENT_TYPE, "text/plain")
+      .copy(false);
+    AtomicReference<MultiMap> headersRef = new AtomicReference<>();
+    server.connectionHandler(conn -> {
+      HttpServerConnection serverConn = (HttpServerConnection) conn;
+      ChannelPipeline pipeline = serverConn.channelHandlerContext().pipeline();
+      pipeline.addBefore("handler", "filter", new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+          if (msg instanceof HttpResponse) {
+            HttpResponse response = (HttpResponse) msg;
+            headersRef.set((MultiMap) response.headers());
+          }
+          super.write(ctx, msg, promise);
+        }
+      });
+    });
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.headers().setAll(headers);
+      resp
+        .end("Hello World");
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end)
+      ).await();
+    assertSame(((HeadersMultiMap) headersRef.get()).iteratorCharSequence().next(), ((HeadersMultiMap) headers).iteratorCharSequence().next());
+  }
+
+  @Test
+  public void testStrictThreadMode() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setStrictThreadMode(true));
+    server.requestHandler(request -> {
+      Context ctx = vertx.getOrCreateContext();
+      new Thread(() -> {
+        HttpServerResponse response = request.response();
+        try {
+          response.end();
+          fail();
+        } catch (IllegalStateException e) {
+          ctx.runOnContext(v -> {
+            response.end();
+          });
+        }
+      }).start();
+    });
+    startServer(testAddress);
+
+    client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end)
+      ).await();
+  }
+
+  @Test
+  public void testRequestHeadersConstant() throws Exception {
+    System.setProperty(SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.name, "true");
+    try {
+      server.requestHandler(request -> {
+        IdentityHashMap<CharSequence, CharSequence> expected = new IdentityHashMap<>();
+        expected.put(HttpHeaders.CONNECTION, HttpHeaders.CONNECTION);
+        expected.put(HttpHeaders.ACCEPT, HttpHeaders.ACCEPT);
+        expected.put(HttpHeaders.CONTENT_TYPE, HttpHeaders.CONTENT_TYPE);
+        expected.put(HttpHeaders.CONTENT_LENGTH, HttpHeaders.CONTENT_LENGTH);
+        expected.put(HttpHeaders.HOST, HttpHeaders.HOST);
+        io.netty.handler.codec.http.HttpHeaders nettyHeaders = (io.netty.handler.codec.http.HttpHeaders) request.headers();
+        Iterator<Map.Entry<CharSequence, CharSequence>> it = nettyHeaders.iteratorCharSequence();
+        while (it.hasNext()) {
+          Map.Entry<CharSequence, CharSequence> entry = it.next();
+          expected.remove(entry.getKey());
+        }
+        assertEquals(Collections.emptySet(), expected.keySet());
+        request.response().end();
+      });
+      startServer(testAddress);
+
+      client.request(requestOptions)
+        .compose(request -> request
+          .putHeader("host", "localhost:8080")
+          .putHeader("connection", "keep-alive")
+          .putHeader("accept", "text/plain")
+          .putHeader("content-type", "text/plain")
+          .putHeader("content-length", "11")
+          .send("Hello World")
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end)
+        ).await();
+      client.request(requestOptions)
+        .compose(request -> request
+          .putHeader("Host", "localhost:8080")
+          .putHeader("Connection", "keep-alive")
+          .putHeader("Accept", "text/plain")
+          .putHeader("Content-Type", "text/plain")
+          .putHeader("Content-Length", "11")
+          .send("Hello World")
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end)
+        ).await();
+    } finally {
+      System.clearProperty(SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.name);
+    }
+  }
+
+  @Test
+  public void testEagerCreateRequestInboundQueueForWorkers() throws Exception {
+    server.requestHandler(req -> {
+      AtomicBoolean paused = new AtomicBoolean(true);
+      req.pause();
+      req.endHandler(v -> {
+        assertFalse(paused.get());
+        req.response().end();
+      });
+      vertx.runOnContext(v1 -> {
+        paused.set(false);
+        req.resume();
+      });
+    });
+    Context ctx = ((VertxInternal)vertx).createWorkerContext();
+    startServer(testAddress, ctx, server);
+
+    client.request(requestOptions).compose(req -> req
+      .send()
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body))
+      .await();
+  }
+
 }
