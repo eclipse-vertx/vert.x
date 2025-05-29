@@ -15,7 +15,13 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -74,7 +80,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -135,15 +149,15 @@ public abstract class HttpServerTest extends HttpTestBase {
     return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
   }
 
-  static Http2Headers GET(String scheme, String path) {
+  protected static Http2Headers GET(String scheme, String path) {
     return headers("GET", scheme, path);
   }
 
-  static Http2Headers GET(String path) {
+  protected static Http2Headers GET(String path) {
     return headers("GET", "https", path);
   }
 
-  static Http2Headers POST(String path) {
+  protected static Http2Headers POST(String path) {
     return headers("POST", "https", path);
   }
 
@@ -2803,8 +2817,7 @@ public abstract class HttpServerTest extends HttpTestBase {
       assertEquals("http", req.scheme());
       assertEquals(request.getMethod(), req.method());
       assertEquals(HttpVersion.HTTP_2, req.version());
-      assertEquals(10000,
-        ((io.vertx.core.http.Http2Settings) req.connection().remoteHttpSettings()).getMaxConcurrentStreams());
+      assertEquals(10000, ((io.vertx.core.http.Http2Settings) req.connection().remoteHttpSettings()).getMaxConcurrentStreams());
       assertFalse(req.isSSL());
       req.bodyHandler(body -> {
         vertx.setTimer(10, id -> {
@@ -2867,7 +2880,8 @@ public abstract class HttpServerTest extends HttpTestBase {
             .putHeader("Upgrade", "h2c")
             .putHeader("Connection", "Upgrade")
             .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
-            .send().onComplete(handler);
+            .send()
+            .onComplete(handler);
         }));
     });
   }
@@ -2883,7 +2897,8 @@ public abstract class HttpServerTest extends HttpTestBase {
             .putHeader("Upgrade", "h2c")
             .putHeader("Connection", "Upgrade, HTTP2-Settings")
             .putHeader("HTTP2-Settings", "incorrect-settings")
-            .send().onComplete(handler);
+            .send()
+            .onComplete(handler);
         }));
     });
   }
@@ -2902,7 +2917,8 @@ public abstract class HttpServerTest extends HttpTestBase {
             .putHeader("Upgrade", "h2c")
             .putHeader("Connection", "Upgrade, HTTP2-Settings")
             .putHeader("HTTP2-Settings", s)
-            .send().onComplete(handler);
+            .send()
+            .onComplete(handler);
       }));
     });
   }
@@ -2917,7 +2933,8 @@ public abstract class HttpServerTest extends HttpTestBase {
         req
           .putHeader("Upgrade", "h2c")
           .putHeader("Connection", "Upgrade, HTTP2-Settings")
-          .send().onComplete(handler);
+          .send()
+          .onComplete(handler);
       }));
     });
   }
