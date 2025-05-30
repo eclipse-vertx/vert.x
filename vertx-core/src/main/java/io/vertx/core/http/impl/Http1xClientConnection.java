@@ -1000,7 +1000,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, upgrade);
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
       upgrade.addListener((GenericFutureListener<io.netty.util.concurrent.Future<HttpHeaders>>) future -> {
-        if (timer > 0L) {
+        if (timer > -1L) {
           vertx.cancelTimer(timer);
         }
         if (future.isSuccess()) {
