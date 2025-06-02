@@ -173,7 +173,11 @@ public abstract class HttpTest extends HttpTestBase {
   public void testListenSocketAddress() throws Exception {
     NetClient netClient = vertx.createNetClient(createNetClientOptions());
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> req.response().end());
+    HttpServerOptions serverOptions = createBaseServerOptions();
+    if (!serverOptions.isHttp3()) {
+      serverOptions.setSsl(false);
+    }
+    server = vertx.createHttpServer(serverOptions).requestHandler(req -> req.response().end());
     SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
     startServer(sockAddress);
     netClient
