@@ -102,6 +102,10 @@ public abstract class NetTest extends VertxTestBase {
 
   protected abstract HttpClientOptions createBaseClientOptions();
 
+  protected abstract HttpServerOptions createHttpServerOptionsForNetTest();
+
+  protected abstract HttpClientOptions createHttpClientOptionsForNetTest();
+
   protected abstract Socks4Proxy createSocks4Proxy();
 
   protected abstract SocksProxy createSocksProxy();
@@ -3526,7 +3530,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testNetServerInternal() throws Exception {
-    testNetServerInternal_(createBaseClientOptions(), false);
+    testNetServerInternal_(createHttpClientOptionsForNetTest(), false);
   }
 
   @Test
@@ -3537,7 +3541,7 @@ public abstract class NetTest extends VertxTestBase {
       .setHost("localhost")
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
-    testNetServerInternal_(createBaseClientOptions()
+    testNetServerInternal_(createHttpClientOptionsForNetTest()
       .setSsl(true)
       .setTrustOptions(Trust.SERVER_JKS.get())
     , true);
@@ -3578,7 +3582,7 @@ public abstract class NetTest extends VertxTestBase {
 
   @Test
   public void testNetClientInternal() throws Exception {
-    testNetClientInternal_(createBaseServerOptions().setHost("localhost").setPort(1234), false);
+    testNetClientInternal_(createHttpServerOptionsForNetTest().setHost("localhost").setPort(1234), false);
   }
 
   @Test
@@ -3589,7 +3593,7 @@ public abstract class NetTest extends VertxTestBase {
       .setHostnameVerificationAlgorithm("")
       .setTrustOptions(Trust.SERVER_JKS.get())
     );
-    testNetClientInternal_(createBaseServerOptions()
+    testNetClientInternal_(createHttpServerOptionsForNetTest()
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
@@ -3635,7 +3639,7 @@ public abstract class NetTest extends VertxTestBase {
         }
       }));
 
-    testNetClientInternal_(createBaseServerOptions()
+    testNetClientInternal_(createHttpServerOptionsForNetTest()
       .setHost("localhost")
       .setPort(1234)
       .setSsl(true)
