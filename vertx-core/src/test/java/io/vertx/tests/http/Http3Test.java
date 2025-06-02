@@ -374,20 +374,6 @@ public class Http3Test extends HttpCommonTest {
 
   @Test
   @Ignore
-  public void testClientRequestWithLargeBodyInSmallChunksChunked() throws Exception {
-    //TODO: resolve this test issue.
-    super.testClientRequestWithLargeBodyInSmallChunksChunked();
-  }
-
-  @Test
-  @Ignore
-  public void testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler() throws Exception {
-    //TODO: resolve this test issue.
-    super.testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler();
-  }
-
-  @Test
-  @Ignore
   public void testClientDrainHandler() throws Exception {
     //TODO: resolve this test issue.
     super.testClientDrainHandler();
