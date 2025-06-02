@@ -34,8 +34,10 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 
 import static io.vertx.core.net.impl.Http3ProxyProvider.*;
 
@@ -129,7 +131,18 @@ public final class ChannelProvider {
       ChannelHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName, sslOptions);
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast(CLIENT_SSL_HANDLER_NAME, sslHandler);
-      pipeline.addLast(new ExceptionHandlingChannelHandler(channelHandler));
+      pipeline.addLast(new ChannelDuplexHandler() {
+        @Override
+        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+          if (cause instanceof PortUnreachableException) {
+            cause = new VertxConnectException(cause);
+          }
+          channelHandler.tryFailure(cause);
+          ctx.close();
+
+          super.exceptionCaught(ctx, cause);
+        }
+      });
 
       if (version != HttpVersion.HTTP_3) {
         Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
@@ -291,5 +304,12 @@ public final class ChannelProvider {
         channelHandler.tryFailure(dnsRes.cause());
       }
     });
+  }
+
+  public static class VertxConnectException extends ConnectException {
+    public VertxConnectException(Throwable cause) {
+      super(cause.getMessage());
+      initCause(cause);
+    }
   }
 }
