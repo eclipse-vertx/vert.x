@@ -16,11 +16,15 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.incubator.codec.http3.Http3ClientConnectionHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -43,7 +47,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.test.http.HttpTestBase.*;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -69,7 +74,7 @@ public class Http3NetTest extends NetTest {
   }
 
   @Override
-   protected HttpServerOptions createHttpServerOptionsForNetTest() {
+  protected HttpServerOptions createHttpServerOptionsForNetTest() {
     return HttpOptionsFactory.createH3HttpServerOptions();
   }
 
@@ -98,6 +103,13 @@ public class Http3NetTest extends NetTest {
     HAProxy haProxy = new HAProxy(remoteAddress, header);
     haProxy.http3(true);
     return haProxy;
+  }
+
+  @Override
+  protected SslContext createSSLContext() {
+    return QuicSslContextBuilder.forClient()
+      .trustManager(InsecureTrustManagerFactory.INSTANCE)
+      .applicationProtocols(Http3.supportedApplicationProtocols()).build();
   }
 
   @Ignore("Host shortnames are not allowed in netty for QUIC.")
@@ -134,7 +146,8 @@ public class Http3NetTest extends NetTest {
     waitFor(5);
     HttpServer server = vertx.createHttpServer(options);
     server.requestHandler(req -> {
-      req.response().end("Hello World"); });
+      req.response().end("Hello World");
+    });
     CountDownLatch latch = new CountDownLatch(1);
     server.listen().onComplete(onSuccess(v -> {
       latch.countDown();
@@ -351,8 +364,7 @@ public class Http3NetTest extends NetTest {
     // Start of client part
 
     NetClientOptions clientOptions = createNetClientOptions()
-      .setProxyOptions(createProxyOptions().setType(proxyType).setPort(proxy.port()))
-      ;
+      .setProxyOptions(createProxyOptions().setType(proxyType).setPort(proxy.port()));
     NetClient client = vertx.createNetClient(clientOptions);
     client.connect(1234, "localhost").onComplete(onSuccess(so -> {
       log.info("Sending a message to proxy server...");
@@ -653,13 +665,6 @@ public class Http3NetTest extends NetTest {
   @Test
   public void testSharedServersRoundRobin() throws Exception {
     super.testSharedServersRoundRobin();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
-    super.testNetClientInternalTLSWithSuppliedSSLContext();
   }
 
   @Ignore
