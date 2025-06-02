@@ -38,6 +38,10 @@ import java.util.function.BiConsumer;
  */
 class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
+  private static long expirationTimestamp(int timeout) {
+    return timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
+  }
+
   private final HttpClientBase client;
   private final ClientMetrics metrics;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
@@ -50,6 +54,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
                         VertxHttp2ConnectionHandler connHandler,
                         ClientMetrics metrics) {
     super(context, connHandler);
+    this.expirationTimestamp = expirationTimestamp(client.options.getHttp2KeepAliveTimeout());
     this.metrics = metrics;
     this.client = client;
   }
@@ -171,8 +176,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   private void recycle() {
-    int timeout = client.options().getHttp2KeepAliveTimeout();
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
+    expirationTimestamp = expirationTimestamp(client.options.getHttp2KeepAliveTimeout());
   }
 
   @Override
