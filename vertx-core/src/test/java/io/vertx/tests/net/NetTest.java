@@ -14,18 +14,14 @@ package io.vertx.tests.net;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.IdentityCipherSuiteFilter;
-import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -61,7 +57,6 @@ import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.*;
@@ -116,6 +111,8 @@ public abstract class NetTest extends VertxTestBase {
   protected abstract HttpProxy createHttpProxy();
 
   protected abstract HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header);
+
+  protected abstract SslContext createSSLContext();
 
   protected ProxyOptions createProxyOptions() {
     return new ProxyOptions().setConnectTimeout(isDebug() ? 6000 : 10);
@@ -3613,36 +3610,12 @@ public abstract class NetTest extends VertxTestBase {
   @Test
   public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
     client.close();
-    Buffer trust = vertx.fileSystem().readFileBlocking(Trust.SERVER_JKS.get().getPath());
-
-    TrustManagerFactory tmFactory;
-    try (InputStream trustStoreStream = new ByteArrayInputStream(trust.getBytes())){
-      KeyStore trustStore = KeyStore.getInstance("jks");
-      trustStore.load(trustStoreStream, Trust.SERVER_JKS.get().getPassword().toCharArray());
-      tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      tmFactory.init(trustStore);
-    }
-
-    SSLContext sslContext = SSLContext.getInstance("TLS");
-    sslContext.init(
-      null,
-      tmFactory.getTrustManagers(),
-      null
-    );
 
     client = vertx.createNetClient(createNetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("")
       .setSslEngineOptions(new JdkSSLEngineOptions() {
         @Override
         public SslContextFactory sslContextFactory() {
-          return () -> new JdkSslContext(
-            sslContext,
-            true,
-            null,
-            IdentityCipherSuiteFilter.INSTANCE,
-            ApplicationProtocolConfig.DISABLED,
-            io.netty.handler.ssl.ClientAuth.NONE,
-            null,
-            false);
+          return () -> createSSLContext();
         }
       }));
 

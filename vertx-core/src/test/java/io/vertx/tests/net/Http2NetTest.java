@@ -10,21 +10,31 @@
  */
 package io.vertx.tests.net;
 
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
+import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
+import io.vertx.test.tls.Trust;
 import io.vertx.tests.http.HttpOptionsFactory;
-import org.junit.Ignore;
-import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
 
-import static io.vertx.test.http.HttpTestBase.*;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -76,4 +86,36 @@ public class Http2NetTest extends NetTest {
     return new HAProxy(remoteAddress, header);
   }
 
+  @Override
+  protected SslContext createSSLContext() {
+    Buffer trust = vertx.fileSystem().readFileBlocking(Trust.SERVER_JKS.get().getPath());
+
+    try {
+      TrustManagerFactory tmFactory;
+      try (InputStream trustStoreStream = new ByteArrayInputStream(trust.getBytes())) {
+        KeyStore trustStore = KeyStore.getInstance("jks");
+        trustStore.load(trustStoreStream, Trust.SERVER_JKS.get().getPassword().toCharArray());
+        tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmFactory.init(trustStore);
+      }
+
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(
+        null,
+        tmFactory.getTrustManagers(),
+        null
+      );
+      return new JdkSslContext(
+        sslContext,
+        true,
+        null,
+        IdentityCipherSuiteFilter.INSTANCE,
+        ApplicationProtocolConfig.DISABLED,
+        io.netty.handler.ssl.ClientAuth.NONE,
+        null,
+        false);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 }
