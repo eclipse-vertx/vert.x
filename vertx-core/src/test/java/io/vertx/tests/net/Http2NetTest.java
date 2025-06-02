@@ -49,6 +49,16 @@ public class Http2NetTest extends NetTest {
     return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
+  @Override
+  protected HttpServerOptions createHttpServerOptionsForNetTest() {
+    return new HttpServerOptions();
+  }
+
+  @Override
+  protected HttpClientOptions createHttpClientOptionsForNetTest() {
+    return new HttpClientOptions();
+  }
+
   protected Socks4Proxy createSocks4Proxy() {
     return new Socks4Proxy();
   }

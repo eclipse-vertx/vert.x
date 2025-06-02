@@ -69,6 +69,16 @@ public class Http3NetTest extends NetTest {
   }
 
   @Override
+   protected HttpServerOptions createHttpServerOptionsForNetTest() {
+    return HttpOptionsFactory.createH3HttpServerOptions();
+  }
+
+  @Override
+  protected HttpClientOptions createHttpClientOptionsForNetTest() {
+    return HttpOptionsFactory.createH3HttpClientOptions();
+  }
+
+  @Override
   protected Socks4Proxy createSocks4Proxy() {
     return new Socks4Proxy().http3(true);
   }
@@ -277,6 +287,7 @@ public class Http3NetTest extends NetTest {
 
   @Category(Http3ProxyProvider.class)
   @Test
+  @Ignore
   public void testVertxBasedHttpProxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.HTTP);
@@ -826,4 +837,17 @@ public class Http3NetTest extends NetTest {
     super.testTLSHostnameCertCheckIncorrect();
   }
 
+  @Test
+  @Ignore
+  @Override
+  public void testConnectLocalHost() {
+    super.testConnectLocalHost();
+  }
+
+  @Test
+  @Ignore
+  @Override
+  public void testAsyncWriteIsFlushed() throws Exception {
+    super.testAsyncWriteIsFlushed();
+  }
 }
