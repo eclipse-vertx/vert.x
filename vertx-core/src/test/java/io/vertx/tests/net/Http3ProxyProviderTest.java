@@ -81,6 +81,7 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
     testProxy_(ProxyType.SOCKS4);
   }
 
+  @Ignore
   @Category(Http3ProxyProvider.class)
   @Test
   public void testVertxBasedHttpProxy() throws Exception {

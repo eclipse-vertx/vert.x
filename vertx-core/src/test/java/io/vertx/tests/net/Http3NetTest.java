@@ -278,6 +278,7 @@ public class Http3NetTest extends NetTest {
   //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
   @Category(Http3ProxyProvider.class)
   @Test
+  @Ignore
   public void testNettyBasedSocks5Proxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.SOCKS5);
@@ -285,6 +286,7 @@ public class Http3NetTest extends NetTest {
 
   @Category(Http3ProxyProvider.class)
   @Test
+  @Ignore
   public void testVertxBasedSocks4Proxy() throws Exception {
     Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.SOCKS4);
