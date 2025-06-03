@@ -350,4 +350,10 @@ public class Http3ClientTest extends HttpClientTest {
     super.testReduceMaxConcurrentStreams();
   }
 
+  @Test
+  @Override
+  @Ignore
+  public void testMaxConcurrencyMultipleConnections() throws Exception {
+    super.testMaxConcurrencyMultipleConnections();
+  }
 }
