@@ -31,6 +31,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final ClientMetrics metrics;
   private final HostAndPort authority;
   private final boolean pooled;
+  private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
@@ -40,12 +41,15 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
                         ContextInternal context,
                         HostAndPort authority,
                         VertxHttp2ConnectionHandler connHandler,
-                        ClientMetrics metrics, boolean pooled) {
+                        ClientMetrics metrics,
+                        boolean pooled,
+                        long maxLifetime) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
     this.authority = authority;
     this.pooled = pooled;
+    this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
   }
 
   @Override
@@ -162,12 +166,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   public void recycle() {
     int timeout = client.options().getHttp2KeepAliveTimeout();
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
+    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : Long.MAX_VALUE;
   }
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
+    long now = System.currentTimeMillis();
+    return now <= expirationTimestamp && now <= lifetimeEvictionTimestamp;
   }
 
   @Override
@@ -230,7 +235,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     boolean upgrade,
     Object socketMetric,
     HostAndPort authority,
-    boolean pooled) {
+    boolean pooled,
+    long maxLifetime) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
@@ -239,7 +245,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnection conn = new Http2ClientConnection(client, context, authority, connHandler, metrics, pooled);
+        Http2ClientConnection conn = new Http2ClientConnection(client, context, authority, connHandler, metrics, pooled, maxLifetime);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);

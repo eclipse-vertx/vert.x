@@ -11,33 +11,32 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.internal.pool.ConnectionPool;
 import io.vertx.core.internal.pool.Lease;
-import io.vertx.core.net.endpoint.Endpoint;
-import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
-import io.vertx.core.http.*;
-import io.vertx.core.net.*;
-import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
-import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.internal.resource.ResourceManager;
+import io.vertx.core.net.*;
+import io.vertx.core.net.endpoint.Endpoint;
+import io.vertx.core.net.endpoint.EndpointResolver;
+import io.vertx.core.net.endpoint.ServerInteraction;
+import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -54,6 +53,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
+  private final long maxLifetime;
 
   public HttpClientImpl(VertxInternal vertx,
                         EndpointResolver endpointResolver,
@@ -64,11 +64,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.endpointResolver = (EndpointResolverImpl) endpointResolver;
     this.poolOptions = poolOptions;
     httpCM = new ResourceManager<>();
-    if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
+    if (poolCheckerIsNeeded(options, poolOptions)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
       timerID = timerContext.setTimer(poolOptions.getCleanerPeriod(), checker);
     }
+    this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
     int eventLoopSize = poolOptions.getEventLoopSize();
     if (eventLoopSize > 0) {
       ContextInternal[] eventLoops = new ContextInternal[eventLoopSize];
@@ -83,6 +84,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
     }
+  }
+
+  private static boolean poolCheckerIsNeeded(HttpClientOptions options, PoolOptions poolOptions) {
+    return poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L || poolOptions.getMaxLifetime() > 0L);
   }
 
   Function<ContextInternal, ContextInternal> contextProvider() {
@@ -132,7 +137,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         key = new EndpointKey(key.ssl, key.sslOptions, proxyOptions, server, key.authority);
         proxyOptions = null;
       }
-      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, true);
+      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, true, maxLifetime);
       return new SharedHttpClientConnectionGroup(
         vertx,
         HttpClientImpl.this,
@@ -146,7 +151,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  protected void doShutdown(Promise<Void> p) {
+  protected void doShutdown(Completable<Void> p) {
     synchronized (this) {
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
@@ -158,7 +163,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  protected void doClose(Promise<Void> p) {
+  protected void doClose(Completable<Void> p) {
     httpCM.close();
     super.doClose(p);
   }
@@ -235,7 +240,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       useAlpn,
       authority,
       server,
-      false);
+      false,
+      0);
     return (Future) connector.httpConnect(vertx.getOrCreateContext()).map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 

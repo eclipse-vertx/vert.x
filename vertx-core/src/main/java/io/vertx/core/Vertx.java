@@ -496,7 +496,7 @@ public interface Vertx extends Measured {
    *
    * @return a future completed with the result
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   Future<String> deployVerticle(Supplier<? extends Deployable> supplier, DeploymentOptions options);
 
   /**

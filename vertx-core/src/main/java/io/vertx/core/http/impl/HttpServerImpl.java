@@ -236,11 +236,11 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     return result.future();
   }
 
-  private void doShutdown(NetServer netServer, Promise<Void> p) {
+  private void doShutdown(NetServer netServer, Completable<Void> p) {
     netServer.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
   }
 
-  private void doClose(NetServer netServer, Promise<Void> p) {
+  private void doClose(NetServer netServer, Completable<Void> p) {
     netServer.close().onComplete(p);
   }
 

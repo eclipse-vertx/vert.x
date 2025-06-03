@@ -20,7 +20,10 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
@@ -52,6 +55,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
 
   private HttpClientBase client;
   private HttpClientConnectionInternal current;
+  private final long maxLifetime;
   private boolean upgradeProcessed;
 
   private Handler<Void> closeHandler;
@@ -64,9 +68,10 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   private Handler<Long> concurrencyChangeHandler;
   private Handler<HttpSettings> remoteHttpSettingsHandler;
 
-  Http2UpgradeClientConnection(HttpClientBase client, Http1xClientConnection connection) {
+  Http2UpgradeClientConnection(HttpClientBase client, Http1xClientConnection connection, long maxLifetime) {
     this.client = client;
     this.current = connection;
+    this.maxLifetime = maxLifetime;
   }
 
   public HttpClientConnectionInternal unwrap() {
@@ -281,6 +286,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     private final Http1xClientConnection upgradingConnection;
     private final HttpClientStream upgradingStream;
     private final Http2UpgradeClientConnection upgradedConnection;
+    private final long maxLifetime;
     private HttpClientStream upgradedStream;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -294,10 +300,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
 
-    UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, Http1xClientConnection upgradingConnection) {
+    UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, Http1xClientConnection upgradingConnection, long maxLifetime) {
       this.upgradedConnection = upgradedConnection;
       this.upgradingConnection = upgradingConnection;
       this.upgradingStream = stream;
+      this.maxLifetime = maxLifetime;
     }
 
     @Override
@@ -358,7 +365,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.context(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority(), upgradingConnection.pooled());
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.context(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority(), upgradingConnection.pooled(), maxLifetime);
           upgradingConnection.channel().pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {
@@ -435,7 +442,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
           handler.clientUpgrade(ctx);
         }
       };
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536) {
+      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, upgradedConnection.client.options().getHttp2UpgradeMaxContentLength()) {
 
         private long bufferedSize = 0;
         private Deque<Object> buffered = new ArrayDeque<>();
@@ -791,7 +798,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     if (current instanceof Http1xClientConnection && !upgradeProcessed) {
       return current
         .createStream(context)
-        .map(stream -> new UpgradingStream(stream, this, (Http1xClientConnection) current));
+        .map(stream -> new UpgradingStream(stream, this, (Http1xClientConnection) current, maxLifetime));
     } else {
       return current
         .createStream(context)

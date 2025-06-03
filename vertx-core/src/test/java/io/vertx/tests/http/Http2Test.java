@@ -32,6 +32,12 @@ import org.junit.Test;
 import javax.net.ssl.SSLHandshakeException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static io.vertx.test.core.AssertExpectations.that;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -381,6 +387,38 @@ public class Http2Test extends HttpCommonTest {
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setInstances(numVerticles));
 
+    await();
+  }
+
+  @Test
+  public void testClientKeepAliveTimeoutNoStreams() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    AtomicBoolean closed = new AtomicBoolean();
+    client = vertx
+      .httpClientBuilder()
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          // We will have retry when the connection is closed
+          if (closed.compareAndSet(false, true)) {
+            client.close().onComplete(v2 -> {
+              testComplete();
+            });
+          }
+        });
+      })
+      .with(createBaseClientOptions().setHttp2KeepAliveTimeout(1))
+      .build();
+    client.request(requestOptions).onComplete(ar -> {
+      if (ar.succeeded()) {
+        ar.result().send();
+      }
+    });
     await();
   }
 

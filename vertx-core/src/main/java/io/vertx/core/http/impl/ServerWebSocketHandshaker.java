@@ -177,7 +177,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       long closingTimeoutMS = options.getWebSocketClosingTimeout() >= 0 ? options.getWebSocketClosingTimeout() * 1000L : 0L;
       WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context, ctx, true, closingTimeoutMS,httpConn.metrics);
       ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
-        (ContextInternal) request.context(),
+        request.context(),
         webSocketConn,
         handshaker.version() != WebSocketVersion.V00,
         request,
@@ -187,7 +187,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       String subprotocol = handshaker.selectedSubprotocol();
       webSocket.subProtocol(subprotocol);
       webSocketConn.webSocket(webSocket);
-      webSocketConn.metric(webSocketConn.metric());
+      webSocketConn.metric(httpConn.metric());
       return webSocketConn;
     });
     CompletableFuture<Void> latch = new CompletableFuture<>();

@@ -44,6 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -564,11 +565,17 @@ public class MetricsTest extends VertxTestBase {
     server.webSocketHandler(ws -> {
       wsRef.set(ws);
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
-      WebSocketMetric metric = metrics.getWebSocketMetric(ws);
-      assertNotNull(metric);
+      WebSocketMetric webSocketMetric = metrics.getWebSocketMetric(ws);
+      SocketMetric socketMetric = metrics.firstMetric(ws.remoteAddress());
+      long bytesWritten = socketMetric.bytesRead.get();
+      long bytesRead = socketMetric.bytesRead.get();
+      assertNotNull(webSocketMetric);
       ws.handler(ws::write);
       ws.closeHandler(closed -> {
-        latch.countDown();
+        vertx.runOnContext(v -> {
+          assertTrue(socketMetric.bytesRead.get() > bytesRead || socketMetric.bytesWritten.get() > bytesWritten);
+          latch.countDown();
+        });
       });
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
@@ -589,15 +596,23 @@ public class MetricsTest extends VertxTestBase {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(metrics.getRequestMetric(req));
-      req.toWebSocket().onComplete(onSuccess(ws -> {
-        assertNull(metrics.getRequestMetric(req));
-        WebSocketMetric metric = metrics.getWebSocketMetric(ws);
-        assertNotNull(metric);
-        ws.handler(ws::write);
-        ws.closeHandler(closed -> {
-          ref.set(ws);
-        });
-      }));
+      req
+        .toWebSocket()
+        .onComplete(onSuccess(ws -> {
+          assertNull(metrics.getRequestMetric(req));
+          WebSocketMetric wsMetric = metrics.getWebSocketMetric(ws);
+          SocketMetric socketMetric = metrics.firstMetric(ws.remoteAddress());
+          long bytesWritten = socketMetric.bytesRead.get();
+          long bytesRead = socketMetric.bytesRead.get();
+          assertNotNull(wsMetric);
+          ws.handler(ws::write);
+          ws.closeHandler(closed -> {
+            vertx.runOnContext(v -> {
+              assertTrue(socketMetric.bytesRead.get() > bytesRead || socketMetric.bytesWritten.get() > bytesWritten);
+              ref.set(ws);
+            });
+          });
+        }));
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
     wsClient = vertx.createWebSocketClient();

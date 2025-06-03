@@ -11,6 +11,7 @@
 package io.vertx.core.internal;
 
 import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 
@@ -127,7 +128,7 @@ public class CloseSequence extends NestedCloseable implements Closeable {
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     progressTo(0).onComplete(completion);
   }
 }

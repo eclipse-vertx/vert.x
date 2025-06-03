@@ -343,7 +343,7 @@ public class DeploymentTest extends VertxTestBase {
       }));
     }));
     await();
-    assertTrue(verticle2.completion.future().isComplete());
+    assertTrue(((Promise<?>)verticle2.completion).future().isComplete());
   }
 
   @Test
@@ -895,11 +895,11 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(Future.succeededFuture());
+      completionHandler.succeed();
     };
     Closeable myCloseable2 = completionHandler -> {
       closedCount.incrementAndGet();
-      completionHandler.handle(Future.succeededFuture());
+      completionHandler.succeed();
     };
     MyAsyncVerticle verticle = new MyAsyncVerticle(f-> {
       ContextInternal ctx = (ContextInternal)Vertx.currentContext();
@@ -1190,7 +1190,7 @@ public class DeploymentTest extends VertxTestBase {
     AtomicBoolean closeHookCalledBeforeDeployFailure = new AtomicBoolean(false);
     Closeable closeable = completionHandler -> {
       closeHookCalledBeforeDeployFailure.set(true);
-      completionHandler.handle(Future.succeededFuture());
+      completionHandler.succeed();
     };
     Verticle v = new AbstractVerticle() {
       @Override
@@ -1307,7 +1307,7 @@ public class DeploymentTest extends VertxTestBase {
           ContextInternal ctx = (ContextInternal) context;
           ctx.addCloseHook(completion -> {
             closeHooks.add(idx);
-            completion.complete();
+            completion.succeed();
           });
           startPromises.put(idx, startPromise);
           if (startPromises.size() == numberOfInstances) {
@@ -1358,7 +1358,7 @@ public class DeploymentTest extends VertxTestBase {
               fail(e);
             }
             hookCompletion.set(true);
-            completion.complete();
+            completion.succeed();
           }).start();
         });
         vertx.close().onComplete(onSuccess(v -> {
@@ -1443,7 +1443,7 @@ public class DeploymentTest extends VertxTestBase {
     int stopAction;
     String deploymentID;
     JsonObject config;
-    Promise<Void> completion;
+    Completable<Void> completion;
 
     MyVerticle() {
       this(NOOP, NOOP);
@@ -1458,7 +1458,7 @@ public class DeploymentTest extends VertxTestBase {
     public void start() throws Exception {
       ((ContextInternal)context).addCloseHook(promise -> {
         completion = promise;
-        promise.complete();
+        promise.succeed();
       });
       switch (startAction) {
         case THROW_EXCEPTION:

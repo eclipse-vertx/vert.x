@@ -18,8 +18,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
@@ -5215,6 +5215,45 @@ public abstract class HttpTest extends HttpTestBase {
       }))));
     await();
   }
+
+  @Test
+  public void testMaxLifetime() throws Exception {
+    waitFor(2);
+
+    int poolCleanerPeriod = 100;
+    int maxLifetime = 3000;
+    server
+      .connectionHandler(conn -> {
+        long now = System.currentTimeMillis();
+        conn.closeHandler(v -> {
+          long lifetime = System.currentTimeMillis() - now;
+          int delta = 500;
+          int lowerBound = maxLifetime - poolCleanerPeriod - delta;
+          assertTrue("Was expecting connection to be closed in more than " + lowerBound + ": " + lifetime, lifetime >= lowerBound);
+          int upperBound = maxLifetime + poolCleanerPeriod + delta;
+          assertTrue("Was expecting connection to be closed in less than " + upperBound + ": " + lifetime, lifetime <= upperBound);
+          complete();
+        });
+      })
+      .requestHandler(req -> {
+        req.response().end();
+      });
+    startServer(testAddress);
+
+    client.close();
+    PoolOptions poolOptions = new PoolOptions()
+      .setCleanerPeriod(poolCleanerPeriod)
+      .setMaxLifetime(maxLifetime)
+      .setMaxLifetimeUnit(TimeUnit.MILLISECONDS);
+    client = vertx.createHttpClient(createBaseClientOptions(), poolOptions);
+
+    // Create a connection that remains in the pool
+    client.request(requestOptions)
+      .compose(req -> req.send().compose(resp -> resp.body().<Void>mapEmpty()))
+      .onComplete(onSuccess(v -> complete()));
+    await();
+  }
+
 
   @Test
   public void testHttpConnect() {

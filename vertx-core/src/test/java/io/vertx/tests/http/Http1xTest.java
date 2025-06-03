@@ -204,6 +204,13 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHttp2ConnectionWindowSize(-1));
     assertEquals(-1, options.getHttp2ConnectionWindowSize());
 
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH, options.getHttp2UpgradeMaxContentLength());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2UpgradeMaxContentLength(rand));
+    assertEquals(rand, options.getHttp2UpgradeMaxContentLength());
+    assertEquals(options, options.setHttp2UpgradeMaxContentLength(-1));
+    assertEquals(-1, options.getHttp2UpgradeMaxContentLength());
+
     assertEquals(60000, options.getConnectTimeout());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setConnectTimeout(rand));
@@ -452,6 +459,7 @@ public class Http1xTest extends HttpTest {
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
+    int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
     boolean decompressionSupported = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxChunkSize = TestUtils.randomPositiveInt();
@@ -504,6 +512,7 @@ public class Http1xTest extends HttpTest {
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
     options.setKeepAliveTimeout(keepAliveTimeout);
     options.setHttp2KeepAliveTimeout(http2KeepAliveTimeout);
+    options.setHttp2UpgradeMaxContentLength(http2UpgradeMaxContentLength);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -540,6 +549,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getPipeliningLimit(), json.getPipeliningLimit());
     assertEquals(def.getHttp2MultiplexingLimit(), json.getHttp2MultiplexingLimit());
     assertEquals(def.getHttp2ConnectionWindowSize(), json.getHttp2ConnectionWindowSize());
+    assertEquals(def.getHttp2UpgradeMaxContentLength(), json.getHttp2UpgradeMaxContentLength());
     assertEquals(def.isVerifyHost(), json.isVerifyHost());
     assertEquals(def.isDecompressionSupported(), json.isDecompressionSupported());
     assertEquals(def.isTrustAll(), json.isTrustAll());
@@ -599,6 +609,7 @@ public class Http1xTest extends HttpTest {
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
+    int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
     boolean decompressionSupported = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_1;
     int maxChunkSize = TestUtils.randomPositiveInt();
@@ -640,6 +651,7 @@ public class Http1xTest extends HttpTest {
       .put("http2MaxPoolSize", http2MaxPoolSize)
       .put("http2MultiplexingLimit", http2MultiplexingLimit)
       .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
+      .put("http2UpgradeMaxContentLength", http2UpgradeMaxContentLength)
       .put("decompressionSupported", decompressionSupported)
       .put("protocolVersion", protocolVersion.name())
       .put("maxChunkSize", maxChunkSize)
@@ -691,6 +703,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(pipeliningLimit, options.getPipeliningLimit());
     assertEquals(http2MultiplexingLimit, options.getHttp2MultiplexingLimit());
     assertEquals(http2ConnectionWindowSize, options.getHttp2ConnectionWindowSize());
+    assertEquals(http2UpgradeMaxContentLength, options.getHttp2UpgradeMaxContentLength());
     assertEquals(decompressionSupported, options.isDecompressionSupported());
     assertEquals(protocolVersion, options.getProtocolVersion());
     assertEquals(maxChunkSize, options.getMaxChunkSize());

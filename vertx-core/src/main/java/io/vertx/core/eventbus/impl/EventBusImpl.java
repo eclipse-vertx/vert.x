@@ -11,10 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.ContextInternal;
@@ -278,24 +275,20 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return msg;
   }
 
-  protected <T> Consumer<Promise<Void>> addRegistration(String address, HandlerRegistration<T> registration, boolean broadcast, boolean localOnly, Promise<Void> promise) {
+  protected <T> Consumer<Promise<Void>> addRegistration(String address, HandlerRegistration<T> registration, boolean broadcast, boolean localOnly, Completable<Void> promise) {
     HandlerHolder<T> holder = addLocalRegistration(address, registration, localOnly);
     if (broadcast) {
       onLocalRegistration(holder, promise);
     } else {
-      if (promise != null) {
-        promise.complete();
-      }
+      promise.succeed();
     }
     return p -> {
       removeRegistration(holder, broadcast, p);
     };
   }
 
-  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
-    if (promise != null) {
-      promise.complete();
-    }
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Completable<Void> promise) {
+    promise.succeed();
   }
 
   private <T> HandlerHolder<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
@@ -332,8 +325,8 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     }
   }
 
-  protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
-    promise.complete();
+  protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Completable<Void> promise) {
+    promise.succeed();
   }
 
   private <T> void removeLocalRegistration(HandlerHolder<T> holder) {

@@ -11,11 +11,8 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.logging.Logger;
@@ -616,6 +613,13 @@ public class AsyncTestBase {
     };
   }
 
+  protected <T> Completable<T> onFailure2(Consumer<Throwable> consumer) {
+    return (res, err) -> {
+      assertNotNull(err);
+      consumer.accept(err);
+    };
+  }
+
   protected <T> T awaitFuture(Future<T> latch) throws InterruptedException {
     return awaitFuture(latch, 10, TimeUnit.SECONDS);
   }
@@ -687,6 +691,17 @@ public class AsyncTestBase {
         return false;
       }
     }
+  }
+
+  protected <T> Completable<T> onSuccess2(Consumer<T> consumer) {
+    return (res, err) -> {
+      if (err != null) {
+        err.printStackTrace();
+        fail(err.getMessage());
+      } else {
+        consumer.accept(res);
+      }
+    };
   }
 
   protected <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {

@@ -10,18 +10,19 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
@@ -42,12 +43,12 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     this.webSocketCM = new ResourceManager<>();
   }
 
-  protected void doShutdown(Promise<Void> p) {
+  protected void doShutdown(Completable<Void> p) {
     webSocketCM.shutdown();
     super.doShutdown(p);
   }
 
-  protected void doClose(Promise<Void> p) {
+  protected void doClose(Completable<Void> p) {
     webSocketCM.close();
     super.doClose(p);
   }
@@ -70,7 +71,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false);
+      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false, 0);
       return new WebSocketGroup(null, queueMetrics, options, maxPoolSize, connector);
     };
     webSocketCM

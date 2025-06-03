@@ -10,6 +10,7 @@
  */
 package io.vertx.core.internal.pool;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
 
@@ -46,13 +47,13 @@ public class PoolWaiter<C> {
   final PoolWaiter.Listener<C> listener;
   final ContextInternal context;
   final int capacity;
-  final Promise<Lease<C>> handler;
+  final Completable<Lease<C>> handler;
   PoolWaiter<C> prev;
   PoolWaiter<C> next;
   boolean disposed;
   boolean queued;
 
-  PoolWaiter(PoolWaiter.Listener<C> listener, ContextInternal context, final int capacity, Promise<Lease<C>> handler) {
+  PoolWaiter(PoolWaiter.Listener<C> listener, ContextInternal context, final int capacity, Completable<Lease<C>> handler) {
     this.listener = listener;
     this.context = context;
     this.capacity = capacity;

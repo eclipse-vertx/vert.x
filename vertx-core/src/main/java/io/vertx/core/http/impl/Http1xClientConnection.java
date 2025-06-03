@@ -18,10 +18,10 @@ import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.compression.Zstd;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.*;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandler;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
@@ -32,19 +32,21 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.WebSocketVersion;
-import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.*;
+import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.*;
-import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -75,6 +77,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   public final ClientMetrics metrics;
   private final HttpVersion version;
   private final boolean pooled;
+  private final long lifetimeEvictionTimestamp;
 
   private final Deque<Stream> requests = new ArrayDeque<>();
   private final Deque<Stream> responses = new ArrayDeque<>();
@@ -100,7 +103,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
                          HostAndPort authority,
                          ContextInternal context,
                          ClientMetrics metrics,
-                         boolean pooled) {
+                         boolean pooled,
+                         long maxLifetime) {
     super(context, chctx);
     this.client = client;
     this.options = client.options();
@@ -109,6 +113,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     this.authority = authority;
     this.metrics = metrics;
     this.version = version;
+    this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     this.pooled = pooled;
@@ -1000,7 +1005,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, upgrade);
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
       upgrade.addListener((GenericFutureListener<io.netty.util.concurrent.Future<HttpHeaders>>) future -> {
-        if (timer > 0L) {
+        if (timer > -1L) {
           vertx.cancelTimer(timer);
         }
         if (future.isSuccess()) {
@@ -1266,7 +1271,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
+    long now = System.currentTimeMillis();
+    return now <= expirationTimestamp && now <= lifetimeEvictionTimestamp;
   }
 
   /**
@@ -1276,6 +1282,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
    * @return the expiration timestamp
    */
   private static long expirationTimestampOf(long timeout) {
-    return timeout == 0 ? 0L : System.currentTimeMillis() + timeout * 1000;
+    return timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : Long.MAX_VALUE;
   }
 }

@@ -22,10 +22,7 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.datagram.DatagramSocket;
@@ -314,9 +311,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     if (!channel.isOpen()) {
-      completion.complete();
+      completion.succeed();
     } else {
       // make sure everything is flushed out on close
       channel.flush();

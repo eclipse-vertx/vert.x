@@ -59,6 +59,8 @@ public interface NetSocketInternal extends NetSocket {
    * <p/>
    * When a read operation is in progress, the flush operation is delayed until the read operation completes.
    *
+   * Note: this handler does not take in account the eventually pending buffers
+   *
    * @param message the message to write, it should be handled by one of the channel pipeline handlers
    * @return a future completed with the result
    */
@@ -78,7 +80,19 @@ public interface NetSocketInternal extends NetSocket {
   NetSocketInternal messageHandler(Handler<Object> handler);
 
   /**
-   * Set an handler to process pipeline user events.
+   * Set a {@code handler} on this socket to process the read complete event produced by this socket. This handler
+   * is called when the socket has finished delivering message to the message handler. It should not be used
+   * when it comes to buffers, since buffer delivery might be further buffered.
+   * <p/>
+   * The handler replaces any {@link #handler(Handler)} previously set.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  NetSocketInternal readCompletionHandler(Handler<Void> handler);
+
+  /**
+   * Set a handler to process pipeline user events.
    *
    * The handler should take care of releasing event, e.g calling {@code ReferenceCountUtil.release(evt)}.
    *

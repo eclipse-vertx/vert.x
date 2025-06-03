@@ -10,7 +10,7 @@
  */
 package io.vertx.core.spi.cluster;
 
-import io.vertx.core.Promise;
+import io.vertx.core.Completable;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public interface ClusteredNode {
   /**
    * Get the messaging handler currently registered in the cluster.
    */
-  void getRegistrations(String address, Promise<List<RegistrationInfo>> promise);
+  void getRegistrations(String address, Completable<List<RegistrationInfo>> promise);
 
   /**
    * Get details about this clustered node.
@@ -39,7 +39,7 @@ public interface ClusteredNode {
    *
    * @param nodeId the clustered node id
    */
-  void getNodeInfo(String nodeId, Promise<NodeInfo> promise);
+  void getNodeInfo(String nodeId, Completable<NodeInfo> promise);
 
   /**
    * Return a list of node identifiers corresponding to the nodes in the cluster.

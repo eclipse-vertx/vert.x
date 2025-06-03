@@ -221,6 +221,9 @@ public class VertxConnection extends ConnectionBase {
   protected void handleMessage(Object msg) {
   }
 
+  protected void handleReadComplete() {
+  }
+
   void channelWritabilityChanged() {
     channelWritable = chctx.channel().isWritable();
     if (channelWritable) {
@@ -269,6 +272,7 @@ public class VertxConnection extends ConnectionBase {
       if (pending != null) {
         checkPendingMessages();
       }
+      handleReadComplete();
       read = false;
       checkFlush();
       checkAutoRead();
@@ -302,6 +306,7 @@ public class VertxConnection extends ConnectionBase {
       read = true;
       try {
         checkPendingMessages();
+        handleReadComplete();
       } finally {
         read = false;
         if (!draining) {

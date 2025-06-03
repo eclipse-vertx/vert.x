@@ -57,10 +57,10 @@ public interface Promise<T> extends Completable<T> {
 
   @Override
   default void complete(T result, Throwable failure) {
-    if (failure != null) {
-      handle(Future.failedFuture(failure));
+    if (failure == null) {
+      succeed(result);
     } else {
-      handle(Future.succeededFuture(result));
+      fail(failure);
     }
   }
 
@@ -84,7 +84,7 @@ public interface Promise<T> extends Completable<T> {
    * @throws IllegalStateException when the promise is already completed
    */
   default void complete() {
-    if (!tryComplete()) {
+    if (!tryComplete(null)) {
       throw new IllegalStateException("Promise already completed");
     }
   }
