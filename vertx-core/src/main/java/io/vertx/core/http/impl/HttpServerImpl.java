@@ -219,7 +219,8 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         serverOrigin,
         handler,
         exceptionHandler,
-        soi.metric());
+        soi.metric(),
+        server.getTrafficShapingHandler());
       initializer.configurePipeline(soi.channel(), null, null);
     });
     tcpServer = server;

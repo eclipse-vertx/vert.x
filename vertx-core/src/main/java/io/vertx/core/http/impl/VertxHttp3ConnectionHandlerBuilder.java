@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.vertx.core.internal.ContextInternal;
 
@@ -21,6 +22,7 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
   private Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private Http3SettingsFrame httpSettings;
   private boolean isServer;
+  private GlobalTrafficShapingHandler trafficShapingHandler;
 
   VertxHttp3ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
@@ -38,7 +40,12 @@ class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionBase> {
     return this;
   }
 
+  public VertxHttp3ConnectionHandlerBuilder<C> trafficShapingHandler(GlobalTrafficShapingHandler trafficShapingHandler) {
+    this.trafficShapingHandler = trafficShapingHandler;
+    return this;
+  }
+
   protected VertxHttp3ConnectionHandler<C> build(ContextInternal context) {
-    return new VertxHttp3ConnectionHandler<>(connectionFactory, context, httpSettings, isServer);
+    return new VertxHttp3ConnectionHandler<>(connectionFactory, context, httpSettings, isServer, trafficShapingHandler);
   }
 }

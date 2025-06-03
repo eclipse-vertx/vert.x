@@ -248,7 +248,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
-      if (trafficShapingHandler != null) {
+      if (trafficShapingHandler != null && !options.isHttp3()) {
         ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
       }
     }
@@ -838,5 +838,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         promise.setFailure(f.cause());
       }
     });
+  }
+
+  public GlobalTrafficShapingHandler getTrafficShapingHandler() {
+    return trafficShapingHandler;
   }
 }
