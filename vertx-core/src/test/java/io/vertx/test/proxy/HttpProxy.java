@@ -73,7 +73,10 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
     server.requestHandler(request -> {
       HttpMethod method = request.method();
       //TODO: Investigate why request.uri() is null while request.authority() works.
-      String uri = request.authority().toString(); /* request.uri(); */
+      String uri = request.uri();
+      if (isHttp3()) {
+        uri = request.authority().toString();
+      }
       String username = nextUserName();
       if (username != null) {
         String auth = request.getHeader("Proxy-Authorization");
