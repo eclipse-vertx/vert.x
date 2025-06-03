@@ -44,7 +44,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     randPort = TestUtils.randomPortInt();
     randUsername = TestUtils.randomAlphaString(10);
     randPassword = TestUtils.randomAlphaString(10);
-    randConnectTimeout = TestUtils.randomLong();
+    randConnectTimeout = TestUtils.randomPositiveLong();
     randConnectTimeoutUnit = TestUtils.randomElement(TimeUnit.values());
   }
 
@@ -142,4 +142,3 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(randConnectTimeoutUnit, options.getConnectTimeoutUnit());
   }
 }
-
