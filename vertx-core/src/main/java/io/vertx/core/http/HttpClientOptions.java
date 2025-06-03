@@ -157,6 +157,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
+  /**
+   * The default maximum number of concurrent streams per connection for HTTP/3 = -1
+   */
+  public static final int DEFAULT_HTTP3_MULTIPLEXING_LIMIT = -1;
+
   private boolean verifyHost = true;
   private boolean keepAlive;
   private int keepAliveTimeout;
@@ -170,11 +175,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
-  private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private Http2Settings initialSettings;
+  private Http3Settings initialHttp3Settings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean http2ClearTextUpgradeWithPreflightRequest;
@@ -186,6 +191,8 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private boolean shared;
   private String name;
+
+  private int http3MultiplexingLimit;
 
   /**
    * Default constructor
@@ -224,11 +231,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
-    this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.initialHttp3Settings = other.initialHttp3Settings != null ? new Http3Settings(other.initialHttp3Settings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
@@ -238,6 +245,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
+    this.http3MultiplexingLimit = other.http3MultiplexingLimit;
   }
 
   /**
@@ -275,11 +283,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
-    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings();
+    initialHttp3Settings = new Http3Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
@@ -289,6 +297,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+    http3MultiplexingLimit = DEFAULT_HTTP3_MULTIPLEXING_LIMIT;
   }
 
   @Override
@@ -721,26 +730,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
-  /**
-   * Get the protocol version.
-   *
-   * @return the protocol version
-   */
-  public HttpVersion getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  /**
-   * Set the protocol version.
-   *
-   * @param protocolVersion the protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
+  @Override
   public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
-    if (protocolVersion == null) {
-      throw new IllegalArgumentException("protocolVersion must not be null");
-    }
-    this.protocolVersion = protocolVersion;
+    super.setProtocolVersion(protocolVersion);
     return this;
   }
 
@@ -813,6 +805,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setInitialSettings(Http2Settings settings) {
     this.initialSettings = settings;
+    return this;
+  }
+
+  /**
+   * @return the initial HTTP/3 connection settings
+   */
+  public Http3Settings getInitialHttp3Settings() {
+    return initialHttp3Settings;
+  }
+
+  /**
+   * Set the HTTP/3 connection settings immediately sent by to the server when the client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setInitialHttp3Settings(Http3Settings settings) {
+    this.initialHttp3Settings = settings;
     return this;
   }
 
@@ -1031,6 +1041,30 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setName(String name) {
     Objects.requireNonNull(name, "Client name cannot be null");
     this.name = name;
+    return this;
+  }
+
+  /**
+   * @return the maximum number of concurrent streams for an HTTP/3 connection
+   */
+  public int getHttp3MultiplexingLimit() {
+    return http3MultiplexingLimit;
+  }
+
+  /**
+   * Set a client limit of the number concurrent streams for each HTTP/3 connection, this limits the number
+   * of streams the client can create for a connection. The effective number of streams for a
+   * connection is the min of this value and http3InitialMaxStreamDataUnidirectional and http3InitialMaxStreamsBidirectional.
+   * <p/>
+   *
+   * @param limit the maximum concurrent for an HTTP/3 connection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp3MultiplexingLimit(int limit) {
+    if (limit == 0 || limit < -1) {
+      throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
+    }
+    this.http3MultiplexingLimit = limit;
     return this;
   }
 }

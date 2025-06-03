@@ -5,7 +5,6 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -214,13 +213,13 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public StreamPriority streamPriority() {
+  public StreamPriorityBase streamPriority() {
     return delegate.streamPriority();
   }
 
   @Override
   @Fluent
-  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriorityBase> handler) {
     return delegate.streamPriorityHandler(handler);
   }
 

@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net;
 
+import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
@@ -40,6 +41,41 @@ public class SSLOptions {
   public static final boolean DEFAULT_USE_ALPN = false;
 
   /**
+   * Default use http3 = false
+   */
+  public static final boolean DEFAULT_HTTP3 = false;
+
+  /**
+   * Default use initialMaxStreamsBidirectional = 100
+   */
+  public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAMS_BIDIRECTIONAL = 100;
+
+  /**
+   * Default use http3InitialMaxStreamsUnidirectional = 100
+   */
+  public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAMS_UNIDIRECTIONAL = 100;
+
+  /**
+   * Default use http3InitialMaxData = 2,097,152 ~ 2MB
+   */
+  public static final long DEFAULT_HTTP3_INITIAL_MAX_DATA = 2_097_152;
+
+  /**
+   * Default use http3InitialMaxStreamDataBidirectionalLocal = 262,144 ~ 256 KB
+   */
+  public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_LOCAL = 262_144 ;
+
+  /**
+   * Default use http3InitialMaxStreamDataBidirectionalRemote = 262,144 ~ 256 KB
+   */
+  public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_REMOTE = 262_144;
+
+  /**
+   * Default use http3InitialMaxStreamDataUnidirectional = 131,072 ~ 128KB
+   */
+  public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_UNIDIRECTIONAL = 131_072;
+
+  /**
    * The default value of SSL handshake timeout = 10
    */
   public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
@@ -66,9 +102,15 @@ public class SSLOptions {
   List<String> crlPaths;
   List<Buffer> crlValues;
   private boolean useAlpn;
+  private boolean http3;
   private Set<String> enabledSecureTransportProtocols;
   private List<String> applicationLayerProtocols;
-
+  private long http3InitialMaxStreamsBidirectional;
+  private long http3InitialMaxData;
+  private long http3InitialMaxStreamDataBidirectionalLocal;
+  private long http3InitialMaxStreamDataBidirectionalRemote;
+  private long http3InitialMaxStreamDataUnidirectional;
+  private long http3InitialMaxStreamsUnidirectional;
   /**
    * Default constructor
    */
@@ -90,6 +132,13 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
+    this.http3 = other.http3;
+    this.http3InitialMaxStreamsBidirectional = other.http3InitialMaxStreamsBidirectional;
+    this.http3InitialMaxData = other.http3InitialMaxData;
+    this.http3InitialMaxStreamDataBidirectionalLocal = other.http3InitialMaxStreamDataBidirectionalLocal;
+    this.http3InitialMaxStreamDataBidirectionalRemote = other.http3InitialMaxStreamDataBidirectionalRemote;
+    this.http3InitialMaxStreamDataUnidirectional = other.http3InitialMaxStreamDataUnidirectional;
+    this.http3InitialMaxStreamsUnidirectional = other.http3InitialMaxStreamsUnidirectional;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
     this.applicationLayerProtocols = other.getApplicationLayerProtocols() != null ? new ArrayList<>(other.getApplicationLayerProtocols()) : null;
   }
@@ -112,6 +161,13 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
+    http3 = DEFAULT_HTTP3;
+    http3InitialMaxStreamsBidirectional = DEFAULT_HTTP3_INITIAL_MAX_STREAMS_BIDIRECTIONAL;
+    http3InitialMaxData = DEFAULT_HTTP3_INITIAL_MAX_DATA;
+    http3InitialMaxStreamDataBidirectionalLocal = DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_LOCAL;
+    http3InitialMaxStreamDataBidirectionalRemote = DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_REMOTE;
+    http3InitialMaxStreamDataUnidirectional = DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_UNIDIRECTIONAL;
+    http3InitialMaxStreamsUnidirectional = DEFAULT_HTTP3_INITIAL_MAX_STREAMS_UNIDIRECTIONAL;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
     applicationLayerProtocols = null;
   }
@@ -254,6 +310,123 @@ public class SSLOptions {
   }
 
   /**
+   * @return whether to use or not HTTP3
+   */
+  public boolean isHttp3() {
+    return http3;
+  }
+
+  /**
+   * Set the http3 usage.
+   *
+   * @param http3 true when http3 should be used
+   */
+  public SSLOptions setHttp3(boolean http3) {
+    this.http3 = http3;
+    return this;
+  }
+
+  /**
+   * @return get HTTP/3 initial max streams bidirectional count
+   */
+  public long getHttp3InitialMaxStreamsBidirectional() {
+    return http3InitialMaxStreamsBidirectional;
+  }
+
+  /**
+   * Set the HTTP/3 initial max streams bidirectional count.
+   *
+   * @param http3InitialMaxStreamsBidirectional the HTTP/3 initial max streams bidirectional count
+   */
+  public SSLOptions setHttp3InitialMaxStreamsBidirectional(long http3InitialMaxStreamsBidirectional) {
+    ObjectUtil.checkPositive(http3InitialMaxStreamsBidirectional, "http3InitialMaxStreamsBidirectional");
+    this.http3InitialMaxStreamsBidirectional = http3InitialMaxStreamsBidirectional;
+    return this;
+  }
+
+  /**
+   * @return get HTTP/3 initial max data
+   */
+  public long getHttp3InitialMaxData() {
+    return http3InitialMaxData;
+  }
+
+  /**
+   * Set the HTTP/3 Initial Max Data .
+   *
+   * @param http3InitialMaxData HTTP/3 initial max data
+   */
+  public SSLOptions setHttp3InitialMaxData(long http3InitialMaxData) {
+    this.http3InitialMaxData = http3InitialMaxData;
+    return this;
+  }
+  /**
+   * @return get HTTP/3 initial max stream data bidirectional local
+   */
+  public long getHttp3InitialMaxStreamDataBidirectionalLocal() {
+    return http3InitialMaxStreamDataBidirectionalLocal;
+  }
+
+  /**
+   * Set the HTTP/3 initial max stream data bidirectional local.
+   *
+   * @param http3InitialMaxStreamDataBidirectionalLocal HTTP/3 initial max stream data bidirectional local
+   */
+  public SSLOptions setHttp3InitialMaxStreamDataBidirectionalLocal(long http3InitialMaxStreamDataBidirectionalLocal) {
+    ObjectUtil.checkPositive(http3InitialMaxStreamDataBidirectionalLocal, "http3InitialMaxStreamDataBidirectionalLocal");
+    this.http3InitialMaxStreamDataBidirectionalLocal = http3InitialMaxStreamDataBidirectionalLocal;
+    return this;
+  }
+  /**
+   * @return get HTTP/3 initial max stream data bidirectional remote
+   */
+  public long getHttp3InitialMaxStreamDataBidirectionalRemote() {
+    return http3InitialMaxStreamDataBidirectionalRemote;
+  }
+
+  /**
+   * Set the HTTP/3 initial max stream data bidirectional remote.
+   *
+   * @param http3InitialMaxStreamDataBidirectionalRemote http/3 initial max stream data bidirectional remote
+   */
+  public SSLOptions setHttp3InitialMaxStreamDataBidirectionalRemote(long http3InitialMaxStreamDataBidirectionalRemote) {
+    this.http3InitialMaxStreamDataBidirectionalRemote = http3InitialMaxStreamDataBidirectionalRemote;
+    return this;
+  }
+  /**
+   * @return get HTTP/3 initial max stream data unidirectional
+   */
+  public long getHttp3InitialMaxStreamDataUnidirectional() {
+    return http3InitialMaxStreamDataUnidirectional;
+  }
+
+  /**
+   * Set the HTTP/3 initial max stream data unidirectional.
+   *
+   * @param http3InitialMaxStreamDataUnidirectional HTTP/3 initial max stream data unidirectional
+   */
+  public SSLOptions setHttp3InitialMaxStreamDataUnidirectional(long http3InitialMaxStreamDataUnidirectional) {
+    this.http3InitialMaxStreamDataUnidirectional = http3InitialMaxStreamDataUnidirectional;
+    return this;
+  }
+  /**
+   * @return get HTTP/3 initial max streams unidirectional
+   */
+  public long getHttp3InitialMaxStreamsUnidirectional() {
+    return http3InitialMaxStreamsUnidirectional;
+  }
+
+  /**
+   * Set the HTTP/3 initial max streams unidirectional.
+   *
+   * @param http3InitialMaxStreamsUnidirectional http/3 initial max streams unidirectional
+   */
+  public SSLOptions setHttp3InitialMaxStreamsUnidirectional(long http3InitialMaxStreamsUnidirectional) {
+    this.http3InitialMaxStreamsUnidirectional = http3InitialMaxStreamsUnidirectional;
+    return this;
+  }
+
+  /**
    * Returns the enabled SSL/TLS protocols
    * @return the enabled protocols
    */
@@ -365,6 +538,7 @@ public class SSLOptions {
          Objects.equals(crlPaths, that.crlPaths) &&
          Objects.equals(crlValues, that.crlValues) &&
          useAlpn == that.useAlpn &&
+         http3 == that.http3 &&
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;
@@ -372,7 +546,7 @@ public class SSLOptions {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, enabledSecureTransportProtocols);
+    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, enabledSecureTransportProtocols, http3);
   }
 
   /**

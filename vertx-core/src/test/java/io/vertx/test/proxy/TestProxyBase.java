@@ -11,16 +11,25 @@
 
 package io.vertx.test.proxy;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.tests.http.HttpOptionsFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -28,12 +37,14 @@ import java.util.function.Supplier;
  *
  */
 public abstract class TestProxyBase<P extends TestProxyBase<P>> {
+  private static final Logger log = LoggerFactory.getLogger(TestProxyBase.class);
 
   private Supplier<String> username;
   protected int port;
   protected String lastUri;
   protected String forceUri;
   protected List<String> localAddresses = Collections.synchronizedList(new ArrayList<>());
+  protected boolean http3 = false;
 
   public TestProxyBase() {
     port = defaultPort();
@@ -97,6 +108,15 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
+  public P http3(boolean http3) {
+    this.http3 = http3;
+    return (P)this;
+  }
+
+  public boolean isHttp3() {
+    return http3;
+  }
+
   /**
    * force uri to connect to a given string (e.g. "localhost:4443") this is used to simulate a host that only resolves
    * on the proxy
@@ -109,7 +129,44 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
-  public abstract TestProxyBase start(Vertx vertx) throws Exception;
+  protected NetClientOptions createNetClientOptions() {
+    return http3 ? HttpOptionsFactory.createH3NetClientOptions() : new NetClientOptions();
+  }
+
+  protected NetServerOptions createNetServerOptions() {
+    return http3 ? HttpOptionsFactory.createH3NetServerOptions() : new NetServerOptions();
+  }
+
+  protected HttpClientOptions createHttpClientOptions() {
+    return http3 ? HttpOptionsFactory.createH3HttpClientOptions() : new HttpClientOptions();
+  }
+
+  protected HttpServerOptions createHttpServerOptions() {
+    return http3 ? HttpOptionsFactory.createH3HttpServerOptions() : new HttpServerOptions();
+  }
+
+  protected abstract<T> Future<T> start0(Vertx vertx);
+
+  public TestProxyBase start(Vertx vertx) throws Exception {
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    start0(vertx).onComplete(ar -> {
+      if (ar.succeeded()) {
+        fut.complete(null);
+      } else {
+        fut.completeExceptionally(ar.cause());
+      }
+    });
+    fut.get(10, TimeUnit.SECONDS);
+    log.debug(this.getClass().getSimpleName() + " server started");
+    return this;
+  }
+
+  public <T>Future<T> startAsync(Vertx vertx) {
+    return (Future<T>) start0(vertx).onComplete(event -> {
+      log.debug(TestProxyBase.this.getClass().getSimpleName() + " server started");
+    });
+  }
+
   public abstract void stop();
 
 }

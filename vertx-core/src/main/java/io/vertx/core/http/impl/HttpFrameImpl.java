@@ -14,6 +14,8 @@ package io.vertx.core.http.impl;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 
+import java.util.Objects;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -42,5 +44,12 @@ public class HttpFrameImpl implements HttpFrame {
   @Override
   public Buffer payload() {
     return payload;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) return false;
+    HttpFrameImpl httpFrame = (HttpFrameImpl) o;
+    return type == httpFrame.type && flags == httpFrame.flags && Objects.equals(payload, httpFrame.payload);
   }
 }
