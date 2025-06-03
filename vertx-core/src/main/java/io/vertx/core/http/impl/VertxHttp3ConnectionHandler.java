@@ -19,6 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.incubator.codec.http3.DefaultHttp3DataFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
@@ -69,6 +70,7 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   private static final Logger log = LoggerFactory.getLogger(VertxHttp3ConnectionHandler.class);
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
+  private final GlobalTrafficShapingHandler trafficShapingHandler;
   private C connection;
   private ChannelHandlerContext chctx;
   private Promise<C> connectFuture;
@@ -90,10 +92,12 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
     ContextInternal context,
     Http3SettingsFrame httpSettings,
-    boolean isServer) {
+    boolean isServer,
+    GlobalTrafficShapingHandler trafficShapingHandler) {
     this.connectionFactory = connectionFactory;
     this.httpSettings = httpSettings;
     this.isServer = isServer;
+    this.trafficShapingHandler = trafficShapingHandler;
     this.agentType = isServer ? "SERVER" : "CLIENT";
   }
 
@@ -501,6 +505,9 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
         .requestStreamHandler(streamChannel -> {
           streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
           streamChannel.pipeline().addLast(new StreamChannelHandler());
+          if (trafficShapingHandler != null) {
+            streamChannel.pipeline().addFirst("streamTrafficShaping", trafficShapingHandler);
+          }
         })
         .agentType(this.agentType)
         .http3GoAwayFrameHandler(this::onGoAwayReceived)

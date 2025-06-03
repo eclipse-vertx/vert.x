@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -42,6 +41,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   private final HttpServerMetrics metrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
+  private final boolean trafficShaped;
 
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
@@ -55,7 +55,8 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     VertxHttp3ConnectionHandler connHandler,
     Function<String, String> encodingDetector,
     HttpServerOptions options,
-    HttpServerMetrics metrics) {
+    HttpServerMetrics metrics,
+    boolean trafficShaped) {
     super(context, connHandler);
 
     this.options = options;
@@ -63,6 +64,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
+    this.trafficShaped = trafficShaped;
   }
 
   @Override
@@ -319,5 +321,10 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
       stream.registerMetrics();
       promise.complete(response);
     }
+  }
+
+  @Override
+  public boolean isTrafficShaped() {
+    return trafficShaped;
   }
 }
