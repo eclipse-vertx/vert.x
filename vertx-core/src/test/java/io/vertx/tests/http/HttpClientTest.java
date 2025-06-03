@@ -1171,7 +1171,7 @@ public abstract class HttpClientTest extends HttpTestBase {
             }));
           req.exceptionHandler(err -> {
               assertOnIOContext(ctx);
-              if (err instanceof HttpClosedException) {
+              if (err instanceof Http2Exception) {
                 complete();
               }
             })
