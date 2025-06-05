@@ -7049,4 +7049,27 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testServerStartedFromDuplicatedContext() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    ContextInternal.LOCAL_MAP.get(duplicated, ConcurrentHashMap::new).put("foo", "bar");
+
+    server.requestHandler(req -> {
+      ContextInternal current = ContextInternal.current();
+      assertTrue("Not a duplicated context", current.isDuplicate());
+      assertNotSame("Request should be handled on a different duplicated context", duplicated, current);
+      ConcurrentMap<Object, Object> localMap = ContextInternal.LOCAL_MAP.get(current, ConcurrentHashMap::new);
+      assertFalse("Local map shouldn't have an entry for the key 'foo'", localMap.containsKey("foo"));
+      req.response().end();
+    });
+    startServer(duplicated);
+
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .onComplete(onSuccess(v -> testComplete()));
+
+    await();
+  }
 }
