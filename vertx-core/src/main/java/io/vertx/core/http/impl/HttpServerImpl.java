@@ -185,7 +185,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     ContextInternal listenContext;
     // Not sure of this
     if (context.isEventLoopContext()) {
-      listenContext = context;
+      listenContext = context.unwrap();
     } else {
       listenContext = context.toBuilder()
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
@@ -197,7 +197,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     server.exceptionHandler(exceptionHandler);
     server.connectHandler(so -> {
       NetSocketImpl soi = (NetSocketImpl) so;
-      Supplier<ContextInternal> streamContextSupplier = context::duplicate;
+      Supplier<ContextInternal> streamContextSupplier = context.unwrap()::duplicate;
       String host = address.isInetSocket() ? address.host() : "localhost";
       int port = address.port();
       String serverOrigin = (tcpOptions.isSsl() ? "https" : "http") + "://" + host + ":" + port;
