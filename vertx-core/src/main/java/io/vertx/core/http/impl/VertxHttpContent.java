@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -23,12 +22,12 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledHttpContent extends AssembledHttpObject implements HttpContent {
+class VertxHttpContent extends VertxHttpObject implements HttpContent {
 
   private DecoderResult result;
   private final ByteBuf content;
 
-  AssembledHttpContent(ByteBuf content) {
+  VertxHttpContent(ByteBuf content) {
     super(false);
     this.result = DecoderResult.SUCCESS;
     this.content = content;
@@ -102,13 +101,13 @@ class AssembledHttpContent extends AssembledHttpObject implements HttpContent {
   }
 
   @Override
-  public AssembledHttpContent touch() {
+  public VertxHttpContent touch() {
     content.touch();
     return this;
   }
 
   @Override
-  public AssembledHttpContent touch(Object hint) {
+  public VertxHttpContent touch(Object hint) {
     content.touch(hint);
     return this;
   }
