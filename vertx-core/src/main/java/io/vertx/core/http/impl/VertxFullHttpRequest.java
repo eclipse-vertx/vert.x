@@ -12,10 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
@@ -28,13 +26,13 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpRequest {
+class VertxFullHttpRequest extends VertxAssembledHttpRequest implements FullHttpRequest {
 
-  public AssembledFullHttpRequest(HttpRequest request) {
+  public VertxFullHttpRequest(HttpRequest request) {
     super(request, LastHttpContent.EMPTY_LAST_CONTENT, true);
   }
 
-  public AssembledFullHttpRequest(HttpRequest request, ByteBuf buf) {
+  public VertxFullHttpRequest(HttpRequest request, ByteBuf buf) {
     super(request, toLastContent(buf), true);
   }
 
@@ -47,42 +45,42 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
   }
 
   @Override
-  public AssembledFullHttpRequest replace(ByteBuf content) {
+  public VertxFullHttpRequest replace(ByteBuf content) {
     super.replace(content);
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest retainedDuplicate() {
+  public VertxFullHttpRequest retainedDuplicate() {
     super.retainedDuplicate();
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest setUri(String uri) {
+  public VertxFullHttpRequest setUri(String uri) {
     super.setUri(uri);
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest setProtocolVersion(HttpVersion version) {
+  public VertxFullHttpRequest setProtocolVersion(HttpVersion version) {
     super.setProtocolVersion(version);
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest setMethod(HttpMethod method) {
+  public VertxFullHttpRequest setMethod(HttpMethod method) {
     super.setMethod(method);
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest duplicate() {
+  public VertxFullHttpRequest duplicate() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public AssembledFullHttpRequest copy() {
+  public VertxFullHttpRequest copy() {
     throw new UnsupportedOperationException();
   }
 
@@ -92,25 +90,25 @@ class AssembledFullHttpRequest extends AssembledHttpRequest implements FullHttpR
   }
 
   @Override
-  public AssembledFullHttpRequest retain() {
+  public VertxFullHttpRequest retain() {
     super.retain();
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest retain(int increment) {
+  public VertxFullHttpRequest retain(int increment) {
     super.retain(increment);
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest touch(Object hint) {
+  public VertxFullHttpRequest touch(Object hint) {
     super.touch(hint);
     return this;
   }
 
   @Override
-  public AssembledFullHttpRequest touch() {
+  public VertxFullHttpRequest touch() {
     super.touch();
     return this;
   }

@@ -307,6 +307,26 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public Future<Void> writeHead() {
+    checkThread();
+    PromiseInternal<Void> promise = context.promise();
+    synchronized (conn) {
+      if (headWritten) {
+        throw new IllegalStateException();
+      }
+      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
+      VertxHttpObject msg;
+      prepareHeaders(-1);
+      msg = new VertxHttpResponse(head, version, status, headers);
+      conn.write(msg, promise);
+    }
+    return promise.future();
+  }
+
+  @Override
   public Future<Void> write(Buffer chunk) {
     PromiseInternal<Void> promise = context.promise();
     write(((BufferInternal)chunk).getByteBuf(), promise);
@@ -379,14 +399,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       written = true;
       ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
-      AssembledHttpObject msg;
+      VertxHttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(head, version, status, data, headers, trailingHeaders);
+        msg = new VertxFullHttpResponse(head, version, status, data, headers, trailingHeaders);
       } else {
-        msg = new AssembledLastHttpContent(data, trailingHeaders);
+        msg = new VertxLastHttpContent(data, trailingHeaders);
       }
       conn.write(msg, listener);
       if (bodyEndHandler != null) {
@@ -461,14 +481,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       bytesWritten = actualLength;
       written = true;
 
-      conn.write(new AssembledHttpResponse(head, version, status, headers), null);
+      conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
 
       ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
         if (future.isSuccess()) {
-          conn.write(new AssembledLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), null);
+          conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), null);
         }
 
         // signal body end handler
@@ -660,12 +680,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
       }
       bytesWritten += chunk.readableBytes();
-      AssembledHttpObject msg;
+      VertxHttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
-        msg = new AssembledHttpResponse(head, version, status, headers, chunk);
+        msg = new VertxAssembledHttpResponse(head, version, status, headers, chunk);
       } else {
-        msg = new AssembledHttpContent(chunk);
+        msg = new VertxHttpContent(chunk);
       }
       conn.write(msg, promise);
       return this;
@@ -685,7 +705,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
-        conn.write(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();

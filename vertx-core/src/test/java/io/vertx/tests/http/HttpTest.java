@@ -7004,4 +7004,49 @@ public abstract class HttpTest extends HttpTestBase {
     await();
     assertEquals("msg1msg2", received.get());
   }
+
+  @Test
+  public void testHttpServerResponseWriteHead() throws Exception {
+    waitFor(2);
+    AtomicReference<Runnable> continuation = new AtomicReference<>();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      continuation.set(() -> resp.end("body"));
+      try {
+        resp.writeHead().onComplete(onSuccess(v -> {
+          complete();
+        }));
+        assertEquals(HttpVersion.HTTP_2, req.version());
+      } catch (IllegalStateException ignore) {
+        resp
+          .setChunked(true)
+          .writeHead()
+          .onComplete(onSuccess(v -> {
+            complete();
+          }));
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(response -> {
+        response.handler(chunk -> {
+          fail();
+        });
+        response.endHandler(v -> {
+          fail();
+        });
+        vertx.setTimer(200, id -> {
+          response.handler(null);
+          response.endHandler(null);
+          response.bodyHandler(body -> {
+            assertEquals("body", body.toString());
+            complete();
+          });
+          continuation.get().run();
+        });
+      }));
+    }));
+    await();
+  }
+
 }
