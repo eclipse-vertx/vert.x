@@ -12,10 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.DefaultByteBufHolder;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.LastHttpContent;
@@ -26,17 +22,17 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpContent {
+class VertxLastHttpContent extends VertxHttpObject implements LastHttpContent {
 
   private final HttpHeaders trailingHeaders;
   private DecoderResult result;
   private ByteBuf content;
 
-  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders) {
+  VertxLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders) {
     this(content, trailingHeaders, DecoderResult.SUCCESS);
   }
 
-  AssembledLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
+  VertxLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
     super(true);
     this.trailingHeaders = trailingHeaders;
     this.result = result;
@@ -116,13 +112,13 @@ class AssembledLastHttpContent extends AssembledHttpObject implements LastHttpCo
   }
 
   @Override
-  public AssembledLastHttpContent touch() {
+  public VertxLastHttpContent touch() {
     content.touch();
     return this;
   }
 
   @Override
-  public AssembledLastHttpContent touch(Object hint) {
+  public VertxLastHttpContent touch(Object hint) {
     content.touch(hint);
     return this;
   }

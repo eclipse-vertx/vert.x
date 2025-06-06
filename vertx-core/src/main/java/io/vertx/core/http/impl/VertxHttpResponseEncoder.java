@@ -55,11 +55,11 @@ public final class VertxHttpResponseEncoder extends HttpResponseEncoder {
     // enforces msg to NOT implement HttpRequest and we don't know if users extends vertx/netty types to
     // implement it.
     final Class<?> msgClazz = msg.getClass();
-    if (msgClazz == AssembledFullHttpResponse.class ||
+    if (msgClazz == VertxFullHttpResponse.class ||
       msgClazz == DefaultFullHttpResponse.class ||
-      msgClazz == AssembledHttpResponse.class ||
+      msgClazz == VertxAssembledHttpResponse.class ||
       msgClazz == DefaultHttpContent.class ||
-      msgClazz == AssembledLastHttpContent.class ||
+      msgClazz == VertxLastHttpContent.class ||
       msgClazz == DefaultFileRegion.class) {
       return true;
     }
@@ -76,6 +76,6 @@ public final class VertxHttpResponseEncoder extends HttpResponseEncoder {
   protected boolean isContentAlwaysEmpty(HttpResponse msg) {
     // In HttpServerCodec this is tracked via a FIFO queue of HttpMethod
     // here we track it in the assembled response as we don't use HttpServerCodec
-    return (msg instanceof AssembledHttpResponse && ((AssembledHttpResponse) msg).head()) || super.isContentAlwaysEmpty(msg);
+    return (msg instanceof VertxAssembledHttpResponse && ((VertxAssembledHttpResponse) msg).head()) || super.isContentAlwaysEmpty(msg);
   }
 }

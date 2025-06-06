@@ -20,11 +20,11 @@ import io.netty.handler.codec.http.*;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHttpResponse {
+class VertxFullHttpResponse extends VertxAssembledHttpResponse implements FullHttpResponse {
 
   private HttpHeaders trailingHeaders;
 
-  public AssembledFullHttpResponse(
+  public VertxFullHttpResponse(
     boolean head,
     HttpVersion version,
     HttpResponseStatus status,
@@ -34,7 +34,7 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
     this(head, version, status, buf, headers, trailers, true);
   }
 
-  public AssembledFullHttpResponse(
+  public VertxFullHttpResponse(
     boolean head,
     HttpVersion version,
     HttpResponseStatus status,
@@ -52,61 +52,61 @@ class AssembledFullHttpResponse extends AssembledHttpResponse implements FullHtt
   }
 
   @Override
-  public AssembledFullHttpResponse setStatus(HttpResponseStatus status) {
+  public VertxFullHttpResponse setStatus(HttpResponseStatus status) {
     super.setStatus(status);
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse retain(int increment) {
+  public VertxFullHttpResponse retain(int increment) {
     super.retain(increment);
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse retain() {
+  public VertxFullHttpResponse retain() {
     super.retain();
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse duplicate() {
+  public VertxFullHttpResponse duplicate() {
     super.duplicate();
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse copy() {
+  public VertxFullHttpResponse copy() {
     super.copy();
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse retainedDuplicate() {
+  public VertxFullHttpResponse retainedDuplicate() {
     super.retainedDuplicate();
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse replace(ByteBuf content) {
+  public VertxFullHttpResponse replace(ByteBuf content) {
     super.replace(content);
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse setProtocolVersion(HttpVersion version) {
+  public VertxFullHttpResponse setProtocolVersion(HttpVersion version) {
     super.setProtocolVersion(version);
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse touch() {
+  public VertxFullHttpResponse touch() {
     super.touch();
     return this;
   }
 
   @Override
-  public AssembledFullHttpResponse touch(Object hint) {
+  public VertxFullHttpResponse touch(Object hint) {
     super.touch(hint);
     return this;
   }
