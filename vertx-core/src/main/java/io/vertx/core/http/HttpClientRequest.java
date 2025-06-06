@@ -278,10 +278,25 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * This is normally used to implement HTTP 100-continue handling, see {@link #continueHandler(io.vertx.core.Handler)} for
    * more information.
    *
-   * @return a future notified when the {@link HttpVersion} if it can be determined or {@code null} otherwise
-   * @throws java.lang.IllegalStateException when no response handler is set
+   * @return a future notified with the result of the write operation
+   * @throws java.lang.IllegalStateException if the head has already been written
+   * @deprecated instead use {@link #writeHead()}, this is scheduled for removal in Vert.x 6
    */
+  @Deprecated(since = "5.1.0", forRemoval = true)
   Future<Void> sendHead();
+
+  /**
+   * Write the head of the request.
+   * <p>
+   * This can be used to implement HTTP 100-continue handling, see {@link #continueHandler(io.vertx.core.Handler)} for
+   * more information.
+   *
+   * @return a future notified with the result of the write operation
+   * @throws java.lang.IllegalStateException if the head has already been written
+   */
+  default Future<Void> writeHead() {
+    return sendHead();
+  }
 
   /**
    * Create an HTTP tunnel to the server.
