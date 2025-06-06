@@ -10,11 +10,11 @@
  */
 package io.vertx.core.http.impl;
 
-public class AssembledHttpObject {
+public class VertxHttpObject {
 
   private final boolean ended;
 
-  public AssembledHttpObject(boolean ended) {
+  public VertxHttpObject(boolean ended) {
     this.ended = ended;
   }
 

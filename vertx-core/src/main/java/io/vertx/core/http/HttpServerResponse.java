@@ -206,6 +206,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Fluent
   HttpServerResponse endHandler(@Nullable Handler<Void> handler);
 
+  Future<Void> writeHead();
+
   /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *

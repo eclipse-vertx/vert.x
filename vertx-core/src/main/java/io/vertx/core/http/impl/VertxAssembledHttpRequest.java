@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.UnsupportedMessageTypeException;
 import io.netty.handler.codec.http.*;
@@ -24,28 +23,28 @@ import io.netty.handler.codec.http.*;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledHttpRequest extends AssembledHttpObject implements HttpContent, HttpRequest {
+class VertxAssembledHttpRequest extends VertxHttpObject implements HttpContent, HttpRequest {
 
   private final HttpRequest request;
   protected final HttpContent content;
 
-  AssembledHttpRequest(HttpRequest request, ByteBuf buf) {
+  VertxAssembledHttpRequest(HttpRequest request, ByteBuf buf) {
     this(request, new DefaultHttpContent(buf), false);
   }
 
-  AssembledHttpRequest(HttpRequest request, HttpContent content, boolean ended) {
+  VertxAssembledHttpRequest(HttpRequest request, HttpContent content, boolean ended) {
     super(ended);
     this.request = request;
     this.content = content;
   }
 
   @Override
-  public AssembledHttpRequest copy() {
+  public VertxAssembledHttpRequest copy() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public AssembledHttpRequest duplicate() {
+  public VertxAssembledHttpRequest duplicate() {
     throw new UnsupportedOperationException();
   }
 
@@ -60,25 +59,25 @@ class AssembledHttpRequest extends AssembledHttpObject implements HttpContent, H
   }
 
   @Override
-  public AssembledHttpRequest retain() {
+  public VertxAssembledHttpRequest retain() {
     content.retain();
     return this;
   }
 
   @Override
-  public AssembledHttpRequest retain(int increment) {
+  public VertxAssembledHttpRequest retain(int increment) {
     content.retain(increment);
     return this;
   }
 
   @Override
-  public AssembledHttpRequest touch(Object hint) {
+  public VertxAssembledHttpRequest touch(Object hint) {
     content.touch(hint);
     return this;
   }
 
   @Override
-  public AssembledHttpRequest touch() {
+  public VertxAssembledHttpRequest touch() {
     content.touch();
     return this;
   }
