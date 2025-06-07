@@ -28,8 +28,6 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.Metrics;
@@ -51,7 +49,6 @@ import static io.vertx.core.http.HttpHeaders.*;
 public class Http1xServerResponse implements HttpServerResponse, HttpResponse, FileSender<FileChannel> {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
 
   private final VertxInternal vertx;
@@ -469,7 +466,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
       conn::sendFile);
   }
 
-  private <F> Future<Void> sendFileInternal(String nameOrExtension, long offset, long length, Function<String, String> contentTypeMapper, Function<F, Long> lengthSupplier, Supplier<F> fileSupplier, TriFunction<F, Long, Long, ChannelFuture> sendFileSupplier) {
+  private <F> Future<Void> sendFileInternal(String nameOrExtension, long offset, long length, Function<String, String> contentTypeMapper, Function<F, Long> lengthSupplier, Supplier<F> fileSupplier, Sender<F> sendFileSupplier) {
     ContextInternal ctx = vertx.getOrCreateContext();
     if (offset < 0) {
       return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
@@ -509,7 +506,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
 
       conn.write(new AssembledHttpResponse(head, version, status, headers), null);
 
-      ChannelFuture channelFut = sendFileSupplier.apply(fileSupplier.get(), actualOffset, actualLength);
+      ChannelFuture channelFut = sendFileSupplier.send(fileSupplier.get(), actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
@@ -814,4 +811,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
+  
+  @FunctionalInterface
+  private static interface Sender<F> {
+
+    ChannelFuture send(F u, Long v, Long w);
+
+  }
+  
 }
