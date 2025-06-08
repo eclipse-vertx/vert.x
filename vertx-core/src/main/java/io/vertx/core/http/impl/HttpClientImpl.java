@@ -11,7 +11,10 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Completable;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -26,14 +29,8 @@ import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
-import io.vertx.core.http.*;
-import io.vertx.core.net.*;
-import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
-import io.vertx.core.net.endpoint.ServerInteraction;
-import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;

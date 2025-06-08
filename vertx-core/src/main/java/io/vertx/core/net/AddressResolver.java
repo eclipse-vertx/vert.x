@@ -45,26 +45,6 @@ public interface AddressResolver<A extends Address> {
   }
 
   /**
-   * A simple synchronous resolver for demo and testing purposes.
-   *
-   * <p>The returned resolver uses the {@code mapping} function to obtain a list of endpoints for a given
-   * address. The resolver calls the mapping function when it needs to select an endpoint node.</p>
-   *
-   * <p>The load balancing state of a given address is reset when the list of endpoints returned by the function
-   * has changed. Therefore, when the function returns the same list of endpoints, the load balancing state is
-   * preserved.</p>
-   *
-   * <p>When the {@code mapping} returns {@code null} or an empty list, implies the endpoint is not valid anymore and
-   * fails the server selection.</p>
-   *
-   * @param mapping the mapping function
-   * @return an address resolver
-   */
-  static AddressResolver mappingResolver(Function<Address, List<SocketAddress>> mapping) {
-    return vertx -> new MappingResolver<>(mapping);
-  }
-
-  /**
    * Return a resolver capable of resolving addresses to endpoints.
    *
    * @param vertx the vertx instance

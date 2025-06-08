@@ -149,13 +149,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
       if (compressionOptions != null) {
         encoder = new VertxCompressorHttp2ConnectionEncoder(encoder, compressionOptions);
       }
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression,
-        decoder, encoder, initialSettings);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     } else {
-      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression,
-        decoder, encoder, initialSettings);
+      VertxHttp2ConnectionHandler<C> handler = new VertxHttp2ConnectionHandler<>(connectionFactory, useDecompression, decoder, encoder, initialSettings);
       decoder.frameListener(handler);
       return handler;
     }

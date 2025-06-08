@@ -30,7 +30,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 class Http3ClientConnection extends Http3ConnectionBase implements HttpClientConnectionInternal {
 
-  public final HttpClientBase client;
+  private final HttpClientBase client;
   private final ClientMetrics metrics;
   private final HostAndPort authority;
   private final boolean pooled;
@@ -201,7 +201,8 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     ContextInternal context,
     boolean upgrade,
     Object socketMetric,
-    HostAndPort authority, boolean pooled) {
+    HostAndPort authority,
+    boolean pooled) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
     VertxHttp3ConnectionHandler<Http3ClientConnection> handler =

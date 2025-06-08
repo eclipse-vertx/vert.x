@@ -55,12 +55,12 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
 
   @Override
   protected TracingPolicy getTracingPolicy() {
-    return conn.client.options().getTracingPolicy();
+    return conn.client().options().getTracingPolicy();
   }
 
   @Override
   protected boolean isTryUseCompression() {
-    return this.conn.client.options().isDecompressionSupported();
+    return this.conn.client().options().isDecompressionSupported();
   }
 
   @Override

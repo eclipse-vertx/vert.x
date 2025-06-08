@@ -26,7 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.concurrent.OutboundMessageChannel;
+import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
@@ -370,16 +370,10 @@ public class VertxConnection extends ConnectionBase {
     }
     boolean flush = (!read && !draining) || forceFlush;
     needsFlush = !flush;
-
-    VertxHandler vertxHandler = chctx.pipeline().get(VertxHandler.class);
-    if (vertxHandler != null) {
-      vertxHandler.write(chctx, msg, promise, flush);
+    if (flush) {
+      chctx.writeAndFlush(msg, promise);
     } else {
-      if (flush) {
-        chctx.writeAndFlush(msg, promise);
-      } else {
-        chctx.write(msg, promise);
-      }
+      chctx.write(msg, promise);
     }
     return promise;
   }
@@ -544,7 +538,7 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
-   * Version of {@link OutboundMessageChannel} accessing internal connection base state.
+   * Version of {@link OutboundMessageQueue} accessing internal connection base state.
    */
   private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite>, OutboundWriteQueue {
 

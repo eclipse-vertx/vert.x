@@ -15,6 +15,7 @@ import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -609,26 +610,6 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setCompressionLevel(int compressionLevel) {
     this.compressionLevel = compressionLevel;
-    return this;
-  }
-
-  /**
-   * @return the compression content size threshold
-   */
-  public int getCompressionContentSizeThreshold() {
-    return compressionContentSizeThreshold;
-  }
-
-  /**
-   * Set the compression content size threshold if compression is enabled. This is only applicable for HTTP/1.x response bodies.
-   * If the response content size in bytes is greater than this threshold, then the response is compressed. Otherwise, it is not compressed.
-   *
-   * @param compressionContentSizeThreshold integer greater than or equal to 0.
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerOptions setCompressionContentSizeThreshold(int compressionContentSizeThreshold) {
-    Arguments.require(compressionContentSizeThreshold >= 0, "compressionContentSizeThreshold must be >= 0");
-    this.compressionContentSizeThreshold = compressionContentSizeThreshold;
     return this;
   }
 

@@ -31,7 +31,7 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.concurrent.InboundMessageChannel;
+import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
@@ -56,7 +56,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
-  private final InboundMessageChannel<Object> pending;
+  private final InboundMessageQueue<Object> pending;
   private final String negotiatedApplicationLayerProtocol;
   private Handler<Void> endHandler;
   private volatile Handler<Void> drainHandler;
@@ -91,7 +91,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
-    this.pending = new InboundMessageChannel<>(context.eventLoop(), context.executor()) {
+    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
       @Override
       protected void handleResume() {
         NetSocketImpl.this.doResume();

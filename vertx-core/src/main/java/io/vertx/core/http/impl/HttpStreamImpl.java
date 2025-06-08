@@ -204,8 +204,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     return promise.future();
   }
 
-  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority,
-                            boolean connect, Promise<Void> promise) {
+  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect, Promise<Void> promise) {
     VertxHttpHeaders headers = createHttpHeadersWrapper();
     headers.method(request.method.name());
     boolean e;
@@ -285,37 +284,6 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     Promise<Void> promise = context.promise();
     writeData(buf, end, promise);
     return promise.future();
-
-
-    //TODO: the following codes are commented from 4.x
-/*
-    if (buf != null) {
-      int size = buf.readableBytes();
-      synchronized (this) {
-        writeWindow += size;
-      }
-      if (listener != null) {
-        Handler<AsyncResult<Void>> prev = listener;
-        listener = ar -> {
-          Handler<Void> drainHandler;
-          synchronized (this) {
-            boolean full = writeWindow > windowSize;
-            writeWindow -= size;
-            if (full && writeWindow <= windowSize) {
-              drainHandler = this.drainHandler;
-            } else {
-              drainHandler = null;
-            }
-          }
-          if (drainHandler != null) {
-            drainHandler.handle(null);
-          }
-          prev.handle(ar);
-        };
-      }
-    }
-    writeData(buf, end, listener);
-*/
   }
 
   @Override

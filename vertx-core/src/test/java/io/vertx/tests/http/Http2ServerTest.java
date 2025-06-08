@@ -14,17 +14,12 @@ package io.vertx.tests.http;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.EventLoopGroup;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 public class Http2ServerTest extends HttpServerTest {
 
   @Override

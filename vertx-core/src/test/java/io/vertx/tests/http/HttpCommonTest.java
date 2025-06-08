@@ -309,205 +309,6 @@ public abstract class HttpCommonTest extends HttpTest {
     await();
   }
 
-  /**
-   * Test that socket close (without an HTTP/2 go away frame) removes the connection from the pool
-   * before the streams are notified. Otherwise a notified stream might reuse a stale connection from
-   * the pool.
-   */
-  @Test
-  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
-    Set<HttpConnection> serverConnections = new HashSet<>();
-    server.requestHandler(req -> {
-      serverConnections.add(req.connection());
-      switch (req.path()) {
-        case "/1":
-          req.response().end();
-          break;
-        case "/2":
-          assertEquals(1, serverConnections.size());
-          // Socket close without HTTP/2 go away
-          Channel ch = ((ConnectionBase) req.connection()).channel();
-          ChannelPromise promise = ch.newPromise();
-          ch.unsafe().close(promise);
-          break;
-        case "/3":
-          assertEquals(2, serverConnections.size());
-          req.response().end();
-          break;
-      }
-    });
-    startServer(testAddress);
-    Future<Buffer> f1 = client.request(new RequestOptions(requestOptions).setURI("/1"))
-      .compose(req -> req.send()
-        .compose(HttpClientResponse::body));
-    f1.onComplete(onSuccess(v -> {
-      Future<Buffer> f2 = client.request(new RequestOptions(requestOptions).setURI("/2"))
-        .compose(req -> req.send()
-          .compose(HttpClientResponse::body));
-      f2.onComplete(onFailure(v2 -> {
-        Future<Buffer> f3 = client.request(new RequestOptions(requestOptions).setURI("/3"))
-          .compose(req -> req.send()
-            .compose(HttpClientResponse::body));
-        f3.onComplete(onSuccess(vvv -> {
-          testComplete();
-        }));
-      }));
-    }));
-    await();
-  }
-
-  @Test
-  public void testRstFloodProtection() throws Exception {
-    server.requestHandler(req -> {
-    });
-    startServer(testAddress);
-    int num = HttpServerOptions.DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW + 1;
-    for (int i = 0;i < num;i++) {
-      int val = i;
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        if (val == 0) {
-          req
-            .connection()
-            .goAwayHandler(ga -> {
-              assertEquals(11, ga.getErrorCode()); // Enhance your calm
-              testComplete();
-            });
-        }
-        req.end().onComplete(onSuccess(v -> {
-          req.reset();
-        }));
-      }));
-    }
-    await();
-  }
-
-  @Test
-  public void testStreamResetErrorMapping() throws Exception {
-    server.requestHandler(req -> {
-    });
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        StreamResetException sre = (StreamResetException) err;
-        assertEquals(10, sre.getCode());
-        testComplete();
-      });
-      // Force stream allocation
-      req.sendHead().onComplete(onSuccess(v -> {
-        req.reset(10);
-      }));
-    }));
-    await();
-  }
-
-  @Test
-  public void testUnsupportedAlpnVersion() throws Exception {
-    testUnsupportedAlpnVersion(new JdkSSLEngineOptions(), false);
-  }
-
-  @Test
-  public void testUnsupportedAlpnVersionOpenSSL() throws Exception {
-    testUnsupportedAlpnVersion(new OpenSSLEngineOptions(), true);
-  }
-
-  private void testUnsupportedAlpnVersion(SSLEngineOptions engine, boolean accept) throws Exception {
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions()
-      .setSslEngineOptions(engine)
-      .setAlpnVersions(Collections.singletonList(serverAlpnProtocolVersion()))
-    );
-    server.requestHandler(request -> {
-      request.response().end();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()));
-    client.request(requestOptions).onComplete(ar -> {
-      if (ar.succeeded()) {
-        if (accept) {
-          ar.result().send().onComplete(onSuccess(resp -> {
-            testComplete();
-          }));
-        } else {
-          fail();
-        }
-      } else {
-        if (accept) {
-          fail();
-        } else {
-          testComplete();
-        }
-      }
-    });
-    await();
-  }
-
-  @Test
-  public void testSendFileCancellation() throws Exception {
-
-    Path webroot = Files.createTempDirectory("webroot");
-    File res = new File(webroot.toFile(), "large.dat");
-    RandomAccessFile f = new RandomAccessFile(res, "rw");
-    f.setLength(1024 * 1024);
-
-    AtomicInteger errors = new AtomicInteger();
-    vertx.getOrCreateContext().exceptionHandler(err -> {
-      errors.incrementAndGet();
-    });
-
-    server.requestHandler(request -> {
-      request
-        .response()
-        .sendFile(res.getAbsolutePath())
-        .onComplete(onFailure(ar -> {
-          assertEquals(0, errors.get());
-          testComplete();
-        }));
-    });
-
-    startServer();
-
-    client.request(requestOptions)
-      .onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals(serverAlpnProtocolVersion(), resp.version());
-          req.connection().close();
-        }));
-      }));
-
-    await();
-  }
-
-  @Test
-  public void testAppendToHttpChunks() throws Exception {
-    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
-    server.requestHandler(req -> {
-      HttpServerResponse resp = req.response();
-      expected.forEach(resp::write);
-      resp.end(); // Will end an empty chunk
-    });
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        List<String> chunks = new ArrayList<>();
-        resp.handler(chunk -> {
-          chunk.appendString("-suffix");
-          chunks.add(chunk.toString());
-        });
-        resp.endHandler(v -> {
-          assertEquals(Stream.concat(expected.stream(), Stream.of(""))
-            .map(s -> s + "-suffix")
-            .collect(Collectors.toList()), chunks);
-          testComplete();
-        });
-      }));
-    }));
-    await();
-  }
-
-
   @Test
   public void testStreamPriority() throws Exception {
     waitFor(2);
@@ -532,7 +333,6 @@ public abstract class HttpCommonTest extends HttpTest {
     }));
     await();
   }
-
 
   @Test
   public void testStreamPriorityChange() throws Exception {
@@ -752,6 +552,204 @@ public abstract class HttpCommonTest extends HttpTest {
           complete();
         }));
     }));
+    await();
+  }
+
+  @Test
+  public void testAppendToHttpChunks() throws Exception {
+    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      expected.forEach(resp::write);
+      resp.end(); // Will end an empty chunk
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        List<String> chunks = new ArrayList<>();
+        resp.handler(chunk -> {
+          chunk.appendString("-suffix");
+          chunks.add(chunk.toString());
+        });
+        resp.endHandler(v -> {
+          assertEquals(Stream.concat(expected.stream(), Stream.of(""))
+            .map(s -> s + "-suffix")
+            .collect(Collectors.toList()), chunks);
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  /**
+   * Test that socket close (without an HTTP/2 go away frame) removes the connection from the pool
+   * before the streams are notified. Otherwise a notified stream might reuse a stale connection from
+   * the pool.
+   */
+  @Test
+  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
+    Set<HttpConnection> serverConnections = new HashSet<>();
+    server.requestHandler(req -> {
+      serverConnections.add(req.connection());
+      switch (req.path()) {
+        case "/1":
+          req.response().end();
+          break;
+        case "/2":
+          assertEquals(1, serverConnections.size());
+          // Socket close without HTTP/2 go away
+          Channel ch = ((ConnectionBase) req.connection()).channel();
+          ChannelPromise promise = ch.newPromise();
+          ch.unsafe().close(promise);
+          break;
+        case "/3":
+          assertEquals(2, serverConnections.size());
+          req.response().end();
+          break;
+      }
+    });
+    startServer(testAddress);
+    Future<Buffer> f1 = client.request(new RequestOptions(requestOptions).setURI("/1"))
+      .compose(req -> req.send()
+        .compose(HttpClientResponse::body));
+    f1.onComplete(onSuccess(v -> {
+      Future<Buffer> f2 = client.request(new RequestOptions(requestOptions).setURI("/2"))
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body));
+      f2.onComplete(onFailure(v2 -> {
+        Future<Buffer> f3 = client.request(new RequestOptions(requestOptions).setURI("/3"))
+          .compose(req -> req.send()
+            .compose(HttpClientResponse::body));
+        f3.onComplete(onSuccess(vvv -> {
+          testComplete();
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testRstFloodProtection() throws Exception {
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    int num = HttpServerOptions.DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW + 1;
+    for (int i = 0;i < num;i++) {
+      int val = i;
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        if (val == 0) {
+          req
+            .connection()
+            .goAwayHandler(ga -> {
+              assertEquals(11, ga.getErrorCode()); // Enhance your calm
+              testComplete();
+            });
+        }
+        req.end().onComplete(onSuccess(v -> {
+          req.reset();
+        }));
+      }));
+    }
+    await();
+  }
+
+  @Test
+  public void testStreamResetErrorMapping() throws Exception {
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        StreamResetException sre = (StreamResetException) err;
+        assertEquals(10, sre.getCode());
+        testComplete();
+      });
+      // Force stream allocation
+      req.sendHead().onComplete(onSuccess(v -> {
+        req.reset(10);
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testUnsupportedAlpnVersion() throws Exception {
+    testUnsupportedAlpnVersion(new JdkSSLEngineOptions(), false);
+  }
+
+  @Test
+  public void testUnsupportedAlpnVersionOpenSSL() throws Exception {
+    testUnsupportedAlpnVersion(new OpenSSLEngineOptions(), true);
+  }
+
+  private void testUnsupportedAlpnVersion(SSLEngineOptions engine, boolean accept) throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setSslEngineOptions(engine)
+      .setAlpnVersions(Collections.singletonList(serverAlpnProtocolVersion()))
+    );
+    server.requestHandler(request -> {
+      request.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()));
+    client.request(requestOptions).onComplete(ar -> {
+      if (ar.succeeded()) {
+        if (accept) {
+          ar.result().send().onComplete(onSuccess(resp -> {
+            testComplete();
+          }));
+        } else {
+          fail();
+        }
+      } else {
+        if (accept) {
+          fail();
+        } else {
+          testComplete();
+        }
+      }
+    });
+    await();
+  }
+
+  @Test
+  public void testSendFileCancellation() throws Exception {
+
+    Path webroot = Files.createTempDirectory("webroot");
+    File res = new File(webroot.toFile(), "large.dat");
+    RandomAccessFile f = new RandomAccessFile(res, "rw");
+    f.setLength(1024 * 1024);
+
+    AtomicInteger errors = new AtomicInteger();
+    vertx.getOrCreateContext().exceptionHandler(err -> {
+      errors.incrementAndGet();
+    });
+
+    server.requestHandler(request -> {
+      request
+        .response()
+        .sendFile(res.getAbsolutePath())
+        .onComplete(onFailure(ar -> {
+          assertEquals(0, errors.get());
+          testComplete();
+        }));
+    });
+
+    startServer();
+
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertEquals(serverAlpnProtocolVersion(), resp.version());
+          req.connection().close();
+        }));
+      }));
+
     await();
   }
 

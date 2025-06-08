@@ -10,11 +10,7 @@
  */
 package io.vertx.tests.concurrent;
 
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
 import io.vertx.core.streams.impl.MessagePassingQueue;
-========
-import io.vertx.core.streams.impl.MessageChannel;
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
 import io.vertx.test.core.AsyncTestBase;
 import junit.framework.AssertionFailedError;
 import org.junit.Test;
@@ -27,26 +23,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
 import static io.vertx.core.streams.impl.MessagePassingQueue.*;
-========
-import static io.vertx.core.streams.impl.MessageChannel.*;
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
 public class MessagePassingQueueTest extends AsyncTestBase {
 
   private List<Integer> output = Collections.synchronizedList(new ArrayList<>());
   private MessagePassingQueue.MpSc<Integer> queue;
-========
-public class MessageChannelTest extends AsyncTestBase {
-
-  private List<Integer> output = Collections.synchronizedList(new ArrayList<>());
-  private MessageChannel.MpSc<Integer> queue;
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
   private Runnable unwritableHook;
 
   private int producerAdd(Integer element) {
@@ -73,11 +58,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testWriteFromOtherThread() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       output.add(elt);
       return true;
     });
@@ -91,11 +72,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testWriteFromEventLoopThread() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       output.add(elt);
       return true;
     });
@@ -107,11 +84,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testReentrantWrite() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       output.add(elt);
       if (elt < 9) {
         queue.write(elt + 1);
@@ -124,11 +97,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testConcurrentWrite() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       output.add(elt);
       if (elt < 9) {
         Thread thread = new Thread(() -> {
@@ -148,11 +117,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testOverflow() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> false);
-========
-    queue = new MessageChannel.MpSc<>(elt -> false);
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
     assertFlagsSet(DRAIN_REQUIRED_MASK, queue.write(0));
     for (int i = 1;i < 15;i++) {
       assertEquals(0, queue.write(i));
@@ -162,11 +127,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testOverflowReentrant() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (elt == 0) {
         for (int i = 1;i < 15;i++) {
           assertEquals(0, queue.write(i));
@@ -180,11 +141,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testOverflowReentrant2() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (elt == 0) {
         for (int i = 1;i < 15;i++) {
           assertEquals(0, queue.write(i));
@@ -202,11 +159,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testOverflowReentrant3() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (elt == 0) {
         for (int i = 1;i < 3;i++) {
           assertEquals(0, queue.write(i));
@@ -222,11 +175,7 @@ public class MessageChannelTest extends AsyncTestBase {
   @Test
   public void testDrainQueue() {
     AtomicBoolean paused = new AtomicBoolean(true);
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (paused.get()) {
         return false;
       } else {
@@ -248,11 +197,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testReentrantWritable1() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       switch (elt) {
         case 0:
           Thread thread = new Thread(() -> {
@@ -278,11 +223,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testReentrantWritable2() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       switch (elt) {
         case 0:
           Thread thread = new Thread(() -> {
@@ -309,11 +250,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testReentrantWritable3() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       switch (elt) {
         case 0:
           Thread thread = new Thread(() -> {
@@ -350,11 +287,7 @@ public class MessageChannelTest extends AsyncTestBase {
   @Test
   public void testWritabilityListener() {
     AtomicInteger demand = new AtomicInteger(0);
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (demand.get() > 0) {
         demand.decrementAndGet();
         return true;
@@ -376,11 +309,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testClear() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> false);
-========
-    queue = new MessageChannel.MpSc<>(elt -> false);
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
     for (int i = 0;i < 5;i++) {
       queue.write(i);
     }
@@ -390,11 +319,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testReentrancy() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       switch (elt) {
         case 0:
           for (int i = 1;i < 15;i++) {
@@ -415,11 +340,7 @@ public class MessageChannelTest extends AsyncTestBase {
   @Test
   public void testWeird() {
     AtomicInteger behavior = new AtomicInteger(0);
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       switch (behavior.get()) {
         case 0:
           return false;
@@ -456,11 +377,7 @@ public class MessageChannelTest extends AsyncTestBase {
       queue.write(1);
     };
     AtomicInteger wqf = new AtomicInteger();
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       switch (elt) {
         case 0:
           while (true) {
@@ -500,11 +417,7 @@ public class MessageChannelTest extends AsyncTestBase {
   @Test
   public void testUnwritableCount() {
     AtomicInteger demand = new AtomicInteger();
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt-> {
-========
-    queue = new MessageChannel.MpSc<>(elt-> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (demand.get() > 0) {
         demand.decrementAndGet();
         return true;
@@ -529,21 +442,13 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testConditions() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> true, 1, 1);
-========
-    queue = new MessageChannel.MpSc<>(elt -> true, 1, 1);
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
 //    assertEquals(0, queue.write(0));
     queue.write(0);
     assertFlagsSet(producerAdd(0), UNWRITABLE_MASK, DRAIN_REQUIRED_MASK);
     assertFlagsSet(queue.drain(), WRITABLE_MASK);
 
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> true, 1, 2);
-========
-    queue = new MessageChannel.MpSc<>(elt -> true, 1, 2);
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
     assertEquals(0, queue.write(0));
     assertFlagsSet(queue.add(0), DRAIN_REQUIRED_MASK);
     assertFlagsSet(queue.add(1), UNWRITABLE_MASK);
@@ -568,11 +473,7 @@ public class MessageChannelTest extends AsyncTestBase {
 
   @Test
   public void testWriteShouldNotReturnUnwritableWithOverflowSubmissions() {
-<<<<<<<< HEAD:vertx-core/src/test/java/io/vertx/tests/concurrent/MessagePassingQueueTest.java
     queue = new MessagePassingQueue.MpSc<>(elt -> {
-========
-    queue = new MessageChannel.MpSc<>(elt -> {
->>>>>>>> 7a216501b (Rename more appropriately the queue to channel):vertx-core/src/test/java/io/vertx/tests/concurrent/MessageChannelTest.java
       if (elt == 0) {
         Thread th = new Thread(() -> {
           int idx = 1;

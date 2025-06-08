@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -30,12 +29,12 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.*;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.resolver.NameResolver;
-import io.vertx.core.impl.HostnameResolver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -187,8 +186,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     private final Handler<Throwable> exceptionHandler;
     private final GlobalTrafficShapingHandler trafficShapingHandler;
 
-    NetSocketInitializer(ContextInternal context, Handler<NetSocket> connectionHandler,
-                         Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
+    NetSocketInitializer(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
       this.context = context;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
@@ -199,8 +197,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       return true;
     }
 
-    public void accept(Channel ch, SslContextProvider sslChannelProvider, SslContextManager sslContextManager,
-                       ServerSSLOptions sslOptions) {
+    public void accept(Channel ch, SslContextProvider sslChannelProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (!this.accept()) {
         ch.close();
         return;
@@ -210,8 +207,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
         ch.pipeline().addLast(new HAProxyMessageDecoder());
         if (options.getProxyProtocolTimeout() > 0) {
-          ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getProxyProtocolTimeout(),
-            options.getProxyProtocolTimeoutUnit()));
+          ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getProxyProtocolTimeout(), options.getProxyProtocolTimeoutUnit()));
         } else {
           idle = null;
         }
@@ -232,8 +228,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       }
     }
 
-    private void configurePipeline(Channel ch, SslContextProvider sslContextProvider,
-                                   SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
+    private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
         if (!options.isHttp3()) {
           configureChannelSslHandler(ch, sslContextProvider, null);
@@ -248,7 +243,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             handleException(future.cause());
           }
         });
-
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
@@ -266,8 +260,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     private void connected(Channel ch, SslContextManager sslContextManager, SSLOptions sslOptions) {
       initChannel(ch.pipeline(), options.isSsl());
       TCPMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx,
-        sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {
@@ -276,7 +269,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         conn.registerEventBusHandler();
         context.emit(conn, connectionHandler::handle);
       });
-
       ch.pipeline().addLast("handler", handler);
     }
   }
@@ -286,16 +278,14 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
     if (ssl || !options.isFileRegionEnabled() || !vertx.transport().supportFileRegion() || (options.getTrafficShapingOptions() != null && options.getTrafficShapingOptions().getOutboundGlobalBandwidth() > 0)) {
-      // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported or when outbound traffic
-      // shaping is enabled
+      // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported or when outbound traffic shaping is enabled
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
     int idleTimeout = options.getIdleTimeout();
     int readIdleTimeout = options.getReadIdleTimeout();
     int writeIdleTimeout = options.getWriteIdleTimeout();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout,
-        options.getIdleTimeoutUnit()));
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
   }
 
@@ -303,23 +293,18 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return createTrafficShapingHandler(vertx.eventLoopGroup(), options.getTrafficShapingOptions());
   }
 
-  private GlobalTrafficShapingHandler createTrafficShapingHandler(EventLoopGroup eventLoopGroup,
-                                                                  TrafficShapingOptions options) {
+  private GlobalTrafficShapingHandler createTrafficShapingHandler(EventLoopGroup eventLoopGroup, TrafficShapingOptions options) {
     if (options == null) {
       return null;
     }
     GlobalTrafficShapingHandler trafficShapingHandler;
     if (options.getMaxDelayToWait() != 0) {
       long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
-      long checkIntervalForStatsInMillis =
-        options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
-      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(),
-        options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis, maxDelayToWaitInMillis);
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis, maxDelayToWaitInMillis);
     } else {
-      long checkIntervalForStatsInMillis =
-        options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
-      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(),
-        options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+      long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
     }
     if (options.getPeakOutboundGlobalBandwidth() != 0) {
       trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
@@ -382,10 +367,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
-    if (trafficShapingHandler == null) {
-      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured" +
-        " to use traffic shaping during startup");
-    }
     NetServerImpl server = actualServer;
     ContextInternal ctx = vertx.getOrCreateContext();
     if (server == null) {
@@ -399,11 +380,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (server != this) {
       return server.updateTrafficShapingOptions(options);
     } else {
-      long checkIntervalForStatsInMillis =
-        options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
-      trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(),
-        checkIntervalForStatsInMillis);
-
       Promise<Boolean> promise = ctx.promise();
       ctx.emit(v -> updateTrafficShapingOptions(options, promise));
       return promise.future();
@@ -475,8 +451,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
         SslContextManager helper;
         try {
-          helper = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(),
-            options.isUseAlpn()));
+          helper = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
         } catch (Exception e) {
           return context.failedFuture(e);
         }
@@ -677,7 +652,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
    * Apply the connection option to the server.
    *
    * @param domainSocket whether it's a domain socket server
-   * @param bootstrap    the Netty server bootstrap
+   * @param bootstrap the Netty server bootstrap
    */
   private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
     vertx.transport().configure(options, domainSocket, bootstrap);
@@ -774,7 +749,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         if (metrics != null) {
           a.addListener(cg -> metrics.close());
         }
-        a.addListener((PromiseInternal<Void>) done);
+        a.addListener((PromiseInternal<Void>)done);
       } else {
         done.complete();
       }

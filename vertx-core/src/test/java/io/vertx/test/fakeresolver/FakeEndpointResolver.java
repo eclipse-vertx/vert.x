@@ -29,15 +29,6 @@ public class FakeEndpointResolver<B> implements AddressResolver<FakeAddress>, En
     }
   }
 
-  public static class Endpoint {
-    final List<SocketAddress> addresses;
-    final boolean valid;
-    public Endpoint(List<SocketAddress> addresses, boolean valid) {
-      this.addresses = addresses;
-      this.valid = valid;
-    }
-  }
-
   class LazyFakeState {
     final String name;
     volatile Supplier<Endpoint> endpointSupplier;

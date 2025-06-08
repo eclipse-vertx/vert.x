@@ -9,11 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-<<<<<<<< HEAD:vertx-core/src/main/java/io/vertx/core/impl/ServiceHelper.java
 package io.vertx.core.impl;
-========
-package io.vertx.core.internal;
->>>>>>>> fdc48626a (Move ServiceHelper to internal package):vertx-core/src/main/java/io/vertx/core/internal/ServiceHelper.java
 
 import java.util.*;
 
