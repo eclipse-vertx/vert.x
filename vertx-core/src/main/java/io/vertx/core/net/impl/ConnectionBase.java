@@ -460,8 +460,8 @@ public abstract class ConnectionBase {
   private SocketAddress channelRemoteAddress() {
     java.net.SocketAddress addr = channel.remoteAddress();
 
-    if (chctx.channel() instanceof QuicChannel) {
-      addr = ((QuicChannel) chctx.channel()).remoteSocketAddress();
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel) channel).remoteSocketAddress();
     }
 
     return addr != null ? vertx.transport().convert(addr) : null;
@@ -506,8 +506,8 @@ public abstract class ConnectionBase {
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = channel.localAddress();
 
-    if (chctx.channel() instanceof QuicChannel) {
-      addr = ((QuicChannel) chctx.channel()).remoteSocketAddress();
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel) channel).remoteSocketAddress();
     }
 
     return addr != null ? vertx.transport().convert(addr) : null;

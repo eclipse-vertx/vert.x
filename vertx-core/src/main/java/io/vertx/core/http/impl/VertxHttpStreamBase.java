@@ -50,8 +50,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
   protected boolean isConnect;
   private Throwable failure;
   private long reset = -1L;
-  private boolean headerOnly = true;
-  protected S channelStream;
+  protected S streamChannel;
 
   protected abstract void consumeCredits(S stream, int len);
 
@@ -93,7 +92,7 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
           Buffer data = (Buffer) item;
           int len = data.length();
           conn.context().emit(null, v -> {
-            if (remoteSideOpen(channelStream)) {
+            if (remoteSideOpen(streamChannel)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2
               consumeCredits(streamChannel, len);

@@ -10,6 +10,22 @@
  */
 package io.vertx.tests.http;
 
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
+import io.vertx.core.net.TrafficShapingOptions;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpTestBase;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

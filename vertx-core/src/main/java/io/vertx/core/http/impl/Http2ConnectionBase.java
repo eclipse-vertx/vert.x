@@ -35,7 +35,6 @@ import io.vertx.core.internal.buffer.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;

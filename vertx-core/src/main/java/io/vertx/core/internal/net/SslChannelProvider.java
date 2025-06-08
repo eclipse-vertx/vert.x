@@ -110,7 +110,8 @@ public class SslChannelProvider {
     }
     SslHandler sslHandler;
     if (remoteAddress != null) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(),
+        delegatedTaskExec);
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }

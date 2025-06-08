@@ -166,8 +166,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
 
     void acquire() {
-      pool.acquire(context, this, HttpVersion.isFrameBased(protocol) ? 1 : 0)
-        .onComplete(this);
+      pool.acquire(context, this, HttpVersion.isFrameBased(protocol) ? 1 : 0, this);
     }
   }
 
@@ -194,16 +193,6 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   @Override
   protected void handleClose() {
     pool.close((res, err) -> {});
-  }
-
-  @Override
-  protected void cleanup() {
-    if (clientMetrics != null) {
-      clientMetrics.close();
-    }
-    if (poolMetrics != null) {
-      poolMetrics.close();
-    }
   }
 
   @Override

@@ -25,7 +25,11 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.*;
+import io.vertx.core.Closeable;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
@@ -378,6 +382,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
+    if (trafficShapingHandler == null) {
+      throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured" +
+        " to use traffic shaping during startup");
+    }
     NetServerImpl server = actualServer;
     ContextInternal ctx = vertx.getOrCreateContext();
     if (server == null) {
@@ -391,6 +399,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (server != this) {
       return server.updateTrafficShapingOptions(options);
     } else {
+      long checkIntervalForStatsInMillis =
+        options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
+      trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(),
+        checkIntervalForStatsInMillis);
+
       Promise<Boolean> promise = ctx.promise();
       ctx.emit(v -> updateTrafficShapingOptions(options, promise));
       return promise.future();
@@ -558,16 +571,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     ServerID id) {
     // Socket bind
     channelBalancer.addWorker(eventLoop, worker);
-    ServerBootstrap bootstrap = new ServerBootstrap();
-    bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-    if (options.isSsl()) {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-    } else {
-      bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-    }
-
-    bootstrap.childHandler(channelBalancer);
-    applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+    AbstractBootstrap bootstrap = buildServerBootstrap(localAddress);
 
     // Actual bind
     io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap, options);
