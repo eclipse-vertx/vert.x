@@ -13,7 +13,8 @@ package io.vertx.tests.http;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
-import io.vertx.core.Future;
+import io.netty.handler.codec.TooLongFrameException;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JdkSSLEngineOptions;
@@ -21,15 +22,21 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,8 +75,8 @@ public abstract class HttpCommonTest extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals(200, resp.statusCode())))
-        .compose(HttpClientResponse::body)).
+      .expecting(that(resp -> assertEquals(200, resp.statusCode())))
+      .compose(HttpClientResponse::body)).
       onComplete(onSuccess(body -> {
         assertEquals(Buffer.buffer("hello world"), body);
         testComplete();
@@ -254,6 +261,48 @@ public abstract class HttpCommonTest extends HttpTest {
   }
 
   @Test
+  public void testClientDoesNotSupportAlpn() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    waitFor(2);
+    server.requestHandler(req -> {
+      assertEquals(clientAlpnProtocolVersion(), req.version());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()).setUseAlpn(false));
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(clientAlpnProtocolVersion(), resp.version());
+        complete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testServerDoesNotSupportAlpn() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
+    server.requestHandler(req -> {
+      assertEquals(clientAlpnProtocolVersion(), req.version());
+      req.response().end();
+      complete();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(clientAlpnProtocolVersion(), resp.version());
+        complete();
+      }));
+    await();
+  }
+
+  @Test
   public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
@@ -283,6 +332,56 @@ public abstract class HttpCommonTest extends HttpTest {
         req.send().onComplete(onSuccess(resp -> complete()));
       }));
     }
+    await();
+  }
+
+  @Test
+  public void testInitialMaxConcurrentStreamZero() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    waitFor(2);
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      vertx.setTimer(500, id -> {
+        conn.updateSettings(new Http2Settings().setMaxConcurrentStreams(10));
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> {
+        assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+        conn.remoteSettingsHandler(settings -> {
+          assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+          complete();
+        });
+      })
+      .build();
+    client.request(new RequestOptions(requestOptions).setTimeout(10000))
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> complete()));
+    await();
+  }
+
+  @Test
+  public void testMaxHaderListSize() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setTimeout(10000))
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        assertEquals(Integer.MAX_VALUE, ((Http2Settings) resp.request().connection().remoteHttpSettings()).getMaxHeaderListSize());
+        testComplete();
+      }));
     await();
   }
 
@@ -556,6 +655,92 @@ public abstract class HttpCommonTest extends HttpTest {
   }
 
   @Test
+  public void testClearTextUpgradeWithBody() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    server.close();
+    server = vertx.createHttpServer().requestHandler(req -> {
+      req.bodyHandler(body -> req.response().end(body));
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.httpClientBuilder()
+      .with(createBaseClientOptions())
+      .withConnectHandler(conn -> {
+        conn.goAwayHandler(ga -> {
+          assertEquals(0, ga.getErrorCode());
+        });
+      })
+      .build();
+    Buffer payload = Buffer.buffer("some-data");
+    client.request(new RequestOptions(requestOptions).setSsl(false)).onComplete(onSuccess(req -> {
+      req.response()
+        .compose(HttpClientResponse::body)
+        .onComplete(onSuccess(body -> {
+          assertEquals(Buffer.buffer().appendBuffer(payload).appendBuffer(payload), body);
+          testComplete();
+        }));
+      req.putHeader("Content-Length", "" + payload.length() * 2);
+      req.exceptionHandler(this::fail);
+      req.write(payload);
+      vertx.setTimer(1000, id -> {
+        req.end(payload);
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testClearTextUpgradeWithBodyTooLongFrameResponse() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    server.close();
+    Buffer buffer = TestUtils.randomBuffer(1024);
+    server = vertx.createHttpServer().requestHandler(req -> {
+      req.response().setChunked(true);
+      vertx.setPeriodic(1, id -> {
+        req.response().write(buffer);
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions());
+    client.request(new RequestOptions(requestOptions).setSsl(false)).onComplete(onSuccess(req -> {
+      req.response().onComplete(onFailure(err -> {}));
+      req.setChunked(true);
+      req.exceptionHandler(err -> {
+        if (err instanceof TooLongFrameException) {
+          testComplete();
+        }
+      });
+      req.sendHead();
+    }));
+    await();
+  }
+
+  @Test
+  public void testSslHandshakeTimeout() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    waitFor(2);
+    HttpServerOptions opts = createBaseServerOptions()
+      .setSslHandshakeTimeout(1234)
+      .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
+    server.close();
+    server = vertx.createHttpServer(opts)
+      .requestHandler(req -> fail("Should not be called"))
+      .exceptionHandler(err -> {
+        if (err instanceof SSLHandshakeException) {
+          assertEquals("handshake timed out after 1234ms", err.getMessage());
+          complete();
+        }
+      });
+    startServer();
+    vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+      .onFailure(this::fail)
+      .onSuccess(so -> so.closeHandler(u -> complete()));
+    await();
+  }
+
+  @Test
   public void testAppendToHttpChunks() throws Exception {
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
     server.requestHandler(req -> {
@@ -578,6 +763,43 @@ public abstract class HttpCommonTest extends HttpTest {
           testComplete();
         });
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testNonUpgradedH2CConnectionIsEvictedFromThePool() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions().setHttp2ClearTextEnabled(false));
+    Promise<Void> p = Promise.promise();
+    AtomicBoolean first = new AtomicBoolean(true);
+    server.requestHandler(req -> {
+      if (first.compareAndSet(true, false)) {
+        HttpConnection conn = req.connection();
+        p.future().onComplete(ar -> {
+          conn.close();
+        });
+      }
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req1 -> {
+      req1.connection().closeHandler(v1 -> {
+        vertx.runOnContext(v2 -> {
+          client.request(requestOptions).compose(req2 -> req2.send().compose(HttpClientResponse::body)).onComplete(onSuccess(b2 -> {
+            testComplete();
+          }));
+        });
+      });
+      return req1.send().compose(resp -> {
+        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        return resp.body();
+      });
+    }).onComplete(onSuccess(b -> {
+      p.complete();
     }));
     await();
   }
@@ -753,4 +975,94 @@ public abstract class HttpCommonTest extends HttpTest {
     await();
   }
 
+  @Repeat(times = 10)
+  @Test
+  public void testHttpClientDelayedWriteUponConnectionClose() throws Exception {
+
+    int numVerticles = 5;
+    int numWrites = 100;
+    int delayCloseMS = 50;
+
+    server.connectionHandler(conn -> {
+      vertx.setTimer(delayCloseMS, id -> {
+        conn.close();
+      });
+    });
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        req.response().end();
+      });
+    });
+
+    startServer(testAddress);
+    waitFor(numVerticles);
+    vertx.deployVerticle(() -> new VerticleBase() {
+      int requestCount;
+      int ackCount;
+      @Override
+      public Future<?> start() throws Exception {
+        request();
+        return super.start();
+      }
+      private void request() {
+        requestCount++;
+        client.request(requestOptions)
+          .compose(req -> {
+            req.setChunked(true);
+            for (int i = 0;i < numWrites;i++) {
+              req.write("Hello").onComplete(ar -> {
+                ackCount++;
+              });
+            }
+            req.end();
+            return req.response().compose(HttpClientResponse::body);
+          })
+          .onComplete(ar -> {
+            if (ar.succeeded()) {
+              request();
+            } else {
+              vertx.setTimer(100, id -> {
+                assertEquals(requestCount * numWrites, ackCount);
+                complete();
+              });
+            }
+          });
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setInstances(numVerticles));
+
+    await();
+  }
+
+  @Test
+  public void testClientKeepAliveTimeoutNoStreams() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    AtomicBoolean closed = new AtomicBoolean();
+    client = vertx
+      .httpClientBuilder()
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          // We will have retry when the connection is closed
+          if (closed.compareAndSet(false, true)) {
+            client.close().onComplete(v2 -> {
+              testComplete();
+            });
+          }
+        });
+      })
+      .with(createBaseClientOptions().setHttp2KeepAliveTimeout(1))
+      .build();
+    client.request(requestOptions).onComplete(ar -> {
+      if (ar.succeeded()) {
+        ar.result().send();
+      }
+    });
+    await();
+  }
 }
