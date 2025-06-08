@@ -147,7 +147,7 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
     return trailersReceived;
   }
 
-  public void determineIfTrailersReceived(Http3Headers headers) {
+  public void determineIfTrailersReceived(VertxHttpHeaders headers) {
     trailersReceived = headerReceivedCount > 0 && headers.method() == null && headers.status() == null;
     headerReceivedCount++;
   }
