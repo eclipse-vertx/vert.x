@@ -46,7 +46,6 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
-  private VertxHttpStreamBase<?, ?> upgraded;
 
   Http3ServerConnection(
     ContextInternal context,
@@ -151,18 +150,6 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     quicStreamChannels.put(streamChannel.streamId(), streamChannel);
     vertxStream.init(streamChannel);
-  }
-
-  VertxHttpStreamBase<?, ?> stream(int id) {
-    //TODO: this block was commented only to bypass compile exceptions
-/*
-    VertxHttpStreamBase<?, ?> stream = super.stream(id);
-    if (stream == null && id == 1 && handler.upgraded) {
-      return upgraded;
-    }
-    return stream;
-*/
-    return null;
   }
 
   @Override
