@@ -296,8 +296,7 @@ public class HttpChannelConnector {
                               PromiseInternal<HttpClientConnectionInternal> promise) {
     VertxHttp3ConnectionHandler<Http3ClientConnection> clientHandler;
     try {
-      clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric
-        , authority, pooled);
+      clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
       ch.pipeline().addLast("handler", clientHandler.getHttp3ConnectionHandler());
 //      ch.pipeline().addLast(clientHandler.getUserEventHandler());
       ch.pipeline().addLast(clientHandler);

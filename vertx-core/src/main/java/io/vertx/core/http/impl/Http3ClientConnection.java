@@ -15,10 +15,8 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.*;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -34,20 +32,25 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
   private final ClientMetrics metrics;
   private final HostAndPort authority;
   private final boolean pooled;
+  private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
   private boolean evicted;
 
-  public Http3ClientConnection(HttpClientBase client,
-                               ContextInternal context,
-                               VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler,
-                               ClientMetrics metrics, HostAndPort authority, boolean pooled) {
+  Http3ClientConnection(HttpClientBase client,
+                        ContextInternal context,
+                        HostAndPort authority,
+                        VertxHttp3ConnectionHandler<? extends Http3ConnectionBase> connHandler,
+                        ClientMetrics metrics,
+                        boolean pooled,
+                        long maxLifetime) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
     this.authority = authority;
     this.pooled = pooled;
+    this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
   }
 
   @Override
@@ -157,12 +160,13 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
 
   public void recycle() {
     int timeout = client.options().getHttp2KeepAliveTimeout();
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
+    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : Long.MAX_VALUE;
   }
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
+    long now = System.currentTimeMillis();
+    return now <= expirationTimestamp && now <= lifetimeEvictionTimestamp;
   }
 
   @Override
@@ -202,23 +206,22 @@ class Http3ClientConnection extends Http3ConnectionBase implements HttpClientCon
     boolean upgrade,
     Object socketMetric,
     HostAndPort authority,
-    boolean pooled) {
+    boolean pooled,
+    long maxLifetime) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
-    VertxHttp3ConnectionHandler<Http3ClientConnection> handler =
-      new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
-        .server(false)
-        .httpSettings(HttpUtils.fromVertxSettings(client.options().getInitialHttp3Settings()))
-        .connectionFactory(connHandler -> {
-          Http3ClientConnection conn = new Http3ClientConnection(client, context, connHandler, metrics, authority,
-            pooled);
-          if (metrics != null) {
-            Object m = socketMetric;
-            conn.metric(m);
-          }
-          return conn;
-        })
-        .build(context);
+    VertxHttp3ConnectionHandler<Http3ClientConnection> handler = new VertxHttp3ConnectionHandlerBuilder<Http3ClientConnection>()
+      .server(false)
+      .httpSettings(HttpUtils.fromVertxSettings(client.options().getInitialHttp3Settings()))
+      .connectionFactory(connHandler -> {
+        Http3ClientConnection conn = new Http3ClientConnection(client, context, authority, connHandler, metrics, pooled, maxLifetime);
+        if (metrics != null) {
+          Object m = socketMetric;
+          conn.metric(m);
+        }
+        return conn;
+      })
+      .build(context);
     handler.addHandler(conn -> {
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
