@@ -75,7 +75,6 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
       ctx.fireUserEventTriggered(evt);
     }
   }
-
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     // Ignore these exception as they will be reported to the handler

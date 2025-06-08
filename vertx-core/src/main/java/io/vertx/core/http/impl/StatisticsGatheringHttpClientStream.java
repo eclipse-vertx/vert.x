@@ -19,7 +19,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.endpoint.ServerInteraction;

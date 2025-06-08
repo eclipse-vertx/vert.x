@@ -11,10 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Completable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;

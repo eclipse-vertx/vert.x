@@ -13,11 +13,7 @@ package io.vertx.tests.http;
 
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.ThreadingModel;
-import io.vertx.core.VerticleBase;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.NetClientOptions;

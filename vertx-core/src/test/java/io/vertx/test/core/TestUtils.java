@@ -584,5 +584,4 @@ public class TestUtils {
   public static byte[] fromBase64String(String s) {
     return decoder.decode(s);
   }
-
 }

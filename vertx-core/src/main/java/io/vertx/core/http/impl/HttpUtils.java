@@ -15,8 +15,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
@@ -30,7 +28,14 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.http.*;
+import io.vertx.core.http.Http2StreamPriority;
+import io.vertx.core.http.Http3Settings;
+import io.vertx.core.http.Http3StreamPriority;
+import io.vertx.core.http.HttpClosedException;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.RFC3986;
@@ -55,9 +60,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static io.netty.handler.codec.http.HttpHeaderValues.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
-import static io.netty.handler.codec.http.HttpVersion.*;
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
+import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
+import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.vertx.core.http.Http2Settings.*;
 
 /**

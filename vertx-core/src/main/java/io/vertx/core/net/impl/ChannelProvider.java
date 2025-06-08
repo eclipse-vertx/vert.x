@@ -14,7 +14,7 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.handler.proxy.*;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClosedChannelException;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -222,7 +222,7 @@ public final class ChannelProvider {
   /**
    * Signal we are connected to the remote server.
    *
-   * @param channel        the channel
+   * @param channel the channel
    * @param channelHandler the channel handler
    */
   private void connected(Channel channel, Promise<Channel> channelHandler) {

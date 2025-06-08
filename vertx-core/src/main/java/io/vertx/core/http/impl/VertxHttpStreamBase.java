@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
-import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -422,6 +421,6 @@ abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
     return null;
   }
 
-  public void determineIfTrailersReceived(Http3Headers headers) {
+  public void determineIfTrailersReceived(VertxHttpHeaders headers) {
   }
 }

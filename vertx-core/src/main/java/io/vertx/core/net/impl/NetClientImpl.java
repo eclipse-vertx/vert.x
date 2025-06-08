@@ -425,7 +425,6 @@ class NetClientImpl implements NetClientInternal {
       sock.registerEventBusHandler();
       connectHandler.complete(sock);
     });
-
     ch.pipeline().addLast("handler", handler);
   }
 

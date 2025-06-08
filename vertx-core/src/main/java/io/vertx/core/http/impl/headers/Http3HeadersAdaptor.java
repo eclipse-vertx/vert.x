@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl.headers;
 
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.vertx.core.MultiMap;

@@ -11,10 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
@@ -29,9 +26,9 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextManager;
-import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
