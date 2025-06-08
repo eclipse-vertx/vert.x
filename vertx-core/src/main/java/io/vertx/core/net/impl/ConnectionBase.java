@@ -65,7 +65,7 @@ public abstract class ConnectionBase {
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final Channel channel;
-  public final ContextInternal context;
+  protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
   private Object metric;
