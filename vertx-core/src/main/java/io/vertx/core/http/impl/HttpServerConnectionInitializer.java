@@ -19,6 +19,8 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
@@ -31,6 +33,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -56,6 +59,7 @@ class HttpServerConnectionInitializer {
   private final CompressionOptions[] compressionOptions;
   private final int compressionContentSizeThreshold;
   private final Function<String, String> encodingDetector;
+  private final GlobalTrafficShapingHandler trafficShapingHandler;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
@@ -66,7 +70,8 @@ class HttpServerConnectionInitializer {
                                   String serverOrigin,
                                   Handler<HttpServerConnection> connectionHandler,
                                   Handler<Throwable> exceptionHandler,
-                                  Object metric) {
+                                  Object metric,
+                                  GlobalTrafficShapingHandler trafficShapingHandler) {
 
     CompressionOptions[] compressionOptions = null;
     if (options.isCompressionSupported()) {
@@ -94,16 +99,25 @@ class HttpServerConnectionInitializer {
     this.compressionOptions = compressionOptions;
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
     this.encodingDetector = compressionOptions != null ? new EncodingDetector(options.getCompressionContentSizeThreshold(), compressionOptions)::determineEncoding : null;
+    this.trafficShapingHandler = trafficShapingHandler;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
-      SslHandler sslHandler = pipeline.get(SslHandler.class);
       if (options.isUseAlpn()) {
-        String protocol = sslHandler.applicationProtocol();
+        String protocol;
+        if (options.isHttp3()) {
+          protocol = Objects.requireNonNull(((QuicChannel) ch).sslEngine()).getApplicationProtocol();
+        } else {
+          protocol = pipeline.get(SslHandler.class).applicationProtocol();
+        }
+
         if (protocol != null) {
           switch (protocol) {
+            case "h3":
+              configureHttp3(ch.pipeline());
+              break;
             case "h2":
               configureHttp2(ch.pipeline());
               break;
@@ -162,6 +176,60 @@ class HttpServerConnectionInitializer {
         "Content-Length:0\r\n" +
         "\r\n", StandardCharsets.ISO_8859_1))
       .addListener(ChannelFutureListener.CLOSE);
+  }
+
+  private void configureHttp3(ChannelPipeline pipeline) {
+    configureHttp3Handler(pipeline);
+    configureHttp3Pipeline(pipeline);
+  }
+
+  private void configureHttp3Handler(ChannelPipeline pipeline) {
+    VertxHttp3ConnectionHandler<Http3ServerConnection> handler = buildHttp3ConnectionHandler(context,
+      connectionHandler);
+    pipeline.replace("handler", "handler", handler);
+    pipeline.addLast(handler.getHttp3ConnectionHandler());
+  }
+
+  void configureHttp3Pipeline(ChannelPipeline pipeline) {
+    if (!server.requestAccept()) {
+      // That should send an HTTP/3 go away
+      pipeline.channel().close();
+      return;
+    }
+  }
+
+  private VertxHttp3ConnectionHandler<Http3ServerConnection> buildHttp3ConnectionHandler(ContextInternal ctx,
+                                                                                         Handler<HttpServerConnection> handler_) {
+    //TODO: set correct props for VertxHttp3ConnectionHandlerBuilder:
+    HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
+//    int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
+//    int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
+    VertxHttp3ConnectionHandler<Http3ServerConnection> handler =
+      new VertxHttp3ConnectionHandlerBuilder<Http3ServerConnection>()
+      .server(true)
+      .trafficShapingHandler(trafficShapingHandler)
+//      .useCompression(compressionOptions)
+//      .gracefulShutdownTimeoutMillis(0)
+//      .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
+//      .useDecompression(options.isDecompressionSupported())
+      .httpSettings(HttpUtils.fromVertxSettings(options.getInitialHttp3Settings()))
+      .connectionFactory(connHandler -> {
+        Http3ServerConnection conn = new Http3ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler,
+          encodingDetector, options, metrics, trafficShapingHandler != null);
+        conn.metric(metric);
+        return conn;
+      })
+        //TODO: set log enable
+//      .logEnabled(logEnabled)
+      .build(ctx);
+    handler.addHandler(conn -> {
+      //TODO: set correct props for VertxHttp3ConnectionHandlerBuilder:
+//      if (options.getHttp2ConnectionWindowSize() > 0) {
+//        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+//      }
+      handler_.handle(conn);
+    });
+    return handler;
   }
 
   private void configureHttp2(ChannelPipeline pipeline) {

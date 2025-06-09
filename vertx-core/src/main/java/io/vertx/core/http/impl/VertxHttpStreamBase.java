@@ -14,19 +14,18 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.http2.EmptyHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
@@ -34,27 +33,52 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
-
-  private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
+abstract class VertxHttpStreamBase<C extends ConnectionBase, S> {
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-  protected Http2Stream stream;
 
   // Client context
-  private boolean writable;
-  private StreamPriority priority;
+  protected boolean writable;
+  private StreamPriorityBase priority;
   private long bytesRead;
   private long bytesWritten;
   protected boolean isConnect;
   private Throwable failure;
   private long reset = -1L;
+  protected S streamChannel;
 
-  VertxHttp2Stream(C conn, ContextInternal context) {
+  protected abstract void consumeCredits(S stream, int len);
+
+  protected abstract void writeFrame(S stream, byte type, short flags, ByteBuf payload, Promise<Void> promise);
+
+  protected abstract void writeHeaders(S stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
+                                       boolean checkFlush, FutureListener<Void> promise);
+
+  protected abstract void writePriorityFrame(StreamPriorityBase priority);
+
+  protected abstract void writeData_(S stream, ByteBuf chunk, boolean end, FutureListener<Void> promise);
+
+  protected abstract void writeReset_(int streamId, long code, FutureListener<Void> listener);
+
+  protected abstract void init_(VertxHttpStreamBase vertxHttpStream, S stream);
+
+  protected abstract int getStreamId();
+
+  protected abstract boolean remoteSideOpen(S stream);
+
+  protected abstract MultiMap getEmptyHeaders();
+
+  protected abstract boolean evaluateChannelWritability(S streamChannel);
+
+  protected abstract boolean isTrailersReceived();
+
+  protected abstract StreamPriorityBase createDefaultStreamPriority();
+
+  VertxHttpStreamBase(C conn, ContextInternal context) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
@@ -67,17 +91,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
           Buffer data = (Buffer) item;
           int len = data.length();
           conn.context().emit(null, v -> {
-            if (stream.state().remoteSideOpen()) {
+            if (remoteSideOpen(streamChannel)) {
               // Handle the HTTP upgrade case
               // buffers are received by HTTP/1 and not accounted by HTTP/2
-              conn.consumeCredits(stream, len);
+              consumeCredits(streamChannel, len);
             }
           });
           handleData(data);
         }
       }
     };
-    this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.priority = createDefaultStreamPriority();
     this.isConnect = false;
     this.writable = true;
     this.outboundQueue = new OutboundMessageQueue<>(conn.context().executor()) {
@@ -101,17 +125,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       }
       @Override
       protected void handleDrained() {
-        context.emit(VertxHttp2Stream.this, VertxHttp2Stream::handleWriteQueueDrained);
+        context.emit(VertxHttpStreamBase.this, VertxHttpStreamBase::handleWriteQueueDrained);
       }
     };
   }
 
-  void init(Http2Stream stream) {
+  void init(S streamChannel) {
     synchronized (this) {
-      this.stream = stream;
+      this.streamChannel = streamChannel;
     }
-    writable = this.conn.handler.encoder().flowController().isWritable(stream);
-    stream.setProperty(conn.streamKey, this);
+    this.writable = this.evaluateChannelWritability(streamChannel);
+    this.init_(this, streamChannel);
   }
 
   void onClose() {
@@ -125,12 +149,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     context.emit(cause, this::handleException);
   }
 
+  void onReset() {
+    this.onReset(0);
+  }
+
   void onReset(long code) {
     reset = code;
     context.emit(code, this::handleReset);
   }
 
-  void onPriorityChange(StreamPriority newPriority) {
+  void onPriorityChange(StreamPriorityBase newPriority) {
     context.emit(newPriority, priority -> {
       if (!this.priority.equals(priority)) {
         this.priority = priority;
@@ -143,7 +171,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     context.emit(frame, this::handleCustomFrame);
   }
 
-  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
   }
 
   void onData(Buffer data) {
@@ -160,7 +188,17 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onEnd() {
-    onEnd(EMPTY);
+    onEnd(getEmptyHeaders());
+  }
+
+  void onEnd(boolean headerReceived) {
+    if (headerReceived) {
+      if (!isTrailersReceived()) {
+        onEnd();
+      }
+    } else {
+      onEnd();
+    }
   }
 
   void onEnd(MultiMap trailers) {
@@ -169,7 +207,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   public int id() {
-    return stream.id();
+    return getStreamId();
   }
 
   long bytesWritten() {
@@ -221,10 +259,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   private void doWriteFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
+    writeFrame(streamChannel, (byte) type, (short) flags, payload, promise);
   }
 
-  final void writeHeaders(Http2Headers headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
+  final void writeHeaders(VertxHttpHeaders headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first) {
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
@@ -246,7 +284,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (reset != -1L) {
       if (promise != null) {
         promise.fail("Stream reset");
@@ -262,14 +300,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    writeHeaders(streamChannel, headers, end, priority, checkFlush, (FutureListener<Void>) promise);
   }
 
   protected void endWritten() {
-  }
-
-  private void writePriorityFrame(StreamPriority priority) {
-    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
   final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
@@ -306,7 +340,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
+    writeData_(streamChannel, chunk, end, (FutureListener<Void>) promise);
   }
 
   final Future<Void> writeReset(long code) {
@@ -331,15 +365,15 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     reset = code;
     int streamId;
     synchronized (this) {
-      streamId = stream != null ? stream.id() : -1;
+      streamId = getStreamId();
     }
     if (streamId != -1) {
-      conn.handler.writeReset(streamId, code, null);
+      writeReset_(streamId, code, (PromiseInternal<Void>) promise);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
+      promise.complete();
     }
-    promise.complete();
   }
 
   void handleWriteQueueDrained() {
@@ -363,23 +397,30 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleClose() {
   }
 
-  synchronized void priority(StreamPriority streamPriority) {
+  synchronized void priority(StreamPriorityBase streamPriority) {
     this.priority = streamPriority;
   }
 
-  synchronized StreamPriority priority() {
+  synchronized StreamPriorityBase priority() {
     return priority;
   }
 
-  synchronized void updatePriority(StreamPriority priority) {
+  synchronized void updatePriority(StreamPriorityBase priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
-      if (stream != null) {
+      if (streamChannel != null) {
         writePriorityFrame(priority);
       }
     }
   }
 
-  void handlePriorityChange(StreamPriority newPriority) {
+  void handlePriorityChange(StreamPriorityBase newPriority) {
+  }
+
+  protected Throwable getResetException() {
+    return null;
+  }
+
+  public void determineIfTrailersReceived(VertxHttpHeaders headers) {
   }
 }

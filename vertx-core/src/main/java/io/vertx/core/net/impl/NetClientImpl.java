@@ -17,12 +17,15 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
@@ -42,6 +45,8 @@ import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
+import static io.vertx.core.net.impl.ChannelProvider.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -228,6 +233,7 @@ class NetClientImpl implements NetClientInternal {
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
       this.sslOptions = options;
+      this.sslOptions.setHttp3(this.options.getProtocolVersion() == HttpVersion.HTTP_3);
     }
     return ctx.succeededFuture(true);
   }
@@ -247,6 +253,8 @@ class NetClientImpl implements NetClientInternal {
           connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
           return;
         }
+        sslOptions.setHttp3(options.getProtocolVersion() == HttpVersion.HTTP_3);
+
         Future<SslContextProvider> fut;
         fut = sslContextManager.resolveSslContextProvider(
           sslOptions,
@@ -310,8 +318,8 @@ class NetClientImpl implements NetClientInternal {
         }
       }
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
-        .proxyOptions(proxyOptions);
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context, options, connectTimeout)
+        .proxyOptions(proxyOptions).version(options.getProtocolVersion());;
 
       SocketAddress captured = remoteAddress;
 
@@ -322,7 +330,7 @@ class NetClientImpl implements NetClientInternal {
         connectHandler,
         captured,
         connectOptions.isSsl(),
-        channelProvider.applicationProtocol(),
+        applicationProtocol(ch),
         registerWriteHandlers));
       io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(
         remoteAddress,
@@ -356,6 +364,17 @@ class NetClientImpl implements NetClientInternal {
     } else {
       eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
+  }
+
+  private String applicationProtocol(Channel channel) {
+    if (sslOptions != null && sslOptions.isHttp3()) {
+      return Objects.requireNonNull(((QuicChannel) channel).sslEngine()).getApplicationProtocol();
+    }
+    ChannelPipeline pipeline = channel.pipeline();
+    if (pipeline.get(CLIENT_SSL_HANDLER_NAME) != null) {
+      return ((SslHandler) pipeline.get(CLIENT_SSL_HANDLER_NAME)).applicationProtocol();
+    }
+    return "";
   }
 
   private static SocketAddress peerAddress(SocketAddress remoteAddress, ConnectOptions connectOptions) {
@@ -416,4 +435,3 @@ class NetClientImpl implements NetClientInternal {
     context.emit(th, connectHandler::tryFail);
   }
 }
-

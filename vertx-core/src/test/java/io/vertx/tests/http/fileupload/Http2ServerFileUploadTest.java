@@ -12,7 +12,7 @@ package io.vertx.tests.http.fileupload;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.tests.http.Http2TestBase;
+import io.vertx.tests.http.HttpOptionsFactory;
 
 /**
  */
@@ -20,12 +20,12 @@ public class Http2ServerFileUploadTest extends HttpServerFileUploadTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+    return HttpOptionsFactory.createHttp2ClientOptions();
   }
 
 }

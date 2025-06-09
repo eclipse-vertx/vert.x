@@ -19,6 +19,7 @@ import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
@@ -49,6 +50,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
   private Set<String> enabledCipherSuites;
   private List<String> applicationProtocols;
   private boolean useAlpn;
+  private boolean http3;
   private ClientAuth clientAuth;
   private boolean forClient;
   private KeyManagerFactory kmf;
@@ -57,6 +59,12 @@ public class DefaultSslContextFactory implements SslContextFactory {
   @Override
   public SslContextFactory useAlpn(boolean useAlpn) {
     this.useAlpn = useAlpn;
+    return this;
+  }
+
+  @Override
+  public SslContextFactory http3(boolean http3) {
+    this.http3 = http3;
     return this;
   }
 
@@ -110,14 +118,14 @@ public class DefaultSslContextFactory implements SslContextFactory {
         You can override this by specifying the javax.echo.ssl.keyStore system property
          */
   private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
-    SslContextBuilder builder;
+    SslContextBuilderWrapperStrategy builder;
     if (client) {
-      builder = SslContextBuilder.forClient();
+      builder = http3 ? new QuicSslContextBuilderWrapper(QuicSslContextBuilder.forClient()) : new SslContextBuilderWrapper(SslContextBuilder.forClient());
       if (kmf != null) {
         builder.keyManager(kmf);
       }
     } else {
-      builder = SslContextBuilder.forServer(kmf);
+      builder = http3 ? new QuicSslContextBuilderWrapper(QuicSslContextBuilder.forServer(kmf, null)) : new SslContextBuilderWrapper(SslContextBuilder.forServer(kmf));
     }
     Collection<String> cipherSuites = enabledCipherSuites;
     switch (sslProvider) {
@@ -143,22 +151,26 @@ public class DefaultSslContextFactory implements SslContextFactory {
       builder.ciphers(cipherSuites);
     }
     if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
-      ApplicationProtocolConfig.SelectorFailureBehavior sfb;
-      ApplicationProtocolConfig.SelectedListenerFailureBehavior slfb;
-      if (sslProvider == SslProvider.JDK) {
-        sfb = ApplicationProtocolConfig.SelectorFailureBehavior.FATAL_ALERT;
-        slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.FATAL_ALERT;
+      if(http3) {
+        builder.supportedApplicationProtocols(applicationProtocols.toArray(new String[]{}));
       } else {
-        // Fatal alert not supportd by OpenSSL
-        sfb = ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE;
-        slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT;
+        ApplicationProtocolConfig.SelectorFailureBehavior sfb;
+        ApplicationProtocolConfig.SelectedListenerFailureBehavior slfb;
+        if (sslProvider == SslProvider.JDK) {
+          sfb = ApplicationProtocolConfig.SelectorFailureBehavior.FATAL_ALERT;
+          slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.FATAL_ALERT;
+        } else {
+          // Fatal alert not supportd by OpenSSL
+          sfb = ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE;
+          slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT;
+        }
+        builder.applicationProtocolConfig(new ApplicationProtocolConfig(
+          ApplicationProtocolConfig.Protocol.ALPN,
+          sfb,
+          slfb,
+          applicationProtocols
+        ));
       }
-      builder.applicationProtocolConfig(new ApplicationProtocolConfig(
-        ApplicationProtocolConfig.Protocol.ALPN,
-        sfb,
-        slfb,
-        applicationProtocols
-      ));
     }
     if (clientAuth != null) {
       builder.clientAuth(clientAuth);

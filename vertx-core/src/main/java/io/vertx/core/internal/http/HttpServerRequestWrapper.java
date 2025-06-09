@@ -214,13 +214,13 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public StreamPriority streamPriority() {
+  public StreamPriorityBase streamPriority() {
     return delegate.streamPriority();
   }
 
   @Override
   @Fluent
-  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriorityBase> handler) {
     return delegate.streamPriorityHandler(handler);
   }
 
