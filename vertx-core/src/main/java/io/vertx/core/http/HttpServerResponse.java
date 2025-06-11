@@ -206,6 +206,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Fluent
   HttpServerResponse endHandler(@Nullable Handler<Void> handler);
 
+  /**
+   * Send the response headers.
+   *
+   * @return a future notified by the success or failure of the write
+   */
   Future<Void> writeHead();
 
   /**
