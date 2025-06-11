@@ -23,29 +23,17 @@ import io.netty.handler.codec.http.*;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledHttpResponse implements io.netty.handler.codec.http.HttpResponse, HttpContent {
+class AssembledHttpResponse extends VertxHttpResponse implements HttpContent {
 
-  private boolean head;
-  private HttpResponseStatus status;
-  private HttpVersion version;
-  private HttpHeaders headers;
   private final ByteBuf content;
-  private DecoderResult result = DecoderResult.SUCCESS;
 
   AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers) {
     this(head, version, status, headers, Unpooled.EMPTY_BUFFER);
   }
 
   AssembledHttpResponse(boolean head, HttpVersion version, HttpResponseStatus status, HttpHeaders headers, ByteBuf content) {
-    this.head = head;
-    this.status = status;
-    this.version = version;
-    this.headers = headers;
+    super(head, version, status, headers);
     this.content = content;
-  }
-
-  boolean head() {
-    return head;
   }
 
   @Override
@@ -81,35 +69,13 @@ class AssembledHttpResponse implements io.netty.handler.codec.http.HttpResponse,
   }
 
   @Override
-  public HttpResponseStatus getStatus() {
-    return status;
-  }
-
-  @Override
   public AssembledHttpResponse setStatus(HttpResponseStatus status) {
-    this.status = status;
-    return this;
+    return (AssembledHttpResponse) super.setStatus(status);
   }
 
   @Override
   public AssembledHttpResponse setProtocolVersion(HttpVersion version) {
-    this.version = version;
-    return this;
-  }
-
-  @Override
-  public HttpVersion getProtocolVersion() {
-    return version;
-  }
-
-  @Override
-  public HttpVersion protocolVersion() {
-    return version;
-  }
-
-  @Override
-  public HttpResponseStatus status() {
-    return status;
+    return (AssembledHttpResponse) super.setProtocolVersion(version);
   }
 
   @Override
@@ -122,26 +88,6 @@ class AssembledHttpResponse implements io.netty.handler.codec.http.HttpResponse,
   public AssembledHttpResponse touch(Object hint) {
     content.touch(hint);
     return this;
-  }
-
-  @Override
-  public DecoderResult decoderResult() {
-    return result;
-  }
-
-  @Override
-  public HttpHeaders headers() {
-    return headers;
-  }
-
-  @Override
-  public DecoderResult getDecoderResult() {
-    return result;
-  }
-
-  @Override
-  public void setDecoderResult(DecoderResult result) {
-    this.result = result;
   }
 
   @Override

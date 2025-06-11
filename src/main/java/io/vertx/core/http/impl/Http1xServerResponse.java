@@ -322,6 +322,25 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public Future<Void> writeHead() {
+    PromiseInternal<Void> promise = context.promise();
+    synchronized (conn) {
+      if (headWritten) {
+        throw new IllegalStateException();
+      }
+      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
+      VertxHttpResponse msg;
+      prepareHeaders(-1);
+      msg = new VertxHttpResponse(head, version, status, headers);
+      conn.writeToChannel(msg, promise);
+    }
+    return promise.future();
+  }
+
+  @Override
   public Future<Void> write(Buffer chunk) {
     PromiseInternal<Void> promise = context.promise();
     write(chunk.getByteBuf(), promise);

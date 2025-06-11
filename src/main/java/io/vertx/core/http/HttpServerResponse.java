@@ -208,6 +208,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse endHandler(@Nullable Handler<Void> handler);
 
   /**
+   * Send the response headers.
+   *
+   * @return a future notified by the success or failure of the write
+   */
+  Future<Void> writeHead();
+
+  /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @param chunk  the string to write

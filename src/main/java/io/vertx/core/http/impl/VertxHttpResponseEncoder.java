@@ -73,6 +73,6 @@ final class VertxHttpResponseEncoder extends HttpResponseEncoder {
   protected boolean isContentAlwaysEmpty(HttpResponse msg) {
     // In HttpServerCodec this is tracked via a FIFO queue of HttpMethod
     // here we track it in the assembled response as we don't use HttpServerCodec
-    return (msg instanceof AssembledHttpResponse && ((AssembledHttpResponse) msg).head()) || super.isContentAlwaysEmpty(msg);
+    return (msg instanceof VertxHttpResponse && ((VertxHttpResponse) msg).head()) || super.isContentAlwaysEmpty(msg);
   }
 }
