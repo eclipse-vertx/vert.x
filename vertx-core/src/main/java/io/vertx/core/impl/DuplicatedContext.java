@@ -141,9 +141,11 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public ContextInternal duplicate() {
+  public ContextInternal duplicate(boolean copy) {
     DuplicatedContext duplicate = new DuplicatedContext(delegate, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
-    delegate.owner().duplicate(this, duplicate);
+    if (copy) {
+      delegate.owner().duplicate(this, duplicate);
+    }
     return duplicate;
   }
 
