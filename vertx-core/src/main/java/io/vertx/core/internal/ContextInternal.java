@@ -367,13 +367,17 @@ public interface ContextInternal extends Context {
    * <p>
    * The duplicate context has its own
    * <ul>
-   *   <li>local context data</li>
+   *   <li>local context data, initialized with a copy of the existing local context data when {@code copy} is {@code true}</li>
    *   <li>worker task queue</li>
    * </ul>
    *
    * @return a duplicate of this context
    */
-  ContextInternal duplicate();
+  ContextInternal duplicate(boolean copy);
+
+  default ContextInternal duplicate() {
+    return duplicate(false);
+  }
 
   /**
    * Like {@link Vertx#setPeriodic(long, Handler)} except the periodic timer will fire on this context and the
