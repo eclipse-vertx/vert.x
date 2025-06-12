@@ -187,7 +187,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, false, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext().unwrap(), this, address, false, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
   }
 
   @Override
@@ -200,17 +200,18 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public <T> MessageConsumer<T> localConsumer(String address) {
-    checkStarted();
-    Objects.requireNonNull(address, "address");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, true, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
+    return localConsumer(vertx.getOrCreateContext(), address);
   }
 
   @Override
-  public <T> MessageConsumer<T> localConsumer(String address, Handler<Message<T>> handler) {
-    Objects.requireNonNull(handler, "handler");
-    MessageConsumer<T> consumer = localConsumer(address);
-    consumer.handler(handler);
-    return consumer;
+  public <T> MessageConsumer<T> localConsumer(Context context, String address) {
+    checkStarted();
+    Objects.requireNonNull(context, "context");
+    Objects.requireNonNull(address, "address");
+    if (context.owner() != vertx) {
+      throw new IllegalArgumentException("Invalid context instance");
+    }
+    return new MessageConsumerImpl<>((ContextInternal) context, this, address, true, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
   }
 
   @Override

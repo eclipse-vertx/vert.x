@@ -81,6 +81,10 @@ public abstract class ConnectionBase {
 
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
 
+    if (context.isDuplicate()) {
+      throw new IllegalArgumentException("Cannot accept duplicate contexts");
+    }
+
     PromiseInternal<Void> f = context.promise();
     chctx
       .channel()

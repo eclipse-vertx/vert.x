@@ -59,6 +59,9 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   }
 
   void webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions, Promise<WebSocket> promise) {
+    if (ctx.isDuplicate()) {
+      throw new IllegalArgumentException();
+    }
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
@@ -91,47 +94,10 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   }
 
   public Future<WebSocket> webSocket(WebSocketConnectOptions options) {
-    return webSocket(vertx.getOrCreateContext(), options);
+    return webSocket(vertx.getOrCreateContext().unwrap(), options);
   }
 
-  static WebSocketConnectOptions webSocketConnectOptionsAbs(String url, MultiMap headers, WebSocketVersion version, List<String> subProtocols) {
-    URI uri;
-    try {
-      uri = new URI(url);
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException(e);
-    }
-    String scheme = uri.getScheme();
-    if (!"ws".equals(scheme) && !"wss".equals(scheme)) {
-      throw new IllegalArgumentException("Scheme: " + scheme);
-    }
-    boolean ssl = scheme.length() == 3;
-    int port = uri.getPort();
-    if (port == -1) port = ssl ? 443 : 80;
-    StringBuilder relativeUri = new StringBuilder();
-    if (uri.getRawPath() != null) {
-      relativeUri.append(uri.getRawPath());
-    }
-    if (uri.getRawQuery() != null) {
-      relativeUri.append('?').append(uri.getRawQuery());
-    }
-    if (uri.getRawFragment() != null) {
-      relativeUri.append('#').append(uri.getRawFragment());
-    }
-    return new WebSocketConnectOptions()
-      .setHost(uri.getHost())
-      .setPort(port).setSsl(ssl)
-      .setURI(relativeUri.toString())
-      .setHeaders(headers)
-      .setVersion(version)
-      .setSubProtocols(subProtocols);
-  }
-
-  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebSocketVersion version, List<String> subProtocols) {
-    return webSocket(webSocketConnectOptionsAbs(url, headers, version, subProtocols));
-  }
-
-  Future<WebSocket> webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
+  private Future<WebSocket> webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions) {
     PromiseInternal<WebSocket> promise = ctx.promise();
     webSocket(ctx, connectOptions, promise);
     return promise.andThen(ar -> {

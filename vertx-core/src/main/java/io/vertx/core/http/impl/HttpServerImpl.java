@@ -169,7 +169,27 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   }
 
   @Override
-  public synchronized Future<HttpServer> listen(SocketAddress address) {
+  public Future<HttpServer> listen(SocketAddress address) {
+    ContextInternal context = vertx.getOrCreateContext();
+    ContextInternal listenContext;
+    if (context.isEventLoopContext()) {
+      listenContext = context.unwrap();
+    } else {
+      listenContext = context.toBuilder()
+        .withThreadingModel(ThreadingModel.EVENT_LOOP)
+        .build();
+    }
+    Promise<HttpServer> promise = context.promise();
+    Supplier<ContextInternal> streamContextSupplier = context.unwrap()::duplicate;
+    listen(listenContext, context.threadingModel(), streamContextSupplier, address, promise);
+    return promise.future();
+  }
+
+  private synchronized void listen(ContextInternal listenContext,
+                                   ThreadingModel threadingModel,
+                                   Supplier<ContextInternal> streamContextSupplier,
+                                   SocketAddress address,
+                                   Promise<HttpServer> promise) {
     if (requestHandler == null && webSocketHandler == null && webSocketHandhakeHandler == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
@@ -181,23 +201,12 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     if (tcpOptions.getSslOptions() != null) {
       configureApplicationLayerProtocols(tcpOptions.getSslOptions());
     }
-    ContextInternal context = vertx.getOrCreateContext();
-    ContextInternal listenContext;
-    // Not sure of this
-    if (context.isEventLoopContext()) {
-      listenContext = context.unwrap();
-    } else {
-      listenContext = context.toBuilder()
-        .withThreadingModel(ThreadingModel.EVENT_LOOP)
-        .build();
-    }
     NetServerInternal server = vertx.createNetServer(tcpOptions);
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;
     server.exceptionHandler(exceptionHandler);
     server.connectHandler(so -> {
       NetSocketImpl soi = (NetSocketImpl) so;
-      Supplier<ContextInternal> streamContextSupplier = context.unwrap()::duplicate;
       String host = address.isInetSocket() ? address.host() : "localhost";
       int port = address.port();
       String serverOrigin = (tcpOptions.isSsl() ? "https" : "http") + "://" + host + ":" + port;
@@ -211,7 +220,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         exceptionHandler);
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
-        context.threadingModel(),
+        threadingModel,
         streamContextSupplier,
         this,
         vertx,
@@ -224,15 +233,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     });
     tcpServer = server;
     closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
-    Promise<HttpServer> result = context.promise();
-    tcpServer.listen(listenContext, address).onComplete(ar -> {
-      if (ar.succeeded()) {
-        result.complete(this);
-      } else {
-        result.fail(ar.cause());
-      }
-    });
-    return result.future();
+    tcpServer.listen(listenContext, address).map(this).onComplete(promise);
   }
 
   private void doShutdown(NetServer netServer, Completable<Void> p) {

@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.eventbus.impl.DefaultSerializableChecker;
 import io.vertx.core.metrics.Measured;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
@@ -175,7 +176,12 @@ public interface EventBus extends Measured {
    * @param handler  the handler that will process the received messages
    * @return the event bus message consumer
    */
-  <T> MessageConsumer<T> localConsumer(String address, Handler<Message<T>> handler);
+  default <T> MessageConsumer<T> localConsumer(String address, Handler<Message<T>> handler) {
+    Objects.requireNonNull(handler, "handler");
+    MessageConsumer<T> consumer = localConsumer(address);
+    consumer.handler(handler);
+    return consumer;
+  }
 
   /**
    * Create a message sender against the specified address.

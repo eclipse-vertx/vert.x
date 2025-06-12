@@ -166,6 +166,9 @@ public class HttpChannelConnector {
   }
 
   public Future<HttpClientConnectionInternal> httpConnect(ContextInternal context) {
+    if (context.isDuplicate()) {
+      throw new IllegalArgumentException("Cannot accept duplicate contexts");
+    }
     Promise<NetSocket> promise = context.promise();
     Future<NetSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens

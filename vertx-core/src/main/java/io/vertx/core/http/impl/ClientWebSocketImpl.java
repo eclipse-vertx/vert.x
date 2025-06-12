@@ -52,7 +52,7 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
 
   @Override
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
-    return connect(client.vertx().getOrCreateContext(), options);
+    return connect(client.vertx().getOrCreateContext().unwrap(), options);
   }
 
   @Override

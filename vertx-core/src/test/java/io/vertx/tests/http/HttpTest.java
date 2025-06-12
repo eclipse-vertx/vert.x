@@ -7050,25 +7050,74 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testServerStartedFromDuplicatedContext() throws Exception {
+  public void testServerWithDuplicatedContext() throws Exception {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     ContextInternal duplicated = context.duplicate();
-    ContextInternal.LOCAL_MAP.get(duplicated, ConcurrentHashMap::new).put("foo", "bar");
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
 
     server.requestHandler(req -> {
       ContextInternal current = ContextInternal.current();
       assertTrue("Not a duplicated context", current.isDuplicate());
       assertNotSame("Request should be handled on a different duplicated context", duplicated, current);
-      ConcurrentMap<Object, Object> localMap = ContextInternal.LOCAL_MAP.get(current, ConcurrentHashMap::new);
-      assertFalse("Local map shouldn't have an entry for the key 'foo'", localMap.containsKey("foo"));
+      assertNull("Local map shouldn't have an entry for the key 'foo'", current.getLocal(ContextInternal.LOCAL_MAP));
       req.response().end();
     });
-    startServer(duplicated);
+    startServer(testAddress, duplicated);
 
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .expecting(HttpResponseExpectation.SC_OK)
-      .onComplete(onSuccess(v -> testComplete()));
+      .await();
+  }
+
+  @Test
+  public void testClientPoolWithDuplicatedContext() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+
+    duplicated.runOnContext(v -> {
+      client.request(requestOptions)
+        .compose(req -> {
+          HttpConnection conn = req.connection();
+          conn.closeHandler(v2 -> {
+            assertFalse("A duplicated context", context.isDuplicate());
+            testComplete();
+          });
+          return req
+            .send()
+            .expecting(HttpResponseExpectation.SC_OK)
+            .onComplete(onSuccess(v2 -> {
+              conn.close();
+            }));
+        });
+    });
+
+    await();
+  }
+
+  @Test
+  public void testClientConnectWithDuplicatedContext() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
+
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+
+    duplicated.runOnContext(v -> {
+      client.connect(requestOptions).onComplete(conn -> {
+        assertSame(duplicated.unwrap(), Vertx.currentContext());
+        testComplete();
+      });
+    });
 
     await();
   }

@@ -38,6 +38,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages) {
     super(context, eventBus, address, false);
+
+    if (context.isDuplicate()) {
+      throw new IllegalArgumentException("Duplicated context are not allowed");
+    }
+
     this.localOnly = localOnly;
     this.result = context.promise();
     this.maxBufferedMessages = maxBufferedMessages;

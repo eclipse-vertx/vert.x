@@ -44,7 +44,7 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
     if (wsHandler != null || wsHandshakeHandler != null) {
       if (req.headers().contains(UPGRADE, WEBSOCKET, true) && handlers.server.wsAccept()) {
         // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
-        ((Http1xServerRequest)req).webSocketHandshake().onComplete(ar -> {
+        ((Http1xServerRequest)req).webSocketHandshake(((Http1xServerRequest)req).context.unwrap()).onComplete(ar -> {
           if (ar.succeeded()) {
             ServerWebSocketHandshaker handshake = (ServerWebSocketHandshaker) ar.result();
             if (wsHandshakeHandler == null) {
