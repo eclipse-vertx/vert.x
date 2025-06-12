@@ -121,8 +121,8 @@ public final class ShadowContext extends ContextBase {
   }
 
   @Override
-  public ContextInternal duplicate() {
-    return new ShadowContext(owner, eventLoop, delegate.duplicate());
+  public ContextInternal duplicate(boolean copy) {
+    return new ShadowContext(owner, eventLoop, delegate.duplicate(copy));
   }
 
   @Override
