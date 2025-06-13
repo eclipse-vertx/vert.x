@@ -3015,16 +3015,21 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testClientConnectionCloseTimeout() {
-    testClientConnectionCloseTimeout(1);
+    testClientConnectionCloseTimeout(1, true, 1000);
   }
 
   @Test
   public void testClientConnectionCloseImmediately() {
-    testClientConnectionCloseTimeout(0);
+    testClientConnectionCloseTimeout(0, true, 1000);
   }
 
-  public void testClientConnectionCloseTimeout(int timeout) {
-    waitFor(timeout > 0L ? 3 : 2);
+  @Test
+  public void testClientConnectionCloseTimeoutWithoutCloseFrame() {
+    testClientConnectionCloseTimeout(1, false, 1006);
+  }
+
+  public void testClientConnectionCloseTimeout(int timeout, boolean respondWithCloseFrame, int expectedStatusCode) {
+    waitFor(3);
     List<Object> received = Collections.synchronizedList(new ArrayList<>());
     server = vertx.createHttpServer();
     server.requestHandler(req -> {
@@ -3034,41 +3039,39 @@ public class WebSocketTest extends VertxTestBase {
         soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
         soi.messageHandler(msg -> {
           received.add(msg);
-          if (msg instanceof CloseWebSocketFrame) {
+          if (msg instanceof CloseWebSocketFrame && respondWithCloseFrame) {
             CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
             soi.writeMessage(new CloseWebSocketFrame(frame.statusCode(), frame.reasonText()));
           }
         });
-        soi.closeHandler(v -> {
-          complete();
-        });
+        soi.closeHandler(v -> complete());
       }));
     });
-    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(v1 -> {
-      client = vertx.createWebSocketClient(new WebSocketClientOptions().setClosingTimeout(timeout));
-      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat").onComplete(onSuccess(ws -> {
-        if (timeout > 0L) {
-          ws.endHandler(v -> {
-            complete();
-          });
-          ws.exceptionHandler(err -> fail());
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setClosingTimeout(timeout));
+    WebSocket ws = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat").await();
+    ws.endHandler(v -> {
+      complete();
+    });
+    ws.exceptionHandler(err -> {
+      complete();
+    });
+    ws.closeHandler(v -> {
+      if (timeout > 0L) {
+        assertEquals(1, received.size());
+        Object msg = received.get(0);
+        try {
+          assertNotNull(ws.closeStatusCode());
+          assertEquals(expectedStatusCode, (short)ws.closeStatusCode());
+          assertEquals(msg.getClass(), CloseWebSocketFrame.class);
+        } finally {
+          ReferenceCountUtil.release(msg);
         }
-        ws.closeHandler(v -> {
-          if (timeout > 0L) {
-            assertEquals(1, received.size());
-            Object msg = received.get(0);
-            try {
-              assertEquals(msg.getClass(), CloseWebSocketFrame.class);
-            } finally {
-              ReferenceCountUtil.release(msg);
-            }
-          }
-          complete();
-        });
-        // Client sends a close frame but server will not close the TCP connection as expected
-        ws.close();
-      }));
-    }));
+      }
+      complete();
+    });
+    // Client sends a close frame but server will not close the TCP connection as expected
+    ws.close();
     await();
   }
 
