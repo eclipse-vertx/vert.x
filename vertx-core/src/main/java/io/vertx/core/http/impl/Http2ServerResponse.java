@@ -25,6 +25,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -34,6 +36,9 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
+import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.FileChannel;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -42,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
+public class Http2ServerResponse implements HttpServerResponse, HttpResponse, FileSender<AsynchronousFileChannel> {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
@@ -567,6 +572,49 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         return fut
           .eventually(file::close);
     });
+  }
+
+  @Override
+  public FileSender<AsynchronousFileChannel> asFileChannelSender() {
+    return this;
+  }
+
+  @Override
+  public Future<Void> sendFile(AsynchronousFileChannel channel, String extension, long offset, long length) {
+    if (offset < 0) {
+      return stream.context.failedFuture("offset : " + offset + " (expected: >= 0)");
+    }
+    if (length < 0) {
+      return stream.context.failedFuture("length : " + length + " (expected: >= 0)");
+    }
+    synchronized (conn) {
+      checkValid();
+    }
+    AsyncFile file = AsyncFileImpl.createFromChannel(stream.vertx, channel, stream.context);
+    long size;
+    try {
+      size = channel.size();
+    } catch (IOException e) {
+      return stream.context.failedFuture("unable to get the size of the channel");
+    }
+    long contentLength = Math.min(length, size - offset);
+    if (contentLength < 0) {
+      return stream.context.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
+    }
+    file.setReadPos(offset);
+    file.setReadLength(contentLength);
+    // fail early before status code/headers are written to the response
+    if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+      putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
+    }
+    if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+      String contentType = MimeMapping.mimeTypeForExtension(extension);
+      if (contentType != null) {
+        putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+      }
+    }
+    checkSendHeaders(false);
+    return file.pipeTo(this);
   }
 
   @Override

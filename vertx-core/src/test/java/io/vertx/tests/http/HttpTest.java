@@ -52,6 +52,9 @@ import org.junit.rules.TemporaryFolder;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.Channel;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -1854,7 +1857,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
       assertIllegalStateException(() -> resp.writeQueueFull());
       assertIllegalStateException(() -> resp.putHeader("foo", "bar"));
-      assertIllegalStateException(() -> resp.sendFile("webroot/somefile.html"));
+      assertIllegalStateException(() -> resp.sendFile("a/a.txt"));
       assertIllegalStateException(() -> resp.end());
       assertIllegalStateException(() -> resp.end("foo"));
       assertIllegalStateException(() -> resp.end(buff));
@@ -1863,7 +1866,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> resp.write("foo"));
       assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
       assertIllegalStateException(() -> resp.write(buff));
-      assertIllegalStateException(() -> resp.sendFile("webroot/somefile.html"));
+      assertIllegalStateException(() -> resp.sendFile("a/a.txt"));
       assertIllegalStateException(() -> resp.end());
       assertIllegalStateException(() -> resp.end("foo"));
       assertIllegalStateException(() -> resp.end(buff));
@@ -2300,6 +2303,103 @@ public abstract class HttpTest extends HttpTestBase {
       }));
 
     await();
+  }
+
+  @Test
+  public void testSendFileWithFileChannel() throws Exception {
+    int expected = 16 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", expected);
+    Channel channel;
+    if (this instanceof Http1xTest) {
+      channel = FileChannel.open(file.toPath());
+    }else{
+      channel = AsynchronousFileChannel.open(file.toPath());
+    }
+    server.requestHandler(
+        req -> {
+          req.response().asFileChannelSender().sendFile(channel, null);
+        });
+    startServer(testAddress);
+    int[] length = {0};
+    Integer len = client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
+          resp.handler(buff -> {
+            length[0] += buff.length();
+          });
+          resp.exceptionHandler(this::fail);
+          return resp.end();
+        }))
+      .map(v -> length[0]).await();
+    assertEquals((int)len, file.length());
+  }
+
+  @Test
+  public void testSendFileWithFileChannelAndExtension() throws Exception {
+    int expected = 16 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", expected);
+    Channel channel;
+    if (this instanceof Http1xTest) {
+      channel = FileChannel.open(file.toPath());
+    }else{
+      channel = AsynchronousFileChannel.open(file.toPath());
+    }
+    server.requestHandler(
+        req -> {
+          req.response().asFileChannelSender().sendFile(channel, "mp4");
+        });
+    startServer(testAddress);
+    Object[] res = {0, ""};
+    Object[] r = client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
+          resp.handler(buff -> {
+            Integer length = (Integer) res[0];
+            length += buff.length();
+            res[0] = length;
+          });
+          res[1] = resp.getHeader("Content-Type");
+          resp.exceptionHandler(this::fail);
+          return resp.end();
+        }))
+      .map(v -> res).await();
+    assertEquals((int)r[0], file.length());
+    assertEquals(r[1], "video/mp4");
+  }
+
+  @Test
+  public void testSendFileWithFileChannelRange() throws Exception {
+    int fileLength = 16 * 1024 * 1024;
+    File file = TestUtils.tmpFile(".dat", fileLength);
+    Channel channel;
+    if (this instanceof Http1xTest) {
+      channel = FileChannel.open(file.toPath());
+    }else{
+      channel = AsynchronousFileChannel.open(file.toPath());
+    }
+    int offset = 1024 * 4;
+    int expectedRange = fileLength - offset;
+    server.requestHandler(
+        req -> {
+          req.response().asFileChannelSender().sendFile(channel, "mp4", offset, expectedRange);
+        });
+    startServer(testAddress);
+    Object[] res = {0, ""};
+    Object[] r = client.request(requestOptions)
+      .compose(req -> req.send()
+        .compose(resp -> {
+          resp.handler(buff -> {
+            Integer length = (Integer) res[0];
+            length += buff.length();
+            res[0] = length;
+          });
+          res[1] = resp.getHeader("Content-Type");
+          resp.exceptionHandler(this::fail);
+          return resp.end();
+        }))
+      .map(v -> res).await();
+    assertEquals(expectedRange, (int)r[0]);
+    assertEquals("video/mp4", r[1]);
   }
 
   @Test

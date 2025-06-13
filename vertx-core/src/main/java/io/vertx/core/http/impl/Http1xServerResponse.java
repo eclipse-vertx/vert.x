@@ -14,10 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -33,8 +31,6 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.Metrics;
@@ -43,17 +39,19 @@ import io.vertx.core.spi.observability.HttpResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse, FileSender<FileChannel> {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
 
   private final VertxInternal vertx;
@@ -442,39 +440,85 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    RandomAccessFile raf;
+    File file = vertx.fileResolver().resolve(filename);
+    try {
+      raf = new RandomAccessFile(file, "r");
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    Future<Void> result = sendFileInternal(filename, offset,
+      length,
+      MimeMapping::mimeTypeForFilename,
+      (r) -> {
+        try {
+          return r.length();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      },
+      () -> raf,
+      conn::sendFile);
+    if (result.failed()) {
+      try {
+        raf.close();
+      } catch (IOException ignored) {
+      }
+    }
+    return result;
+  }
+
+  @Override
+  public FileSender asFileChannelSender() {
+    return this;
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
+    return sendFileInternal(extension, offset,
+      length,
+      MimeMapping::mimeTypeForExtension,
+      (c) -> {
+        try {
+          return c.size();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      },
+      () -> channel,
+      conn::sendFile);
+  }
+
+  private <F> Future<Void> sendFileInternal(String nameOrExtension, long offset, long length, Function<String, String> contentTypeMapper, Function<F, Long> lengthSupplier, Supplier<F> fileSupplier, Sender<F> sendFileSupplier) {
     ContextInternal ctx = vertx.getOrCreateContext();
     if (offset < 0) {
-      return context.failedFuture("offset : " + offset + " (expected: >= 0)");
+      return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
     }
     if (length < 0) {
-      return context.failedFuture("length : " + length + " (expected: >= 0)");
+      return ctx.failedFuture("length : " + length + " (expected: >= 0)");
     }
     synchronized (conn) {
       checkValid();
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
-      File file = vertx.fileResolver().resolve(filename);
-      RandomAccessFile raf;
+
+      long size;
       try {
-        raf = new RandomAccessFile(file, "r");
+        size = lengthSupplier.apply(fileSupplier.get());
       } catch (Exception e) {
         return ctx.failedFuture(e);
       }
-      long actualLength = Math.min(length, file.length() - offset);
-      long actualOffset = Math.min(offset, file.length());
+      long actualLength = Math.min(length, size - offset);
+      long actualOffset = Math.min(offset, size);
 
       // fail early before status code/headers are written to the response
       if (actualLength < 0) {
-        try {
-          raf.close();
-        } catch (IOException ignore) {
-        }
-        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + file.length());
+        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
       }
 
       if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
-        String contentType = MimeMapping.mimeTypeForFilename(filename);
+        String contentType = contentTypeMapper.apply(nameOrExtension);
         if (contentType != null) {
           headers.set(HttpHeaders.CONTENT_TYPE, contentType);
         }
@@ -485,7 +529,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
       conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
 
-      ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
+      ChannelFuture channelFut = sendFileSupplier.send(fileSupplier.get(), actualOffset, actualLength);
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
@@ -499,7 +543,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.emit(handler);
+          ctx.emit(handler);
         }
 
         // allow to write next response
@@ -511,7 +555,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
           end = !closed ? endHandler : null;
         }
         if (null != end) {
-          context.emit(end);
+          ctx.emit(end);
         }
       });
 
@@ -704,11 +748,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
           return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
         }
-        ChannelPipeline pipeline = conn.channel().pipeline();
-        WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
-        if (wsHandler != null) {
-          pipeline.remove(wsHandler);
-        }
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
@@ -795,4 +834,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
+
+  @FunctionalInterface
+  private static interface Sender<F> {
+
+    ChannelFuture send(F u, Long v, Long w);
+
+  }
+
 }
