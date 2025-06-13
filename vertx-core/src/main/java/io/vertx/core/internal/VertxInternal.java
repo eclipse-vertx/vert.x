@@ -14,6 +14,8 @@ package io.vertx.core.internal;
 
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.impl.*;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
@@ -101,6 +103,9 @@ public interface VertxInternal extends Vertx {
 
   @Override
   ContextInternal getOrCreateContext();
+
+  @Override
+  EventBusInternal eventBus();
 
   EventLoopGroup eventLoopGroup();
 

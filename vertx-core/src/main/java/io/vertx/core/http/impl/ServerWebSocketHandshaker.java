@@ -52,8 +52,8 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
   private final WebSocketServerHandshaker handshaker;
   private boolean done;
 
-  public ServerWebSocketHandshaker(Http1xServerRequest request, WebSocketServerHandshaker handshaker, HttpServerOptions options) {
-    super(request.context);
+  public ServerWebSocketHandshaker(Http1xServerRequest request, ContextInternal context, WebSocketServerHandshaker handshaker, HttpServerOptions options) {
+    super(context);
     this.request = request;
     this.handshaker = handshaker;
     this.options = options;
@@ -94,7 +94,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     }
     ServerWebSocket ws;
     try {
-      ws = acceptHandshake();
+      ws = acceptHandshake(context);
     } catch (Exception e) {
       return rejectHandshake(BAD_REQUEST.code())
         .transform(ar -> {
@@ -159,7 +159,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     return response.setStatusCode(sc).end(status.reasonPhrase());
   }
 
-  private ServerWebSocket acceptHandshake() {
+  private ServerWebSocket acceptHandshake(ContextInternal context) {
     Http1xServerConnection httpConn = (Http1xServerConnection) request.connection();
     ChannelHandlerContext chctx = httpConn.channelHandlerContext();
     Channel channel = chctx.channel();
@@ -175,9 +175,9 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     }
     VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
       long closingTimeoutMS = options.getWebSocketClosingTimeout() >= 0 ? options.getWebSocketClosingTimeout() * 1000L : 0L;
-      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context, ctx, true, closingTimeoutMS,httpConn.metrics);
+      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(context, ctx, true, closingTimeoutMS,httpConn.metrics);
       ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
-        request.context(),
+        context,
         webSocketConn,
         handshaker.version() != WebSocketVersion.V00,
         request,

@@ -15,6 +15,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
@@ -28,6 +29,7 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -974,6 +976,31 @@ public abstract class EventBusTestBase extends VertxTestBase {
         testComplete();
       }));
     });
+    await();
+  }
+
+  @Test
+  public void testConsumerWithDuplicatedContext() {
+    Vertx[] vertices = vertices(2);
+
+    ContextInternal context = (ContextInternal) vertices[0].getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
+
+    duplicated.runOnContext(v1 -> {
+      vertices[0]
+        .eventBus()
+        .consumer(ADDRESS1, msg -> {
+          ContextInternal current = ContextInternal.current();
+          assertTrue("Not a duplicated context", current.isDuplicate());
+          assertNull("Local map shouldn't have an entry for the key 'foo'", current.getLocal(ContextInternal.LOCAL_MAP));
+          testComplete();
+      }).completion()
+        .onComplete(onSuccess(v2 -> {
+          vertices[1].eventBus().send(ADDRESS1, "ping");
+        }));
+    });
+
     await();
   }
 }

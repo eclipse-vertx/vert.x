@@ -141,7 +141,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   @Override
   public Future<NetServer> listen(SocketAddress localAddress) {
-    return listen(vertx.getOrCreateContext(), localAddress);
+    ContextInternal context = vertx.getOrCreateContext();
+    return listen(context.unwrap(), localAddress);
   }
 
   @Override
@@ -151,6 +152,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
+    }
+    if (context.isDuplicate()) {
+      throw new IllegalArgumentException("Duplicate context are not allowed");
     }
     return bind(context, localAddress).map(this);
   }

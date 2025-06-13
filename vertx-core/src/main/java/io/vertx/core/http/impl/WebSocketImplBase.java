@@ -25,6 +25,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -88,6 +89,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
                     int maxWebSocketFrameSize,
                     int maxWebSocketMessageSize,
                     boolean registerWebSocketWriteHandlers) {
+    if (context.isDuplicate()) {
+      throw new IllegalArgumentException();
+    }
     this.supportsContinuation = supportsContinuation;
     if (registerWebSocketWriteHandlers) {
       textHandlerID = "__vertx.ws." + UUID.randomUUID();
@@ -117,12 +121,12 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.headers = headers;
   }
 
-  void registerHandler(EventBus eventBus) {
+  void registerHandler(EventBusInternal eventBus) {
     if (binaryHandlerID != null) {
       Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
       Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
-      binaryHandlerRegistration = eventBus.<Buffer>localConsumer(binaryHandlerID).handler(binaryHandler);
-      textHandlerRegistration = eventBus.<String>localConsumer(textHandlerID).handler(textHandler);
+      binaryHandlerRegistration = eventBus.<Buffer>localConsumer(context, binaryHandlerID).handler(binaryHandler);
+      textHandlerRegistration = eventBus.<String>localConsumer(context, textHandlerID).handler(textHandler);
     }
   }
 

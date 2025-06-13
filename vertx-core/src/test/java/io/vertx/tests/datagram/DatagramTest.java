@@ -16,6 +16,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -569,6 +571,30 @@ public class DatagramTest extends VertxTestBase {
           .send(expected, 1234, "127.0.0.1")
           .onComplete(onSuccess(s -> complete()));
       }));
+    await();
+  }
+
+  @Test
+  public void testSocketWithDuplicatedContext() {
+    waitFor(2);
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
+    Promise<DatagramSocket> cont = Promise.promise();
+    duplicated.runOnContext(v -> {
+      peer2 = vertx.createDatagramSocket(new DatagramSocketOptions());
+      peer2.exceptionHandler(t -> fail(t.getMessage()));
+      peer2.handler(packet -> {
+        assertSame(context, Vertx.currentContext());
+        complete();
+      });
+      peer2.listen(1234, "127.0.0.1").onComplete(cont);
+    });
+    cont.future().await();
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer1
+      .send(TestUtils.randomBuffer(128), 1234, "127.0.0.1")
+      .onComplete(onSuccess(s -> complete()));
     await();
   }
 }
