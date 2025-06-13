@@ -75,7 +75,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
-  private boolean closing;
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
@@ -208,9 +207,13 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
 
   @Override
   public Short closeStatusCode() {
+    Short sc;
+    boolean isClosed;
     synchronized (this) {
-      return closeStatusCode;
+      sc = closeStatusCode;
+      isClosed = closed;
     }
+    return isClosed ? (sc == null ? 1006 : sc) : sc;
   }
 
   @Override
@@ -441,13 +444,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
         fetch(1);
         break;
     }
-  }
-
-  /**
-   * Close the connection.
-   */
-  void closeConnection() {
-    chctx.close();
   }
 
   private class FrameAggregator implements Handler<WebSocketFrameInternal> {
