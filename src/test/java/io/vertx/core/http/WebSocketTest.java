@@ -16,16 +16,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
+import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
@@ -38,7 +30,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HAProxy;
@@ -59,22 +50,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -520,13 +497,41 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  // Let's manually handle the WebSocket handshake and write a frame to the client
   public void testHandleWSManually() throws Exception {
+    testHandleWSManually(false, false);
+  }
+
+  @Test
+  public void testHandleWSManuallyDeclineExtension() throws Exception {
+    testHandleWSManually(true, false);
+  }
+
+  @Test
+  public void testHandleWSManuallyDeclineSubprotocol() throws Exception {
+    testHandleWSManually(false, true);
+  }
+
+  private void testHandleWSManually(boolean declineExtension, boolean declineSubprotocol) throws Exception {
     String path = "/some/path";
     String message = "here is some text data";
+    String extension = "permessage-deflate";
+    String subProtocol = "myprotocol";
 
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
-      getUpgradedNetSocket(req, path).onComplete(onSuccess(sock -> {
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setPerMessageWebSocketCompressionSupported(true) // This should be ignored if declineExtension is true
+      .setPerFrameWebSocketCompressionSupported(true) // This should be ignored if declineExtension is true
+      .addWebSocketSubProtocol(subProtocol);
+    server = vertx.createHttpServer(serverOptions).requestHandler(req -> {
+      Map<String, String> extraResponseHeaders = new HashMap<>();
+      if (!declineExtension) {
+        assertEquals(extension, req.headers().get("sec-websocket-extensions"));
+        extraResponseHeaders.put("sec-websocket-extensions", extension);
+      }
+      if (!declineSubprotocol) {
+        extraResponseHeaders.put("sec-websocket-protocol", subProtocol);
+      }
+      getUpgradedNetSocket(req, path, extraResponseHeaders).onComplete(onSuccess(sock -> {
         // Let's write a Text frame raw
         Buffer buff = Buffer.buffer();
         buff.appendByte((byte)129); // Text frame
@@ -536,14 +541,40 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     server.listen(onSuccess(s -> {
-      client = vertx.createWebSocketClient();
-      client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
-        ws.handler(buff -> {
-          assertEquals(message, buff.toString("UTF-8"));
-          testComplete();
-        });
-      }));
+      WebSocketClientOptions clientOptions = new WebSocketClientOptions()
+        .setTryUsePerMessageCompression(true)
+        .setTryUsePerFrameCompression(false);
+      client = vertx.createWebSocketClient(clientOptions);
+      vertx.runOnContext(v -> {
+        WebSocketConnectOptions connectOptions = new WebSocketConnectOptions()
+          .setHost(DEFAULT_HTTP_HOST)
+          .setPort(DEFAULT_HTTP_PORT)
+          .setURI(path)
+          .addSubProtocol(subProtocol);
+        Handler<AsyncResult<WebSocket>> handler;
+        if (declineSubprotocol) {
+          handler = onFailure(err -> {
+            testComplete();
+          });
+        } else {
+          handler = onSuccess(ws -> {
+            MultiMap headers = ws.headers();
+            if (declineExtension) {
+              assertFalse(headers.contains("sec-websocket-extensions"));
+            } else {
+              assertTrue(headers.contains("sec-websocket-extensions", extension, true));
+            }
+            assertTrue(headers.contains("sec-websocket-protocol", subProtocol, true));
+            ws.handler(buff -> {
+              assertEquals(message, buff.toString("UTF-8"));
+              testComplete();
+            });
+          });
+        }
+        client.connect(connectOptions).onComplete(handler);
+      });
     }));
+
     await();
   }
 
@@ -676,7 +707,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
 
-  private Future<NetSocket> getUpgradedNetSocket(HttpServerRequest req, String path) {
+  private Future<NetSocket> getUpgradedNetSocket(HttpServerRequest req, String path, Map<String, String> extraResponseHeaders) {
     assertEquals(path, req.path());
     assertEquals("upgrade", req.headers().get("Connection"));
     String secHeader = req.headers().get("Sec-WebSocket-Key");
@@ -688,6 +719,9 @@ public class WebSocketTest extends VertxTestBase {
     headers.set("upgrade", "WebSocket");
     headers.set("connection", "upgrade");
     headers.set("sec-websocket-accept", encoded);
+    if (extraResponseHeaders != null) {
+      headers.addAll(extraResponseHeaders);
+    }
     return req.toNetSocket();
   }
 
@@ -938,7 +972,7 @@ public class WebSocketTest extends VertxTestBase {
     String continuationFrame = "BBB";
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
-      getUpgradedNetSocket(req, path).onComplete(onSuccess(sock -> {
+      getUpgradedNetSocket(req, path, null).onComplete(onSuccess(sock -> {
         // Let's write a Text frame raw
         Buffer buff = Buffer.buffer();
         buff.appendByte((byte) 0x01); // Incomplete Text frame
@@ -3306,7 +3340,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testReportProtocolViolationOnClient() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
-      getUpgradedNetSocket(req, "/some/path").onComplete(onSuccess(sock -> {
+      getUpgradedNetSocket(req, "/some/path", null).onComplete(onSuccess(sock -> {
         // Let's write an invalid frame
         Buffer buff = Buffer.buffer();
         buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
