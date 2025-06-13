@@ -42,6 +42,6 @@ class Mapping<T, U> extends Operation<U> implements Completable<T> {
     } else {
       result = null;
     }
-    handleInternal(result, failure);
+    completeInternal(result, failure);
   }
 }

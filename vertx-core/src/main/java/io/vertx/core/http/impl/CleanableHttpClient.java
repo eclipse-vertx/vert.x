@@ -10,8 +10,8 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
@@ -116,7 +116,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     delegate.close(completion);
   }
 

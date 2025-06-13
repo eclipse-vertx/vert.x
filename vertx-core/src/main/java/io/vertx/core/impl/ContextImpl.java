@@ -194,7 +194,7 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public ContextInternal duplicate() {
+  public ContextInternal duplicate(boolean copy) {
     return new DuplicatedContext(this, locals.length == 0 ? VertxImpl.EMPTY_CONTEXT_LOCALS : new Object[locals.length]);
   }
 }

@@ -174,11 +174,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ThreadLocal<WeakReference<EventLoop>> stickyEventLoop = new ThreadLocal<>();
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
+  private final boolean shadowContext;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, Throwable transportUnavailabilityCause,
             FileResolver fileResolver, VertxThreadFactory threadFactory, ExecutorServiceFactory executorServiceFactory,
-            EventExecutorProvider eventExecutorProvider) {
+            EventExecutorProvider eventExecutorProvider, boolean enableShadowContext) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -239,6 +240,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.deploymentManager = new DefaultDeploymentManager(this);
     this.verticleManager = new VerticleManager(this, DefaultDeploymentManager.log, deploymentManager);
     this.eventExecutorProvider = eventExecutorProvider;
+    this.shadowContext = enableShadowContext;
   }
 
   void init() {
@@ -253,15 +255,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     clusterManager.registrationListener(nodeSelector);
     clusterManager.init(this);
     Promise<Void> initPromise = Promise.promise();
-    Promise<Void> joinPromise = Promise.promise();
-    joinPromise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
+    clusterManager.join((res, err) -> {
+      if (err == null) {
         createHaManager(options, initPromise);
       } else {
-        initPromise.fail(ar.cause());
+        initPromise.fail(err);
       }
     });
-    clusterManager.join(joinPromise);
     return initPromise
       .future()
       .transform(ar -> {
@@ -528,7 +528,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = createContext(ThreadingModel.OTHER, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.EXTERNAL, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread().getContextClassLoader());
       } else {
         ctx = createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
       }
@@ -716,13 +716,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         } else {
           throw new UnsupportedOperationException("????");
         }
-      } else {
+      } else if (((VertxImpl) context.owner()).shadowContext) {
         EventLoop eventLoop = stickyEventLoop();
         return new ShadowContext(this, new EventLoopExecutor(eventLoop), context);
       }
-    } else {
-      return null;
     }
+    return null;
   }
 
   public ClusterManager clusterManager() {
@@ -1049,9 +1048,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     // Called via Context close hook when Verticle is undeployed
-    public void close(Promise<Void> completion) {
+    public void close(Completable<Void> completion) {
       tryCancel();
-      completion.complete();
+      completion.succeed();
     }
   }
 
@@ -1097,7 +1096,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
       cf.add(completion -> {
         pool.close();
-        completion.complete();
+        completion.succeed();
       });
       return pool;
     });

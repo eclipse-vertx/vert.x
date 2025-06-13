@@ -1036,7 +1036,7 @@ public class WebSocketTest extends VertxTestBase {
     // client needs to ask for it
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
-      assertEquals("permessage-deflate;client_max_window_bits", ws.headers().get("sec-websocket-extensions"));
+      assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
       ws.writeFrame(io.vertx.core.http.WebSocketFrame.binaryFrame(buff, true));
     });
 
@@ -1722,7 +1722,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testHandshakeTimeout() throws Exception {
+  public void testHandshakeTimeoutFires() throws Exception {
     NetServer server = vertx.createNetServer()
       .connectHandler(so -> {
 
@@ -1744,6 +1744,32 @@ public class WebSocketTest extends VertxTestBase {
     } finally {
       server.close();
     }
+  }
+
+  @Test
+  public void testHandshakeTimeoutDoesNotFire() throws Exception {
+    server = vertx.createHttpServer()
+      .webSocketHandler(ws -> {
+
+    });
+    server
+      .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+      .await();
+    client = vertx.createWebSocketClient(new WebSocketClientOptions().setConnectTimeout(1000));
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setURI("/")
+      .setTimeout(1000);
+    client.connect(options).onComplete(onSuccess(ws -> {
+      AtomicBoolean closed = new AtomicBoolean();
+      ws.closeHandler(v -> closed.set(true));
+      vertx.setTimer(1100, id -> {
+        assertFalse(closed.get());
+        testComplete();
+      });
+    }));
+    await();
   }
 
   private void connectUntilWebSocketReject(WebSocketClient client, int count, Handler<AsyncResult<Void>> doneHandler) {

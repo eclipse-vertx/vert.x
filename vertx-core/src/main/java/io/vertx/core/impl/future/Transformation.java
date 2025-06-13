@@ -41,6 +41,6 @@ class Transformation<T, U> extends Operation<U> implements Completable<T> {
       tryFail(e);
       return;
     }
-    future.addListener(this::handleInternal);
+    future.addListener(this::completeInternal);
   }
 }

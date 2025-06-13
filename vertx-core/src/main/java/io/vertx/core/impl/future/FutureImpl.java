@@ -11,10 +11,7 @@
 
 package io.vertx.core.impl.future;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Completable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.ContextInternal;
 
@@ -31,7 +28,7 @@ public class FutureImpl<T> extends FutureBase<T> {
   private static final Object NULL_VALUE = new Object();
 
   private Object value;
-  private Completable<T> listener;
+  private Completable<? super T> listener;
 
   /**
    * Create a future that hasn't completed yet
@@ -83,95 +80,32 @@ public class FutureImpl<T> extends FutureBase<T> {
   }
 
   @Override
-  public Future<T> onSuccess(Handler<? super T> handler) {
-    Objects.requireNonNull(handler, "No null handler accepted");
-    addListener(new Completable<T>() {
-      @Override
-      public void complete(T result, Throwable failure) {
-        if (failure == null) {
-          try {
-            handler.handle(result);
-          } catch (Throwable t) {
-            if (context != null) {
-              context.reportException(t);
-            } else {
-              throw t;
-            }
-          }
-        }
-      }
-    });
-    return this;
-  }
-
-  @Override
-  public Future<T> onFailure(Handler<? super Throwable> handler) {
-    Objects.requireNonNull(handler, "No null handler accepted");
-    addListener((value, err) -> {
-      if (err != null) {
-        try {
-          handler.handle(err);
-        } catch (Throwable t) {
-          if (context != null) {
-            context.reportException(t);
-          } else {
-            throw t;
-          }
-        }
-      }
-    });
-    return this;
-  }
-
-  @Override
   public Future<T> onComplete(Handler<? super T> successHandler, Handler<? super Throwable> failureHandler) {
     addListener((value, err) -> {
-      try {
-        if (err == null) {
-          if (successHandler != null) {
-            successHandler.handle(value);
-          }
-        } else {
-          if (failureHandler != null) {
-            failureHandler.handle(err);
-          }
-        }
-      } catch (Throwable t) {
-        if (context != null) {
-          context.reportException(t);
-        } else {
-          throw t;
-        }
+      if (successHandler != null && err == null) {
+        successHandler.handle(value);
+      } else if (failureHandler != null && err != null) {
+        failureHandler.handle(err);
       }
     });
+    return this;
+  }
+
+  @Override
+  public Future<T> onComplete(Completable<? super T> handler) {
+    addListener(handler);
     return this;
   }
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     Objects.requireNonNull(handler, "No null handler accepted");
-    Completable<T> listener;
-    if (handler instanceof Completable) {
-      listener = (Completable<T>) handler;
-    } else {
-      listener = (value, err) -> {
-        try {
-          handler.handle(FutureImpl.this);
-        } catch (Throwable t) {
-          if (context != null) {
-            context.reportException(t);
-          } else {
-            throw t;
-          }
-        }
-      };
-    }
-    addListener(listener);
+    addListener((value, err) -> handler.handle(FutureImpl.this));
     return this;
   }
 
   @Override
-  public void addListener(Completable<T> listener) {
+  public void addListener(Completable<? super T> listener) {
     Object v;
     synchronized (this) {
       v = value;
@@ -183,7 +117,7 @@ public class FutureImpl<T> extends FutureBase<T> {
           if (this.listener instanceof FutureImpl.ListenerArray) {
             listeners = (ListenerArray<T>) this.listener;
           } else {
-            listeners = new ListenerArray<>();
+            listeners = new ListenerArray<>(context);
             listeners.add(this.listener);
             this.listener = listeners;
           }
@@ -203,7 +137,7 @@ public class FutureImpl<T> extends FutureBase<T> {
   }
 
   @Override
-  public void removeListener(Completable<T> l) {
+  public void removeListener(Completable<? super T> l) {
     synchronized (this) {
       Object listener = this.listener;
       if (listener == l) {
@@ -215,7 +149,7 @@ public class FutureImpl<T> extends FutureBase<T> {
     }
   }
 
-  final boolean handleInternal(T result, Throwable err) {
+  final boolean completeInternal(T result, Throwable err) {
     Completable<? super T> l;
     synchronized (this) {
       if (value != null) {
@@ -232,14 +166,14 @@ public class FutureImpl<T> extends FutureBase<T> {
   }
 
   public final boolean tryComplete(T result) {
-    return handleInternal(result, null);
+    return completeInternal(result, null);
   }
 
   public final boolean tryFail(Throwable cause) {
     if (cause == null) {
       cause = new NoStackTraceThrowable(null);
     }
-    return handleInternal(null, cause);
+    return completeInternal(null, cause);
   }
 
   @Override
@@ -265,11 +199,24 @@ public class FutureImpl<T> extends FutureBase<T> {
     sb.append(value);
   }
 
-  private static class ListenerArray<T> extends ArrayList<Completable<T>> implements Completable<T> {
+  private static class ListenerArray<T> extends ArrayList<Completable<? super T>> implements Completable<T> {
+
+    private final ContextInternal context;
+
+    private ListenerArray(ContextInternal context) {
+      this.context = context;
+    }
+
     @Override
     public void complete(T result, Throwable failure) {
-      for (Completable<T> handler : this) {
-        handler.complete(result, failure);
+      for (Completable<? super T> handler : this) {
+        try {
+          handler.complete(result, failure);
+        } catch (Throwable t) {
+          if (context != null) {
+            context.reportException(t);
+          }
+        }
       }
     }
   }

@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakecluster;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
@@ -110,8 +111,8 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public <K, V> void getAsyncMap(String name, Promise<AsyncMap<K, V>> promise) {
-    promise.complete(asyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl(vertx)));
+  public <K, V> void getAsyncMap(String name, Completable<AsyncMap<K, V>> promise) {
+    promise.succeed(asyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl(vertx)));
   }
 
   @Override
@@ -129,13 +130,13 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void getLockWithTimeout(String name, long timeout, Promise<Lock> promise) {
+  public void getLockWithTimeout(String name, long timeout, Completable<Lock> promise) {
     localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout).onComplete(promise);
   }
 
   @Override
-  public void getCounter(String name, Promise<Counter> promise) {
-    promise.complete(new AsynchronousCounter(vertx, counters.computeIfAbsent(name, k -> new AtomicLong())));
+  public void getCounter(String name, Completable<Counter> promise) {
+    promise.succeed(new AsynchronousCounter(vertx, counters.computeIfAbsent(name, k -> new AtomicLong())));
   }
 
   @Override
@@ -158,9 +159,9 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void setNodeInfo(NodeInfo nodeInfo, Promise<Void> promise) {
+  public void setNodeInfo(NodeInfo nodeInfo, Completable<Void> promise) {
     nodeInfos.put(nodeID, nodeInfo);
-    promise.complete();
+    promise.succeed();
   }
 
   @Override
@@ -169,17 +170,17 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void getNodeInfo(String nodeId, Promise<NodeInfo> promise) {
+  public void getNodeInfo(String nodeId, Completable<NodeInfo> promise) {
     NodeInfo result = nodeInfos.get(nodeId);
     if (result != null) {
-      promise.complete(result);
+      promise.succeed(result);
     } else {
       promise.fail("Not a member of the cluster");
     }
   }
 
   @Override
-  public void join(Promise<Void> promise) {
+  public void join(Completable<Void> promise) {
     vertx.<Void>executeBlocking(() -> {
       synchronized (this) {
         this.nodeID = UUID.randomUUID().toString();
@@ -190,7 +191,7 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void leave(Promise<Void> promise) {
+  public void leave(Completable<Void> promise) {
     List<RegistrationUpdateEvent> events = new ArrayList<>();
     registrations.keySet().forEach(address -> {
       List<RegistrationInfo> current = registrations.compute(address, (addr, infos) -> {
@@ -247,7 +248,7 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void addRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
+  public void addRegistration(String address, RegistrationInfo registrationInfo, Completable<Void> promise) {
     List<RegistrationInfo> current = registrations.compute(address, (addrr, infos) -> {
       List<RegistrationInfo> res;
       if (infos == null) {
@@ -258,13 +259,13 @@ public class FakeClusterManager implements ClusterManager {
       res.add(registrationInfo);
       return res;
     });
-    promise.complete();
+    promise.succeed();
     RegistrationUpdateEvent event = new RegistrationUpdateEvent(address, current);
     fireRegistrationUpdateEvents(Collections.singletonList(event), false);
   }
 
   @Override
-  public void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
+  public void removeRegistration(String address, RegistrationInfo registrationInfo, Completable<Void> promise) {
     List<RegistrationInfo> current = registrations.compute(address, (addrr, infos) -> {
       List<RegistrationInfo> list = new ArrayList<>();
       if (infos != null) {
@@ -276,13 +277,13 @@ public class FakeClusterManager implements ClusterManager {
       }
       return list.isEmpty() ? null : list;
     });
-    promise.complete();
+    promise.succeed();
     RegistrationUpdateEvent event = new RegistrationUpdateEvent(address, current);
     fireRegistrationUpdateEvents(Collections.singletonList(event), false);
   }
 
   @Override
-  public void getRegistrations(String address, Promise<List<RegistrationInfo>> promise) {
+  public void getRegistrations(String address, Completable<List<RegistrationInfo>> promise) {
     long delay = getRegistrationsLatency;
     if (delay > 0L) {
       vertx

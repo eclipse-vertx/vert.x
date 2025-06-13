@@ -12,6 +12,7 @@
 package io.vertx.core.internal;
 
 import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.logging.Logger;
@@ -180,7 +181,7 @@ public class CloseFuture extends NestedCloseable implements Closeable {
    *
    * @param promise called when all hooks have been executed
    */
-  public void close(Promise<Void> promise) {
+  public void close(Completable<Void> promise) {
     close().onComplete(promise);
   }
 }

@@ -95,12 +95,12 @@ public final class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public void addListener(Completable<T> listener) {
+  public void addListener(Completable<? super T> listener) {
     emitResult(null, cause, listener);
   }
 
   @Override
-  public void removeListener(Completable<T> listener) {
+  public void removeListener(Completable<? super T> listener) {
   }
 
   @Override

@@ -1,0 +1,46 @@
+name: CI matrix (5.x)
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+jobs:
+  CI:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            jdk: 11
+          - os: ubuntu-latest
+            jdk: 11
+            profile: '-PNativeEpoll'
+#          - os: ubuntu-latest
+#            jdk: 11
+#            profile: '-PNativeIoUring'
+          - os: ubuntu-latest
+            jdk: 11
+            profile: '-PNativeEpoll+DomainSockets'
+          - os: ubuntu-latest
+            jdk: 21
+          - os: windows-latest
+            jdk: 11
+            stable: true
+#          - os: macos-latest
+#            jdk: 11
+#            profile: '-PNativeKQueue'
+    uses: ./.github/workflows/ci.yml
+    with:
+      branch: ${{ inputs.branch }}
+      jdk: ${{ matrix.jdk }}
+      os: ${{ matrix.os }}
+      profile: ${{ matrix.profile }}
+    secrets: inherit
+  Deploy:
+    if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+    needs: CI
+    uses: ./.github/workflows/deploy.yml
+    with:
+      branch: ${{ inputs.branch }}
+      jdk: 11
+    secrets: inherit

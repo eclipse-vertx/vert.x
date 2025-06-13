@@ -20,6 +20,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
@@ -73,7 +74,7 @@ class NetClientImpl implements NetClientInternal {
     // 2: a {@link CloseEvent} event is broadcast to each channel, channels should react accordingly
     // 1: grace period completed when all channels are inactive or the shutdown timeout is fired
     // 0: sockets are closed
-    CloseSequence closeSequence1 = new CloseSequence(this::doClose, this::doGrace, this::doShutdown);
+    CloseSequence closeSequence1 = new CloseSequence(completion -> doClose(completion), completion1 -> doGrace(completion1), p -> doShutdown(p));
 
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.acceptorEventLoopGroup().next(), true);
@@ -156,7 +157,7 @@ class NetClientImpl implements NetClientInternal {
     connectInternal(connectOptions, false, connectHandler, context, 0);
   }
 
-  private void doShutdown(Promise<Void> p) {
+  private void doShutdown(Completable<Void> p) {
     if (closeEvent == null) {
       closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
     }
@@ -164,25 +165,25 @@ class NetClientImpl implements NetClientInternal {
     for (Channel ch : channelGroup) {
       ch.pipeline().fireUserEventTriggered(closeEvent);
     }
-    p.complete();
+    p.succeed();
   }
 
-  private void doGrace(Promise<Void> completion) {
+  private void doGrace(Completable<Void> completion) {
     if (closeEvent.timeout() > 0L) {
       long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
-        completion.complete();
+        completion.succeed();
       });
       graceFuture.addListener(future -> {
         if (vertx.cancelTimer(timerID)) {
-          completion.complete();
+          completion.succeed();
         }
       });
     } else {
-      completion.complete();
+      completion.succeed();
     }
   }
 
-  private void doClose(Promise<Void> completion) {
+  private void doClose(Completable<Void> completion) {
     ChannelGroupFuture fut = channelGroup.close();
     if (metrics != null) {
       PromiseInternal<Void> p = (PromiseInternal) Promise.promise();
@@ -197,7 +198,7 @@ class NetClientImpl implements NetClientInternal {
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     closeSequence.close(completion);
   }
 

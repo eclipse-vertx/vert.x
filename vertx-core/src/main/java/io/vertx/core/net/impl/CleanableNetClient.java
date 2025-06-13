@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.impl;
 
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
@@ -87,7 +88,7 @@ public class CleanableNetClient implements NetClientInternal {
   }
 
   @Override
-  public void close(Promise<Void> completion) {
+  public void close(Completable<Void> completion) {
     client.close(completion);
   }
 

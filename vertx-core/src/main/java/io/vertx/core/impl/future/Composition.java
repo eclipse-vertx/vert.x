@@ -42,9 +42,9 @@ class Composition<T, U> extends Operation<U> implements Completable<T> {
         future = (FutureBase<U>) failureMapper.apply(failure);
       }
     } catch (Throwable e) {
-      handleInternal(null, e);
+      completeInternal(null, e);
       return;
     }
-    future.addListener(this::handleInternal);
+    future.addListener(this::completeInternal);
   }
 }
