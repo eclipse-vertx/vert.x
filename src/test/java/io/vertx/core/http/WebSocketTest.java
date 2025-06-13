@@ -3191,15 +3191,20 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testClientConnectionCloseTimeout() {
-    testClientConnectionCloseTimeout(1);
+    testClientConnectionCloseTimeout(1, true, 1000);
   }
 
   @Test
   public void testClientConnectionCloseImmediately() {
-    testClientConnectionCloseTimeout(0);
+    testClientConnectionCloseTimeout(0, true, 1000);
   }
 
-  public void testClientConnectionCloseTimeout(int timeout) {
+  @Test
+  public void testClientConnectionCloseTimeoutWithoutCloseFrame() {
+    testClientConnectionCloseTimeout(1, false, 1006);
+  }
+
+  public void testClientConnectionCloseTimeout(int timeout, boolean respondWithCloseFrame, int expectedStatusCode) {
     waitFor(3);
     List<Object> received = Collections.synchronizedList(new ArrayList<>());
     server = vertx.createHttpServer();
@@ -3210,7 +3215,7 @@ public class WebSocketTest extends VertxTestBase {
         soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
         soi.messageHandler(msg -> {
           received.add(msg);
-          if (msg instanceof CloseWebSocketFrame) {
+          if (msg instanceof CloseWebSocketFrame && respondWithCloseFrame) {
             CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
             soi.writeMessage(new CloseWebSocketFrame(frame.statusCode(), frame.reasonText()));
           }
@@ -3224,13 +3229,19 @@ public class WebSocketTest extends VertxTestBase {
       client = vertx.createWebSocketClient(new WebSocketClientOptions().setClosingTimeout(timeout));
       client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat", onSuccess(ws -> {
         ws.endHandler(v -> {
+          assertTrue(respondWithCloseFrame);
           complete();
         });
-        ws.exceptionHandler(err -> fail());
+        ws.exceptionHandler(err -> {
+          assertFalse(respondWithCloseFrame);
+          complete();
+        });
         ws.closeHandler(v -> {
           assertEquals(1, received.size());
           Object msg = received.get(0);
           try {
+            assertNotNull(ws.closeStatusCode());
+            assertEquals(expectedStatusCode, (short)ws.closeStatusCode());
             assertEquals(msg.getClass(), CloseWebSocketFrame.class);
           } finally {
             ReferenceCountUtil.release(msg);

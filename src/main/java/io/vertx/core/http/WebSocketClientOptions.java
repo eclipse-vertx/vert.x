@@ -352,12 +352,14 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the amount of time a client WebSocket will wait until it closes the TCP connection after receiving a close frame.
+   * Set the amount of time a client WebSocket will wait until it closes the TCP connection after sending a close frame.
    *
    * <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
-   * the TCP connection on the client when it expires.
+   * the TCP connection on the client when the server has not responded with a close frame and closed the connection
+   * in a timely manner.
    *
-   * <p> Set to {@code 0L} closes the TCP connection immediately after receiving the close frame.
+   * <p> Setting to {@code 0L} closes the TCP connection after receiving the close frame, note this should
+   * not be avoided when interacting with misbehaving server that do not respond with close frames.
    *
    * <p> Set to a negative value to disable it.
    *
