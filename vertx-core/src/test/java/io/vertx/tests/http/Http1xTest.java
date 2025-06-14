@@ -42,7 +42,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
