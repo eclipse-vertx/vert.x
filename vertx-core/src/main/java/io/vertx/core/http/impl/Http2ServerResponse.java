@@ -38,7 +38,7 @@ import io.vertx.core.streams.ReadStream;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.FileChannel;
+import java.nio.channels.Channel;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -47,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponse implements HttpServerResponse, HttpResponse, FileSender<AsynchronousFileChannel> {
+public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
@@ -575,12 +575,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse, Fi
   }
 
   @Override
-  public FileSender<AsynchronousFileChannel> asFileChannelSender() {
-    return this;
-  }
-
-  @Override
-  public Future<Void> sendFile(AsynchronousFileChannel channel, String extension, long offset, long length) {
+  public Future<Void> sendFile(Channel channel, String extension, long offset, long length) {
     if (offset < 0) {
       return stream.context.failedFuture("offset : " + offset + " (expected: >= 0)");
     }
@@ -590,10 +585,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse, Fi
     synchronized (conn) {
       checkValid();
     }
-    AsyncFile file = AsyncFileImpl.createFromChannel(stream.vertx, channel, stream.context);
+    AsynchronousFileChannel afc = (AsynchronousFileChannel) channel;
+    AsyncFile file = AsyncFileImpl.createFromChannel(stream.vertx, afc, stream.context);
     long size;
     try {
-      size = channel.size();
+      size = afc.size();
     } catch (IOException e) {
       return stream.context.failedFuture("unable to get the size of the channel");
     }

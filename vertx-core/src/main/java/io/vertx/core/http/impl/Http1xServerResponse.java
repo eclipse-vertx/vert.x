@@ -39,6 +39,7 @@ import io.vertx.core.spi.observability.HttpResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.util.Set;
 import java.util.function.Function;
@@ -49,7 +50,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse, HttpResponse, FileSender<FileChannel> {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
@@ -469,12 +470,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
   }
 
   @Override
-  public FileSender asFileChannelSender() {
-    return this;
-  }
-
-  @Override
-  public Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
+  public Future<Void> sendFile(Channel channel, String extension, long offset, long length) {
     return sendFileInternal(extension, offset,
       length,
       MimeMapping::mimeTypeForExtension,
@@ -485,7 +481,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
           throw new RuntimeException(e);
         }
       },
-      () -> channel,
+      () -> (FileChannel) channel,
       conn::sendFile);
   }
 

@@ -2317,7 +2317,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
     server.requestHandler(
         req -> {
-          req.response().asFileChannelSender().sendFile(channel, null);
+          req.response().sendFile(channel, null);
         });
     startServer(testAddress);
     int[] length = {0};
@@ -2346,7 +2346,7 @@ public abstract class HttpTest extends HttpTestBase {
     }
     server.requestHandler(
         req -> {
-          req.response().asFileChannelSender().sendFile(channel, "mp4");
+          req.response().sendFile(channel, "mp4");
         });
     startServer(testAddress);
     Object[] res = {0, ""};
@@ -2381,7 +2381,7 @@ public abstract class HttpTest extends HttpTestBase {
     int expectedRange = fileLength - offset;
     server.requestHandler(
         req -> {
-          req.response().asFileChannelSender().sendFile(channel, "mp4", offset, expectedRange);
+          req.response().sendFile(channel, "mp4", offset, expectedRange);
         });
     startServer(testAddress);
     Object[] res = {0, ""};
