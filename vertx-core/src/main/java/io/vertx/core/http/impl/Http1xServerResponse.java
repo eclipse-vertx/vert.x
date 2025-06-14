@@ -49,7 +49,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse, HttpResponse, FileSender<FileChannel> {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
@@ -466,11 +466,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
       }
     }
     return result;
-  }
-
-  @Override
-  public FileSender asFileChannelSender() {
-    return this;
   }
 
   @Override
