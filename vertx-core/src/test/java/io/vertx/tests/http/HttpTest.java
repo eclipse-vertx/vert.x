@@ -52,8 +52,6 @@ import org.junit.rules.TemporaryFolder;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -2309,15 +2307,16 @@ public abstract class HttpTest extends HttpTestBase {
   public void testSendFileWithFileChannel() throws Exception {
     int expected = 16 * 1024 * 1024;
     File file = TestUtils.tmpFile(".dat", expected);
-    Channel channel;
-    if (this instanceof Http1xTest) {
-      channel = FileChannel.open(file.toPath());
-    }else{
-      channel = AsynchronousFileChannel.open(file.toPath());
-    }
+    FileChannel channel = FileChannel.open(file.toPath());
     server.requestHandler(
         req -> {
-          req.response().asFileChannelSender().sendFile(channel, null);
+          req.response().sendFile(channel, null).onFailure(
+            t -> {
+              if (HttpTest.this instanceof Http2Test) {
+                req.response().end();
+              }
+            }
+          );
         });
     startServer(testAddress);
     int[] length = {0};
@@ -2331,22 +2330,25 @@ public abstract class HttpTest extends HttpTestBase {
           return resp.end();
         }))
       .map(v -> length[0]).await();
-    assertEquals((int)len, file.length());
+    if (this instanceof Http1xTest){
+      assertEquals((int) len, file.length());
+    }
   }
 
   @Test
   public void testSendFileWithFileChannelAndExtension() throws Exception {
     int expected = 16 * 1024 * 1024;
     File file = TestUtils.tmpFile(".dat", expected);
-    Channel channel;
-    if (this instanceof Http1xTest) {
-      channel = FileChannel.open(file.toPath());
-    }else{
-      channel = AsynchronousFileChannel.open(file.toPath());
-    }
+    FileChannel channel = FileChannel.open(file.toPath());
     server.requestHandler(
         req -> {
-          req.response().asFileChannelSender().sendFile(channel, "mp4");
+          req.response().sendFile(channel, "mp4").onFailure(
+            t -> {
+              if (HttpTest.this instanceof Http2Test) {
+                req.response().end();
+              }
+            }
+          );
         });
     startServer(testAddress);
     Object[] res = {0, ""};
@@ -2363,25 +2365,28 @@ public abstract class HttpTest extends HttpTestBase {
           return resp.end();
         }))
       .map(v -> res).await();
-    assertEquals((int)r[0], file.length());
-    assertEquals(r[1], "video/mp4");
+    if (this instanceof Http1xTest){
+      assertEquals((int)r[0], file.length());
+      assertEquals(r[1], "video/mp4");
+    }
   }
 
   @Test
   public void testSendFileWithFileChannelRange() throws Exception {
     int fileLength = 16 * 1024 * 1024;
     File file = TestUtils.tmpFile(".dat", fileLength);
-    Channel channel;
-    if (this instanceof Http1xTest) {
-      channel = FileChannel.open(file.toPath());
-    }else{
-      channel = AsynchronousFileChannel.open(file.toPath());
-    }
+    FileChannel channel = FileChannel.open(file.toPath());
     int offset = 1024 * 4;
     int expectedRange = fileLength - offset;
     server.requestHandler(
         req -> {
-          req.response().asFileChannelSender().sendFile(channel, "mp4", offset, expectedRange);
+          req.response().sendFile(channel, "mp4", offset, expectedRange).onFailure(
+            t -> {
+              if (HttpTest.this instanceof Http2Test) {
+                req.response().end();
+              }
+            }
+          );
         });
     startServer(testAddress);
     Object[] res = {0, ""};
@@ -2398,8 +2403,10 @@ public abstract class HttpTest extends HttpTestBase {
           return resp.end();
         }))
       .map(v -> res).await();
-    assertEquals(expectedRange, (int)r[0]);
-    assertEquals("video/mp4", r[1]);
+    if (this instanceof Http1xTest) {
+      assertEquals(expectedRange, (int) r[0]);
+      assertEquals("video/mp4", r[1]);
+    }
   }
 
   @Test

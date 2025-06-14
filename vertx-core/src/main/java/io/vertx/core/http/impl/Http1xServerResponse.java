@@ -17,7 +17,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
@@ -46,7 +49,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse, HttpResponse, FileSender<FileChannel> {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
@@ -466,11 +469,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
   }
 
   @Override
-  public FileSender asFileChannelSender() {
-    return this;
-  }
-
-  @Override
   public Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
     return sendFileInternal(extension, offset,
       length,
@@ -524,7 +522,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse, F
       bytesWritten = actualLength;
       written = true;
 
-      conn.write(new VertxHttpResponse(head, version, status, headers), null);
+      conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
 
       ChannelFuture channelFut = sendFileSupplier.send(fileSupplier.get(), actualOffset, actualLength);
       channelFut.addListener(future -> {
