@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -74,32 +75,15 @@ public class AsyncFileImpl implements AsyncFile {
   private long readPos;
   private long readLength = Long.MAX_VALUE;
 
-  AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextInternal context) {
-    if (!options.isRead() && !options.isWrite()) {
-      throw new FileSystemException("Cannot open file for neither reading nor writing");
-    }
+  AsyncFileImpl(VertxInternal vertx, OpenOptions options, Function<OpenOptions, AsynchronousFileChannel> channelFunction, ContextInternal context) {
     this.vertx = vertx;
-    Path file = Paths.get(path);
-    HashSet<OpenOption> opts = new HashSet<>();
-    if (options.isRead()) opts.add(StandardOpenOption.READ);
-    if (options.isWrite()) opts.add(StandardOpenOption.WRITE);
-    if (options.isCreate()) opts.add(StandardOpenOption.CREATE);
-    if (options.isCreateNew()) opts.add(StandardOpenOption.CREATE_NEW);
-    if (options.isSync()) opts.add(StandardOpenOption.SYNC);
-    if (options.isDsync()) opts.add(StandardOpenOption.DSYNC);
-    if (options.isDeleteOnClose()) opts.add(StandardOpenOption.DELETE_ON_CLOSE);
-    if (options.isSparse()) opts.add(StandardOpenOption.SPARSE);
-    if (options.isTruncateExisting()) opts.add(StandardOpenOption.TRUNCATE_EXISTING);
-    try {
-      if (options.getPerms() != null) {
-        FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
-        ch = AsynchronousFileChannel.open(file, opts, vertx.workerPool().executor(), attrs);
-      } else {
-        ch = AsynchronousFileChannel.open(file, opts, vertx.workerPool().executor());
+    this.ch = channelFunction.apply(options);
+    if (options.isAppend()) {
+      try {
+        writePos = ch.size();
+      } catch (IOException e) {
+        throw new FileSystemException("Unable to get size of the channel", e);
       }
-      if (options.isAppend()) writePos = ch.size();
-    } catch (IOException e) {
-      throw new FileSystemException(FileSystemImpl.getFileAccessErrorMessage("open", path), e);
     }
     this.context = context;
     this.queue = new InboundBuffer<>(context, 0);
@@ -113,6 +97,42 @@ public class AsyncFileImpl implements AsyncFile {
     queue.drainHandler(v -> {
       doRead();
     });
+  }
+
+  AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextInternal context) {
+    this(vertx,
+      options,
+      openOptions -> {
+        if (!options.isRead() && !options.isWrite()) {
+          throw new FileSystemException("Cannot open file for neither reading nor writing");
+        }
+        Path file = Paths.get(path);
+        HashSet<OpenOption> opts = new HashSet<>();
+        if (options.isRead()) opts.add(StandardOpenOption.READ);
+        if (options.isWrite()) opts.add(StandardOpenOption.WRITE);
+        if (options.isCreate()) opts.add(StandardOpenOption.CREATE);
+        if (options.isCreateNew()) opts.add(StandardOpenOption.CREATE_NEW);
+        if (options.isSync()) opts.add(StandardOpenOption.SYNC);
+        if (options.isDsync()) opts.add(StandardOpenOption.DSYNC);
+        if (options.isDeleteOnClose()) opts.add(StandardOpenOption.DELETE_ON_CLOSE);
+        if (options.isSparse()) opts.add(StandardOpenOption.SPARSE);
+        if (options.isTruncateExisting()) opts.add(StandardOpenOption.TRUNCATE_EXISTING);
+        try {
+          if (options.getPerms() != null) {
+            FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
+            return AsynchronousFileChannel.open(file, opts, vertx.workerPool().executor(), attrs);
+          } else {
+            return AsynchronousFileChannel.open(file, opts, vertx.workerPool().executor());
+          }
+        } catch (IOException e) {
+          throw new FileSystemException(FileSystemImpl.getFileAccessErrorMessage("open", path), e);
+        }
+      },
+      context);
+  }
+
+  public static AsyncFile createFromChannel(VertxInternal vertx, AsynchronousFileChannel channel, ContextInternal context) {
+    return new AsyncFileImpl(vertx, new OpenOptions().setRead(true), openOptions -> channel, context);
   }
 
   @Override
