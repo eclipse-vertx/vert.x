@@ -24,6 +24,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -62,7 +63,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   protected final ChannelHandlerContext handlerContext;
-  protected final VertxHttp2ConnectionHandler handler;
+  private final VertxHttp2ConnectionHandler handler;
   protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
@@ -482,6 +483,30 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   void consumeCredits(Http2Stream stream, int numBytes) {
     this.handler.consume(stream, numBytes);
+  }
+
+  boolean isWritable(Http2Stream stream) {
+    return this.handler.encoder().flowController().isWritable(stream);
+  }
+
+  void writeFrame(Http2Stream stream, int type, int flags, ByteBuf payload, Promise<Void> promise) {
+    handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
+  }
+
+  void writePriorityFrame(Http2Stream stream, StreamPriority priority) {
+    handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+  }
+
+  void writeHeaders(Http2Stream stream, Http2Headers headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+  }
+
+  void writeData(Http2Stream stream, ByteBuf buf, boolean end, Promise<Void> promise) {
+    handler.writeData(stream, buf, end, (FutureListener<Void>) promise);
+  }
+
+  protected void writeReset(Http2Stream stream, long code, Promise<Void> promise) {
+    handler.writeReset(stream.id(), code, null);
   }
 
 }
