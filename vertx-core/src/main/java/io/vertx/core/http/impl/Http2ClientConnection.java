@@ -49,6 +49,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
   private boolean evicted;
+  private final VertxHttp2ConnectionHandler handler;
 
   Http2ClientConnection(HttpClientBase client,
                         ContextInternal context,
@@ -63,6 +64,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.authority = authority;
     this.pooled = pooled;
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
+    this.handler = connHandler;
   }
 
   @Override

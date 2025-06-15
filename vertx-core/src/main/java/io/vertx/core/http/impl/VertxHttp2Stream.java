@@ -110,7 +110,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     synchronized (this) {
       this.stream = stream;
     }
-    writable = this.conn.handler.encoder().flowController().isWritable(stream);
+    writable = this.conn.isWritable(stream);
     stream.setProperty(conn.streamKey, this);
   }
 
@@ -204,9 +204,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteFrame(type, flags, payload, promise);
+      conn.writeFrame(stream, type, flags, payload, promise);
     } else {
-      eventLoop.execute(() -> doWriteFrame(type, flags, payload, promise));
+      eventLoop.execute(() -> conn.writeFrame(stream, type, flags, payload, promise));
     }
     return promise.future();
   }
@@ -214,14 +214,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   public final void writeFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteFrame(type, flags, payload, promise);
+      conn.writeFrame(stream, type, flags, payload, promise);
     } else {
-      eventLoop.execute(() -> doWriteFrame(type, flags, payload, promise));
+      eventLoop.execute(() -> conn.writeFrame(stream, type, flags, payload, promise));
     }
-  }
-
-  private void doWriteFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
   final void writeHeaders(Http2Headers headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
@@ -262,14 +258,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    conn.writeHeaders(stream, headers, priority, end, checkFlush, promise);
   }
 
   protected void endWritten() {
-  }
-
-  private void writePriorityFrame(StreamPriority priority) {
-    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
   final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
@@ -306,7 +298,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
+    conn.writeData(stream, chunk, end, promise);
   }
 
   final Future<Void> writeReset(long code) {
@@ -334,7 +326,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       streamId = stream != null ? stream.id() : -1;
     }
     if (streamId != -1) {
-      conn.handler.writeReset(streamId, code, null);
+      conn.writeReset(stream, code, promise);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
@@ -375,7 +367,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
       if (stream != null) {
-        writePriorityFrame(priority);
+        conn.writePriorityFrame(stream, priority);
       }
     }
   }
