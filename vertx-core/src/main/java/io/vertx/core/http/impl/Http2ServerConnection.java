@@ -41,6 +41,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private final HttpServerMetrics metrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
+  private final VertxHttp2ConnectionHandler handler;
 
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
@@ -61,6 +62,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
+    this.handler = connHandler;
   }
 
   @Override
