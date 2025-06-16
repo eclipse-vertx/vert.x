@@ -70,12 +70,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   Http2ServerRequest(Http2ServerStream stream,
                      String serverOrigin,
-                     Http2Headers headers) {
+                     Http2HeadersAdaptor headersMap) {
     this.context = stream.context;
     this.stream = stream;
     this.response = new Http2ServerResponse(stream.conn, stream, false);
     this.serverOrigin = serverOrigin;
-    this.headersMap = new Http2HeadersAdaptor(headers);
+    this.headersMap = headersMap;
   }
 
   private HttpEventHandler eventHandler(boolean create) {

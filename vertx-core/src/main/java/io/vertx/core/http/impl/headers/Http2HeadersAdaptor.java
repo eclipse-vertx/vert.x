@@ -10,9 +10,11 @@
  */
 package io.vertx.core.http.impl.headers;
 
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -31,13 +33,13 @@ import java.util.stream.Collectors;
 public class Http2HeadersAdaptor implements MultiMap {
 
   private final boolean mutable;
-  private final Http2Headers headers;
+  private final Headers<CharSequence, CharSequence, ?> headers;
 
-  public Http2HeadersAdaptor(Http2Headers headers) {
+  public Http2HeadersAdaptor(Headers<CharSequence, CharSequence, ?> headers) {
     this(true, headers);
   }
 
-  private Http2HeadersAdaptor(boolean mutable, Http2Headers headers) {
+  private Http2HeadersAdaptor(boolean mutable, Headers<CharSequence, CharSequence, ?> headers) {
 
     List<CharSequence> cookies = headers.getAll(HttpHeaderNames.COOKIE);
     if (cookies != null && cookies.size() > 1) {
@@ -49,6 +51,19 @@ public class Http2HeadersAdaptor implements MultiMap {
 
     this.mutable = mutable;
     this.headers = headers;
+  }
+
+  public Http2HeadersAdaptor status(AsciiString status) {
+    if (headers instanceof Http2Headers) {
+      ((Http2Headers) headers).status(status);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+    return this;
+  }
+
+  public Headers<CharSequence, CharSequence, ?> unwrap() {
+    return headers;
   }
 
   @Override
@@ -82,7 +97,11 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public boolean contains(String name, String value, boolean caseInsensitive) {
-    return headers.contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+    if (headers instanceof Http2Headers) {
+      return ((Http2Headers)headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
   }
 
   @Override
@@ -266,7 +285,11 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
-    return headers.contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+    if (headers instanceof Http2Headers) {
+      return ((Http2Headers)headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
   }
 
   @Override
