@@ -25,7 +25,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnectionInternal {
+class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnectionInternal, Http2ClientConnection {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
@@ -150,9 +150,11 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
   }
 
   HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
-    Http2ClientStreamImpl stream = createStream2(context);
-    stream.upgrade(handler.connection().stream(1), metric, trace);
-    return stream;
+    Http2ClientStreamImpl vertxStream = createStream2(context);
+    Http2Stream nettyStream = handler.connection().stream(1);
+    vertxStream.upgrade(nettyStream, metric, trace);
+    nettyStream.setProperty(streamKey, vertxStream);
+    return vertxStream;
   }
 
   @Override
@@ -168,12 +170,18 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
   }
 
   private Http2ClientStreamImpl createStream2(ContextInternal context) {
-    return new Http2ClientStreamImpl(this, context, false);
+    return new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), false);
   }
 
-  void recycle() {
+  private void recycle() {
     int timeout = client.options().getHttp2KeepAliveTimeout();
     expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : Long.MAX_VALUE;
+  }
+
+  @Override
+  void onStreamClosed(Http2Stream s) {
+    super.onStreamClosed(s);
+    recycle();
   }
 
   @Override
@@ -204,7 +212,9 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
     Http2ClientStreamImpl stream = (Http2ClientStreamImpl) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-      stream.onPush(promisedStream, headers);
+      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), true);
+      promisedStream.setProperty(streamKey, pushStream);
+      stream.onPush(pushStream, promisedStream, headers);
     } else {
       Http2ClientConnectionImpl.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
     }
@@ -262,7 +272,7 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
     return handler;
   }
 
-  Http2Stream createStream(HttpRequestHead head, Http2Headers headers) throws Http2Exception {
+  public Http2Stream createStream(VertxHttp2Stream<?> vertxStream, HttpRequestHead head, Http2Headers headers) throws Http2Exception {
     int id = handler.encoder().connection().local().lastStreamCreated();
     if (id == 0) {
       id = 1;
@@ -271,6 +281,8 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
     }
     head.id = id;
     head.remoteAddress = remoteAddress();
-    return handler.encoder().connection().local().createStream(id, false);
+    Http2Stream nettyStream = handler.encoder().connection().local().createStream(id, false);
+    nettyStream.setProperty(streamKey, vertxStream);
+    return nettyStream;
   }
 }

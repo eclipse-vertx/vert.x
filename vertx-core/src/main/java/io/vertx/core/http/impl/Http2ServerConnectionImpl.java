@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection {
+public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
   final HttpServerOptions options;
   private final String serverOrigin;
@@ -149,7 +149,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     CharSequence methodHeader = headers.getAndRemove(HttpHeaders.PSEUDO_METHOD);
     return new Http2ServerStream(
       this,
+            metrics,
+      metric(),
       streamContextSupplier.get(),
+      requestHandler,
+      options.isHandle100ContinueAutomatically(),
       headers,
       schemeHeader != null ? schemeHeader.toString() : null,
       authorityHeader != null || hostHeader != null,
@@ -160,11 +164,12 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   private void initStream(int streamId, Http2ServerStream vertxStream) {
-    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, new Http2HeadersAdaptor(vertxStream.headers));
+    Http2ServerRequest request = new Http2ServerRequest(vertxStream, options, serverOrigin, new Http2HeadersAdaptor(vertxStream.headers));
     vertxStream.request = request;
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     Http2Stream stream = handler.connection().stream(streamId);
     vertxStream.init(stream);
+    stream.setProperty(streamKey, vertxStream);
   }
 
   @Override
@@ -192,7 +197,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -220,11 +225,12 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(this, context, headers_, method, path, options.getTracingPolicy(), true);
+          Http2ServerStream vertxStream = new Http2ServerStream(this, metrics, metric(), context, requestHandler, options.isHandle100ContinueAutomatically(), headers_, method, path, options.getTracingPolicy(), true);
           Push push = new Push(vertxStream, promise);
           vertxStream.request = push;
           push.stream.priority(streamPriority);
           push.stream.init(promisedStream);
+          promisedStream.setProperty(streamKey, push.stream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;

@@ -33,7 +33,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends Http2ConnectionHandler implements Http2FrameListener, Http2Connection.Listener {
+class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends Http2ConnectionHandler implements Http2FrameListener, io.netty.handler.codec.http2.Http2Connection.Listener {
 
   private final Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private C connection;

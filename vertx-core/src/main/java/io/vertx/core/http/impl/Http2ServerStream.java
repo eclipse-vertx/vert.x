@@ -14,11 +14,13 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
@@ -32,7 +34,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
+class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
   protected final Http2Headers headers;
   protected final String scheme;
@@ -40,16 +42,24 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
   protected final String uri;
   protected final boolean hasAuthority;
   protected final HostAndPort authority;
+  private final HttpServerMetrics serverMetrics;
+  private final Object socketMetric;
   private final TracingPolicy tracingPolicy;
+  private final boolean handle100ContinueAutomatically;
   private Object metric;
   private Object trace;
   private boolean halfClosedRemote;
   private boolean requestEnded;
   private boolean responseEnded;
   Http2ServerStreamHandler request;
+  private final Handler<HttpServerRequest> requestHandler;
 
-  Http2ServerStream(Http2ServerConnectionImpl conn,
+  Http2ServerStream(Http2ServerConnection conn,
+                    HttpServerMetrics serverMetrics,
+                    Object socketMetric,
                     ContextInternal context,
+                    Handler<HttpServerRequest> requestHandler,
+                    boolean handle100ContinueAutomatically,
                     Http2Headers headers,
                     HttpMethod method,
                     String uri,
@@ -65,10 +75,18 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
     this.authority = null;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
+    this.requestHandler = requestHandler;
+    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    this.serverMetrics = serverMetrics;
+    this.socketMetric = socketMetric;
   }
 
-  Http2ServerStream(Http2ServerConnectionImpl conn,
+  Http2ServerStream(Http2ServerConnection conn,
+                    HttpServerMetrics serverMetrics,
+                    Object socketMetric,
                     ContextInternal context,
+                    Handler<HttpServerRequest> requestHandler,
+                    boolean handle100ContinueAutomatically,
                     Http2Headers headers,
                     String scheme,
                     boolean hasAuthority,
@@ -87,16 +105,19 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
     this.method = method;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
+    this.requestHandler = requestHandler;
+    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    this.serverMetrics = serverMetrics;
+    this.socketMetric = socketMetric;
   }
 
   void registerMetrics() {
     if (METRICS_ENABLED) {
-      HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null) {
+      if (serverMetrics != null) {
         if (request.response().isPush()) {
-          metric = metrics.responsePushed(conn.metric(), method(), uri, request.response());
+          metric = serverMetrics.responsePushed(socketMetric, method(), uri, request.response());
         } else {
-          metric = metrics.requestBegin(conn.metric(), (HttpRequest) request);
+          metric = serverMetrics.requestBegin(socketMetric, (HttpRequest) request);
         }
       }
     }
@@ -109,7 +130,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
     }
     registerMetrics();
     CharSequence value = headers.get(HttpHeaderNames.EXPECT);
-    if (conn.options.isHandle100ContinueAutomatically() &&
+    if (handle100ContinueAutomatically &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
         headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
       request.response().writeContinue();
@@ -118,16 +139,15 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
     if (tracer != null) {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), new Http2HeadersAdaptor(headers), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
-    request.dispatch(conn.requestHandler);
+    request.dispatch(requestHandler);
   }
 
   @Override
   void onEnd(MultiMap trailers) {
     requestEnded = true;
     if (Metrics.METRICS_ENABLED) {
-      HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null) {
-        metrics.requestEnd(metric, (HttpRequest) request, bytesRead());
+      if (serverMetrics != null) {
+        serverMetrics.requestEnd(metric, (HttpRequest) request, bytesRead());
       }
     }
     super.onEnd(trailers);
@@ -136,9 +156,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
   @Override
   void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
-      HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null) {
-        metrics.responseBegin(metric, request.response());
+      if (serverMetrics != null) {
+        serverMetrics.responseBegin(metric, request.response());
       }
     }
     super.doWriteHeaders(headers, end, checkFlush, promise);
@@ -166,9 +185,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
   protected void endWritten() {
     responseEnded = true;
     if (METRICS_ENABLED) {
-      HttpServerMetrics metrics = conn.metrics();
-      if (metrics != null) {
-        metrics.responseEnd(metric, request.response(), bytesWritten());
+      if (serverMetrics != null) {
+        serverMetrics.responseEnd(metric, request.response(), bytesWritten());
       }
     }
   }
@@ -213,10 +231,9 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
   @Override
   void onClose() {
     if (METRICS_ENABLED) {
-      HttpServerMetrics metrics = conn.metrics();
       // Null in case of push response : handle this case
-      if (metrics != null && (!requestEnded || !responseEnded)) {
-        metrics.requestReset(metric);
+      if (serverMetrics != null && (!requestEnded || !responseEnded)) {
+        serverMetrics.requestReset(metric);
       }
     }
     request.onClose();
@@ -254,9 +271,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
   }
 
   private void routedInternal(String route) {
-    HttpServerMetrics metrics = conn.metrics();
-    if (metrics != null && !responseEnded) {
-      metrics.requestRouted(metric, route);
+    if (serverMetrics != null && !responseEnded) {
+      serverMetrics.requestRouted(metric, route);
     }
   }
 }

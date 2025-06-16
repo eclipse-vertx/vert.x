@@ -14,7 +14,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.MultiMap;
@@ -31,6 +30,7 @@ import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -38,19 +38,27 @@ import java.util.function.BiConsumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionImpl> {
+abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> {
 
-  private final boolean push;
+  private final TracingPolicy tracingPolicy;
+  private final boolean decompressionSupported;
+  private final ClientMetrics clientMetrics;
   private HttpResponseHead response;
   private Object metric;
   private Object trace;
   private boolean requestEnded;
   private boolean responseEnded;
 
-  Http2ClientStream(Http2ClientConnectionImpl conn, ContextInternal context, boolean push) {
+  Http2ClientStream(Http2ClientConnection conn,
+                    ContextInternal context,
+                    TracingPolicy tracingPolicy,
+                    boolean decompressionSupported,
+                    ClientMetrics clientMetrics) {
     super(conn, context);
 
-    this.push = push;
+    this.tracingPolicy = tracingPolicy;
+    this.decompressionSupported = decompressionSupported;
+    this.clientMetrics = clientMetrics;
   }
 
   void upgrade(Http2Stream stream, Object metric, Object trace) {
@@ -60,10 +68,9 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
     this.requestEnded = true;
   }
 
-  private void createStream(HttpRequestHead head, Http2Headers headers) throws Http2Exception {
-    Http2Stream stream = conn.createStream(head, headers);
+  private void createStream(HttpRequestHead head, Http2Headers headers) throws Exception {
+    Http2Stream stream = conn.createStream(this, head, headers);
     init(stream);
-    ClientMetrics clientMetrics = conn.clientMetrics();
     if (clientMetrics != null) {
       metric = clientMetrics.requestBegin(headers.path().toString(), head);
     }
@@ -74,7 +81,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
       if (operation == null) {
         operation = headers.method().toString();
       }
-      trace = tracer.sendRequest(context, SpanKind.RPC, conn.client().options().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
     }
   }
 
@@ -122,12 +129,12 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
           headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
         }
       }
-      if (conn.client().options().isDecompressionSupported() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+      if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
       try {
         createStream(request, headers);
-      } catch (Http2Exception ex) {
+      } catch (Exception ex) {
         promise.fail(ex);
         onException(ex);
         return;
@@ -146,15 +153,13 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
     }
   }
 
-  void onPush(Http2Stream stream, Http2Headers headers) {
-    Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(conn, context, true);
-    pushStream.init(stream);
+  void onPush(Http2ClientStreamImpl pushStream, Http2Stream nettyPushStream, Http2Headers headers) {
     HttpClientPush push = new HttpClientPush(headers, pushStream);
-    ClientMetrics metrics = conn.clientMetrics();
-    if (metrics != null) {
-      Object metric = metrics.requestBegin(headers.path().toString(), push);
+    pushStream.init(nettyPushStream);
+    if (clientMetrics != null) {
+      Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
       ((Http2ClientStream)pushStream).metric = metric;
-      metrics.requestEnd(metric, 0L);
+      clientMetrics.requestEnd(metric, 0L);
     }
     context.dispatch(push, this::handlePush);
   }
@@ -200,7 +205,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
 
   protected void endWritten() {
     requestEnded = true;
-    ClientMetrics clientMetrics = conn.clientMetrics();
     if (clientMetrics != null) {
       clientMetrics.requestEnd(metric, bytesWritten());
     }
@@ -208,7 +212,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
 
   @Override
   void onEnd(MultiMap trailers) {
-    ClientMetrics clientMetrics = conn.clientMetrics();
     if (clientMetrics != null) {
       clientMetrics.responseEnd(metric, bytesRead());
     }
@@ -218,7 +221,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
 
   @Override
   void onReset(long code) {
-    ClientMetrics clientMetrics = conn.clientMetrics();
     if (clientMetrics != null) {
       clientMetrics.requestReset(metric);
     }
@@ -260,7 +262,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
         new Http2HeadersAdaptor(headers));
       removeStatusHeaders(headers);
 
-      ClientMetrics clientMetrics = conn.clientMetrics();
       if (clientMetrics != null) {
         clientMetrics.responseBegin(metric, response);
       }
@@ -275,7 +276,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
 
   @Override
   void onClose() {
-    ClientMetrics clientMetrics = conn.clientMetrics();
     if (clientMetrics != null) {
       if (!requestEnded || !responseEnded) {
         clientMetrics.requestReset(metric);
@@ -296,12 +296,5 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionI
       onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     super.onClose();
-    // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
-    // boolean disposable = conn.streams.isEmpty();
-    if (!push) {
-      conn.recycle();
-    } /* else {
-      conn.listener.onRecycle(0, disposable);
-    } */
   }
 }

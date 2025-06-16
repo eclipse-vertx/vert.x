@@ -22,7 +22,9 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.core.tracing.TracingPolicy;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -41,8 +43,13 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
   private Handler<HttpClientPush> pushHandler;
   private Handler<Void> closeHandler;
 
-  Http2ClientStreamImpl(Http2ClientConnectionImpl conn, ContextInternal context, boolean push) {
-    super(conn, context, push);
+  Http2ClientStreamImpl(Http2ClientConnection conn,
+                        ContextInternal context,
+                        TracingPolicy tracingPolicy,
+                        boolean decompressionSupported,
+                        ClientMetrics clientMetrics,
+                        boolean push) {
+    super(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
   }
 
   @Override
@@ -257,6 +264,6 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
 
   @Override
   public HttpClientConnectionInternal connection() {
-    return conn;
+    return (HttpClientConnectionInternal) conn;
   }
 }
