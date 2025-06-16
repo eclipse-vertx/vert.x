@@ -54,9 +54,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameListener, HttpConnection {
+abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnection {
 
-  private static final Logger log = LoggerFactory.getLogger(Http2ConnectionBase.class);
+  private static final Logger log = LoggerFactory.getLogger(Http2ConnectionImpl.class);
 
   private static ByteBuf safeBuffer(ByteBuf buf) {
     ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
@@ -80,7 +80,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private int windowSize;
   private long maxConcurrentStreams;
 
-  public Http2ConnectionBase(ContextInternal context, VertxHttp2ConnectionHandler handler) {
+  public Http2ConnectionImpl(ContextInternal context, VertxHttp2ConnectionHandler handler) {
     super(context, handler.context());
     this.handler = handler;
     this.handlerContext = chctx;
@@ -393,8 +393,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public Http2ConnectionBase closeHandler(Handler<Void> handler) {
-    return (Http2ConnectionBase) super.closeHandler(handler);
+  public Http2ConnectionImpl closeHandler(Handler<Void> handler) {
+    return (Http2ConnectionImpl) super.closeHandler(handler);
   }
 
   @Override
@@ -440,7 +440,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     Promise<Void> promise = context.promise();
     Handler<Void> pending = v -> {
-      synchronized (Http2ConnectionBase.this) {
+      synchronized (Http2ConnectionImpl.this) {
         localSettings.putAll(settingsUpdate);
       }
       promise.complete();
@@ -448,7 +448,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     updateSettingsHandlers.add(pending);
     handler.writeSettings(settingsUpdate).addListener(fut -> {
       if (!fut.isSuccess()) {
-        synchronized (Http2ConnectionBase.this) {
+        synchronized (Http2ConnectionImpl.this) {
           updateSettingsHandlers.remove(pending);
         }
         promise.fail(fut.cause());
@@ -465,7 +465,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     Promise<Buffer> promise = context.promise();
     handler.writePing(data.getLong(0)).addListener(fut -> {
       if (fut.isSuccess()) {
-        synchronized (Http2ConnectionBase.this) {
+        synchronized (Http2ConnectionImpl.this) {
           pongHandlers.add(promise);
         }
       } else {
@@ -483,8 +483,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   // Necessary to set the covariant return type
   @Override
-  public Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
-    return (Http2ConnectionBase) super.exceptionHandler(handler);
+  public Http2ConnectionImpl exceptionHandler(Handler<Throwable> handler) {
+    return (Http2ConnectionImpl) super.exceptionHandler(handler);
   }
 
   void consumeCredits(Http2Stream stream, int numBytes) {

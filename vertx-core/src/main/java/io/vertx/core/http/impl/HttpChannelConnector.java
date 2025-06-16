@@ -261,9 +261,9 @@ public class HttpChannelConnector {
                               Object metric,
                               Channel ch,
                               PromiseInternal<HttpClientConnectionInternal> promise) {
-    VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
+    VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {

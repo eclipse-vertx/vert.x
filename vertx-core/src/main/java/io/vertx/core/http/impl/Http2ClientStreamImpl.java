@@ -41,7 +41,7 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
   private Handler<HttpClientPush> pushHandler;
   private Handler<Void> closeHandler;
 
-  Http2ClientStreamImpl(Http2ClientConnection conn, ContextInternal context, boolean push) {
+  Http2ClientStreamImpl(Http2ClientConnectionImpl conn, ContextInternal context, boolean push) {
     super(conn, context, push);
   }
 

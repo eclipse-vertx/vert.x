@@ -46,7 +46,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
-  private final Http2ServerConnection conn;
+  private final Http2ServerConnectionImpl conn;
   private final boolean push;
   private final Http2HeadersAdaptor headersMap;
   private Http2HeadersAdaptor trailedMap;
@@ -65,7 +65,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> endHandler;
   private Future<NetSocket> netSocket;
 
-  public Http2ServerResponse(Http2ServerConnection conn,
+  public Http2ServerResponse(Http2ServerConnectionImpl conn,
                              Http2ServerStream stream,
                              boolean push) {
     this.stream = stream;

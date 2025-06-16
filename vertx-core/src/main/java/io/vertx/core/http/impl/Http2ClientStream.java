@@ -38,7 +38,7 @@ import java.util.function.BiConsumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> {
+abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnectionImpl> {
 
   private final boolean push;
   private HttpResponseHead response;
@@ -47,7 +47,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
   private boolean requestEnded;
   private boolean responseEnded;
 
-  Http2ClientStream(Http2ClientConnection conn, ContextInternal context, boolean push) {
+  Http2ClientStream(Http2ClientConnectionImpl conn, ContextInternal context, boolean push) {
     super(conn, context);
 
     this.push = push;

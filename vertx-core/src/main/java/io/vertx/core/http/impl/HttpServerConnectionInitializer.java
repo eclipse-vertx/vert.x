@@ -170,7 +170,7 @@ class HttpServerConnectionInitializer {
   }
 
   private void configureHttp2Handler(ChannelPipeline pipeline) {
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(context, connectionHandler);
+    VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = buildHttp2ConnectionHandler(context, connectionHandler);
     pipeline.replace(VertxHandler.class, "handler", handler);
   }
 
@@ -182,15 +182,15 @@ class HttpServerConnectionInitializer {
     }
   }
 
-  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler() {
+  VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> buildHttp2ConnectionHandler() {
     return buildHttp2ConnectionHandler(context, connectionHandler);
   }
 
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
+  private VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
     int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
+    VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnectionImpl>()
       .server(true)
       .useCompression(compressionOptions)
       .gracefulShutdownTimeoutMillis(0)
@@ -198,7 +198,7 @@ class HttpServerConnectionInitializer {
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
+        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
         conn.metric(metric);
         return conn;
       })

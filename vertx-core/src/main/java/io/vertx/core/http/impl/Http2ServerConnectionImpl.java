@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerConnection extends Http2ConnectionBase implements HttpServerConnection {
+public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection {
 
   final HttpServerOptions options;
   private final String serverOrigin;
@@ -48,7 +48,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
 
-  Http2ServerConnection(
+  Http2ServerConnectionImpl(
     ContextInternal context,
     Supplier<ContextInternal> streamContextSupplier,
     String serverOrigin,
@@ -217,7 +217,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     Future<Integer> fut = handler.writePushPromise(streamId, headers_);
     fut.addListener((FutureListener<Integer>) future -> {
       if (future.isSuccess()) {
-        synchronized (Http2ServerConnection.this) {
+        synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
           Http2ServerStream vertxStream = new Http2ServerStream(this, context, headers_, method, path, options.getTracingPolicy(), true);

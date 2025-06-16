@@ -33,7 +33,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
   private final HttpServerConnectionInitializer initializer;
   private final SslChannelProvider sslChannelProvider;
   private final SslContextManager sslContextManager;
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
+  private VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler;
   private final boolean isCompressionSupported;
   private final boolean isDecompressionSupported;
 
