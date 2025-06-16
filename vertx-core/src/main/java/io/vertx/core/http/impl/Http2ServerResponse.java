@@ -63,11 +63,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> endHandler;
   private Future<NetSocket> netSocket;
 
-  public Http2ServerResponse(Http2ServerConnection conn,
-                             Http2ServerStream stream,
+  public Http2ServerResponse(Http2ServerStream stream,
                              boolean push) {
     this.stream = stream;
-    this.conn = conn;
+    this.conn = stream.connection();
     this.push = push;
     this.headersMap = conn.newHeaders();
   }
@@ -424,7 +423,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private boolean needsContentLengthHeader() {
-    return stream.method != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headersMap.contains(HttpHeaderNames.CONTENT_LENGTH);
+    return stream.method() != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headersMap.contains(HttpHeaderNames.CONTENT_LENGTH);
   }
 
   private Future<Void> checkSendHeaders(boolean end) {
@@ -452,7 +451,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private void prepareHeaders() {
     headersMap.status(status.codeAsText()); // Could be optimized for usual case ?
     // Sanitize
-    if (stream.method == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
+    if (stream.method() == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
       headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
     } else if (status == HttpResponseStatus.RESET_CONTENT) {
       headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
@@ -618,7 +617,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new IllegalStateException("A push response cannot promise another push");
     }
     if (authority == null) {
-      authority = stream.authority;
+      authority = stream.authority();
     }
     synchronized (conn) {
       checkValid();
@@ -651,11 +650,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     protected final Http2ServerResponse response;
     private final Promise<HttpServerResponse> promise;
 
-    public Push(Http2ServerStream stream,
-                Promise<HttpServerResponse> promise) {
+    public Push(Http2ServerStream stream, Promise<HttpServerResponse> promise) {
       this.context = stream.context;
       this.stream = stream;
-      this.response = new Http2ServerResponse(stream.conn, stream, true);
+      this.response = new Http2ServerResponse(stream, true);
       this.promise = promise;
     }
 
@@ -704,7 +702,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       // avoid double parsing
       if (cookies == null) {
-        CharSequence cookieHeader = stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null;
+        CharSequence cookieHeader = stream.headers() != null ? stream.headers().get(io.vertx.core.http.HttpHeaders.COOKIE) : null;
         if (cookieHeader == null) {
           cookies = new CookieJar();
         } else {

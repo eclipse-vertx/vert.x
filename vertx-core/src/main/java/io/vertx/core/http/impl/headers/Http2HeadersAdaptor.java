@@ -16,6 +16,7 @@ import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
@@ -53,79 +54,67 @@ public class Http2HeadersAdaptor implements MultiMap {
     this.headers = headers;
   }
 
-  public Http2HeadersAdaptor status(AsciiString status) {
-    if (headers instanceof Http2Headers) {
-      ((Http2Headers) headers).status(status);
+  public Http2HeadersAdaptor status(CharSequence status) {
+    if (status != null) {
+      headers.set(HttpHeaders.PSEUDO_STATUS, status);
     } else {
-      throw new UnsupportedOperationException("Implement me");
+      headers.remove(HttpHeaders.PSEUDO_STATUS);
     }
     return this;
   }
 
   public CharSequence status() {
-    if (headers instanceof Http2Headers) {
-      return ((Http2Headers) headers).status();
-    } else {
-      throw new UnsupportedOperationException("Implement me");
-    }
+    return headers.get(HttpHeaders.PSEUDO_STATUS);
   }
 
   public Http2HeadersAdaptor path(CharSequence path) {
-    if (headers instanceof Http2Headers) {
-      ((Http2Headers) headers).path(path);
+    if (path != null) {
+      headers.set(HttpHeaders.PSEUDO_PATH, path);
     } else {
-      throw new UnsupportedOperationException("Implement me");
+      headers.remove(HttpHeaders.PSEUDO_PATH);
     }
     return this;
   }
 
   public CharSequence path() {
-    if (headers instanceof Http2Headers) {
-      return ((Http2Headers) headers).path();
-    } else {
-      throw new UnsupportedOperationException("Implement me");
-    }
+    return headers.get(HttpHeaders.PSEUDO_PATH);
   }
 
   public Http2HeadersAdaptor method(CharSequence method) {
-    if (headers instanceof Http2Headers) {
-      ((Http2Headers) headers).method(method);
+    if (method != null) {
+      headers.set(HttpHeaders.PSEUDO_METHOD, method);
     } else {
-      throw new UnsupportedOperationException("Implement me");
+      headers.remove(HttpHeaders.PSEUDO_METHOD);
     }
     return this;
   }
 
   public CharSequence method() {
-    if (headers instanceof Http2Headers) {
-      return ((Http2Headers) headers).method();
-    } else {
-      throw new UnsupportedOperationException("Implement me");
-    }
+    return headers.get(HttpHeaders.PSEUDO_METHOD);
   }
 
   public Http2HeadersAdaptor authority(CharSequence authority) {
-    if (headers instanceof Http2Headers) {
-      ((Http2Headers) headers).authority(authority);
+    if (authority != null) {
+      headers.set(HttpHeaders.PSEUDO_AUTHORITY, authority);
     } else {
-      throw new UnsupportedOperationException("Implement me");
+      headers.remove(HttpHeaders.PSEUDO_AUTHORITY);
     }
     return this;
   }
 
   public CharSequence authority() {
-    if (headers instanceof Http2Headers) {
-      return ((Http2Headers) headers).authority();
-    } else {
-      throw new UnsupportedOperationException("Implement me");
-    }
+    return headers.get(HttpHeaders.PSEUDO_AUTHORITY);
+  }
+
+  public CharSequence scheme() {
+    return headers.get(HttpHeaders.PSEUDO_SCHEME);
   }
 
   public Http2HeadersAdaptor scheme(CharSequence scheme) {
-    if (headers instanceof Http2Headers) {
-      ((Http2Headers) headers).scheme(scheme);
+    if (scheme != null) {
+      headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
     } else {
-      throw new UnsupportedOperationException("Implement me");
+      headers.remove(HttpHeaders.PSEUDO_SCHEME);
     }
     return this;
   }

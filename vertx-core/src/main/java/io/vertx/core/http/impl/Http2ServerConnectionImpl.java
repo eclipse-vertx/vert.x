@@ -84,34 +84,6 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     return metrics;
   }
 
-  private static boolean isMalformedRequest(Http2ServerStream request) {
-    if (request.method == null) {
-      return true;
-    }
-
-    if (request.method == HttpMethod.CONNECT) {
-      if (request.scheme != null || request.uri != null || request.authority == null) {
-        return true;
-      }
-    } else {
-      if (request.scheme == null || request.uri == null || request.uri.length() == 0) {
-        return true;
-      }
-    }
-    if (request.hasAuthority) {
-      if (request.authority == null) {
-        return true;
-      }
-      CharSequence hostHeader = request.headers.get(HttpHeaders.HOST);
-      if (hostHeader != null) {
-        HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-        return host == null || (!request.authority.host().equals(host.host()) || request.authority.port() != host.port());
-      }
-    }
-    return false;
-  }
-
-
   private static class EncodingDetector extends HttpContentCompressor {
 
     private EncodingDetector(CompressionOptions[] compressionOptions) {
@@ -133,43 +105,22 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
-    CharSequence schemeHeader = headers.getAndRemove(HttpHeaders.PSEUDO_SCHEME);
-    HostAndPort authority = null;
-    String authorityHeaderAsString;
-    CharSequence authorityHeader = headers.getAndRemove(HttpHeaders.PSEUDO_AUTHORITY);
-    if (authorityHeader != null) {
-      authorityHeaderAsString = authorityHeader.toString();
-      authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
-    }
-    CharSequence hostHeader = null;
-    if (authority == null) {
-      hostHeader = headers.getAndRemove(HttpHeaders.HOST);
-      if (hostHeader != null) {
-        authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-      }
-    }
-    CharSequence pathHeader = headers.getAndRemove(HttpHeaders.PSEUDO_PATH);
-    CharSequence methodHeader = headers.getAndRemove(HttpHeaders.PSEUDO_METHOD);
     return new Http2ServerStream(
       this,
+            serverOrigin,
             metrics,
       metric(),
       streamContextSupplier.get(),
       requestHandler,
       options.isHandle100ContinueAutomatically(),
-      new Http2HeadersAdaptor(headers),
-      schemeHeader != null ? schemeHeader.toString() : null,
-      authorityHeader != null || hostHeader != null,
-      authority,
-      methodHeader != null ? HttpMethod.valueOf(methodHeader.toString()) : null,
-      pathHeader != null ? pathHeader.toString() : null,
-      options.getTracingPolicy(), streamEnded);
+      options.getMaxFormAttributeSize(),
+      options.getMaxFormFields(),
+      options.getMaxFormBufferedBytes(),
+      options.getTracingPolicy(),
+      streamEnded);
   }
 
   private void initStream(int streamId, Http2ServerStream vertxStream) {
-    Http2ServerRequest request = new Http2ServerRequest(vertxStream, options, serverOrigin, vertxStream.headers);
-    vertxStream.request = request;
-    vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     Http2Stream stream = handler.connection().stream(streamId);
     vertxStream.init(stream.id());
     stream.setProperty(streamKey, vertxStream);
@@ -185,12 +136,12 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       } else {
         stream = createStream(headers, endOfStream);
       }
-      if (isMalformedRequest(stream)) {
+      initStream(streamId, stream);
+      if (!stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority)) {
+        nettyStream.setProperty(streamKey, null);
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
         return;
       }
-      initStream(streamId, stream);
-      stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
       stream = nettyStream.getProperty(streamKey);
@@ -271,7 +222,23 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(this, metrics, metric(), context, requestHandler, options.isHandle100ContinueAutomatically(), new Http2HeadersAdaptor(headers_), method, path, options.getTracingPolicy(), true, promisedStreamId);
+          Http2ServerStream vertxStream = new Http2ServerStream(
+            this,
+            serverOrigin,
+            metrics,
+            metric(),
+            context,
+            requestHandler,
+            options.isHandle100ContinueAutomatically(),
+            options.getMaxFormAttributeSize(),
+            options.getMaxFormFields(),
+            options.getMaxFormBufferedBytes(),
+            new Http2HeadersAdaptor(headers_),
+            method,
+            path,
+            options.getTracingPolicy(),
+            true,
+            promisedStreamId);
           promisedStream.setProperty(streamKey, vertxStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {

@@ -60,7 +60,7 @@ public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, 
     return ifType(ctx.handler(), VertxHttp2ConnectionHandler.class, connectionHandler ->
       ifType(connectionHandler.connectFuture().getNow(), Http2ServerConnectionImpl.class, connection ->
         ifType(connection.stream(streamId), Http2ServerStream.class, stream ->
-          stream.headers == null ? null : connection.determineContentEncoding(stream.headers))));
+          stream.headers() == null ? null : connection.determineContentEncoding(stream.headers()))));
   }
 
   private <T, R> R ifType(Object obj, Class<T> type, Function<T, R> then) {

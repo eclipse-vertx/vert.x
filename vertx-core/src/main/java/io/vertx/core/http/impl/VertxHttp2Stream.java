@@ -135,9 +135,6 @@ abstract class VertxHttp2Stream {
     context.emit(frame, this::handleCustomFrame);
   }
 
-  void onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
-  }
-
   void onData(Buffer data) {
     bytesRead += data.length();
     conn.reportBytesRead(data.length());
