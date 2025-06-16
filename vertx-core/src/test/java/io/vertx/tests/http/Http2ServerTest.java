@@ -2742,6 +2742,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testUpgradeToClearTextInvalidHost() throws Exception {
     testUpgradeToClearText(new RequestOptions(requestOptions).putHeader("Host", "localhost:not"), options -> {})
       .compose(req -> req.send()).onComplete(onFailure(failure -> {
+        // Regression
         assertEquals(StreamResetException.class, failure.getClass());
         assertEquals(1L, ((StreamResetException)failure).getCode());
         testComplete();

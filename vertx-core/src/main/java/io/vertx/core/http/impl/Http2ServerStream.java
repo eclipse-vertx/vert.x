@@ -18,7 +18,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -35,17 +37,21 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 class Http2ServerStream extends VertxHttp2Stream {
 
-  protected final Http2ServerConnection conn;
-  protected final Http2HeadersAdaptor headers;
-  protected final String scheme;
-  protected final HttpMethod method;
-  protected final String uri;
-  protected final boolean hasAuthority;
-  protected final HostAndPort authority;
+  private final Http2ServerConnection conn;
+  private final String serverOrigin;
+  private Http2HeadersAdaptor headers;
+  private String scheme;
+  private HttpMethod method;
+  private String uri;
+  private boolean hasAuthority;
+  private HostAndPort authority;
   private final HttpServerMetrics serverMetrics;
   private final Object socketMetric;
   private final TracingPolicy tracingPolicy;
   private final boolean handle100ContinueAutomatically;
+  private final int maxFormAttributeSize;
+  private final int maxFormFields;
+  private final int maxFormBufferedBytes;
   private Object metric;
   private Object trace;
   private boolean halfClosedRemote;
@@ -56,11 +62,15 @@ class Http2ServerStream extends VertxHttp2Stream {
   final int promisedId;
 
   Http2ServerStream(Http2ServerConnection conn,
+                    String serverOrigin,
                     HttpServerMetrics serverMetrics,
                     Object socketMetric,
                     ContextInternal context,
                     Handler<HttpServerRequest> requestHandler,
                     boolean handle100ContinueAutomatically,
+                    int maxFormAttributeSize,
+                    int maxFormFields,
+                    int maxFormBufferedBytes,
                     Http2HeadersAdaptor headers,
                     HttpMethod method,
                     String uri,
@@ -69,6 +79,7 @@ class Http2ServerStream extends VertxHttp2Stream {
                     int promisedId) {
     super(conn, context);
 
+    this.serverOrigin = serverOrigin;
     this.conn = conn;
     this.headers = headers;
     this.method = method;
@@ -80,34 +91,30 @@ class Http2ServerStream extends VertxHttp2Stream {
     this.halfClosedRemote = halfClosedRemote;
     this.requestHandler = requestHandler;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
     this.promisedId = promisedId;
   }
 
   Http2ServerStream(Http2ServerConnection conn,
+                    String serverOrigin,
                     HttpServerMetrics serverMetrics,
                     Object socketMetric,
                     ContextInternal context,
                     Handler<HttpServerRequest> requestHandler,
                     boolean handle100ContinueAutomatically,
-                    Http2HeadersAdaptor headers,
-                    String scheme,
-                    boolean hasAuthority,
-                    HostAndPort authority,
-                    HttpMethod method,
-                    String uri,
+                    int maxFormAttributeSize,
+                    int maxFormFields,
+                    int maxFormBufferedBytes,
                     TracingPolicy tracingPolicy,
                     boolean halfClosedRemote) {
     super(conn, context);
 
     this.conn = conn;
-    this.scheme = scheme;
-    this.headers = headers;
-    this.hasAuthority = hasAuthority;
-    this.authority = authority;
-    this.uri = uri;
-    this.method = method;
+    this.serverOrigin = serverOrigin;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
     this.requestHandler = requestHandler;
@@ -115,6 +122,33 @@ class Http2ServerStream extends VertxHttp2Stream {
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
     this.promisedId = -1;
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
+  }
+
+  Http2ServerConnection connection() {
+    return conn;
+  }
+
+  Http2HeadersAdaptor headers() {
+    return headers;
+  }
+
+  String uri() {
+    return uri;
+  }
+
+  String scheme() {
+    return scheme;
+  }
+
+  HostAndPort authority() {
+    return authority;
+  }
+
+  boolean hasAuthority() {
+    return hasAuthority;
   }
 
   void registerMetrics() {
@@ -129,8 +163,75 @@ class Http2ServerStream extends VertxHttp2Stream {
     }
   }
 
-  @Override
-  void onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
+  boolean onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
+
+    CharSequence methodHeader = headers.method();
+    if (methodHeader == null) {
+      return false;
+    }
+    HttpMethod method = HttpMethod.valueOf(methodHeader.toString());
+
+    CharSequence schemeHeader = headers.scheme();
+    String scheme = schemeHeader != null ? schemeHeader.toString() : null;
+
+    CharSequence pathHeader = headers.path();
+    String uri = pathHeader != null ? pathHeader.toString() : null;
+
+    HostAndPort authority = null;
+    String authorityHeaderAsString;
+    CharSequence authorityHeader = headers.authority();
+    if (authorityHeader != null) {
+      authorityHeaderAsString = authorityHeader.toString();
+      authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+    }
+
+    CharSequence hostHeader = headers.get(HttpHeaders.HOST);
+    if (authority == null) {
+      headers.remove(HttpHeaders.HOST);
+      if (hostHeader != null) {
+        authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+      }
+    }
+
+    if (method == HttpMethod.CONNECT) {
+      if (scheme != null || uri != null || authority == null) {
+        return false;
+      }
+    } else {
+      if (scheme == null || uri == null || uri.length() == 0) {
+        return false;
+      }
+    }
+
+    boolean hasAuthority = authorityHeader != null || hostHeader != null;
+    if (hasAuthority) {
+      if (authority == null) {
+        return false;
+      }
+      if (hostHeader != null) {
+        HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+        if (host == null || (!authority.host().equals(host.host()) || authority.port() != host.port())) {
+          return false;
+        }
+      }
+    }
+
+    // Sanitize headers
+    headers.authority(null);
+    headers.path(null);
+    headers.method(null);
+    headers.scheme(null);
+    headers.path(null);
+
+    this.method = method;
+    this.isConnect = method == HttpMethod.CONNECT;
+    this.uri = uri;
+    this.authority = authority;
+    this.scheme = scheme;
+    this.hasAuthority = hasAuthority;
+    this.headers = headers;
+    this.request = new Http2ServerRequest(this, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes, serverOrigin, headers);
+
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -146,6 +247,8 @@ class Http2ServerStream extends VertxHttp2Stream {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(requestHandler);
+
+    return true;
   }
 
   @Override
@@ -200,21 +303,23 @@ class Http2ServerStream extends VertxHttp2Stream {
   @Override
   void handleClose() {
     super.handleClose();
-    request.handleClose();
+    if (request != null) {
+      request.handleClose();
+    }
   }
 
   @Override
   void handleReset(long errorCode) {
     if (request != null) {
       request.handleReset(errorCode);
-    } else {
-
     }
   }
 
   @Override
   void handleException(Throwable cause) {
-    request.handleException(cause);
+    if (request != null) {
+      request.handleException(cause);
+    }
   }
 
   @Override
@@ -246,19 +351,21 @@ class Http2ServerStream extends VertxHttp2Stream {
         serverMetrics.requestReset(metric);
       }
     }
-    request.onClose();
-    VertxTracer tracer = context.tracer();
-    Object trace = this.trace;
-    if (tracer != null && trace != null) {
-      Throwable failure;
-      synchronized (conn) {
-        if (!halfClosedRemote && (!requestEnded || !responseEnded)) {
-          failure = HttpUtils.STREAM_CLOSED_EXCEPTION;
-        } else {
-          failure = null;
+    if (request != null) {
+      request.onClose();
+      VertxTracer tracer = context.tracer();
+      Object trace = this.trace;
+      if (tracer != null && trace != null) {
+        Throwable failure;
+        synchronized (conn) {
+          if (!halfClosedRemote && (!requestEnded || !responseEnded)) {
+            failure = HttpUtils.STREAM_CLOSED_EXCEPTION;
+          } else {
+            failure = null;
+          }
         }
+        tracer.sendResponse(context, failure == null ? request.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
       }
-      tracer.sendResponse(context, failure == null ? request.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
     super.onClose();
   }

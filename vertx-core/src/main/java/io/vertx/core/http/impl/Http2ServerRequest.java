@@ -50,6 +50,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   protected final ContextInternal context;
   protected final Http2ServerStream stream;
+  protected final Http2ServerConnection connection;
   protected final Http2ServerResponse response;
   private final String serverOrigin;
   private final MultiMap headersMap;
@@ -72,17 +73,20 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private Handler<StreamPriority> streamPriorityHandler;
 
   Http2ServerRequest(Http2ServerStream stream,
-                     HttpServerOptions options,
+                     int maxFormAttributeSize,
+                     int maxFormFields,
+                     int maxFormBufferedBytes,
                      String serverOrigin,
                      Http2HeadersAdaptor headersMap) {
     this.context = stream.context;
     this.stream = stream;
-    this.response = new Http2ServerResponse(stream.conn, stream, false);
+    this.connection = stream.connection();
+    this.response = new Http2ServerResponse(stream, false);
     this.serverOrigin = serverOrigin;
     this.headersMap = headersMap;
-    this.maxFormAttributeSize = options.getMaxFormAttributeSize();
-    this.maxFormFields = options.getMaxFormFields();
-    this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -99,7 +103,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public void handleException(Throwable cause) {
     boolean notify;
-    synchronized (stream.conn) {
+    synchronized (connection) {
       notify = !ended;
     }
     if (notify) {
@@ -111,7 +115,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private void notifyException(Throwable failure) {
     InterfaceHttpData upload = null;
     HttpEventHandler handler;
-    synchronized (stream.conn) {
+    synchronized (connection) {
       if (postRequestDecoder != null) {
         upload = postRequestDecoder.currentPartialHttpData();
       }
@@ -157,7 +161,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   public void handleEnd(MultiMap trailers) {
     HttpEventHandler handler;
-    synchronized (stream.conn) {
+    synchronized (connection) {
       ended = true;
       if (postRequestDecoder != null) {
         try {
@@ -195,7 +199,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public void handleReset(long errorCode) {
     boolean notify;
-    synchronized (stream.conn) {
+    synchronized (connection) {
       notify = !ended;
       ended = true;
     }
@@ -213,7 +217,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpMethod method() {
-    return stream.method;
+    return stream.method();
   }
 
   @Override
@@ -233,7 +237,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       HttpEventHandler eventHandler = eventHandler(handler != null);
       if (eventHandler != null) {
         eventHandler.exceptionHandler(handler);
@@ -244,7 +248,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest handler(Handler<Buffer> handler) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       if (handler != null) {
         checkEnded();
       }
@@ -258,7 +262,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest pause() {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       checkEnded();
       stream.doPause();
     }
@@ -272,7 +276,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest fetch(long amount) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       checkEnded();
       stream.doFetch(amount);
     }
@@ -281,7 +285,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest endHandler(Handler<Void> handler) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       if (handler != null) {
         checkEnded();
       }
@@ -300,35 +304,35 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public String uri() {
-    return stream.uri;
+    return stream.uri();
   }
 
   @Override
   public String path() {
-    synchronized (stream.conn) {
-      return stream.uri != null ? HttpUtils.parsePath(stream.uri) : null;
+    synchronized (connection) {
+      return stream.uri() != null ? HttpUtils.parsePath(stream.uri()) : null;
     }
   }
 
   @Override
   public String query() {
-    synchronized (stream.conn) {
-      if (stream.uri == null) {
+    synchronized (connection) {
+      if (stream.uri() == null) {
         return null;
       } else {
-        return HttpUtils.parseQuery(stream.uri);
+        return HttpUtils.parseQuery(stream.uri());
       }
     }
   }
 
   @Override
   public String scheme() {
-    return stream.scheme;
+    return stream.scheme();
   }
 
   @Override
   public @Nullable HostAndPort authority() {
-    return stream.authority;
+    return stream.authority();
   }
 
   @Override
@@ -363,7 +367,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
   @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
         params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
         semicolonIsNormalCharInParams = semicolonIsNormalChar;
@@ -379,10 +383,10 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public String absoluteURI() {
-    if (stream.method == HttpMethod.CONNECT) {
+    if (stream.method() == HttpMethod.CONNECT) {
       return null;
     }
-    synchronized (stream.conn) {
+    synchronized (connection) {
       if (absoluteURI == null) {
         absoluteURI = HttpUtils.absoluteURI(serverOrigin, this);
       }
@@ -397,7 +401,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest setExpectMultipart(boolean expect) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       checkEnded();
       expectMultipart = expect;
       if (expect) {
@@ -409,13 +413,13 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
           if (!HttpUtils.isValidMultipartContentType(contentType)) {
             throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
           }
-          if (!HttpUtils.isValidMultipartMethod(stream.method.toNetty())) {
+          if (!HttpUtils.isValidMultipartMethod(stream.method().toNetty())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
           HttpRequest req = new DefaultHttpRequest(
             io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-            stream.method.toNetty(),
-            stream.uri);
+            stream.method().toNetty(),
+            stream.uri());
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
           factory.setMaxLimit(maxFormAttributeSize);
@@ -430,14 +434,14 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public boolean isExpectMultipart() {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       return expectMultipart;
     }
   }
 
   @Override
   public HttpServerRequest uploadHandler(@Nullable Handler<HttpServerFileUpload> handler) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       if (handler != null) {
         checkEnded();
       }
@@ -448,7 +452,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public MultiMap formAttributes() {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       // Create it lazily
       if (attributes == null) {
         attributes = MultiMap.caseInsensitiveMultiMap();
@@ -474,14 +478,14 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public boolean isEnded() {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       return ended;
     }
   }
 
   @Override
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       customFrameHandler = handler;
     }
     return this;
@@ -489,7 +493,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpConnection connection() {
-    return (HttpConnection) stream.conn;
+    return (HttpConnection) connection;
   }
 
   @Override
@@ -510,7 +514,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
-    synchronized (stream.conn) {
+    synchronized (connection) {
       streamPriorityHandler = handler;
     }
     return this;
@@ -524,7 +528,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public void handlePriorityChange(StreamPriority streamPriority) {
     Handler<StreamPriority> handler;
-    synchronized (stream.conn) {
+    synchronized (connection) {
       handler = streamPriorityHandler;
     }
     if (handler != null) {

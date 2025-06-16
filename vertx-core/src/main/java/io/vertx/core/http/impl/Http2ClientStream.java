@@ -226,7 +226,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
     super.onReset(code);
   }
 
-  @Override
   void onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
