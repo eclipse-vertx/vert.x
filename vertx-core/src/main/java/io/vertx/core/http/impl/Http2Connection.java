@@ -12,7 +12,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.Promise;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -26,7 +25,7 @@ interface Http2Connection {
 
   boolean isSsl();
 
-  boolean isWritable(VertxHttp2Stream<?> stream);
+  boolean isWritable(VertxHttp2Stream stream);
 
   void reportBytesWritten(long numOfBytes);
 
@@ -36,16 +35,16 @@ interface Http2Connection {
 
   void flushBytesRead();
 
-  void writeFrame(VertxHttp2Stream<?> stream, int type, int flags, ByteBuf payload, Promise<Void> promise);
+  void writeFrame(VertxHttp2Stream stream, int type, int flags, ByteBuf payload, Promise<Void> promise);
 
-  void writeHeaders(VertxHttp2Stream<?> stream, Http2Headers headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
+  void writeHeaders(VertxHttp2Stream stream, Http2Headers headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
 
-  void writeData(VertxHttp2Stream<?> stream, ByteBuf buf, boolean end, Promise<Void> promise);
+  void writeData(VertxHttp2Stream stream, ByteBuf buf, boolean end, Promise<Void> promise);
 
-  void writeReset(VertxHttp2Stream<?> stream, long code, Promise<Void> promise);
+  void writeReset(VertxHttp2Stream stream, long code, Promise<Void> promise);
 
-  void writePriorityFrame(VertxHttp2Stream<?> stream, StreamPriority priority);
+  void writePriorityFrame(VertxHttp2Stream stream, StreamPriority priority);
 
-  void consumeCredits(VertxHttp2Stream<?> stream, int amountOfBytes);
+  void consumeCredits(VertxHttp2Stream stream, int amountOfBytes);
 
 }

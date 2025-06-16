@@ -13,9 +13,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
@@ -38,8 +35,9 @@ import java.util.function.BiConsumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> {
+abstract class Http2ClientStream extends VertxHttp2Stream {
 
+  protected final Http2ClientConnection conn;
   private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
@@ -56,27 +54,28 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
                     ClientMetrics clientMetrics) {
     super(conn, context);
 
+    this.conn = conn;
     this.tracingPolicy = tracingPolicy;
     this.decompressionSupported = decompressionSupported;
     this.clientMetrics = clientMetrics;
   }
 
-  void upgrade(Http2Stream stream, Object metric, Object trace) {
-    init(stream);
+  void upgrade(int streamId, Object metric, Object trace) {
+    init(streamId);
     this.metric = metric;
     this.trace = trace;
     this.requestEnded = true;
   }
 
-  private void createStream(HttpRequestHead head, Http2Headers headers) throws Exception {
-    Http2Stream stream = conn.createStream(this, head, headers);
-    init(stream);
+  private void createStream(HttpRequestHead head, Http2HeadersAdaptor headers) throws Exception {
+    int streamId = conn.createStream(this, head, headers);
+    init(streamId);
     if (clientMetrics != null) {
       metric = clientMetrics.requestBegin(headers.path().toString(), head);
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      BiConsumer<String, String> headers_ = (key, val) -> new Http2HeadersAdaptor(headers).add(key, val);
+      BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
       String operation = head.traceOperation;
       if (operation == null) {
         operation = headers.method().toString();
@@ -106,7 +105,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
 
     @Override
     public void write() {
-      Http2Headers headers = new DefaultHttp2Headers();
+      Http2HeadersAdaptor headers = conn.newHeaders();
       headers.method(request.method.name());
       boolean e;
       if (request.method == HttpMethod.CONNECT) {
@@ -153,9 +152,9 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
     }
   }
 
-  void onPush(Http2ClientStreamImpl pushStream, Http2Stream nettyPushStream, Http2Headers headers) {
+  void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersAdaptor headers) {
     HttpClientPush push = new HttpClientPush(headers, pushStream);
-    pushStream.init(nettyPushStream);
+    pushStream.init(promisedStreamId);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
       ((Http2ClientStream)pushStream).metric = metric;
@@ -189,7 +188,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
   }
 
   @Override
-  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void doWriteHeaders(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     isConnect = "CONNECT".contentEquals(headers.method());
     super.doWriteHeaders(headers, end, checkFlush, promise);
   }
@@ -228,7 +227,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
   }
 
   @Override
-  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
+  void onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -249,7 +248,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
       } else if (status == 103) {
         MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
         removeStatusHeaders(headers);
-        for (Map.Entry<CharSequence, CharSequence> header : headers) {
+        for (Map.Entry<String, String> header : headers) {
           headersMultiMap.add(header.getKey(), header.getValue());
         }
         onEarlyHints(headersMultiMap);
@@ -259,7 +258,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
         HttpVersion.HTTP_2,
         status,
         statusMessage,
-        new Http2HeadersAdaptor(headers));
+        headers);
       removeStatusHeaders(headers);
 
       if (clientMetrics != null) {
@@ -270,7 +269,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection>
     }
   }
 
-  private void removeStatusHeaders(Http2Headers headers) {
+  private void removeStatusHeaders(Http2HeadersAdaptor headers) {
     headers.remove(HttpHeaders.PSEUDO_STATUS);
   }
 

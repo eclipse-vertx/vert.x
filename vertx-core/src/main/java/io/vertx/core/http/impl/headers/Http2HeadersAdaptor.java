@@ -62,6 +62,74 @@ public class Http2HeadersAdaptor implements MultiMap {
     return this;
   }
 
+  public CharSequence status() {
+    if (headers instanceof Http2Headers) {
+      return ((Http2Headers) headers).status();
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+  }
+
+  public Http2HeadersAdaptor path(CharSequence path) {
+    if (headers instanceof Http2Headers) {
+      ((Http2Headers) headers).path(path);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+    return this;
+  }
+
+  public CharSequence path() {
+    if (headers instanceof Http2Headers) {
+      return ((Http2Headers) headers).path();
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+  }
+
+  public Http2HeadersAdaptor method(CharSequence method) {
+    if (headers instanceof Http2Headers) {
+      ((Http2Headers) headers).method(method);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+    return this;
+  }
+
+  public CharSequence method() {
+    if (headers instanceof Http2Headers) {
+      return ((Http2Headers) headers).method();
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+  }
+
+  public Http2HeadersAdaptor authority(CharSequence authority) {
+    if (headers instanceof Http2Headers) {
+      ((Http2Headers) headers).authority(authority);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+    return this;
+  }
+
+  public CharSequence authority() {
+    if (headers instanceof Http2Headers) {
+      return ((Http2Headers) headers).authority();
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+  }
+
+  public Http2HeadersAdaptor scheme(CharSequence scheme) {
+    if (headers instanceof Http2Headers) {
+      ((Http2Headers) headers).scheme(scheme);
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+    return this;
+  }
+
   public Headers<CharSequence, CharSequence, ?> unwrap() {
     return headers;
   }

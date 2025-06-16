@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -34,9 +33,10 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
+class Http2ServerStream extends VertxHttp2Stream {
 
-  protected final Http2Headers headers;
+  protected final Http2ServerConnection conn;
+  protected final Http2HeadersAdaptor headers;
   protected final String scheme;
   protected final HttpMethod method;
   protected final String uri;
@@ -60,13 +60,14 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
                     ContextInternal context,
                     Handler<HttpServerRequest> requestHandler,
                     boolean handle100ContinueAutomatically,
-                    Http2Headers headers,
+                    Http2HeadersAdaptor headers,
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
                     boolean halfClosedRemote) {
     super(conn, context);
 
+    this.conn = conn;
     this.headers = headers;
     this.method = method;
     this.uri = uri;
@@ -87,7 +88,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
                     ContextInternal context,
                     Handler<HttpServerRequest> requestHandler,
                     boolean handle100ContinueAutomatically,
-                    Http2Headers headers,
+                    Http2HeadersAdaptor headers,
                     String scheme,
                     boolean hasAuthority,
                     HostAndPort authority,
@@ -97,6 +98,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
                     boolean halfClosedRemote) {
     super(conn, context);
 
+    this.conn = conn;
     this.scheme = scheme;
     this.headers = headers;
     this.hasAuthority = hasAuthority;
@@ -124,7 +126,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
+  void onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
@@ -132,12 +134,12 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     CharSequence value = headers.get(HttpHeaderNames.EXPECT);
     if (handle100ContinueAutomatically &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE, true))) {
       request.response().writeContinue();
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), new Http2HeadersAdaptor(headers), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     request.dispatch(requestHandler);
   }
@@ -154,7 +156,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   }
 
   @Override
-  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void doWriteHeaders(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       if (serverMetrics != null) {
         serverMetrics.responseBegin(metric, request.response());
