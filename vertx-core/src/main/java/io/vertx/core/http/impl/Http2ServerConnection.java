@@ -20,5 +20,5 @@ import io.vertx.core.net.HostAndPort;
 public interface Http2ServerConnection extends Http2Connection {
 
   // Promise<VertxHttpStream> instead
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise);
+  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise);
 }

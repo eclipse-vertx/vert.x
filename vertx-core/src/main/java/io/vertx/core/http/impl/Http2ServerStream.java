@@ -53,6 +53,7 @@ class Http2ServerStream extends VertxHttp2Stream {
   private boolean responseEnded;
   Http2ServerStreamHandler request;
   private final Handler<HttpServerRequest> requestHandler;
+  final int promisedId;
 
   Http2ServerStream(Http2ServerConnection conn,
                     HttpServerMetrics serverMetrics,
@@ -64,7 +65,8 @@ class Http2ServerStream extends VertxHttp2Stream {
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
-                    boolean halfClosedRemote) {
+                    boolean halfClosedRemote,
+                    int promisedId) {
     super(conn, context);
 
     this.conn = conn;
@@ -80,6 +82,7 @@ class Http2ServerStream extends VertxHttp2Stream {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
+    this.promisedId = promisedId;
   }
 
   Http2ServerStream(Http2ServerConnection conn,
@@ -111,6 +114,7 @@ class Http2ServerStream extends VertxHttp2Stream {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
+    this.promisedId = -1;
   }
 
   void registerMetrics() {
@@ -201,7 +205,11 @@ class Http2ServerStream extends VertxHttp2Stream {
 
   @Override
   void handleReset(long errorCode) {
-    request.handleReset(errorCode);
+    if (request != null) {
+      request.handleReset(errorCode);
+    } else {
+
+    }
   }
 
   @Override
