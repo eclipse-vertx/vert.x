@@ -32,7 +32,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
+class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnectionImpl> {
 
   protected final Http2Headers headers;
   protected final String scheme;
@@ -48,7 +48,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   private boolean responseEnded;
   Http2ServerStreamHandler request;
 
-  Http2ServerStream(Http2ServerConnection conn,
+  Http2ServerStream(Http2ServerConnectionImpl conn,
                     ContextInternal context,
                     Http2Headers headers,
                     HttpMethod method,
@@ -67,7 +67,7 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     this.halfClosedRemote = halfClosedRemote;
   }
 
-  Http2ServerStream(Http2ServerConnection conn,
+  Http2ServerStream(Http2ServerConnectionImpl conn,
                     ContextInternal context,
                     Http2Headers headers,
                     String scheme,

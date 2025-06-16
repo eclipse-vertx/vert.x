@@ -360,7 +360,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.context(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority(), upgradingConnection.pooled(), maxLifetime);
+          VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, upgradingConnection.context(), true, upgradedConnection.current.metric(), upgradedConnection.current.authority(), upgradingConnection.pooled(), maxLifetime);
           upgradingConnection.channel().pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {
@@ -368,7 +368,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
               log.error(future.cause().getMessage(), future.cause());
               return;
             }
-            Http2ClientConnection conn = (Http2ClientConnection) future.getNow();
+            Http2ClientConnectionImpl conn = (Http2ClientConnectionImpl) future.getNow();
             try {
               try {
                 upgradedStream = conn.upgradeStream(upgradingStream.metric(), upgradingStream.trace(), upgradingStream.getContext());

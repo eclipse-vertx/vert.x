@@ -25,7 +25,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnectionInternal {
+class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnectionInternal {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
@@ -38,13 +38,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private boolean evicted;
   private final VertxHttp2ConnectionHandler handler;
 
-  Http2ClientConnection(HttpClientBase client,
-                        ContextInternal context,
-                        HostAndPort authority,
-                        VertxHttp2ConnectionHandler connHandler,
-                        ClientMetrics metrics,
-                        boolean pooled,
-                        long maxLifetime) {
+  Http2ClientConnectionImpl(HttpClientBase client,
+                            ContextInternal context,
+                            HostAndPort authority,
+                            VertxHttp2ConnectionHandler connHandler,
+                            ClientMetrics metrics,
+                            boolean pooled,
+                            long maxLifetime) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
@@ -69,7 +69,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public Http2ClientConnection evictionHandler(Handler<Void> handler) {
+  public Http2ClientConnectionImpl evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
   }
@@ -80,7 +80,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public Http2ClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+  public Http2ClientConnectionImpl concurrencyChangeHandler(Handler<Long> handler) {
     concurrencyChangeHandler = handler;
     return this;
   }
@@ -206,7 +206,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
       stream.onPush(promisedStream, headers);
     } else {
-      Http2ClientConnection.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
+      Http2ClientConnectionImpl.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
     }
   }
 
@@ -217,7 +217,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
   }
 
-  public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
+  public static VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> createHttp2ConnectionHandler(
     HttpClientBase client,
     ClientMetrics metrics,
     ContextInternal context,
@@ -228,13 +228,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     long maxLifetime) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
-    VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
+    VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnectionImpl>()
       .server(false)
       .useDecompression(client.options().isDecompressionSupported())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnection conn = new Http2ClientConnection(client, context, authority, connHandler, metrics, pooled, maxLifetime);
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(client, context, authority, connHandler, metrics, pooled, maxLifetime);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);
