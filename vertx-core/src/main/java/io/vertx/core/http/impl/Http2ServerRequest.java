@@ -53,6 +53,9 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   protected final Http2ServerResponse response;
   private final String serverOrigin;
   private final MultiMap headersMap;
+  private final int maxFormAttributeSize;
+  private final int maxFormFields;
+  private final int maxFormBufferedBytes;
 
   // Accessed on context thread
   private Charset paramsCharset = StandardCharsets.UTF_8;
@@ -69,6 +72,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private Handler<StreamPriority> streamPriorityHandler;
 
   Http2ServerRequest(Http2ServerStream stream,
+                     HttpServerOptions options,
                      String serverOrigin,
                      Http2HeadersAdaptor headersMap) {
     this.context = stream.context;
@@ -76,6 +80,9 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     this.response = new Http2ServerResponse(stream.conn, stream, false);
     this.serverOrigin = serverOrigin;
     this.headersMap = headersMap;
+    this.maxFormAttributeSize = options.getMaxFormAttributeSize();
+    this.maxFormFields = options.getMaxFormFields();
+    this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -411,11 +418,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
             stream.uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          HttpServerOptions options = stream.conn.options;
-          factory.setMaxLimit(options.getMaxFormAttributeSize());
-          int maxFields = options.getMaxFormFields();
-          int maxBufferedBytes = options.getMaxFormBufferedBytes();
-          postRequestDecoder = new HttpPostRequestDecoder(factory, req, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
+          factory.setMaxLimit(maxFormAttributeSize);
+          postRequestDecoder = new HttpPostRequestDecoder(factory, req, HttpConstants.DEFAULT_CHARSET, maxFormFields, maxFormBufferedBytes);
         }
       } else {
         postRequestDecoder = null;
@@ -485,7 +489,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpConnection connection() {
-    return stream.conn;
+    return (HttpConnection) stream.conn;
   }
 
   @Override

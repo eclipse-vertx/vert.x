@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
@@ -45,8 +46,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
-  private final ChannelHandlerContext ctx;
-  private final Http2ServerConnectionImpl conn;
+  private final Http2ServerConnection conn;
   private final boolean push;
   private final Http2HeadersAdaptor headersMap;
   private Http2HeadersAdaptor trailedMap;
@@ -65,11 +65,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> endHandler;
   private Future<NetSocket> netSocket;
 
-  public Http2ServerResponse(Http2ServerConnectionImpl conn,
+  public Http2ServerResponse(Http2ServerConnection conn,
                              Http2ServerStream stream,
                              boolean push) {
     this.stream = stream;
-    this.ctx = conn.handlerContext;
     this.conn = conn;
     this.push = push;
     this.headersMap = conn.newHeaders();
@@ -375,7 +374,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         if (checkSendHeaders(false) == null) {
           netSocket = stream.context.failedFuture("Response for CONNECT already sent");
         } else {
-          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream.request, this);
+          HttpNetSocket ns = HttpNetSocket.netSocket((ConnectionBase) conn, stream.context, (ReadStream<Buffer>) stream.request, this);
           netSocket = Future.succeededFuture(ns);
         }
       }

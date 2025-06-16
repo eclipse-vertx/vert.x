@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnection {
+abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnection, io.vertx.core.http.impl.Http2Connection {
 
   private static final Logger log = LoggerFactory.getLogger(Http2ConnectionImpl.class);
 
@@ -90,12 +90,8 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     this.localSettings = handler.initialSettings();
   }
 
-  Http2HeadersAdaptor newHeaders() {
+  public Http2HeadersAdaptor newHeaders() {
     return new Http2HeadersAdaptor(new DefaultHttp2Headers());
-  }
-
-  VertxInternal vertx() {
-    return vertx;
   }
 
   @Override
@@ -487,32 +483,38 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     return (Http2ConnectionImpl) super.exceptionHandler(handler);
   }
 
-  void consumeCredits(Http2Stream stream, int numBytes) {
-    this.handler.consume(stream, numBytes);
+  @Override
+  public void consumeCredits(VertxHttp2Stream<?> stream, int amountOfBytes) {
+    if (stream.stream.state().remoteSideOpen()) {
+      // Handle the HTTP upgrade case
+      // buffers are received by HTTP/1 and not accounted by HTTP/2
+      this.handler.consume(stream.stream, amountOfBytes);
+    }
   }
 
-  boolean isWritable(Http2Stream stream) {
-    return this.handler.encoder().flowController().isWritable(stream);
+  @Override
+  public boolean isWritable(VertxHttp2Stream<?> stream) {
+    return this.handler.encoder().flowController().isWritable(stream.stream);
   }
 
-  void writeFrame(Http2Stream stream, int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
+  @Override
+  public void writeFrame(VertxHttp2Stream<?> stream, int type, int flags, ByteBuf payload, Promise<Void> promise) {
+    handler.writeFrame(stream.stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
-  void writePriorityFrame(Http2Stream stream, StreamPriority priority) {
-    handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+  public void writePriorityFrame(VertxHttp2Stream<?> stream, StreamPriority priority) {
+    handler.writePriority(stream.stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+  public void writeHeaders(VertxHttp2Stream<?> stream, Http2Headers headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    handler.writeHeaders(stream.stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
-  void writeData(Http2Stream stream, ByteBuf buf, boolean end, Promise<Void> promise) {
-    handler.writeData(stream, buf, end, (FutureListener<Void>) promise);
+  public void writeData(VertxHttp2Stream<?> stream, ByteBuf buf, boolean end, Promise<Void> promise) {
+    handler.writeData(stream.stream, buf, end, (FutureListener<Void>) promise);
   }
 
-  protected void writeReset(Http2Stream stream, long code, Promise<Void> promise) {
+  public void writeReset(VertxHttp2Stream<?> stream, long code, Promise<Void> promise) {
     handler.writeReset(stream.id(), code, null);
   }
-
 }
