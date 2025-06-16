@@ -16,6 +16,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
@@ -30,6 +31,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
@@ -86,6 +88,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
     this.streamKey = handler.connection().newKey();
     this.localSettings = handler.initialSettings();
+  }
+
+  Http2HeadersAdaptor newHeaders() {
+    return new Http2HeadersAdaptor(new DefaultHttp2Headers());
   }
 
   VertxInternal vertx() {

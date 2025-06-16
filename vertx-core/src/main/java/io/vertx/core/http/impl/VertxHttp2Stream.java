@@ -220,19 +220,19 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  final void writeHeaders(Http2Headers headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
+  final void writeHeaders(Http2HeadersAdaptor headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first) {
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        doWriteHeaders(headers, end, checkFlush, promise);
+        doWriteHeaders((Http2Headers) headers.unwrap(), end, checkFlush, promise);
       } else {
-        eventLoop.execute(() -> doWriteHeaders(headers, end, checkFlush, promise));
+        eventLoop.execute(() -> doWriteHeaders((Http2Headers) headers.unwrap(), end, checkFlush, promise));
       }
     } else {
       outboundQueue.write(new MessageWrite() {
         @Override
         public void write() {
-          doWriteHeaders(headers, end, checkFlush, promise);
+          doWriteHeaders((Http2Headers) headers.unwrap(), end, checkFlush, promise);
         }
         @Override
         public void cancel(Throwable cause) {

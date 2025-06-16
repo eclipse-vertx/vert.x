@@ -17,8 +17,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -50,9 +48,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
   private final boolean push;
-  private final Http2Headers headers = new DefaultHttp2Headers();
-  private Http2HeadersAdaptor headersMap;
-  private Http2Headers trailers;
+  private final Http2HeadersAdaptor headersMap;
   private Http2HeadersAdaptor trailedMap;
   private boolean chunked;
   private boolean headWritten;
@@ -76,6 +72,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     this.ctx = conn.handlerContext;
     this.conn = conn;
     this.push = push;
+    this.headersMap = conn.newHeaders();
   }
 
   boolean isPush() {
@@ -195,12 +192,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public MultiMap headers() {
-    synchronized (conn) {
-      if (headersMap == null) {
-        headersMap = new Http2HeadersAdaptor(headers);
-      }
-      return headersMap;
-    }
+    return headersMap;
   }
 
   @Override
@@ -241,12 +233,12 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public MultiMap trailers() {
-    synchronized (conn) {
-      if (trailedMap == null) {
-        trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
-      }
-      return trailedMap;
+    Http2HeadersAdaptor ret = trailedMap;
+    if (ret == null) {
+      ret = conn.newHeaders();
+      trailedMap = ret;
     }
+    return ret;
   }
 
   @Override
@@ -312,7 +304,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
+      stream.writeHeaders(conn.newHeaders().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
     }
     return promise.future();
   }
@@ -328,7 +320,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = stream.context.promise();
-    DefaultHttp2Headers http2Headers = new DefaultHttp2Headers();
+    Http2HeadersAdaptor http2Headers = conn.newHeaders();
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
     }
@@ -409,16 +401,16 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (end && !headWritten && needsContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
-      boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody) != null;
+      boolean sent = checkSendHeaders(end && !hasBody && trailedMap == null, !hasBody) != null;
       if (hasBody || (!sent && end)) {
         Promise<Void> p = stream.context.promise();
         fut = p.future();
-        stream.writeData(chunk, end && trailers == null, p);
+        stream.writeData(chunk, end && trailedMap == null, p);
       } else {
         fut = stream.context.succeededFuture();
       }
-      if (end && trailers != null) {
-        stream.writeHeaders(trailers, false, true, true, null);
+      if (end && trailedMap != null) {
+        stream.writeHeaders(trailedMap, false, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -435,7 +427,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private boolean needsContentLengthHeader() {
-    return stream.method != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headers.contains(HttpHeaderNames.CONTENT_LENGTH);
+    return stream.method != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headersMap.contains(HttpHeaderNames.CONTENT_LENGTH);
   }
 
   private Future<Void> checkSendHeaders(boolean end) {
@@ -453,7 +445,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       prepareHeaders();
       headWritten = true;
       Promise<Void> promise = stream.context.promise();
-      stream.writeHeaders(headers, true, end, checkFlush, promise);
+      stream.writeHeaders(headersMap, true, end, checkFlush, promise);
       return promise.future();
     } else {
       return null;
@@ -461,23 +453,23 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void prepareHeaders() {
-    headers.status(status.codeAsText()); // Could be optimized for usual case ?
+    headersMap.status(status.codeAsText()); // Could be optimized for usual case ?
     // Sanitize
     if (stream.method == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+      headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
     } else if (status == HttpResponseStatus.RESET_CONTENT) {
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
-      headers.set(HttpHeaders.CONTENT_LENGTH, "0");
+      headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
+      headersMap.set(HttpHeaders.CONTENT_LENGTH, "0");
     } else if (status.codeClass() == HttpStatusClass.INFORMATIONAL || status == HttpResponseStatus.NO_CONTENT) {
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
-      headers.remove(HttpHeaders.CONTENT_LENGTH);
+      headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
+      headersMap.remove(HttpHeaders.CONTENT_LENGTH);
     }
   }
 
   private void setCookies() {
     for (ServerCookie cookie: cookies) {
       if (cookie.isChanged()) {
-        headers.add(SET_COOKIE, cookie.encode());
+        headersMap.add(SET_COOKIE, cookie.encode());
       }
     }
   }
@@ -555,10 +547,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         long fileLength = file.getReadLength();
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
-        if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+        if (headersMap.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
         }
-        if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+        if (headersMap.get(HttpHeaderNames.CONTENT_TYPE) == null) {
           String contentType = MimeMapping.mimeTypeForFilename(filename);
           if (contentType != null) {
             putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
