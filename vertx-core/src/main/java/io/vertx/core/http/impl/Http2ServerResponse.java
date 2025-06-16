@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
@@ -24,6 +23,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
@@ -636,8 +636,74 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       checkValid();
     }
     Promise<HttpServerResponse> promise = stream.context.promise();
-    conn.sendPush(stream.id(), authority, method, headers, path, stream.priority(), promise);
+
+    Promise<Http2ServerStream> blah = stream.context.promise();
+
+    conn.sendPush(stream.id(), authority, method, headers, path, stream.priority(), blah);
+
+    blah.future().onComplete((res, err) -> {
+      if (res != null) {
+        Push push = new Push(res, promise);
+        res.request = push;
+        push.stream.priority(stream.priority());
+        push.stream.init(res.promisedId);
+        push.complete();
+      } else {
+        promise.fail(err);
+      }
+    });
+
     return promise.future();
+  }
+
+  private static class Push implements Http2ServerStreamHandler {
+
+    protected final ContextInternal context;
+    protected final Http2ServerStream stream;
+    protected final Http2ServerResponse response;
+    private final Promise<HttpServerResponse> promise;
+
+    public Push(Http2ServerStream stream,
+                Promise<HttpServerResponse> promise) {
+      this.context = stream.context;
+      this.stream = stream;
+      this.response = new Http2ServerResponse(stream.conn, stream, true);
+      this.promise = promise;
+    }
+
+    @Override
+    public Http2ServerResponse response() {
+      return response;
+    }
+
+    @Override
+    public  void dispatch(Handler<HttpServerRequest> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleReset(long errorCode) {
+      if (!promise.tryFail(new StreamResetException(errorCode))) {
+        response.handleReset(errorCode);
+      }
+    }
+
+    @Override
+    public  void handleException(Throwable cause) {
+      response.handleException(cause);
+    }
+
+    @Override
+    public  void handleClose() {
+      if (!promise.tryFail("Push reset by client")) {
+        response.handleClose();
+      }
+    }
+
+    void complete() {
+      stream.registerMetrics();
+      promise.complete(response);
+    }
   }
 
   @Override

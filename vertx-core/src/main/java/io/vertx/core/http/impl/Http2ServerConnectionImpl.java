@@ -11,8 +11,8 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -29,7 +29,9 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -38,7 +40,7 @@ import java.util.function.Supplier;
  */
 public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
-  final HttpServerOptions options;
+  private final HttpServerOptions options;
   private final String serverOrigin;
   private final HttpServerMetrics metrics;
   private final Function<String, String> encodingDetector;
@@ -47,7 +49,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
 
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
-  private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
+  private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
   Http2ServerConnectionImpl(
     ContextInternal context,
@@ -198,7 +200,41 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  @Override
+  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+    super.onRstStreamRead(ctx, streamId, errorCode);
+    Pending pendingPush = pendingPushes.remove(streamId);
+    if (pendingPush != null) {
+      concurrentStreams--;
+      checkNextPendingPush();
+      pendingPush.promise.fail(new StreamResetException(errorCode));
+    }
+  }
+
+  private void checkNextPendingPush() {
+    int maxConcurrentStreams = handler.maxConcurrentStreams();
+    Iterator<Map.Entry<Integer, Pending>> it = pendingPushes.entrySet().iterator();
+    while (concurrentStreams < maxConcurrentStreams && it.hasNext()) {
+      Map.Entry<Integer, Pending> next = it.next();
+      it.remove();
+      concurrentStreams++;
+      Pending pending = next.getValue();
+      pending.promise.complete(pending.stream);
+    }
+  }
+
+  @Override
+  void onStreamClosed(Http2Stream s) {
+    super.onStreamClosed(s);
+    if (pendingPushes.remove(s.id()) != null) {
+      //
+    } else {
+      concurrentStreams--;
+      checkNextPendingPush();
+    }
+  }
+
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -207,7 +243,16 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  static class Pending {
+    final Http2ServerStream stream;
+    final Promise<Http2ServerStream> promise;
+    Pending(Http2ServerStream stream, Promise<Http2ServerStream> promise) {
+      this.stream = stream;
+      this.promise = promise;
+    }
+  }
+
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());
@@ -226,18 +271,14 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(this, metrics, metric(), context, requestHandler, options.isHandle100ContinueAutomatically(), new Http2HeadersAdaptor(headers_), method, path, options.getTracingPolicy(), true);
-          Push push = new Push(vertxStream, promise);
-          vertxStream.request = push;
-          push.stream.priority(streamPriority);
-          push.stream.init(promisedStream.id());
-          promisedStream.setProperty(streamKey, push.stream);
+          Http2ServerStream vertxStream = new Http2ServerStream(this, metrics, metric(), context, requestHandler, options.isHandle100ContinueAutomatically(), new Http2HeadersAdaptor(headers_), method, path, options.getTracingPolicy(), true, promisedStreamId);
+          promisedStream.setProperty(streamKey, vertxStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;
-            push.complete();
+            promise.complete(vertxStream);
           } else {
-            pendingPushes.add(push);
+            pendingPushes.put(promisedStreamId, new Pending(vertxStream, promise));
           }
         }
       } else {
@@ -249,66 +290,5 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   protected io.vertx.core.Future<Void> updateSettings(Http2Settings settingsUpdate) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     return super.updateSettings(settingsUpdate);
-  }
-
-  private class Push implements Http2ServerStreamHandler {
-
-    protected final ContextInternal context;
-    protected final Http2ServerStream stream;
-    protected final Http2ServerResponse response;
-    private final Promise<HttpServerResponse> promise;
-
-    public Push(Http2ServerStream stream,
-                Promise<HttpServerResponse> promise) {
-      this.context = stream.context;
-      this.stream = stream;
-      this.response = new Http2ServerResponse(stream.conn, stream, true);
-      this.promise = promise;
-    }
-
-    @Override
-    public Http2ServerResponse response() {
-      return response;
-    }
-
-    @Override
-    public  void dispatch(Handler<HttpServerRequest> handler) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void handleReset(long errorCode) {
-      if (!promise.tryFail(new StreamResetException(errorCode))) {
-        response.handleReset(errorCode);
-      }
-    }
-
-    @Override
-    public  void handleException(Throwable cause) {
-      if (response != null) {
-        response.handleException(cause);
-      }
-    }
-
-    @Override
-    public  void handleClose() {
-      if (pendingPushes.remove(this)) {
-        promise.fail("Push reset by client");
-      } else {
-        concurrentStreams--;
-        int maxConcurrentStreams = handler.maxConcurrentStreams();
-        while (concurrentStreams < maxConcurrentStreams && pendingPushes.size() > 0) {
-          Push push = pendingPushes.pop();
-          concurrentStreams++;
-          push.complete();
-        }
-        response.handleClose();
-      }
-    }
-
-    void complete() {
-      stream.registerMetrics();
-      promise.complete(response);
-    }
   }
 }
