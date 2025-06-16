@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -121,7 +122,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  String determineContentEncoding(Http2Headers headers) {
+  String determineContentEncoding(Http2HeadersAdaptor headers) {
     String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
@@ -154,7 +155,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       streamContextSupplier.get(),
       requestHandler,
       options.isHandle100ContinueAutomatically(),
-      headers,
+      new Http2HeadersAdaptor(headers),
       schemeHeader != null ? schemeHeader.toString() : null,
       authorityHeader != null || hostHeader != null,
       authority,
@@ -164,11 +165,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   private void initStream(int streamId, Http2ServerStream vertxStream) {
-    Http2ServerRequest request = new Http2ServerRequest(vertxStream, options, serverOrigin, new Http2HeadersAdaptor(vertxStream.headers));
+    Http2ServerRequest request = new Http2ServerRequest(vertxStream, options, serverOrigin, vertxStream.headers);
     vertxStream.request = request;
     vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     Http2Stream stream = handler.connection().stream(streamId);
-    vertxStream.init(stream);
+    vertxStream.init(stream.id());
     stream.setProperty(streamKey, vertxStream);
   }
 
@@ -187,7 +188,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         return;
       }
       initStream(streamId, stream);
-      stream.onHeaders(headers, streamPriority);
+      stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
       stream = nettyStream.getProperty(streamKey);
@@ -225,11 +226,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(this, metrics, metric(), context, requestHandler, options.isHandle100ContinueAutomatically(), headers_, method, path, options.getTracingPolicy(), true);
+          Http2ServerStream vertxStream = new Http2ServerStream(this, metrics, metric(), context, requestHandler, options.isHandle100ContinueAutomatically(), new Http2HeadersAdaptor(headers_), method, path, options.getTracingPolicy(), true);
           Push push = new Push(vertxStream, promise);
           vertxStream.request = push;
           push.stream.priority(streamPriority);
-          push.stream.init(promisedStream);
+          push.stream.init(promisedStream.id());
           promisedStream.setProperty(streamKey, push.stream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {

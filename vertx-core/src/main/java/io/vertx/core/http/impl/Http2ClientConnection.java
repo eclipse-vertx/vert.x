@@ -11,10 +11,10 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 
 public interface Http2ClientConnection extends Http2Connection {
 
-  Http2Stream createStream(VertxHttp2Stream<?> vertxStream, HttpRequestHead head, Http2Headers headers) throws Exception;
+  int createStream(VertxHttp2Stream vertxStream, HttpRequestHead head, Http2HeadersAdaptor headers) throws Exception;
 
 }
