@@ -645,7 +645,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         Push push = new Push(res, promise);
         res.request = push;
         push.stream.priority(stream.priority());
-        push.stream.init(res.promisedId);
         push.complete();
       } else {
         promise.fail(err);

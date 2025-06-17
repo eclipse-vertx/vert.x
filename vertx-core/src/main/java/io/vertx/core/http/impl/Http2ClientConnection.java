@@ -15,6 +15,6 @@ import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 
 public interface Http2ClientConnection extends Http2Connection {
 
-  int createStream(VertxHttp2Stream vertxStream, HttpRequestHead head, Http2HeadersAdaptor headers) throws Exception;
+  void createStream(VertxHttp2Stream vertxStream, HttpRequestHead head, Http2HeadersAdaptor headers) throws Exception;
 
 }

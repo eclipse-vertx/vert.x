@@ -60,16 +60,15 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
     this.clientMetrics = clientMetrics;
   }
 
-  void upgrade(int streamId, Object metric, Object trace) {
-    init(streamId);
+  void upgrade(int streamId, Object metric, Object trace, boolean writable) {
+    init(streamId, writable);
     this.metric = metric;
     this.trace = trace;
     this.requestEnded = true;
   }
 
   private void createStream(HttpRequestHead head, Http2HeadersAdaptor headers) throws Exception {
-    int streamId = conn.createStream(this, head, headers);
-    init(streamId);
+    conn.createStream(this, head, headers);
     if (clientMetrics != null) {
       metric = clientMetrics.requestBegin(headers.path().toString(), head);
     }
@@ -152,9 +151,9 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
     }
   }
 
-  void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersAdaptor headers) {
+  void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersAdaptor headers, boolean writable) {
     HttpClientPush push = new HttpClientPush(headers, pushStream);
-    pushStream.init(promisedStreamId);
+    pushStream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
       ((Http2ClientStream)pushStream).metric = metric;

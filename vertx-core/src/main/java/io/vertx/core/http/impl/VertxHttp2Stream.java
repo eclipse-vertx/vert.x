@@ -99,11 +99,11 @@ abstract class VertxHttp2Stream {
     };
   }
 
-  void init(int streamId) {
+  void init(int streamId, boolean writable) {
     synchronized (this) {
       this.id = streamId;
+      this.writable = writable;
     }
-    writable = this.conn.isWritable(this);
   }
 
   void onClose() {

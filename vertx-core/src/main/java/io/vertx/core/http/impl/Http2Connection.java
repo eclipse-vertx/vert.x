@@ -24,8 +24,6 @@ interface Http2Connection {
 
   boolean isSsl();
 
-  boolean isWritable(VertxHttp2Stream stream);
-
   void reportBytesWritten(long numOfBytes);
 
   void flushBytesWritten();
