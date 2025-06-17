@@ -492,7 +492,11 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     }
   }
 
-  @Override
+  public boolean isWritable(int streamId) {
+    Http2Stream s = handler.connection().stream(streamId);
+    return this.handler.encoder().flowController().isWritable(s);
+  }
+
   public boolean isWritable(VertxHttp2Stream stream) {
     Http2Stream s = handler.connection().stream(stream.id);
     return this.handler.encoder().flowController().isWritable(s);
