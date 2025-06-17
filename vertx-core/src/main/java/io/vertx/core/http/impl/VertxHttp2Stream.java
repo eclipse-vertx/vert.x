@@ -131,8 +131,8 @@ abstract class VertxHttp2Stream {
     });
   }
 
-  void onCustomFrame(HttpFrame frame) {
-    context.emit(frame, this::handleCustomFrame);
+  void onCustomFrame(int type, int flags, Buffer payload) {
+    context.emit(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
   void onData(Buffer data) {

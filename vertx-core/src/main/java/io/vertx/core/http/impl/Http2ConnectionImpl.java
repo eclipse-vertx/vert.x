@@ -298,7 +298,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     VertxHttp2Stream stream = stream(streamId);
     if (stream != null) {
       Buffer buff = BufferInternal.buffer(safeBuffer(payload));
-      stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
+      stream.onCustomFrame(frameType, flags.value(), buff);
     }
   }
 
