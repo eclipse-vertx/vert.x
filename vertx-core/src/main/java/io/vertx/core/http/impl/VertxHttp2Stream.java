@@ -65,7 +65,7 @@ abstract class VertxHttp2Stream {
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          conn.context().emit(len, v -> conn.consumeCredits(VertxHttp2Stream.this, v));
+          conn.context().emit(len, v -> conn.consumeCredits(id, v));
           handleData(data);
         }
       }
@@ -198,9 +198,9 @@ abstract class VertxHttp2Stream {
   public final void writeFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      conn.writeFrame(this, type, flags, payload, promise);
+      conn.writeFrame(id, type, flags, payload, promise);
     } else {
-      eventLoop.execute(() -> conn.writeFrame(this, type, flags, payload, promise));
+      eventLoop.execute(() -> conn.writeFrame(id, type, flags, payload, promise));
     }
   }
 
@@ -242,7 +242,7 @@ abstract class VertxHttp2Stream {
     if (end) {
       endWritten();
     }
-    conn.writeHeaders(this, headers, priority, end, checkFlush, promise);
+    conn.writeHeaders(id, headers, priority, end, checkFlush, promise);
   }
 
   protected void endWritten() {
@@ -282,7 +282,7 @@ abstract class VertxHttp2Stream {
     if (end) {
       endWritten();
     }
-    conn.writeData(this, chunk, end, promise);
+    conn.writeData(id, chunk, end, promise);
   }
 
   final Future<Void> writeReset(long code) {
@@ -310,7 +310,7 @@ abstract class VertxHttp2Stream {
       streamId = this.id;
     }
     if (streamId != -1) {
-      conn.writeReset(this, code, promise);
+      conn.writeReset(id, code, promise);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
@@ -351,7 +351,7 @@ abstract class VertxHttp2Stream {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
       if (id >= 0) {
-        conn.writePriorityFrame(this, priority);
+        conn.writePriorityFrame(id, priority);
       }
     }
   }
