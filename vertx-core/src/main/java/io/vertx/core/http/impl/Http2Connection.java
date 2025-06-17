@@ -32,16 +32,16 @@ interface Http2Connection {
 
   void flushBytesRead();
 
-  void writeFrame(VertxHttp2Stream stream, int type, int flags, ByteBuf payload, Promise<Void> promise);
+  void writeFrame(int streamId, int type, int flags, ByteBuf payload, Promise<Void> promise);
 
-  void writeHeaders(VertxHttp2Stream stream, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
+  void writeHeaders(int streamId, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
 
-  void writeData(VertxHttp2Stream stream, ByteBuf buf, boolean end, Promise<Void> promise);
+  void writeData(int streamId, ByteBuf buf, boolean end, Promise<Void> promise);
 
-  void writeReset(VertxHttp2Stream stream, long code, Promise<Void> promise);
+  void writeReset(int streamId, long code, Promise<Void> promise);
 
-  void writePriorityFrame(VertxHttp2Stream stream, StreamPriority priority);
+  void writePriorityFrame(int streamId, StreamPriority priority);
 
-  void consumeCredits(VertxHttp2Stream stream, int amountOfBytes);
+  void consumeCredits(int streamId, int amountOfBytes);
 
 }

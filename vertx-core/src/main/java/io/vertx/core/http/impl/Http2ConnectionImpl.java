@@ -483,8 +483,8 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void consumeCredits(VertxHttp2Stream stream, int amountOfBytes) {
-    Http2Stream s = handler.connection().stream(stream.id);
+  public void consumeCredits(int streamId, int amountOfBytes) {
+    Http2Stream s = handler.connection().stream(streamId);
     if (s != null && s.state().remoteSideOpen()) {
       // Handle the HTTP upgrade case
       // buffers are received by HTTP/1 and not accounted by HTTP/2
@@ -503,27 +503,31 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void writeFrame(VertxHttp2Stream stream, int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    Http2Stream s = handler.connection().stream(stream.id);
+  public void writeFrame(int streamId, int type, int flags, ByteBuf payload, Promise<Void> promise) {
+    Http2Stream s = handler.connection().stream(streamId);
     handler.writeFrame(s, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
-  public void writePriorityFrame(VertxHttp2Stream stream, StreamPriority priority) {
-    Http2Stream s = handler.connection().stream(stream.id);
+  @Override
+  public void writePriorityFrame(int streamId, StreamPriority priority) {
+    Http2Stream s = handler.connection().stream(streamId);
     handler.writePriority(s, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
-  public void writeHeaders(VertxHttp2Stream stream, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    Http2Stream s = handler.connection().stream(stream.id);
+  @Override
+  public void writeHeaders(int streamId, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    Http2Stream s = handler.connection().stream(streamId);
     handler.writeHeaders(s, (Http2Headers) headers.unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
-  public void writeData(VertxHttp2Stream stream, ByteBuf buf, boolean end, Promise<Void> promise) {
-    Http2Stream s = handler.connection().stream(stream.id);
+  @Override
+  public void writeData(int streamId, ByteBuf buf, boolean end, Promise<Void> promise) {
+    Http2Stream s = handler.connection().stream(streamId);
     handler.writeData(s, buf, end, (FutureListener<Void>) promise);
   }
 
-  public void writeReset(VertxHttp2Stream stream, long code, Promise<Void> promise) {
-    handler.writeReset(stream.id(), code, null);
+  @Override
+  public void writeReset(int streamId, long code, Promise<Void> promise) {
+    handler.writeReset(streamId, code, null);
   }
 }
