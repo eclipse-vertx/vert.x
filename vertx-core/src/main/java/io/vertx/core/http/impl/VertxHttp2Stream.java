@@ -242,7 +242,7 @@ abstract class VertxHttp2Stream {
     if (end) {
       endWritten();
     }
-    conn.writeHeaders(this, (Http2Headers) headers.unwrap(), priority, end, checkFlush, promise);
+    conn.writeHeaders(this, headers, priority, end, checkFlush, promise);
   }
 
   protected void endWritten() {
