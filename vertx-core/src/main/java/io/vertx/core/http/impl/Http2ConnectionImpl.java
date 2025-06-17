@@ -509,9 +509,9 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     handler.writePriority(s, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
-  public void writeHeaders(VertxHttp2Stream stream, Http2Headers headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(VertxHttp2Stream stream, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2Stream s = handler.connection().stream(stream.id);
-    handler.writeHeaders(s, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    handler.writeHeaders(s, (Http2Headers) headers.unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
   public void writeData(VertxHttp2Stream stream, ByteBuf buf, boolean end, Promise<Void> promise) {
