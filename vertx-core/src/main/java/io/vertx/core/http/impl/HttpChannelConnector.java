@@ -12,10 +12,16 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http2.Http2FrameCodec;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2MultiplexHandler;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -26,6 +32,9 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.codec.Http2ClientConnectionImpl;
 import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientConnection;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexConnection;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexConnectionFactory;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -139,7 +148,11 @@ public class HttpChannelConnector {
       if (useAlpn) {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
-          http2Connected(context, metric, ch, promise);
+          if (options.getHttp2MultiplexImplementation()) {
+            http2MultiplexConnected(context, metric, ch, promise);
+          } else {
+            http2Connected(context, metric, ch, promise);
+          }
         } else {
           applyHttp1xConnectionOptions(ch.pipeline());
           HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
@@ -257,6 +270,28 @@ public class HttpChannelConnector {
       }
     });
     ch.pipeline().addLast("handler", clientHandler);
+  }
+
+  private void http2MultiplexConnected(ContextInternal context,
+                              Object metric,
+                              Channel ch,
+                              PromiseInternal<HttpClientConnection> promise) {
+
+    Http2MultiplexConnectionFactory connectionFactory = new Http2MultiplexConnectionFactory() {
+      @Override
+      public Http2MultiplexConnection createConnection(io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler, ChannelHandlerContext chctx) {
+        return new Http2MultiplexClientConnection(handler, chctx, context, authority, promise);
+      }
+    };
+
+    Http2Settings settings = HttpUtils.fromVertxSettings(client.options().getInitialSettings());
+    io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler = new io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler(ch, context, connectionFactory, settings);
+    Http2FrameCodec http2FrameCodec = Http2FrameCodecBuilder.forClient()
+      .initialSettings(settings)
+      .build();
+    ch.pipeline().addLast(http2FrameCodec);
+    ch.pipeline().addLast(new Http2MultiplexHandler(handler));
+    ch.pipeline().addLast(handler);
   }
 
   private void http2Connected(ContextInternal context,

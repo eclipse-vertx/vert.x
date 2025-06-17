@@ -195,7 +195,7 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   @Override
-  void onTrailers(MultiMap trailers) {
+  public void onTrailers(MultiMap trailers) {
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.requestEnd(metric, (HttpRequest) handler, bytesRead());

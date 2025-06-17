@@ -19,9 +19,9 @@ public interface Http2Connection {
 
   Http2HeadersMultiMap newHeaders();
 
-  ContextInternal context();
-
   boolean isSsl();
+
+  ContextInternal context();
 
   void reportBytesWritten(long numOfBytes);
 
