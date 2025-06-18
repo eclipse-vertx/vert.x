@@ -436,22 +436,14 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
 
   @Override
   public Future<ServerWebSocket> toWebSocket() {
-    return webSocketHandshake().compose(handshake -> handshake.accept());
-  }
-
-  /**
-   * @return a future of the un-accepted WebSocket
-   */
-  Future<ServerWebSocketHandshake> webSocketHandshake() {
-    PromiseInternal<ServerWebSocketHandshake> promise = context.promise();
-    webSocketHandshake(promise);
-    return promise.future();
+    return webSocketHandshake(context.unwrap()).compose(handshake -> handshake.accept());
   }
 
   /**
    * Handle the request when a WebSocket upgrade header is present.
    */
-  private void webSocketHandshake(PromiseInternal<ServerWebSocketHandshake> promise) {
+  Future<ServerWebSocketHandshake> webSocketHandshake(ContextInternal context) {
+    PromiseInternal<ServerWebSocketHandshake> promise = context.promise();
     BufferInternal body = BufferInternal.buffer();
     boolean[] failed = new boolean[1];
     handler(buff -> {
@@ -482,6 +474,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     });
     // In case we were paused
     resume();
+    return promise.future();
   }
 
   @Override

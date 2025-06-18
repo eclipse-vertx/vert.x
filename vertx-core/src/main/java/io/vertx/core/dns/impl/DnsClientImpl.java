@@ -64,8 +64,7 @@ public class DnsClientImpl implements DnsClient {
     this.vertx = vertx;
   }
 
-  private DnsNameResolver resolver(ContextInternal ctx, InternetProtocolFamily ipFamily) {
-    EventLoop el = ctx.nettyEventLoop();
+  private DnsNameResolver resolver(EventLoop el, InternetProtocolFamily ipFamily) {
     DnsNameResolver resolver;
     synchronized (this) {
       if (closed) {
@@ -169,7 +168,7 @@ public class DnsClientImpl implements DnsClient {
   private Future<List<String>> resolveAll(String name, InternetProtocolFamily ipFamily) {
     Objects.requireNonNull(name);
     ContextInternal ctx = vertx.getOrCreateContext();
-    DnsNameResolver resolver = resolver(ctx, ipFamily);
+    DnsNameResolver resolver = resolver(ctx.nettyEventLoop(), ipFamily);
     if (resolver == null) {
       return ctx.failedFuture("DNS client is closed");
     }
@@ -200,7 +199,7 @@ public class DnsClientImpl implements DnsClient {
   private <T> Future<List<T>> queryAll(String name, DnsRecordType recordType, Function<DnsRecord, T> mapper) {
     Objects.requireNonNull(name);
     ContextInternal ctx = vertx.getOrCreateContext();
-    DnsNameResolver resolver = resolver(ctx, InternetProtocolFamily.IPv4);
+    DnsNameResolver resolver = resolver(ctx.nettyEventLoop(), InternetProtocolFamily.IPv4);
     if (resolver == null) {
       return ctx.failedFuture("DNS client is closed");
     }

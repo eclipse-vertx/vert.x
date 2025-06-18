@@ -242,7 +242,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       server,
       false,
       0);
-    return (Future) connector.httpConnect(vertx.getOrCreateContext()).map(conn -> new UnpooledHttpClientConnection(conn).init());
+    return (Future) connector.httpConnect(vertx.getOrCreateContext().unwrap()).map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 
   @Override

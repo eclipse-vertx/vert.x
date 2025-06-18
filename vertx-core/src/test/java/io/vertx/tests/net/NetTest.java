@@ -30,6 +30,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetClientInternal;
@@ -4658,5 +4659,23 @@ public class NetTest extends VertxTestBase {
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
     assertEquals("host2.com", test.indicatedServerName);
     assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+  }
+
+  @Test
+  public void testServerWithDuplicatedContext() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
+
+    server.connectHandler(so -> {
+      ContextInternal current = ContextInternal.current();
+      assertFalse("A duplicated context", current.isDuplicate());
+      assertNull("Local map shouldn't have an entry for the key 'foo'", current.getLocal(ContextInternal.LOCAL_MAP));
+      so.end();
+    });
+    startServer(testAddress, duplicated);
+
+    NetSocket so = client.connect(testAddress).await();
+    so.end().await();
   }
 }

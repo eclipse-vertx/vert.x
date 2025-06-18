@@ -51,7 +51,7 @@ import java.util.Objects;
  */
 public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Closeable {
 
-  public static DatagramSocketImpl create(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
+  public static DatagramSocketImpl create(ContextInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
     DatagramSocketImpl socket = new DatagramSocketImpl(vertx, closeFuture, options);
     // Make sure object is fully initiliased to avoid race with async registration
     socket.init();
@@ -65,11 +65,10 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   private Handler<Throwable> exceptionHandler;
   private final CloseFuture closeFuture;
 
-  private DatagramSocketImpl(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
-    Transport transport = vertx.transport();
+  private DatagramSocketImpl(ContextInternal context, CloseFuture closeFuture, DatagramSocketOptions options) {
+    Transport transport = context.owner().transport();
     DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
     transport.configure(channel, new DatagramSocketOptions(options));
-    ContextInternal context = vertx.getOrCreateContext();
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
     bufAllocator.maxMessagesPerRead(1);
@@ -77,7 +76,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
-    VertxMetrics metrics = vertx.metrics();
+    VertxMetrics metrics = context.owner().metrics();
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;
     this.channel = channel;
     this.context = context;
