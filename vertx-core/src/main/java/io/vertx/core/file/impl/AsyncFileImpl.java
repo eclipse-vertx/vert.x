@@ -512,7 +512,7 @@ public class AsyncFileImpl implements AsyncFile {
   private void checkContext() {
     if (!vertx.getContext().equals(context)) {
       throw new IllegalStateException("AsyncFile must only be used in the context that created it, expected: "
-        + context + " actual " + vertx.getContext());
+          + context + " actual " + vertx.getContext());
     }
   }
 
