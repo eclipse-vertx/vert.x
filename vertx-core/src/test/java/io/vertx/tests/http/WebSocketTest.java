@@ -424,9 +424,6 @@ public class WebSocketTest extends VertxTestBase {
                        boolean sni,
                        String[] enabledCipherSuites,
                        Function<WebSocketClient, Future<WebSocket>> wsProvider) throws Exception {
-    if (true) {
-      return;
-    }
     WebSocketClientOptions options = new WebSocketClientOptions();
     options.setSsl(clientSsl);
     options.setTrustAll(clientTrustAll);
