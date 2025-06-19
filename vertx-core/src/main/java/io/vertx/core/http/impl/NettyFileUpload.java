@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
+public final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
   private final String name;
   private String contentType;

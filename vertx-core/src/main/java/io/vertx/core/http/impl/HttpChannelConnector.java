@@ -24,6 +24,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.codec.Http2ClientConnectionImpl;
+import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -114,10 +116,10 @@ public class HttpChannelConnector {
     netClient.connectInternal(connectOptions, promise, context);
   }
 
-  public Future<HttpClientConnectionInternal> wrap(ContextInternal context, NetSocket so_) {
+  public Future<HttpClientConnection> wrap(ContextInternal context, NetSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
-    PromiseInternal<HttpClientConnectionInternal> promise = context.promise();
+    PromiseInternal<HttpClientConnection> promise = context.promise();
 
     // Remove all un-necessary handlers
     ChannelPipeline pipeline = so.channelHandlerContext().pipeline();
@@ -165,12 +167,12 @@ public class HttpChannelConnector {
     return promise.future();
   }
 
-  public Future<HttpClientConnectionInternal> httpConnect(ContextInternal context) {
+  public Future<HttpClientConnection> httpConnect(ContextInternal context) {
     Promise<NetSocket> promise = context.promise();
     Future<NetSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens
     // before the promise is completed by the connect operation
-    Future<HttpClientConnectionInternal> ret = future.compose(so -> wrap(context, so));
+    Future<HttpClientConnection> ret = future.compose(so -> wrap(context, so));
     connect(context, promise);
     return ret;
   }
@@ -212,7 +214,7 @@ public class HttpChannelConnector {
                                ContextInternal context,
                                Object socketMetric,
                                Channel ch,
-                               Promise<HttpClientConnectionInternal> future) {
+                               Promise<HttpClientConnection> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
@@ -236,7 +238,7 @@ public class HttpChannelConnector {
               HttpClientStream stream = ar.result();
               stream.headHandler(resp -> {
                 Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) stream.connection();
-                HttpClientConnectionInternal unwrap = connection.unwrap();
+                HttpClientConnection unwrap = connection.unwrap();
                 future.tryComplete(unwrap);
               });
               stream.exceptionHandler(future::tryFail);
@@ -260,7 +262,7 @@ public class HttpChannelConnector {
   private void http2Connected(ContextInternal context,
                               Object metric,
                               Channel ch,
-                              PromiseInternal<HttpClientConnectionInternal> promise) {
+                              PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
       clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
@@ -273,7 +275,7 @@ public class HttpChannelConnector {
     clientHandler.connectFuture().addListener(promise);
   }
 
-  private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnectionInternal> future) {
+  private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnection> future) {
     if (ch != null) {
       try {
         ch.close();

@@ -21,6 +21,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
@@ -5741,7 +5742,7 @@ public class Http1xTest extends HttpTest {
 
     HttpClientAgent client = vertx.httpClientBuilder().withConnectHandler(conn -> {
       List<Object> invalidMessages = new ArrayList<>();
-      ((HttpClientConnectionInternal) conn).invalidMessageHandler(invalidMessages::add);
+      ((HttpClientConnection) conn).invalidMessageHandler(invalidMessages::add);
       conn.exceptionHandler(err -> {
       });
       conn.closeHandler(v -> {

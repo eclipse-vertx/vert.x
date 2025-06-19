@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -16,13 +16,11 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -35,7 +33,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-public class Http2ServerStream extends VertxHttp2Stream {
+public class Http2ServerStream extends Http2StreamBase {
 
   private final Http2ServerConnection conn;
   private final String serverOrigin;
@@ -57,11 +55,11 @@ public class Http2ServerStream extends VertxHttp2Stream {
   private boolean halfClosedRemote;
   private boolean requestEnded;
   private boolean responseEnded;
-  Http2ServerStreamHandler request;
+  private Http2ServerStreamHandler handler;
   private final Handler<HttpServerRequest> requestHandler;
-  final int promisedId;
+  private final int promisedId;
 
-  Http2ServerStream(Http2ServerConnection conn,
+  public Http2ServerStream(Http2ServerConnection conn,
                     String serverOrigin,
                     HttpServerMetrics serverMetrics,
                     Object socketMetric,
@@ -127,7 +125,22 @@ public class Http2ServerStream extends VertxHttp2Stream {
     this.maxFormBufferedBytes = maxFormBufferedBytes;
   }
 
-  Http2ServerConnection connection() {
+  public int promisedId() {
+    return promisedId;
+  }
+
+  @Override
+  public Http2ServerStream handler(Http2StreamHandler handler) {
+    this.handler = (Http2ServerStreamHandler) handler;
+    return this;
+  }
+
+  @Override
+  public Http2StreamHandler handler() {
+    return handler;
+  }
+
+  public Http2ServerConnection connection() {
     return conn;
   }
 
@@ -135,15 +148,15 @@ public class Http2ServerStream extends VertxHttp2Stream {
     return headers;
   }
 
-  String uri() {
+  public String uri() {
     return uri;
   }
 
-  String scheme() {
+  public String scheme() {
     return scheme;
   }
 
-  HostAndPort authority() {
+  public HostAndPort authority() {
     return authority;
   }
 
@@ -151,13 +164,13 @@ public class Http2ServerStream extends VertxHttp2Stream {
     return hasAuthority;
   }
 
-  void registerMetrics() {
+  public void registerMetrics() {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        if (request.response().isPush()) {
-          metric = serverMetrics.responsePushed(socketMetric, method(), uri, request.response());
+        if (handler.response().isPush()) {
+          metric = serverMetrics.responsePushed(socketMetric, method(), uri, handler.response());
         } else {
-          metric = serverMetrics.requestBegin(socketMetric, (HttpRequest) request);
+          metric = serverMetrics.requestBegin(socketMetric, (HttpRequest) handler);
         }
       }
     }
@@ -230,23 +243,28 @@ public class Http2ServerStream extends VertxHttp2Stream {
     this.scheme = scheme;
     this.hasAuthority = hasAuthority;
     this.headers = headers;
-    this.request = new Http2ServerRequest(this, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes, serverOrigin, headers);
+    this.handler = new Http2ServerRequest(this, context, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes, serverOrigin, headers);
 
     if (streamPriority != null) {
       priority(streamPriority);
     }
     registerMetrics();
+
     CharSequence value = headers.get(HttpHeaderNames.EXPECT);
+
+    // SHOULD BE DONE IN RESPONSE
     if (handle100ContinueAutomatically &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
         headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE, true))) {
-      request.response().writeContinue();
+      handler.response().writeContinue();
     }
+
+    //
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, request, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, handler, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
-    request.dispatch(requestHandler);
+    handler.dispatch(requestHandler);
 
     return true;
   }
@@ -256,34 +274,29 @@ public class Http2ServerStream extends VertxHttp2Stream {
     requestEnded = true;
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
-        serverMetrics.requestEnd(metric, (HttpRequest) request, bytesRead());
+        serverMetrics.requestEnd(metric, (HttpRequest) handler, bytesRead());
       }
     }
     super.onEnd(trailers);
   }
 
   @Override
-  void doWriteHeaders(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       if (serverMetrics != null) {
-        serverMetrics.responseBegin(metric, request.response());
+        serverMetrics.responseBegin(metric, handler.response());
       }
     }
-    super.doWriteHeaders(headers, end, checkFlush, promise);
+    super.writeHeaders0(headers, end, checkFlush, promise);
   }
 
   @Override
-  protected void doWriteReset(long code, Promise<Void> promise) {
+  protected void writeReset0(long code, Promise<Void> promise) {
     if (!requestEnded || !responseEnded) {
-      super.doWriteReset(code, promise);
+      super.writeReset0(code, promise);
     } else {
       promise.fail("Request ended");
     }
-  }
-
-  @Override
-  void handleWriteQueueDrained() {
-    request.response().handleWriteQueueDrained();
   }
 
   public HttpMethod method() {
@@ -295,52 +308,15 @@ public class Http2ServerStream extends VertxHttp2Stream {
     responseEnded = true;
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        serverMetrics.responseEnd(metric, request.response(), bytesWritten());
+        serverMetrics.responseEnd(metric, handler.response(), bytesWritten());
       }
     }
   }
 
   @Override
-  void handleClose() {
-    super.handleClose();
-    if (request != null) {
-      request.handleClose();
-    }
-  }
-
-  @Override
-  void handleReset(long errorCode) {
-    if (request != null) {
-      request.handleReset(errorCode);
-    }
-  }
-
-  @Override
-  void handleException(Throwable cause) {
-    if (request != null) {
-      request.handleException(cause);
-    }
-  }
-
-  @Override
-  void handleCustomFrame(HttpFrame frame) {
-    request.handleCustomFrame(frame);
-  }
-
-  @Override
-  void handlePriorityChange(StreamPriority newPriority) {
-    request.handlePriorityChange(newPriority);
-  }
-
-  @Override
-  void handleData(Buffer buf) {
-    request.handleData(buf);
-  }
-
-  @Override
   void handleEnd(MultiMap trailers) {
     halfClosedRemote = true;
-    request.handleEnd(trailers);
+    super.handleEnd(trailers);
   }
 
   @Override
@@ -351,8 +327,7 @@ public class Http2ServerStream extends VertxHttp2Stream {
         serverMetrics.requestReset(metric);
       }
     }
-    if (request != null) {
-      request.onClose();
+    if (handler != null) {
       VertxTracer tracer = context.tracer();
       Object trace = this.trace;
       if (tracer != null && trace != null) {
@@ -364,7 +339,7 @@ public class Http2ServerStream extends VertxHttp2Stream {
             failure = null;
           }
         }
-        tracer.sendResponse(context, failure == null ? request.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+        tracer.sendResponse(context, failure == null ? handler.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
       }
     }
     super.onClose();

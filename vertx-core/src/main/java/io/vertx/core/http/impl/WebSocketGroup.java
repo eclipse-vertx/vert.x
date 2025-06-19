@@ -79,10 +79,10 @@ class WebSocketGroup extends ManagedResource {
     } else {
       eventLoopContext = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     }
-    Future<HttpClientConnectionInternal> fut = connector.httpConnect(eventLoopContext);
+    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext);
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
-        HttpClientConnectionInternal c = ar.result();
+        HttpClientConnection c = ar.result();
         if (!incRefCount()) {
           c.close();
           promise.fail(new VertxException("Connection closed", true));

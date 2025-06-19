@@ -19,7 +19,7 @@ import io.vertx.core.internal.ContextInternal;
 /**
  * All HTTP event related handlers.
  */
-class HttpEventHandler {
+public class HttpEventHandler {
 
   final ContextInternal context;
   private Handler<Buffer> chunkHandler;
@@ -29,23 +29,23 @@ class HttpEventHandler {
   private Promise<Buffer> bodyPromise;
   private Promise<Void> endPromise;
 
-  HttpEventHandler(ContextInternal context) {
+  public HttpEventHandler(ContextInternal context) {
     this.context = context;
   }
 
-  void chunkHandler(Handler<Buffer> handler) {
+  public void chunkHandler(Handler<Buffer> handler) {
     chunkHandler = handler;
   }
 
-  void endHandler(Handler<Void> handler) {
+  public void endHandler(Handler<Void> handler) {
     endHandler = handler;
   }
 
-  void exceptionHandler(Handler<Throwable> handler) {
+  public void exceptionHandler(Handler<Throwable> handler) {
     exceptionHandler = handler;
   }
 
-  void handleChunk(Buffer chunk) {
+  public void handleChunk(Buffer chunk) {
     Handler<Buffer> handler = chunkHandler;
     if (handler != null) {
       context.dispatch(chunk, handler);
@@ -55,7 +55,7 @@ class HttpEventHandler {
     }
   }
 
-  Future<Buffer> body() {
+  public Future<Buffer> body() {
     if (body == null) {
       body = Buffer.buffer();
       bodyPromise = context.promise();
@@ -63,14 +63,14 @@ class HttpEventHandler {
     return bodyPromise.future();
   }
 
-  Future<Void> end() {
+  public Future<Void> end() {
     if (endPromise == null) {
       endPromise = context.promise();
     }
     return endPromise.future();
   }
 
-  void handleEnd() {
+  public void handleEnd() {
     Handler<Void> handler = endHandler;
     if (handler != null) {
       context.dispatch(handler);
@@ -83,7 +83,7 @@ class HttpEventHandler {
     }
   }
 
-  void handleException(Throwable err) {
+  public void handleException(Throwable err) {
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
       context.dispatch(err, handler);

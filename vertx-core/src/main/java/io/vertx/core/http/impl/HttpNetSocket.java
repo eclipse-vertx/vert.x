@@ -33,9 +33,9 @@ import java.util.List;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class HttpNetSocket implements NetSocket {
+public class HttpNetSocket implements NetSocket {
 
-  static HttpNetSocket netSocket(ConnectionBase conn, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
+  public static HttpNetSocket netSocket(ConnectionBase conn, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
     HttpNetSocket sock = new HttpNetSocket(conn, context, readStream, writeStream);
     readStream.handler(sock::handleData);
     readStream.endHandler(sock::handleEnd);

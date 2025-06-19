@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
@@ -24,7 +24,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2ServerConnection;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -51,7 +54,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   private int concurrentStreams;
   private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
-  Http2ServerConnectionImpl(
+  public Http2ServerConnectionImpl(
     ContextInternal context,
     Supplier<ContextInternal> streamContextSupplier,
     String serverOrigin,
@@ -96,7 +99,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  String determineContentEncoding(Http2HeadersAdaptor headers) {
+  public String determineContentEncoding(Http2HeadersAdaptor headers) {
     String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
@@ -170,7 +173,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       it.remove();
       concurrentStreams++;
       Pending pending = next.getValue();
-      pending.stream.init(pending.stream.promisedId, isWritable(pending.stream.promisedId));
+      pending.stream.init(pending.stream.promisedId(), isWritable(pending.stream.promisedId()));
       pending.promise.complete(pending.stream);
     }
   }
@@ -244,7 +247,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;
-            vertxStream.init(vertxStream.promisedId, isWritable(vertxStream.promisedId));
+            vertxStream.init(vertxStream.promisedId(), isWritable(vertxStream.promisedId()));
             promise.complete(vertxStream);
           } else {
             pendingPushes.put(promisedStreamId, new Pending(vertxStream, promise));

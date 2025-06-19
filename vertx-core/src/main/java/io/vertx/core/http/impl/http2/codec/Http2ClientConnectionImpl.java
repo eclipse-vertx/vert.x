@@ -9,14 +9,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpClientBase;
+import io.vertx.core.http.impl.HttpClientConnection;
+import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2ClientConnection;
+import io.vertx.core.http.impl.http2.Http2ClientStream;
+import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -25,7 +31,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnectionInternal, Http2ClientConnection {
+public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
@@ -75,7 +81,7 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
   }
 
   @Override
-  public HttpClientConnectionInternal invalidMessageHandler(Handler<Object> handler) {
+  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
     return this;
   }
 
@@ -149,13 +155,13 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
     return metrics;
   }
 
-  HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
+  public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2ClientStreamImpl vertxStream = createStream2(context);
     Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
     vertxStream.stream = s;
-    s.impl = vertxStream;
+    s.handler(vertxStream);
     Http2Stream nettyStream = handler.connection().stream(1);
-    vertxStream.stream.upgrade(nettyStream.id(), metric, trace, isWritable(1));
+    s.upgrade(nettyStream.id(), metric, trace, isWritable(1));
     nettyStream.setProperty(streamKey, s);
     return vertxStream;
   }
@@ -218,7 +224,7 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
       Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), true);
       Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      s.impl = pushStream;
+      s.handler(pushStream);
       pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
       stream.onPush(pushStream, promisedStreamId, new Http2HeadersAdaptor(headers), isWritable(promisedStreamId));

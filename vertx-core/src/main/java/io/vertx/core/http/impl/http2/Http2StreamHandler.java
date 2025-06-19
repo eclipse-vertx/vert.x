@@ -8,17 +8,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.net.HostAndPort;
 
-public interface Http2ServerConnection extends Http2Connection {
+public interface Http2StreamHandler {
 
-  // Promise<VertxHttpStream> instead
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise);
+  void handleReset(long errorCode);
+  void handleException(Throwable cause);
+  void handleClose();
+  void handleData(Buffer data);
+  void handleEnd(MultiMap trailers);
+  void handleCustomFrame(HttpFrame frame);
+  void handlePriorityChange(StreamPriority streamPriority);
+  void handleDrained();
+
 }

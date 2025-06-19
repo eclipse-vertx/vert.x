@@ -188,7 +188,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public Future<HttpClientConnection> connect(HttpConnectOptions connect) {
+  public Future<io.vertx.core.http.HttpClientConnection> connect(HttpConnectOptions connect) {
     Address addr = connect.getServer();
     Integer port = connect.getPort();
     String host = connect.getHost();
@@ -346,7 +346,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
         EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
         return httpCM.withResourceAsync(key, httpEndpointProvider(), (endpoint, created) -> {
-          Future<Lease<HttpClientConnectionInternal>> fut2 = endpoint.requestConnection(streamCtx, connectTimeout);
+          Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(streamCtx, connectTimeout);
           if (fut2 == null) {
             return null;
           } else {
@@ -356,7 +356,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                 endpointRequest.reportFailure(ar.cause());
               }
             }).compose(lease -> {
-              HttpClientConnectionInternal conn = lease.get();
+              HttpClientConnection conn = lease.get();
               return conn.createStream(streamCtx).map(stream -> {
                 HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
                 wrapped.closeHandler(v -> lease.recycle());
@@ -370,12 +370,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
       EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, (SocketAddress) server, authority);
       future = httpCM.withResourceAsync(key, httpEndpointProvider(), (endpoint, created) -> {
-        Future<Lease<HttpClientConnectionInternal>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
+        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
         if (fut == null) {
           return null;
         } else {
           return fut.compose(lease -> {
-            HttpClientConnectionInternal conn = lease.get();
+            HttpClientConnection conn = lease.get();
             return conn.createStream(streamCtx).map(stream -> {
               stream.closeHandler(v -> {
                 lease.recycle();

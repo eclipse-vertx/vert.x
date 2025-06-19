@@ -189,7 +189,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse pause() {
-    stream.doPause();
+    stream.pause();
     return this;
   }
 
@@ -200,7 +200,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public HttpClientResponse fetch(long amount) {
-    stream.doFetch(amount);
+    stream.fetch(amount);
     return this;
   }
 
@@ -234,10 +234,15 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
-  void handleEnd(MultiMap trailers) {
-    HttpEventHandler handler;
+  void handleTrailers(MultiMap trailers) {
     synchronized (conn) {
       this.trailers = trailers;
+    }
+  }
+
+  void handleEnd(Void trailers) {
+    HttpEventHandler handler;
+    synchronized (conn) {
       handler = eventHandler;
     }
     if (handler != null) {

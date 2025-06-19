@@ -20,8 +20,8 @@ import io.vertx.core.spi.observability.HttpRequest;
  */
 public class HttpRequestHead implements HttpRequest {
 
-  int id; // For internal testing correlation
-  SocketAddress remoteAddress;
+  public int id; // For internal testing correlation
+  public SocketAddress remoteAddress;
   public final HttpMethod method;
   public final String uri;
   public final MultiMap headers;
