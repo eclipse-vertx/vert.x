@@ -32,7 +32,7 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class VertxHttp2Stream {
+public abstract class VertxHttp2Stream {
 
   private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
 
@@ -99,25 +99,25 @@ abstract class VertxHttp2Stream {
     };
   }
 
-  void init(int streamId, boolean writable) {
+  public void init(int streamId, boolean writable) {
     synchronized (this) {
       this.id = streamId;
       this.writable = writable;
     }
   }
 
-  void onClose() {
+  public void onClose() {
     conn.flushBytesWritten();
     context.execute(ex -> handleClose());
     outboundQueue.close();
   }
 
-  void onException(Throwable cause) {
+  public void onException(Throwable cause) {
     failure = cause;
     context.emit(cause, this::handleException);
   }
 
-  void onReset(long code) {
+  public void onReset(long code) {
     reset = code;
     context.emit(code, this::handleReset);
   }
@@ -131,24 +131,24 @@ abstract class VertxHttp2Stream {
     });
   }
 
-  void onCustomFrame(int type, int flags, Buffer payload) {
+  public void onCustomFrame(int type, int flags, Buffer payload) {
     context.emit(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
-  void onData(Buffer data) {
+  public void onData(Buffer data) {
     bytesRead += data.length();
     conn.reportBytesRead(data.length());
     inboundQueue.write(data);
   }
 
-  void onWritabilityChanged() {
+  public void onWritabilityChanged() {
     writable = !writable;
     if (writable) {
       outboundQueue.tryDrain();
     }
   }
 
-  void onEnd() {
+  public void onEnd() {
     onEnd(EMPTY);
   }
 

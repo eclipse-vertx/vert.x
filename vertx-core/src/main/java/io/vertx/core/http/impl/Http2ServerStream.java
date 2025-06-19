@@ -35,7 +35,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class Http2ServerStream extends VertxHttp2Stream {
+public class Http2ServerStream extends VertxHttp2Stream {
 
   private final Http2ServerConnection conn;
   private final String serverOrigin;
@@ -99,7 +99,7 @@ class Http2ServerStream extends VertxHttp2Stream {
     this.promisedId = promisedId;
   }
 
-  Http2ServerStream(Http2ServerConnection conn,
+  public Http2ServerStream(Http2ServerConnection conn,
                     String serverOrigin,
                     HttpServerMetrics serverMetrics,
                     Object socketMetric,
@@ -131,7 +131,7 @@ class Http2ServerStream extends VertxHttp2Stream {
     return conn;
   }
 
-  Http2HeadersAdaptor headers() {
+  public Http2HeadersAdaptor headers() {
     return headers;
   }
 
@@ -163,7 +163,7 @@ class Http2ServerStream extends VertxHttp2Stream {
     }
   }
 
-  boolean onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
+  public boolean onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
 
     CharSequence methodHeader = headers.method();
     if (methodHeader == null) {
@@ -344,7 +344,7 @@ class Http2ServerStream extends VertxHttp2Stream {
   }
 
   @Override
-  void onClose() {
+  public void onClose() {
     if (METRICS_ENABLED) {
       // Null in case of push response : handle this case
       if (serverMetrics != null && (!requestEnded || !responseEnded)) {
