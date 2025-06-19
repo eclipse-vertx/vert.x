@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.buffer.*;
 import io.netty.channel.ChannelFuture;
@@ -31,7 +31,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
@@ -53,7 +55,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnection, io.vertx.core.http.impl.Http2Connection {
+abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnection, io.vertx.core.http.impl.http2.Http2Connection {
 
   private static final Logger log = LoggerFactory.getLogger(Http2ConnectionImpl.class);
 
@@ -104,7 +106,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   synchronized void onConnectionError(Throwable cause) {
-    ArrayList<VertxHttp2Stream> streams = new ArrayList<>();
+    ArrayList<Http2StreamBase> streams = new ArrayList<>();
     try {
       handler.connection().forEachActiveStream(stream -> {
         streams.add(stream.getProperty(streamKey));
@@ -113,13 +115,13 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     } catch (Http2Exception e) {
       log.error("Could not get the list of active streams", e);
     }
-    for (VertxHttp2Stream stream : streams) {
-      stream.context.dispatch(v -> stream.handleException(cause));
+    for (Http2StreamBase stream : streams) {
+      stream.context().dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
 
-  VertxHttp2Stream stream(int id) {
+  public Http2StreamBase stream(int id) {
     Http2Stream s = handler.connection().stream(id);
     if (s == null) {
       return null;
@@ -128,21 +130,21 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   void onStreamError(int streamId, Throwable cause) {
-    VertxHttp2Stream stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
-    VertxHttp2Stream stream = s.getProperty(streamKey);
+    Http2StreamBase stream = s.getProperty(streamKey);
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
   void onStreamClosed(Http2Stream s) {
-    VertxHttp2Stream stream = s.getProperty(streamKey);
+    Http2StreamBase stream = s.getProperty(streamKey);
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -193,7 +195,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
-      VertxHttp2Stream stream = stream(streamId);
+      Http2StreamBase stream = stream(streamId);
       if (stream != null) {
         StreamPriority streamPriority = new StreamPriority()
           .setDependency(streamDependency)
@@ -295,7 +297,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    VertxHttp2Stream stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       Buffer buff = BufferInternal.buffer(safeBuffer(payload));
       stream.onCustomFrame(frameType, flags.value(), buff);
@@ -304,7 +306,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
     }
@@ -312,7 +314,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    VertxHttp2Stream stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = BufferInternal.buffer(data);
@@ -497,8 +499,8 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     return this.handler.encoder().flowController().isWritable(s);
   }
 
-  public boolean isWritable(VertxHttp2Stream stream) {
-    Http2Stream s = handler.connection().stream(stream.id);
+  public boolean isWritable(Http2StreamBase stream) {
+    Http2Stream s = handler.connection().stream(stream.id());
     return this.handler.encoder().flowController().isWritable(s);
   }
 

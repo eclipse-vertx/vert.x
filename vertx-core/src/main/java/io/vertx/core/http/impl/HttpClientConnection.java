@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -24,9 +23,9 @@ import io.vertx.core.net.HostAndPort;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientConnectionInternal extends HttpConnection {
+public interface HttpClientConnection extends HttpConnection {
 
-  Logger log = LoggerFactory.getLogger(HttpClientConnectionInternal.class);
+  Logger log = LoggerFactory.getLogger(HttpClientConnection.class);
 
   Handler<Void> DEFAULT_EVICTION_HANDLER = v -> {
     log.warn("Connection evicted");
@@ -44,6 +43,9 @@ public interface HttpClientConnectionInternal extends HttpConnection {
    */
   long concurrency();
 
+  /**
+   * @return the connection authority
+   */
   HostAndPort authority();
 
   /**
@@ -52,7 +54,7 @@ public interface HttpClientConnectionInternal extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnectionInternal evictionHandler(Handler<Void> handler);
+  HttpClientConnection evictionHandler(Handler<Void> handler);
 
   /**
    * Set a {@code handler} called when the connection receives invalid messages.
@@ -60,7 +62,7 @@ public interface HttpClientConnectionInternal extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnectionInternal invalidMessageHandler(Handler<Object> handler);
+  HttpClientConnection invalidMessageHandler(Handler<Object> handler);
 
   /**
    * Set a {@code handler} called when the connection concurrency changes.
@@ -69,7 +71,7 @@ public interface HttpClientConnectionInternal extends HttpConnection {
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler);
+  HttpClientConnection concurrencyChangeHandler(Handler<Long> handler);
 
   /**
    * @return whether the connection is pooled

@@ -27,13 +27,14 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.codec.Http2ClientConnectionImpl;
+import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -47,14 +48,14 @@ import java.util.concurrent.TimeUnit;
  * A connection that attempts to perform a protocol upgrade to H2C. The connection might use HTTP/1 or H2C
  * depending on the initial server response.
  */
-public class Http2UpgradeClientConnection implements HttpClientConnectionInternal {
+public class Http2UpgradeClientConnection implements HttpClientConnection {
 
   private static final Object SEND_BUFFERED_MESSAGES = new Object();
 
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
   private HttpClientBase client;
-  private HttpClientConnectionInternal current;
+  private HttpClientConnection current;
   private final long maxLifetime;
   private boolean upgradeProcessed;
 
@@ -74,7 +75,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     this.maxLifetime = maxLifetime;
   }
 
-  public HttpClientConnectionInternal unwrap() {
+  public HttpClientConnection unwrap() {
     return current;
   }
 
@@ -144,13 +145,13 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public HttpClientConnectionInternal connection() {
+    public HttpClientConnection connection() {
       return connection;
     }
 
     @Override
-    public ContextInternal getContext() {
-      return delegate.getContext();
+    public ContextInternal context() {
+      return delegate.context();
     }
 
     @Override
@@ -159,8 +160,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
-      return delegate.writeBuffer(buf, end);
+    public Future<Void> write(ByteBuf buf, boolean end) {
+      return delegate.write(buf, end);
     }
 
     @Override
@@ -169,68 +170,81 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void continueHandler(Handler<Void> handler) {
+    public HttpClientStream continueHandler(Handler<Void> handler) {
       delegate.continueHandler(handler);
+      return this;
     }
 
     @Override
-    public void earlyHintsHandler(Handler<MultiMap> handler) {
+    public HttpClientStream earlyHintsHandler(Handler<MultiMap> handler) {
       delegate.earlyHintsHandler(handler);
+      return this;
     }
 
     @Override
-    public void pushHandler(Handler<HttpClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
       delegate.pushHandler(handler);
+      return this;
     }
 
     @Override
-    public void unknownFrameHandler(Handler<HttpFrame> handler) {
+    public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
       delegate.unknownFrameHandler(handler);
+      return this;
     }
 
     @Override
-    public void headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       delegate.headHandler(handler);
+      return this;
     }
 
     @Override
-    public void chunkHandler(Handler<Buffer> handler) {
-      delegate.chunkHandler(handler);
+    public HttpClientStream handler(Handler<Buffer> handler) {
+      delegate.handler(handler);
+      return this;
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
+      delegate.trailersHandler(handler);
+      return this;
+    }
+
+    @Override
+    public HttpClientStream endHandler(Handler<Void> handler) {
       delegate.endHandler(handler);
+      return this;
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriority> handler) {
+    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
       delegate.priorityHandler(handler);
+      return this;
     }
 
     @Override
-    public void closeHandler(Handler<Void> handler) {
+    public HttpClientStream closeHandler(Handler<Void> handler) {
       delegate.closeHandler(handler);
+      return this;
     }
 
     @Override
-    public void doSetWriteQueueMaxSize(int size) {
-      delegate.doSetWriteQueueMaxSize(size);
+    public HttpClientStream pause() {
+      delegate.pause();
+      return this;
     }
 
     @Override
-    public boolean isNotWritable() {
-      return delegate.isNotWritable();
+    public HttpClientStream fetch(long amount) {
+      delegate.fetch(amount);
+      return this;
     }
 
     @Override
-    public void doPause() {
-      delegate.doPause();
-    }
-
-    @Override
-    public void doFetch(long amount) {
-      delegate.doFetch(amount);
+    public HttpClientStream resume() {
+      delegate.resume();
+      return this;
     }
 
     @Override
@@ -244,18 +258,19 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void updatePriority(StreamPriority streamPriority) {
+    public HttpClientStream updatePriority(StreamPriority streamPriority) {
       delegate.updatePriority(streamPriority);
+      return this;
     }
 
     @Override
-    public WriteStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
+    public HttpClientStream exceptionHandler(@Nullable Handler<Throwable> handler) {
       delegate.exceptionHandler(handler);
       return this;
     }
 
     @Override
-    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+    public HttpClientStream setWriteQueueMaxSize(int maxSize) {
       delegate.setWriteQueueMaxSize(maxSize);
       return this;
     }
@@ -266,7 +281,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public WriteStream<Buffer> drainHandler(@Nullable Handler<Void> handler) {
+    public HttpClientStream drainHandler(@Nullable Handler<Void> handler) {
       delegate.drainHandler(handler);
       return this;
     }
@@ -285,7 +300,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     private HttpClientStream upgradedStream;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
-    private Handler<MultiMap> endHandler;
+    private Handler<MultiMap> trailerHandler;
+    private Handler<Void> endHandler;
     private Handler<StreamPriority> priorityHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> drainHandler;
@@ -303,7 +319,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public HttpClientConnectionInternal connection() {
+    public HttpClientConnection connection() {
       return upgradedConnection;
     }
 
@@ -371,7 +387,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
             Http2ClientConnectionImpl conn = (Http2ClientConnectionImpl) future.getNow();
             try {
               try {
-                upgradedStream = conn.upgradeStream(upgradingStream.metric(), upgradingStream.trace(), upgradingStream.getContext());
+                upgradedStream = conn.upgradeStream(upgradingStream.metric(), upgradingStream.trace(), upgradingStream.context());
               } finally {
                 upgradingConnection.closeHandler(null);
                 upgradingConnection.exceptionHandler(null);
@@ -379,7 +395,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
                 upgradingConnection.concurrencyChangeHandler(null);
               }
               upgradedStream.headHandler(headHandler);
-              upgradedStream.chunkHandler(chunkHandler);
+              upgradedStream.handler(chunkHandler);
               upgradedStream.endHandler(endHandler);
               upgradedStream.priorityHandler(priorityHandler);
               upgradedStream.exceptionHandler(exceptionHandler);
@@ -390,7 +406,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
               upgradedStream.unknownFrameHandler(unknownFrameHandler);
               upgradedStream.closeHandler(closeHandler);
               upgradingStream.headHandler(null);
-              upgradingStream.chunkHandler(null);
+              upgradingStream.handler(null);
               upgradingStream.endHandler(null);
               upgradingStream.priorityHandler(null);
               upgradingStream.exceptionHandler(null);
@@ -510,7 +526,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
       };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      PromiseInternal<Void> promise = upgradingStream.getContext().promise();
+      PromiseInternal<Void> promise = upgradingStream.context().promise();
       doWriteHead(request, chunked, buf, end, priority, connect, promise);
       return promise.future();
     }
@@ -559,48 +575,52 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public ContextInternal getContext() {
-      return upgradingStream.getContext();
+    public ContextInternal context() {
+      return upgradingStream.context();
     }
 
     @Override
-    public void continueHandler(Handler<Void> handler) {
+    public HttpClientStream continueHandler(Handler<Void> handler) {
       if (upgradedStream != null) {
         upgradedStream.continueHandler(handler);
       } else {
         upgradingStream.continueHandler(handler);
         continueHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void earlyHintsHandler(Handler<MultiMap> handler) {
+    public HttpClientStream earlyHintsHandler(Handler<MultiMap> handler) {
       if (upgradedStream != null) {
         upgradedStream.earlyHintsHandler(handler);
       } else {
         upgradingStream.earlyHintsHandler(handler);
         earlyHintsHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void pushHandler(Handler<HttpClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
       if (upgradedStream != null) {
         upgradedStream.pushHandler(handler);
       } else {
         upgradingStream.pushHandler(handler);
         pushHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void closeHandler(Handler<Void> handler) {
+    public HttpClientStream closeHandler(Handler<Void> handler) {
       if (upgradedStream != null) {
         upgradedStream.closeHandler(handler);
       } else {
         upgradingStream.closeHandler(handler);
         closeHandler = handler;
       }
+      return this;
     }
 
     @Override
@@ -626,57 +646,73 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       if (upgradedStream != null) {
         upgradedStream.headHandler(handler);
       } else {
         upgradingStream.headHandler(handler);
         headHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void chunkHandler(Handler<Buffer> handler) {
+    public HttpClientStream handler(Handler<Buffer> handler) {
       if (upgradedStream != null) {
-        upgradedStream.chunkHandler(handler);
+        upgradedStream.handler(handler);
       } else {
-        upgradingStream.chunkHandler(handler);
+        upgradingStream.handler(handler);
         chunkHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
+      if (upgradedStream != null) {
+        upgradedStream.trailersHandler(handler);
+      } else {
+        upgradingStream.trailersHandler(handler);
+        trailerHandler = handler;
+      }
+      return this;
+    }
+
+    @Override
+    public HttpClientStream endHandler(Handler<Void> handler) {
       if (upgradedStream != null) {
         upgradedStream.endHandler(handler);
       } else {
         upgradingStream.endHandler(handler);
         endHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void unknownFrameHandler(Handler<HttpFrame> handler) {
+    public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
       if (upgradedStream != null) {
         upgradedStream.unknownFrameHandler(handler);
       } else {
         upgradingStream.unknownFrameHandler(handler);
         unknownFrameHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriority> handler) {
+    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
       if (upgradedStream != null) {
         upgradedStream.priorityHandler(handler);
       } else {
         upgradingStream.priorityHandler(handler);
         priorityHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+    public HttpClientStream setWriteQueueMaxSize(int maxSize) {
       if (upgradedStream != null) {
         upgradedStream.setWriteQueueMaxSize(maxSize);
       } else {
@@ -695,17 +731,17 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
-      Promise<Void> promise = upgradingStream.getContext().promise();
+    public Future<Void> write(ByteBuf buf, boolean end) {
+      Promise<Void> promise = upgradingStream.context().promise();
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeBuffer(buf, end);
+        upgradingStream.write(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
         }
       } else {
-        exec.execute(() -> writeBuffer(buf, end));
+        exec.execute(() -> write(buf, end));
       }
       return promise.future();
     }
@@ -720,39 +756,33 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void doSetWriteQueueMaxSize(int size) {
+    public HttpClientStream pause() {
       if (upgradedStream != null) {
-        upgradedStream.doSetWriteQueueMaxSize(size);
+        upgradedStream.pause();
       } else {
-        upgradingStream.doSetWriteQueueMaxSize(size);
+        upgradingStream.pause();
       }
+      return this;
     }
 
     @Override
-    public boolean isNotWritable() {
+    public HttpClientStream resume() {
       if (upgradedStream != null) {
-        return upgradedStream.isNotWritable();
+        upgradedStream.resume();
       } else {
-        return upgradingStream.isNotWritable();
+        upgradingStream.resume();
       }
+      return this;
     }
 
     @Override
-    public void doPause() {
+    public HttpClientStream fetch(long amount) {
       if (upgradedStream != null) {
-        upgradedStream.doPause();
+        upgradedStream.fetch(amount);
       } else {
-        upgradingStream.doPause();
+        upgradingStream.fetch(amount);
       }
-    }
-
-    @Override
-    public void doFetch(long amount) {
-      if (upgradedStream != null) {
-        upgradedStream.doFetch(amount);
-      } else {
-        upgradingStream.doFetch(amount);
-      }
+      return this;
     }
 
     @Override
@@ -774,12 +804,13 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
     }
 
     @Override
-    public void updatePriority(StreamPriority streamPriority) {
+    public HttpClientStream updatePriority(StreamPriority streamPriority) {
       if (upgradedStream != null) {
         upgradedStream.updatePriority(streamPriority);
       } else {
         upgradingStream.updatePriority(streamPriority);
       }
+      return this;
     }
   }
 
@@ -860,7 +891,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpClientConnectionInternal evictionHandler(Handler<Void> handler) {
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
     if (current instanceof Http1xClientConnection) {
       evictionHandler = handler;
     }
@@ -869,7 +900,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpClientConnectionInternal invalidMessageHandler(Handler<Object> handler) {
+  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
     if (current instanceof Http1xClientConnection) {
       invalidMessageHandler = handler;
     }
@@ -878,7 +909,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
   }
 
   @Override
-  public HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler) {
+  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     if (current instanceof Http1xClientConnection) {
       concurrencyChangeHandler = handler;
     }

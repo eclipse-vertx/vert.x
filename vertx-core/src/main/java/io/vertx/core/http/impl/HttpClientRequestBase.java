@@ -58,7 +58,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     stream.pushHandler(this::handlePush);
     stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.chunkHandler(response::handleChunk);
+      stream.handler(response::handleChunk);
+      stream.trailersHandler(response::handleTrailers);
       stream.endHandler(response::handleEnd);
       stream.priorityHandler(response::handlePriorityChange);
       stream.unknownFrameHandler(response::handleUnknownFrame);

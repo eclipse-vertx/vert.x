@@ -9,19 +9,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpEventHandler;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.NettyFileUpload;
+import io.vertx.core.http.impl.NettyFileUploadDataFactory;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
@@ -30,8 +33,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -46,8 +47,6 @@ import java.util.Set;
  */
 public class Http2ServerRequest extends HttpServerRequestInternal implements Http2ServerStreamHandler, io.vertx.core.spi.observability.HttpRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
-
   protected final ContextInternal context;
   protected final Http2ServerStream stream;
   protected final Http2ServerConnection connection;
@@ -57,6 +56,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private final int maxFormAttributeSize;
   private final int maxFormFields;
   private final int maxFormBufferedBytes;
+
+  Handler<HttpServerRequest> handler;
 
   // Accessed on context thread
   private Charset paramsCharset = StandardCharsets.UTF_8;
@@ -72,16 +73,17 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> streamPriorityHandler;
 
-  Http2ServerRequest(Http2ServerStream stream,
+  public Http2ServerRequest(Http2ServerStream stream,
+                     ContextInternal context,
                      int maxFormAttributeSize,
                      int maxFormFields,
                      int maxFormBufferedBytes,
                      String serverOrigin,
                      Http2HeadersAdaptor headersMap) {
-    this.context = stream.context;
+    this.context = context;
     this.stream = stream;
     this.connection = stream.connection();
-    this.response = new Http2ServerResponse(stream, false);
+    this.response = new Http2ServerResponse(stream, context,false);
     this.serverOrigin = serverOrigin;
     this.headersMap = headersMap;
     this.maxFormAttributeSize = maxFormAttributeSize;
@@ -127,6 +129,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload)upload).handleException(failure);
     }
+  }
+
+  @Override
+  public void handleDrained() {
+    response.handleWriteQueueDrained();
   }
 
   @Override
@@ -396,7 +403,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public Future<NetSocket> toNetSocket() {
-    return response.netSocket();
+    return response.netSocket(this);
   }
 
   @Override
