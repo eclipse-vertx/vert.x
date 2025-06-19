@@ -13,13 +13,19 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
@@ -35,7 +41,7 @@ import java.util.function.BiConsumer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ClientStream extends VertxHttp2Stream {
+public class Http2ClientStream extends VertxHttp2Stream {
 
   protected final Http2ClientConnection conn;
   private final TracingPolicy tracingPolicy;
@@ -46,6 +52,8 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
   private Object trace;
   private boolean requestEnded;
   private boolean responseEnded;
+
+  volatile Http2ClientStreamImpl impl;
 
   Http2ClientStream(Http2ClientConnection conn,
                     ContextInternal context,
@@ -67,20 +75,26 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
     this.requestEnded = true;
   }
 
-  private void createStream(HttpRequestHead head, Http2HeadersAdaptor headers) throws Exception {
-    conn.createStream(this, head, headers);
-    if (clientMetrics != null) {
-      metric = clientMetrics.requestBegin(headers.path().toString(), head);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
-      String operation = head.traceOperation;
-      if (operation == null) {
-        operation = headers.method().toString();
+  private Future<Void> createStream(HttpRequestHead head, Http2HeadersAdaptor headers) {
+    Future<Void> fut = conn.createStream(this);
+    return fut.andThen(ar -> {
+      if (ar.succeeded()) {
+        head.id = id;
+        head.remoteAddress = ((HttpConnection)conn).remoteAddress();
+        if (clientMetrics != null) {
+          metric = clientMetrics.requestBegin(headers.path().toString(), head);
+        }
+        VertxTracer tracer = context.tracer();
+        if (tracer != null) {
+          BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
+          String operation = head.traceOperation;
+          if (operation == null) {
+            operation = headers.method().toString();
+          }
+          trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        }
       }
-      trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
-    }
+    });
   }
 
   void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
@@ -130,19 +144,21 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
-      try {
-        createStream(request, headers);
-      } catch (Exception ex) {
-        promise.fail(ex);
-        onException(ex);
-        return;
-      }
-      if (buf != null) {
-        doWriteHeaders(headers, false, false, null);
-        doWriteData(buf, e, promise);
-      } else {
-        doWriteHeaders(headers, e, true, promise);
-      }
+      Future<Void> f = createStream(request, headers);
+      f.onComplete(ar -> {
+        if (ar.succeeded()) {
+          if (buf != null) {
+            doWriteHeaders(headers, false, false, null);
+            doWriteData(buf, e, promise);
+          } else {
+            doWriteHeaders(headers, e, true, promise);
+          }
+        } else {
+          Throwable ex = ar.cause();
+          promise.fail(ex);
+          onException(ex);
+        }
+      });
     }
 
     @Override
@@ -153,10 +169,10 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
 
   void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersAdaptor headers, boolean writable) {
     HttpClientPush push = new HttpClientPush(headers, pushStream);
-    pushStream.init(promisedStreamId, writable);
+    pushStream.stream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
-      ((Http2ClientStream)pushStream).metric = metric;
+      pushStream.stream.metric = metric;
       clientMetrics.requestEnd(metric, 0L);
     }
     context.dispatch(push, this::handlePush);
@@ -169,14 +185,6 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
   void onEarlyHints(MultiMap headers) {
     context.emit(null, v -> handleEarlyHints(headers));
   }
-
-  abstract void handleContinue();
-
-  abstract void handlePush(HttpClientPush push);
-
-  abstract void handleEarlyHints(MultiMap headers);
-
-  abstract void handleHead(HttpResponseHead response);
 
   public Object metric() {
     return metric;
@@ -293,5 +301,99 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
       onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     super.onClose();
+  }
+
+  @Override
+  void handleEnd(MultiMap trailers) {
+    Handler<MultiMap> handler = impl.endHandler;
+    if (handler != null) {
+      impl.endHandler.handle(trailers);
+    }
+  }
+
+  @Override
+  void handleData(Buffer buf) {
+    Handler<Buffer> handler = impl.chunkHandler;
+    if (handler != null) {
+      handler.handle(buf);
+    }
+  }
+
+  @Override
+  void handleReset(long errorCode) {
+    handleException(new StreamResetException(errorCode));
+  }
+
+  @Override
+  void handleWriteQueueDrained() {
+    Handler<Void> handler = impl.drainHandler;
+    if (handler != null) {
+      context.dispatch(null, handler);
+    }
+  }
+
+  @Override
+  void handleCustomFrame(HttpFrame frame) {
+    Handler<HttpFrame> handler = impl.unknownFrameHandler;
+    if (handler != null) {
+      handler.handle(frame);
+    }
+  }
+
+
+  @Override
+  void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler = impl.priorityHandler;
+    if (handler != null) {
+      handler.handle(streamPriority);
+    }
+  }
+
+  void handleContinue() {
+    Handler<Void> handler = impl.continueHandler;
+    if (handler != null) {
+      handler.handle(null);
+    }
+  }
+
+  void handlePush(HttpClientPush push) {
+    Handler<HttpClientPush> handler = impl.pushHandler;
+    if (handler != null) {
+      handler.handle(push);
+    } else {
+      // Must reset
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  void handleEarlyHints(MultiMap headers) {
+    Handler<MultiMap> handler = impl.earlyHintsHandler;
+    if (handler != null) {
+      handler.handle(headers);
+    }
+  }
+
+  @Override
+  void handleException(Throwable exception) {
+    Handler<Throwable> handler = impl.exceptionHandler;
+    if (handler != null) {
+      handler.handle(exception);
+    }
+  }
+
+  void handleHead(HttpResponseHead response) {
+    Handler<HttpResponseHead> handler = impl.headHandler;
+    if (handler != null) {
+      // Context ??????
+      context.emit(response, handler);
+    }
+  }
+
+  @Override
+  void handleClose() {
+    Handler<Void> handler = impl.closeHandler;
+    if (handler != null) {
+      handler.handle(null);
+    }
   }
 }

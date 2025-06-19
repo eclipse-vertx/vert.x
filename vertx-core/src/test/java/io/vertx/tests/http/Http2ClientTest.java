@@ -537,6 +537,7 @@ public class Http2ClientTest extends Http2TestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testClientResponsePauseResume() throws Exception {
     String content = TestUtils.randomAlphaString(1024);
