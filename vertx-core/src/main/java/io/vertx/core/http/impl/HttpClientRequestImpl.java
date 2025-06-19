@@ -495,6 +495,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     boolean writeHead;
     boolean writeEnd;
     synchronized (this) {
+      if (reset != null) {
+        return context.failedFuture(reset);
+      }
       if (ended) {
         return context.failedFuture(new IllegalStateException("Request already complete"));
       }

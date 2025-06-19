@@ -41,7 +41,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
-  private Throwable reset;
+  protected Throwable reset;
   private HttpConnection connection;
 
   HttpClientRequestBase(HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
@@ -241,7 +241,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       }
       reset = cause;
     }
-    return stream.reset(cause);
+    Future<Void> ret = stream.reset(cause);
+    if (ret == null) {
+      // Not yet sent
+      handleException(cause);
+      return context.succeededFuture();
+    } else {
+      return ret;
+    }
   }
 
   @Override

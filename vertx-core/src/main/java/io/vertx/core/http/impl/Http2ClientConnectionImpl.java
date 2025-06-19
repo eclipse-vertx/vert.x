@@ -151,9 +151,12 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
 
   HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2ClientStreamImpl vertxStream = createStream2(context);
+    Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+    vertxStream.stream = s;
+    s.impl = vertxStream;
     Http2Stream nettyStream = handler.connection().stream(1);
-    vertxStream.upgrade(nettyStream.id(), metric, trace, isWritable(1));
-    nettyStream.setProperty(streamKey, vertxStream);
+    vertxStream.stream.upgrade(nettyStream.id(), metric, trace, isWritable(1));
+    nettyStream.setProperty(streamKey, s);
     return vertxStream;
   }
 
@@ -210,11 +213,14 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
 
   @Override
   public synchronized void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-    Http2ClientStreamImpl stream = (Http2ClientStreamImpl) stream(streamId);
+    Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
       Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), true);
-      promisedStream.setProperty(streamKey, pushStream);
+      Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+      s.impl = pushStream;
+      pushStream.stream = s;
+      promisedStream.setProperty(streamKey, s);
       stream.onPush(pushStream, promisedStreamId, new Http2HeadersAdaptor(headers), isWritable(promisedStreamId));
     } else {
       Http2ClientConnectionImpl.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
@@ -273,18 +279,22 @@ class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClien
     return handler;
   }
 
-  public void createStream(VertxHttp2Stream vertxStream, HttpRequestHead head, Http2HeadersAdaptor headers) throws Http2Exception {
+  public Future<Void> createStream(Http2ClientStream vertxStream) {
     int id = handler.encoder().connection().local().lastStreamCreated();
     if (id == 0) {
       id = 1;
     } else {
       id += 2;
     }
-    head.id = id;
-    head.remoteAddress = remoteAddress();
-    Http2Stream nettyStream = handler.encoder().connection().local().createStream(id, false);
+    Http2Stream nettyStream = null;
+    try {
+      nettyStream = handler.encoder().connection().local().createStream(id, false);
+    } catch (Http2Exception e) {
+      return Future.failedFuture(e);
+    }
     nettyStream.setProperty(streamKey, vertxStream);
     int nettyStreamId = nettyStream.id();
     vertxStream.init(nettyStreamId, isWritable(nettyStream.id()));
+    return Future.succeededFuture();
   }
 }

@@ -29,19 +29,28 @@ import io.vertx.core.tracing.TracingPolicy;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStream {
+class Http2ClientStreamImpl implements HttpClientStream {
 
-  private Handler<HttpResponseHead> headHandler;
-  private Handler<Buffer> chunkHandler;
-  private Handler<MultiMap> endHandler;
-  private Handler<StreamPriority> priorityHandler;
-  private Handler<Void> drainHandler;
-  private Handler<Void> continueHandler;
-  private Handler<MultiMap> earlyHintsHandler;
-  private Handler<HttpFrame> unknownFrameHandler;
-  private Handler<Throwable> exceptionHandler;
-  private Handler<HttpClientPush> pushHandler;
-  private Handler<Void> closeHandler;
+  private final Http2ClientConnection conn;
+  private final ContextInternal context;
+  Http2ClientStream stream;
+
+  Handler<HttpResponseHead> headHandler;
+  Handler<Buffer> chunkHandler;
+  Handler<MultiMap> endHandler;
+  Handler<StreamPriority> priorityHandler;
+  Handler<Void> drainHandler;
+  Handler<Void> continueHandler;
+  Handler<MultiMap> earlyHintsHandler;
+  Handler<HttpFrame> unknownFrameHandler;
+  Handler<Throwable> exceptionHandler;
+  Handler<HttpClientPush> pushHandler;
+  Handler<Void> closeHandler;
+
+  TracingPolicy tracingPolicy;
+  boolean decompressionSupported;
+  ClientMetrics clientMetrics;
+  boolean push;
 
   Http2ClientStreamImpl(Http2ClientConnection conn,
                         ContextInternal context,
@@ -49,7 +58,43 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
                         boolean decompressionSupported,
                         ClientMetrics clientMetrics,
                         boolean push) {
-    super(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
+    this.context = context;
+    this.conn = conn;
+
+    this.tracingPolicy = tracingPolicy;
+    this.decompressionSupported = decompressionSupported;
+    this.clientMetrics = clientMetrics;
+    this.push = push;
+  }
+
+  @Override
+  public int id() {
+    return stream.id();
+  }
+
+  @Override
+  public Object metric() {
+    return stream.metric();
+  }
+
+  @Override
+  public Object trace() {
+    return stream.trace();
+  }
+
+  @Override
+  public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    return stream.writeFrame(type, flags, payload);
+  }
+
+  @Override
+  public void doPause() {
+    stream.doPause();
+  }
+
+  @Override
+  public void doFetch(long amount) {
+    stream.doFetch(amount);
   }
 
   @Override
@@ -101,7 +146,8 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
 
   @Override
   public boolean isNotWritable() {
-    return !isWritable();
+    Http2ClientStream s = stream;
+    return s != null && !s.isWritable();
   }
 
   @Override
@@ -126,12 +172,12 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
 
   @Override
   public StreamPriority priority() {
-    return super.priority();
+    return stream.priority();
   }
 
   @Override
   public void updatePriority(StreamPriority streamPriority) {
-    super.updatePriority(streamPriority);
+    stream.updatePriority(streamPriority);
   }
 
   @Override
@@ -139,104 +185,22 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
     return HttpVersion.HTTP_2;
   }
 
-  @Override
-  void handleEnd(MultiMap trailers) {
-    if (endHandler != null) {
-      endHandler.handle(trailers);
-    }
-  }
-
-  @Override
-  void handleData(Buffer buf) {
-    if (chunkHandler != null) {
-      chunkHandler.handle(buf);
-    }
-  }
-
-  @Override
-  void handleReset(long errorCode) {
-    handleException(new StreamResetException(errorCode));
-  }
-
-  @Override
-  void handleWriteQueueDrained() {
-    Handler<Void> handler = drainHandler;
-    if (handler != null) {
-      context.dispatch(null, handler);
-    }
-  }
-
-  @Override
-  void handleCustomFrame(HttpFrame frame) {
-    if (unknownFrameHandler != null) {
-      unknownFrameHandler.handle(frame);
-    }
-  }
-
-
-  @Override
-  void handlePriorityChange(StreamPriority streamPriority) {
-    if (priorityHandler != null) {
-      priorityHandler.handle(streamPriority);
-    }
-  }
-
-  @Override
-  void handleContinue() {
-    if (continueHandler != null) {
-      continueHandler.handle(null);
-    }
-  }
-
-  @Override
-  void handlePush(HttpClientPush push) {
-    if (pushHandler != null) {
-      pushHandler.handle(push);
-    } else {
-      // Must reset
-      throw new UnsupportedOperationException();
-    }
-  }
-
-  @Override
-  void handleEarlyHints(MultiMap headers) {
-    if (earlyHintsHandler != null) {
-      earlyHintsHandler.handle(headers);
-    }
-  }
-
-  @Override
-  void handleException(Throwable exception) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(exception);
-    }
-  }
-
-  @Override
-  void handleHead(HttpResponseHead response) {
-    if (headHandler != null) {
-      context.emit(response, headHandler);
-    }
-  }
-
-  @Override
-  void handleClose() {
-    if (closeHandler != null) {
-      closeHandler.handle(null);
-    }
-  }
 
   @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
-    writeHeaders(request, buf, end, priority, promise);
+
+    stream = new Http2ClientStream(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
+    stream.impl = this;
+
+    stream.writeHeaders(request, buf, end, priority, promise);
     return promise.future();
   }
 
   @Override
   public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
     Promise<Void> promise = context.promise();
-    writeData(buf, end, promise);
+    stream.writeData(buf, end, promise);
     return promise.future();
   }
 
@@ -259,7 +223,12 @@ class Http2ClientStreamImpl extends Http2ClientStream implements HttpClientStrea
     } else {
       code = 0L;
     }
-    return writeReset(code);
+    Http2ClientStream s = stream;
+    if (s != null) {
+      return s.writeReset(code);
+    } else {
+      return null;
+    }
   }
 
   @Override
