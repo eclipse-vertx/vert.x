@@ -218,7 +218,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
   }
 
   @Override
-  void onReset(long code) {
+  public void onReset(long code) {
     if (clientMetrics != null) {
       clientMetrics.requestReset(metric);
     }
@@ -272,7 +272,7 @@ abstract class Http2ClientStream extends VertxHttp2Stream {
   }
 
   @Override
-  void onClose() {
+  public void onClose() {
     if (clientMetrics != null) {
       if (!requestEnded || !responseEnded) {
         clientMetrics.requestReset(metric);

@@ -430,7 +430,7 @@ public final class HttpUtils {
     return converted;
   }
 
-  static Http2Settings decodeSettings(String base64Settings) {
+  public static Http2Settings decodeSettings(String base64Settings) {
     try {
       Http2Settings settings = new Http2Settings();
       Buffer buffer = Buffer.buffer(Base64.getUrlDecoder().decode(base64Settings));
