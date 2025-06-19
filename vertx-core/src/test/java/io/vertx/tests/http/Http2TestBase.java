@@ -56,8 +56,8 @@ public class Http2TestBase extends HttpTestBase {
   @Override
   public void setUp() throws Exception {
     eventLoopGroups.clear();
-    serverOptions =  createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = createHttp2ClientOptions();
+    serverOptions =  createBaseServerOptions();
+    clientOptions = createBaseClientOptions();
     super.setUp();
   }
 
@@ -76,11 +76,11 @@ public class Http2TestBase extends HttpTestBase {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
+    return createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
+    return createHttp2ClientOptions();
   }
 }
