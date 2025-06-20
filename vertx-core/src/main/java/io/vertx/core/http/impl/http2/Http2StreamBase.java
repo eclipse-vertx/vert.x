@@ -43,6 +43,12 @@ public abstract class Http2StreamBase {
   protected final ContextInternal context;
   protected int id;
 
+  // Keep track of state
+  private boolean headersReceived;
+  private boolean trailersReceived;
+  private boolean headersSent;
+  protected boolean trailersSent;
+
   // Client context
   private boolean writable;
   private StreamPriority priority;
@@ -99,7 +105,23 @@ public abstract class Http2StreamBase {
     };
   }
 
-  public ContextInternal context() {
+  public final boolean isHeadersReceived() {
+    return headersReceived;
+  }
+
+  public final boolean isTrailersReceived() {
+    return trailersReceived;
+  }
+
+  public final boolean isHeadersSent() {
+    return headersSent;
+  }
+
+  public final boolean isTrailersSent() {
+    return trailersSent;
+  }
+
+  public final ContextInternal context() {
     return context;
   }
 
@@ -126,7 +148,9 @@ public abstract class Http2StreamBase {
     context.emit(code, this::handleReset);
   }
 
-  public abstract void onHeaders(Http2HeadersMultiMap headers, StreamPriority streamPriority);
+  public void onHeaders(Http2HeadersMultiMap headers) {
+    headersReceived = true;
+  }
 
   public void onException(Throwable cause) {
     failure = cause;
@@ -159,11 +183,12 @@ public abstract class Http2StreamBase {
     }
   }
 
-  public void onEnd() {
-    onEnd(EMPTY);
+  public void onTrailers() {
+    onTrailers(EMPTY);
   }
 
-  void onEnd(MultiMap trailers) {
+  void onTrailers(MultiMap trailers) {
+    trailersReceived = true;
     conn.flushBytesRead();
     inboundQueue.write(trailers);
   }
@@ -254,6 +279,7 @@ public abstract class Http2StreamBase {
 
   // MAYBE NOT NECESSARY
   protected void endWritten() {
+    trailersSent = true;
   }
 
   public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {

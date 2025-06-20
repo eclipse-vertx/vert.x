@@ -16,10 +16,8 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -51,8 +49,6 @@ public class Http2ServerStream extends Http2StreamBase {
   private Object metric;
   private Object trace;
   private boolean halfClosedRemote;
-  private boolean requestEnded;
-  private boolean responseEnded;
   private Http2ServerStreamHandler handler;
   private final Handler<HttpServerRequest> requestHandler;
   private final int promisedId;
@@ -169,7 +165,7 @@ public class Http2ServerStream extends Http2StreamBase {
     }
   }
 
-  public void onHeaders(Http2HeadersMultiMap headers, StreamPriority streamPriority) {
+  public void onHeaders(Http2HeadersMultiMap headers) {
 
     this.method = headers.method();
     this.isConnect = method == HttpMethod.CONNECT;
@@ -179,9 +175,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.headers = headers;
     this.handler = new Http2ServerRequest(this, context, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes, serverOrigin, headers);
 
-    if (streamPriority != null) {
-      priority(streamPriority);
-    }
     registerMetrics();
 
     CharSequence value = headers.get(HttpHeaderNames.EXPECT);
@@ -202,14 +195,13 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   @Override
-  void onEnd(MultiMap trailers) {
-    requestEnded = true;
+  void onTrailers(MultiMap trailers) {
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.requestEnd(metric, (HttpRequest) handler, bytesRead());
       }
     }
-    super.onEnd(trailers);
+    super.onTrailers(trailers);
   }
 
   @Override
@@ -224,7 +216,7 @@ public class Http2ServerStream extends Http2StreamBase {
 
   @Override
   protected void writeReset0(long code, Promise<Void> promise) {
-    if (!requestEnded || !responseEnded) {
+    if (!isTrailersReceived() || !isTrailersSent()) {
       super.writeReset0(code, promise);
     } else {
       promise.fail("Request ended");
@@ -237,7 +229,7 @@ public class Http2ServerStream extends Http2StreamBase {
 
   @Override
   protected void endWritten() {
-    responseEnded = true;
+    super.endWritten();
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.responseEnd(metric, handler.response(), bytesWritten());
@@ -255,7 +247,7 @@ public class Http2ServerStream extends Http2StreamBase {
   public void onClose() {
     if (METRICS_ENABLED) {
       // Null in case of push response : handle this case
-      if (serverMetrics != null && (!requestEnded || !responseEnded)) {
+      if (serverMetrics != null && (!isTrailersReceived() || !isTrailersSent())) {
         serverMetrics.requestReset(metric);
       }
     }
@@ -265,7 +257,7 @@ public class Http2ServerStream extends Http2StreamBase {
       if (tracer != null && trace != null) {
         Throwable failure;
         synchronized (conn) {
-          if (!halfClosedRemote && (!requestEnded || !responseEnded)) {
+          if (!halfClosedRemote && (!isTrailersReceived() || !isTrailersSent())) {
             failure = HttpUtils.STREAM_CLOSED_EXCEPTION;
           } else {
             failure = null;
@@ -295,7 +287,7 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   private void routedInternal(String route) {
-    if (serverMetrics != null && !responseEnded) {
+    if (serverMetrics != null && !isTrailersSent()) {
       serverMetrics.requestRouted(metric, route);
     }
   }

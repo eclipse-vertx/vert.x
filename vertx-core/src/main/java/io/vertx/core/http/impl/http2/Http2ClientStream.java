@@ -50,8 +50,6 @@ public class Http2ClientStream extends Http2StreamBase {
   private HttpResponseHead response;
   private Object metric;
   private Object trace;
-  private boolean requestEnded;
-  private boolean responseEnded;
 
   Http2ClientStreamHandler impl;
 
@@ -83,7 +81,7 @@ public class Http2ClientStream extends Http2StreamBase {
     init(streamId, writable);
     this.metric = metric;
     this.trace = trace;
-    this.requestEnded = true;
+    this.trailersSent = true;
   }
 
   private Future<Void> createStream(HttpRequestHead head, Http2HeadersMultiMap headers) {
@@ -194,7 +192,7 @@ public class Http2ClientStream extends Http2StreamBase {
 
   @Override
   protected void writeReset0(long code, Promise<Void> promise) {
-    if (!requestEnded || !responseEnded) {
+    if (!isTrailersSent() || !isTrailersReceived()) {
       super.writeReset0(code, promise);
     } else {
       promise.fail("Request ended");
@@ -202,7 +200,7 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   protected void endWritten() {
-    requestEnded = true;
+    super.endWritten();
     if (clientMetrics != null) {
       clientMetrics.requestEnd(metric, bytesWritten());
     }
@@ -228,12 +226,11 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   @Override
-  public void onEnd(MultiMap trailers) {
+  public void onTrailers(MultiMap trailers) {
     if (clientMetrics != null) {
       clientMetrics.responseEnd(metric, bytesRead());
     }
-    responseEnded = true;
-    super.onEnd(trailers);
+    super.onTrailers(trailers);
   }
 
   @Override
@@ -244,10 +241,8 @@ public class Http2ClientStream extends Http2StreamBase {
     super.onReset(code);
   }
 
-  public void onHeaders(Http2HeadersMultiMap headers, StreamPriority streamPriority) {
-    if (streamPriority != null) {
-      priority(streamPriority);
-    }
+  public void onHeaders(Http2HeadersMultiMap headers) {
+    super.onHeaders(headers);
     if (response == null) {
       int status = headers.status();
       String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
@@ -281,21 +276,21 @@ public class Http2ClientStream extends Http2StreamBase {
   @Override
   public void onClose() {
     if (clientMetrics != null) {
-      if (!requestEnded || !responseEnded) {
+      if (!isTrailersSent() || !isTrailersReceived()) {
         clientMetrics.requestReset(metric);
       }
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null && trace != null) {
       VertxException err;
-      if (responseEnded && requestEnded) {
+      if (isTrailersReceived() && isTrailersSent()) {
         err = null;
       } else {
         err = HttpUtils.STREAM_CLOSED_EXCEPTION;
       }
       tracer.receiveResponse(context, response, trace, err, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
-    if (!responseEnded) {
+    if (!isTrailersReceived()) {
       // NOT SURE OF THAT
       onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
     }

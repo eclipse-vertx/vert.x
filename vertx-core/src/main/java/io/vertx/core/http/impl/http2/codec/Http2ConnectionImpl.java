@@ -320,7 +320,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
       Buffer buff = BufferInternal.buffer(data);
       stream.onData(buff);
       if (endOfStream) {
-        stream.onEnd();
+        stream.onTrailers();
       }
     }
     return padding;
