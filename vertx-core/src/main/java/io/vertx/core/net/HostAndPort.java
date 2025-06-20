@@ -75,6 +75,8 @@ public interface HostAndPort {
    */
   int port();
 
+  String toString(boolean ssl);
+
   default JsonObject toJson() {
     JsonObject json = new JsonObject().put("host", host());
     int port = port();

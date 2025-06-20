@@ -12,10 +12,16 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http2.Http2FrameCodec;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2MultiplexHandler;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -24,6 +30,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.codec.Http2ClientConnectionImpl;
+import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientConnection;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexConnection;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexConnectionFactory;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -114,10 +125,10 @@ public class HttpChannelConnector {
     netClient.connectInternal(connectOptions, promise, context);
   }
 
-  public Future<HttpClientConnectionInternal> wrap(ContextInternal context, NetSocket so_) {
+  public Future<HttpClientConnection> wrap(ContextInternal context, NetSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
-    PromiseInternal<HttpClientConnectionInternal> promise = context.promise();
+    PromiseInternal<HttpClientConnection> promise = context.promise();
 
     // Remove all un-necessary handlers
     ChannelPipeline pipeline = so.channelHandlerContext().pipeline();
@@ -137,7 +148,11 @@ public class HttpChannelConnector {
       if (useAlpn) {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
-          http2Connected(context, metric, ch, promise);
+          if (options.getHttp2MultiplexImplementation()) {
+            http2MultiplexConnected(context, metric, ch, promise);
+          } else {
+            http2Connected(context, metric, ch, promise);
+          }
         } else {
           applyHttp1xConnectionOptions(ch.pipeline());
           HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
@@ -165,12 +180,12 @@ public class HttpChannelConnector {
     return promise.future();
   }
 
-  public Future<HttpClientConnectionInternal> httpConnect(ContextInternal context) {
+  public Future<HttpClientConnection> httpConnect(ContextInternal context) {
     Promise<NetSocket> promise = context.promise();
     Future<NetSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens
     // before the promise is completed by the connect operation
-    Future<HttpClientConnectionInternal> ret = future.compose(so -> wrap(context, so));
+    Future<HttpClientConnection> ret = future.compose(so -> wrap(context, so));
     connect(context, promise);
     return ret;
   }
@@ -212,7 +227,7 @@ public class HttpChannelConnector {
                                ContextInternal context,
                                Object socketMetric,
                                Channel ch,
-                               Promise<HttpClientConnectionInternal> future) {
+                               Promise<HttpClientConnection> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
@@ -236,11 +251,11 @@ public class HttpChannelConnector {
               HttpClientStream stream = ar.result();
               stream.headHandler(resp -> {
                 Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) stream.connection();
-                HttpClientConnectionInternal unwrap = connection.unwrap();
+                HttpClientConnection unwrap = connection.unwrap();
                 future.tryComplete(unwrap);
               });
               stream.exceptionHandler(future::tryFail);
-              HttpRequestHead request = new HttpRequestHead(OPTIONS, "/", HttpHeaders.headers(), server.toString(),
+              HttpRequestHead request = new HttpRequestHead(OPTIONS, "/", HttpHeaders.headers(), HostAndPort.authority(server.host(), server.port()),
                 "http://" + server + "/", null);
               stream.writeHead(request, false, null, true, null, false);
             } else {
@@ -257,13 +272,35 @@ public class HttpChannelConnector {
     ch.pipeline().addLast("handler", clientHandler);
   }
 
+  private void http2MultiplexConnected(ContextInternal context,
+                              Object metric,
+                              Channel ch,
+                              PromiseInternal<HttpClientConnection> promise) {
+
+    Http2MultiplexConnectionFactory connectionFactory = new Http2MultiplexConnectionFactory() {
+      @Override
+      public Http2MultiplexConnection createConnection(io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler, ChannelHandlerContext chctx) {
+        return new Http2MultiplexClientConnection(handler, chctx, context, authority, promise);
+      }
+    };
+
+    Http2Settings settings = HttpUtils.fromVertxSettings(client.options().getInitialSettings());
+    io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler = new io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler(ch, context, connectionFactory, settings);
+    Http2FrameCodec http2FrameCodec = Http2FrameCodecBuilder.forClient()
+      .initialSettings(settings)
+      .build();
+    ch.pipeline().addLast(http2FrameCodec);
+    ch.pipeline().addLast(new Http2MultiplexHandler(handler));
+    ch.pipeline().addLast(handler);
+  }
+
   private void http2Connected(ContextInternal context,
                               Object metric,
                               Channel ch,
-                              PromiseInternal<HttpClientConnectionInternal> promise) {
-    VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
+                              PromiseInternal<HttpClientConnection> promise) {
+    VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
@@ -273,7 +310,7 @@ public class HttpChannelConnector {
     clientHandler.connectFuture().addListener(promise);
   }
 
-  private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnectionInternal> future) {
+  private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnection> future) {
     if (ch != null) {
       try {
         ch.close();

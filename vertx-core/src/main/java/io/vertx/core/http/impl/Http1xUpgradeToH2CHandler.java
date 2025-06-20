@@ -20,6 +20,8 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.vertx.core.http.impl.http2.codec.Http2ServerConnectionImpl;
+import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
@@ -33,7 +35,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
   private final HttpServerConnectionInitializer initializer;
   private final SslChannelProvider sslChannelProvider;
   private final SslContextManager sslContextManager;
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
+  private VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler;
   private final boolean isCompressionSupported;
   private final boolean isDecompressionSupported;
 

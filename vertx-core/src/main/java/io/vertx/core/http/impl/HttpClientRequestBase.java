@@ -41,7 +41,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
-  private Throwable reset;
+  protected Throwable reset;
   private HttpConnection connection;
 
   HttpClientRequestBase(HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
@@ -58,7 +58,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     stream.pushHandler(this::handlePush);
     stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.chunkHandler(response::handleChunk);
+      stream.handler(response::handleChunk);
+      stream.trailersHandler(response::handleTrailers);
       stream.endHandler(response::handleEnd);
       stream.priorityHandler(response::handlePriorityChange);
       stream.unknownFrameHandler(response::handleUnknownFrame);
@@ -66,14 +67,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     });
   }
 
-  protected String authority() {
-    if (authority == null) {
-      return null;
-    } else if ((authority.port() == 80 && !ssl) || (authority.port() == 443 && ssl) || authority.port() < 0) {
-      return authority.host();
-    } else {
-      return authority.host() + ':' + authority.port();
-    }
+  protected HostAndPort authority() {
+    return authority;
   }
 
   @Override
@@ -241,7 +236,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       }
       reset = cause;
     }
-    return stream.reset(cause);
+    Future<Void> ret = stream.reset(cause);
+    if (ret == null) {
+      // Not yet sent
+      handleException(cause);
+      return context.succeededFuture();
+    } else {
+      return ret;
+    }
   }
 
   @Override

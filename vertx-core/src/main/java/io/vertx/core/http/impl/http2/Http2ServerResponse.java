@@ -9,16 +9,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -26,11 +23,16 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.CookieJar;
+import io.vertx.core.http.impl.HttpNetSocket;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.ServerCookie;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
@@ -45,13 +47,11 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
-  private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
+  private final ContextInternal context;
   private final boolean push;
-  private final Http2Headers headers = new DefaultHttp2Headers();
-  private Http2HeadersAdaptor headersMap;
-  private Http2Headers trailers;
-  private Http2HeadersAdaptor trailedMap;
+  private final Http2HeadersMultiMap headersMap;
+  private Http2HeadersMultiMap trailedMap;
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
@@ -67,16 +67,17 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> endHandler;
   private Future<NetSocket> netSocket;
 
-  public Http2ServerResponse(Http2ServerConnection conn,
-                             Http2ServerStream stream,
+  public Http2ServerResponse(Http2ServerStream stream,
+                             ContextInternal context,
                              boolean push) {
     this.stream = stream;
-    this.ctx = conn.handlerContext;
-    this.conn = conn;
+    this.context = context;
+    this.conn = stream.connection();
     this.push = push;
+    this.headersMap = conn.newHeaders();
   }
 
-  boolean isPush() {
+  public boolean isPush() {
     return push;
   }
 
@@ -93,7 +94,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       handler = exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(cause);
+      context.dispatch(cause, handler);
     }
   }
 
@@ -108,10 +109,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       closeHandler = this.closeHandler;
     }
     if (endHandler != null) {
-      stream.context.emit(null, endHandler);
+      context.dispatch(null, endHandler);
     }
     if (closeHandler != null) {
-      stream.context.emit(null, closeHandler);
+      context.dispatch(null, closeHandler);
     }
   }
 
@@ -193,12 +194,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public MultiMap headers() {
-    synchronized (conn) {
-      if (headersMap == null) {
-        headersMap = new Http2HeadersAdaptor(headers);
-      }
-      return headersMap;
-    }
+    return headersMap;
   }
 
   @Override
@@ -239,12 +235,12 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public MultiMap trailers() {
-    synchronized (conn) {
-      if (trailedMap == null) {
-        trailedMap = new Http2HeadersAdaptor(trailers = new DefaultHttp2Headers());
-      }
-      return trailedMap;
+    Http2HeadersMultiMap ret = trailedMap;
+    if (ret == null) {
+      ret = conn.newHeaders();
+      trailedMap = ret;
     }
+    return ret;
   }
 
   @Override
@@ -307,10 +303,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeContinue() {
-    Promise<Void> promise = stream.context.promise();
+    Promise<Void> promise = context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
+      stream.writeHeaders(conn.newHeaders().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
     }
     return promise.future();
   }
@@ -325,8 +321,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
-    PromiseInternal<Void> promise = stream.context.promise();
-    DefaultHttp2Headers http2Headers = new DefaultHttp2Headers();
+    PromiseInternal<Void> promise = context.promise();
+    Http2HeadersMultiMap http2Headers = conn.newHeaders();
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
     }
@@ -374,14 +370,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return write(null, true);
   }
 
-  Future<NetSocket> netSocket() {
+  Future<NetSocket> netSocket(ReadStream<Buffer> inbound) {
     synchronized (conn) {
       if (netSocket == null) {
         status = HttpResponseStatus.OK;
         if (checkSendHeaders(false) == null) {
-          netSocket = stream.context.failedFuture("Response for CONNECT already sent");
+          netSocket = context.failedFuture("Response for CONNECT already sent");
         } else {
-          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream.request, this);
+          HttpNetSocket ns = HttpNetSocket.netSocket((ConnectionBase) conn, context, inbound, this);
           netSocket = Future.succeededFuture(ns);
         }
       }
@@ -407,16 +403,16 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (end && !headWritten && needsContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
-      boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody) != null;
+      boolean sent = checkSendHeaders(end && !hasBody && trailedMap == null, !hasBody) != null;
       if (hasBody || (!sent && end)) {
-        Promise<Void> p = stream.context.promise();
+        Promise<Void> p = context.promise();
         fut = p.future();
-        stream.writeData(chunk, end && trailers == null, p);
+        stream.writeData(chunk, end && trailedMap == null, p);
       } else {
-        fut = stream.context.succeededFuture();
+        fut = context.succeededFuture();
       }
-      if (end && trailers != null) {
-        stream.writeHeaders(trailers, false, true, true, null);
+      if (end && trailedMap != null) {
+        stream.writeHeaders(trailedMap, false, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -433,7 +429,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private boolean needsContentLengthHeader() {
-    return stream.method != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headers.contains(HttpHeaderNames.CONTENT_LENGTH);
+    return stream.method() != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headersMap.contains(HttpHeaderNames.CONTENT_LENGTH);
   }
 
   private Future<Void> checkSendHeaders(boolean end) {
@@ -450,8 +446,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      Promise<Void> promise = stream.context.promise();
-      stream.writeHeaders(headers, true, end, checkFlush, promise);
+      Promise<Void> promise = context.promise();
+      stream.writeHeaders(headersMap, true, end, checkFlush, promise);
       return promise.future();
     } else {
       return null;
@@ -459,36 +455,34 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void prepareHeaders() {
-    headers.status(status.codeAsText()); // Could be optimized for usual case ?
+    headersMap.status(status.code());
     // Sanitize
-    if (stream.method == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+    if (stream.method() == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
+      headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
     } else if (status == HttpResponseStatus.RESET_CONTENT) {
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
-      headers.set(HttpHeaders.CONTENT_LENGTH, "0");
+      headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
+      headersMap.set(HttpHeaders.CONTENT_LENGTH, "0");
     } else if (status.codeClass() == HttpStatusClass.INFORMATIONAL || status == HttpResponseStatus.NO_CONTENT) {
-      headers.remove(HttpHeaders.TRANSFER_ENCODING);
-      headers.remove(HttpHeaders.CONTENT_LENGTH);
+      headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
+      headersMap.remove(HttpHeaders.CONTENT_LENGTH);
     }
   }
 
   private void setCookies() {
     for (ServerCookie cookie: cookies) {
       if (cookie.isChanged()) {
-        headers.add(SET_COOKIE, cookie.encode());
+        headersMap.add(SET_COOKIE, cookie.encode());
       }
     }
   }
 
   @Override
   public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) {
-    Promise<Void> promise = stream.context.promise();
     synchronized (conn) {
       checkValid();
       checkSendHeaders(false);
-      stream.writeFrame(type, flags, ((BufferInternal)payload).getByteBuf(), promise);
     }
-    return promise.future();
+    return stream.writeFrame(type, flags, ((BufferInternal)payload).getByteBuf());
   }
 
   private void checkValid() {
@@ -505,7 +499,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         return;
       }
     }
-    handler.handle(null);
+    context.dispatch(null, handler);
   }
 
   @Override
@@ -539,24 +533,24 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
     if (offset < 0) {
-      return stream.context.failedFuture("offset : " + offset + " (expected: >= 0)");
+      return context.failedFuture("offset : " + offset + " (expected: >= 0)");
     }
     if (length < 0) {
-      return stream.context.failedFuture("length : " + length + " (expected: >= 0)");
+      return context.failedFuture("length : " + length + " (expected: >= 0)");
     }
     synchronized (conn) {
       checkValid();
     }
     return HttpUtils
-      .resolveFile(stream.context, filename, offset, length)
+      .resolveFile(context, filename, offset, length)
       .compose(file -> {
         long fileLength = file.getReadLength();
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
-        if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+        if (headersMap.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
           putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(contentLength));
         }
-        if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+        if (headersMap.get(HttpHeaderNames.CONTENT_TYPE) == null) {
           String contentType = MimeMapping.mimeTypeForFilename(filename);
           if (contentType != null) {
             putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
@@ -627,14 +621,103 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new IllegalStateException("A push response cannot promise another push");
     }
     if (authority == null) {
-      authority = stream.authority;
+      authority = stream.authority();
     }
     synchronized (conn) {
       checkValid();
     }
-    Promise<HttpServerResponse> promise = stream.context.promise();
-    conn.sendPush(stream.id(), authority, method, headers, path, stream.priority(), promise);
+    Promise<HttpServerResponse> promise = context.promise();
+
+    Promise<Http2ServerStream> blah = context.promise();
+
+    conn.sendPush(stream.id(), authority, method, headers, path, stream.priority(), blah);
+
+    blah.future().onComplete((res, err) -> {
+      if (res != null) {
+        Push push = new Push(res, context, promise);
+        res.handler(push);
+        push.stream.priority(stream.priority());
+        push.complete();
+      } else {
+        promise.fail(err);
+      }
+    });
+
     return promise.future();
+  }
+
+  private static class Push implements Http2ServerStreamHandler {
+
+    protected final ContextInternal context;
+    protected final Http2ServerStream stream;
+    protected final Http2ServerResponse response;
+    private final Promise<HttpServerResponse> promise;
+
+    public Push(Http2ServerStream stream, ContextInternal context, Promise<HttpServerResponse> promise) {
+      this.context = context;
+      this.stream = stream;
+      this.response = new Http2ServerResponse(stream, context, true);
+      this.promise = promise;
+    }
+
+    @Override
+    public Http2ServerResponse response() {
+      return response;
+    }
+
+    @Override
+    public  void dispatch(Handler<HttpServerRequest> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleReset(long errorCode) {
+      if (!promise.tryFail(new StreamResetException(errorCode))) {
+        response.handleReset(errorCode);
+      }
+    }
+
+    @Override
+    public  void handleException(Throwable cause) {
+      response.handleException(cause);
+    }
+
+    @Override
+    public  void handleClose() {
+      if (!promise.tryFail("Push reset by client")) {
+        response.handleClose();
+      }
+    }
+
+    @Override
+    public void handleDrained() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleData(Buffer data) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleEnd(MultiMap trailers) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handleCustomFrame(HttpFrame frame) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void handlePriorityChange(StreamPriority streamPriority) {
+      throw new UnsupportedOperationException();
+    }
+
+    void complete() {
+      stream.registerMetrics();
+      promise.complete(response);
+    }
   }
 
   @Override
@@ -647,7 +730,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       // avoid double parsing
       if (cookies == null) {
-        CharSequence cookieHeader = stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null;
+        CharSequence cookieHeader = stream.headers() != null ? stream.headers().get(io.vertx.core.http.HttpHeaders.COOKIE) : null;
         if (cookieHeader == null) {
           cookies = new CookieJar();
         } else {

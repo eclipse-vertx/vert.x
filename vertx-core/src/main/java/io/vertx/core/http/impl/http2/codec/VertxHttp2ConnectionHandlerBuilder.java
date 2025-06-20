@@ -9,13 +9,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
+import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.function.Function;
 
@@ -24,7 +25,7 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler<C>, VertxHttp2ConnectionHandlerBuilder<C>> {
+public class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionImpl> extends AbstractHttp2ConnectionHandlerBuilder<VertxHttp2ConnectionHandler<C>, VertxHttp2ConnectionHandlerBuilder<C>> {
 
   private boolean useDecompression;
   private CompressionOptions[] compressionOptions;
@@ -32,48 +33,48 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private boolean logEnabled;
   private boolean server;
 
-  protected VertxHttp2ConnectionHandlerBuilder<C> server(boolean isServer) {
+  public VertxHttp2ConnectionHandlerBuilder<C> server(boolean isServer) {
     this.server = isServer;
     return this;
   }
 
-  VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
+  public VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
     HttpUtils.fromVertxInitialSettings(server, settings, initialSettings());
     return this;
   }
 
-  VertxHttp2ConnectionHandlerBuilder<C> useCompression(CompressionOptions[] compressionOptions) {
+  public VertxHttp2ConnectionHandlerBuilder<C> useCompression(CompressionOptions[] compressionOptions) {
     this.compressionOptions = compressionOptions;
     return this;
   }
 
   @Override
-  protected VertxHttp2ConnectionHandlerBuilder<C> decoderEnforceMaxRstFramesPerWindow(int maxRstFramesPerWindow, int secondsPerWindow) {
+  public VertxHttp2ConnectionHandlerBuilder<C> decoderEnforceMaxRstFramesPerWindow(int maxRstFramesPerWindow, int secondsPerWindow) {
     return super.decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow);
   }
 
   @Override
-  protected VertxHttp2ConnectionHandlerBuilder<C> gracefulShutdownTimeoutMillis(long gracefulShutdownTimeoutMillis) {
+  public VertxHttp2ConnectionHandlerBuilder<C> gracefulShutdownTimeoutMillis(long gracefulShutdownTimeoutMillis) {
     return super.gracefulShutdownTimeoutMillis(gracefulShutdownTimeoutMillis);
   }
 
-  VertxHttp2ConnectionHandlerBuilder<C> useDecompression(boolean useDecompression) {
+  public VertxHttp2ConnectionHandlerBuilder<C> useDecompression(boolean useDecompression) {
     this.useDecompression = useDecompression;
     return this;
   }
 
-  VertxHttp2ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
+  public VertxHttp2ConnectionHandlerBuilder<C> connectionFactory(Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory) {
     this.connectionFactory = connectionFactory;
     return this;
   }
 
-  VertxHttp2ConnectionHandlerBuilder<C> logEnabled(boolean logEnabled) {
+  public VertxHttp2ConnectionHandlerBuilder<C> logEnabled(boolean logEnabled) {
     this.logEnabled = logEnabled;
     return this;
   }
 
   @Override
-  protected VertxHttp2ConnectionHandler<C> build() {
+  public VertxHttp2ConnectionHandler<C> build() {
     if (logEnabled) {
       frameLogger(new Http2FrameLogger(LogLevel.DEBUG));
     }

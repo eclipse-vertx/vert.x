@@ -12,6 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
 
@@ -20,16 +21,16 @@ import io.vertx.core.spi.observability.HttpRequest;
  */
 public class HttpRequestHead implements HttpRequest {
 
-  int id; // For internal testing correlation
-  SocketAddress remoteAddress;
+  public int id; // For internal testing correlation
+  public SocketAddress remoteAddress;
   public final HttpMethod method;
   public final String uri;
   public final MultiMap headers;
-  public final String authority;
+  public final HostAndPort authority;
   public final String absoluteURI;
   public final String traceOperation;
 
-  public HttpRequestHead(HttpMethod method, String uri, MultiMap headers, String authority, String absoluteURI, String traceOperation) {
+  public HttpRequestHead(HttpMethod method, String uri, MultiMap headers, HostAndPort authority, String absoluteURI, String traceOperation) {
     if (uri == null || uri.isEmpty()) {
       throw new IllegalArgumentException("Invalid request URI");
     }

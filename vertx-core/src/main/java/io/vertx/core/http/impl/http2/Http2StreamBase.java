@@ -9,22 +9,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.HttpFrameImpl;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
@@ -34,16 +32,22 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
+public abstract class Http2StreamBase {
 
-  private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
+  private static final MultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
-  protected final C conn;
+  private final Http2Connection conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-  protected Http2Stream stream;
+  public int id;
+
+  // Keep track of state
+  private boolean headersReceived;
+  private boolean trailersReceived;
+  private boolean headersSent;
+  protected boolean trailersSent;
 
   // Client context
   private boolean writable;
@@ -54,10 +58,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private Throwable failure;
   private long reset = -1L;
 
-  VertxHttp2Stream(C conn, ContextInternal context) {
+  Http2StreamBase(Http2Connection conn, ContextInternal context) {
     this.conn = conn;
-    this.vertx = conn.vertx();
+    this.vertx = context.owner();
     this.context = context;
+    this.id = -1;
     this.inboundQueue = new InboundMessageQueue<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
@@ -66,13 +71,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          conn.context().emit(null, v -> {
-            if (stream.state().remoteSideOpen()) {
-              // Handle the HTTP upgrade case
-              // buffers are received by HTTP/1 and not accounted by HTTP/2
-              conn.consumeCredits(stream, len);
-            }
-          });
+          conn.context().execute(len, v -> conn.consumeCredits(id, v));
           handleData(data);
         }
       }
@@ -101,37 +100,65 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       }
       @Override
       protected void handleDrained() {
-        context.emit(VertxHttp2Stream.this, VertxHttp2Stream::handleWriteQueueDrained);
+        context.execute(Http2StreamBase.this, Http2StreamBase::handleWriteQueueDrained);
       }
     };
   }
 
-  void init(Http2Stream stream) {
-    synchronized (this) {
-      this.stream = stream;
-    }
-    writable = this.conn.handler.encoder().flowController().isWritable(stream);
-    stream.setProperty(conn.streamKey, this);
+  public final boolean isHeadersReceived() {
+    return headersReceived;
   }
 
-  void onClose() {
+  public final boolean isTrailersReceived() {
+    return trailersReceived;
+  }
+
+  public final boolean isHeadersSent() {
+    return headersSent;
+  }
+
+  public final boolean isTrailersSent() {
+    return trailersSent;
+  }
+
+  public final ContextInternal context() {
+    return context;
+  }
+
+  // Should use generic for Http2StreamHandler
+  public abstract Http2StreamHandler handler();
+
+  public abstract Http2StreamBase handler(Http2StreamHandler handler);
+
+  public void init(int streamId, boolean writable) {
+    synchronized (this) {
+      this.id = streamId;
+      this.writable = writable;
+    }
+  }
+
+  public void onClose() {
     conn.flushBytesWritten();
     context.execute(ex -> handleClose());
     outboundQueue.close();
   }
 
-  void onException(Throwable cause) {
-    failure = cause;
-    context.emit(cause, this::handleException);
-  }
-
-  void onReset(long code) {
+  public void onReset(long code) {
     reset = code;
-    context.emit(code, this::handleReset);
+    context.execute(code, this::handleReset);
   }
 
-  void onPriorityChange(StreamPriority newPriority) {
-    context.emit(newPriority, priority -> {
+  public void onHeaders(Http2HeadersMultiMap headers) {
+    headersReceived = true;
+  }
+
+  public void onException(Throwable cause) {
+    failure = cause;
+    context.execute(cause, this::handleException);
+  }
+
+  public void onPriorityChange(StreamPriority newPriority) {
+    context.execute(newPriority, priority -> {
       if (!this.priority.equals(priority)) {
         this.priority = priority;
         handlePriorityChange(priority);
@@ -139,44 +166,42 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     });
   }
 
-  void onCustomFrame(HttpFrame frame) {
-    context.emit(frame, this::handleCustomFrame);
+  public void onCustomFrame(int type, int flags, Buffer payload) {
+    context.execute(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
-  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
-  }
-
-  void onData(Buffer data) {
+  public void onData(Buffer data) {
     bytesRead += data.length();
     conn.reportBytesRead(data.length());
     inboundQueue.write(data);
   }
 
-  void onWritabilityChanged() {
+  public void onWritabilityChanged() {
     writable = !writable;
     if (writable) {
       outboundQueue.tryDrain();
     }
   }
 
-  void onEnd() {
-    onEnd(EMPTY);
+  public void onTrailers() {
+    onTrailers(EMPTY);
   }
 
-  void onEnd(MultiMap trailers) {
+  public void onTrailers(MultiMap trailers) {
+    trailersReceived = true;
     conn.flushBytesRead();
     inboundQueue.write(trailers);
   }
 
   public int id() {
-    return stream.id();
+    return id;
   }
 
-  long bytesWritten() {
+  public long bytesWritten() {
     return bytesWritten;
   }
 
-  long bytesRead() {
+  public long bytesRead() {
     return bytesRead;
   }
 
@@ -204,39 +229,26 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteFrame(type, flags, payload, promise);
+      conn.writeFrame(id, type, flags, payload, promise);
     } else {
-      eventLoop.execute(() -> doWriteFrame(type, flags, payload, promise));
+      eventLoop.execute(() -> conn.writeFrame(id, type, flags, payload, promise));
     }
     return promise.future();
   }
 
-  public final void writeFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    EventLoop eventLoop = conn.context().nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      doWriteFrame(type, flags, payload, promise);
-    } else {
-      eventLoop.execute(() -> doWriteFrame(type, flags, payload, promise));
-    }
-  }
-
-  private void doWriteFrame(int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
-  }
-
-  final void writeHeaders(Http2Headers headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public final void writeHeaders(Http2HeadersMultiMap headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first) {
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        doWriteHeaders(headers, end, checkFlush, promise);
+        writeHeaders0(headers, end, checkFlush, promise);
       } else {
-        eventLoop.execute(() -> doWriteHeaders(headers, end, checkFlush, promise));
+        eventLoop.execute(() -> writeHeaders0(headers, end, checkFlush, promise));
       }
     } else {
       outboundQueue.write(new MessageWrite() {
         @Override
         public void write() {
-          doWriteHeaders(headers, end, checkFlush, promise);
+          writeHeaders0(headers, end, checkFlush, promise);
         }
         @Override
         public void cancel(Throwable cause) {
@@ -246,7 +258,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  void doWriteHeaders(Http2Headers headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (reset != -1L) {
       if (promise != null) {
         promise.fail("Stream reset");
@@ -262,21 +274,19 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    conn.writeHeaders(id, headers, priority, end, checkFlush, promise);
   }
 
+  // MAYBE NOT NECESSARY
   protected void endWritten() {
+    trailersSent = true;
   }
 
-  private void writePriorityFrame(StreamPriority priority) {
-    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
-  }
-
-  final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
+  public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
     outboundQueue.write(new MessageWrite() {
       @Override
       public void write() {
-        doWriteData(chunk, end, promise);
+        writeData0(chunk, end, promise);
       }
       @Override
       public void cancel(Throwable cause) {
@@ -285,7 +295,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     });
   }
 
-  void doWriteData(ByteBuf buf, boolean end, Promise<Void> promise) {
+  void writeData0(ByteBuf buf, boolean end, Promise<Void> promise) {
     if (reset != -1L) {
       promise.fail("Stream reset");
       return;
@@ -306,24 +316,24 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     if (end) {
       endWritten();
     }
-    conn.handler.writeData(stream, chunk, end, (FutureListener<Void>) promise);
+    conn.writeData(id, chunk, end, promise);
   }
 
-  final Future<Void> writeReset(long code) {
+  public final Future<Void> writeReset(long code) {
     if (code < 0L) {
       throw new IllegalArgumentException("Invalid reset code value");
     }
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = conn.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
-      doWriteReset(code, promise);
+      writeReset0(code, promise);
     } else {
-      eventLoop.execute(() -> doWriteReset(code, promise));
+      eventLoop.execute(() -> writeReset0(code, promise));
     }
     return promise.future();
   }
 
-  protected void doWriteReset(long code, Promise<Void> promise) {
+  protected void writeReset0(long code, Promise<Void> promise) {
     if (reset != -1L) {
       promise.fail("Stream already reset");
       return;
@@ -331,10 +341,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     reset = code;
     int streamId;
     synchronized (this) {
-      streamId = stream != null ? stream.id() : -1;
+      streamId = this.id;
     }
     if (streamId != -1) {
-      conn.handler.writeReset(streamId, code, null);
+      conn.writeReset(id, code, promise);
     } else {
       // Reset happening before stream allocation
       handleReset(code);
@@ -342,44 +352,76 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     promise.complete();
   }
 
-  void handleWriteQueueDrained() {
-  }
-
-  void handleData(Buffer buf) {
-  }
-
-  void handleCustomFrame(HttpFrame frame) {
-  }
-
-  void handleEnd(MultiMap trailers) {
-  }
-
-  void handleReset(long errorCode) {
-  }
-
-  void handleException(Throwable cause) {
-  }
-
-  void handleClose() {
-  }
-
-  synchronized void priority(StreamPriority streamPriority) {
-    this.priority = streamPriority;
-  }
-
-  synchronized StreamPriority priority() {
-    return priority;
-  }
-
-  synchronized void updatePriority(StreamPriority priority) {
-    if (!this.priority.equals(priority)) {
-      this.priority = priority;
-      if (stream != null) {
-        writePriorityFrame(priority);
-      }
+  final void handleWriteQueueDrained() {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleDrained();
     }
   }
 
-  void handlePriorityChange(StreamPriority newPriority) {
+  final void handleData(Buffer buf) {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleData(buf);
+    }
+  }
+
+  final void handleCustomFrame(HttpFrame frame) {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleCustomFrame(frame);
+    }
+  }
+
+  void handleEnd(MultiMap trailers) {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleEnd(trailers);
+    }
+  }
+
+  final void handleReset(long errorCode) {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleReset(errorCode);
+    }
+  }
+
+  public final void handleException(Throwable cause) {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleException(cause);
+    }
+  }
+
+  final void handleClose() {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handleClose();
+    }
+  }
+
+  final void handlePriorityChange(StreamPriority newPriority) {
+    Http2StreamHandler i = handler();
+    if (i != null) {
+      i.handlePriorityChange(newPriority);
+    }
+  }
+
+  public void priority(StreamPriority streamPriority) {
+    this.priority = streamPriority;
+  }
+
+  public StreamPriority priority() {
+    return priority;
+  }
+
+  public void updatePriority(StreamPriority priority) {
+    if (!this.priority.equals(priority)) {
+      this.priority = priority;
+      if (id >= 0) {
+        conn.writePriorityFrame(id, priority);
+      }
+    }
   }
 }

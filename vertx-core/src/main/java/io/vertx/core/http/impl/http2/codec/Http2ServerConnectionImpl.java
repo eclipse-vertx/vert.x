@@ -9,8 +9,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
@@ -23,30 +24,37 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpServerConnection;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.http2.Http2ServerConnection;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import java.util.ArrayDeque;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerConnection extends Http2ConnectionBase implements HttpServerConnection {
+public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
-  final HttpServerOptions options;
+  private final HttpServerOptions options;
   private final String serverOrigin;
   private final HttpServerMetrics metrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
+  private final VertxHttp2ConnectionHandler handler;
 
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
-  private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
+  private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
-  Http2ServerConnection(
+  public Http2ServerConnectionImpl(
     ContextInternal context,
     Supplier<ContextInternal> streamContextSupplier,
     String serverOrigin,
@@ -61,6 +69,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
+    this.handler = connHandler;
   }
 
   @Override
@@ -78,34 +87,6 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return metrics;
   }
 
-  private static boolean isMalformedRequest(Http2ServerStream request) {
-    if (request.method == null) {
-      return true;
-    }
-
-    if (request.method == HttpMethod.CONNECT) {
-      if (request.scheme != null || request.uri != null || request.authority == null) {
-        return true;
-      }
-    } else {
-      if (request.scheme == null || request.uri == null || request.uri.length() == 0) {
-        return true;
-      }
-    }
-    if (request.hasAuthority) {
-      if (request.authority == null) {
-        return true;
-      }
-      CharSequence hostHeader = request.headers.get(HttpHeaders.HOST);
-      if (hostHeader != null) {
-        HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-        return host == null || (!request.authority.host().equals(host.host()) || request.authority.port() != host.port());
-      }
-    }
-    return false;
-  }
-
-
   private static class EncodingDetector extends HttpContentCompressor {
 
     private EncodingDetector(CompressionOptions[] compressionOptions) {
@@ -118,7 +99,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
   }
 
-  String determineContentEncoding(Http2Headers headers) {
+  public String determineContentEncoding(Http2HeadersMultiMap headers) {
     String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
@@ -127,41 +108,25 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   }
 
   private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
-    CharSequence schemeHeader = headers.getAndRemove(HttpHeaders.PSEUDO_SCHEME);
-    HostAndPort authority = null;
-    String authorityHeaderAsString;
-    CharSequence authorityHeader = headers.getAndRemove(HttpHeaders.PSEUDO_AUTHORITY);
-    if (authorityHeader != null) {
-      authorityHeaderAsString = authorityHeader.toString();
-      authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
-    }
-    CharSequence hostHeader = null;
-    if (authority == null) {
-      hostHeader = headers.getAndRemove(HttpHeaders.HOST);
-      if (hostHeader != null) {
-        authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-      }
-    }
-    CharSequence pathHeader = headers.getAndRemove(HttpHeaders.PSEUDO_PATH);
-    CharSequence methodHeader = headers.getAndRemove(HttpHeaders.PSEUDO_METHOD);
     return new Http2ServerStream(
       this,
+            serverOrigin,
+            metrics,
+      metric(),
       streamContextSupplier.get(),
-      headers,
-      schemeHeader != null ? schemeHeader.toString() : null,
-      authorityHeader != null || hostHeader != null,
-      authority,
-      methodHeader != null ? HttpMethod.valueOf(methodHeader.toString()) : null,
-      pathHeader != null ? pathHeader.toString() : null,
-      options.getTracingPolicy(), streamEnded);
+      requestHandler,
+      options.isHandle100ContinueAutomatically(),
+      options.getMaxFormAttributeSize(),
+      options.getMaxFormFields(),
+      options.getMaxFormBufferedBytes(),
+      options.getTracingPolicy(),
+      streamEnded);
   }
 
   private void initStream(int streamId, Http2ServerStream vertxStream) {
-    Http2ServerRequest request = new Http2ServerRequest(vertxStream, serverOrigin, vertxStream.headers);
-    vertxStream.request = request;
-    vertxStream.isConnect = request.method() == HttpMethod.CONNECT;
     Http2Stream stream = handler.connection().stream(streamId);
-    vertxStream.init(stream);
+    vertxStream.init(stream.id(), isWritable(streamId));
+    stream.setProperty(streamKey, vertxStream);
   }
 
   @Override
@@ -169,27 +134,67 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     Http2Stream nettyStream = handler.connection().stream(streamId);
     Http2ServerStream stream;
     if (nettyStream.getProperty(streamKey) == null) {
+      Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+      if (!headersMap.validate(true)) {
+        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
+        return;
+      }
+      headersMap.sanitize();
       if (streamId == 1 && handler.upgraded) {
         stream = createStream(headers, true);
       } else {
         stream = createStream(headers, endOfStream);
       }
-      if (isMalformedRequest(stream)) {
-        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
-        return;
-      }
       initStream(streamId, stream);
-      stream.onHeaders(headers, streamPriority);
+      if (streamPriority != null) {
+        stream.priority(streamPriority);
+      }
+      stream.onHeaders(headersMap);
     } else {
       // Http server request trailer - not implemented yet (in api)
       stream = nettyStream.getProperty(streamKey);
     }
     if (endOfStream) {
-      stream.onEnd();
+      stream.onTrailers();
     }
   }
 
-  void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  @Override
+  public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
+    super.onRstStreamRead(ctx, streamId, errorCode);
+    Pending pendingPush = pendingPushes.remove(streamId);
+    if (pendingPush != null) {
+      concurrentStreams--;
+      checkNextPendingPush();
+      pendingPush.promise.fail(new StreamResetException(errorCode));
+    }
+  }
+
+  private void checkNextPendingPush() {
+    int maxConcurrentStreams = handler.maxConcurrentStreams();
+    Iterator<Map.Entry<Integer, Pending>> it = pendingPushes.entrySet().iterator();
+    while (concurrentStreams < maxConcurrentStreams && it.hasNext()) {
+      Map.Entry<Integer, Pending> next = it.next();
+      it.remove();
+      concurrentStreams++;
+      Pending pending = next.getValue();
+      pending.stream.init(pending.stream.promisedId(), isWritable(pending.stream.promisedId()));
+      pending.promise.complete(pending.stream);
+    }
+  }
+
+  @Override
+  void onStreamClosed(Http2Stream s) {
+    super.onStreamClosed(s);
+    if (pendingPushes.remove(s.id()) != null) {
+      //
+    } else {
+      concurrentStreams--;
+      checkNextPendingPush();
+    }
+  }
+
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -198,7 +203,16 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+  static class Pending {
+    final Http2ServerStream stream;
+    final Promise<Http2ServerStream> promise;
+    Pending(Http2ServerStream stream, Promise<Http2ServerStream> promise) {
+      this.stream = stream;
+      this.promise = promise;
+    }
+  }
+
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());
@@ -214,20 +228,34 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     Future<Integer> fut = handler.writePushPromise(streamId, headers_);
     fut.addListener((FutureListener<Integer>) future -> {
       if (future.isSuccess()) {
-        synchronized (Http2ServerConnection.this) {
+        synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(this, context, headers_, method, path, options.getTracingPolicy(), true);
-          Push push = new Push(vertxStream, promise);
-          vertxStream.request = push;
-          push.stream.priority(streamPriority);
-          push.stream.init(promisedStream);
+          Http2ServerStream vertxStream = new Http2ServerStream(
+            this,
+            serverOrigin,
+            metrics,
+            metric(),
+            context,
+            requestHandler,
+            options.isHandle100ContinueAutomatically(),
+            options.getMaxFormAttributeSize(),
+            options.getMaxFormFields(),
+            options.getMaxFormBufferedBytes(),
+            new Http2HeadersMultiMap(headers_),
+            method,
+            path,
+            options.getTracingPolicy(),
+            true,
+            promisedStreamId);
+          promisedStream.setProperty(streamKey, vertxStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;
-            push.complete();
+            vertxStream.init(vertxStream.promisedId(), isWritable(vertxStream.promisedId()));
+            promise.complete(vertxStream);
           } else {
-            pendingPushes.add(push);
+            pendingPushes.put(promisedStreamId, new Pending(vertxStream, promise));
           }
         }
       } else {
@@ -239,66 +267,5 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   protected io.vertx.core.Future<Void> updateSettings(Http2Settings settingsUpdate) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     return super.updateSettings(settingsUpdate);
-  }
-
-  private class Push implements Http2ServerStreamHandler {
-
-    protected final ContextInternal context;
-    protected final Http2ServerStream stream;
-    protected final Http2ServerResponse response;
-    private final Promise<HttpServerResponse> promise;
-
-    public Push(Http2ServerStream stream,
-                Promise<HttpServerResponse> promise) {
-      this.context = stream.context;
-      this.stream = stream;
-      this.response = new Http2ServerResponse(stream.conn, stream, true);
-      this.promise = promise;
-    }
-
-    @Override
-    public Http2ServerResponse response() {
-      return response;
-    }
-
-    @Override
-    public  void dispatch(Handler<HttpServerRequest> handler) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void handleReset(long errorCode) {
-      if (!promise.tryFail(new StreamResetException(errorCode))) {
-        response.handleReset(errorCode);
-      }
-    }
-
-    @Override
-    public  void handleException(Throwable cause) {
-      if (response != null) {
-        response.handleException(cause);
-      }
-    }
-
-    @Override
-    public  void handleClose() {
-      if (pendingPushes.remove(this)) {
-        promise.fail("Push reset by client");
-      } else {
-        concurrentStreams--;
-        int maxConcurrentStreams = handler.maxConcurrentStreams();
-        while (concurrentStreams < maxConcurrentStreams && pendingPushes.size() > 0) {
-          Push push = pendingPushes.pop();
-          concurrentStreams++;
-          push.complete();
-        }
-        response.handleClose();
-      }
-    }
-
-    void complete() {
-      stream.registerMetrics();
-      promise.complete(response);
-    }
   }
 }
