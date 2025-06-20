@@ -333,11 +333,11 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   public void handleEnd(MultiMap trailers) {
     Handler<MultiMap> handler1 = trailerHandler;
     if (handler1 != null) {
-      handler1.handle(trailers);
+      context.dispatch(trailers, handler1);
     }
     Handler<Void> handler2 = endHandler;
     if (handler2 != null) {
-      handler2.handle(null);
+      context.dispatch(null, handler2);
     }
   }
 
@@ -345,7 +345,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   public void handleCustomFrame(HttpFrame frame) {
     Handler<HttpFrame> handler = unknownFrameHandler;
     if (handler != null) {
-      handler.handle(frame);
+      context.dispatch(frame, handler);
     }
   }
 
@@ -353,7 +353,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   public void handlePriorityChange(StreamPriority streamPriority) {
     Handler<StreamPriority> handler = priorityHandler;
     if (handler != null) {
-      handler.handle(streamPriority);
+      context.dispatch(streamPriority, handler);
     }
   }
 }

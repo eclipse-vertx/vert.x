@@ -143,7 +143,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public void handleCustomFrame(HttpFrame frame) {
     if (customFrameHandler != null) {
-      customFrameHandler.handle(frame);
+      context.dispatch(frame, customFrameHandler);
     }
   }
 

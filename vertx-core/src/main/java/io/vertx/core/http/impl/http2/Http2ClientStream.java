@@ -218,11 +218,11 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   void onContinue() {
-    context.emit(null, v -> handleContinue());
+    context.execute(null, v -> handleContinue());
   }
 
   void onEarlyHints(MultiMap headers) {
-    context.emit(null, v -> handleEarlyHints(headers));
+    context.execute(null, v -> handleEarlyHints(headers));
   }
 
   @Override

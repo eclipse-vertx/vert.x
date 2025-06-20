@@ -400,7 +400,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       handler = continueHandler;
     }
     if (handler != null) {
-      handler.handle(null);
+      context.dispatch(null, handler);
     }
   }
 
