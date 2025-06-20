@@ -71,7 +71,7 @@ public abstract class Http2StreamBase {
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          conn.context().emit(len, v -> conn.consumeCredits(id, v));
+          conn.context().execute(len, v -> conn.consumeCredits(id, v));
           handleData(data);
         }
       }
@@ -100,7 +100,7 @@ public abstract class Http2StreamBase {
       }
       @Override
       protected void handleDrained() {
-        context.emit(Http2StreamBase.this, Http2StreamBase::handleWriteQueueDrained);
+        context.execute(Http2StreamBase.this, Http2StreamBase::handleWriteQueueDrained);
       }
     };
   }
@@ -145,7 +145,7 @@ public abstract class Http2StreamBase {
 
   public void onReset(long code) {
     reset = code;
-    context.emit(code, this::handleReset);
+    context.execute(code, this::handleReset);
   }
 
   public void onHeaders(Http2HeadersMultiMap headers) {
@@ -154,11 +154,11 @@ public abstract class Http2StreamBase {
 
   public void onException(Throwable cause) {
     failure = cause;
-    context.emit(cause, this::handleException);
+    context.execute(cause, this::handleException);
   }
 
   public void onPriorityChange(StreamPriority newPriority) {
-    context.emit(newPriority, priority -> {
+    context.execute(newPriority, priority -> {
       if (!this.priority.equals(priority)) {
         this.priority = priority;
         handlePriorityChange(priority);
@@ -167,7 +167,7 @@ public abstract class Http2StreamBase {
   }
 
   public void onCustomFrame(int type, int flags, Buffer payload) {
-    context.emit(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
+    context.execute(new HttpFrameImpl(type, flags, payload), this::handleCustomFrame);
   }
 
   public void onData(Buffer data) {

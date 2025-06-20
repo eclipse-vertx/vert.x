@@ -96,7 +96,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       handler = exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(cause);
+      context.dispatch(cause, handler);
     }
   }
 
@@ -111,10 +111,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       closeHandler = this.closeHandler;
     }
     if (endHandler != null) {
-      context.emit(null, endHandler);
+      context.dispatch(null, endHandler);
     }
     if (closeHandler != null) {
-      context.emit(null, closeHandler);
+      context.dispatch(null, closeHandler);
     }
   }
 
@@ -501,7 +501,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         return;
       }
     }
-    handler.handle(null);
+    context.dispatch(null, handler);
   }
 
   @Override
