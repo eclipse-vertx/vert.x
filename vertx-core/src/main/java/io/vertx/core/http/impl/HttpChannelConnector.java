@@ -242,7 +242,7 @@ public class HttpChannelConnector {
                 future.tryComplete(unwrap);
               });
               stream.exceptionHandler(future::tryFail);
-              HttpRequestHead request = new HttpRequestHead(OPTIONS, "/", HttpHeaders.headers(), server.toString(),
+              HttpRequestHead request = new HttpRequestHead(OPTIONS, "/", HttpHeaders.headers(), HostAndPort.authority(server.host(), server.port()),
                 "http://" + server + "/", null);
               stream.writeHead(request, false, null, true, null, false);
             } else {

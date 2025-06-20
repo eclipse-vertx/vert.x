@@ -28,7 +28,6 @@ import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -87,7 +86,7 @@ public class Http2ClientStream extends Http2StreamBase {
     this.requestEnded = true;
   }
 
-  private Future<Void> createStream(HttpRequestHead head, Http2HeadersAdaptor headers) {
+  private Future<Void> createStream(HttpRequestHead head, Http2HeadersMultiMap headers) {
     Future<Void> fut = conn.createStream(this);
     return fut.andThen(ar -> {
       if (ar.succeeded()) {
@@ -130,8 +129,8 @@ public class Http2ClientStream extends Http2StreamBase {
 
     @Override
     public void write() {
-      Http2HeadersAdaptor headers = conn.newHeaders();
-      headers.method(request.method.name());
+      Http2HeadersMultiMap headers = conn.newHeaders();
+      headers.method(request.method);
       boolean e;
       if (request.method == HttpMethod.CONNECT) {
         if (request.authority == null) {
@@ -188,8 +187,8 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   @Override
-  void writeHeaders0(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
-    isConnect = "CONNECT".contentEquals(headers.method());
+  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+    isConnect = headers.method() == HttpMethod.CONNECT;
     super.writeHeaders0(headers, end, checkFlush, promise);
   }
 
@@ -209,7 +208,7 @@ public class Http2ClientStream extends Http2StreamBase {
     }
   }
 
-  public void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersAdaptor headers, boolean writable) {
+  public void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
     HttpClientPush push = new HttpClientPush(headers, pushStream);
     pushStream.stream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
@@ -245,21 +244,13 @@ public class Http2ClientStream extends Http2StreamBase {
     super.onReset(code);
   }
 
-  public void onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
+  public void onHeaders(Http2HeadersMultiMap headers, StreamPriority streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }
     if (response == null) {
-      int status;
-      String statusMessage;
-      try {
-        status = Integer.parseInt(headers.status().toString());
-        statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-      } catch (Exception e) {
-        handleException(e);
-        writeReset(0x01 /* PROTOCOL_ERROR */);
-        return;
-      }
+      int status = headers.status();
+      String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
       if (status == 100) {
         onContinue();
         return;

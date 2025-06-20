@@ -25,7 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
@@ -99,7 +99,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  public String determineContentEncoding(Http2HeadersAdaptor headers) {
+  public String determineContentEncoding(Http2HeadersMultiMap headers) {
     String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
@@ -134,17 +134,19 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     Http2Stream nettyStream = handler.connection().stream(streamId);
     Http2ServerStream stream;
     if (nettyStream.getProperty(streamKey) == null) {
+      Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+      if (!headersMap.validate(true)) {
+        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
+        return;
+      }
+      headersMap.sanitize();
       if (streamId == 1 && handler.upgraded) {
         stream = createStream(headers, true);
       } else {
         stream = createStream(headers, endOfStream);
       }
       initStream(streamId, stream);
-      if (!stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority)) {
-        nettyStream.setProperty(streamKey, null);
-        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
-        return;
-      }
+      stream.onHeaders(headersMap, streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
       stream = nettyStream.getProperty(streamKey);
@@ -237,7 +239,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
             options.getMaxFormAttributeSize(),
             options.getMaxFormFields(),
             options.getMaxFormBufferedBytes(),
-            new Http2HeadersAdaptor(headers_),
+            new Http2HeadersMultiMap(headers_),
             method,
             path,
             options.getTracingPolicy(),

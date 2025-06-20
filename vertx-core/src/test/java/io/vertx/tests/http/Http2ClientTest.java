@@ -1374,7 +1374,7 @@ public class Http2ClientTest extends Http2TestBase {
         client.request(requestOptions).onComplete(onSuccess(req -> {
           req.send().onComplete(onFailure(err -> {
             assertOnIOContext(ctx);
-            if (err instanceof NumberFormatException) {
+            if (err instanceof HttpClosedException) {
               testComplete();
             }
           }));

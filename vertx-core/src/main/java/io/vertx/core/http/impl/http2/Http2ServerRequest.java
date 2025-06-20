@@ -30,7 +30,6 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.HostAndPort;
@@ -79,7 +78,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
                      int maxFormFields,
                      int maxFormBufferedBytes,
                      String serverOrigin,
-                     Http2HeadersAdaptor headersMap) {
+                     Http2HeadersMultiMap headersMap) {
     this.context = context;
     this.stream = stream;
     this.connection = stream.connection();

@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -37,11 +36,10 @@ public class Http2ServerStream extends Http2StreamBase {
 
   private final Http2ServerConnection conn;
   private final String serverOrigin;
-  private Http2HeadersAdaptor headers;
+  private Http2HeadersMultiMap headers;
   private String scheme;
   private HttpMethod method;
   private String uri;
-  private boolean hasAuthority;
   private HostAndPort authority;
   private final HttpServerMetrics serverMetrics;
   private final Object socketMetric;
@@ -69,7 +67,7 @@ public class Http2ServerStream extends Http2StreamBase {
                     int maxFormAttributeSize,
                     int maxFormFields,
                     int maxFormBufferedBytes,
-                    Http2HeadersAdaptor headers,
+                    Http2HeadersMultiMap headers,
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
@@ -83,7 +81,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.method = method;
     this.uri = uri;
     this.scheme = null;
-    this.hasAuthority = false;
     this.authority = null;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
@@ -144,7 +141,7 @@ public class Http2ServerStream extends Http2StreamBase {
     return conn;
   }
 
-  public Http2HeadersAdaptor headers() {
+  public Http2HeadersMultiMap headers() {
     return headers;
   }
 
@@ -160,10 +157,6 @@ public class Http2ServerStream extends Http2StreamBase {
     return authority;
   }
 
-  boolean hasAuthority() {
-    return hasAuthority;
-  }
-
   public void registerMetrics() {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
@@ -176,72 +169,13 @@ public class Http2ServerStream extends Http2StreamBase {
     }
   }
 
-  public boolean onHeaders(Http2HeadersAdaptor headers, StreamPriority streamPriority) {
+  public void onHeaders(Http2HeadersMultiMap headers, StreamPriority streamPriority) {
 
-    CharSequence methodHeader = headers.method();
-    if (methodHeader == null) {
-      return false;
-    }
-    HttpMethod method = HttpMethod.valueOf(methodHeader.toString());
-
-    CharSequence schemeHeader = headers.scheme();
-    String scheme = schemeHeader != null ? schemeHeader.toString() : null;
-
-    CharSequence pathHeader = headers.path();
-    String uri = pathHeader != null ? pathHeader.toString() : null;
-
-    HostAndPort authority = null;
-    String authorityHeaderAsString;
-    CharSequence authorityHeader = headers.authority();
-    if (authorityHeader != null) {
-      authorityHeaderAsString = authorityHeader.toString();
-      authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
-    }
-
-    CharSequence hostHeader = headers.get(HttpHeaders.HOST);
-    if (authority == null) {
-      headers.remove(HttpHeaders.HOST);
-      if (hostHeader != null) {
-        authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-      }
-    }
-
-    if (method == HttpMethod.CONNECT) {
-      if (scheme != null || uri != null || authority == null) {
-        return false;
-      }
-    } else {
-      if (scheme == null || uri == null || uri.length() == 0) {
-        return false;
-      }
-    }
-
-    boolean hasAuthority = authorityHeader != null || hostHeader != null;
-    if (hasAuthority) {
-      if (authority == null) {
-        return false;
-      }
-      if (hostHeader != null) {
-        HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-        if (host == null || (!authority.host().equals(host.host()) || authority.port() != host.port())) {
-          return false;
-        }
-      }
-    }
-
-    // Sanitize headers
-    headers.authority(null);
-    headers.path(null);
-    headers.method(null);
-    headers.scheme(null);
-    headers.path(null);
-
-    this.method = method;
+    this.method = headers.method();
     this.isConnect = method == HttpMethod.CONNECT;
-    this.uri = uri;
-    this.authority = authority;
-    this.scheme = scheme;
-    this.hasAuthority = hasAuthority;
+    this.uri = headers.path();
+    this.authority = headers.authority();
+    this.scheme = headers.scheme();
     this.headers = headers;
     this.handler = new Http2ServerRequest(this, context, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes, serverOrigin, headers);
 
@@ -265,8 +199,6 @@ public class Http2ServerStream extends Http2StreamBase {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, handler, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     handler.dispatch(requestHandler);
-
-    return true;
   }
 
   @Override
@@ -281,7 +213,7 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   @Override
-  void writeHeaders0(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       if (serverMetrics != null) {
         serverMetrics.responseBegin(metric, handler.response());

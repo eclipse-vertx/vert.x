@@ -19,7 +19,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBase;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientStream;
 import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
@@ -207,13 +207,20 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     Http2Stream s = handler.connection().stream(streamId);
+    Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+
+    if (!s.isTrailersReceived() && !headersMap.validate(false)) {
+      handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
+      return;
+    }
+    headersMap.sanitize();
     if (!s.isTrailersReceived()) {
-      stream.onHeaders(new Http2HeadersAdaptor(headers), streamPriority);
+      stream.onHeaders(headersMap, streamPriority);
       if (endOfStream) {
         stream.onEnd();
       }
     } else {
-      stream.onEnd(new Http2HeadersAdaptor(headers));
+      stream.onEnd(headersMap);
     }
   }
 
@@ -227,7 +234,10 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       s.handler(pushStream);
       pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
-      stream.onPush(pushStream, promisedStreamId, new Http2HeadersAdaptor(headers), isWritable(promisedStreamId));
+      Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+      headersMap.validate(true);
+      headersMap.sanitize();
+      stream.onPush(pushStream, promisedStreamId, headersMap, isWritable(promisedStreamId));
     } else {
       Http2ClientConnectionImpl.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
     }

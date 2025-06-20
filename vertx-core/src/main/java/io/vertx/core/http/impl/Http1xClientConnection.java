@@ -175,7 +175,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     HttpMethod method,
     String uri,
     MultiMap headerMap,
-    String authority,
+    HostAndPort authority,
     boolean chunked,
     ByteBuf buf,
     boolean end) {
@@ -187,7 +187,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       }
     }
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, authority);
+      request.headers().set(HOST, authority.toString(ssl));
     } else {
       headers.remove(TRANSFER_ENCODING);
     }
