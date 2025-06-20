@@ -29,7 +29,6 @@ import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -53,8 +52,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private final Http2ServerConnection conn;
   private final ContextInternal context;
   private final boolean push;
-  private final Http2HeadersAdaptor headersMap;
-  private Http2HeadersAdaptor trailedMap;
+  private final Http2HeadersMultiMap headersMap;
+  private Http2HeadersMultiMap trailedMap;
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
@@ -238,7 +237,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public MultiMap trailers() {
-    Http2HeadersAdaptor ret = trailedMap;
+    Http2HeadersMultiMap ret = trailedMap;
     if (ret == null) {
       ret = conn.newHeaders();
       trailedMap = ret;
@@ -325,7 +324,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = context.promise();
-    Http2HeadersAdaptor http2Headers = conn.newHeaders();
+    Http2HeadersMultiMap http2Headers = conn.newHeaders();
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
     }
@@ -458,7 +457,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void prepareHeaders() {
-    headersMap.status(status.codeAsText()); // Could be optimized for usual case ?
+    headersMap.status(status.code());
     // Sanitize
     if (stream.method() == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
       headersMap.remove(HttpHeaders.TRANSFER_ENCODING);

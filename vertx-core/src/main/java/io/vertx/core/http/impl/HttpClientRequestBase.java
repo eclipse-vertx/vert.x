@@ -67,14 +67,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     });
   }
 
-  protected String authority() {
-    if (authority == null) {
-      return null;
-    } else if ((authority.port() == 80 && !ssl) || (authority.port() == 443 && ssl) || authority.port() < 0) {
-      return authority.host();
-    } else {
-      return authority.host() + ':' + authority.port();
-    }
+  protected HostAndPort authority() {
+    return authority;
   }
 
   @Override

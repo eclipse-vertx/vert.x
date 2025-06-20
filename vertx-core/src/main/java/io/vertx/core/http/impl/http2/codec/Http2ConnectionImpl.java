@@ -32,7 +32,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
@@ -91,8 +91,8 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     this.localSettings = handler.initialSettings();
   }
 
-  public Http2HeadersAdaptor newHeaders() {
-    return new Http2HeadersAdaptor(new DefaultHttp2Headers());
+  public Http2HeadersMultiMap newHeaders() {
+    return new Http2HeadersMultiMap(new DefaultHttp2Headers());
   }
 
   @Override
@@ -517,9 +517,9 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2Stream s = handler.connection().stream(streamId);
-    handler.writeHeaders(s, (Http2Headers) headers.unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    handler.writeHeaders(s, (Http2Headers) headers.prepare().unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
   @Override

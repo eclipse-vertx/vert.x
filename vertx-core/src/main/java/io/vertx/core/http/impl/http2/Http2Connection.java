@@ -13,12 +13,11 @@ package io.vertx.core.http.impl.http2;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Promise;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 
 public interface Http2Connection {
 
-  Http2HeadersAdaptor newHeaders();
+  Http2HeadersMultiMap newHeaders();
 
   ContextInternal context();
 
@@ -34,7 +33,7 @@ public interface Http2Connection {
 
   void writeFrame(int streamId, int type, int flags, ByteBuf payload, Promise<Void> promise);
 
-  void writeHeaders(int streamId, Http2HeadersAdaptor headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
+  void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
 
   void writeData(int streamId, ByteBuf buf, boolean end, Promise<Void> promise);
 

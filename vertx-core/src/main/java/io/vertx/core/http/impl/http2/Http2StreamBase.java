@@ -23,7 +23,6 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
@@ -35,7 +34,7 @@ import io.vertx.core.net.impl.MessageWrite;
  */
 public abstract class Http2StreamBase {
 
-  private static final MultiMap EMPTY = new Http2HeadersAdaptor(EmptyHttp2Headers.INSTANCE);
+  private static final MultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
@@ -127,6 +126,8 @@ public abstract class Http2StreamBase {
     context.emit(code, this::handleReset);
   }
 
+  public abstract void onHeaders(Http2HeadersMultiMap headers, StreamPriority streamPriority);
+
   public void onException(Throwable cause) {
     failure = cause;
     context.emit(cause, this::handleException);
@@ -210,7 +211,7 @@ public abstract class Http2StreamBase {
     return promise.future();
   }
 
-  public final void writeHeaders(Http2HeadersAdaptor headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public final void writeHeaders(Http2HeadersMultiMap headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first) {
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
@@ -232,7 +233,7 @@ public abstract class Http2StreamBase {
     }
   }
 
-  void writeHeaders0(Http2HeadersAdaptor headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (reset != -1L) {
       if (promise != null) {
         promise.fail("Stream reset");

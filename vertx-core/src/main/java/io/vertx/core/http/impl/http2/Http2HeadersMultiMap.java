@@ -8,17 +8,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.headers;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
+import io.vertx.core.net.HostAndPort;
 
 import java.util.AbstractList;
 import java.util.Iterator;
@@ -31,16 +32,16 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class Http2HeadersAdaptor implements MultiMap {
+public class Http2HeadersMultiMap implements MultiMap {
 
   private final boolean mutable;
   private final Headers<CharSequence, CharSequence, ?> headers;
 
-  public Http2HeadersAdaptor(Headers<CharSequence, CharSequence, ?> headers) {
+  public Http2HeadersMultiMap(Headers<CharSequence, CharSequence, ?> headers) {
     this(true, headers);
   }
 
-  private Http2HeadersAdaptor(boolean mutable, Headers<CharSequence, CharSequence, ?> headers) {
+  private Http2HeadersMultiMap(boolean mutable, Headers<CharSequence, CharSequence, ?> headers) {
 
     List<CharSequence> cookies = headers.getAll(HttpHeaderNames.COOKIE);
     if (cookies != null && cookies.size() > 1) {
@@ -54,7 +55,120 @@ public class Http2HeadersAdaptor implements MultiMap {
     this.headers = headers;
   }
 
-  public Http2HeadersAdaptor status(CharSequence status) {
+  private Integer status;
+  private HttpMethod method;
+  private HostAndPort authority;
+  private String uri;
+  private String scheme;
+
+  public boolean validate(boolean isRequest) {
+    if (isRequest) {
+      CharSequence methodHeader = headers.get(HttpHeaders.PSEUDO_METHOD);
+      if (methodHeader == null) {
+        return false;
+      }
+      HttpMethod method = HttpMethod.valueOf(methodHeader.toString());
+
+      CharSequence schemeHeader = headers.get(HttpHeaders.PSEUDO_SCHEME);
+      String scheme = schemeHeader != null ? schemeHeader.toString() : null;
+
+      CharSequence pathHeader = headers.get(HttpHeaders.PSEUDO_PATH);
+      String uri = pathHeader != null ? pathHeader.toString() : null;
+
+      HostAndPort authority = null;
+      String authorityHeaderAsString;
+      CharSequence authorityHeader = headers.get(HttpHeaders.PSEUDO_AUTHORITY);
+      if (authorityHeader != null) {
+        authorityHeaderAsString = authorityHeader.toString();
+        authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+      }
+
+      CharSequence hostHeader = headers.get(HttpHeaders.HOST);
+      if (authority == null) {
+        headers.remove(HttpHeaders.HOST);
+        if (hostHeader != null) {
+          authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+        }
+      }
+
+      if (method == HttpMethod.CONNECT) {
+        if (scheme != null || uri != null || authority == null) {
+          return false;
+        }
+      } else {
+        if (scheme == null || uri == null || uri.isEmpty()) {
+          return false;
+        }
+      }
+
+      boolean hasAuthority = authorityHeader != null || hostHeader != null;
+      if (hasAuthority) {
+        if (authority == null) {
+          return false;
+        }
+        if (hostHeader != null) {
+          HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+          if (host == null || (!authority.host().equals(host.host()) || authority.port() != host.port())) {
+            return false;
+          }
+        }
+      }
+
+      this.method = method;
+      this.uri = uri;
+      this.authority = authority;
+      this.scheme = scheme;
+
+      return true;
+    } else {
+      CharSequence statusHeader = headers.get(HttpHeaders.PSEUDO_STATUS);
+      if (statusHeader == null) {
+        return false;
+      }
+      int status;
+      try {
+        status = Integer.parseInt(statusHeader.toString());
+      } catch (NumberFormatException e) {
+        return false;
+      }
+      this.status = status;
+      return true;
+    }
+  }
+
+  public Http2HeadersMultiMap sanitize() {
+    headers.remove(HttpHeaders.PSEUDO_METHOD);
+    headers.remove(HttpHeaders.PSEUDO_PATH);
+    headers.remove(HttpHeaders.PSEUDO_SCHEME);
+    headers.remove(HttpHeaders.PSEUDO_AUTHORITY);
+    headers.remove(HttpHeaders.PSEUDO_STATUS);
+    return this;
+  }
+
+  public Http2HeadersMultiMap prepare() {
+    boolean ssl = "ssl".equals(scheme);
+    if (method != null) {
+      headers.set(HttpHeaders.PSEUDO_METHOD, method.toString());
+    }
+    if (uri != null) {
+      headers.set(HttpHeaders.PSEUDO_PATH, uri);
+    }
+    if (scheme != null) {
+      headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
+    }
+    if (authority != null) {
+      headers.set(HttpHeaders.PSEUDO_AUTHORITY, authority.toString(ssl));
+    }
+    if (scheme != null) {
+      headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
+    }
+    if (status != null) {
+      headers.set(HttpHeaders.PSEUDO_STATUS, status.toString());
+    }
+    return this;
+  }
+
+  public Http2HeadersMultiMap status(CharSequence status) {
     if (status != null) {
       headers.set(HttpHeaders.PSEUDO_STATUS, status);
     } else {
@@ -63,59 +177,48 @@ public class Http2HeadersAdaptor implements MultiMap {
     return this;
   }
 
-  public CharSequence status() {
-    return headers.get(HttpHeaders.PSEUDO_STATUS);
+  public Integer status() {
+    return status;
   }
 
-  public Http2HeadersAdaptor path(CharSequence path) {
-    if (path != null) {
-      headers.set(HttpHeaders.PSEUDO_PATH, path);
-    } else {
-      headers.remove(HttpHeaders.PSEUDO_PATH);
-    }
+  public Http2HeadersMultiMap status(Integer status) {
+    this.status = status;
     return this;
   }
 
-  public CharSequence path() {
-    return headers.get(HttpHeaders.PSEUDO_PATH);
-  }
-
-  public Http2HeadersAdaptor method(CharSequence method) {
-    if (method != null) {
-      headers.set(HttpHeaders.PSEUDO_METHOD, method);
-    } else {
-      headers.remove(HttpHeaders.PSEUDO_METHOD);
-    }
+  public Http2HeadersMultiMap path(String path) {
+    this.uri = path;
     return this;
   }
 
-  public CharSequence method() {
-    return headers.get(HttpHeaders.PSEUDO_METHOD);
+  public String path() {
+    return uri;
   }
 
-  public Http2HeadersAdaptor authority(CharSequence authority) {
-    if (authority != null) {
-      headers.set(HttpHeaders.PSEUDO_AUTHORITY, authority);
-    } else {
-      headers.remove(HttpHeaders.PSEUDO_AUTHORITY);
-    }
+  public Http2HeadersMultiMap method(HttpMethod method) {
+    this.method = method;
     return this;
   }
 
-  public CharSequence authority() {
-    return headers.get(HttpHeaders.PSEUDO_AUTHORITY);
+  public HttpMethod method() {
+    return method;
   }
 
-  public CharSequence scheme() {
-    return headers.get(HttpHeaders.PSEUDO_SCHEME);
+  public Http2HeadersMultiMap authority(HostAndPort authority) {
+    this.authority = authority;
+    return this;
   }
 
-  public Http2HeadersAdaptor scheme(CharSequence scheme) {
-    if (scheme != null) {
-      headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
-    } else {
-      headers.remove(HttpHeaders.PSEUDO_SCHEME);
-    }
+  public HostAndPort authority() {
+    return authority;
+  }
+
+  public String scheme() {
+    return scheme;
+  }
+
+  public Http2HeadersMultiMap scheme(String scheme) {
+    this.scheme = scheme;
     return this;
   }
 
@@ -176,7 +279,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor add(String name, String value) {
+  public Http2HeadersMultiMap add(String name, String value) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -188,7 +291,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor add(String name, Iterable<String> values) {
+  public Http2HeadersMultiMap add(String name, Iterable<String> values) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -200,7 +303,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor addAll(MultiMap headers) {
+  public Http2HeadersMultiMap addAll(MultiMap headers) {
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -208,7 +311,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor addAll(Map<String, String> map) {
+  public Http2HeadersMultiMap addAll(Map<String, String> map) {
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -216,7 +319,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor set(String name, String value) {
+  public Http2HeadersMultiMap set(String name, String value) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -233,7 +336,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor set(String name, Iterable<String> values) {
+  public Http2HeadersMultiMap set(String name, Iterable<String> values) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -245,7 +348,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor setAll(MultiMap httpHeaders) {
+  public Http2HeadersMultiMap setAll(MultiMap httpHeaders) {
     clear();
     for (Map.Entry<String, String> entry: httpHeaders) {
       add(entry.getKey(), entry.getValue());
@@ -254,7 +357,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor remove(String name) {
+  public Http2HeadersMultiMap remove(String name) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -263,7 +366,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor clear() {
+  public Http2HeadersMultiMap clear() {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -315,7 +418,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor setAll(Map<String, String> headers) {
+  public Http2HeadersMultiMap setAll(Map<String, String> headers) {
     clear();
     for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
@@ -350,7 +453,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor add(CharSequence name, CharSequence value) {
+  public Http2HeadersMultiMap add(CharSequence name, CharSequence value) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -362,7 +465,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor add(CharSequence name, Iterable<CharSequence> values) {
+  public Http2HeadersMultiMap add(CharSequence name, Iterable<CharSequence> values) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -374,7 +477,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor set(CharSequence name, CharSequence value) {
+  public Http2HeadersMultiMap set(CharSequence name, CharSequence value) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -391,7 +494,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor set(CharSequence name, Iterable<CharSequence> values) {
+  public Http2HeadersMultiMap set(CharSequence name, Iterable<CharSequence> values) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -403,7 +506,7 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public Http2HeadersAdaptor remove(CharSequence name) {
+  public Http2HeadersMultiMap remove(CharSequence name) {
     if (!mutable) {
       throw new IllegalStateException("Read only");
     }
@@ -430,6 +533,6 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!this.mutable && ! mutable) {
       return this;
     }
-    return new Http2HeadersAdaptor(mutable, new DefaultHttp2Headers().setAll(headers));
+    return new Http2HeadersMultiMap(mutable, new DefaultHttp2Headers().setAll(headers));
   }
 }

@@ -14,7 +14,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.impl.SysProps;
 
 /**
@@ -41,6 +41,6 @@ public interface HttpHeadersInternal extends HttpHeaders {
    * @return a multimap wrapping Netty HTTP/2 {code header} instance
    */
   static MultiMap headers(Http2Headers headers) {
-    return new Http2HeadersAdaptor(headers);
+    return new Http2HeadersMultiMap(headers);
   }
 }

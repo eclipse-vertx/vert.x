@@ -232,6 +232,15 @@ public class HostAndPortImpl implements HostAndPort {
   }
 
   @Override
+  public String toString(boolean ssl) {
+    if ((port == 80 && !ssl) || (port == 443 && ssl) || port < 0) {
+      return host;
+    } else {
+      return host + ':' + port;
+    }
+  }
+
+  @Override
   public String toString() {
     if (port >= 0) {
       return host + ':' + port;
