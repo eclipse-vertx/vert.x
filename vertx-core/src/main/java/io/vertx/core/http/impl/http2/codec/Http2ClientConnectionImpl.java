@@ -208,19 +208,21 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     Http2Stream s = handler.connection().stream(streamId);
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
-
-    if (!s.isTrailersReceived() && !headersMap.validate(false)) {
-      handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
-      return;
-    }
-    headersMap.sanitize();
     if (!s.isTrailersReceived()) {
-      stream.onHeaders(headersMap, streamPriority);
-      if (endOfStream) {
-        stream.onEnd();
+      if (!headersMap.validate(false)) {
+        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
+      } else {
+        headersMap.sanitize();
+        if (streamPriority != null) {
+          stream.priority(streamPriority);
+        }
+        stream.onHeaders(headersMap);
+        if (endOfStream) {
+          stream.onTrailers();
+        }
       }
     } else {
-      stream.onEnd(headersMap);
+      stream.onTrailers(headersMap);
     }
   }
 
