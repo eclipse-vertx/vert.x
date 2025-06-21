@@ -40,7 +40,7 @@ import java.util.Set;
  * the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one
  * from the file and written to the outgoing socket. If the developer wants to use directly a
- * {@link java.nio.channels.FileChannel} and manage its lifecycle use {@link #sendFile(FileChannel, String)}.
+ * {@link java.nio.channels.FileChannel} and manage its lifecycle use {@link #sendFile(FileChannel)}.
  * This is not yet supported in HTTP/2 for {@link io.vertx.core.http.impl.Http2ServerResponse}.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
@@ -369,32 +369,30 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> sendFile(String filename, long offset, long length);
 
   /**
-   * Same as {@link #sendFile(FileChannel, String, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * Same as {@link #sendFile(FileChannel, long)} using length @code{Long.MAX_VALUE} which means until the end of the
    * file.
    *
    * @param channel the file channel to the file to serve
-   * @param extension the file extension if known
    * @return a future completed with the body result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  default Future<Void> sendFile(FileChannel channel, String extension) {
-    return sendFile(channel, extension, 0);
+  default Future<Void> sendFile(FileChannel channel) {
+    return sendFile(channel, 0);
   }
 
   /**
-   * Same as {@link #sendFile(FileChannel, String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * Same as {@link #sendFile(FileChannel, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
    * file.
    *
    * @param channel the file channel to the file to serve
-   * @param extension the file extension if known
    * @param offset offset to start serving from
    * @return a future completed with the body result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  default Future<Void> sendFile(FileChannel channel, String extension, long offset) {
-    return sendFile(channel, extension, offset, Long.MAX_VALUE);
+  default Future<Void> sendFile(FileChannel channel, long offset) {
+    return sendFile(channel, offset, Long.MAX_VALUE);
   }
 
   /**
@@ -404,6 +402,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * the caller is responsible to close {@code channel} when no more needed.
    * This is a very efficient way to serve files.<p>
    * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   * The developer is responsible to set the adequate Content-Type with {@link #putHeader(String, String)}. If not
+   * application/octet-stream will be set as default Content-Type.
    *
    * @param channel the file channel to the file to serve
    * @param offset offset to start serving from
@@ -412,24 +412,23 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  Future<Void> sendFile(FileChannel channel, String extension, long offset, long length);
+  Future<Void> sendFile(FileChannel channel, long offset, long length);
 
   /**
-   * Same as {@link #sendFile(FileChannel, String)} with {@link RandomAccessFile}
+   * Same as {@link #sendFile(FileChannel)} with {@link RandomAccessFile}
    *
    * @param file the file to serve
-   * @param extension the file extension if known
    * @return a future completed with the body result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  default Future<Void> sendFile(RandomAccessFile file, String extension) {
-    return sendFile(file.getChannel(), extension, 0);
+  default Future<Void> sendFile(RandomAccessFile file) {
+    return sendFile(file.getChannel(), 0);
   }
 
   /**
    *
-   * Same as {@link #sendFile(FileChannel, String, long)} with {@link RandomAccessFile}
+   * Same as {@link #sendFile(FileChannel, long)} with {@link RandomAccessFile}
    *
    * @param file the file to serve
    * @param offset offset to start serving from
@@ -437,12 +436,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  default Future<Void> sendFile(RandomAccessFile file, String extension, long offset) {
-    return sendFile(file.getChannel(), extension, offset, Long.MAX_VALUE);
+  default Future<Void> sendFile(RandomAccessFile file, long offset) {
+    return sendFile(file.getChannel(), offset, Long.MAX_VALUE);
   }
 
   /**
-   * Same as {@link #sendFile(FileChannel, String, long, long)} with {@link RandomAccessFile}
+   * Same as {@link #sendFile(FileChannel, long, long)} with {@link RandomAccessFile}
    *
    * @param file the file to serve
    * @param offset offset to start serving from
@@ -451,8 +450,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  default Future<Void> sendFile(RandomAccessFile file, String extension, long offset, long length) {
-    return sendFile(file.getChannel(), extension, offset, length);
+  default Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    return sendFile(file.getChannel(), offset, length);
   }
 
   /**

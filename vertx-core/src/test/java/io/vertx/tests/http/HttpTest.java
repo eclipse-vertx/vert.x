@@ -2310,7 +2310,7 @@ public abstract class HttpTest extends HttpTestBase {
     FileChannel channel = FileChannel.open(file.toPath());
     server.requestHandler(
         req -> {
-          req.response().sendFile(channel, null).onFailure(
+          req.response().sendFile(channel).onFailure(
             t -> {
               if (HttpTest.this instanceof Http2Test) {
                 req.response().end();
@@ -2319,19 +2319,23 @@ public abstract class HttpTest extends HttpTestBase {
           );
         });
     startServer(testAddress);
-    int[] length = {0};
-    Integer len = client.request(requestOptions)
+    Object[] res = {0, ""};
+    Object[] r = client.request(requestOptions)
       .compose(req -> req.send()
         .compose(resp -> {
           resp.handler(buff -> {
-            length[0] += buff.length();
+            Integer length = (Integer) res[0];
+            length += buff.length();
+            res[0] = length;
           });
+          res[1] = resp.getHeader("Content-Type");
           resp.exceptionHandler(this::fail);
           return resp.end();
         }))
-      .map(v -> length[0]).await();
+      .map(v -> res).await();
     if (this instanceof Http1xTest){
-      assertEquals((int) len, file.length());
+      assertEquals((int) r[0], file.length());
+      assertEquals("application/octet-stream", r[1]);
     }
   }
 
@@ -2342,7 +2346,9 @@ public abstract class HttpTest extends HttpTestBase {
     FileChannel channel = FileChannel.open(file.toPath());
     server.requestHandler(
         req -> {
-          req.response().sendFile(channel, "mp4").onFailure(
+          req.response()
+            .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
+            .sendFile(channel).onFailure(
             t -> {
               if (HttpTest.this instanceof Http2Test) {
                 req.response().end();
@@ -2380,7 +2386,8 @@ public abstract class HttpTest extends HttpTestBase {
     int expectedRange = fileLength - offset;
     server.requestHandler(
         req -> {
-          req.response().sendFile(channel, "mp4", offset, expectedRange).onFailure(
+          req.response().putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4");
+          req.response().sendFile(channel, offset, expectedRange).onFailure(
             t -> {
               if (HttpTest.this instanceof Http2Test) {
                 req.response().end();

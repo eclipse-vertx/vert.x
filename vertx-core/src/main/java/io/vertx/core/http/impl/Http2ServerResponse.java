@@ -571,7 +571,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
     return stream.context.failedFuture("HTTP/2 does not support sending channel for now");
   }
 
