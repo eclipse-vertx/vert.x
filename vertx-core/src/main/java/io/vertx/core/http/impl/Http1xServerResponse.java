@@ -471,10 +471,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> sendFile(FileChannel channel, String extension, long offset, long length) {
-    return sendFileInternal(extension, offset,
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    return sendFileInternal("application/octet-stream", offset,
       length,
-      MimeMapping::mimeTypeForExtension,
+      Function.identity(),
       (c) -> {
         try {
           return c.size();
