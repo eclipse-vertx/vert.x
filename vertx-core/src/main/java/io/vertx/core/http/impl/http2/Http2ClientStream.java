@@ -242,35 +242,31 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   public void onHeaders(Http2HeadersMultiMap headers) {
-    super.onHeaders(headers);
-    if (response == null) {
-      int status = headers.status();
-      String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-      if (status == 100) {
-        onContinue();
-        return;
-      } else if (status == 103) {
-        MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
-        headers.remove(HttpHeaders.PSEUDO_STATUS);
-        for (Map.Entry<String, String> header : headers) {
-          headersMultiMap.add(header.getKey(), header.getValue());
-        }
-        onEarlyHints(headersMultiMap);
-        return;
-      }
-      response = new HttpResponseHead(
-        HttpVersion.HTTP_2,
-        status,
-        statusMessage,
-        headers);
+    int status = headers.status();
+    String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
+    if (status == 100) {
+      onContinue();
+      return;
+    } else if (status == 103) {
+      MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
       headers.remove(HttpHeaders.PSEUDO_STATUS);
-
-      if (clientMetrics != null) {
-        clientMetrics.responseBegin(metric, response);
+      for (Map.Entry<String, String> header : headers) {
+        headersMultiMap.add(header.getKey(), header.getValue());
       }
-
-      context.execute(response, this::handleHead);
+      onEarlyHints(headersMultiMap);
+      return;
     }
+    super.onHeaders(headers);
+    response = new HttpResponseHead(
+      HttpVersion.HTTP_2,
+      status,
+      statusMessage,
+      headers);
+    headers.remove(HttpHeaders.PSEUDO_STATUS);
+    if (clientMetrics != null) {
+      clientMetrics.responseBegin(metric, response);
+    }
+    context.execute(response, this::handleHead);
   }
 
   @Override

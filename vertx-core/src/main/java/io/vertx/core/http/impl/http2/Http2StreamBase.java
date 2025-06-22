@@ -41,7 +41,7 @@ public abstract class Http2StreamBase {
   private final Http2Connection conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-  protected int id;
+  public int id;
 
   // Keep track of state
   private boolean headersReceived;
@@ -149,6 +149,9 @@ public abstract class Http2StreamBase {
   }
 
   public void onHeaders(Http2HeadersMultiMap headers) {
+    if (headersReceived) {
+      throw new IllegalStateException();
+    }
     headersReceived = true;
   }
 
@@ -187,7 +190,10 @@ public abstract class Http2StreamBase {
     onTrailers(EMPTY);
   }
 
-  void onTrailers(MultiMap trailers) {
+  public void onTrailers(MultiMap trailers) {
+    if (trailersReceived) {
+      throw new IllegalStateException();
+    }
     trailersReceived = true;
     conn.flushBytesRead();
     inboundQueue.write(trailers);

@@ -14,11 +14,23 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.codec.http.HttpServerUpgradeHandler;
+import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
+import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
+import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.netty.handler.codec.http2.Http2Connection;
+import io.netty.handler.codec.http2.Http2ConnectionDecoder;
+import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2FrameCodec;
+import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
+import io.netty.handler.codec.http2.Http2FrameListener;
+import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
@@ -34,7 +46,6 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -56,9 +67,8 @@ class HttpServerConnectionInitializer {
   private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
-  private final CompressionOptions[] compressionOptions;
+  private final CompressionManager compressionManager;
   private final int compressionContentSizeThreshold;
-  private final Function<String, String> encodingDetector;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
@@ -71,8 +81,9 @@ class HttpServerConnectionInitializer {
                                   Handler<Throwable> exceptionHandler,
                                   Object metric) {
 
-    CompressionOptions[] compressionOptions = null;
+    CompressionManager compressionHelper;
     if (options.isCompressionSupported()) {
+      CompressionOptions[] compressionOptions = null;
       List<CompressionOptions> compressors = options.getCompressors();
       if (compressors == null) {
         int compressionLevel = options.getCompressionLevel();
@@ -80,6 +91,9 @@ class HttpServerConnectionInitializer {
       } else {
         compressionOptions = compressors.toArray(new CompressionOptions[0]);
       }
+      compressionHelper = new CompressionManager(options.getCompressionContentSizeThreshold(), compressionOptions);
+    } else {
+      compressionHelper = null;
     }
 
     this.context = context;
@@ -94,9 +108,8 @@ class HttpServerConnectionInitializer {
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
-    this.compressionOptions = compressionOptions;
+    this.compressionManager = compressionHelper;
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
-    this.encodingDetector = compressionOptions != null ? new EncodingDetector(options.getCompressionContentSizeThreshold(), compressionOptions)::determineEncoding : null;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
@@ -108,7 +121,7 @@ class HttpServerConnectionInitializer {
         if (protocol != null) {
           switch (protocol) {
             case "h2":
-              configureHttp2(ch.pipeline());
+              configureHttp2(ch.pipeline(), true);
               break;
             case "http/1.1":
             case "http/1.0":
@@ -134,7 +147,7 @@ class HttpServerConnectionInitializer {
           @Override
           protected void configure(ChannelHandlerContext ctx, boolean h2c) {
             if (h2c) {
-              configureHttp2(ctx.pipeline());
+              configureHttp2(ctx.pipeline(), false);
             } else {
               configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslContextManager);
               configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslContextManager);
@@ -167,12 +180,40 @@ class HttpServerConnectionInitializer {
       .addListener(ChannelFutureListener.CLOSE);
   }
 
-  private void configureHttp2(ChannelPipeline pipeline) {
-    configureHttp2Handler(pipeline);
+  private void configureHttp2(ChannelPipeline pipeline, boolean ssl) {
+    configureHttp2Handler(pipeline, ssl);
     configureHttp2Pipeline(pipeline);
   }
 
-  private void configureHttp2Handler(ChannelPipeline pipeline) {
+  class VertxFrameCodecBuilder extends Http2FrameCodecBuilder {
+
+    public VertxFrameCodecBuilder() {
+      gracefulShutdownTimeoutMillis(0);
+    }
+
+    @Override
+    public Http2FrameCodecBuilder server(boolean isServer) {
+      return super.server(isServer);
+    }
+
+    @Override
+    protected Http2FrameCodec build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
+      Http2FrameCodec codec;
+      if (isServer() && compressionManager != null) {
+        encoder = new CompressorHttp2ConnectionEncoder(encoder, compressionManager.options());
+      }
+      codec = super.build(decoder, encoder, initialSettings);
+      if (options.isDecompressionSupported()) {
+        decoder = codec.decoder();
+        Http2Connection http2Connection = codec.connection();
+        Http2FrameListener listener = decoder.frameListener();
+        decoder.frameListener(new DelegatingDecompressorFrameListener(http2Connection, listener, 0));
+      }
+      return codec;
+    }
+  }
+
+  private void configureHttp2Handler(ChannelPipeline pipeline, boolean ssl) {
     VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = buildHttp2ConnectionHandler(context, connectionHandler);
     pipeline.replace(VertxHandler.class, "handler", handler);
   }
@@ -195,13 +236,13 @@ class HttpServerConnectionInitializer {
     int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
     VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnectionImpl>()
       .server(true)
-      .useCompression(compressionOptions)
+      .useCompression(compressionManager != null ? compressionManager.options() : null)
       .gracefulShutdownTimeoutMillis(0)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
+        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, serverOrigin, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, options, metrics);
         conn.metric(metric);
         return conn;
       })
@@ -245,7 +286,7 @@ class HttpServerConnectionInitializer {
       pipeline.addBefore(name, "inflater", new HttpContentDecompressor(false));
     }
     if (options.isCompressionSupported()) {
-      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionContentSizeThreshold, compressionOptions));
+      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionContentSizeThreshold, compressionManager.options()));
     }
   }
 
@@ -271,17 +312,5 @@ class HttpServerConnectionInitializer {
     pipeline.replace(VertxHandler.class, "handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     connectionHandler.handle(conn);
-  }
-
-  private static class EncodingDetector extends HttpContentCompressor {
-
-    private EncodingDetector(int contentSizeThreshold, CompressionOptions[] compressionOptions) {
-      super(contentSizeThreshold, compressionOptions);
-    }
-
-    @Override
-    protected String determineEncoding(String acceptEncoding) {
-      return super.determineEncoding(acceptEncoding);
-    }
   }
 }

@@ -351,6 +351,12 @@ public final class HttpUtils {
     return params;
   }
 
+  public static Http2Settings fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings) {
+    Http2Settings nettySettings = new Http2Settings();
+    fromVertxInitialSettings(server, vertxSettings, nettySettings);
+    return nettySettings;
+  }
+
   public static void fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings, Http2Settings nettySettings) {
     if (vertxSettings != null) {
       if (!server && vertxSettings.isPushEnabled() != DEFAULT_ENABLE_PUSH) {
