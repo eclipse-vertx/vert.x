@@ -881,7 +881,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   /**
    * The outcome of the upgrade signalled by the upgrade.
    */
-  interface UpgradeResult {
+  public interface UpgradeResult {
 
     /**
      * Upgrade is successful.
@@ -907,7 +907,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   /**
    * Plugin to upgrade a Netty HTTP/1.1 channel to a Netty HTTP/2 channel.
    */
-  interface Http2ChannelUpgrade {
+  public interface Http2ChannelUpgrade {
 
     void upgrade(HttpClientStream upgradingStream,
                  HttpRequestHead request,

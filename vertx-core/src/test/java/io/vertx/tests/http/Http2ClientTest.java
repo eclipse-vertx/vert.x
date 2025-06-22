@@ -852,6 +852,7 @@ public class Http2ClientTest extends Http2TestBase {
             Buffer content = Buffer.buffer();
             resp.handler(content::appendBuffer);
             resp.endHandler(v -> {
+              assertEquals("the_content", content.toString());
               complete();
             });
           }));

@@ -297,22 +297,17 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     return handler;
   }
 
-  public Future<Void> createStream(Http2ClientStream vertxStream) {
+  @Override
+  public void createStream(Http2ClientStream vertxStream) throws Exception {
     int id = handler.encoder().connection().local().lastStreamCreated();
     if (id == 0) {
       id = 1;
     } else {
       id += 2;
     }
-    Http2Stream nettyStream = null;
-    try {
-      nettyStream = handler.encoder().connection().local().createStream(id, false);
-    } catch (Http2Exception e) {
-      return Future.failedFuture(e);
-    }
+    Http2Stream nettyStream = handler.encoder().connection().local().createStream(id, false);
     nettyStream.setProperty(streamKey, vertxStream);
     int nettyStreamId = nettyStream.id();
     vertxStream.init(nettyStreamId, isWritable(nettyStream.id()));
-    return Future.succeededFuture();
   }
 }

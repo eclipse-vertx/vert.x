@@ -289,7 +289,7 @@ public abstract class Http2StreamBase {
   }
 
   public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
-    outboundQueue.write(new MessageWrite() {
+    write(new MessageWrite() {
       @Override
       public void write() {
         writeData0(chunk, end, promise);

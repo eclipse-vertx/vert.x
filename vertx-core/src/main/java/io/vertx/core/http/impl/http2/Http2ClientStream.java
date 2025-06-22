@@ -13,7 +13,6 @@ package io.vertx.core.http.impl.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
@@ -84,26 +83,22 @@ public class Http2ClientStream extends Http2StreamBase {
     this.trailersSent = true;
   }
 
-  private Future<Void> createStream(HttpRequestHead head, Http2HeadersMultiMap headers) {
-    Future<Void> fut = conn.createStream(this);
-    return fut.andThen(ar -> {
-      if (ar.succeeded()) {
-        head.id = id;
-        head.remoteAddress = ((HttpConnection)conn).remoteAddress();
-        if (clientMetrics != null) {
-          metric = clientMetrics.requestBegin(headers.path().toString(), head);
-        }
-        VertxTracer tracer = context.tracer();
-        if (tracer != null) {
-          BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
-          String operation = head.traceOperation;
-          if (operation == null) {
-            operation = headers.method().toString();
-          }
-          trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
-        }
+  private void createStream(HttpRequestHead head, Http2HeadersMultiMap headers) throws Exception {
+    conn.createStream(this);
+    head.id = id;
+    head.remoteAddress = ((HttpConnection)conn).remoteAddress();
+    if (clientMetrics != null) {
+      metric = clientMetrics.requestBegin(headers.path().toString(), head);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
+      String operation = head.traceOperation;
+      if (operation == null) {
+        operation = headers.method().toString();
       }
-    });
+      trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+    }
   }
 
   void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
@@ -153,21 +148,19 @@ public class Http2ClientStream extends Http2StreamBase {
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
-      Future<Void> f = createStream(request, headers);
-      f.onComplete(ar -> {
-        if (ar.succeeded()) {
-          if (buf != null) {
-            writeHeaders0(headers, false, false, null);
-            writeData0(buf, e, promise);
-          } else {
-            writeHeaders0(headers, e, true, promise);
-          }
-        } else {
-          Throwable ex = ar.cause();
-          promise.fail(ex);
-          onException(ex);
-        }
-      });
+      try {
+        createStream(request, headers);
+      } catch (Exception ex) {
+        promise.fail(ex);
+        onException(ex);
+        return;
+      }
+      if (buf != null) {
+        writeHeaders0(headers, false, false, null);
+        writeData0(buf, e, promise);
+      } else {
+        writeHeaders0(headers, e, true, promise);
+      }
     }
 
     @Override
