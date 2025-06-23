@@ -240,7 +240,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return Zstd.isAvailable();
   }
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
-    request.id = stream.id;
     request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);

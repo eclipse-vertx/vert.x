@@ -21,7 +21,6 @@ import io.vertx.core.spi.observability.HttpRequest;
  */
 public class HttpRequestHead implements HttpRequest {
 
-  public int id; // For internal testing correlation
   public SocketAddress remoteAddress;
   public final HttpMethod method;
   public final String uri;
@@ -59,7 +58,7 @@ public class HttpRequestHead implements HttpRequest {
 
   @Override
   public int id() {
-    return id;
+    return 1;
   }
 
   @Override

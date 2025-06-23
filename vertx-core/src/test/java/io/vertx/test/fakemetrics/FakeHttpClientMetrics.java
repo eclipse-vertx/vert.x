@@ -46,7 +46,9 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
   public HttpClientMetric getMetric(HttpClientRequest request) {
     for (EndpointMetric metric : endpoints.values()) {
       for (HttpRequest req : metric.requests.keySet()) {
-        if (req.id() == request.streamId()) {
+        if (req.uri().equals(request.getURI()) &&
+            req.remoteAddress().equals(request.connection().remoteAddress()) &&
+            req.method() == request.getMethod()) {
           return metric.requests.get(req);
         }
       }

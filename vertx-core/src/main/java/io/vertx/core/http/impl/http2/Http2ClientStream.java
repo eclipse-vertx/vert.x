@@ -85,7 +85,6 @@ public class Http2ClientStream extends Http2StreamBase {
 
   private void createStream(HttpRequestHead head, Http2HeadersMultiMap headers) throws Exception {
     conn.createStream(this);
-    head.id = id;
     head.remoteAddress = ((HttpConnection)conn).remoteAddress();
     if (clientMetrics != null) {
       metric = clientMetrics.requestBegin(headers.path().toString(), head);

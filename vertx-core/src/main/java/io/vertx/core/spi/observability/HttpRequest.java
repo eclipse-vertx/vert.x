@@ -23,7 +23,9 @@ public interface HttpRequest {
 
   /**
    * @return the stream id
+   * @deprecated the id cannot be guaranteed to be a stable value, it cannot be used for correlation purpose
    */
+  @Deprecated(forRemoval = true)
   int id();
 
   /**
