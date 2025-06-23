@@ -26,6 +26,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -39,6 +40,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.http.HttpMethod.OPTIONS;
 
@@ -75,7 +77,24 @@ public class HttpChannelConnector {
                               HostAndPort authority,
                               SocketAddress server,
                               boolean pooled,
-                              long maxLifetime) {
+                              long maxLifetimeMillis) {
+
+    Http2ClientChannelInitializer http2ChannelInitializer;
+    if (client.options.getHttp2MultiplexImplementation()) {
+      http2ChannelInitializer = new Http2MultiplexClientChannelInitializer(
+        HttpUtils.fromVertxSettings(client.options.getInitialSettings()),
+        client.metrics,
+        metrics,
+        TimeUnit.SECONDS.toMillis(client.options.getHttp2KeepAliveTimeout()),
+        maxLifetimeMillis,
+        authority,
+        client.options.getHttp2MultiplexingLimit(),
+        client.options.isDecompressionSupported(),
+        client.options.getLogActivity());
+    } else {
+      http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, pooled, maxLifetimeMillis, authority);
+    }
+
     this.client = client;
     this.netClient = netClient;
     this.metrics = metrics;
@@ -88,8 +107,8 @@ public class HttpChannelConnector {
     this.authority = authority;
     this.server = server;
     this.pooled = pooled;
-    this.maxLifetime = maxLifetime;
-    this.http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, pooled, maxLifetime, authority);
+    this.maxLifetime = maxLifetimeMillis;
+    this.http2ChannelInitializer = http2ChannelInitializer;
   }
 
   public SocketAddress server() {

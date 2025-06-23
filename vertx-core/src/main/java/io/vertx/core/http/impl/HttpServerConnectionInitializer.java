@@ -23,6 +23,7 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
@@ -79,17 +80,31 @@ public class HttpServerConnectionInitializer {
       compressionManager = null;
     }
 
-    Http2ServerChannelInitializer http2ChannelInitializer = new Http2CodecServerChannelInitializer(
-      this,
-      (HttpServerMetrics) server.getMetrics(),
-      options,
-      compressionManager,
-      streamContextSupplier,
-      connectionHandler,
-      serverOrigin,
-      metric,
-      options.getLogActivity()
-    );
+    Http2ServerChannelInitializer http2ChannelInitalizer;
+    if (options.getHttp2MultiplexImplementation()) {
+      http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
+        context,
+        compressionManager,
+        options.isDecompressionSupported(),
+        (HttpServerMetrics) server.getMetrics(),
+        metric,
+        streamContextSupplier,
+        connectionHandler,
+        HttpUtils.fromVertxInitialSettings(true, options.getInitialSettings()),
+        options.getLogActivity());
+    } else {
+      http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
+        this,
+        (HttpServerMetrics) server.getMetrics(),
+        options,
+        compressionManager,
+        streamContextSupplier,
+        connectionHandler,
+        serverOrigin,
+        metric,
+        options.getLogActivity()
+      );
+    }
 
     this.context = context;
     this.threadingModel = threadingModel;
@@ -103,7 +118,7 @@ public class HttpServerConnectionInitializer {
     this.metric = metric;
     this.compressionManager = compressionManager;
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
-    this.http2ChannelInitializer = http2ChannelInitializer;
+    this.http2ChannelInitializer = http2ChannelInitalizer;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {

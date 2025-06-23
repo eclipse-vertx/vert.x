@@ -18,6 +18,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpTestBase;
@@ -352,7 +353,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
 
   private RandomAccessFile testSendFileWithFileChannel(int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender,
                                                        String expectedContentType, long expectedLength) throws Exception {
-    Assume.assumeTrue(this instanceof Http1xSendFileTest);
+    Assume.assumeTrue(createBaseClientOptions().getProtocolVersion() == HttpVersion.HTTP_1_1 || createBaseServerOptions().getHttp2MultiplexImplementation());
     File file = TestUtils.tmpFile(".dat", flen);
     RandomAccessFile raf = new RandomAccessFile(file, "r");
     server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(onSuccess(v -> testComplete())));

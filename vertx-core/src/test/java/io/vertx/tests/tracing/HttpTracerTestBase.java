@@ -11,8 +11,11 @@
 package io.vertx.tests.tracing;
 
 import io.vertx.core.Context;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -29,6 +32,7 @@ import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
@@ -193,22 +197,18 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     }));
     awaitLatch(latch);
     Context ctx = vertx.getOrCreateContext();
+    Promise<Void> response = Promise.promise();
     ctx.runOnContext(v1 -> {
       key.put(ctx, val);
-      client.request(request).onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          resp.endHandler(v2 -> {
-            // Updates are done on the HTTP client context, so we need to run task on this context
-            // to avoid data race
-            ctx.runOnContext(v -> {
-              assertNull(key.get(ctx));
-              testComplete();
-            });
-          });
-        }));
-      }));
+      client.request(request).compose(req -> req.send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+        .onComplete(response);
     });
-    await();
+    response.future().await(20, TimeUnit.SECONDS);
+    // Updates are done on the HTTP client context, so we need to run task on this context
+    // to avoid data race
+    assertWaitUntil(() -> key.get(ctx) == null);
   }
 
   @Test

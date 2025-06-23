@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.handler.stream.ChunkedInput;
+import io.netty.handler.stream.ChunkedNioFile;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -105,7 +106,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   void handleClose() {
-    Handler<Throwable> exceptionHandler;
     Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
@@ -638,7 +638,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         if (file != null) {
           channel = file.getChannel();
         }
-        chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength);
+        if (close) {
+          chunkedFile = new ChunkedNioFile(channel, actualOffset, actualLength, 8192);
+        } else {
+          chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength);
+        }
       } catch (IOException e) {
         return context.failedFuture(e);
       }
@@ -666,6 +670,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
     checkSendHeaders(false);
     Promise<Void> promise = context.promise();
+    ended = true;
     stream.sendFile(file, promise);
     Future<Void> future = promise.future();
     Handler<Void> bodyEndHandler = this.bodyEndHandler;

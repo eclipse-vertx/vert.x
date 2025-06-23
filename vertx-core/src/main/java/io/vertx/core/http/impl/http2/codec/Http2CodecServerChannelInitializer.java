@@ -29,12 +29,12 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
 
   private final HttpServerConnectionInitializer initializer;
   private final HttpServerMetrics serverMetrics;
+  private final Object metric;
   private final HttpServerOptions options;
   private final CompressionManager compressionManager;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
   private final String serverOrigin;
-  private final Object metric;
   private final boolean logEnabled;
 
   public Http2CodecServerChannelInitializer(HttpServerConnectionInitializer initializer,

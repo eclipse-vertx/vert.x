@@ -2857,6 +2857,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2874,6 +2875,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextMalformedSettings() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2891,6 +2893,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidSettings() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     Buffer buffer = Buffer.buffer();
     buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
     String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
@@ -2928,6 +2931,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextWorkerContext() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2961,6 +2965,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextPartialFailure() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
     CompletableFuture<Void> closeRequest = new CompletableFuture<>();
