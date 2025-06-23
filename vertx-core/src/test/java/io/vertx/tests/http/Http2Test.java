@@ -1129,4 +1129,22 @@ public class Http2Test extends HttpTest {
     });
     await();
   }
+
+  @Test
+  public void testClearTextDirect() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setSsl(false).setHttp2ClearTextEnabled(true));
+    server.requestHandler(req -> {
+      assertFalse(req.isSSL());
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setSsl(false).setHttp2ClearTextUpgrade(false));
+    client.request(requestOptions).compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
+  }
 }

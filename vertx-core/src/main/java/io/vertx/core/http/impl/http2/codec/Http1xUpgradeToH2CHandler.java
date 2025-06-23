@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -20,8 +20,9 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.core.http.impl.http2.codec.Http2ServerConnectionImpl;
-import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
+import io.vertx.core.http.impl.HttpServerConnectionInitializer;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.VertxHandler;
@@ -33,14 +34,18 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
 
   private final HttpServerConnectionInitializer initializer;
+  private final ContextInternal context;
+  private final Http2CodecServerChannelInitializer provider;
   private final SslChannelProvider sslChannelProvider;
   private final SslContextManager sslContextManager;
   private VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler;
   private final boolean isCompressionSupported;
   private final boolean isDecompressionSupported;
 
-  Http1xUpgradeToH2CHandler(HttpServerConnectionInitializer initializer, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager, boolean isCompressionSupported, boolean isDecompressionSupported) {
+  public Http1xUpgradeToH2CHandler(HttpServerConnectionInitializer initializer, ContextInternal context, Http2CodecServerChannelInitializer provider, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager, boolean isCompressionSupported, boolean isDecompressionSupported) {
     this.initializer = initializer;
+    this.context = context;
+    this.provider = provider;
     this.sslChannelProvider = sslChannelProvider;
     this.sslContextManager = sslContextManager;
     this.isCompressionSupported = isCompressionSupported;
@@ -93,7 +98,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
               if (isDecompressionSupported) {
                 pipeline.remove("inflater");
               }
-              handler = initializer.buildHttp2ConnectionHandler();
+              handler = provider.buildHttp2ConnectionHandler(context);
               pipeline.replace(VertxHandler.class, "handler", handler);
               handler.serverUpgrade(ctx, settings);
               DefaultHttp2Headers headers = new DefaultHttp2Headers();
@@ -118,7 +123,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.writeAndFlush(res);
         }
       } else {
-        initializer.configureHttp1Handler(ctx.pipeline(), sslChannelProvider, sslContextManager);
+        initializer.configureHttp1Handler(ctx.pipeline(), sslContextManager);
         ctx.fireChannelRead(msg);
         ctx.pipeline().remove(this);
       }
@@ -133,7 +138,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
             ChannelPipeline pipeline = ctx.pipeline();
             pipeline.remove("h2c");
             pipeline.remove("httpDecoder");
-            initializer.configureHttp2Pipeline(pipeline);
+            initializer.checkAccept(pipeline);
           }
         } else {
           // We might have left over buffer sent when removing the HTTP decoder that needs to be propagated to the HTTP handler

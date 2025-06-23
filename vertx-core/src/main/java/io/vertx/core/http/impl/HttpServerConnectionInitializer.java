@@ -15,30 +15,15 @@ import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpServerUpgradeHandler;
-import io.netty.handler.codec.http2.CompressorHttp2ConnectionEncoder;
-import io.netty.handler.codec.http2.DelegatingDecompressorFrameListener;
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2ConnectionDecoder;
-import io.netty.handler.codec.http2.Http2ConnectionEncoder;
-import io.netty.handler.codec.http2.Http2FrameCodec;
-import io.netty.handler.codec.http2.Http2FrameCodecBuilder;
-import io.netty.handler.codec.http2.Http2FrameListener;
-import io.netty.handler.codec.http2.Http2ServerUpgradeCodec;
-import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.http2.codec.Http2ServerConnectionImpl;
-import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandler;
-import io.vertx.core.http.impl.http2.codec.VertxHttp2ConnectionHandlerBuilder;
+import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
+import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.*;
@@ -53,37 +38,35 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class HttpServerConnectionInitializer {
+public class HttpServerConnectionInitializer {
 
   private final ContextInternal context;
   private final ThreadingModel threadingModel;
   private final Supplier<ContextInternal> streamContextSupplier;
-  private final VertxInternal vertx;
   private final HttpServerImpl server;
   private final HttpServerOptions options;
   private final String serverOrigin;
-  private final boolean logEnabled;
   private final boolean disableH2C;
   private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
   private final CompressionManager compressionManager;
   private final int compressionContentSizeThreshold;
+  private final Http2ServerChannelInitializer http2ChannelInitializer;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
                                   Supplier<ContextInternal> streamContextSupplier,
                                   HttpServerImpl server,
-                                  VertxInternal vertx,
                                   HttpServerOptions options,
                                   String serverOrigin,
                                   Handler<HttpServerConnection> connectionHandler,
                                   Handler<Throwable> exceptionHandler,
                                   Object metric) {
 
-    CompressionManager compressionHelper;
+    CompressionManager compressionManager;
     if (options.isCompressionSupported()) {
-      CompressionOptions[] compressionOptions = null;
+      CompressionOptions[] compressionOptions;
       List<CompressionOptions> compressors = options.getCompressors();
       if (compressors == null) {
         int compressionLevel = options.getCompressionLevel();
@@ -91,25 +74,36 @@ class HttpServerConnectionInitializer {
       } else {
         compressionOptions = compressors.toArray(new CompressionOptions[0]);
       }
-      compressionHelper = new CompressionManager(options.getCompressionContentSizeThreshold(), compressionOptions);
+      compressionManager = new CompressionManager(options.getCompressionContentSizeThreshold(), compressionOptions);
     } else {
-      compressionHelper = null;
+      compressionManager = null;
     }
+
+    Http2ServerChannelInitializer http2ChannelInitializer = new Http2CodecServerChannelInitializer(
+      this,
+      (HttpServerMetrics) server.getMetrics(),
+      options,
+      compressionManager,
+      streamContextSupplier,
+      connectionHandler,
+      serverOrigin,
+      metric,
+      options.getLogActivity()
+    );
 
     this.context = context;
     this.threadingModel = threadingModel;
     this.streamContextSupplier = streamContextSupplier;
     this.server = server;
-    this.vertx = vertx;
     this.options = options;
     this.serverOrigin = serverOrigin;
-    this.logEnabled = options.getLogActivity();
     this.disableH2C = !options.isHttp2ClearTextEnabled();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
-    this.compressionManager = compressionHelper;
+    this.compressionManager = compressionManager;
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
+    this.http2ChannelInitializer = http2ChannelInitializer;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
@@ -126,22 +120,22 @@ class HttpServerConnectionInitializer {
             case "http/1.1":
             case "http/1.0":
               configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-              configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+              configureHttp1Handler(ch.pipeline(), sslContextManager);
               break;
           }
         } else {
           // No alpn presented or OpenSSL
           configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-          configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+          configureHttp1Handler(ch.pipeline(), sslContextManager);
         }
       } else {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Handler(ch.pipeline(), sslContextManager);
       }
     } else {
       if (disableH2C) {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Handler(ch.pipeline(), sslContextManager);
       } else {
         Http1xOrH2CHandler handler = new Http1xOrH2CHandler() {
           @Override
@@ -150,7 +144,7 @@ class HttpServerConnectionInitializer {
               configureHttp2(ctx.pipeline(), false);
             } else {
               configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslContextManager);
-              configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslContextManager);
+              http2ChannelInitializer.configureHttp1OrH2CUpgradeHandler(context, ctx.pipeline(), sslChannelProvider, sslContextManager);
             }
           }
           @Override
@@ -181,85 +175,16 @@ class HttpServerConnectionInitializer {
   }
 
   private void configureHttp2(ChannelPipeline pipeline, boolean ssl) {
-    configureHttp2Handler(pipeline, ssl);
-    configureHttp2Pipeline(pipeline);
+    http2ChannelInitializer.configureHttp2(context, pipeline, ssl);
+    checkAccept(pipeline);
   }
 
-  class VertxFrameCodecBuilder extends Http2FrameCodecBuilder {
-
-    public VertxFrameCodecBuilder() {
-      gracefulShutdownTimeoutMillis(0);
-    }
-
-    @Override
-    public Http2FrameCodecBuilder server(boolean isServer) {
-      return super.server(isServer);
-    }
-
-    @Override
-    protected Http2FrameCodec build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
-      Http2FrameCodec codec;
-      if (isServer() && compressionManager != null) {
-        encoder = new CompressorHttp2ConnectionEncoder(encoder, compressionManager.options());
-      }
-      codec = super.build(decoder, encoder, initialSettings);
-      if (options.isDecompressionSupported()) {
-        decoder = codec.decoder();
-        Http2Connection http2Connection = codec.connection();
-        Http2FrameListener listener = decoder.frameListener();
-        decoder.frameListener(new DelegatingDecompressorFrameListener(http2Connection, listener, 0));
-      }
-      return codec;
-    }
-  }
-
-  private void configureHttp2Handler(ChannelPipeline pipeline, boolean ssl) {
-    VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = buildHttp2ConnectionHandler(context, connectionHandler);
-    pipeline.replace(VertxHandler.class, "handler", handler);
-  }
-
-  void configureHttp2Pipeline(ChannelPipeline pipeline) {
+  public void checkAccept(ChannelPipeline pipeline) {
     if (!server.requestAccept()) {
       // That should send an HTTP/2 go away
       pipeline.channel().close();
       return;
     }
-  }
-
-  VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> buildHttp2ConnectionHandler() {
-    return buildHttp2ConnectionHandler(context, connectionHandler);
-  }
-
-  private VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
-    HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
-    int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
-    int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
-    VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnectionImpl>()
-      .server(true)
-      .useCompression(compressionManager != null ? compressionManager.options() : null)
-      .gracefulShutdownTimeoutMillis(0)
-      .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
-      .useDecompression(options.isDecompressionSupported())
-      .initialSettings(options.getInitialSettings())
-      .connectionFactory(connHandler -> {
-        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, serverOrigin, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, options, metrics);
-        conn.metric(metric);
-        return conn;
-      })
-      .logEnabled(logEnabled)
-      .build();
-    handler.addHandler(conn -> {
-      if (options.getHttp2ConnectionWindowSize() > 0) {
-        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-      }
-      handler_.handle(conn);
-    });
-    return handler;
-  }
-
-  private void configureHttp1OrH2CUpgradeHandler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
-    // DO WE NEED TO ADD SOMEWHERE BEFORE IDLE ?
-    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslContextManager, options.isCompressionSupported(), options.isDecompressionSupported()));
   }
 
   /**
@@ -290,7 +215,7 @@ class HttpServerConnectionInitializer {
     }
   }
 
-  void configureHttp1Handler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
+  public void configureHttp1Handler(ChannelPipeline pipeline, SslContextManager sslContextManager) {
     if (!server.requestAccept()) {
       sendServiceUnavailable(pipeline.channel());
       return;

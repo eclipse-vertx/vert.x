@@ -214,7 +214,6 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         context.threadingModel(),
         streamContextSupplier,
         this,
-        vertx,
         options,
         serverOrigin,
         handler,

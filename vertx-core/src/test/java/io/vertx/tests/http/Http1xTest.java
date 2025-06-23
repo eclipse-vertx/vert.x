@@ -23,6 +23,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.http2.codec.Http1xUpgradeToH2CHandler;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
