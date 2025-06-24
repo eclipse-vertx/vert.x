@@ -117,7 +117,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       ((HttpClientImpl)((CleanableHttpClient)client).delegate).redirectHandler(redirectHandler);
     }
     if (connectHandler != null) {
-      ((HttpClientImpl)((CleanableHttpClient)client).delegate).connectionHandler(connectHandler);
+      ((HttpClientImpl)((CleanableHttpClient)client).delegate).connectionHandler = connectHandler;
     }
     return client;
   }

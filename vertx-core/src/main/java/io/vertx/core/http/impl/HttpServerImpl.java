@@ -208,7 +208,8 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         webSocketHandler,
         webSocketHandhakeHandler,
         connectionHandler,
-        exceptionHandler);
+        exceptionHandler,
+        options.getHttp2ConnectionWindowSize());
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),

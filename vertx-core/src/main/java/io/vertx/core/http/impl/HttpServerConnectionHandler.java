@@ -40,6 +40,7 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
   final Handler<ServerWebSocketHandshake> webSocketHandshakeHandler;
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
+  final int connectionWindowSize;
 
   HttpServerConnectionHandler(
     HttpServerImpl server,
@@ -48,7 +49,8 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
     Handler<ServerWebSocket> webSocketHandler,
     Handler<ServerWebSocketHandshake> webSocketHandshakeHandler,
     Handler<HttpConnection> connectionHandler,
-    Handler<Throwable> exceptionHandler) {
+    Handler<Throwable> exceptionHandler,
+    int connectionWindowSize) {
     this.server = server;
     this.requestHandler = requestHandler;
     this.invalidRequestHandler = invalidRequestHandler == null ? HttpServerRequest.DEFAULT_INVALID_REQUEST_HANDLER : invalidRequestHandler;
@@ -56,6 +58,7 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
     this.webSocketHandshakeHandler = webSocketHandshakeHandler;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
+    this.connectionWindowSize = connectionWindowSize;
   }
 
   @Override
@@ -70,6 +73,9 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
         Http1xServerConnection c = (Http1xServerConnection) conn;
         initializeWebSocketExtensions(c.channelHandlerContext().pipeline());
       }
+    }
+    if (connectionWindowSize > 0) {
+      conn.setWindowSize(connectionWindowSize);
     }
     conn.exceptionHandler(exceptionHandler);
     conn.handler(requestHandler);

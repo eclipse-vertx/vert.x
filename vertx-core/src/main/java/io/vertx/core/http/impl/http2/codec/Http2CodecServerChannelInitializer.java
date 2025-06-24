@@ -84,12 +84,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
       })
       .logEnabled(logEnabled)
       .build();
-    handler.addHandler(conn -> {
-      if (options.getHttp2ConnectionWindowSize() > 0) {
-        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-      }
-      connectionHandler.handle(conn);
-    });
+    handler.addHandler(connectionHandler::handle);
     return handler;
   }
 }

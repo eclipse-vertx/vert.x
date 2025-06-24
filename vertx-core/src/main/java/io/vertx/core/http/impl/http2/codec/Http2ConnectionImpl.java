@@ -333,6 +333,9 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public HttpConnection setWindowSize(int windowSize) {
+    if (windowSize <= 0) {
+      throw new IllegalArgumentException("Invalid window size: " + windowSize);
+    }
     try {
       Http2Stream stream = handler.encoder().connection().connectionStream();
       int delta = windowSize - this.windowSize;

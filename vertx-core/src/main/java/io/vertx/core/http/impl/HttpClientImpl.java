@@ -51,7 +51,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final EndpointResolverInternal endpointResolver;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_REDIRECT_HANDLER;
   private long timerID;
-  private volatile Handler<HttpConnection> connectionHandler;
+  volatile Handler<HttpConnection> connectionHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
 
@@ -179,12 +179,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return redirectHandler;
   }
 
-  public void connectionHandler(Handler<HttpConnection> handler) {
-    connectionHandler = handler;
-  }
-
   Handler<HttpConnection> connectionHandler() {
-    return connectionHandler;
+    Handler<HttpConnection> handler = connectionHandler;
+    return conn -> {
+      if (options.getHttp2ConnectionWindowSize() > 0) {
+        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
+      }
+      if (handler != null) {
+        handler.handle(conn);
+      }
+    };
   }
 
   @Override

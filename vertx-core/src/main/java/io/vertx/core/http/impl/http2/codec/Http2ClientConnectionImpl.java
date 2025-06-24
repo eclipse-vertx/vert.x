@@ -279,9 +279,6 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       .logEnabled(options.getLogActivity())
       .build();
     handler.addHandler(conn -> {
-      if (options.getHttp2ConnectionWindowSize() > 0) {
-        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-      }
       if (metrics != null) {
         if (!upgrade)  {
           met.endpointConnected(metrics);
