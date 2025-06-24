@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core-aggregator</artifactId>
-  <version>5.0.1</version>
+  <version>5.0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Vert.x Core Aggregator</name>
