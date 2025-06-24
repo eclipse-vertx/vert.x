@@ -2799,6 +2799,29 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testUpgradeToClearTextIdleTimeout() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setUseAlpn(false)
+      .setSsl(false)
+      .setIdleTimeout(250)
+      .setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+    server.requestHandler(req -> {
+      req.connection().closeHandler(v -> {
+        testComplete();
+      });
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(clientOptions.
+      setUseAlpn(false).
+      setSsl(false));
+    client.request(requestOptions).compose(request -> request.send());
+    await();
+  }
+
+  @Test
   public void testPushPromiseClearText() throws Exception {
     waitFor(2);
     server.close();
