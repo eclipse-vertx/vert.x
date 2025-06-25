@@ -214,15 +214,6 @@ public class Http2ServerStream extends Http2StreamBase {
     super.writeHeaders0(headers, end, checkFlush, promise);
   }
 
-  @Override
-  protected void writeReset0(long code, Promise<Void> promise) {
-    if (!isTrailersReceived() || !isTrailersSent()) {
-      super.writeReset0(code, promise);
-    } else {
-      promise.fail("Request ended");
-    }
-  }
-
   public HttpMethod method() {
     return method;
   }

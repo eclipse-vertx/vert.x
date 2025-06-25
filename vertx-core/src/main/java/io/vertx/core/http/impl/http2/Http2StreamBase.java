@@ -339,23 +339,27 @@ public abstract class Http2StreamBase {
     return promise.future();
   }
 
-  protected void writeReset0(long code, Promise<Void> promise) {
-    if (reset != -1L) {
-      promise.fail("Stream already reset");
-      return;
-    }
-    reset = code;
-    int streamId;
-    synchronized (this) {
-      streamId = this.id;
-    }
-    if (streamId != -1) {
-      conn.writeReset(id, code, promise);
+  private void writeReset0(long code, Promise<Void> promise) {
+    if (trailersSent && trailersReceived) {
+      promise.fail("Request ended");
     } else {
-      // Reset happening before stream allocation
-      handleReset(code);
+      if (reset != -1L) {
+        promise.fail("Stream already reset");
+        return;
+      }
+      reset = code;
+      int streamId;
+      synchronized (this) {
+        streamId = this.id;
+      }
+      if (streamId != -1) {
+        conn.writeReset(id, code, promise);
+      } else {
+        // Reset happening before stream allocation
+        handleReset(code);
+      }
+      promise.complete();
     }
-    promise.complete();
   }
 
   final void handleWriteQueueDrained() {
