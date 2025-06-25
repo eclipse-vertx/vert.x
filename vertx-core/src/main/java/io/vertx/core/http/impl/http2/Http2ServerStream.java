@@ -13,11 +13,14 @@ package io.vertx.core.http.impl.http2;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -153,14 +156,10 @@ public class Http2ServerStream extends Http2StreamBase {
     return authority;
   }
 
-  public void registerMetrics() {
+  private void registerMetrics() {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        if (handler.response().isPush()) {
-          metric = serverMetrics.responsePushed(socketMetric, method(), uri, handler.response());
-        } else {
-          metric = serverMetrics.requestBegin(socketMetric, (HttpRequest) handler);
-        }
+        metric = serverMetrics.requestBegin(socketMetric, (HttpRequest) handler);
       }
     }
   }
@@ -280,6 +279,26 @@ public class Http2ServerStream extends Http2StreamBase {
   private void routedInternal(String route) {
     if (serverMetrics != null && !isTrailersSent()) {
       serverMetrics.requestRouted(metric, route);
+    }
+  }
+
+  public Future<Http2ServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path) {
+    Promise<Http2ServerStream> promise = context.promise();
+    conn.sendPush(id, authority, method, headers, path, priority(), promise);
+    return promise.future().andThen(ar -> {
+      if (ar.succeeded()) {
+        Http2ServerStream pushStream = ar.result();
+        pushStream.priority(priority()); // Necessary ???
+        pushStream.registerPushMetrics(headers);
+      }
+    });
+  }
+
+  private void registerPushMetrics(MultiMap headers) {
+    if (METRICS_ENABLED) {
+      if (serverMetrics != null) {
+        metric = serverMetrics.responsePushed(socketMetric, method(), uri, new HttpResponseHead(HttpVersion.HTTP_2, 200, null, headers));
+      }
     }
   }
 }

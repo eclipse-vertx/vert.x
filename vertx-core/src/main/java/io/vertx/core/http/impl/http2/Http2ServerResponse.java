@@ -638,38 +638,25 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkValid();
     }
-    Promise<HttpServerResponse> promise = context.promise();
-
-    Promise<Http2ServerStream> blah = context.promise();
-
-    conn.sendPush(stream.id(), authority, method, headers, path, stream.priority(), blah);
-
-    blah.future().onComplete((res, err) -> {
-      if (res != null) {
-        Push push = new Push(res, context, promise);
-        res.handler(push);
-        push.stream.priority(stream.priority());
-        push.complete();
-      } else {
-        promise.fail(err);
-      }
+    Future<Http2ServerStream> fut = stream.sendPush(authority, method, headers, path);
+    return fut.map((pushStream) -> {
+      PushStreamHandler push = new PushStreamHandler(pushStream, context);
+      pushStream.handler(push);
+      push.stream.priority(stream.priority());
+      return push.response;
     });
-
-    return promise.future();
   }
 
-  private static class Push implements Http2ServerStreamHandler {
+  private static class PushStreamHandler implements Http2ServerStreamHandler {
 
     protected final ContextInternal context;
     protected final Http2ServerStream stream;
     protected final Http2ServerResponse response;
-    private final Promise<HttpServerResponse> promise;
 
-    public Push(Http2ServerStream stream, ContextInternal context, Promise<HttpServerResponse> promise) {
+    public PushStreamHandler(Http2ServerStream stream, ContextInternal context) {
       this.context = context;
       this.stream = stream;
       this.response = new Http2ServerResponse(stream, context, true);
-      this.promise = promise;
     }
 
     @Override
@@ -684,9 +671,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
     @Override
     public void handleReset(long errorCode) {
-      if (!promise.tryFail(new StreamResetException(errorCode))) {
-        response.handleReset(errorCode);
-      }
+      response.handleReset(errorCode);
     }
 
     @Override
@@ -696,9 +681,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
     @Override
     public  void handleClose() {
-      if (!promise.tryFail("Push reset by client")) {
-        response.handleClose();
-      }
+      response.handleClose();
     }
 
     @Override
@@ -726,10 +709,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new UnsupportedOperationException();
     }
 
-    void complete() {
-      stream.registerMetrics();
-      promise.complete(response);
-    }
   }
 
   @Override
