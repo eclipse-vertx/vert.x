@@ -2776,18 +2776,20 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertEquals(data, buff);
-            complete();
-          });
-          resp.pause();
-          vertx.setTimer(10, id -> {
-            resp.resume();
-          });
-        }));
-      }));
+      client.request(requestOptions)
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(resp -> Future.future(promise -> {
+            resp.bodyHandler(buff -> {
+              assertEquals(data, buff);
+              promise.complete();
+            });
+            resp.pause();
+            vertx.setTimer(10, id -> {
+              resp.resume();
+            });
+          }))).onComplete(onSuccess(v -> complete()));
     }
     await();
   }
