@@ -11,12 +11,9 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpRequestHead;
@@ -24,7 +21,6 @@ import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -46,7 +42,6 @@ public class Http2ServerStream extends Http2StreamBase {
   private final HttpServerMetrics serverMetrics;
   private final Object socketMetric;
   private final TracingPolicy tracingPolicy;
-  private final boolean handle100ContinueAutomatically;
   private Object metric;
   private Object trace;
   private Http2ServerStreamHandler handler;
@@ -57,15 +52,12 @@ public class Http2ServerStream extends Http2StreamBase {
                            HttpServerMetrics serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
-                           boolean handle100ContinueAutomatically,
                            Http2HeadersMultiMap headers,
                            HttpMethod method,
                            String uri,
                            TracingPolicy tracingPolicy,
                            int promisedId) {
     super(promisedId, conn, context, true);
-
-
 
     this.conn = conn;
     this.headers = headers;
@@ -74,7 +66,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.scheme = null;
     this.authority = null;
     this.tracingPolicy = tracingPolicy;
-    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
   }
@@ -83,13 +74,11 @@ public class Http2ServerStream extends Http2StreamBase {
                            HttpServerMetrics serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
-                           boolean handle100ContinueAutomatically,
                            TracingPolicy tracingPolicy) {
     super(conn, context);
 
     this.conn = conn;
     this.tracingPolicy = tracingPolicy;
-    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
   }
@@ -156,15 +145,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.headers = headers;
 
     registerMetrics();
-
-    CharSequence value = headers.get(HttpHeaderNames.EXPECT);
-
-    // SHOULD BE DONE IN RESPONSE
-    if (handle100ContinueAutomatically &&
-      ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE, true))) {
-      handler.response().writeContinue();
-    }
 
     //
     VertxTracer tracer = context.tracer();

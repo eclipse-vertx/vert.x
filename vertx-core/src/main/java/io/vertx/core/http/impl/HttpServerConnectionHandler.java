@@ -100,8 +100,8 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
       Http2ServerConnection http2Conn = (Http2ServerConnection) conn;
       http2Conn.streamHandler(stream -> {
         HttpServerOptions options = server.options;
-        Http2ServerRequest request = new Http2ServerRequest(stream, stream.context(), options.getMaxFormAttributeSize(), options.getMaxFormFields(),
-          options.getMaxFormBufferedBytes(), serverOrigin);
+        Http2ServerRequest request = new Http2ServerRequest(stream, stream.context(), options.isHandle100ContinueAutomatically(),
+          options.getMaxFormAttributeSize(), options.getMaxFormFields(), options.getMaxFormBufferedBytes(), serverOrigin);
         request.handler = requestHandler;
         stream.handler(request);
       });

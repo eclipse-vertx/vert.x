@@ -105,7 +105,6 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       metrics,
       metric(),
       streamContextSupplier.get(),
-      options.isHandle100ContinueAutomatically(),
       options.getTracingPolicy()
     );
   }
@@ -228,7 +227,6 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
             metrics,
             metric(),
             context,
-            options.isHandle100ContinueAutomatically(),
             new Http2HeadersMultiMap(headers_),
             method,
             path,

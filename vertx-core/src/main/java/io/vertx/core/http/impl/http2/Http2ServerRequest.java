@@ -50,6 +50,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   protected final Http2ServerStream stream;
   protected final Http2ServerConnection connection;
   protected final Http2ServerResponse response;
+  private final boolean handle100ContinueAutomatically;
   private final String serverOrigin;
   private final int maxFormAttributeSize;
   private final int maxFormFields;
@@ -74,6 +75,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   public Http2ServerRequest(Http2ServerStream stream,
                      ContextInternal context,
+                     boolean handle100ContinueAutomatically,
                      int maxFormAttributeSize,
                      int maxFormFields,
                      int maxFormBufferedBytes,
@@ -83,6 +85,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     this.connection = stream.connection();
     this.response = new Http2ServerResponse(stream, context,false);
     this.serverOrigin = serverOrigin;
+    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
@@ -98,6 +101,15 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public void handleHead(MultiMap headers) {
     this.headersMap = headers;
+
+    // Check expect header and implement 100 continue automatically
+    CharSequence value = headers.get(HttpHeaderNames.EXPECT);
+    if (handle100ContinueAutomatically &&
+      ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
+        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE, true))) {
+      response.writeContinue();
+    }
+
     context.dispatch(this, handler);
   }
 
