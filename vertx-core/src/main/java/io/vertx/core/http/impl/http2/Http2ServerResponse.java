@@ -665,11 +665,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
-    public Http2ServerResponse response() {
-      return response;
-    }
-
-    @Override
     public void handleReset(long errorCode) {
       response.handleReset(errorCode);
     }

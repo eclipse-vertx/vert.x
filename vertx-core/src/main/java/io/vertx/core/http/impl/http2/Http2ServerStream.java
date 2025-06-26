@@ -172,6 +172,10 @@ public class Http2ServerStream extends Http2StreamBase {
 
   @Override
   void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+    // Work around
+    if (context.tracer() != null) {
+      observableResponse(headers.status(), headers);
+    }
     if (Metrics.METRICS_ENABLED && !end) {
       if (serverMetrics != null) {
         serverMetrics.responseBegin(metric, observableResponse(headers.status(), headers));
@@ -213,7 +217,7 @@ public class Http2ServerStream extends Http2StreamBase {
             failure = null;
           }
         }
-        tracer.sendResponse(context, failure == null ? handler.response() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+        tracer.sendResponse(context, failure == null ? observableResponse : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
       }
     }
     super.onClose();
@@ -255,6 +259,10 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   private void registerPushMetrics(MultiMap headers) {
+    // Work around
+    if (vertx.tracer() != null) {
+      observableResponse(200, headers);
+    }
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
         metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse(200, headers));

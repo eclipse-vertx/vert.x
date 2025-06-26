@@ -70,7 +70,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertTrue(seq.compareAndSet(1, 2));
         assertNotNull(response);
-        assertTrue(response instanceof HttpServerResponse);
+        assertTrue(response instanceof HttpResponse);
         assertNull(failure);
         assertSame(val, key.get(context));
         key.remove(context);

@@ -111,14 +111,14 @@ public final class HttpUtils {
     }
   };
 
-  public static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<io.vertx.core.spi.observability.HttpResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
-    public int len(HttpServerResponse resp) {
+    public int len(io.vertx.core.spi.observability.HttpResponse resp) {
       return 1;
     }
 
     @Override
-    public String name(HttpServerResponse resp, int index) {
+    public String name(io.vertx.core.spi.observability.HttpResponse resp, int index) {
       if (index == 0) {
         return "http.response.status_code";
       }
@@ -126,9 +126,9 @@ public final class HttpUtils {
     }
 
     @Override
-    public String value(HttpServerResponse resp, int index) {
+    public String value(io.vertx.core.spi.observability.HttpResponse resp, int index) {
       if (index == 0) {
-        return Integer.toString(resp.getStatusCode());
+        return Integer.toString(resp.statusCode());
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }

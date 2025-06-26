@@ -10,15 +10,10 @@
  */
 package io.vertx.core.http.impl.http2;
 
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpServerRequest;
 
 public interface Http2ServerStreamHandler extends Http2StreamHandler {
 
   void handleHead(MultiMap headers);
-
-  // This should be removed which means changing the contract of tracing to provide observable response instead of HttpServerResponse
-  Http2ServerResponse response();
 
 }
