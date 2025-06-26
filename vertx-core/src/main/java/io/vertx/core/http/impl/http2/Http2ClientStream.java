@@ -35,12 +35,16 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ClientStream extends Http2StreamBase {
+
+  // Temporary id assignments
+  private static final AtomicInteger id_seq = new AtomicInteger(-1);
 
   private final Http2ClientConnection conn;
   private final TracingPolicy tracingPolicy;
@@ -49,15 +53,16 @@ public class Http2ClientStream extends Http2StreamBase {
   private HttpResponseHead response;
   private Object metric;
   private Object trace;
+  private Http2ClientStreamHandler handler;
 
-  Http2ClientStreamHandler impl;
+  public Http2ClientStream(Http2ClientConnection conn, ContextInternal context, TracingPolicy tracingPolicy,
+                           boolean decompressionSupported, ClientMetrics clientMetrics) {
+    this(id_seq.getAndDecrement(), conn, context, tracingPolicy, decompressionSupported, clientMetrics, true);
+  }
 
-  public Http2ClientStream(Http2ClientConnection conn,
-                    ContextInternal context,
-                    TracingPolicy tracingPolicy,
-                    boolean decompressionSupported,
-                    ClientMetrics clientMetrics) {
-    super(conn, context);
+  public Http2ClientStream(int id, Http2ClientConnection conn, ContextInternal context, TracingPolicy tracingPolicy,
+                           boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
+    super(id, conn, context, writable);
 
     this.conn = conn;
     this.tracingPolicy = tracingPolicy;
@@ -66,21 +71,18 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   @Override
-  public Http2StreamHandler handler() {
-    return impl;
+  public Http2ClientStreamHandler handler() {
+    return handler;
   }
 
-  @Override
-  public Http2ClientStream handler(Http2StreamHandler handler) {
-    this.impl = (Http2ClientStreamHandler) handler;
+  public Http2ClientStream handler(Http2ClientStreamHandler handler) {
+    this.handler = handler;
     return this;
   }
 
-  public void upgrade(int streamId, Object metric, Object trace, boolean writable) {
-    init(streamId, writable);
+  public void upgrade(Object metric, Object trace) {
     this.metric = metric;
     this.trace = trace;
-    this.trailersSent = true;
   }
 
   private void createStream(HttpRequestHead head, Http2HeadersMultiMap headers) throws Exception {
@@ -183,7 +185,6 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   protected void endWritten() {
-    super.endWritten();
     if (clientMetrics != null) {
       clientMetrics.requestEnd(metric, bytesWritten());
     }
@@ -277,28 +278,28 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   void handleContinue() {
-    Http2ClientStreamHandler i = impl;
+    Http2ClientStreamHandler i = handler;
     if (i != null) {
       i.handleContinue();
     }
   }
 
   void handlePush(HttpClientPush push) {
-    Http2ClientStreamHandler i = impl;
+    Http2ClientStreamHandler i = handler;
     if (i != null) {
       i.handlePush(push);
     }
   }
 
   void handleEarlyHints(MultiMap headers) {
-    Http2ClientStreamHandler i = impl;
+    Http2ClientStreamHandler i = handler;
     if (i != null) {
       i.handleEarlyHints(headers);
     }
   }
 
   void handleHead(HttpResponseHead response) {
-    Http2ClientStreamHandler i = impl;
+    Http2ClientStreamHandler i = handler;
     if (i != null) {
       i.handleHead(response);
     }

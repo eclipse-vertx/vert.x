@@ -178,8 +178,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       it.remove();
       concurrentStreams++;
       Pending pending = next.getValue();
-      pending.stream.init(pending.stream.promisedId(), isWritable(pending.stream.promisedId()));
-      pending.promise.complete(pending.stream);
+      Http2ServerStream stream = pending.stream;
+      if (!isWritable(stream.id())) {
+        stream.onWritabilityChanged();
+      }
+      pending.promise.complete(stream);
     }
   }
 
@@ -251,7 +254,9 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;
-            vertxStream.init(vertxStream.promisedId(), isWritable(vertxStream.promisedId()));
+            if (!isWritable(promisedStreamId)) {
+              vertxStream.onWritabilityChanged();
+            }
             promise.complete(vertxStream);
           } else {
             pendingPushes.put(promisedStreamId, new Pending(vertxStream, promise));

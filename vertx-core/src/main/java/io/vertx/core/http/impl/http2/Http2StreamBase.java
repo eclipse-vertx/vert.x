@@ -41,16 +41,16 @@ public abstract class Http2StreamBase {
   private final Http2Connection conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-  public int id;
+  private int id;
 
-  // Keep track of state
+  // Accessed from event-loop
   private boolean headersReceived;
   private boolean trailersReceived;
   private boolean headersSent;
-  protected boolean trailersSent;
+  private boolean trailersSent;
+  private boolean writable;
 
   // Client context
-  private boolean writable;
   private StreamPriority priority;
   private long bytesRead;
   private long bytesWritten;
@@ -59,10 +59,14 @@ public abstract class Http2StreamBase {
   private long reset = -1L;
 
   Http2StreamBase(Http2Connection conn, ContextInternal context) {
+    this(-1, conn, context, true);
+  }
+
+  Http2StreamBase(int id_, Http2Connection conn, ContextInternal context, boolean writable) {
     this.conn = conn;
     this.vertx = context.owner();
     this.context = context;
-    this.id = -1;
+    this.id = id_;
     this.inboundQueue = new InboundMessageQueue<>(conn.context().eventLoop(), context.executor()) {
       @Override
       protected void handleMessage(Object item) {
@@ -71,19 +75,19 @@ public abstract class Http2StreamBase {
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          conn.context().execute(len, v -> conn.consumeCredits(id, v));
+          conn.context().execute(len, v -> conn.consumeCredits(Http2StreamBase.this.id, v));
           handleData(data);
         }
       }
     };
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.isConnect = false;
-    this.writable = true;
+    this.writable = writable;
     this.outboundQueue = new OutboundMessageQueue<>(conn.context().executor()) {
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {
-        if (writable) {
+        if (Http2StreamBase.this.writable) {
           msg.write();
           return true;
         } else {
@@ -103,6 +107,16 @@ public abstract class Http2StreamBase {
         context.execute(Http2StreamBase.this, Http2StreamBase::handleWriteQueueDrained);
       }
     };
+    if (id >= 0) {
+      // Not great but well
+      if (this instanceof Http2ClientStream) {
+        this.headersSent = true;
+        this.trailersSent = true;
+      } else {
+        this.headersReceived = true;
+        this.trailersReceived = true;
+      }
+    }
   }
 
   public final boolean isHeadersReceived() {
@@ -128,13 +142,10 @@ public abstract class Http2StreamBase {
   // Should use generic for Http2StreamHandler
   public abstract Http2StreamHandler handler();
 
-  public abstract Http2StreamBase handler(Http2StreamHandler handler);
-
   public void init(int streamId, boolean writable) {
-    synchronized (this) {
-      this.id = streamId;
-      this.writable = writable;
-    }
+    assert id < 0;
+    this.id = streamId;
+    this.writable = writable;
   }
 
   public void onClose() {
@@ -278,6 +289,7 @@ public abstract class Http2StreamBase {
       return;
     }
     if (end) {
+      trailersSent = true;
       endWritten();
     }
     conn.writeHeaders(id, headers, priority, end, checkFlush, promise);
@@ -285,7 +297,6 @@ public abstract class Http2StreamBase {
 
   // MAYBE NOT NECESSARY
   protected void endWritten() {
-    trailersSent = true;
   }
 
   public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
@@ -320,6 +331,7 @@ public abstract class Http2StreamBase {
     bytesWritten += numOfBytes;
     conn.reportBytesWritten(numOfBytes);
     if (end) {
+      trailersSent = true;
       endWritten();
     }
     conn.writeData(id, chunk, end, promise);

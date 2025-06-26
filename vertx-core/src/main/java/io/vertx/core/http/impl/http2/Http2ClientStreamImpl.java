@@ -28,7 +28,6 @@ import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.streams.WriteStream;
 import io.vertx.core.tracing.TracingPolicy;
 
 /**
@@ -216,7 +215,8 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
     PromiseInternal<Void> promise = context.promise();
 
     stream = new Http2ClientStream(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
-    stream.impl = this;
+
+    stream.handler(this);
 
     stream.writeHeaders(request, buf, end, priority, promise);
     return promise.future();
@@ -254,6 +254,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
 
   @Override
   public HttpClientConnection connection() {
+    // That's a bit a hack to avoid implementing a proxy of HttpClientConnection
     return (HttpClientConnection) conn;
   }
 

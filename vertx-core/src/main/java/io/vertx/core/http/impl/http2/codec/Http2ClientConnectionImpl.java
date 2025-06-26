@@ -157,11 +157,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2ClientStreamImpl vertxStream = createStream2(context);
-    Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+    Http2Stream nettyStream = handler.connection().stream(1);
+    Http2ClientStream s = new Http2ClientStream(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
+    s.upgrade(metric, trace);
     vertxStream.stream = s;
     s.handler(vertxStream);
-    Http2Stream nettyStream = handler.connection().stream(1);
-    s.upgrade(nettyStream.id(), metric, trace, isWritable(1));
     nettyStream.setProperty(streamKey, s);
     return vertxStream;
   }

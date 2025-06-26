@@ -52,8 +52,7 @@ public class Http2ServerStream extends Http2StreamBase {
   private Object metric;
   private Object trace;
   private Http2ServerStreamHandler handler;
-  private final Handler<HttpServerRequest> requestHandler;
-  private final int promisedId;
+  private final Handler<HttpServerRequest> requestHandler; // I think we can get rid of this
 
   public Http2ServerStream(Http2ServerConnection conn,
                     String serverOrigin,
@@ -70,7 +69,7 @@ public class Http2ServerStream extends Http2StreamBase {
                     String uri,
                     TracingPolicy tracingPolicy,
                     int promisedId) {
-    super(conn, context);
+    super(promisedId, conn, context, true);
 
     this.serverOrigin = serverOrigin;
     this.conn = conn;
@@ -87,7 +86,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
-    this.promisedId = promisedId;
   }
 
   public Http2ServerStream(Http2ServerConnection conn,
@@ -110,24 +108,18 @@ public class Http2ServerStream extends Http2StreamBase {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
-    this.promisedId = -1;
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
   }
 
-  public int promisedId() {
-    return promisedId;
-  }
-
-  @Override
-  public Http2ServerStream handler(Http2StreamHandler handler) {
-    this.handler = (Http2ServerStreamHandler) handler;
+  public Http2ServerStream handler(Http2ServerStreamHandler handler) {
+    this.handler = handler;
     return this;
   }
 
   @Override
-  public Http2StreamHandler handler() {
+  public Http2ServerStreamHandler handler() {
     return handler;
   }
 
@@ -214,7 +206,6 @@ public class Http2ServerStream extends Http2StreamBase {
 
   @Override
   protected void endWritten() {
-    super.endWritten();
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.responseEnd(metric, handler.response(), bytesWritten());
@@ -273,7 +264,7 @@ public class Http2ServerStream extends Http2StreamBase {
 
   public Future<Http2ServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path) {
     Promise<Http2ServerStream> promise = context.promise();
-    conn.sendPush(id, authority, method, headers, path, priority(), promise);
+    conn.sendPush(id(), authority, method, headers, path, priority(), promise);
     return promise.future().andThen(ar -> {
       if (ar.succeeded()) {
         Http2ServerStream pushStream = ar.result();
