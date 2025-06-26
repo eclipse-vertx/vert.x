@@ -51,7 +51,6 @@ public class Http2ServerStream extends Http2StreamBase {
   private final int maxFormBufferedBytes;
   private Object metric;
   private Object trace;
-  private boolean halfClosedRemote;
   private Http2ServerStreamHandler handler;
   private final Handler<HttpServerRequest> requestHandler;
   private final int promisedId;
@@ -70,7 +69,6 @@ public class Http2ServerStream extends Http2StreamBase {
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
-                    boolean halfClosedRemote,
                     int promisedId) {
     super(conn, context);
 
@@ -82,7 +80,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.scheme = null;
     this.authority = null;
     this.tracingPolicy = tracingPolicy;
-    this.halfClosedRemote = halfClosedRemote;
     this.requestHandler = requestHandler;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.maxFormAttributeSize = maxFormAttributeSize;
@@ -103,14 +100,12 @@ public class Http2ServerStream extends Http2StreamBase {
                     int maxFormAttributeSize,
                     int maxFormFields,
                     int maxFormBufferedBytes,
-                    TracingPolicy tracingPolicy,
-                    boolean halfClosedRemote) {
+                    TracingPolicy tracingPolicy) {
     super(conn, context);
 
     this.conn = conn;
     this.serverOrigin = serverOrigin;
     this.tracingPolicy = tracingPolicy;
-    this.halfClosedRemote = halfClosedRemote;
     this.requestHandler = requestHandler;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
@@ -228,12 +223,6 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   @Override
-  void handleEnd(MultiMap trailers) {
-    halfClosedRemote = true;
-    super.handleEnd(trailers);
-  }
-
-  @Override
   public void onClose() {
     if (METRICS_ENABLED) {
       // Null in case of push response : handle this case
@@ -247,7 +236,7 @@ public class Http2ServerStream extends Http2StreamBase {
       if (tracer != null && trace != null) {
         Throwable failure;
         synchronized (conn) {
-          if (!halfClosedRemote && (!isTrailersReceived() || !isTrailersSent())) {
+          if (!isTrailersReceived() || !isTrailersSent()) {
             failure = HttpUtils.STREAM_CLOSED_EXCEPTION;
           } else {
             failure = null;

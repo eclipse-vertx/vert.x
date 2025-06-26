@@ -119,8 +119,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       options.getMaxFormAttributeSize(),
       options.getMaxFormFields(),
       options.getMaxFormBufferedBytes(),
-      options.getTracingPolicy(),
-      streamEnded);
+      options.getTracingPolicy()
+    );
   }
 
   private void initStream(int streamId, Http2ServerStream vertxStream) {
@@ -246,7 +246,6 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
             method,
             path,
             options.getTracingPolicy(),
-            true,
             promisedStreamId);
           promisedStream.setProperty(streamKey, vertxStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
