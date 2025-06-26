@@ -34,7 +34,8 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class Http2ServerStream extends Http2StreamBase {
 
   private final Http2ServerConnection conn;
-  private Http2HeadersMultiMap headers;
+  private Http2HeadersMultiMap requestHeaders;
+  private Http2HeadersMultiMap responseHeaders;
   private String scheme;
   private HttpMethod method;
   private String uri;
@@ -52,7 +53,7 @@ public class Http2ServerStream extends Http2StreamBase {
                            HttpServerMetrics serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
-                           Http2HeadersMultiMap headers,
+                           Http2HeadersMultiMap requestHeaders,
                            HttpMethod method,
                            String uri,
                            TracingPolicy tracingPolicy,
@@ -60,7 +61,7 @@ public class Http2ServerStream extends Http2StreamBase {
     super(promisedId, conn, context, true);
 
     this.conn = conn;
-    this.headers = headers;
+    this.requestHeaders = requestHeaders;
     this.method = method;
     this.uri = uri;
     this.scheme = null;
@@ -85,14 +86,14 @@ public class Http2ServerStream extends Http2StreamBase {
 
   private HttpRequest observableRequest() {
     if (observableRequest == null) {
-      observableRequest = new HttpRequestHead(method, uri, headers, authority, null, null);
+      observableRequest = new HttpRequestHead(method, uri, requestHeaders, authority, null, null);
     }
     return observableRequest;
   }
 
-  private HttpResponse observableResponse(int statusCode, MultiMap headers) {
+  private HttpResponse observableResponse() {
     if (observableResponse == null) {
-      observableResponse = new HttpResponseHead(HttpVersion.HTTP_2, statusCode, null, headers);
+      observableResponse = new HttpResponseHead(HttpVersion.HTTP_2, responseHeaders.status(), null, responseHeaders);
     }
     return observableResponse;
   }
@@ -112,7 +113,7 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   public Http2HeadersMultiMap headers() {
-    return headers;
+    return requestHeaders;
   }
 
   public String uri() {
@@ -142,7 +143,7 @@ public class Http2ServerStream extends Http2StreamBase {
     this.uri = headers.path();
     this.authority = headers.authority();
     this.scheme = headers.scheme();
-    this.headers = headers;
+    this.requestHeaders = headers;
 
     registerMetrics();
 
@@ -161,7 +162,7 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   @Override
-  public void onTrailers(MultiMap trailers) {
+  public void onTrailers(Http2HeadersMultiMap trailers) {
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.requestEnd(metric, observableRequest(), bytesRead());
@@ -173,12 +174,10 @@ public class Http2ServerStream extends Http2StreamBase {
   @Override
   void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     // Work around
-    if (context.tracer() != null) {
-      observableResponse(headers.status(), headers);
-    }
+    responseHeaders = headers;
     if (Metrics.METRICS_ENABLED && !end) {
       if (serverMetrics != null) {
-        serverMetrics.responseBegin(metric, observableResponse(headers.status(), headers));
+        serverMetrics.responseBegin(metric, observableResponse());
       }
     }
     super.writeHeaders0(headers, end, checkFlush, promise);
@@ -217,7 +216,7 @@ public class Http2ServerStream extends Http2StreamBase {
             failure = null;
           }
         }
-        tracer.sendResponse(context, failure == null ? observableResponse : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+        tracer.sendResponse(context, failure == null ? observableResponse() : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
       }
     }
     super.onClose();
@@ -253,19 +252,21 @@ public class Http2ServerStream extends Http2StreamBase {
       if (ar.succeeded()) {
         Http2ServerStream pushStream = ar.result();
         pushStream.priority(priority()); // Necessary ???
-        pushStream.registerPushMetrics(headers);
+        Http2HeadersMultiMap mmap = conn.newHeaders();
+        if (headers != null) {
+          mmap.addAll(headers);
+        }
+        mmap.status(200);
+        pushStream.registerPushMetrics(mmap);
       }
     });
   }
 
-  private void registerPushMetrics(MultiMap headers) {
-    // Work around
-    if (vertx.tracer() != null) {
-      observableResponse(200, headers);
-    }
+  private void registerPushMetrics(Http2HeadersMultiMap headers) {
+    responseHeaders = headers;
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse(200, headers));
+        metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse());
       }
     }
   }

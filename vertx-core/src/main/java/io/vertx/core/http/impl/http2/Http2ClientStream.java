@@ -209,7 +209,7 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   @Override
-  public void onTrailers(MultiMap trailers) {
+  public void onTrailers(Http2HeadersMultiMap trailers) {
     if (clientMetrics != null) {
       clientMetrics.responseEnd(metric, bytesRead());
     }

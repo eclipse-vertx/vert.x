@@ -34,7 +34,7 @@ import io.vertx.core.net.impl.MessageWrite;
  */
 public abstract class Http2StreamBase {
 
-  private static final MultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
+  private static final Http2HeadersMultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
@@ -201,7 +201,7 @@ public abstract class Http2StreamBase {
     onTrailers(EMPTY);
   }
 
-  public void onTrailers(MultiMap trailers) {
+  public void onTrailers(Http2HeadersMultiMap trailers) {
     if (trailersReceived) {
       throw new IllegalStateException();
     }
