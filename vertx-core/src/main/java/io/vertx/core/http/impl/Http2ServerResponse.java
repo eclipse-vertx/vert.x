@@ -34,6 +34,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
+import java.nio.channels.FileChannel;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -567,6 +568,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         return fut
           .eventually(file::close);
     });
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    return stream.context.failedFuture("HTTP/2 does not support sending channel for now");
   }
 
   @Override
