@@ -139,7 +139,6 @@ public class Http2ServerStream extends Http2StreamBase {
   public void onHeaders(Http2HeadersMultiMap headers) {
 
     this.method = headers.method();
-    this.isConnect = method == HttpMethod.CONNECT;
     this.uri = headers.path();
     this.authority = headers.authority();
     this.scheme = headers.scheme();

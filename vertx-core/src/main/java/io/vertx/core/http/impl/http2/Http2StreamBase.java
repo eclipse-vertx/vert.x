@@ -54,7 +54,6 @@ public abstract class Http2StreamBase {
   private StreamPriority priority;
   private long bytesRead;
   private long bytesWritten;
-  protected boolean isConnect;
   private Throwable failure;
   private long reset = -1L;
 
@@ -81,7 +80,6 @@ public abstract class Http2StreamBase {
       }
     };
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-    this.isConnect = false;
     this.writable = writable;
     this.outboundQueue = new OutboundMessageQueue<>(conn.context().executor()) {
       // TODO implement stop drain to optimize flushes ?

@@ -177,12 +177,6 @@ public class Http2ClientStream extends Http2StreamBase {
     return trace;
   }
 
-  @Override
-  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
-    isConnect = headers.method() == HttpMethod.CONNECT;
-    super.writeHeaders0(headers, end, checkFlush, promise);
-  }
-
   protected void endWritten() {
     if (clientMetrics != null) {
       clientMetrics.requestEnd(metric, bytesWritten());
