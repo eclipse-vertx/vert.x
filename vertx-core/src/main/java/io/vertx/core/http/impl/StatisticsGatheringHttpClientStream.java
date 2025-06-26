@@ -20,6 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
@@ -103,7 +104,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
+  public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
     delegate.pushHandler(handler);
     return this;
   }

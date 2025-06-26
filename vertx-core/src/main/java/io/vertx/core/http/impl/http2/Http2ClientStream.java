@@ -22,7 +22,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.Http1xClientConnection;
-import io.vertx.core.http.impl.HttpClientPush;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
@@ -191,7 +190,7 @@ public class Http2ClientStream extends Http2StreamBase {
   }
 
   public void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
-    HttpClientPush push = new HttpClientPush(headers, pushStream);
+    Http2ClientPush push = new Http2ClientPush(headers, pushStream);
     pushStream.stream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
@@ -284,7 +283,7 @@ public class Http2ClientStream extends Http2StreamBase {
     }
   }
 
-  void handlePush(HttpClientPush push) {
+  void handlePush(Http2ClientPush push) {
     Http2ClientStreamHandler i = handler;
     if (i != null) {
       i.handlePush(push);

@@ -23,6 +23,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -173,7 +174,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
       delegate.pushHandler(handler);
       return this;
     }
@@ -358,7 +359,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
     private Handler<MultiMap> earlyHintsHandler;
-    private Handler<HttpClientPush> pushHandler;
+    private Handler<Http2ClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
 
@@ -483,7 +484,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
       if (upgradedStream != null) {
         upgradedStream.pushHandler(handler);
       } else {

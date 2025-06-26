@@ -11,14 +11,13 @@
 package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.HttpClientPush;
 import io.vertx.core.http.impl.HttpResponseHead;
 
 public interface Http2ClientStreamHandler extends Http2StreamHandler {
 
   void handleHead(HttpResponseHead head);
   void handleContinue();
-  void handlePush(HttpClientPush push);
+  void handlePush(Http2ClientPush push);
   void handleEarlyHints(MultiMap headers);
 
 }

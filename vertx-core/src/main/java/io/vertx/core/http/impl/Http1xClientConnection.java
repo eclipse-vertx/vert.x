@@ -37,6 +37,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -52,7 +53,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.streams.WriteStream;
 
 import java.net.URI;
 import java.util.*;
@@ -521,7 +521,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
       // No op
       return this;
     }

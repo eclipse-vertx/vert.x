@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.HttpClientPush;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
@@ -49,7 +48,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   private Handler<MultiMap> earlyHintsHandler;
   private Handler<HttpFrame> unknownFrameHandler;
   private Handler<Throwable> exceptionHandler;
-  private Handler<HttpClientPush> pushHandler;
+  private Handler<Http2ClientPush> pushHandler;
   private Handler<Void> closeHandler;
 
   private TracingPolicy tracingPolicy;
@@ -135,7 +134,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
+  public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
     pushHandler = handler;
     return this;
   }
@@ -283,8 +282,8 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public void handlePush(HttpClientPush push) {
-    Handler<HttpClientPush> handler = pushHandler;
+  public void handlePush(Http2ClientPush push) {
+    Handler<Http2ClientPush> handler = pushHandler;
     if (handler != null) {
       handler.handle(push);
     }
