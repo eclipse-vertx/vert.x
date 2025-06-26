@@ -493,12 +493,6 @@ public class VertxConnection extends ConnectionBase {
     }
   }
 
-  public ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) {
-    ChannelFuture writeFuture = sendFile(raf.getChannel(), offset, length);
-    writeFuture.addListener(fut -> raf.close());
-    return writeFuture;
-  }
-
   public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();

@@ -2307,7 +2307,9 @@ public abstract class HttpTest extends HttpTestBase {
   public void testSendFileWithFileChannel() throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file.getChannel());
-    testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength);
+    try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+      assertTrue(raf.getChannel().isOpen());
+    }
   }
 
   @Test
@@ -2316,7 +2318,9 @@ public abstract class HttpTest extends HttpTestBase {
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file.getChannel());
-    testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
+      assertTrue(raf.getChannel().isOpen());
+    }
   }
 
   @Test
@@ -2327,14 +2331,18 @@ public abstract class HttpTest extends HttpTestBase {
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file.getChannel(), offset, expectedRange);
-    testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
+      assertTrue(raf.getChannel().isOpen());
+    }
   }
 
   @Test
   public void testSendFileWithRandomAccessFile() throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file);
-    testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+      raf.getFilePointer();
+    }
   }
 
   @Test
@@ -2343,7 +2351,9 @@ public abstract class HttpTest extends HttpTestBase {
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file);
-    testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
+      raf.getFilePointer();
+    }
   }
 
   @Test
@@ -2354,22 +2364,25 @@ public abstract class HttpTest extends HttpTestBase {
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file, offset, expectedRange);
-    testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
+      raf.getFilePointer();
+    }
   }
 
-  private void testSendFileWithFileChannel(int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender, String expectedContentType, long expectedLength) throws Exception {
+  private RandomAccessFile testSendFileWithFileChannel(int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender,
+                                           String expectedContentType, long expectedLength) throws Exception {
     Assume.assumeTrue(this instanceof Http1xTest);
     File file = TestUtils.tmpFile(".dat", flen);
-    try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
-      server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(onSuccess(v -> testComplete())));
-      startServer(testAddress);
-      Buffer body = client.request(requestOptions)
-        .compose(req -> req.send()
-          .expecting(HttpResponseExpectation.contentType(expectedContentType))
-          .compose(HttpClientResponse::body)).await();
-      assertEquals(body.length(), expectedLength);
-      await();
-    }
+    RandomAccessFile raf = new RandomAccessFile(file, "r");
+    server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(onSuccess(v -> testComplete())));
+    startServer(testAddress);
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req.send()
+        .expecting(HttpResponseExpectation.contentType(expectedContentType))
+        .compose(HttpClientResponse::body)).await();
+    assertEquals(body.length(), expectedLength);
+    await();
+    return raf;
   }
 
   @Test
