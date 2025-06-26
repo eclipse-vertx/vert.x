@@ -442,10 +442,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    RandomAccessFile raf;
     File file = vertx.fileResolver().resolve(filename);
+    RandomAccessFile raf;
+    long size;
     try {
       raf = new RandomAccessFile(file, "r");
+      size = raf.length();
     } catch (Exception e) {
       return context.failedFuture(e);
     }
@@ -456,14 +458,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       }
       headers.set(CONTENT_TYPE, mimeType);
     }
-    Future<Void> result = sendFile(raf, offset, length);
-    if (result.failed()) {
-      try {
-        raf.close();
-      } catch (IOException ignored) {
-      }
-    }
-    return result;
+    return sendFileInternal(offset, length, size, raf, null, true);
   }
 
   @Override
@@ -477,7 +472,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     } catch (IOException e) {
       return context.failedFuture(e);
     }
-    return sendFileInternal(offset, length, size, null, file);
+    return sendFileInternal(offset, length, size, file, null, false);
   }
 
   @Override
@@ -491,75 +486,91 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     } catch (IOException e) {
       return context.failedFuture(e);
     }
-    return sendFileInternal(offset, length, size, channel, null);
+    return sendFileInternal(offset, length, size, null, channel, false);
   }
 
-  private <F> Future<Void> sendFileInternal(long offset, long length, long size, FileChannel fileChannel, RandomAccessFile raf) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    if (offset < 0) {
-      return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
-    }
-    if (length < 0) {
-      return ctx.failedFuture("length : " + length + " (expected: >= 0)");
-    }
-    synchronized (conn) {
-      checkValid();
-      if (headWritten) {
-        throw new IllegalStateException("Head already written");
+  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel fileChannel, boolean close) {
+    Future<Void> ret = null;
+    try {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      if (offset < 0) {
+        return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
       }
-
+      if (length < 0) {
+        return ctx.failedFuture("length : " + length + " (expected: >= 0)");
+      }
       long actualLength = Math.min(length, size - offset);
       long actualOffset = Math.min(offset, size);
-
-      // fail early before status code/headers are written to the response
       if (actualLength < 0) {
         return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
       }
+      synchronized (conn) {
+        checkValid();
+        if (headWritten) {
+          throw new IllegalStateException("Head already written");
+        }
 
-      prepareHeaders(actualLength);
-      bytesWritten = actualLength;
-      written = true;
+        // fail early before status code/headers are written to the response
+        prepareHeaders(actualLength);
+        bytesWritten = actualLength;
+        written = true;
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
+        FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
+        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
+        PromiseInternal<Void> promise = context.promise();
+        ret = promise.future();
+        channelFuture.addListener(future -> {
+          if (future.isSuccess()) {
 
-      conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
+            // signal body end handler
+            Handler<Void> handler;
+            synchronized (conn) {
+              handler = bodyEndHandler;
+            }
+            if (handler != null) {
+              ctx.emit(handler);
+            }
 
-      ChannelFuture channelFut;
-      if (fileChannel != null) {
-        channelFut = conn.sendFile(fileChannel, actualOffset, actualLength);
-      } else {
-        channelFut = conn.sendFile(raf, actualOffset, actualLength);
+            // signal end handler
+            Handler<Void> end;
+            synchronized (conn) {
+              end = !closed ? endHandler : null;
+            }
+            if (null != end) {
+              ctx.emit(end);
+            }
+
+            // write an empty last content to let the http encoder know the response is complete
+            conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
+          } else {
+            promise.fail(future.cause());
+          }
+
+          //
+          if (close) {
+            try {
+              if (file != null) {
+                file.close();
+              } else {
+                fileChannel.close();
+              }
+            } catch (IOException ignore) {
+            }
+          }
+        });
       }
-      channelFut.addListener(future -> {
-
-        // write an empty last content to let the http encoder know the response is complete
-        if (future.isSuccess()) {
-          conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), null);
+      return ret;
+    } finally {
+      if (ret == null && close) {
+        try {
+          if (file != null) {
+            file.close();
+          } else {
+            fileChannel.close();
+          }
+        } catch (IOException ignore) {
         }
-
-        // signal body end handler
-        Handler<Void> handler;
-        synchronized (conn) {
-          handler = bodyEndHandler;
-        }
-        if (handler != null) {
-          ctx.emit(handler);
-        }
-
-        // allow to write next response
-        // conn.responseComplete();
-
-        // signal end handler
-        Handler<Void> end;
-        synchronized (conn) {
-          end = !closed ? endHandler : null;
-        }
-        if (null != end) {
-          ctx.emit(end);
-        }
-      });
-
-      PromiseInternal<Void> promise = ctx.promise();
-      channelFut.addListener(promise);
-      return promise.future();
+      }
     }
   }
 
