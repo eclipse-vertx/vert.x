@@ -355,6 +355,12 @@ public interface HttpHeaders {
   CharSequence APPLICATION_X_WWW_FORM_URLENCODED = HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 
   /**
+   * application/application/octet-stream header value
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence APPLICATION_OCTET_STREAM = HttpHeaderValues.APPLICATION_OCTET_STREAM;
+
+  /**
    * multipart/form-data header value
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

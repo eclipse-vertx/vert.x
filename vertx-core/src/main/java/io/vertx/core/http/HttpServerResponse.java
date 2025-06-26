@@ -423,7 +423,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
   default Future<Void> sendFile(RandomAccessFile file) {
-    return sendFile(file.getChannel(), 0);
+    return sendFile(file, 0);
   }
 
   /**
@@ -437,7 +437,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
   default Future<Void> sendFile(RandomAccessFile file, long offset) {
-    return sendFile(file.getChannel(), offset, Long.MAX_VALUE);
+    return sendFile(file, offset, Long.MAX_VALUE);
   }
 
   /**
@@ -450,9 +450,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
-  default Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
-    return sendFile(file.getChannel(), offset, length);
-  }
+  Future<Void> sendFile(RandomAccessFile file, long offset, long length);
 
   /**
    * @return has the response already ended?

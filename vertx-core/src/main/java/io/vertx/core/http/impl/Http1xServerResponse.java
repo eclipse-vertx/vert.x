@@ -449,18 +449,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     } catch (Exception e) {
       return context.failedFuture(e);
     }
-    Future<Void> result = sendFileInternal(filename, offset,
-      length,
-      MimeMapping::mimeTypeForFilename,
-      (r) -> {
-        try {
-          return r.length();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      },
-      () -> raf,
-      conn::sendFile);
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      CharSequence mimeType = MimeMapping.mimeTypeForFilename(filename);
+      if (mimeType == null) {
+        mimeType = APPLICATION_OCTET_STREAM;
+      }
+      headers.set(CONTENT_TYPE, mimeType);
+    }
+    Future<Void> result = sendFile(raf, offset, length);
     if (result.failed()) {
       try {
         raf.close();
@@ -471,22 +467,34 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
-    return sendFileInternal("application/octet-stream", offset,
-      length,
-      Function.identity(),
-      (c) -> {
-        try {
-          return c.size();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      },
-      () -> channel,
-      conn::sendFile);
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = file.length();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, null, file);
   }
 
-  private <F> Future<Void> sendFileInternal(String nameOrExtension, long offset, long length, Function<String, String> contentTypeMapper, Function<F, Long> lengthSupplier, Supplier<F> fileSupplier, Sender<F> sendFileSupplier) {
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = channel.size();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, channel, null);
+  }
+
+  private <F> Future<Void> sendFileInternal(long offset, long length, long size, FileChannel fileChannel, RandomAccessFile raf) {
     ContextInternal ctx = vertx.getOrCreateContext();
     if (offset < 0) {
       return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
@@ -500,12 +508,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         throw new IllegalStateException("Head already written");
       }
 
-      long size;
-      try {
-        size = lengthSupplier.apply(fileSupplier.get());
-      } catch (Exception e) {
-        return ctx.failedFuture(e);
-      }
       long actualLength = Math.min(length, size - offset);
       long actualOffset = Math.min(offset, size);
 
@@ -514,19 +516,18 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
       }
 
-      if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
-        String contentType = contentTypeMapper.apply(nameOrExtension);
-        if (contentType != null) {
-          headers.set(HttpHeaders.CONTENT_TYPE, contentType);
-        }
-      }
       prepareHeaders(actualLength);
       bytesWritten = actualLength;
       written = true;
 
       conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
 
-      ChannelFuture channelFut = sendFileSupplier.send(fileSupplier.get(), actualOffset, actualLength);
+      ChannelFuture channelFut;
+      if (fileChannel != null) {
+        channelFut = conn.sendFile(fileChannel, actualOffset, actualLength);
+      } else {
+        channelFut = conn.sendFile(raf, actualOffset, actualLength);
+      }
       channelFut.addListener(future -> {
 
         // write an empty last content to let the http encoder know the response is complete
@@ -836,12 +837,4 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
-
-  @FunctionalInterface
-  private static interface Sender<F> {
-
-    ChannelFuture send(F u, Long v, Long w);
-
-  }
-
 }
