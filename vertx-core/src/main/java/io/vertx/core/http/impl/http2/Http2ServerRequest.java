@@ -101,10 +101,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     context.dispatch(this, handler);
   }
 
-  public void dispatch(Handler<HttpServerRequest> handler) {
-    context.emit(this, handler);
-  }
-
   @Override
   public void handleException(Throwable cause) {
     boolean notify;

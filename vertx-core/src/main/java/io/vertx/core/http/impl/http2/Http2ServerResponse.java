@@ -670,11 +670,6 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
-    public  void dispatch(Handler<HttpServerRequest> handler) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void handleReset(long errorCode) {
       response.handleReset(errorCode);
     }

@@ -21,6 +21,4 @@ public interface Http2ServerStreamHandler extends Http2StreamHandler {
   // This should be removed which means changing the contract of tracing to provide observable response instead of HttpServerResponse
   Http2ServerResponse response();
 
-  void dispatch(Handler<HttpServerRequest> handler);
-
 }
