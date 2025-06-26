@@ -78,7 +78,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, serverOrigin, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, options, serverMetrics);
+        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, options, serverMetrics);
         conn.metric(metric);
         return conn;
       })

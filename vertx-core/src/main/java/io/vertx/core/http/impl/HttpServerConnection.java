@@ -28,7 +28,4 @@ public interface HttpServerConnection extends HttpConnection {
 
   ChannelHandlerContext channelHandlerContext();
 
-  HttpServerConnection handler(Handler<HttpServerRequest> handler);
-
-  HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler);
 }

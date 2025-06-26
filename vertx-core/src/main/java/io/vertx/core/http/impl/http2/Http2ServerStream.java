@@ -14,19 +14,21 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -36,7 +38,6 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class Http2ServerStream extends Http2StreamBase {
 
   private final Http2ServerConnection conn;
-  private final String serverOrigin;
   private Http2HeadersMultiMap headers;
   private String scheme;
   private HttpMethod method;
@@ -46,32 +47,26 @@ public class Http2ServerStream extends Http2StreamBase {
   private final Object socketMetric;
   private final TracingPolicy tracingPolicy;
   private final boolean handle100ContinueAutomatically;
-  private final int maxFormAttributeSize;
-  private final int maxFormFields;
-  private final int maxFormBufferedBytes;
   private Object metric;
   private Object trace;
   private Http2ServerStreamHandler handler;
-  private final Handler<HttpServerRequest> requestHandler; // I think we can get rid of this
+  private HttpRequest observableRequest;
+  private HttpResponse observableResponse;
 
   public Http2ServerStream(Http2ServerConnection conn,
-                    String serverOrigin,
-                    HttpServerMetrics serverMetrics,
-                    Object socketMetric,
-                    ContextInternal context,
-                    Handler<HttpServerRequest> requestHandler,
-                    boolean handle100ContinueAutomatically,
-                    int maxFormAttributeSize,
-                    int maxFormFields,
-                    int maxFormBufferedBytes,
-                    Http2HeadersMultiMap headers,
-                    HttpMethod method,
-                    String uri,
-                    TracingPolicy tracingPolicy,
-                    int promisedId) {
+                           HttpServerMetrics serverMetrics,
+                           Object socketMetric,
+                           ContextInternal context,
+                           boolean handle100ContinueAutomatically,
+                           Http2HeadersMultiMap headers,
+                           HttpMethod method,
+                           String uri,
+                           TracingPolicy tracingPolicy,
+                           int promisedId) {
     super(promisedId, conn, context, true);
 
-    this.serverOrigin = serverOrigin;
+
+
     this.conn = conn;
     this.headers = headers;
     this.method = method;
@@ -79,38 +74,38 @@ public class Http2ServerStream extends Http2StreamBase {
     this.scheme = null;
     this.authority = null;
     this.tracingPolicy = tracingPolicy;
-    this.requestHandler = requestHandler;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
-    this.maxFormAttributeSize = maxFormAttributeSize;
-    this.maxFormFields = maxFormFields;
-    this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
   }
 
   public Http2ServerStream(Http2ServerConnection conn,
-                    String serverOrigin,
-                    HttpServerMetrics serverMetrics,
-                    Object socketMetric,
-                    ContextInternal context,
-                    Handler<HttpServerRequest> requestHandler,
-                    boolean handle100ContinueAutomatically,
-                    int maxFormAttributeSize,
-                    int maxFormFields,
-                    int maxFormBufferedBytes,
-                    TracingPolicy tracingPolicy) {
+                           HttpServerMetrics serverMetrics,
+                           Object socketMetric,
+                           ContextInternal context,
+                           boolean handle100ContinueAutomatically,
+                           TracingPolicy tracingPolicy) {
     super(conn, context);
 
     this.conn = conn;
-    this.serverOrigin = serverOrigin;
     this.tracingPolicy = tracingPolicy;
-    this.requestHandler = requestHandler;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
-    this.maxFormAttributeSize = maxFormAttributeSize;
-    this.maxFormFields = maxFormFields;
-    this.maxFormBufferedBytes = maxFormBufferedBytes;
+  }
+
+  private HttpRequest observableRequest() {
+    if (observableRequest == null) {
+      observableRequest = new HttpRequestHead(method, uri, headers, authority, null, null);
+    }
+    return observableRequest;
+  }
+
+  private HttpResponse observableResponse(int statusCode, MultiMap headers) {
+    if (observableResponse == null) {
+      observableResponse = new HttpResponseHead(HttpVersion.HTTP_2, statusCode, null, headers);
+    }
+    return observableResponse;
   }
 
   public Http2ServerStream handler(Http2ServerStreamHandler handler) {
@@ -146,7 +141,7 @@ public class Http2ServerStream extends Http2StreamBase {
   private void registerMetrics() {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        metric = serverMetrics.requestBegin(socketMetric, (HttpRequest) handler);
+        metric = serverMetrics.requestBegin(socketMetric, observableRequest());
       }
     }
   }
@@ -159,7 +154,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.authority = headers.authority();
     this.scheme = headers.scheme();
     this.headers = headers;
-    this.handler = new Http2ServerRequest(this, context, maxFormAttributeSize, maxFormFields, maxFormBufferedBytes, serverOrigin, headers);
 
     registerMetrics();
 
@@ -177,14 +171,20 @@ public class Http2ServerStream extends Http2StreamBase {
     if (tracer != null) {
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, handler, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
-    handler.dispatch(requestHandler);
+
+    //
+    context.execute(headers, this::handleHead);
+  }
+
+  private void handleHead(Http2HeadersMultiMap map) {
+    handler.handleHead(map);
   }
 
   @Override
   public void onTrailers(MultiMap trailers) {
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
-        serverMetrics.requestEnd(metric, (HttpRequest) handler, bytesRead());
+        serverMetrics.requestEnd(metric, observableRequest(), bytesRead());
       }
     }
     super.onTrailers(trailers);
@@ -194,7 +194,7 @@ public class Http2ServerStream extends Http2StreamBase {
   void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (Metrics.METRICS_ENABLED && !end) {
       if (serverMetrics != null) {
-        serverMetrics.responseBegin(metric, handler.response());
+        serverMetrics.responseBegin(metric, observableResponse(headers.status(), headers));
       }
     }
     super.writeHeaders0(headers, end, checkFlush, promise);
@@ -208,7 +208,7 @@ public class Http2ServerStream extends Http2StreamBase {
   protected void endWritten() {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        serverMetrics.responseEnd(metric, handler.response(), bytesWritten());
+        serverMetrics.responseEnd(metric, observableResponse, bytesWritten());
       }
     }
   }
@@ -277,7 +277,7 @@ public class Http2ServerStream extends Http2StreamBase {
   private void registerPushMetrics(MultiMap headers) {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
-        metric = serverMetrics.responsePushed(socketMetric, method(), uri, new HttpResponseHead(HttpVersion.HTTP_2, 200, null, headers));
+        metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse(200, headers));
       }
     }
   }

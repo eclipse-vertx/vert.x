@@ -119,13 +119,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     return tracingPolicy;
   }
 
-  @Override
   public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
     requestHandler = handler;
     return this;
   }
 
-  @Override
   public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
     invalidRequestHandler = handler;
     return this;

@@ -203,6 +203,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       String serverOrigin = (tcpOptions.isSsl() ? "https" : "http") + "://" + host + ":" + port;
       HttpServerConnectionHandler handler = new HttpServerConnectionHandler(
         this,
+        serverOrigin,
         requestHandler,
         invalidRequestHandler,
         webSocketHandler,

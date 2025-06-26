@@ -44,20 +44,18 @@ import java.util.function.Supplier;
 public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
   private final HttpServerOptions options;
-  private final String serverOrigin;
   private final HttpServerMetrics metrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp2ConnectionHandler handler;
 
-  Handler<HttpServerRequest> requestHandler;
+  private Handler<Http2ServerStream> streamHandler;
   private int concurrentStreams;
   private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
   public Http2ServerConnectionImpl(
     ContextInternal context,
     Supplier<ContextInternal> streamContextSupplier,
-    String serverOrigin,
     VertxHttp2ConnectionHandler connHandler,
     Function<String, String> encodingDetector,
     HttpServerOptions options,
@@ -65,7 +63,6 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     super(context, connHandler);
 
     this.options = options;
-    this.serverOrigin = serverOrigin;
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
@@ -73,13 +70,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
-    requestHandler = handler;
-    return this;
-  }
-
-  @Override
-  public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
+  public Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler) {
+    this.streamHandler = handler;
     return this;
   }
 
@@ -110,15 +102,10 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
     return new Http2ServerStream(
       this,
-            serverOrigin,
-            metrics,
+      metrics,
       metric(),
       streamContextSupplier.get(),
-      requestHandler,
       options.isHandle100ContinueAutomatically(),
-      options.getMaxFormAttributeSize(),
-      options.getMaxFormFields(),
-      options.getMaxFormBufferedBytes(),
       options.getTracingPolicy()
     );
   }
@@ -149,6 +136,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       if (streamPriority != null) {
         stream.priority(streamPriority);
       }
+
+      stream.context().execute(stream, streamHandler);
       stream.onHeaders(headersMap);
     } else {
       // Http server request trailer - not implemented yet (in api)
@@ -236,15 +225,10 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
           Http2ServerStream vertxStream = new Http2ServerStream(
             this,
-            serverOrigin,
             metrics,
             metric(),
             context,
-            requestHandler,
             options.isHandle100ContinueAutomatically(),
-            options.getMaxFormAttributeSize(),
-            options.getMaxFormFields(),
-            options.getMaxFormBufferedBytes(),
             new Http2HeadersMultiMap(headers_),
             method,
             path,

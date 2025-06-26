@@ -44,21 +44,21 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequest extends HttpServerRequestInternal implements Http2ServerStreamHandler, io.vertx.core.spi.observability.HttpRequest {
+public class Http2ServerRequest extends HttpServerRequestInternal implements Http2ServerStreamHandler {
 
   protected final ContextInternal context;
   protected final Http2ServerStream stream;
   protected final Http2ServerConnection connection;
   protected final Http2ServerResponse response;
   private final String serverOrigin;
-  private final MultiMap headersMap;
   private final int maxFormAttributeSize;
   private final int maxFormFields;
   private final int maxFormBufferedBytes;
 
-  Handler<HttpServerRequest> handler;
+  public Handler<HttpServerRequest> handler;
 
   // Accessed on context thread
+  private MultiMap headersMap;
   private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
   private boolean semicolonIsNormalCharInParams;
@@ -77,14 +77,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
                      int maxFormAttributeSize,
                      int maxFormFields,
                      int maxFormBufferedBytes,
-                     String serverOrigin,
-                     Http2HeadersMultiMap headersMap) {
+                     String serverOrigin) {
     this.context = context;
     this.stream = stream;
     this.connection = stream.connection();
     this.response = new Http2ServerResponse(stream, context,false);
     this.serverOrigin = serverOrigin;
-    this.headersMap = headersMap;
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
@@ -95,6 +93,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
       eventHandler = new HttpEventHandler(context);
     }
     return eventHandler;
+  }
+
+  @Override
+  public void handleHead(MultiMap headers) {
+    this.headersMap = headers;
+    context.dispatch(this, handler);
   }
 
   public void dispatch(Handler<HttpServerRequest> handler) {
@@ -224,11 +228,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public HttpMethod method() {
     return stream.method();
-  }
-
-  @Override
-  public int id() {
-    return stream.id();
   }
 
   @Override

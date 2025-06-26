@@ -126,7 +126,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
             resp
               .write(chunk)
               .onComplete(onSuccess(v -> {
-                assertSame(serverMetric.get().response.get(), resp);
+                assertSame(serverMetric.get().response.get().headers(), resp.headers());
               }));
           }
         });

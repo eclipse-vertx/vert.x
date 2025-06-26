@@ -660,6 +660,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
+    public void handleHead(MultiMap headers) {
+      // Do nothing ???
+    }
+
+    @Override
     public Http2ServerResponse response() {
       return response;
     }
