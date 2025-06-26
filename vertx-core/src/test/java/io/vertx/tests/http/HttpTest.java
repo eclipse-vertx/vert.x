@@ -2305,115 +2305,84 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSendFileWithFileChannel() throws Exception {
-    int expected = 16 * 1024 * 1024;
-    File file = TestUtils.tmpFile(".dat", expected);
-    FileChannel channel = FileChannel.open(file.toPath());
-    server.requestHandler(
-        req -> {
-          req.response().sendFile(channel).onFailure(
-            t -> {
-              if (HttpTest.this instanceof Http2Test) {
-                req.response().end();
-              }
-            }
-          );
-        });
-    startServer(testAddress);
-    Object[] res = {0, ""};
-    Object[] r = client.request(requestOptions)
-      .compose(req -> req.send()
-        .compose(resp -> {
-          resp.handler(buff -> {
-            Integer length = (Integer) res[0];
-            length += buff.length();
-            res[0] = length;
-          });
-          res[1] = resp.getHeader("Content-Type");
-          resp.exceptionHandler(this::fail);
-          return resp.end();
-        }))
-      .map(v -> res).await();
-    if (this instanceof Http1xTest){
-      assertEquals((int) r[0], file.length());
-      assertEquals("application/octet-stream", r[1]);
+    int fileLength = 16 * 1024 * 1024;
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file.getChannel());
+    try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+      assertTrue(raf.getChannel().isOpen());
     }
   }
 
   @Test
   public void testSendFileWithFileChannelAndExtension() throws Exception {
-    int expected = 16 * 1024 * 1024;
-    File file = TestUtils.tmpFile(".dat", expected);
-    FileChannel channel = FileChannel.open(file.toPath());
-    server.requestHandler(
-        req -> {
-          req.response()
-            .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
-            .sendFile(channel).onFailure(
-            t -> {
-              if (HttpTest.this instanceof Http2Test) {
-                req.response().end();
-              }
-            }
-          );
-        });
-    startServer(testAddress);
-    Object[] res = {0, ""};
-    Object[] r = client.request(requestOptions)
-      .compose(req -> req.send()
-        .compose(resp -> {
-          resp.handler(buff -> {
-            Integer length = (Integer) res[0];
-            length += buff.length();
-            res[0] = length;
-          });
-          res[1] = resp.getHeader("Content-Type");
-          resp.exceptionHandler(this::fail);
-          return resp.end();
-        }))
-      .map(v -> res).await();
-    if (this instanceof Http1xTest){
-      assertEquals((int)r[0], file.length());
-      assertEquals(r[1], "video/mp4");
+    int fileLength = 16 * 1024 * 1024;
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
+      .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
+      .sendFile(file.getChannel());
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
+      assertTrue(raf.getChannel().isOpen());
     }
   }
 
   @Test
   public void testSendFileWithFileChannelRange() throws Exception {
     int fileLength = 16 * 1024 * 1024;
-    File file = TestUtils.tmpFile(".dat", fileLength);
-    FileChannel channel = FileChannel.open(file.toPath());
     int offset = 1024 * 4;
     int expectedRange = fileLength - offset;
-    server.requestHandler(
-        req -> {
-          req.response().putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4");
-          req.response().sendFile(channel, offset, expectedRange).onFailure(
-            t -> {
-              if (HttpTest.this instanceof Http2Test) {
-                req.response().end();
-              }
-            }
-          );
-        });
-    startServer(testAddress);
-    Object[] res = {0, ""};
-    Object[] r = client.request(requestOptions)
-      .compose(req -> req.send()
-        .compose(resp -> {
-          resp.handler(buff -> {
-            Integer length = (Integer) res[0];
-            length += buff.length();
-            res[0] = length;
-          });
-          res[1] = resp.getHeader("Content-Type");
-          resp.exceptionHandler(this::fail);
-          return resp.end();
-        }))
-      .map(v -> res).await();
-    if (this instanceof Http1xTest) {
-      assertEquals(expectedRange, (int) r[0]);
-      assertEquals("video/mp4", r[1]);
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
+      .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
+      .sendFile(file.getChannel(), offset, expectedRange);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
+      assertTrue(raf.getChannel().isOpen());
     }
+  }
+
+  @Test
+  public void testSendFileWithRandomAccessFile() throws Exception {
+    int fileLength = 16 * 1024 * 1024;
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+      raf.getFilePointer();
+    }
+  }
+
+  @Test
+  public void testSendFileWithRandomAccessFileAndExtension() throws Exception {
+    int fileLength = 16 * 1024 * 1024;
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
+      .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
+      .sendFile(file);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
+      raf.getFilePointer();
+    }
+  }
+
+  @Test
+  public void testSendFileWithRandomAccessFileRange() throws Exception {
+    int fileLength = 16 * 1024 * 1024;
+    int offset = 1024 * 4;
+    int expectedRange = fileLength - offset;
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response
+      .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
+      .sendFile(file, offset, expectedRange);
+    try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
+      raf.getFilePointer();
+    }
+  }
+
+  private RandomAccessFile testSendFileWithFileChannel(int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender,
+                                           String expectedContentType, long expectedLength) throws Exception {
+    Assume.assumeTrue(this instanceof Http1xTest);
+    File file = TestUtils.tmpFile(".dat", flen);
+    RandomAccessFile raf = new RandomAccessFile(file, "r");
+    server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(onSuccess(v -> testComplete())));
+    startServer(testAddress);
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req.send()
+        .expecting(HttpResponseExpectation.contentType(expectedContentType))
+        .compose(HttpClientResponse::body)).await();
+    assertEquals(body.length(), expectedLength);
+    await();
+    return raf;
   }
 
   @Test

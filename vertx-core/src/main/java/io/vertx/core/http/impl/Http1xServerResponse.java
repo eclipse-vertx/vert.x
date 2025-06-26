@@ -442,123 +442,135 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    RandomAccessFile raf;
     File file = vertx.fileResolver().resolve(filename);
+    RandomAccessFile raf;
+    long size;
     try {
       raf = new RandomAccessFile(file, "r");
+      size = raf.length();
     } catch (Exception e) {
       return context.failedFuture(e);
     }
-    Future<Void> result = sendFileInternal(filename, offset,
-      length,
-      MimeMapping::mimeTypeForFilename,
-      (r) -> {
-        try {
-          return r.length();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      },
-      () -> raf,
-      conn::sendFile);
-    if (result.failed()) {
-      try {
-        raf.close();
-      } catch (IOException ignored) {
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      CharSequence mimeType = MimeMapping.mimeTypeForFilename(filename);
+      if (mimeType == null) {
+        mimeType = APPLICATION_OCTET_STREAM;
       }
+      headers.set(CONTENT_TYPE, mimeType);
     }
-    return result;
+    return sendFileInternal(offset, length, size, raf, null, true);
+  }
+
+  @Override
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = file.length();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, file, null, false);
   }
 
   @Override
   public Future<Void> sendFile(FileChannel channel, long offset, long length) {
-    return sendFileInternal("application/octet-stream", offset,
-      length,
-      Function.identity(),
-      (c) -> {
-        try {
-          return c.size();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      },
-      () -> channel,
-      conn::sendFile);
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = channel.size();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, null, channel, false);
   }
 
-  private <F> Future<Void> sendFileInternal(String nameOrExtension, long offset, long length, Function<String, String> contentTypeMapper, Function<F, Long> lengthSupplier, Supplier<F> fileSupplier, Sender<F> sendFileSupplier) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    if (offset < 0) {
-      return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
-    }
-    if (length < 0) {
-      return ctx.failedFuture("length : " + length + " (expected: >= 0)");
-    }
-    synchronized (conn) {
-      checkValid();
-      if (headWritten) {
-        throw new IllegalStateException("Head already written");
+  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel fileChannel, boolean close) {
+    Future<Void> ret = null;
+    try {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      if (offset < 0) {
+        return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
       }
-
-      long size;
-      try {
-        size = lengthSupplier.apply(fileSupplier.get());
-      } catch (Exception e) {
-        return ctx.failedFuture(e);
+      if (length < 0) {
+        return ctx.failedFuture("length : " + length + " (expected: >= 0)");
       }
       long actualLength = Math.min(length, size - offset);
       long actualOffset = Math.min(offset, size);
-
-      // fail early before status code/headers are written to the response
       if (actualLength < 0) {
         return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
       }
+      synchronized (conn) {
+        checkValid();
+        if (headWritten) {
+          throw new IllegalStateException("Head already written");
+        }
 
-      if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
-        String contentType = contentTypeMapper.apply(nameOrExtension);
-        if (contentType != null) {
-          headers.set(HttpHeaders.CONTENT_TYPE, contentType);
+        // fail early before status code/headers are written to the response
+        prepareHeaders(actualLength);
+        bytesWritten = actualLength;
+        written = true;
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
+        FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
+        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
+        PromiseInternal<Void> promise = context.promise();
+        ret = promise.future();
+        channelFuture.addListener(future -> {
+          if (future.isSuccess()) {
+
+            // signal body end handler
+            Handler<Void> handler;
+            synchronized (conn) {
+              handler = bodyEndHandler;
+            }
+            if (handler != null) {
+              ctx.emit(handler);
+            }
+
+            // signal end handler
+            Handler<Void> end;
+            synchronized (conn) {
+              end = !closed ? endHandler : null;
+            }
+            if (null != end) {
+              ctx.emit(end);
+            }
+
+            // write an empty last content to let the http encoder know the response is complete
+            conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
+          } else {
+            promise.fail(future.cause());
+          }
+
+          //
+          if (close) {
+            try {
+              if (file != null) {
+                file.close();
+              } else {
+                fileChannel.close();
+              }
+            } catch (IOException ignore) {
+            }
+          }
+        });
+      }
+      return ret;
+    } finally {
+      if (ret == null && close) {
+        try {
+          if (file != null) {
+            file.close();
+          } else {
+            fileChannel.close();
+          }
+        } catch (IOException ignore) {
         }
       }
-      prepareHeaders(actualLength);
-      bytesWritten = actualLength;
-      written = true;
-
-      conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
-
-      ChannelFuture channelFut = sendFileSupplier.send(fileSupplier.get(), actualOffset, actualLength);
-      channelFut.addListener(future -> {
-
-        // write an empty last content to let the http encoder know the response is complete
-        if (future.isSuccess()) {
-          conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), null);
-        }
-
-        // signal body end handler
-        Handler<Void> handler;
-        synchronized (conn) {
-          handler = bodyEndHandler;
-        }
-        if (handler != null) {
-          ctx.emit(handler);
-        }
-
-        // allow to write next response
-        // conn.responseComplete();
-
-        // signal end handler
-        Handler<Void> end;
-        synchronized (conn) {
-          end = !closed ? endHandler : null;
-        }
-        if (null != end) {
-          ctx.emit(end);
-        }
-      });
-
-      PromiseInternal<Void> promise = ctx.promise();
-      channelFut.addListener(promise);
-      return promise.future();
     }
   }
 
@@ -836,12 +848,4 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
-
-  @FunctionalInterface
-  private static interface Sender<F> {
-
-    ChannelFuture send(F u, Long v, Long w);
-
-  }
-
 }
