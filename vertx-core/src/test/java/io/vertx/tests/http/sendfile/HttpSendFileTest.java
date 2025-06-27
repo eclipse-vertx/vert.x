@@ -27,6 +27,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -37,25 +38,22 @@ import static io.vertx.test.core.AssertExpectations.that;
 public abstract class HttpSendFileTest extends HttpTestBase {
 
   @Test
-  @DetectFileDescriptorLeaks
+  @DetectFileDescriptorLeaks(iterations = 40)
   public void testSendFile() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, false,
-      () -> client.request(requestOptions));
+    sendFile("test-send-file.html", content, false, () -> client.request(requestOptions));
   }
 
   @Test
   public void testSendFileUpperCaseSuffix() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.HTML", content, true,
-      () -> client.request(requestOptions));
+    sendFile("test-send-file.HTML", content, true, () -> client.request(requestOptions));
   }
 
   @Test
   public void testSendFileWithHandler() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, true,
-      () -> client.request(requestOptions));
+    sendFile("test-send-file.html", content, true, () -> client.request(requestOptions));
   }
 
   protected void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
@@ -165,7 +163,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
   @Test
   public void testSendFileDirectoryWithHandler() throws Exception {
 
-    File dir = testFolder.newFolder();
+    File dir = Files.createTempDirectory("vertx").toFile();
 
     server.requestHandler(req -> {
       req.response().putHeader("Content-Type", "wibble");
