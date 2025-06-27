@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.http.sendfile;
 
-import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
