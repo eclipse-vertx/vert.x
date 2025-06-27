@@ -1013,7 +1013,7 @@ public class HTTPExamples {
           request.end();
         });
 
-        request.sendHead();
+        request.writeHead();
     });
   }
 

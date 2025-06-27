@@ -249,7 +249,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
           });
         }));
       req.setChunked(true);
-      req.sendHead();
+      req.writeHead();
     }));
     awaitLatch(requestBeginLatch);
     HttpClientMetric reqMetric = clientMetrics.getMetric(request.result());

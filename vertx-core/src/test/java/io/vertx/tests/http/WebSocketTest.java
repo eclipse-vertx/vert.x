@@ -1997,7 +1997,7 @@ public class WebSocketTest extends VertxTestBase {
     HttpClient client = vertx.createHttpClient();
     handshake(client, req -> {
       req.putHeader(HttpHeaders.CONTENT_LENGTH, "100");
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         req.connection().close();
       }));
     });

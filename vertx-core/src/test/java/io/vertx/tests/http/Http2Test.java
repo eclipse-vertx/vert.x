@@ -141,7 +141,7 @@ public class Http2Test extends HttpTest {
           assertTrue(err instanceof StreamResetException);
           complete();
         })
-        .sendHead();
+        .writeHead();
     }));
     await();
   }
@@ -176,7 +176,7 @@ public class Http2Test extends HttpTest {
         }));
         req
           .setChunked(true)
-          .sendHead();
+          .writeHead();
         new Thread(() -> {
           try {
             awaitLatch(latch2); // The next write won't be buffered
@@ -498,7 +498,7 @@ public class Http2Test extends HttpTest {
           complete();
         }));
       req
-        .sendHead()
+        .writeHead()
         .onComplete(h -> {
           req.setStreamPriority(new StreamPriority()
             .setDependency(requestStreamDependency2)
@@ -543,7 +543,7 @@ public class Http2Test extends HttpTest {
         .setWeight(weight)
         .setExclusive(exclusive));
       req
-        .sendHead()
+        .writeHead()
         .onComplete(h -> {
         req.setStreamPriority(new StreamPriority()
           .setDependency(dependency)
@@ -778,7 +778,7 @@ public class Http2Test extends HttpTest {
           testComplete();
         }
       });
-      req.sendHead();
+      req.writeHead();
     }));
     await();
   }
@@ -954,7 +954,7 @@ public class Http2Test extends HttpTest {
         testComplete();
       });
       // Force stream allocation
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         req.reset(10);
       }));
     }));

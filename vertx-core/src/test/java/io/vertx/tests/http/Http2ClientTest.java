@@ -1285,7 +1285,7 @@ public class Http2ClientTest extends Http2TestBase {
                 complete();
               }
             })
-            .sendHead();
+            .writeHead();
         }));
       });
       await();
@@ -1341,7 +1341,7 @@ public class Http2ClientTest extends Http2TestBase {
                 complete();
               }
             })
-            .sendHead();
+            .writeHead();
         }));
       });
       await();
@@ -1454,7 +1454,7 @@ public class Http2ClientTest extends Http2TestBase {
           status.getAndIncrement();
           req.end(Buffer.buffer("request-body"));
         });
-        req.sendHead().onComplete(version -> {
+        req.writeHead().onComplete(version -> {
           assertEquals(1, req.streamId());
         });
       }));
@@ -1586,7 +1586,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
-  public void testSendHeadersCompletionHandler() throws Exception {
+  public void testwriteHeadersCompletionHandler() throws Exception {
     AtomicInteger status = new AtomicInteger();
     server.requestHandler(req -> {
       req.response().end();
@@ -1601,7 +1601,7 @@ public class Http2ClientTest extends Http2TestBase {
             testComplete();
           });
         }));
-      req.sendHead().onComplete(onSuccess(version -> {
+      req.writeHead().onComplete(onSuccess(version -> {
         assertEquals(0, status.getAndIncrement());
         assertSame(HttpVersion.HTTP_2, req.version());
         req.end();
@@ -1642,7 +1642,7 @@ public class Http2ClientTest extends Http2TestBase {
           testComplete();
         });
       }));
-      req.sendHead().onComplete(onSuccess(version -> {
+      req.writeHead().onComplete(onSuccess(version -> {
         assertSame(HttpVersion.HTTP_2, req.version());
         req.writeCustomFrame(10, 253, expectedSend);
         req.end();
@@ -1812,7 +1812,7 @@ public class Http2ClientTest extends Http2TestBase {
           .exceptionHandler(err -> {
             complete();
           });
-        req.sendHead();
+        req.writeHead();
       }));
     });
     await();
@@ -2179,7 +2179,7 @@ public class Http2ClientTest extends Http2TestBase {
             });
           }));
         req.setStreamPriority(requestStreamPriority);
-        req.sendHead().onComplete(h -> {
+        req.writeHead().onComplete(h -> {
           req.setStreamPriority(requestStreamPriority2);
           req.end();
         });
@@ -2236,7 +2236,7 @@ public class Http2ClientTest extends Http2TestBase {
             });
           }));
         req.setStreamPriority(streamPriority);
-        req.sendHead();
+        req.writeHead();
         latch.future().onComplete(onSuccess(v -> {
           req.setStreamPriority(streamPriority);
           req.end();

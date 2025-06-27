@@ -1229,7 +1229,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateExceptionAsync(() -> req.end("foo"));
       assertIllegalStateExceptionAsync(() -> req.end(buff));
       assertIllegalStateExceptionAsync(() -> req.end("foo", "UTF-8"));
-      assertIllegalStateException(() -> req.sendHead());
+      assertIllegalStateException(() -> req.writeHead());
       assertIllegalStateException(() -> req.setChunked(false));
       assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
       assertIllegalStateExceptionAsync(() -> req.write(buff));
@@ -1620,7 +1620,7 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
         .onComplete(onSuccess(req -> {
           req.setChunked(true);
-          req.sendHead().onComplete(v -> {
+          req.writeHead().onComplete(v -> {
             req.connection().close();
           });
       }));
@@ -2067,7 +2067,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.write(toSend);
         req.end();
       });
-      req.sendHead();
+      req.writeHead();
     }));
 
     await();
@@ -2098,7 +2098,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.write(toSend);
         req.end();
       });
-      req.sendHead();
+      req.writeHead();
     }));
 
     await();
@@ -2126,7 +2126,7 @@ public abstract class HttpTest extends HttpTestBase {
       req.continueHandler(v -> {
         fail("should not be called");
       });
-      req.sendHead();
+      req.writeHead();
     }));
 
     await();
@@ -3965,7 +3965,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testFollowRedirectSendHeadThenBody() throws Exception {
+  public void testFollowRedirectwriteHeadThenBody() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
@@ -3994,7 +3994,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertEquals(200, resp.statusCode());
           testComplete();
         }));
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         req.end(expected);
       }));
     }));
@@ -4430,7 +4430,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertFalse(Thread.holdsLock(req.connection()));
           complete();
         }));
-        req.setChunked(true).sendHead();
+        req.setChunked(true).writeHead();
       }));
     await();
   }
@@ -5584,7 +5584,7 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.response().onComplete(onFailure(err -> complete()));
         req.exceptionHandler(err -> complete());
-        req.sendHead().onComplete(onSuccess(version -> req.reset(0)));
+        req.writeHead().onComplete(onSuccess(version -> req.reset(0)));
       }));
     });
     await();
@@ -6446,7 +6446,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
       req
         .setChunked(true)
-        .sendHead();
+        .writeHead();
       promise.future().onSuccess(v -> {
         req.connection().close();
       });
@@ -6679,7 +6679,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConcurrentWrites1() throws Exception {
     testConcurrentWrites(req -> req
-      .sendHead()
+      .writeHead()
       .compose(v -> {
         AtomicBoolean latch = new AtomicBoolean(false);
         new Thread(() -> {
@@ -6700,7 +6700,7 @@ public abstract class HttpTest extends HttpTestBase {
     testConcurrentWrites(req -> {
       AtomicBoolean latch = new AtomicBoolean(false);
       new Thread(() -> {
-        req.sendHead();
+        req.writeHead();
         latch.set(true); // Release Event-loop thread
       }).start();
       // Active wait for the event to be published

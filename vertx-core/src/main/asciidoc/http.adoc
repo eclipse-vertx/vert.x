@@ -1496,7 +1496,7 @@ client request object
 This will be called if the server sends back a `Status: 100 (Continue)` response to signify that it is ok to send
 the rest of the request.
 
-This is used in conjunction with {@link io.vertx.core.http.HttpClientRequest#sendHead()}to send the head of the request.
+This is used in conjunction with {@link io.vertx.core.http.HttpClientRequest#writeHead()} to write the head of the request.
 
 Here's an example:
 

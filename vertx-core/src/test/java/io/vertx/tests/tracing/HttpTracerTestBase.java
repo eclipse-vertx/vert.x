@@ -142,7 +142,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
           complete();
         }));
       req.setChunked(true)
-        .sendHead().onComplete(v -> {
+        .writeHead().onComplete(v -> {
           req.connection().close();
         });
     }));

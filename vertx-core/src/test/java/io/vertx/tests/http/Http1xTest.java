@@ -1951,7 +1951,7 @@ public class Http1xTest extends HttpTest {
               assertSameEventLoop(clientCtx, Vertx.currentContext());
               complete();
             }));
-          req.sendHead();
+          req.writeHead();
         }));
     });
     await();
@@ -2077,7 +2077,7 @@ public class Http1xTest extends HttpTest {
               assertSameEventLoop(requestCtx, Vertx.currentContext());
               req.end();
             });
-            req.sendHead().onComplete(version -> {
+            req.writeHead().onComplete(version -> {
               assertSameEventLoop(requestCtx, Vertx.currentContext());
               fill(data, req, cf::complete);
             });
@@ -2796,7 +2796,7 @@ public class Http1xTest extends HttpTest {
       // Send head to the server and trigger the request handler
       req
         .setChunked(true)
-        .sendHead();
+        .writeHead();
     }));
 
     client.request(new RequestOptions(requestOptions).setURI("/2"))
@@ -2866,7 +2866,7 @@ public class Http1xTest extends HttpTest {
       })
       .build();
     client.request(requestOptions)
-      .onComplete(onSuccess(HttpClientRequest::sendHead));
+      .onComplete(onSuccess(HttpClientRequest::writeHead));
     await();
   }
 
@@ -2890,7 +2890,7 @@ public class Http1xTest extends HttpTest {
         client.request(requestOptions)
           .onComplete(onSuccess(req -> {
             req.putHeader("the_header", TestUtils.randomAlphaString(10000));
-            req.sendHead();
+            req.writeHead();
           }));
       });
     await();
@@ -2911,7 +2911,7 @@ public class Http1xTest extends HttpTest {
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .putHeader("the_header", TestUtils.randomAlphaString(10000))
-        .sendHead();
+        .writeHead();
     }));
     await();
   }
@@ -3087,7 +3087,7 @@ public class Http1xTest extends HttpTest {
           client.request(requestOptions).onSuccess(req2 -> {
             req2
               .response().onComplete(onFailure(err -> complete()));
-            req2.sendHead().onComplete(onSuccess(v -> {
+            req2.writeHead().onComplete(onSuccess(v -> {
               assertTrue(req2.reset().succeeded());
             }));
           });
@@ -3153,7 +3153,7 @@ public class Http1xTest extends HttpTest {
           .setMethod(HttpMethod.POST)
         ).onComplete(onSuccess(req2 -> {
           req2.response().onComplete(onFailure(resp -> complete()));
-          req2.sendHead();
+          req2.writeHead();
           doReset.thenAccept(v2 -> {
             assertTrue(req2.reset().succeeded());
           });
@@ -3242,11 +3242,11 @@ public class Http1xTest extends HttpTest {
                   complete();
                 }));
             });
-            req1.sendHead().onComplete(v -> {
+            req1.writeHead().onComplete(v -> {
               assertTrue(req1.reset().succeeded());
             });
           } else {
-            req1.sendHead().onComplete(v -> {
+            req1.writeHead().onComplete(v -> {
               assertTrue(req1.reset().succeeded());
             });
             client.request(new RequestOptions(requestOptions).setURI("/somepath"))
@@ -4440,7 +4440,7 @@ public class Http1xTest extends HttpTest {
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
         req.response().onComplete(onSuccess(resp -> complete()));
-        req.sendHead();
+        req.writeHead();
         client.request(requestOptions).compose(HttpClientRequest::send).onComplete(resp -> complete());
         client.request(requestOptions).compose(HttpClientRequest::send).onComplete(resp -> complete());
         // Need to wait a little so requests 2 and 3 are appended to the first request
@@ -4570,7 +4570,7 @@ public class Http1xTest extends HttpTest {
           testComplete();
         }
       });
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         connected.set(true);
         sender.send();
       }));
@@ -4977,7 +4977,7 @@ public class Http1xTest extends HttpTest {
             });
           });
         }));
-      req.setChunked(true).sendHead();
+      req.setChunked(true).writeHead();
     }));
     await();
   }
@@ -5535,7 +5535,7 @@ public class Http1xTest extends HttpTest {
           case 0:
             assertTrue(ar.succeeded());
             HttpClientRequest req = ar.result();
-            req.sendHead();
+            req.writeHead();
             req.response().onComplete(onSuccess(resp -> {
               complete();
             }));
@@ -5563,7 +5563,7 @@ public class Http1xTest extends HttpTest {
     for (int i = 0;i < numRequests;i++) {
       Future<HttpClientRequest> fut = client.request(requestOptions);
       fut.onComplete(onSuccess(request -> {
-        request.setChunked(true).sendHead();
+        request.setChunked(true).writeHead();
         request.response().compose(HttpClientResponse::body).onComplete(onSuccess(v -> {
           vertx.setTimer(10, id -> request.end());
           complete();
@@ -5593,7 +5593,7 @@ public class Http1xTest extends HttpTest {
           case 0:
             assertTrue(ar.succeeded());
             HttpClientRequest req = ar.result();
-            req.sendHead();
+            req.writeHead();
             req.response().onComplete(onSuccess(resp -> {
               complete();
             }));

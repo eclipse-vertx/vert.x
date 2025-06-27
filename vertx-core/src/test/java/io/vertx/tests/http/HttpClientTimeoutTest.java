@@ -239,7 +239,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
       req.response().onComplete(onFailure(err -> {
         complete();
       }));
-      req.setChunked(true).sendHead().onComplete(onSuccess(version -> req.idleTimeout(500)));
+      req.setChunked(true).writeHead().onComplete(onSuccess(version -> req.idleTimeout(500)));
       AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
         if (errored.compareAndSet(false, true)) {
@@ -289,7 +289,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
           complete();
         }
       });
-      req.sendHead();
+      req.writeHead();
     }));
     await();
   }
