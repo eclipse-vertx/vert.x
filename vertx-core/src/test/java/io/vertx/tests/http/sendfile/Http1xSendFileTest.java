@@ -16,6 +16,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.PoolOptions;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
 import org.junit.Test;
@@ -48,7 +49,11 @@ public class Http1xSendFileTest extends HttpSendFileTest {
       }
     });
     startServer(testAddress);
-    vertx.createNetClient().connect(testAddress).onComplete(onSuccess(socket -> {
+    vertx.createNetClient(new NetClientOptions()
+      .setSsl(createBaseClientOptions().isSsl())
+      .setHostnameVerificationAlgorithm("")
+      .setTrustAll(true)
+    ).connect(testAddress).onComplete(onSuccess(socket -> {
       socket.write("GET / HTTP/1.1\r\n\r\n");
       socket.close();
     }));
@@ -101,14 +106,8 @@ public class Http1xSendFileTest extends HttpSendFileTest {
         });
     startServer(testAddress);
     long now = System.currentTimeMillis();
-    Integer len = getFile().await();
-    assertEquals((int)len, file.length());
-    return (int) (System.currentTimeMillis() - now);
-  }
-
-  private Future<Integer> getFile() {
     int[] length = {0};
-    return client.request(requestOptions)
+    Integer len = client.request(requestOptions)
       .compose(req -> req.send()
         .compose(resp -> {
           resp.handler(buff -> {
@@ -121,7 +120,8 @@ public class Http1xSendFileTest extends HttpSendFileTest {
           resp.exceptionHandler(this::fail);
           return resp.end();
         }))
-      .map(v -> length[0]);
+      .map(v -> length[0]).await();
+    assertEquals((int)len, file.length());
+    return (int) (System.currentTimeMillis() - now);
   }
-
 }

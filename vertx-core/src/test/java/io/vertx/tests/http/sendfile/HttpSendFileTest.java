@@ -354,7 +354,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
 
   private RandomAccessFile testSendFileWithFileChannel(int flen, BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender,
                                                        String expectedContentType, long expectedLength) throws Exception {
-    Assume.assumeTrue(this instanceof Http1xSendFileTest);
+    Assume.assumeTrue(this.getClass() == Http1xSendFileTest.class);
     File file = TestUtils.tmpFile(".dat", flen);
     RandomAccessFile raf = new RandomAccessFile(file, "r");
     server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(onSuccess(v -> testComplete())));
