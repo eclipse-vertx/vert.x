@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Promise;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
@@ -42,5 +43,9 @@ public interface Http2Connection {
   void writePriorityFrame(int streamId, StreamPriority priority);
 
   void consumeCredits(int streamId, int amountOfBytes);
+
+  boolean supportsSendFile();
+
+  void sendFile(int streamId, ChunkedInput<ByteBuf> file, Promise<Void> promise);
 
 }

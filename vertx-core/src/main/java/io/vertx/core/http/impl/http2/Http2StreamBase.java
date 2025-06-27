@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
+import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -291,6 +292,24 @@ public abstract class Http2StreamBase {
       endWritten();
     }
     conn.writeHeaders(id, headers, priority, end, checkFlush, promise);
+  }
+
+  public final void sendFile(ChunkedInput<ByteBuf> file, Promise<Void> promise) {
+    bytesWritten += file.length();
+    outboundQueue.write(new MessageWrite() {
+      @Override
+      public void write() {
+        sendFile0(file, promise);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        promise.fail(cause);
+      }
+    });
+  }
+
+  void sendFile0(ChunkedInput<ByteBuf> file, Promise<Void> promise) {
+    conn.sendFile(id, file, promise);
   }
 
   // MAYBE NOT NECESSARY

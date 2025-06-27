@@ -24,6 +24,7 @@ import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
@@ -495,6 +496,16 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
       // buffers are received by HTTP/1 and not accounted by HTTP/2
       this.handler.consume(s, amountOfBytes);
     }
+  }
+
+  @Override
+  public boolean supportsSendFile() {
+    return false;
+  }
+
+  @Override
+  public void sendFile(int streamId, ChunkedInput<ByteBuf> file, Promise<Void> promise) {
+    promise.fail("Send file not supported");
   }
 
   public boolean isWritable(int streamId) {

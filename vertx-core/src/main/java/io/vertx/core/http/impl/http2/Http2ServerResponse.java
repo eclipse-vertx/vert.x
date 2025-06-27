@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpStatusClass;
+import io.netty.handler.stream.ChunkedInput;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -33,15 +34,18 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.UncloseableChunkedNioFile;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
+import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -402,7 +406,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       } else {
         chunk = Unpooled.EMPTY_BUFFER;
       }
-      if (end && !headWritten && needsContentLengthHeader()) {
+      if (end && !headWritten && requiresContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailedMap == null, !hasBody) != null;
@@ -430,7 +434,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return fut;
   }
 
-  private boolean needsContentLengthHeader() {
+  private boolean requiresContentLengthHeader() {
     return stream.method() != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headersMap.contains(HttpHeaderNames.CONTENT_LENGTH);
   }
 
@@ -543,6 +547,42 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkValid();
     }
+    if (conn.supportsSendFile()) {
+      return sendFileInternal(filename, offset, length);
+    } else {
+      return sendAsyncFile(filename, offset, length);
+    }
+  }
+
+  @Override
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    if (!headersMap.contains(HttpHeaders.CONTENT_TYPE)) {
+      headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = file.length();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, file, null, false);
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    if (!headersMap.contains(HttpHeaders.CONTENT_TYPE)) {
+      headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = channel.size();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, null, channel, false);
+  }
+
+  private Future<Void> sendAsyncFile(String filename, long offset, long length) {
     return HttpUtils
       .resolveFile(context, filename, offset, length)
       .compose(file -> {
@@ -562,17 +602,77 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         Future<Void> fut = file.pipeTo(this);
         return fut
           .eventually(file::close);
-    });
+      });
   }
 
-  @Override
-  public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
-    return stream.context.failedFuture("HTTP/2 does not support sending random access file for now");
+  private Future<Void> sendFileInternal(String filename, long offset, long length) {
+    File file = context.owner().fileResolver().resolve(filename);
+    long size;
+    RandomAccessFile raf;
+    try {
+      raf = new RandomAccessFile(file, "r");
+      size = raf.length();
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    if (!headersMap.contains(HttpHeaders.CONTENT_TYPE)) {
+      CharSequence mimeType = MimeMapping.mimeTypeForFilename(filename);
+      if (mimeType == null) {
+        mimeType = APPLICATION_OCTET_STREAM;
+      }
+      headersMap.set(CONTENT_TYPE, mimeType);
+    }
+    return sendFileInternal(offset, length, size, raf, null, true);
   }
 
-  @Override
-  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
-    return stream.context.failedFuture("HTTP/2 does not support sending channel for now");
+  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel channel, boolean close) {
+    Future<Void> fut = null;
+    try {
+      long actualLength = Math.min(length, size - offset);
+      long actualOffset = Math.min(offset, size);
+      if (actualLength < 0) {
+        return context.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
+      }
+      ChunkedInput<ByteBuf> chunkedFile;
+      try {
+        if (file != null) {
+          channel = file.getChannel();
+        }
+        chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength);
+      } catch (IOException e) {
+        return context.failedFuture(e);
+      }
+      fut = sendFileInternal(chunkedFile);
+    } finally {
+      if (fut == null && close) {
+        try {
+          if (file != null) {
+            file.close();
+          } else {
+            channel.close();
+          }
+        } catch (Exception ignore) {
+        }
+      }
+    }
+    return fut;
+  }
+
+  private Future<Void> sendFileInternal(ChunkedInput<ByteBuf> file) {
+    if (requiresContentLengthHeader()) {
+      if (headersMap.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+        putHeader(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(file.length()));
+      }
+    }
+    checkSendHeaders(false);
+    Promise<Void> promise = context.promise();
+    stream.sendFile(file, promise);
+    Future<Void> future = promise.future();
+    Handler<Void> handler = bodyEndHandler;
+    if (handler != null) {
+      future.onSuccess(handler);
+    }
+    return future;
   }
 
   @Override
