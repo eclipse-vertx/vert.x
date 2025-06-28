@@ -11,8 +11,13 @@
 
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.eventbus.MessageConsumerOptions;
+
+import java.util.Objects;
 
 public interface EventBusInternal extends EventBus {
 
@@ -20,6 +25,8 @@ public interface EventBusInternal extends EventBus {
    * Start the event bus.
    */
   void start(Promise<Void> promise);
+
+  <T> MessageConsumer<T> localConsumer(Context context, String address);
 
   /**
    * Close the event bus and release any resources held.

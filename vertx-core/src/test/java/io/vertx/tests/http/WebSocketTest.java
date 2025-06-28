@@ -36,6 +36,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.internal.VertxInternal;
@@ -76,6 +77,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -4104,5 +4106,36 @@ public class WebSocketTest extends VertxTestBase {
     }
 
     awaitLatch(latch, 10, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testClientWebSocketWithDuplicatedContext1() {
+    testClientWebSocketWithDuplicatedContext(() -> client.connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
+  }
+
+  @Test
+  public void testClientWebSocketWithDuplicatedContext2() {
+    testClientWebSocketWithDuplicatedContext(() -> client.webSocket().connect(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/"));
+  }
+
+  private void testClientWebSocketWithDuplicatedContext(Supplier<Future<WebSocket>> sup) {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+      ws.write(Buffer.buffer("ping"));
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+    client = vertx.createWebSocketClient();
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.runOnContext(v -> {
+      sup.get()
+        .onComplete(onSuccess(ws -> {
+          assertSame(context, Vertx.currentContext());
+          ws.handler(data -> {
+            assertSame(context, Vertx.currentContext());
+            testComplete();
+          });
+        }));
+    });
+    await();
   }
 }

@@ -19,7 +19,9 @@ import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -317,6 +319,36 @@ public class TimerTest extends VertxTestBase {
         }
       });
     });
+    await();
+  }
+
+  @Test
+  public void testPeriodicWithDuplicateContext() {
+
+    waitFor(2);
+
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicated = context.duplicate();
+    duplicated.getLocal(ContextInternal.LOCAL_MAP, ConcurrentHashMap::new).put("foo", "bar");
+
+    duplicated.runOnContext(v -> {
+      vertx.setPeriodic(10, id -> {
+        ContextInternal current = (ContextInternal) Vertx.currentContext();
+        assertTrue("Not a duplicated context", current.isDuplicate());
+        assertNull("Local map shouldn't have an entry for the key 'foo'", current.getLocal(ContextInternal.LOCAL_MAP));
+        vertx.cancelTimer(id);
+        complete();
+      });
+    });
+
+    duplicated.setPeriodic(10, id -> {
+      ContextInternal current = (ContextInternal) Vertx.currentContext();
+      assertTrue("Not a duplicated context", current.isDuplicate());
+      assertNull("Local map shouldn't have an entry for the key 'foo'", current.getLocal(ContextInternal.LOCAL_MAP));
+      vertx.cancelTimer(id);
+      complete();
+    });
+
     await();
   }
 

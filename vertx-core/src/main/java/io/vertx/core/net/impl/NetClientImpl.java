@@ -139,7 +139,7 @@ class NetClientImpl implements NetClientInternal {
 
   @Override
   public Future<NetSocket> connect(ConnectOptions connectOptions) {
-    ContextInternal context = vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext().unwrap();
     Promise<NetSocket> promise = context.promise();
     connectInternal(connectOptions, options.isRegisterWriteHandler(), promise, context, options.getReconnectAttempts());
     return promise.future();
@@ -237,6 +237,9 @@ class NetClientImpl implements NetClientInternal {
                                Promise<NetSocket> connectHandler,
                                ContextInternal context,
                                int remainingAttempts) {
+    if (context.isDuplicate()) {
+      throw new IllegalArgumentException("Cannot accept duplicate contexts");
+    }
     if (closeSequence.started()) {
       connectHandler.fail(new IllegalStateException("Client is closed"));
     } else {

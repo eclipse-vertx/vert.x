@@ -338,7 +338,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
     CloseFuture closeFuture = new CloseFuture(log);
-    DatagramSocketImpl so = DatagramSocketImpl.create(this, closeFuture, options);
+    ContextInternal context = getOrCreateContext().unwrap();
+    DatagramSocketImpl so = DatagramSocketImpl.create(context, closeFuture, options);
     closeFuture.add(so);
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
@@ -426,7 +427,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new HttpClientBuilderInternal(this);
   }
 
-  public EventBus eventBus() {
+  public EventBusInternal eventBus() {
     return eventBus;
   }
 

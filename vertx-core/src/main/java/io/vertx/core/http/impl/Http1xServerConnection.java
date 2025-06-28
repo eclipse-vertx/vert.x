@@ -297,7 +297,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
           promise.fail(e);
           return;
         }
-        promise.complete(new ServerWebSocketHandshaker(request, handshaker, options));
+        promise.complete(new ServerWebSocketHandshaker(request, promise.context(), handshaker, options));
       }
     });
   }
