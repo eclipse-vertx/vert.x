@@ -4998,9 +4998,6 @@ public abstract class HttpTest extends HttpTestBase {
             // Create pumps which echo stuff
             src.pipeTo(dst);
             dst.pipeTo(src);
-            dst.closeHandler(v -> {
-              src.close();
-            });
           }));
         }));
       });
