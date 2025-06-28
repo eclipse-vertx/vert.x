@@ -15,7 +15,6 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -29,7 +28,6 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -51,8 +49,8 @@ public class Http2ClientStream extends Http2StreamBase {
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
   private Http2ClientStreamHandler handler;
-  private Http2HeadersMultiMap headers;
-  private HttpResponse observableResponse;
+  private HttpResponseHead responseHead;
+  private HttpRequestHead requestHead;
   private Object metric;
   private Object trace;
 
@@ -84,23 +82,6 @@ public class Http2ClientStream extends Http2StreamBase {
   public void upgrade(Object metric, Object trace) {
     this.metric = metric;
     this.trace = trace;
-  }
-
-  private void createStream(HttpRequestHead head, Http2HeadersMultiMap headers) throws Exception {
-    conn.createStream(this);
-    head.remoteAddress = ((HttpConnection)conn).remoteAddress();
-    if (clientMetrics != null) {
-      metric = clientMetrics.requestBegin(headers.path().toString(), head);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
-      String operation = head.traceOperation;
-      if (operation == null) {
-        operation = headers.method().toString();
-      }
-      trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
-    }
   }
 
   void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
@@ -150,8 +131,10 @@ public class Http2ClientStream extends Http2StreamBase {
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
+      request.remoteAddress = ((HttpConnection)conn).remoteAddress();
+      requestHead = request;
       try {
-        createStream(request, headers);
+        conn.createStream(Http2ClientStream.this);
       } catch (Exception ex) {
         promise.fail(ex);
         onException(ex);
@@ -179,12 +162,6 @@ public class Http2ClientStream extends Http2StreamBase {
     return trace;
   }
 
-  protected void endWritten() {
-    if (clientMetrics != null) {
-      clientMetrics.requestEnd(metric, bytesWritten());
-    }
-  }
-
   public void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
     Http2ClientPush push = new Http2ClientPush(headers, pushStream);
     pushStream.stream.init(promisedStreamId, writable);
@@ -204,22 +181,6 @@ public class Http2ClientStream extends Http2StreamBase {
     context.execute(null, v -> handleEarlyHints(headers));
   }
 
-  @Override
-  public void onTrailers(Http2HeadersMultiMap trailers) {
-    if (clientMetrics != null) {
-      clientMetrics.responseEnd(metric, bytesRead());
-    }
-    super.onTrailers(trailers);
-  }
-
-  @Override
-  public void onReset(long code) {
-    if (clientMetrics != null) {
-      clientMetrics.requestReset(metric);
-    }
-    super.onReset(code);
-  }
-
   public void onHeaders(Http2HeadersMultiMap headers) {
     int status = headers.status();
     if (status == 100) {
@@ -234,31 +195,14 @@ public class Http2ClientStream extends Http2StreamBase {
       onEarlyHints(headersMultiMap);
       return;
     }
-    this.headers = headers;
+    String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
+    this.responseHead = new HttpResponseHead(HttpVersion.HTTP_2, headers.status(), statusMessage, headers);
     super.onHeaders(headers);
-    if (clientMetrics != null) {
-      clientMetrics.responseBegin(metric, observableResponse());
-    }
     context.execute(headers, this::handleHeaders);
   }
 
   @Override
   public void onClose() {
-    if (clientMetrics != null) {
-      if (!isTrailersSent() || !isTrailersReceived()) {
-        clientMetrics.requestReset(metric);
-      }
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null && trace != null) {
-      VertxException err;
-      if (isTrailersReceived() && isTrailersSent()) {
-        err = null;
-      } else {
-        err = HttpUtils.STREAM_CLOSED_EXCEPTION;
-      }
-      tracer.receiveResponse(context, observableResponse(), trace, err, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
-    }
     if (!isTrailersReceived()) {
       // NOT SURE OF THAT
       onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
@@ -294,16 +238,55 @@ public class Http2ClientStream extends Http2StreamBase {
     }
   }
 
-  private HttpResponse observableResponse() {
-    if (observableResponse == null && headers != null) {
-      int status = headers.status();
-      String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-      observableResponse = new HttpResponseHead(
-        HttpVersion.HTTP_2,
-        status,
-        statusMessage,
-        headers);
+  @Override
+  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
+    if (clientMetrics != null) {
+      metric = clientMetrics.requestBegin(requestHead.uri, requestHead);
     }
-    return observableResponse;
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
+      String operation = requestHead.traceOperation;
+      if (operation == null) {
+        operation = requestHead.method().toString();
+      }
+      trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, requestHead, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+    }
+  }
+
+  @Override
+  protected void observeInboundTrailers() {
+    if (clientMetrics != null) {
+      clientMetrics.responseEnd(metric, bytesRead());
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null && trace != null) {
+      tracer.receiveResponse(context, responseHead, trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
+    }
+  }
+
+  @Override
+  protected void observeReset() {
+    if (clientMetrics != null) {
+      clientMetrics.requestReset(metric);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null && trace != null) {
+      tracer.receiveResponse(context, responseHead, trace, HttpUtils.STREAM_CLOSED_EXCEPTION, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
+    }
+  }
+
+  @Override
+  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
+    if (clientMetrics != null) {
+      clientMetrics.responseBegin(metric, responseHead);
+    }
+  }
+
+  @Override
+  protected void observeOutboundTrailers() {
+    if (clientMetrics != null) {
+      clientMetrics.requestEnd(metric, bytesWritten());
+    }
   }
 }

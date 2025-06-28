@@ -312,7 +312,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = context.promise();
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(conn.newHeaders().status(HttpResponseStatus.CONTINUE.codeAsText()), true, false, true, promise);
+      stream.writeHeaders(conn.newHeaders().status(HttpResponseStatus.CONTINUE.codeAsText()), false, true, promise);
     }
     return promise.future();
   }
@@ -336,7 +336,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       checkHeadWritten();
     }
-    stream.writeHeaders(http2Headers, true, false, true, promise);
+    stream.writeHeaders(http2Headers, false, true, promise);
     return promise.future();
   }
 
@@ -418,7 +418,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         fut = context.succeededFuture();
       }
       if (end && trailedMap != null) {
-        stream.writeHeaders(trailedMap, false, true, true, null);
+        stream.writeHeaders(trailedMap, true, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -453,7 +453,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       prepareHeaders();
       headWritten = true;
       Promise<Void> promise = context.promise();
-      stream.writeHeaders(headersMap, true, end, checkFlush, promise);
+      stream.writeHeaders(headersMap, end, checkFlush, promise);
       return promise.future();
     } else {
       return null;

@@ -57,6 +57,7 @@ public abstract class Http2StreamBase {
   private long bytesWritten;
   private Throwable failure;
   private long reset = -1L;
+  private boolean first_ = true;
 
   Http2StreamBase(Http2Connection conn, ContextInternal context) {
     this(-1, conn, context, true);
@@ -138,6 +139,14 @@ public abstract class Http2StreamBase {
     return context;
   }
 
+  public void priority(StreamPriority streamPriority) {
+    this.priority = streamPriority;
+  }
+
+  public StreamPriority priority() {
+    return priority;
+  }
+
   // Should use generic for Http2StreamHandler
   public abstract Http2StreamHandler handler();
 
@@ -148,12 +157,16 @@ public abstract class Http2StreamBase {
   }
 
   public void onClose() {
+    if (!trailersSent || !trailersReceived) {
+      observeReset();
+    }
     conn.flushBytesWritten();
     context.execute(ex -> handleClose());
     outboundQueue.close();
   }
 
   public void onReset(long code) {
+    observeReset();
     reset = code;
     context.execute(code, this::handleReset);
   }
@@ -163,6 +176,7 @@ public abstract class Http2StreamBase {
       throw new IllegalStateException();
     }
     headersReceived = true;
+    observeInboundHeaders(headers);
   }
 
   public void onException(Throwable cause) {
@@ -205,6 +219,7 @@ public abstract class Http2StreamBase {
       throw new IllegalStateException();
     }
     trailersReceived = true;
+    observeInboundTrailers();
     conn.flushBytesRead();
     inboundQueue.write(trailers);
   }
@@ -252,8 +267,9 @@ public abstract class Http2StreamBase {
     return promise.future();
   }
 
-  public final void writeHeaders(Http2HeadersMultiMap headers, boolean first, boolean end, boolean checkFlush, Promise<Void> promise) {
-    if (first) {
+  public final void writeHeaders(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+    if (first_) {
+      first_ = false;
       EventLoop eventLoop = conn.context().nettyEventLoop();
       if (eventLoop.inEventLoop()) {
         writeHeaders0(headers, end, checkFlush, promise);
@@ -287,9 +303,13 @@ public abstract class Http2StreamBase {
       }
       return;
     }
+    if (!headersSent) {
+      headersSent = true;
+      observeOutboundHeaders(headers);
+    }
     if (end) {
       trailersSent = true;
-      endWritten();
+      observeOutboundTrailers();
     }
     conn.writeHeaders(id, headers, priority, end, checkFlush, promise);
   }
@@ -310,10 +330,6 @@ public abstract class Http2StreamBase {
 
   void sendFile0(ChunkedInput<ByteBuf> file, Promise<Void> promise) {
     conn.sendFile(id, file, promise);
-  }
-
-  // MAYBE NOT NECESSARY
-  protected void endWritten() {
   }
 
   public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
@@ -349,7 +365,7 @@ public abstract class Http2StreamBase {
     conn.reportBytesWritten(numOfBytes);
     if (end) {
       trailersSent = true;
-      endWritten();
+      observeOutboundTrailers();
     }
     conn.writeData(id, chunk, end, promise);
   }
@@ -447,14 +463,6 @@ public abstract class Http2StreamBase {
     }
   }
 
-  public void priority(StreamPriority streamPriority) {
-    this.priority = streamPriority;
-  }
-
-  public StreamPriority priority() {
-    return priority;
-  }
-
   public void updatePriority(StreamPriority priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
@@ -462,5 +470,20 @@ public abstract class Http2StreamBase {
         conn.writePriorityFrame(id, priority);
       }
     }
+  }
+
+  protected void observeReset() {
+  }
+
+  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
+  }
+
+  protected void observeOutboundTrailers() {
+  }
+
+  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
+  }
+
+  protected void observeInboundTrailers() {
   }
 }
