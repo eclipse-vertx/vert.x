@@ -17,11 +17,12 @@ import io.vertx.core.http.StreamPriority;
 
 public interface Http2StreamHandler {
 
+  void handleHeaders(Http2HeadersMultiMap head);
   void handleReset(long errorCode);
   void handleException(Throwable cause);
   void handleClose();
   void handleData(Buffer data);
-  void handleEnd(MultiMap trailers);
+  void handleTrailers(MultiMap trailers);
   void handleCustomFrame(HttpFrame frame);
   void handlePriorityChange(StreamPriority streamPriority);
   void handleDrained();

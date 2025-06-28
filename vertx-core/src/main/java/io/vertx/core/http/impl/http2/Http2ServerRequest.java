@@ -99,7 +99,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public void handleHead(MultiMap headers) {
+  public void handleHeaders(Http2HeadersMultiMap headers) {
     this.headersMap = headers;
 
     // Check expect header and implement 100 continue automatically
@@ -177,7 +177,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     }
   }
 
-  public void handleEnd(MultiMap trailers) {
+  public void handleTrailers(MultiMap trailers) {
     HttpEventHandler handler;
     synchronized (connection) {
       ended = true;

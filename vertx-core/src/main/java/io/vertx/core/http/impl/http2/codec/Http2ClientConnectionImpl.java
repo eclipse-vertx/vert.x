@@ -179,7 +179,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   private Http2ClientStreamImpl createStream2(ContextInternal context) {
-    return new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), false);
+    return new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
   }
 
   private void recycle() {
@@ -231,7 +231,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), true);
+      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
       Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
       s.handler(pushStream);
       pushStream.stream = s;

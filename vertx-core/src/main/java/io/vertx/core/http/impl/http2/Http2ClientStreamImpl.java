@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -54,21 +55,18 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   private TracingPolicy tracingPolicy;
   private boolean decompressionSupported;
   private ClientMetrics clientMetrics;
-  private boolean push;
 
   public Http2ClientStreamImpl(Http2ClientConnection conn,
                         ContextInternal context,
                         TracingPolicy tracingPolicy,
                         boolean decompressionSupported,
-                        ClientMetrics clientMetrics,
-                        boolean push) {
+                        ClientMetrics clientMetrics) {
     this.context = context;
     this.conn = conn;
 
     this.tracingPolicy = tracingPolicy;
     this.decompressionSupported = decompressionSupported;
     this.clientMetrics = clientMetrics;
-    this.push = push;
   }
 
   @Override
@@ -266,10 +264,17 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public void handleHead(HttpResponseHead head) {
+  public void handleHeaders(Http2HeadersMultiMap headers) {
     Handler<HttpResponseHead> handler = headHandler;
     if (handler != null) {
-      handler.handle(head);
+      int status = headers.status();
+      String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
+      HttpResponseHead response = new HttpResponseHead(
+        HttpVersion.HTTP_2,
+        status,
+        statusMessage,
+        headers);
+      handler.handle(response);
     }
   }
 
@@ -330,7 +335,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public void handleEnd(MultiMap trailers) {
+  public void handleTrailers(MultiMap trailers) {
     Handler<MultiMap> handler1 = trailerHandler;
     if (handler1 != null) {
       context.dispatch(trailers, handler1);

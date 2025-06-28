@@ -10,10 +10,5 @@
  */
 package io.vertx.core.http.impl.http2;
 
-import io.vertx.core.MultiMap;
-
 public interface Http2ServerStreamHandler extends Http2StreamHandler {
-
-  void handleHead(MultiMap headers);
-
 }

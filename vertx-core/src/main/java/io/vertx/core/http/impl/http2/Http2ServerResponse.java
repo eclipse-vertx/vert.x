@@ -668,10 +668,15 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Promise<Void> promise = context.promise();
     stream.sendFile(file, promise);
     Future<Void> future = promise.future();
-    Handler<Void> handler = bodyEndHandler;
-    if (handler != null) {
-      future.onSuccess(handler);
+    Handler<Void> bodyEndHandler = this.bodyEndHandler;
+    if (bodyEndHandler != null) {
+      future.onSuccess(bodyEndHandler);
     }
+    Handler<Void> endHandler = this.endHandler;
+    if (endHandler != null) {
+      future.onSuccess(endHandler);
+    }
+
     return future;
   }
 
@@ -760,7 +765,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
-    public void handleHead(MultiMap headers) {
+    public void handleHeaders(Http2HeadersMultiMap headers) {
       // Do nothing ???
     }
 
@@ -790,7 +795,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
-    public void handleEnd(MultiMap trailers) {
+    public void handleTrailers(MultiMap trailers) {
       throw new UnsupportedOperationException();
     }
 

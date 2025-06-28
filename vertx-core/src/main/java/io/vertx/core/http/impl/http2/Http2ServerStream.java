@@ -157,7 +157,7 @@ public class Http2ServerStream extends Http2StreamBase {
   }
 
   private void handleHead(Http2HeadersMultiMap map) {
-    handler.handleHead(map);
+    handler.handleHeaders(map);
   }
 
   @Override

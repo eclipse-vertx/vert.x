@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -49,10 +50,11 @@ public class Http2ClientStream extends Http2StreamBase {
   private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
-  private HttpResponseHead response;
+  private Http2ClientStreamHandler handler;
+  private Http2HeadersMultiMap headers;
+  private HttpResponse observableResponse;
   private Object metric;
   private Object trace;
-  private Http2ClientStreamHandler handler;
 
   public Http2ClientStream(Http2ClientConnection conn, ContextInternal context, TracingPolicy tracingPolicy,
                            boolean decompressionSupported, ClientMetrics clientMetrics) {
@@ -220,7 +222,6 @@ public class Http2ClientStream extends Http2StreamBase {
 
   public void onHeaders(Http2HeadersMultiMap headers) {
     int status = headers.status();
-    String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
     if (status == 100) {
       onContinue();
       return;
@@ -233,17 +234,12 @@ public class Http2ClientStream extends Http2StreamBase {
       onEarlyHints(headersMultiMap);
       return;
     }
+    this.headers = headers;
     super.onHeaders(headers);
-    response = new HttpResponseHead(
-      HttpVersion.HTTP_2,
-      status,
-      statusMessage,
-      headers);
-    headers.remove(HttpHeaders.PSEUDO_STATUS);
     if (clientMetrics != null) {
-      clientMetrics.responseBegin(metric, response);
+      clientMetrics.responseBegin(metric, observableResponse());
     }
-    context.execute(response, this::handleHead);
+    context.execute(headers, this::handleHeaders);
   }
 
   @Override
@@ -261,7 +257,7 @@ public class Http2ClientStream extends Http2StreamBase {
       } else {
         err = HttpUtils.STREAM_CLOSED_EXCEPTION;
       }
-      tracer.receiveResponse(context, response, trace, err, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
+      tracer.receiveResponse(context, observableResponse(), trace, err, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
     if (!isTrailersReceived()) {
       // NOT SURE OF THAT
@@ -291,10 +287,23 @@ public class Http2ClientStream extends Http2StreamBase {
     }
   }
 
-  void handleHead(HttpResponseHead response) {
+  void handleHeaders(Http2HeadersMultiMap headers) {
     Http2ClientStreamHandler i = handler;
     if (i != null) {
-      i.handleHead(response);
+      i.handleHeaders(headers);
     }
+  }
+
+  private HttpResponse observableResponse() {
+    if (observableResponse == null && headers != null) {
+      int status = headers.status();
+      String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
+      observableResponse = new HttpResponseHead(
+        HttpVersion.HTTP_2,
+        status,
+        statusMessage,
+        headers);
+    }
+    return observableResponse;
   }
 }

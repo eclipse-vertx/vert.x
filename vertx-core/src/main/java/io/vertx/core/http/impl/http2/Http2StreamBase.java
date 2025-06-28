@@ -71,7 +71,7 @@ public abstract class Http2StreamBase {
       @Override
       protected void handleMessage(Object item) {
         if (item instanceof MultiMap) {
-          handleEnd((MultiMap) item);
+          handleTrailers((MultiMap) item);
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
@@ -412,10 +412,10 @@ public abstract class Http2StreamBase {
     }
   }
 
-  void handleEnd(MultiMap trailers) {
+  void handleTrailers(MultiMap trailers) {
     Http2StreamHandler i = handler();
     if (i != null) {
-      i.handleEnd(trailers);
+      i.handleTrailers(trailers);
     }
   }
 
