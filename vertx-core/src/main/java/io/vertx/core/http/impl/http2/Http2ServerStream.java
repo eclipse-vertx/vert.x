@@ -21,7 +21,6 @@ import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -34,23 +33,25 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 public class Http2ServerStream extends Http2StreamBase {
 
-  private final Http2ServerConnection conn;
+  private final Http2ServerConnection connection;
   private Http2HeadersMultiMap requestHeaders;
   private Http2HeadersMultiMap responseHeaders;
   private String scheme;
   private HttpMethod method;
   private String uri;
   private HostAndPort authority;
+  private Http2ServerStreamHandler handler;
+
+  // Observability
   private final HttpServerMetrics serverMetrics;
   private final Object socketMetric;
   private final TracingPolicy tracingPolicy;
   private Object metric;
   private Object trace;
-  private Http2ServerStreamHandler handler;
   private HttpRequest observableRequest;
   private HttpResponse observableResponse;
 
-  public Http2ServerStream(Http2ServerConnection conn,
+  public Http2ServerStream(Http2ServerConnection connection,
                            HttpServerMetrics serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
@@ -59,9 +60,9 @@ public class Http2ServerStream extends Http2StreamBase {
                            String uri,
                            TracingPolicy tracingPolicy,
                            int promisedId) {
-    super(promisedId, conn, context, true);
+    super(promisedId, connection, context, true);
 
-    this.conn = conn;
+    this.connection = connection;
     this.requestHeaders = requestHeaders;
     this.method = method;
     this.uri = uri;
@@ -72,14 +73,14 @@ public class Http2ServerStream extends Http2StreamBase {
     this.socketMetric = socketMetric;
   }
 
-  public Http2ServerStream(Http2ServerConnection conn,
+  public Http2ServerStream(Http2ServerConnection connection,
                            HttpServerMetrics serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
                            TracingPolicy tracingPolicy) {
-    super(conn, context);
+    super(connection, context);
 
-    this.conn = conn;
+    this.connection = connection;
     this.tracingPolicy = tracingPolicy;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
@@ -109,10 +110,6 @@ public class Http2ServerStream extends Http2StreamBase {
     return handler;
   }
 
-  public Http2ServerConnection connection() {
-    return conn;
-  }
-
   public Http2HeadersMultiMap headers() {
     return requestHeaders;
   }
@@ -137,6 +134,11 @@ public class Http2ServerStream extends Http2StreamBase {
     return metric;
   }
 
+  @Override
+  public Http2ServerConnection connection() {
+    return connection;
+  }
+
   public void onHeaders(Http2HeadersMultiMap headers) {
 
     this.method = headers.method();
@@ -146,13 +148,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.requestHeaders = headers;
 
     super.onHeaders(headers);
-
-    //
-    context.execute(headers, this::handleHead);
-  }
-
-  private void handleHead(Http2HeadersMultiMap map) {
-    handler.handleHeaders(map);
   }
 
   @Override
@@ -165,24 +160,22 @@ public class Http2ServerStream extends Http2StreamBase {
   public void routed(String route) {
     if (METRICS_ENABLED) {
       EventLoop eventLoop = vertx.getOrCreateContext().nettyEventLoop();
-      synchronized (this) {
-        if (!eventLoop.inEventLoop()) {
-          eventLoop.execute(() -> observeRoute(route));
-          return;
-        }
+      if (!eventLoop.inEventLoop()) {
+        eventLoop.execute(() -> observeRoute(route));
+      } else {
+        observeRoute(route);
       }
-      observeRoute(route);
     }
   }
 
   public Future<Http2ServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path) {
     Promise<Http2ServerStream> promise = context.promise();
-    conn.sendPush(id(), authority, method, headers, path, priority(), promise);
+    connection.sendPush(id(), authority, method, headers, path, priority(), promise);
     return promise.future().andThen(ar -> {
       if (ar.succeeded()) {
         Http2ServerStream pushStream = ar.result();
         pushStream.priority(priority()); // Necessary ???
-        Http2HeadersMultiMap mmap = conn.newHeaders();
+        Http2HeadersMultiMap mmap = connection.newHeaders();
         if (headers != null) {
           mmap.addAll(headers);
         }

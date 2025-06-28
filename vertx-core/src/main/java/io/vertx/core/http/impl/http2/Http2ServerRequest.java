@@ -277,7 +277,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public HttpServerRequest pause() {
     synchronized (connection) {
       checkEnded();
-      stream.doPause();
+      stream.pause();
     }
     return this;
   }
@@ -291,7 +291,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public HttpServerRequest fetch(long amount) {
     synchronized (connection) {
       checkEnded();
-      stream.doFetch(amount);
+      stream.fetch(amount);
     }
     return this;
   }

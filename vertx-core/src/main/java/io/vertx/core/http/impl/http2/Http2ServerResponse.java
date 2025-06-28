@@ -512,7 +512,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public boolean writeQueueFull() {
     synchronized (conn) {
       checkValid();
-      return stream.isNotWritable();
+      return !stream.isWritable();
     }
   }
 

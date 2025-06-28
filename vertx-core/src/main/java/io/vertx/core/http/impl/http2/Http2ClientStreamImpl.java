@@ -91,19 +91,19 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
 
   @Override
   public HttpClientStream pause() {
-    stream.doPause();
+    stream.pause();
     return this;
   }
 
   @Override
   public HttpClientStream fetch(long amount) {
-    stream.doFetch(amount);
+    stream.fetch(amount);
     return this;
   }
 
   @Override
   public HttpClientStream resume() {
-    stream.doFetch(Long.MAX_VALUE);
+    stream.fetch(Long.MAX_VALUE);
     return this;
   }
 

@@ -44,7 +44,7 @@ public class Http2ClientStream extends Http2StreamBase {
   // Temporary id assignments
   private static final AtomicInteger id_seq = new AtomicInteger(-1);
 
-  private final Http2ClientConnection conn;
+  private final Http2ClientConnection connection;
   private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
@@ -54,16 +54,16 @@ public class Http2ClientStream extends Http2StreamBase {
   private Object metric;
   private Object trace;
 
-  public Http2ClientStream(Http2ClientConnection conn, ContextInternal context, TracingPolicy tracingPolicy,
+  public Http2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
                            boolean decompressionSupported, ClientMetrics clientMetrics) {
-    this(id_seq.getAndDecrement(), conn, context, tracingPolicy, decompressionSupported, clientMetrics, true);
+    this(id_seq.getAndDecrement(), connection, context, tracingPolicy, decompressionSupported, clientMetrics, true);
   }
 
-  public Http2ClientStream(int id, Http2ClientConnection conn, ContextInternal context, TracingPolicy tracingPolicy,
+  public Http2ClientStream(int id, Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
                            boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
-    super(id, conn, context, writable);
+    super(id, connection, context, writable);
 
-    this.conn = conn;
+    this.connection = connection;
     this.tracingPolicy = tracingPolicy;
     this.decompressionSupported = decompressionSupported;
     this.clientMetrics = clientMetrics;
@@ -105,7 +105,7 @@ public class Http2ClientStream extends Http2StreamBase {
 
     @Override
     public void write() {
-      Http2HeadersMultiMap headers = conn.newHeaders();
+      Http2HeadersMultiMap headers = connection.newHeaders();
       headers.method(request.method);
       boolean e;
       if (request.method == HttpMethod.CONNECT) {
@@ -117,7 +117,7 @@ public class Http2ClientStream extends Http2StreamBase {
         e = false;
       } else {
         headers.path(request.uri);
-        headers.scheme(conn.isSsl() ? "https" : "http");
+        headers.scheme(connection.isSsl() ? "https" : "http");
         if (request.authority != null) {
           headers.authority(request.authority);
         }
@@ -131,10 +131,10 @@ public class Http2ClientStream extends Http2StreamBase {
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
-      request.remoteAddress = ((HttpConnection)conn).remoteAddress();
+      request.remoteAddress = ((HttpConnection) connection).remoteAddress();
       requestHead = request;
       try {
-        conn.createStream(Http2ClientStream.this);
+        connection.createStream(Http2ClientStream.this);
       } catch (Exception ex) {
         promise.fail(ex);
         onException(ex);
@@ -160,6 +160,11 @@ public class Http2ClientStream extends Http2StreamBase {
 
   public Object trace() {
     return trace;
+  }
+
+  @Override
+  public Http2ClientConnection connection() {
+    return connection;
   }
 
   public void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
@@ -198,7 +203,6 @@ public class Http2ClientStream extends Http2StreamBase {
     String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
     this.responseHead = new HttpResponseHead(HttpVersion.HTTP_2, headers.status(), statusMessage, headers);
     super.onHeaders(headers);
-    context.execute(headers, this::handleHeaders);
   }
 
   @Override
@@ -228,13 +232,6 @@ public class Http2ClientStream extends Http2StreamBase {
     Http2ClientStreamHandler i = handler;
     if (i != null) {
       i.handleEarlyHints(headers);
-    }
-  }
-
-  void handleHeaders(Http2HeadersMultiMap headers) {
-    Http2ClientStreamHandler i = handler;
-    if (i != null) {
-      i.handleHeaders(headers);
     }
   }
 
