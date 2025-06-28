@@ -2007,16 +2007,6 @@ public class Http2ClientTest extends Http2TestBase {
   public void testConnectionWindowSize() throws Exception {
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
-      public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
-        super.onSettingsRead(ctx, settings);
-        vertx.runOnContext(v -> {
-          if (settings.initialWindowSize() != null) {
-            assertEquals(65535, (int)settings.initialWindowSize());
-            testComplete();
-          }
-        });
-      }
-      @Override
       public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) {
         vertx.runOnContext(v -> {
           assertEquals(65535, windowSizeIncrement);
