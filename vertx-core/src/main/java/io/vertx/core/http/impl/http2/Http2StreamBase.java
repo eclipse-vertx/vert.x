@@ -387,16 +387,16 @@ public abstract class Http2StreamBase {
     } else {
       if (reset != -1L) {
         promise.fail("Stream already reset");
-        return;
-      }
-      reset = code;
-      if (id != -1) {
-        connection.writeReset(id, code, promise);
       } else {
-        // Reset happening before stream allocation
-        handleReset(code);
+        reset = code;
+        if (id != -1) {
+          connection.writeReset(id, code, promise);
+        } else {
+          // Reset happening before stream allocation
+          handleReset(code);
+          promise.complete();
+        }
       }
-      promise.complete();
     }
   }
 
