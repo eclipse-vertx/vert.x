@@ -15,7 +15,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
@@ -23,13 +22,14 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -48,16 +48,12 @@ public class HttpTestBase extends VertxTestBase {
   public static final String DEFAULT_HTTPS_HOST_AND_PORT = DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT;;
   public static final String DEFAULT_TEST_URI = "some-uri";
 
-  @Rule
-  public final TemporaryFolder testFolder = TemporaryFolder.builder().assureDeletion().build();
-
   protected HttpServer server;
   protected HttpClientAgent client;
   protected TestProxyBase proxy;
   protected SocketAddress testAddress;
   protected RequestOptions requestOptions;
   private File tmp;
-  private File testDir;
 
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
@@ -77,12 +73,6 @@ public class HttpTestBase extends VertxTestBase {
       .setURI(DEFAULT_TEST_URI);
     server = vertx.createHttpServer(baseServerOptions);
     client = vertx.createHttpClient(createBaseClientOptions());
-  }
-
-  @Override
-  public void after() throws Exception {
-    testDir = null;
-    super.after();
   }
 
   /**
@@ -179,21 +169,16 @@ public class HttpTestBase extends VertxTestBase {
     proxy.start(vertx);
   }
 
-  protected File testDir() throws Exception {
-    if (testDir == null) {
-      testDir = testFolder.newFolder();
-    }
-    return testDir;
-  }
-
   protected File setupFile(String fileName, String content) throws Exception {
-    File file = new File(testDir(), fileName);
+    Path dir = Files.createTempDirectory("vertx");
+    File file = new File(dir.toFile(), fileName);
     if (file.exists()) {
       file.delete();
     }
-    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
-    out.write(content);
-    out.close();
+    file.deleteOnExit();
+    try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+      out.write(content);
+    }
     return file;
   }
 }

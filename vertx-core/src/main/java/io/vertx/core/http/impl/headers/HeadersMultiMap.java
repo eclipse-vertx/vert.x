@@ -483,7 +483,15 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
 
   @Override
   public int getInt(CharSequence name, int defaultValue) {
-    throw new UnsupportedOperationException();
+    String value = get(name);
+    if (value == null) {
+      return defaultValue;
+    }
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
   }
 
   @Override

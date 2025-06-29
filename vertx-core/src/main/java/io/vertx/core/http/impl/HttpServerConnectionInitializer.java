@@ -14,7 +14,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -22,8 +21,10 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
+import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
+import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.*;
@@ -31,7 +32,6 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -39,37 +39,35 @@ import java.util.function.Supplier;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class HttpServerConnectionInitializer {
+public class HttpServerConnectionInitializer {
 
   private final ContextInternal context;
   private final ThreadingModel threadingModel;
   private final Supplier<ContextInternal> streamContextSupplier;
-  private final VertxInternal vertx;
   private final HttpServerImpl server;
   private final HttpServerOptions options;
   private final String serverOrigin;
-  private final boolean logEnabled;
   private final boolean disableH2C;
   private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
-  private final CompressionOptions[] compressionOptions;
+  private final CompressionManager compressionManager;
   private final int compressionContentSizeThreshold;
-  private final Function<String, String> encodingDetector;
+  private final Http2ServerChannelInitializer http2ChannelInitializer;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
                                   Supplier<ContextInternal> streamContextSupplier,
                                   HttpServerImpl server,
-                                  VertxInternal vertx,
                                   HttpServerOptions options,
                                   String serverOrigin,
                                   Handler<HttpServerConnection> connectionHandler,
                                   Handler<Throwable> exceptionHandler,
                                   Object metric) {
 
-    CompressionOptions[] compressionOptions = null;
+    CompressionManager compressionManager;
     if (options.isCompressionSupported()) {
+      CompressionOptions[] compressionOptions;
       List<CompressionOptions> compressors = options.getCompressors();
       if (compressors == null) {
         int compressionLevel = options.getCompressionLevel();
@@ -77,23 +75,50 @@ class HttpServerConnectionInitializer {
       } else {
         compressionOptions = compressors.toArray(new CompressionOptions[0]);
       }
+      compressionManager = new CompressionManager(options.getCompressionContentSizeThreshold(), compressionOptions);
+    } else {
+      compressionManager = null;
+    }
+
+    Http2ServerChannelInitializer http2ChannelInitalizer;
+    if (options.getHttp2MultiplexImplementation()) {
+      http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
+        context,
+        compressionManager,
+        options.isDecompressionSupported(),
+        (HttpServerMetrics) server.getMetrics(),
+        metric,
+        streamContextSupplier,
+        connectionHandler,
+        HttpUtils.fromVertxInitialSettings(true, options.getInitialSettings()),
+        options.getLogActivity());
+    } else {
+      http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
+        this,
+        (HttpServerMetrics) server.getMetrics(),
+        options,
+        compressionManager,
+        streamContextSupplier,
+        connectionHandler,
+        serverOrigin,
+        metric,
+        options.getLogActivity()
+      );
     }
 
     this.context = context;
     this.threadingModel = threadingModel;
     this.streamContextSupplier = streamContextSupplier;
     this.server = server;
-    this.vertx = vertx;
     this.options = options;
     this.serverOrigin = serverOrigin;
-    this.logEnabled = options.getLogActivity();
     this.disableH2C = !options.isHttp2ClearTextEnabled();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
-    this.compressionOptions = compressionOptions;
+    this.compressionManager = compressionManager;
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
-    this.encodingDetector = compressionOptions != null ? new EncodingDetector(options.getCompressionContentSizeThreshold(), compressionOptions)::determineEncoding : null;
+    this.http2ChannelInitializer = http2ChannelInitalizer;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
@@ -105,36 +130,36 @@ class HttpServerConnectionInitializer {
         if (protocol != null) {
           switch (protocol) {
             case "h2":
-              configureHttp2(ch.pipeline());
+              configureHttp2(ch.pipeline(), true);
               break;
             case "http/1.1":
             case "http/1.0":
               configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-              configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+              configureHttp1Handler(ch.pipeline(), sslContextManager);
               break;
           }
         } else {
           // No alpn presented or OpenSSL
           configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-          configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+          configureHttp1Handler(ch.pipeline(), sslContextManager);
         }
       } else {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Handler(ch.pipeline(), sslContextManager);
       }
     } else {
       if (disableH2C) {
         configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-        configureHttp1Handler(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Handler(ch.pipeline(), sslContextManager);
       } else {
         Http1xOrH2CHandler handler = new Http1xOrH2CHandler() {
           @Override
           protected void configure(ChannelHandlerContext ctx, boolean h2c) {
             if (h2c) {
-              configureHttp2(ctx.pipeline());
+              configureHttp2(ctx.pipeline(), false);
             } else {
               configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslContextManager);
-              configureHttp1OrH2CUpgradeHandler(ctx.pipeline(), sslChannelProvider, sslContextManager);
+              http2ChannelInitializer.configureHttp1OrH2CUpgradeHandler(context, ctx.pipeline(), sslChannelProvider, sslContextManager);
             }
           }
           @Override
@@ -164,58 +189,17 @@ class HttpServerConnectionInitializer {
       .addListener(ChannelFutureListener.CLOSE);
   }
 
-  private void configureHttp2(ChannelPipeline pipeline) {
-    configureHttp2Handler(pipeline);
-    configureHttp2Pipeline(pipeline);
+  private void configureHttp2(ChannelPipeline pipeline, boolean ssl) {
+    http2ChannelInitializer.configureHttp2(context, pipeline, ssl);
+    checkAccept(pipeline);
   }
 
-  private void configureHttp2Handler(ChannelPipeline pipeline) {
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(context, connectionHandler);
-    pipeline.replace(VertxHandler.class, "handler", handler);
-  }
-
-  void configureHttp2Pipeline(ChannelPipeline pipeline) {
+  public void checkAccept(ChannelPipeline pipeline) {
     if (!server.requestAccept()) {
       // That should send an HTTP/2 go away
       pipeline.channel().close();
       return;
     }
-  }
-
-  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler() {
-    return buildHttp2ConnectionHandler(context, connectionHandler);
-  }
-
-  private VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
-    HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
-    int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
-    int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
-      .server(true)
-      .useCompression(compressionOptions)
-      .gracefulShutdownTimeoutMillis(0)
-      .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
-      .useDecompression(options.isDecompressionSupported())
-      .initialSettings(options.getInitialSettings())
-      .connectionFactory(connHandler -> {
-        Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
-        conn.metric(metric);
-        return conn;
-      })
-      .logEnabled(logEnabled)
-      .build();
-    handler.addHandler(conn -> {
-      if (options.getHttp2ConnectionWindowSize() > 0) {
-        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-      }
-      handler_.handle(conn);
-    });
-    return handler;
-  }
-
-  private void configureHttp1OrH2CUpgradeHandler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
-    // DO WE NEED TO ADD SOMEWHERE BEFORE IDLE ?
-    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(this, sslChannelProvider, sslContextManager, options.isCompressionSupported(), options.isDecompressionSupported()));
   }
 
   /**
@@ -242,11 +226,11 @@ class HttpServerConnectionInitializer {
       pipeline.addBefore(name, "inflater", new HttpContentDecompressor(false));
     }
     if (options.isCompressionSupported()) {
-      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionContentSizeThreshold, compressionOptions));
+      pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionContentSizeThreshold, compressionManager.options()));
     }
   }
 
-  void configureHttp1Handler(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
+  public void configureHttp1Handler(ChannelPipeline pipeline, SslContextManager sslContextManager) {
     if (!server.requestAccept()) {
       sendServiceUnavailable(pipeline.channel());
       return;
@@ -268,17 +252,5 @@ class HttpServerConnectionInitializer {
     pipeline.replace(VertxHandler.class, "handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     connectionHandler.handle(conn);
-  }
-
-  private static class EncodingDetector extends HttpContentCompressor {
-
-    private EncodingDetector(int contentSizeThreshold, CompressionOptions[] compressionOptions) {
-      super(contentSizeThreshold, compressionOptions);
-    }
-
-    @Override
-    protected String determineEncoding(String acceptEncoding) {
-      return super.determineEncoding(acceptEncoding);
-    }
   }
 }

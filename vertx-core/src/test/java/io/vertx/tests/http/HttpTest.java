@@ -2776,18 +2776,20 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertEquals(data, buff);
-            complete();
-          });
-          resp.pause();
-          vertx.setTimer(10, id -> {
-            resp.resume();
-          });
-        }));
-      }));
+      client.request(requestOptions)
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(resp -> Future.future(promise -> {
+            resp.bodyHandler(buff -> {
+              assertEquals(data, buff);
+              promise.complete();
+            });
+            resp.pause();
+            vertx.setTimer(10, id -> {
+              resp.resume();
+            });
+          }))).onComplete(onSuccess(v -> complete()));
     }
     await();
   }
@@ -4996,9 +4998,6 @@ public abstract class HttpTest extends HttpTestBase {
             // Create pumps which echo stuff
             src.pipeTo(dst);
             dst.pipeTo(src);
-            dst.closeHandler(v -> {
-              src.close();
-            });
           }));
         }));
       });
@@ -6778,4 +6777,51 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testClientShutdown() throws Exception {
+    long timeout = 10000;
+    AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
+    server.requestHandler(request -> {
+      ref.set(request);
+    });
+    startServer(testAddress);
+    CountDownLatch shutdownLatch = new CountDownLatch(1);
+    HttpClientRequest request = client.request(requestOptions).await();
+    request.connection().shutdownHandler(v -> {
+      shutdownLatch.countDown();
+    });
+    Future<HttpClientResponse> fut = request.send();
+    long now = System.currentTimeMillis();
+    client.shutdown(timeout, TimeUnit.MILLISECONDS);
+    awaitLatch(shutdownLatch);
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+    waitUntil(() -> ref.get() != null);
+    ref.get().response().end();
+    fut.await();
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+  }
+
+  @Test
+  public void testServerShutdown() throws Exception {
+    long timeout = 10000;
+    AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
+    CountDownLatch shutdownLatch = new CountDownLatch(1);
+    server.requestHandler(request -> {
+      request.connection().shutdownHandler(v -> {
+        shutdownLatch.countDown();
+      });
+      ref.set(request);
+    });
+    startServer(testAddress);
+    HttpClientRequest request = client.request(requestOptions).await();
+    Future<HttpClientResponse> fut = request.send();
+    long now = System.currentTimeMillis();
+    waitUntil(() -> ref.get() != null);
+    server.shutdown(timeout, TimeUnit.MILLISECONDS);
+    awaitLatch(shutdownLatch);
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+    ref.get().response().end();
+    fut.await();
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+  }
 }

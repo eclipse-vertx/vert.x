@@ -499,12 +499,7 @@ public class VertxConnection extends ConnectionBase {
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
       try {
-        writeToChannel(new ChunkedNioFile(fc, offset, length, 8192) {
-          @Override
-          public void close() {
-            // The called is responsible for closing the file
-          }
-        }, writeFuture);
+        writeToChannel(new UncloseableChunkedNioFile(fc, offset, length), writeFuture);
       } catch (IOException e) {
         return chctx.newFailedFuture(e);
       }

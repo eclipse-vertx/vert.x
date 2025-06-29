@@ -8,12 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2;
 
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -21,19 +20,18 @@ import io.vertx.core.spi.observability.HttpRequest;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpClientPush implements HttpRequest {
+public class Http2ClientPush implements HttpRequest {
 
-  final String uri;
-  final HttpMethod method;
-  final HostAndPort authority;
-  final HttpClientStream stream;
-  final MultiMap headers;
+  private final String uri;
+  private final HttpMethod method;
+  private final HostAndPort authority;
+  private final HttpClientStream stream;
+  private final MultiMap headers;
 
-  public HttpClientPush(Http2Headers headers, HttpClientStream stream) {
+  Http2ClientPush(Http2HeadersMultiMap headers, HttpClientStream stream) {
 
     String rawMethod = headers.method().toString();
     String authority = headers.authority() != null ? headers.authority().toString() : null;
-    MultiMap headersMap = new Http2HeadersAdaptor(headers);
     int pos = authority == null ? -1 : authority.indexOf(':');
     if (pos == -1) {
       this.authority = HostAndPort.create(authority, 80);
@@ -43,7 +41,11 @@ public class HttpClientPush implements HttpRequest {
     this.method = HttpMethod.valueOf(rawMethod);
     this.uri = headers.path().toString();
     this.stream = stream;
-    this.headers = headersMap;
+    this.headers = headers;
+  }
+
+  public HttpClientStream stream() {
+    return stream;
   }
 
   @Override

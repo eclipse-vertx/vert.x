@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
@@ -26,6 +26,8 @@ import io.netty.handler.codec.http2.Http2LifecycleManager;
 import io.netty.handler.codec.http2.Http2RemoteFlowController;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2SettingsReceivedConsumer;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
+
 import java.util.function.Function;
 
 import static io.vertx.core.http.HttpHeaders.CONTENT_ENCODING;
@@ -58,9 +60,9 @@ public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, 
       return null;
     }
     return ifType(ctx.handler(), VertxHttp2ConnectionHandler.class, connectionHandler ->
-      ifType(connectionHandler.connectFuture().getNow(), Http2ServerConnection.class, connection ->
+      ifType(connectionHandler.connectFuture().getNow(), Http2ServerConnectionImpl.class, connection ->
         ifType(connection.stream(streamId), Http2ServerStream.class, stream ->
-          stream.headers == null ? null : connection.determineContentEncoding(stream.headers))));
+          stream.headers() == null ? null : connection.determineContentEncoding(stream.headers()))));
   }
 
   private <T, R> R ifType(Object obj, Class<T> type, Function<T, R> then) {
