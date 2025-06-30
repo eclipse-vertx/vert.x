@@ -110,7 +110,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
               request.headers().remove("host");
               request.headers().forEach(header -> {
                 if (!HttpHeaderValidationUtil.isConnectionHeader(header.getKey(), true)) {
-                  headers.set(header.getKey().toLowerCase(), header.getValue());
+                  headers.add(header.getKey().toLowerCase(), header.getValue());
                 }
               });
               ctx.fireChannelRead(new DefaultHttp2HeadersFrame(headers, false));

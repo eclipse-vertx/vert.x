@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.http.HttpHeaderValidationUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -18,6 +19,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
@@ -29,6 +31,9 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
+
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -210,11 +215,12 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
-
     stream = new Http2ClientStream(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
-
     stream.handler(this);
-
+    MultiMap headers = request.headers;
+    if (headers != null) {
+      headers.remove(HttpHeaders.TRANSFER_ENCODING);
+    }
     stream.writeHeaders(request, buf, end, priority, promise);
     return promise.future();
   }
