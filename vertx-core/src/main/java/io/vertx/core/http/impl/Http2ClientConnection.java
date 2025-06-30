@@ -601,6 +601,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
         }
       }
+      headers.remove(HttpHeaders.TRANSFER_ENCODING);
       if (conn.client.options().isDecompressionSupported() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
