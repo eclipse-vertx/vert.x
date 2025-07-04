@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 public class CustomVertxThreadFactory implements VertxThreadFactory {
 
   @Override
-  public VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
-    return new CustomVertxThread(target, name, worker, maxExecTime, maxExecTimeUnit);
+  public VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit, boolean permitBlockingCalls) {
+    return new CustomVertxThread(target, name, worker, maxExecTime, maxExecTimeUnit, permitBlockingCalls);
   }
 }
