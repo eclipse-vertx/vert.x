@@ -11,6 +11,8 @@
 
 package io.vertx.core;
 
+import io.netty.util.concurrent.FastThreadLocalThread;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -72,11 +74,13 @@ public class ExecuteBlockingTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       Context ctx = vertx.getOrCreateContext();
       assertTrue(ctx.isEventLoopContext());
+      assertPermitBlockingCalls(false);
       vertx.executeBlocking(future -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
         assertTrue(Context.isOnWorkerThread());
         assertFalse(Context.isOnEventLoopThread());
+        assertPermitBlockingCalls(true);
         try {
           Thread.sleep(1000);
         } catch (Exception ignore) {
@@ -99,6 +103,12 @@ public class ExecuteBlockingTest extends VertxTestBase {
     });
 
     await();
+  }
+
+  private void assertPermitBlockingCalls(boolean expected) {
+    Thread current = Thread.currentThread();
+    assertEquals(VertxThread.class, current.getClass());
+    assertEquals(((FastThreadLocalThread) current).permitBlockingCalls(), expected);
   }
 
   @Test
