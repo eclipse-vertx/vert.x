@@ -24,14 +24,20 @@ public class VertxThread extends FastThreadLocalThread {
 
   private final boolean worker;
   final ThreadInfo info;
+  private final boolean permitBlockingCalls;
   VertxImpl owner;
   ContextInternal context;
   ClassLoader topLevelTCCL;
 
   public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+    this(target, name, worker, maxExecTime, maxExecTimeUnit, false);
+  }
+
+  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit, boolean permitBlockingCalls) {
     super(target, name);
     this.worker = worker;
-    this.info = new ThreadInfo(maxExecTimeUnit, maxExecTime);
+    this.permitBlockingCalls = permitBlockingCalls;
+    info = new ThreadInfo(maxExecTimeUnit, maxExecTime);
   }
 
   /**
@@ -69,4 +75,8 @@ public class VertxThread extends FastThreadLocalThread {
     return info.maxExecTimeUnit;
   }
 
+  @Override
+  public boolean permitBlockingCalls() {
+    return permitBlockingCalls;
+  }
 }

@@ -32,6 +32,10 @@ public interface VertxThreadFactory extends VertxServiceProvider {
   }
 
   default VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
-    return new VertxThread(target, name, worker, maxExecTime, maxExecTimeUnit);
+    return newVertxThread(target, name, worker, maxExecTime, maxExecTimeUnit, false);
+  }
+
+  default VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit, boolean permitBlockingCalls) {
+    return new VertxThread(target, name, worker, maxExecTime, maxExecTimeUnit, permitBlockingCalls);
   }
 }
