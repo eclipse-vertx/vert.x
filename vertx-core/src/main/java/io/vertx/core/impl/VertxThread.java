@@ -31,7 +31,7 @@ public class VertxThread extends FastThreadLocalThread {
   public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
     this.worker = worker;
-    this.info = new ThreadInfo(maxExecTimeUnit, maxExecTime);
+    info = new ThreadInfo(maxExecTimeUnit, maxExecTime);
   }
 
   /**
@@ -69,4 +69,8 @@ public class VertxThread extends FastThreadLocalThread {
     return info.maxExecTimeUnit;
   }
 
+  @Override
+  public boolean permitBlockingCalls() {
+    return worker;
+  }
 }
