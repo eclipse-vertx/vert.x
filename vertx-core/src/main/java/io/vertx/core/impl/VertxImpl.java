@@ -1090,7 +1090,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalArgumentException("maxExecuteTime must be > 0");
     }
     WorkerPool shared = createSharedResource("__vertx.shared.workerPools", name, closeFuture, cf -> {
-      ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true, false);
+      ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true, true);
       ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
       PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
