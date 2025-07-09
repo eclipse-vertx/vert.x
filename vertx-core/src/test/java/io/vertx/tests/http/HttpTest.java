@@ -6049,6 +6049,72 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientRequestSendFailure() throws Exception {
+    waitFor(2);
+    CompletableFuture<Void> chunkContinuation = new CompletableFuture<>();
+    server.requestHandler(request -> {
+      request.handler(chunk -> {
+        chunkContinuation.complete(null);
+      });
+      request.exceptionHandler(err -> {
+        if (request.version() == HttpVersion.HTTP_2) {
+          assertEquals(StreamResetException.class, err.getClass());
+          StreamResetException sre = (StreamResetException) err;
+          assertEquals(0x8, sre.getCode());
+        } else {
+          assertEquals(HttpClosedException.class, err.getClass());
+        }
+        complete();
+      });
+      request.endHandler(v -> {
+        fail();
+      });
+    });
+    startServer(testAddress);
+    Throwable failure = new Throwable();
+    client.request(requestOptions).compose(request -> request.send(new ReadStream<>() {
+      Handler<Throwable> exceptionHandler;
+      @Override
+      public ReadStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
+        exceptionHandler = handler;
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> handler(@Nullable Handler<Buffer> handler) {
+        if (handler != null) {
+          vertx.runOnContext(v1 -> {
+            handler.handle(Buffer.buffer("chunk-1"));
+            chunkContinuation.whenComplete((v2, err) -> {
+              exceptionHandler.handle(failure);
+            });
+          });
+        }
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> pause() {
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> resume() {
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> fetch(long amount) {
+        return this;
+      }
+      @Override
+      public ReadStream<Buffer> endHandler(@Nullable Handler<Void> endHandler) {
+        return this;
+      }
+    })).onComplete(onFailure(err -> {
+      assertSame(failure, err.getCause());
+      complete();
+    }));
+    await();
+  }
+
+  @Test
   public void testClientRequestFlowControlDifferentEventLoops() throws Exception {
     Promise<Void> resume = Promise.promise();
     server.requestHandler(req -> {
