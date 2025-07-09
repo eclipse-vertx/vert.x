@@ -546,7 +546,7 @@ public class BufferImpl implements BufferInternal {
   /**
    * @return the buffer as is
    */
-  public ByteBuf byteBuf() {
+  public ByteBuf unwrap() {
     return buffer;
   }
 

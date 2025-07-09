@@ -225,4 +225,9 @@ public interface BufferInternal extends Buffer {
    * <p> The returned buffer is a duplicate that maintain its own indices.
    */
   ByteBuf getByteBuf();
+
+  /**
+   * @return the raw byte buff
+   */
+  ByteBuf unwrap();
 }

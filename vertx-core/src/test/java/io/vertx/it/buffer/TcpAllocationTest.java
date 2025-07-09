@@ -82,7 +82,7 @@ public class TcpAllocationTest extends VertxTestBase {
     NetServer server = vertx.createNetServer();
     server.connectHandler(so -> {
       so.handler(buff -> {
-        ByteBuf byteBuf = ((BufferImpl)buff).byteBuf();
+        ByteBuf byteBuf = ((BufferImpl)buff).unwrap();
         assertFalse(byteBuf.isDirect());
         assertFalse(byteBuf.alloc().isDirectBufferPooled());
         testComplete();

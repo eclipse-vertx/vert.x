@@ -26,14 +26,14 @@ public class VertxBufferTest {
   @Test
   public void testAllocateVertxBuffer() {
     BufferImpl buffer = new BufferImpl();
-    ByteBuf byteBuf = buffer.byteBuf();
+    ByteBuf byteBuf = buffer.unwrap();
     assertTrue(byteBuf instanceof VertxHeapByteBuf || byteBuf instanceof VertxUnsafeHeapByteBuf);
   }
 
   @Test
   public void testUnreleasable() {
     BufferImpl buffer = new BufferImpl();
-    ByteBuf byteBuf = buffer.byteBuf();
+    ByteBuf byteBuf = buffer.unwrap();
     assertEquals(1, byteBuf.refCnt());
     byteBuf.release();
     assertEquals(1, byteBuf.refCnt());
@@ -43,7 +43,7 @@ public class VertxBufferTest {
   public void testDuplicate() {
     BufferImpl buffer = new BufferImpl();
     buffer.appendString("Hello World");
-    ByteBuf byteBuf = buffer.byteBuf();
+    ByteBuf byteBuf = buffer.unwrap();
     ByteBuf duplicate = buffer.getByteBuf();
     assertEquals(1, byteBuf.refCnt());
     duplicate.release();
@@ -79,13 +79,13 @@ public class VertxBufferTest {
 
   private static void assertCopyAndRelease(ByteBuf bbuf) {
     BufferImpl buffer = (BufferImpl) BufferInternal.safeBuffer(bbuf);
-    assertNotSame(bbuf, buffer.byteBuf());
+    assertNotSame(bbuf, buffer.unwrap());
     assertEquals(0, bbuf.refCnt());
   }
 
   private static void assertWrap(ByteBuf bbuf) {
     BufferImpl buffer = (BufferImpl) BufferInternal.safeBuffer(bbuf);
-    assertSame(bbuf, buffer.byteBuf());
+    assertSame(bbuf, buffer.unwrap());
     assertEquals(1, bbuf.refCnt());
     bbuf.release();
   }
