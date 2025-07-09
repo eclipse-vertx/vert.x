@@ -11,7 +11,6 @@
 
 package io.vertx.it.vertx;
 
-import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -25,7 +24,6 @@ public class VertxThreadFactoryTest extends VertxTestBase {
     vertx.runOnContext(v -> {
       Thread current = Thread.currentThread();
       assertEquals(CustomVertxThread.class, current.getClass());
-      assertTrue(((CustomVertxThread) current).permitBlockingCalls());
       testComplete();
     });
     await();
