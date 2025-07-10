@@ -27,6 +27,8 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
+import io.vertx.core.http.impl.http3.Http3ClientChannelInitializer;
+import io.vertx.core.http.impl.http3.codec.Http3CodecClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -42,8 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.http.HttpMethod.*;
-import static io.vertx.core.net.impl.ChannelProvider.*;
+import static io.vertx.core.http.HttpMethod.OPTIONS;
+import static io.vertx.core.net.impl.ChannelProvider.CLIENT_SSL_HANDLER_NAME;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -66,6 +68,7 @@ public class HttpChannelConnector {
   private final boolean pooled;
   private final long maxLifetime;
   private final Http2ClientChannelInitializer http2ChannelInitializer;
+  private final Http3ClientChannelInitializer http3ChannelInitializer;
 
   public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
@@ -80,7 +83,8 @@ public class HttpChannelConnector {
                               boolean pooled,
                               long maxLifetimeMillis) {
 
-    Http2ClientChannelInitializer http2ChannelInitializer;
+    Http2ClientChannelInitializer http2ChannelInitializer = null;
+    Http3ClientChannelInitializer http3ChannelInitializer = null;
     if (client.options.getHttp2MultiplexImplementation()) {
       http2ChannelInitializer = new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(client.options.getInitialSettings()),
@@ -92,8 +96,10 @@ public class HttpChannelConnector {
         client.options.getHttp2MultiplexingLimit(),
         client.options.isDecompressionSupported(),
         client.options.getLogActivity());
-    } else {
+    } else if (client.options.getProtocolVersion() == HttpVersion.HTTP_2) {
       http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, pooled, maxLifetimeMillis, authority);
+    } else {
+      http3ChannelInitializer = new Http3CodecClientChannelInitializer(client, metrics, pooled, maxLifetimeMillis, authority);
     }
 
     this.client = client;
@@ -110,6 +116,7 @@ public class HttpChannelConnector {
     this.pooled = pooled;
     this.maxLifetime = maxLifetimeMillis;
     this.http2ChannelInitializer = http2ChannelInitializer;
+    this.http3ChannelInitializer = http3ChannelInitializer;
   }
 
   public SocketAddress server() {
@@ -161,7 +168,7 @@ public class HttpChannelConnector {
       if (useAlpn) {
         if (protocol != null && protocol.startsWith("h3")) {
           applyHttp3ConnectionOptions(ch.pipeline());
-          http3Connected(context, metric, ch, promise);
+          http3ChannelInitializer.http3Connected(context, metric, ch ,promise);
         } else if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           http2ChannelInitializer.http2Connected(context, metric, ch ,promise);
@@ -178,7 +185,7 @@ public class HttpChannelConnector {
     } else {
       if (version == HttpVersion.HTTP_3) {
         applyHttp3ConnectionOptions(pipeline);
-        http3Connected(context, metric, ch, promise);
+        http3ChannelInitializer.http3Connected(context, metric, ch, promise);
       } else if (version == HttpVersion.HTTP_2) {
         if (this.options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
@@ -297,33 +304,5 @@ public class HttpChannelConnector {
       }
     });
     ch.pipeline().addLast("handler", clientHandler);
-  }
-
-  private void http3Connected(ContextInternal context,
-                              Object metric,
-                              Channel ch,
-                              PromiseInternal<HttpClientConnectionInternal> promise) {
-    VertxHttp3ConnectionHandler<Http3ClientConnection> clientHandler;
-    try {
-      clientHandler = Http3ClientConnection.createVertxHttp3ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
-      ch.pipeline().addLast("handler", clientHandler.getHttp3ConnectionHandler());
-//      ch.pipeline().addLast(clientHandler.getUserEventHandler());
-      ch.pipeline().addLast(clientHandler);
-      ch.flush();
-    } catch (Exception e) {
-      connectFailed(ch, e, promise);
-      return;
-    }
-    clientHandler.connectFuture().addListener(promise);
-  }
-
-  private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnectionInternal> future) {
-    if (ch != null) {
-      try {
-        ch.close();
-      } catch (Exception ignore) {
-      }
-    }
-    future.tryFail(t);
   }
 }
