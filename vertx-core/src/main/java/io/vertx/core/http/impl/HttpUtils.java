@@ -206,15 +206,19 @@ public final class HttpUtils {
     public StreamPriority setExclusive(boolean exclusive) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
+
+    @Override
+    public StreamPriority setHttp3Urgency(int http3Urgency) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+
+    @Override
+    public StreamPriority setHttp3Incremental(boolean http3Incremental) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
   };
 
-  public static final StreamPriority DEFAULT_QUIC_STREAM_PRIORITY = new StreamPriority();
-
   private HttpUtils() {
-  }
-
-  public static StreamPriority getDefaultStreamPriority(io.vertx.core.http.HttpVersion version){
-    return version == io.vertx.core.http.HttpVersion.HTTP_3 ? DEFAULT_QUIC_STREAM_PRIORITY : DEFAULT_STREAM_PRIORITY;
   }
 
   /**
