@@ -194,26 +194,30 @@ public final class HttpUtils {
     }
   };
 
-  public static final StreamPriorityBase DEFAULT_STREAM_PRIORITY = new StreamPriority() {
+  public static final StreamPriorityBase DEFAULT_STREAM_PRIORITY = new Http2StreamPriority() {
     @Override
-    public StreamPriority setWeight(short weight) {
+    public Http2StreamPriority setWeight(short weight) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
 
     @Override
-    public StreamPriority setDependency(int dependency) {
+    public Http2StreamPriority setDependency(int dependency) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
 
     @Override
-    public StreamPriority setExclusive(boolean exclusive) {
+    public Http2StreamPriority setExclusive(boolean exclusive) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
-  });
+  };
 
-  static final StreamPriorityBase DEFAULT_QUIC_STREAM_PRIORITY = new Http3StreamPriority(new QuicStreamPriority(0, true));
+  public static final StreamPriorityBase DEFAULT_QUIC_STREAM_PRIORITY = new Http3StreamPriority(new QuicStreamPriority(0, true));
 
   private HttpUtils() {
+  }
+
+  public static StreamPriorityBase getDefaultStreamPriority(io.vertx.core.http.HttpVersion version){
+    return version == io.vertx.core.http.HttpVersion.HTTP_3 ? DEFAULT_QUIC_STREAM_PRIORITY : DEFAULT_STREAM_PRIORITY;
   }
 
   /**
@@ -444,7 +448,6 @@ public final class HttpUtils {
     });
     return converted;
   }
-
   public static Http3SettingsFrame fromVertxSettings(io.vertx.core.http.Http3Settings settings) {
     Http3SettingsFrame converted = new DefaultHttp3SettingsFrame();
     converted.put(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY, settings.getQpackMaxTableCapacity());
