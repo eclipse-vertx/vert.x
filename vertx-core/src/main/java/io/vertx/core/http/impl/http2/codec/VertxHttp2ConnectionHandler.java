@@ -23,7 +23,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.GoAway;
@@ -456,11 +456,11 @@ public class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends 
     throw new UnsupportedOperationException();
   }
 
-  private void _writePriority(Http2Stream stream, StreamPriorityBase priority) {
+  private void _writePriority(Http2Stream stream, StreamPriority priority) {
       encoder().writePriority(chctx, stream.id(), priority.getDependency(), priority.getWeight(), priority.isExclusive(), chctx.newPromise());
   }
 
-  void writePriority(Http2Stream stream, StreamPriorityBase priority) {
+  void writePriority(Http2Stream stream, StreamPriority priority) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writePriority(stream, priority);

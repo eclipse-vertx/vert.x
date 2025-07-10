@@ -154,7 +154,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
 
   @Override
   protected synchronized void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
-                                            StreamPriorityBase streamPriority, boolean endOfStream,
+                                            StreamPriority streamPriority, boolean endOfStream,
                                             QuicStreamChannel streamChannel) {
     //TODO: Alter the logic of this method based on onHeadersRead method in the Http2ServerConnection class.
     Http3ServerStream stream0 = null;
@@ -181,7 +181,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   }
 
   void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path,
-                StreamPriorityBase streamPriority, Promise<HttpServerResponse> promise) {
+                StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -191,7 +191,7 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
   }
 
   private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers,
-                                       String path, StreamPriorityBase streamPriority,
+                                       String path, StreamPriority streamPriority,
                                        Promise<HttpServerResponse> promise) {
     boolean ssl = isSsl();
     VertxHttpHeaders headers_ = new Http3HeadersAdaptor();

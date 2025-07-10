@@ -116,7 +116,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2Stream nettyStream = handler.connection().stream(streamId);
     Http2ServerStream stream;
     if (nettyStream.getProperty(streamKey) == null) {
@@ -185,7 +185,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http2ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -203,7 +203,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http2ServerStream> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());

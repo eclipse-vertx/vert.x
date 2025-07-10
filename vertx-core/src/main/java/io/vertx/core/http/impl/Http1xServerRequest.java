@@ -691,7 +691,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public HttpServerRequest streamPriorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     return this;
   }
 

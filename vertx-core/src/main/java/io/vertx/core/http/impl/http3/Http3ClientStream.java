@@ -79,7 +79,7 @@ public class Http3ClientStream extends Http3StreamBase {
     this.trace = trace;
   }
 
-  void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, Promise<Void> promise) {
+  void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
     priority(priority);
     write(new HeadersWrite(request, buf, end, promise));
   }
@@ -285,7 +285,7 @@ public class Http3ClientStream extends Http3StreamBase {
   }
 
   @Override
-  protected StreamPriorityBase createDefaultStreamPriority() {
+  protected StreamPriority createDefaultStreamPriority() {
     return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
   }
 

@@ -15,7 +15,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 
 interface Http3ServerStreamHandler {
 
@@ -38,7 +38,7 @@ interface Http3ServerStreamHandler {
   default void handleCustomFrame(HttpFrame frame) {
   }
 
-  default void handlePriorityChange(StreamPriorityBase streamPriority) {
+  default void handlePriorityChange(StreamPriority streamPriority) {
   }
 
   default void onException(Throwable t) {

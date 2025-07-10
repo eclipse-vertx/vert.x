@@ -47,7 +47,7 @@ public interface HttpClientStream extends WriteStream<Buffer>, ReadStream<Buffer
   HttpClientConnection connection();
   ContextInternal context();
 
-  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect);
+  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
   Future<Void> write(ByteBuf buf, boolean end);
   Future<Void> writeFrame(int type, int flags, ByteBuf payload);
 
@@ -75,7 +75,7 @@ public interface HttpClientStream extends WriteStream<Buffer>, ReadStream<Buffer
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream handler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);
-  HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler);
+  HttpClientStream priorityHandler(Handler<StreamPriority> handler);
   HttpClientStream closeHandler(Handler<Void> handler);
   HttpClientStream drainHandler(Handler<Void> handler);
 
@@ -87,9 +87,9 @@ public interface HttpClientStream extends WriteStream<Buffer>, ReadStream<Buffer
 
   Future<Void> reset(Throwable cause);
 
-  StreamPriorityBase priority();
-  HttpClientStream updatePriority(StreamPriorityBase streamPriority);
-  default StreamPriorityBase createDefaultStreamPriority(){
+  StreamPriority priority();
+  HttpClientStream updatePriority(StreamPriority streamPriority);
+  default StreamPriority createDefaultStreamPriority(){
     return null;
   }
 

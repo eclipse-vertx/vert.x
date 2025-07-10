@@ -16,7 +16,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
@@ -255,7 +255,7 @@ public class Http3ServerStream extends Http3StreamBase {
   }
 
   @Override
-  protected StreamPriorityBase createDefaultStreamPriority() {
+  protected StreamPriority createDefaultStreamPriority() {
     return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
   }
 }

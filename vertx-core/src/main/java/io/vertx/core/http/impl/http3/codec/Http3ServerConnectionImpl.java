@@ -22,7 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.http3.Http3HeadersMultiMap;
 import io.vertx.core.http.impl.http3.Http3ServerConnection;
@@ -256,7 +256,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 */
 
   @Override
-  protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http3ServerStream stream0;
     if (stream == null) {
       Http3HeadersMultiMap headersMap = new Http3HeadersMultiMap(headers);
@@ -327,7 +327,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
   }*/
 
   @Override
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http3ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http3ServerStream> promise) {
 
   }
 }

@@ -59,7 +59,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     buffer.writeBytes(buf);
     return buffer;
   }
-  protected abstract void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream);
+  protected abstract void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
   protected final ChannelHandlerContext handlerContext;
   private final VertxHttp3ConnectionHandler handler;
@@ -192,7 +192,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 //  @Override
   public void onPriorityRead(ChannelHandlerContext ctx, Http3StreamBase stream, int streamDependency, short weight, boolean exclusive) {
       if (stream != null) {
-        StreamPriorityBase streamPriority = new Http2StreamPriority()
+        StreamPriority streamPriority = new StreamPriority()
           .setDependency(streamDependency)
           .setWeight(weight)
           .setExclusive(exclusive);
@@ -481,12 +481,12 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   @Override
-  public void writePriorityFrame(QuicStreamChannel streamChannel, StreamPriorityBase priority) {
+  public void writePriorityFrame(QuicStreamChannel streamChannel, StreamPriority priority) {
     handler.writePriority(streamChannel, priority);
   }
 
   @Override
-  public void writeHeaders(QuicStreamChannel streamChannel, Http3HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(QuicStreamChannel streamChannel, Http3HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     handler.writeHeaders(streamChannel, headers.prepare(), end, priority, checkFlush, (FutureListener<Void>) promise);
   }
 

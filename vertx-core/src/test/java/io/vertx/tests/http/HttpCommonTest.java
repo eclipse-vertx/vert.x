@@ -25,7 +25,6 @@ import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -52,10 +51,10 @@ public abstract class HttpCommonTest extends HttpTest {
   protected abstract HttpServerOptions setMaxConcurrentStreamsSettings(HttpServerOptions options,
                                                                        int maxConcurrentStreams);
 
-  protected abstract void assertEqualsStreamPriority(StreamPriorityBase expectedStreamPriority,
-                                                     StreamPriorityBase actualStreamPriority);
-  protected abstract StreamPriorityBase generateStreamPriority();
-  protected abstract StreamPriorityBase defaultStreamPriority();
+  protected abstract void assertEqualsStreamPriority(StreamPriority expectedStreamPriority,
+                                                     StreamPriority actualStreamPriority);
+  protected abstract StreamPriority generateStreamPriority();
+  protected abstract StreamPriority defaultStreamPriority();
 
   @Test
   @Override
@@ -411,11 +410,11 @@ public abstract class HttpCommonTest extends HttpTest {
   @Test
   public void testStreamPriority() throws Exception {
     waitFor(2);
-    StreamPriorityBase requestStreamPriority = generateStreamPriority();
-    StreamPriorityBase responseStreamPriority = generateStreamPriority();
+    StreamPriority requestStreamPriority = generateStreamPriority();
+    StreamPriority responseStreamPriority = generateStreamPriority();
     server.requestHandler(req -> {
       assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
-      req.response().setStreamPriority(responseStreamPriority.copy());
+      req.response().setStreamPriority(new StreamPriority(responseStreamPriority));
       req.response().end();
       complete();
     });
@@ -424,7 +423,7 @@ public abstract class HttpCommonTest extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(requestStreamPriority.copy())
+        .setStreamPriority(new StreamPriority(requestStreamPriority))
         .send().onComplete(onSuccess(resp -> {
           assertEqualsStreamPriority(responseStreamPriority, resp.request().getStreamPriority());
           complete();
@@ -435,10 +434,10 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testStreamPriorityChange() throws Exception {
-    StreamPriorityBase requestStreamPriority = generateStreamPriority();
-    StreamPriorityBase requestStreamPriority2 = generateStreamPriority();
-    StreamPriorityBase responseStreamPriority = generateStreamPriority();
-    StreamPriorityBase responseStreamPriority2 = generateStreamPriority();
+    StreamPriority requestStreamPriority = generateStreamPriority();
+    StreamPriority requestStreamPriority2 = generateStreamPriority();
+    StreamPriority responseStreamPriority = generateStreamPriority();
+    StreamPriority responseStreamPriority2 = generateStreamPriority();
     waitFor(4);
     server.requestHandler(req -> {
       req.streamPriorityHandler(sp -> {
@@ -447,9 +446,9 @@ public abstract class HttpCommonTest extends HttpTest {
         complete();
       });
       assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
-      req.response().setStreamPriority(responseStreamPriority.copy());
+      req.response().setStreamPriority(new StreamPriority(responseStreamPriority));
       req.response().write("hello");
-      req.response().setStreamPriority(responseStreamPriority2.copy());
+      req.response().setStreamPriority(new StreamPriority(responseStreamPriority2));
       req.response().drainHandler(h -> {
       });
       req.response().end("world");
@@ -460,7 +459,7 @@ public abstract class HttpCommonTest extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(requestStreamPriority.copy())
+        .setStreamPriority(new StreamPriority(requestStreamPriority))
         .response()
         .onComplete(onSuccess(resp -> {
           assertEqualsStreamPriority(responseStreamPriority, resp.request().getStreamPriority());
@@ -474,7 +473,7 @@ public abstract class HttpCommonTest extends HttpTest {
       req
         .writeHead()
         .onComplete(h -> {
-          req.setStreamPriority(requestStreamPriority2.copy());
+          req.setStreamPriority(new StreamPriority(requestStreamPriority2));
           req.end();
         });
     }));
@@ -483,7 +482,7 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testServerStreamPriorityNoChange() throws Exception {
-    StreamPriorityBase streamPriority = generateStreamPriority();
+    StreamPriority streamPriority = generateStreamPriority();
     waitFor(2);
     server.requestHandler(req -> {
       req.streamPriorityHandler(sp -> {
@@ -505,11 +504,11 @@ public abstract class HttpCommonTest extends HttpTest {
             complete();
           });
         }));
-      req.setStreamPriority(streamPriority.copy());
+      req.setStreamPriority(new StreamPriority(streamPriority));
       req
         .writeHead()
         .onComplete(h -> {
-          req.setStreamPriority(streamPriority.copy());
+          req.setStreamPriority(new StreamPriority(streamPriority));
           req.end();
         });
     }));
@@ -518,12 +517,12 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testClientStreamPriorityNoChange() throws Exception {
-    StreamPriorityBase streamPriority = generateStreamPriority();
+    StreamPriority streamPriority = generateStreamPriority();
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().setStreamPriority(streamPriority.copy());
+      req.response().setStreamPriority(new StreamPriority(streamPriority));
       req.response().write("hello");
-      req.response().setStreamPriority(streamPriority.copy());
+      req.response().setStreamPriority(new StreamPriority(streamPriority));
       req.response().end("world");
       req.endHandler(v -> {
         complete();
@@ -550,7 +549,7 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testStreamPriorityInheritance() throws Exception {
-    StreamPriorityBase requestStreamPriority = generateStreamPriority();
+    StreamPriority requestStreamPriority = generateStreamPriority();
 
     waitFor(2);
     server.requestHandler(req -> {
@@ -563,7 +562,7 @@ public abstract class HttpCommonTest extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(requestStreamPriority.copy())
+        .setStreamPriority(new StreamPriority(requestStreamPriority))
         .send()
         .onComplete(onSuccess(resp -> {
           assertEqualsStreamPriority(requestStreamPriority, resp.request().getStreamPriority());
@@ -575,7 +574,7 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testDefaultPriority() throws Exception {
-    StreamPriorityBase defaultStreamPriority = defaultStreamPriority();
+    StreamPriority defaultStreamPriority = defaultStreamPriority();
     waitFor(2);
     server.requestHandler(req -> {
       assertEqualsStreamPriority(defaultStreamPriority, req.streamPriority());
@@ -596,11 +595,11 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testStreamPriorityPushPromise() throws Exception {
-    StreamPriorityBase pushStreamPriority = generateStreamPriority();
+    StreamPriority pushStreamPriority = generateStreamPriority();
     waitFor(4);
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(pushedResp -> {
-        pushedResp.setStreamPriority(pushStreamPriority.copy());
+        pushedResp.setStreamPriority(new StreamPriority(pushStreamPriority));
         pushedResp.end();
       }));
       req.response().end();
@@ -627,7 +626,7 @@ public abstract class HttpCommonTest extends HttpTest {
 
   @Test
   public void testStreamPriorityInheritancePushPromise() throws Exception {
-    StreamPriorityBase reqStreamPriority = generateStreamPriority();
+    StreamPriority reqStreamPriority = generateStreamPriority();
     waitFor(4);
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(HttpServerResponse::end));
@@ -645,7 +644,7 @@ public abstract class HttpCommonTest extends HttpTest {
             assertEqualsStreamPriority(reqStreamPriority, pushResp.request().getStreamPriority());
             complete();
           }));
-        }).setStreamPriority(reqStreamPriority.copy())
+        }).setStreamPriority(new StreamPriority(reqStreamPriority))
         .send()
         .onComplete(onSuccess(resp -> {
           complete();

@@ -22,7 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
@@ -55,7 +55,7 @@ public abstract class Http3StreamBase {
   private boolean writable;
 
   // Client context
-  private StreamPriorityBase priority;
+  private StreamPriority priority;
   private long bytesRead;
   private long bytesWritten;
   private Throwable failure;
@@ -90,7 +90,7 @@ public abstract class Http3StreamBase {
   protected abstract boolean evaluateChannelWritability(S streamChannel);
 */
 
-  protected abstract StreamPriorityBase createDefaultStreamPriority();
+  protected abstract StreamPriority createDefaultStreamPriority();
 
   Http3StreamBase(Http3Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
@@ -174,11 +174,11 @@ public abstract class Http3StreamBase {
     return context;
   }
 
-  public void priority(StreamPriorityBase streamPriority) {
+  public void priority(StreamPriority streamPriority) {
     this.priority = streamPriority;
   }
 
-  public StreamPriorityBase priority() {
+  public StreamPriority priority() {
     return priority;
   }
 
@@ -219,7 +219,7 @@ public abstract class Http3StreamBase {
     context.execute(cause, this::handleException);
   }
 
-  public void onPriorityChange(StreamPriorityBase newPriority) {
+  public void onPriorityChange(StreamPriority newPriority) {
     if (!priority.equals(newPriority)) {
       priority = newPriority;
       context.execute(newPriority, this::handlePriorityChange);
@@ -488,14 +488,14 @@ public abstract class Http3StreamBase {
     }
   }
 
-  private void handlePriorityChange(StreamPriorityBase newPriority) {
+  private void handlePriorityChange(StreamPriority newPriority) {
     Http3StreamHandler i = handler();
     if (i != null) {
       i.handlePriorityChange(newPriority);
     }
   }
 
-  public void updatePriority(StreamPriorityBase priority) {
+  public void updatePriority(StreamPriority priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
       if (streamChannel != null) {

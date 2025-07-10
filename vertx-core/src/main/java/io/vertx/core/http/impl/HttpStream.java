@@ -10,7 +10,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
@@ -31,7 +31,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   protected Handler<HttpResponseHead> headHandler;
   protected Handler<Buffer> chunkHandler;
   protected Handler<MultiMap> endHandler;
-  protected Handler<StreamPriorityBase> priorityHandler;
+  protected Handler<StreamPriority> priorityHandler;
   protected Handler<Void> drainHandler;
   protected Handler<Void> continueHandler;
   protected Handler<MultiMap> earlyHintsHandler;
@@ -119,7 +119,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
   }
 
   @Override
-  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriority streamPriority) {
     if (streamPriority != null) {
       priority(streamPriority);
     }

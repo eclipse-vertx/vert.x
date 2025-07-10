@@ -72,24 +72,24 @@ public class Http2Test extends HttpCommonTest {
   }
 
   @Override
-  protected StreamPriorityBase generateStreamPriority() {
-    return new Http2StreamPriority()
+  protected StreamPriority generateStreamPriority() {
+    return new StreamPriority()
       .setDependency(TestUtils.randomPositiveInt())
       .setWeight((short) TestUtils.randomPositiveInt(255))
       .setExclusive(TestUtils.randomBoolean());
   }
 
   @Override
-  protected StreamPriorityBase defaultStreamPriority() {
-    return new Http2StreamPriority()
+  protected StreamPriority defaultStreamPriority() {
+    return new StreamPriority()
       .setDependency(0)
       .setWeight(Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT)
       .setExclusive(false);
   }
 
   @Override
-  protected void assertEqualsStreamPriority(StreamPriorityBase expectedStreamPriority,
-                                            StreamPriorityBase actualStreamPriority) {
+  protected void assertEqualsStreamPriority(StreamPriority expectedStreamPriority,
+                                            StreamPriority actualStreamPriority) {
     assertEquals(expectedStreamPriority.getWeight(), actualStreamPriority.getWeight());
     assertEquals(expectedStreamPriority.getDependency(), actualStreamPriority.getDependency());
     assertEquals(expectedStreamPriority.isExclusive(), actualStreamPriority.isExclusive());

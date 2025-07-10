@@ -24,7 +24,7 @@ import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpSettings;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
@@ -108,7 +108,7 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     VertxHttpHeaders prepare = headers.prepare();
     if (headers.status() != null && compressionManager != null) {
       Http2ServerStream stream = stream(streamId);
@@ -118,12 +118,12 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writePriorityFrame(int streamId, StreamPriorityBase priority) {
+  public void writePriorityFrame(int streamId, StreamPriority priority) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http2ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     promise.fail("Push not supported");
   }
 

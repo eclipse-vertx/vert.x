@@ -13,7 +13,7 @@ package io.vertx.core.http.impl.http3;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 
 public interface Http3StreamHandler {
 
@@ -24,7 +24,7 @@ public interface Http3StreamHandler {
   void handleData(Buffer data);
   void handleTrailers(MultiMap trailers);
   void handleCustomFrame(HttpFrame frame);
-  void handlePriorityChange(StreamPriorityBase streamPriority);
+  void handlePriorityChange(StreamPriority streamPriority);
   void handleDrained();
 
 }

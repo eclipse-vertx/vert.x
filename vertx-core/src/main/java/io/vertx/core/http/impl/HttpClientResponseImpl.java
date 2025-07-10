@@ -42,7 +42,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   private HttpEventHandler eventHandler;
   private Handler<HttpFrame> customFrameHandler;
-  private Handler<StreamPriorityBase> priorityHandler;
+  private Handler<StreamPriority> priorityHandler;
 
   // Cache these for performance
   private MultiMap headers;
@@ -277,7 +277,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse streamPriorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) {
     synchronized (conn) {
       if (handler != null) {
         checkEnded();
@@ -287,8 +287,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     return this;
   }
 
-  void handlePriorityChange(StreamPriorityBase streamPriority) {
-    Handler<StreamPriorityBase> handler;
+  void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler;
     synchronized (conn) {
       handler = priorityHandler;
     }

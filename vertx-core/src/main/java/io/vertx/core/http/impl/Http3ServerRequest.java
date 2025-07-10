@@ -66,7 +66,7 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
   private Handler<HttpFrame> customFrameHandler;
-  private Handler<StreamPriorityBase> streamPriorityHandler;
+  private Handler<StreamPriority> streamPriorityHandler;
 
   Http3ServerRequest(Http3ServerStream stream,
                      String serverOrigin,
@@ -504,12 +504,12 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
     return eventHandler(true).end();
   }
 
-  public StreamPriorityBase streamPriority() {
+  public StreamPriority streamPriority() {
     return stream.priority();
   }
 
   @Override
-  public HttpServerRequest streamPriorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     synchronized (stream.conn) {
       streamPriorityHandler = handler;
     }
@@ -522,8 +522,8 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public void handlePriorityChange(StreamPriorityBase streamPriority) {
-    Handler<StreamPriorityBase> handler;
+  public void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler;
     synchronized (stream.conn) {
       handler = streamPriorityHandler;
     }

@@ -631,7 +631,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public HttpServerResponse setStreamPriority(StreamPriorityBase priority) {
+  public HttpServerResponse setStreamPriority(StreamPriority priority) {
 //    stream.updatePriority(priority);
     return this;
   }

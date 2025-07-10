@@ -41,7 +41,7 @@ public class Http3ClientStreamImpl implements HttpClientStream, Http3ClientStrea
   private Handler<Buffer> chunkHandler;
   private Handler<MultiMap> trailerHandler;
   private Handler<Void> endHandler;
-  private Handler<StreamPriorityBase> priorityHandler;
+  private Handler<StreamPriority> priorityHandler;
   private Handler<Void> drainHandler;
   private Handler<Void> continueHandler;
   private Handler<MultiMap> earlyHintsHandler;
@@ -171,7 +171,7 @@ public class Http3ClientStreamImpl implements HttpClientStream, Http3ClientStrea
   }
 
   @Override
-  public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
     priorityHandler = handler;
     return this;
   }
@@ -189,12 +189,12 @@ public class Http3ClientStreamImpl implements HttpClientStream, Http3ClientStrea
   }
 
   @Override
-  public StreamPriorityBase priority() {
+  public StreamPriority priority() {
     return stream.priority();
   }
 
   @Override
-  public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+  public HttpClientStream updatePriority(StreamPriority streamPriority) {
     stream.updatePriority(streamPriority);
     return this;
   }
@@ -206,7 +206,7 @@ public class Http3ClientStreamImpl implements HttpClientStream, Http3ClientStrea
 
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
     stream = new Http3ClientStream(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
     stream.handler(this);
@@ -354,8 +354,8 @@ public class Http3ClientStreamImpl implements HttpClientStream, Http3ClientStrea
   }
 
   @Override
-  public void handlePriorityChange(StreamPriorityBase streamPriority) {
-    Handler<StreamPriorityBase> handler = priorityHandler;
+  public void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler = priorityHandler;
     if (handler != null) {
       context.dispatch(streamPriority, handler);
     }

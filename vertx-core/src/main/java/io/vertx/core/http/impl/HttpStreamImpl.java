@@ -9,7 +9,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.http.impl.http2.Http2ClientPush;
@@ -19,7 +19,6 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.streams.WriteStream;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Map;
@@ -111,7 +110,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 //  }
 
   @Override
-  public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
     priorityHandler = handler;
     return this;
   }
@@ -122,7 +121,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 //  }
 
   @Override
-  public StreamPriorityBase priority() {
+  public StreamPriority priority() {
     return super.priority();
   }
 
@@ -168,7 +167,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
 
   @Override
-  void handlePriorityChange(StreamPriorityBase streamPriority) {
+  void handlePriorityChange(StreamPriority streamPriority) {
     if (priorityHandler != null) {
       priorityHandler.handle(streamPriority);
     }
@@ -194,7 +193,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end,
-                                StreamPriorityBase priority, boolean connect) {
+                                StreamPriority priority, boolean connect) {
     priority(priority);
     PromiseInternal<Void> promise = context.promise();
     write(new MessageWrite() {
@@ -211,7 +210,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     return promise.future();
   }
 
-  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect, Promise<Void> promise) {
+  private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Promise<Void> promise) {
     VertxHttpHeaders headers = createHttpHeadersWrapper();
     headers.method(request.method);
     boolean e;
@@ -327,7 +326,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+  public HttpClientStream updatePriority(StreamPriority streamPriority) {
     updatePriority_(streamPriority);
     return this;
   }

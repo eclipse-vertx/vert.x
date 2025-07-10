@@ -33,7 +33,6 @@ import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.FakeDNSServer;
@@ -48,13 +47,10 @@ import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Assume;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.net.URLEncoder;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -4228,7 +4224,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientConnection connection() { throw new UnsupportedOperationException(); }
       public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
-      public StreamPriorityBase getStreamPriority() { return null; }
+      public StreamPriority getStreamPriority() { return null; }
       public HttpClientRequest setMethod(HttpMethod method) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
     }
@@ -4252,7 +4248,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }
       public HttpClientRequest request() { return req; }
-      public HttpClientResponse streamPriorityHandler(Handler<StreamPriorityBase> handler) { return this; }
+      public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
       public Future<Buffer> body() { throw new UnsupportedOperationException(); }
       public Future<Void> end() { throw new UnsupportedOperationException(); }
     }

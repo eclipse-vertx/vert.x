@@ -94,20 +94,20 @@ public class Http3Test extends HttpCommonTest {
   }
 
   @Override
-  protected void assertEqualsStreamPriority(StreamPriorityBase expectedStreamPriority,
-                                            StreamPriorityBase actualStreamPriority) {
-    assertEquals(expectedStreamPriority.urgency(), actualStreamPriority.urgency());
-    assertEquals(expectedStreamPriority.isIncremental(), actualStreamPriority.isIncremental());
+  protected void assertEqualsStreamPriority(StreamPriority expectedStreamPriority,
+                                            StreamPriority actualStreamPriority) {
+    assertEquals(expectedStreamPriority.getHttp3Urgency(), actualStreamPriority.getHttp3Urgency());
+    assertEquals(expectedStreamPriority.isHttp3Incremental(), actualStreamPriority.isHttp3Incremental());
   }
 
   @Override
-  protected StreamPriorityBase generateStreamPriority() {
-    return new Http3StreamPriority(new QuicStreamPriority(TestUtils.randomPositiveInt(127), TestUtils.randomBoolean()));
+  protected StreamPriority generateStreamPriority() {
+    return new StreamPriority().setHttp3Incremental(TestUtils.randomBoolean()).setHttp3Urgency(TestUtils.randomPositiveInt(127));
   }
 
   @Override
-  protected StreamPriorityBase defaultStreamPriority() {
-    return new Http3StreamPriority(new QuicStreamPriority(0, false));
+  protected StreamPriority defaultStreamPriority() {
+    return new StreamPriority();
   }
 
   @Test

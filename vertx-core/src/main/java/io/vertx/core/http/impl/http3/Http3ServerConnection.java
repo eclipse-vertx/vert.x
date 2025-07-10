@@ -14,7 +14,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.net.HostAndPort;
 
 public interface Http3ServerConnection extends Http3Connection {
@@ -28,6 +28,6 @@ public interface Http3ServerConnection extends Http3Connection {
                 HttpMethod method,
                 MultiMap headers,
                 String path,
-                StreamPriorityBase streamPriority,
+                StreamPriority streamPriority,
                 Promise<Http3ServerStream> promise);
 }

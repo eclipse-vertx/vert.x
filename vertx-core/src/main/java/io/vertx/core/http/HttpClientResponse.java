@@ -19,8 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.List;
-
 /**
  * Represents a client-side HTTP response.
  * <p>
@@ -127,5 +125,5 @@ public interface HttpClientResponse extends ReadStream<Buffer>, HttpResponseHead
    * @param handler the handler to be called when the stream priority changes
    */
   @Fluent
-  HttpClientResponse streamPriorityHandler(Handler<StreamPriorityBase> handler);
+  HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler);
 }

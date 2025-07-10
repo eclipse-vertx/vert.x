@@ -64,7 +64,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   }
 
   protected abstract void onHeadersRead(VertxHttpStreamBase<?, ?> stream, Http3Headers headers,
-                                        StreamPriorityBase streamPriority, boolean endOfStream,
+                                        StreamPriority streamPriority, boolean endOfStream,
                                         QuicStreamChannel streamChannel);
 
   protected final ChannelHandlerContext handlerContext;
@@ -197,7 +197,7 @@ public abstract class Http3ConnectionBase extends ConnectionBase implements Http
   public void onPriorityRead(ChannelHandlerContext ctx, VertxHttpStreamBase<?, ?> stream, int streamDependency,
                              short weight, boolean exclusive) {
     if (stream != null) {
-      StreamPriorityBase streamPriority = new Http2StreamPriority()
+      StreamPriority streamPriority = new StreamPriority()
         .setDependency(streamDependency)
         .setWeight(weight)
         .setExclusive(exclusive);

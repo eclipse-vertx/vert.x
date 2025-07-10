@@ -18,7 +18,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.http3.*;
 import io.vertx.core.internal.ContextInternal;
@@ -93,7 +93,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
 //  }
 
   @Override
-  protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http3ClientStream stream0 = (Http3ClientStream) stream(streamChannel);
     Http3HeadersMultiMap headersMap = new Http3HeadersMultiMap(headers);
     if (!stream0.isTrailersReceived()) {

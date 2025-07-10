@@ -147,7 +147,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
       return delegate.writeHead(request, chunked, buf, end, priority, connect);
     }
 
@@ -210,7 +210,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
+    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
       delegate.priorityHandler(handler);
       return this;
     }
@@ -245,12 +245,12 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public StreamPriorityBase priority() {
+    public StreamPriority priority() {
       return delegate.priority();
     }
 
     @Override
-    public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+    public HttpClientStream updatePriority(StreamPriority streamPriority) {
       delegate.updatePriority(streamPriority);
       return this;
     }
@@ -354,7 +354,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailersHandler;
     private Handler<Void> endHandler;
-    private Handler<StreamPriorityBase> priorityHandler;
+    private Handler<StreamPriority> priorityHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
@@ -383,7 +383,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                           boolean chunked,
                           ByteBuf buf,
                           boolean end,
-                          StreamPriorityBase priority,
+                          StreamPriority priority,
                           boolean connect) {
       UpgradeResult blah = new UpgradeResult() {
         @Override
@@ -417,7 +417,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                            boolean chunked,
                            ByteBuf buf,
                            boolean end,
-                           StreamPriorityBase priority,
+                           StreamPriority priority,
                            boolean connect,
                            Promise<Void> promise) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
@@ -583,7 +583,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
+    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
       if (upgradedStream != null) {
         upgradedStream.priorityHandler(handler);
       } else {
@@ -677,7 +677,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public StreamPriorityBase priority() {
+    public StreamPriority priority() {
       if (upgradedStream != null) {
         return upgradedStream.priority();
       } else {
@@ -686,7 +686,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+    public HttpClientStream updatePriority(StreamPriority streamPriority) {
       if (upgradedStream != null) {
         upgradedStream.updatePriority(streamPriority);
       } else {

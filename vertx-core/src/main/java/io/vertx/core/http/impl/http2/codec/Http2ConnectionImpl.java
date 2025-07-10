@@ -32,17 +32,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.Http2StreamPriority;
-import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpSettings;
-import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -68,7 +63,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     return buffer;
   }
 
-  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream);
+  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
   protected final ChannelHandlerContext handlerContext;
   private final VertxHttp2ConnectionHandler handler;
@@ -202,7 +197,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
       Http2StreamBase stream = stream(streamId);
       if (stream != null) {
-        StreamPriorityBase streamPriority = new Http2StreamPriority()
+        StreamPriority streamPriority = new StreamPriority()
           .setDependency(streamDependency)
           .setWeight(weight)
           .setExclusive(exclusive);
@@ -212,7 +207,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    StreamPriorityBase streamPriority = new Http2StreamPriority()
+    StreamPriority streamPriority = new StreamPriority()
       .setDependency(streamDependency)
       .setWeight(weight)
       .setExclusive(exclusive);
@@ -527,13 +522,13 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void writePriorityFrame(int streamId, StreamPriorityBase priority) {
+  public void writePriorityFrame(int streamId, StreamPriority priority) {
     Http2Stream s = handler.connection().stream(streamId);
     handler.writePriority(s, priority);
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2Stream s = handler.connection().stream(streamId);
     handler.writeHeaders(s, headers.prepare(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }

@@ -11,7 +11,6 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpHeaderValidationUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -21,7 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
@@ -31,9 +30,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
-
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -48,7 +44,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   private Handler<Buffer> chunkHandler;
   private Handler<MultiMap> trailerHandler;
   private Handler<Void> endHandler;
-  private Handler<StreamPriorityBase> priorityHandler;
+  private Handler<StreamPriority> priorityHandler;
   private Handler<Void> drainHandler;
   private Handler<Void> continueHandler;
   private Handler<MultiMap> earlyHintsHandler;
@@ -178,7 +174,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
     priorityHandler = handler;
     return this;
   }
@@ -196,12 +192,12 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public StreamPriorityBase priority() {
+  public StreamPriority priority() {
     return stream.priority();
   }
 
   @Override
-  public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+  public HttpClientStream updatePriority(StreamPriority streamPriority) {
     stream.updatePriority(streamPriority);
     return this;
   }
@@ -213,7 +209,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
 
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
     stream = new Http2ClientStream(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
     stream.handler(this);
@@ -361,8 +357,8 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public void handlePriorityChange(StreamPriorityBase streamPriority) {
-    Handler<StreamPriorityBase> handler = priorityHandler;
+  public void handlePriorityChange(StreamPriority streamPriority) {
+    Handler<StreamPriority> handler = priorityHandler;
     if (handler != null) {
       context.dispatch(streamPriority, handler);
     }

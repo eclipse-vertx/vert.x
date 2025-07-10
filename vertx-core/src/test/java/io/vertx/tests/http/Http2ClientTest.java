@@ -26,13 +26,12 @@ import io.netty.handler.ssl.*;
 import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.http.Http2StreamPriority;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -60,16 +59,16 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected StreamPriorityBase generateStreamPriority() {
-    return new Http2StreamPriority()
+  protected StreamPriority generateStreamPriority() {
+    return new StreamPriority()
       .setDependency(TestUtils.randomPositiveInt())
       .setWeight((short) TestUtils.randomPositiveInt(255))
       .setExclusive(TestUtils.randomBoolean());
   }
 
   @Override
-  protected StreamPriorityBase defaultStreamPriority() {
-    return new Http2StreamPriority()
+  protected StreamPriority defaultStreamPriority() {
+    return new StreamPriority()
       .setDependency(0)
       .setWeight(Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT)
       .setExclusive(false);
@@ -365,7 +364,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected AbstractBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
+  protected AbstractBootstrap createServerForStreamPriority(StreamPriority requestStreamPriority, StreamPriority responseStreamPriority) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -383,7 +382,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected AbstractBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
+  protected AbstractBootstrap createServerForStreamPriorityChange(StreamPriority requestStreamPriority, StreamPriority responseStreamPriority, StreamPriority requestStreamPriority2, StreamPriority responseStreamPriority2) {
     return createH2Server((decoder, encoder_) -> {
       Http2ConnectionEncoder encoder = (Http2ConnectionEncoder) encoder_;
 
@@ -430,7 +429,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
+  protected AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriority streamPriority, Promise<Void> latch) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
@@ -463,7 +462,7 @@ public class Http2ClientTest extends HttpClientTest {
   }
 
   @Override
-  protected AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
+  protected AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriority streamPriority) {
     return createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
       public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {

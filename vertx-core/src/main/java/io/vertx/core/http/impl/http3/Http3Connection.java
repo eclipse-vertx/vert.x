@@ -14,7 +14,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.vertx.core.Promise;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 
 /**
@@ -38,13 +38,13 @@ public interface Http3Connection {
 
   void writeFrame(QuicStreamChannel streamChannel, int type, int flags, ByteBuf payload, Promise<Void> promise);
 
-  void writeHeaders(QuicStreamChannel streamChannel, Http3HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise);
+  void writeHeaders(QuicStreamChannel streamChannel, Http3HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
 
   void writeData(QuicStreamChannel streamChannel, ByteBuf buf, boolean end, Promise<Void> promise);
 
   void writeReset(QuicStreamChannel streamChannel, long code, Promise<Void> promise);
 
-  void writePriorityFrame(QuicStreamChannel streamChannel, StreamPriorityBase priority);
+  void writePriorityFrame(QuicStreamChannel streamChannel, StreamPriority priority);
 
   void consumeCredits(QuicStreamChannel streamChannel, int amountOfBytes);
 

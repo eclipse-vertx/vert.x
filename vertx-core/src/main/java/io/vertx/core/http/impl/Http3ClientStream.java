@@ -1,7 +1,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
@@ -10,7 +9,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
@@ -81,13 +80,13 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  public void writeHeaders(QuicStreamChannel stream, VertxHttpHeaders headers, boolean end, StreamPriorityBase priority,
+  public void writeHeaders(QuicStreamChannel stream, VertxHttpHeaders headers, boolean end, StreamPriority priority,
                            boolean checkFlush, FutureListener<Void> promise) {
     conn.handler.writeHeaders(stream, headers, end, priority, checkFlush, promise);
   }
 
   @Override
-  public void writePriorityFrame(StreamPriorityBase priority) {
+  public void writePriorityFrame(StreamPriority priority) {
     conn.handler.writePriority(streamChannel, priority);
   }
 
@@ -136,12 +135,12 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   }
 
   @Override
-  void onHeaders(VertxHttpHeaders headers, StreamPriorityBase streamPriority) {
+  void onHeaders(VertxHttpHeaders headers, StreamPriority streamPriority) {
     super.onHeaders(headers, streamPriority);
   }
 
   @Override
-  public StreamPriorityBase createDefaultStreamPriority() {
+  public StreamPriority createDefaultStreamPriority() {
     return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
   }
 

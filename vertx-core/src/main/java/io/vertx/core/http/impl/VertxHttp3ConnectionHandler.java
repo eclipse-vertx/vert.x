@@ -50,7 +50,7 @@ import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
-import io.vertx.core.http.StreamPriorityBase;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.internal.ContextInternal;
@@ -228,11 +228,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
   }
 
   public void writeHeaders(QuicStreamChannel streamChannel, VertxHttpHeaders headers, boolean end,
-                           StreamPriorityBase priority, boolean checkFlush, FutureListener<Void> listener) {
+                           StreamPriority priority, boolean checkFlush, FutureListener<Void> listener) {
     log.debug(String.format("%s - Write header for channelId: %s, streamId: %s",
       agentType, streamChannel.id(), streamChannel.streamId()));
 
-    streamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
+    streamChannel.updatePriority(new QuicStreamPriority(priority.getHttp3Urgency(), priority.isHttp3Incremental()));
     Http3Headers http3Headers = headers.getHeaders();
 
     ChannelPromise promise = streamChannel.newPromise();
@@ -522,11 +522,11 @@ class VertxHttp3ConnectionHandler<C extends Http3ConnectionBase> extends Channel
       .build();
   }
 
-  private void _writePriority(QuicStreamChannel streamChannel, StreamPriorityBase priority) {
-    streamChannel.updatePriority(new QuicStreamPriority(priority.urgency(), priority.isIncremental()));
+  private void _writePriority(QuicStreamChannel streamChannel, StreamPriority priority) {
+    streamChannel.updatePriority(new QuicStreamPriority(priority.getHttp3Urgency(), priority.isHttp3Incremental()));
   }
 
-  public void writePriority(QuicStreamChannel streamChannel, StreamPriorityBase priority) {
+  public void writePriority(QuicStreamChannel streamChannel, StreamPriority priority) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
       _writePriority(streamChannel, priority);

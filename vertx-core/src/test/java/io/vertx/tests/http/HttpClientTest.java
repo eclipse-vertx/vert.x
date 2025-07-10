@@ -24,7 +24,6 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
-import io.vertx.core.http.impl.HttpClientConnectionInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -60,8 +59,8 @@ public abstract class HttpClientTest extends HttpTestBase {
   protected HttpClientOptions clientOptions;
   protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
-  protected abstract StreamPriorityBase generateStreamPriority();
-  protected abstract StreamPriorityBase defaultStreamPriority();
+  protected abstract StreamPriority generateStreamPriority();
+  protected abstract StreamPriority defaultStreamPriority();
   protected abstract HttpFrame generateCustomFrame();
   protected abstract HttpVersion httpVersion();
   protected abstract void resetResponse(HttpServerResponse response, int code);
@@ -1941,14 +1940,14 @@ public abstract class HttpClientTest extends HttpTestBase {
   }
 */
 
-  protected AbstractBootstrap createServerForStreamPriority(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority) {
+  protected AbstractBootstrap createServerForStreamPriority(StreamPriority requestStreamPriority, StreamPriority responseStreamPriority) {
     throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
   }
 
   @Test
   public void testStreamPriority() throws Exception {
-    StreamPriorityBase requestStreamPriority = generateStreamPriority();
-    StreamPriorityBase responseStreamPriority = generateStreamPriority();
+    StreamPriority requestStreamPriority = generateStreamPriority();
+    StreamPriority responseStreamPriority = generateStreamPriority();
 
     waitFor(2);
     AbstractBootstrap bootstrap = createServerForStreamPriority(requestStreamPriority, responseStreamPriority);
@@ -1972,16 +1971,16 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected AbstractBootstrap createServerForStreamPriorityChange(StreamPriorityBase requestStreamPriority, StreamPriorityBase responseStreamPriority, StreamPriorityBase requestStreamPriority2, StreamPriorityBase responseStreamPriority2) {
+  protected AbstractBootstrap createServerForStreamPriorityChange(StreamPriority requestStreamPriority, StreamPriority responseStreamPriority, StreamPriority requestStreamPriority2, StreamPriority responseStreamPriority2) {
     throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
   }
 
   @Test
   public void testStreamPriorityChange() throws Exception {
-    StreamPriorityBase requestStreamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
-    StreamPriorityBase requestStreamPriority2 = new Http2StreamPriority().setDependency(223).setWeight((short)145).setExclusive(false);
-    StreamPriorityBase responseStreamPriority = new Http2StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
-    StreamPriorityBase responseStreamPriority2 = new Http2StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
+    StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority requestStreamPriority2 = new StreamPriority().setDependency(223).setWeight((short)145).setExclusive(false);
+    StreamPriority responseStreamPriority = new StreamPriority().setDependency(153).setWeight((short)75).setExclusive(false);
+    StreamPriority responseStreamPriority2 = new StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
     waitFor(5);
     AbstractBootstrap bootstrap = createServerForStreamPriorityChange(requestStreamPriority, responseStreamPriority, requestStreamPriority2, responseStreamPriority2);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
@@ -2019,14 +2018,14 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriorityBase streamPriority, Promise<Void> latch) {
+  protected AbstractBootstrap createServerForClientStreamPriorityNoChange(StreamPriority streamPriority, Promise<Void> latch) {
     throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
   }
 
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
   public void testClientStreamPriorityNoChange() throws Exception {
-    StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(2);
     Promise<Void> latch = Promise.promise();
     AbstractBootstrap bootstrap = createServerForClientStreamPriorityNoChange(streamPriority, latch);
@@ -2055,14 +2054,14 @@ public abstract class HttpClientTest extends HttpTestBase {
     }
   }
 
-  protected AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriorityBase streamPriority) {
+  protected AbstractBootstrap createServerForServerStreamPriorityNoChange(StreamPriority streamPriority) {
     throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
   }
 
   @Ignore("Cannot pass reliably for now (https://github.com/netty/netty/issues/9842)")
   @Test
   public void testServerStreamPriorityNoChange() throws Exception {
-    StreamPriorityBase streamPriority = new Http2StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
+    StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(1);
     AbstractBootstrap bootstrap = createServerForServerStreamPriorityNoChange(streamPriority);
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
