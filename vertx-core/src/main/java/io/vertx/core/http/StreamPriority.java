@@ -13,14 +13,12 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
 /**
  * This class represents HTTP/2 stream priority defined in RFC 7540 clause 5.3
  */
 @DataObject
-@JsonGen(publicConverter = false)
 public class StreamPriority {
 
   public static final int DEFAULT_DEPENDENCY = 0;
@@ -158,7 +156,7 @@ public class StreamPriority {
     result = prime * result + dependency;
     result = prime * result + weight;
     result = prime * result + http3Urgency;
-    result = prime * result + (http3Incremental ? 1478 : 1241);
+    result = prime * result + (http3Incremental ? 1231 : 1237);
     return result;
   }
 
