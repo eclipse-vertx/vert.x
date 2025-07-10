@@ -253,9 +253,4 @@ public class Http3ServerStream extends Http3StreamBase {
       metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse());
     }
   }
-
-  @Override
-  protected StreamPriority createDefaultStreamPriority() {
-    return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
-  }
 }

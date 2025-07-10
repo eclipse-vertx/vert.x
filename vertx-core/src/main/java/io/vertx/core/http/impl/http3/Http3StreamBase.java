@@ -90,8 +90,6 @@ public abstract class Http3StreamBase {
   protected abstract boolean evaluateChannelWritability(S streamChannel);
 */
 
-  protected abstract StreamPriority createDefaultStreamPriority();
-
   Http3StreamBase(Http3Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
   }
@@ -114,7 +112,7 @@ public abstract class Http3StreamBase {
         }
       }
     };
-    this.priority = createDefaultStreamPriority();
+    this.priority = HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
     this.writable = writable;
     this.outboundQueue = new OutboundMessageQueue<>(connection.context().executor()) {
       // TODO implement stop drain to optimize flushes ?

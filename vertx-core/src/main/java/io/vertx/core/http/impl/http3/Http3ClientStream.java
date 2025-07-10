@@ -283,10 +283,4 @@ public class Http3ClientStream extends Http3StreamBase {
       clientMetrics.requestEnd(metric, bytesWritten());
     }
   }
-
-  @Override
-  protected StreamPriority createDefaultStreamPriority() {
-    return HttpUtils.DEFAULT_QUIC_STREAM_PRIORITY;
-  }
-
 }

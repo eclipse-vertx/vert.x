@@ -718,11 +718,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         }
       }
     }
-
-    @Override
-    public StreamPriority createDefaultStreamPriority() {
-      return HttpUtils.DEFAULT_STREAM_PRIORITY;
-    }
   }
 
   @Override

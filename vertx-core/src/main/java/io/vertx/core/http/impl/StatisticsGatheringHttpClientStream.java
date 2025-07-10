@@ -228,9 +228,4 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   public HttpClientStream drainHandler(@Nullable Handler<Void> handler) {
     return delegate.drainHandler(handler);
   }
-
-  @Override
-  public StreamPriority createDefaultStreamPriority() {
-    return HttpUtils.DEFAULT_STREAM_PRIORITY;
-  }
 }
