@@ -13,7 +13,7 @@ package io.vertx.core.http.impl.http2;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 
 public interface Http2StreamHandler {
 
@@ -24,7 +24,7 @@ public interface Http2StreamHandler {
   void handleData(Buffer data);
   void handleTrailers(MultiMap trailers);
   void handleCustomFrame(HttpFrame frame);
-  void handlePriorityChange(StreamPriority streamPriority);
+  void handlePriorityChange(StreamPriorityBase streamPriority);
   void handleDrained();
 
 }

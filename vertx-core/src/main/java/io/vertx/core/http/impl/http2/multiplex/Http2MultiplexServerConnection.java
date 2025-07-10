@@ -16,13 +16,18 @@ import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameStream;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.HttpSettings;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
+import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerStream;
@@ -103,22 +108,43 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    Http2HeadersMultiMap prepare = headers.prepare();
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    VertxHttpHeaders prepare = headers.prepare();
     if (headers.status() != null && compressionManager != null) {
       Http2ServerStream stream = stream(streamId);
-      compressionManager.setContentEncoding(stream.headers().unwrap(), headers.unwrap());
+      compressionManager.setContentEncoding(stream.headers().getHeaders(), headers.getHeaders());
     }
-    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) prepare.unwrap(), end), promise);
+    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame(prepare.getHeaders(), end), promise);
   }
 
   @Override
-  public void writePriorityFrame(int streamId, StreamPriority priority) {
+  public void writePriorityFrame(int streamId, StreamPriorityBase priority) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http2ServerStream> promise) {
     promise.fail("Push not supported");
+  }
+
+  //TODO: checkit: remove the following.
+  @Override
+  public HttpSettings httpSettings() {
+    return settings();
+  }
+
+  @Override
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings((Http2Settings) settings);
+  }
+
+  @Override
+  public HttpSettings remoteHttpSettings() {
+    return remoteSettings();
+  }
+
+  @Override
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    return remoteSettingsHandler(handler::handle);
   }
 }

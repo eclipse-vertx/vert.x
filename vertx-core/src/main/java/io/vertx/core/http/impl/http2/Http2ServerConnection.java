@@ -14,7 +14,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.net.HostAndPort;
 
 public interface Http2ServerConnection extends Http2Connection {
@@ -28,6 +28,6 @@ public interface Http2ServerConnection extends Http2Connection {
                 HttpMethod method,
                 MultiMap headers,
                 String path,
-                StreamPriority streamPriority,
+                StreamPriorityBase streamPriority,
                 Promise<Http2ServerStream> promise);
 }

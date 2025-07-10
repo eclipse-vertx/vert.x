@@ -13,7 +13,7 @@ package io.vertx.core.http.impl.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Promise;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.internal.ContextInternal;
 
 public interface Http2Connection {
@@ -34,13 +34,13 @@ public interface Http2Connection {
 
   void writeFrame(int streamId, int type, int flags, ByteBuf payload, Promise<Void> promise);
 
-  void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise);
+  void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise);
 
   void writeData(int streamId, ByteBuf buf, boolean end, Promise<Void> promise);
 
   void writeReset(int streamId, long code, Promise<Void> promise);
 
-  void writePriorityFrame(int streamId, StreamPriority priority);
+  void writePriorityFrame(int streamId, StreamPriorityBase priority);
 
   void consumeCredits(int streamId, int amountOfBytes);
 

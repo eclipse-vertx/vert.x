@@ -111,7 +111,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   synchronized void onConnectionError(Throwable cause) {
-    ArrayList<HttpStreamBase> streams = new ArrayList<>();
+    ArrayList<Http2StreamBase> streams = new ArrayList<>();
     try {
       handler.connection().forEachActiveStream(stream -> {
         streams.add(stream.getProperty(streamKey));
@@ -120,13 +120,13 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     } catch (Http2Exception e) {
       log.error("Could not get the list of active streams", e);
     }
-    for (HttpStreamBase stream : streams) {
+    for (Http2StreamBase stream : streams) {
       stream.context().dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
 
-  HttpStreamBase<?> stream(int id) {
+  public Http2StreamBase stream(int id) {
     Http2Stream s = handler.connection().stream(id);
     if (s == null) {
       return null;
@@ -135,21 +135,21 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   void onStreamError(int streamId, Throwable cause) {
-    HttpStreamBase stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
-    HttpStreamBase stream = s.getProperty(streamKey);
+    Http2StreamBase stream = s.getProperty(streamKey);
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
   void onStreamClosed(Http2Stream s) {
-    HttpStreamBase stream = s.getProperty(streamKey);
+    Http2StreamBase stream = s.getProperty(streamKey);
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -200,7 +200,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) {
-      HttpStreamBase stream = stream(streamId);
+      Http2StreamBase stream = stream(streamId);
       if (stream != null) {
         StreamPriorityBase streamPriority = new Http2StreamPriority()
           .setDependency(streamDependency)
@@ -300,7 +300,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    HttpStreamBase stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       Buffer buff = BufferInternal.buffer(safeBuffer(payload));
       stream.onCustomFrame(frameType, flags.value(), buff);
@@ -309,7 +309,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    HttpStreamBase stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
     }
@@ -317,7 +317,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    HttpStreamBase stream = stream(streamId);
+    Http2StreamBase stream = stream(streamId);
     if (stream != null) {
       data = safeBuffer(data);
       Buffer buff = BufferInternal.buffer(data);
@@ -527,15 +527,15 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void writePriorityFrame(int streamId, StreamPriority priority) {
+  public void writePriorityFrame(int streamId, StreamPriorityBase priority) {
     Http2Stream s = handler.connection().stream(streamId);
-    handler.writePriority(s, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+    handler.writePriority(s, priority);
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2Stream s = handler.connection().stream(streamId);
-    handler.writeHeaders(s, (Http2Headers) headers.prepare().unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    handler.writeHeaders(s, headers.prepare(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
   @Override

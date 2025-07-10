@@ -19,7 +19,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
@@ -84,7 +84,7 @@ public class Http2ClientStream extends Http2StreamBase {
     this.trace = trace;
   }
 
-  void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
+  void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, Promise<Void> promise) {
     priority(priority);
     write(new HeadersWrite(request, buf, end, promise));
   }

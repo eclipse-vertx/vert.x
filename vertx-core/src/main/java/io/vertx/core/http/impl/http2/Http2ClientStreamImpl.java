@@ -21,7 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
@@ -48,7 +48,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   private Handler<Buffer> chunkHandler;
   private Handler<MultiMap> trailerHandler;
   private Handler<Void> endHandler;
-  private Handler<StreamPriority> priorityHandler;
+  private Handler<StreamPriorityBase> priorityHandler;
   private Handler<Void> drainHandler;
   private Handler<Void> continueHandler;
   private Handler<MultiMap> earlyHintsHandler;
@@ -178,7 +178,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
+  public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
     priorityHandler = handler;
     return this;
   }
@@ -196,12 +196,12 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public StreamPriority priority() {
+  public StreamPriorityBase priority() {
     return stream.priority();
   }
 
   @Override
-  public HttpClientStream updatePriority(StreamPriority streamPriority) {
+  public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
     stream.updatePriority(streamPriority);
     return this;
   }
@@ -213,7 +213,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
 
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
     stream = new Http2ClientStream(conn, context, tracingPolicy, decompressionSupported, clientMetrics);
     stream.handler(this);
@@ -361,8 +361,8 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
   }
 
   @Override
-  public void handlePriorityChange(StreamPriority streamPriority) {
-    Handler<StreamPriority> handler = priorityHandler;
+  public void handlePriorityChange(StreamPriorityBase streamPriority) {
+    Handler<StreamPriorityBase> handler = priorityHandler;
     if (handler != null) {
       context.dispatch(streamPriority, handler);
     }

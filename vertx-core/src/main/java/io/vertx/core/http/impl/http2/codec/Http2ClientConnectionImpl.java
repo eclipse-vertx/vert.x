@@ -204,7 +204,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     return 0L;
   }
 
-  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
     Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     Http2Stream s = handler.connection().stream(streamId);
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);

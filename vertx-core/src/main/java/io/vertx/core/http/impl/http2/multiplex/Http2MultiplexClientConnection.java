@@ -22,7 +22,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpSettings;
+import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
@@ -196,12 +198,12 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) headers.prepare().unwrap(), end), promise);
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriorityBase priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame(headers.prepare().getHeaders(), end), promise);
   }
 
   @Override
-  public void writePriorityFrame(int streamId, StreamPriority priority) {
+  public void writePriorityFrame(int streamId, StreamPriorityBase priority) {
     throw new UnsupportedOperationException();
   }
 
@@ -232,5 +234,26 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
       completion = null;
       promise.fail(ConnectionBase.CLOSED_EXCEPTION);
     }
+  }
+
+  //TODO: checkit: remove the following.
+  @Override
+  public HttpSettings httpSettings() {
+    return settings();
+  }
+
+  @Override
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings((Http2Settings) settings);
+  }
+
+  @Override
+  public HttpSettings remoteHttpSettings() {
+    return remoteSettings();
+  }
+
+  @Override
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    return remoteSettingsHandler(handler::handle);
   }
 }

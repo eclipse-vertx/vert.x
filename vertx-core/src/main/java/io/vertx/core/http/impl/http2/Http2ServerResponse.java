@@ -810,7 +810,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
-    public void handlePriorityChange(StreamPriority streamPriority) {
+    public void handlePriorityChange(StreamPriorityBase streamPriority) {
       throw new UnsupportedOperationException();
     }
 
