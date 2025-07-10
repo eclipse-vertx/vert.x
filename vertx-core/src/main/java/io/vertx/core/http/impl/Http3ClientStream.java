@@ -5,8 +5,10 @@ import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.impl.headers.Http3HeadersAdaptor;
@@ -150,5 +152,45 @@ class Http3ClientStream extends HttpStreamImpl<Http3ClientConnection, QuicStream
   public void determineIfTrailersReceived(VertxHttpHeaders headers) {
     trailersReceived = headerReceivedCount > 0 && headers.method() == null && headers.status() == null;
     headerReceivedCount++;
+  }
+
+  @Override
+  public ContextInternal context() {
+    return null;
+  }
+
+  @Override
+  public Future<Void> write(ByteBuf buf, boolean end) {
+    return null;
+  }
+
+  @Override
+  public HttpClientStream endHandler(Handler<Void> handler) {
+    return null;
+  }
+
+  @Override
+  public HttpClientStream handler(Handler<Buffer> handler) {
+    return null;
+  }
+
+  @Override
+  public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
+    return null;
+  }
+
+  @Override
+  public HttpClientStream resume() {
+    return null;
+  }
+
+  @Override
+  public HttpClientStream pause() {
+    return null;
+  }
+
+  @Override
+  public HttpClientStream fetch(long amount) {
+    return null;
   }
 }

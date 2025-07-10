@@ -12,6 +12,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriorityBase;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -43,28 +44,32 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public void closeHandler(Handler<Void> handler) {
+  public HttpClientStream closeHandler(Handler<Void> handler) {
     closeHandler = handler;
+    return this;
   }
 
   @Override
-  public void continueHandler(Handler<Void> handler) {
+  public HttpClientStream continueHandler(Handler<Void> handler) {
     continueHandler = handler;
+    return this;
   }
 
   @Override
-  public void earlyHintsHandler(Handler<MultiMap> handler) {
+  public HttpClientStream earlyHintsHandler(Handler<MultiMap> handler) {
     earlyHintsHandler = handler;
+    return this;
   }
 
   @Override
-  public void unknownFrameHandler(Handler<HttpFrame> handler) {
+  public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
     unknownFrameHandler = handler;
+    return this;
   }
 
   @Override
-  public void pushHandler(Handler<HttpClientPush> handler) {
-    pushHandler = handler;
+  public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
+    throw new RuntimeException("not implemented");
   }
 
   @Override
@@ -80,7 +85,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+  public HttpClientStream setWriteQueueMaxSize(int maxSize) {
     return this;
   }
 
@@ -95,34 +100,36 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   }
 
   @Override
-  public void headHandler(Handler<HttpResponseHead> handler) {
+  public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
     headHandler = handler;
+    return this;
   }
 
-  @Override
-  public void chunkHandler(Handler<Buffer> handler) {
-    chunkHandler = handler;
-  }
+//  @Override
+//  public void chunkHandler(Handler<Buffer> handler) {
+//    chunkHandler = handler;
+//  }
 
   @Override
-  public void priorityHandler(Handler<StreamPriorityBase> handler) {
+  public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
     priorityHandler = handler;
+    return this;
   }
 
-  @Override
-  public void endHandler(Handler<MultiMap> handler) {
-    endHandler = handler;
-  }
+//  @Override
+//  public void endHandler(Handler<MultiMap> handler) {
+//    endHandler = handler;
+//  }
 
   @Override
   public StreamPriorityBase priority() {
     return super.priority();
   }
 
-  @Override
-  public void updatePriority(StreamPriorityBase streamPriority) {
-    super.updatePriority(streamPriority);
-  }
+//  @Override
+//  public void updatePriority(StreamPriorityBase streamPriority) {
+//    super.updatePriority(streamPriority);
+//  }
 
 
   @Override
@@ -206,7 +213,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
 
   private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriorityBase priority, boolean connect, Promise<Void> promise) {
     VertxHttpHeaders headers = createHttpHeadersWrapper();
-    headers.method(request.method.name());
+    headers.method(request.method);
     boolean e;
     if (request.method == HttpMethod.CONNECT) {
       if (request.authority == null) {
@@ -255,7 +262,7 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     } else {
       id += 2;
     }
-    head.id = id;
+//    head.id = id;
     head.remoteAddress = conn.remoteAddress();
     createStreamChannelInternal(id, false).onSuccess(streamChannel -> {
       init(streamChannel);
@@ -279,21 +286,21 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
     }).onFailure(this::handleException);
   }
 
-  @Override
-  public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
-    Promise<Void> promise = context.promise();
-    writeData(buf, end, promise);
-    return promise.future();
-  }
+//  @Override
+//  public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
+//    Promise<Void> promise = context.promise();
+//    writeData(buf, end, promise);
+//    return promise.future();
+//  }
 
-  @Override
-  public ContextInternal getContext() {
-    return context;
-  }
-
-  @Override
-  public void doSetWriteQueueMaxSize(int size) {
-  }
+//  @Override
+//  public ContextInternal getContext() {
+//    return context;
+//  }
+//
+//  @Override
+//  public void doSetWriteQueueMaxSize(int size) {
+//  }
 
   @Override
   public Future<Void> reset(Throwable cause) {
@@ -317,5 +324,11 @@ abstract class HttpStreamImpl<C extends ConnectionBase, S> extends HttpStream<C,
   @Override
   protected Throwable getResetException() {
     return reset;
+  }
+
+  @Override
+  public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+    updatePriority_(streamPriority);
+    return this;
   }
 }

@@ -60,7 +60,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private Handler<Void> evictionHandler;
   private Handler<Object> invalidMessageHandler;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<HttpSettings> remoteHttpSettingsHandler;
+  private Handler<Http2Settings> remoteSettingsHandler;
 
   Http2UpgradeClientConnection(Http1xClientConnection connection, Http2ChannelUpgrade upgrade) {
     this.current = connection;
@@ -277,11 +277,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       delegate.drainHandler(handler);
       return this;
     }
-
-    @Override
-    public StreamPriorityBase createDefaultStreamPriority() {
-      return HttpUtils.DEFAULT_STREAM_PRIORITY;
-    }
   }
 
   /**
@@ -359,7 +354,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailersHandler;
     private Handler<Void> endHandler;
-    private Handler<StreamPriority> priorityHandler;
+    private Handler<StreamPriorityBase> priorityHandler;
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
@@ -388,7 +383,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                           boolean chunked,
                           ByteBuf buf,
                           boolean end,
-                          StreamPriority priority,
+                          StreamPriorityBase priority,
                           boolean connect) {
       UpgradeResult blah = new UpgradeResult() {
         @Override
@@ -699,11 +694,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       }
       return this;
     }
-
-    @Override
-    public StreamPriorityBase createDefaultStreamPriority() {
-      return HttpUtils.DEFAULT_STREAM_PRIORITY;
-    }
   }
 
   @Override
@@ -725,11 +715,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
     if (current instanceof Http1xClientConnection) {
-      remoteHttpSettingsHandler = handler;
+      remoteSettingsHandler = handler;
     } else {
-      current.remoteHttpSettingsHandler(handler);
+      current.remoteSettingsHandler(handler);
     }
     return this;
   }
@@ -820,18 +810,18 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public Http2Settings httpSettings() {
-    return (Http2Settings) current.httpSettings();
+  public Future<Void> updateSettings(Http2Settings settings) {
+    return current.updateSettings(settings);
   }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settings) {
-    return current.updateHttpSettings(settings);
+  public Http2Settings settings() {
+    return current.settings();
   }
 
   @Override
-  public HttpSettings remoteHttpSettings() {
-    return current.remoteHttpSettings();
+  public Http2Settings remoteSettings() {
+    return current.remoteSettings();
   }
 
   @Override
@@ -927,5 +917,26 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                  Channel channel,
                  boolean pooled,
                  UpgradeResult result);
+  }
+
+  //TODO: checkit: remove the following.
+  @Override
+  public HttpSettings httpSettings() {
+    return settings();
+  }
+
+  @Override
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings((Http2Settings) settings);
+  }
+
+  @Override
+  public HttpSettings remoteHttpSettings() {
+    return remoteSettings();
+  }
+
+  @Override
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    return remoteSettingsHandler(handler::handle);
   }
 }

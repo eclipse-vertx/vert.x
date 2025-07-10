@@ -32,6 +32,8 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -630,7 +632,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public HttpServerResponse setStreamPriority(StreamPriorityBase priority) {
-    stream.updatePriority(priority);
+//    stream.updatePriority(priority);
     return this;
   }
 
@@ -680,5 +682,20 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
       checkHeadWritten();
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
+  }
+
+  @Override
+  public Future<Void> writeHead() {
+    return null;
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    return null;
+  }
+
+  @Override
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    return null;
   }
 }

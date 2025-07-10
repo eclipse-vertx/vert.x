@@ -66,16 +66,16 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
     this.trafficShaped = trafficShaped;
   }
 
-  @Override
-  public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
-    requestHandler = handler;
-    return this;
-  }
-
-  @Override
-  public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
-    return this;
-  }
+//  @Override
+//  public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
+//    requestHandler = handler;
+//    return this;
+//  }
+//
+//  @Override
+//  public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
+//    return this;
+//  }
 
   public HttpServerMetrics metrics() {
     return metrics;
@@ -195,13 +195,11 @@ public class Http3ServerConnection extends Http3ConnectionBase implements HttpSe
                                        Promise<HttpServerResponse> promise) {
     boolean ssl = isSsl();
     VertxHttpHeaders headers_ = new Http3HeadersAdaptor();
-    headers_.method(method.name());
+    headers_.method(method);
     headers_.path(path);
     headers_.scheme(ssl ? "https" : "http");
     if (authority != null) {
-      String s = (ssl && authority.port() == 443) || (!ssl && authority.port() == 80) || authority.port() <= 0 ?
-        authority.host() : authority.host() + ':' + authority.port();
-      headers_.authority(s);
+      headers_.authority(authority);
     }
     if (headers != null) {
       headers.forEach(header -> headers_.add(header.getKey(), header.getValue()));

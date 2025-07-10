@@ -75,7 +75,7 @@ public interface HttpClientStream extends WriteStream<Buffer>, ReadStream<Buffer
   HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream handler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);
-  HttpClientStream priorityHandler(Handler<StreamPriority> handler);
+  HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler);
   HttpClientStream closeHandler(Handler<Void> handler);
   HttpClientStream drainHandler(Handler<Void> handler);
 
@@ -89,5 +89,8 @@ public interface HttpClientStream extends WriteStream<Buffer>, ReadStream<Buffer
 
   StreamPriorityBase priority();
   HttpClientStream updatePriority(StreamPriorityBase streamPriority);
-  StreamPriorityBase createDefaultStreamPriority();
+  default StreamPriorityBase createDefaultStreamPriority(){
+    return null;
+  }
+
 }

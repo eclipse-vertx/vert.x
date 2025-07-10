@@ -79,7 +79,7 @@ abstract class HttpStream<C extends ConnectionBase, S> extends VertxHttpStreamBa
 
   @Override
   void doWriteHeaders(VertxHttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
-    isConnect = "CONNECT".contentEquals(headers.method());
+    isConnect = "CONNECT".contentEquals(headers.method().name());
     super.doWriteHeaders(headers, end, checkFlush, promise);
   }
 
