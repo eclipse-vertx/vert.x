@@ -40,6 +40,8 @@ public class HTTP3ClientExamples {
       setTrustAll(true).
       setProtocolVersion(HttpVersion.HTTP_3);
 
+    options.setHttp3(true);
+
     options
       .getSslOptions()
       .setSslHandshakeTimeout(1)
