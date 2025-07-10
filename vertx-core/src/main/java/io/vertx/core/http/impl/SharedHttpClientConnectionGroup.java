@@ -33,19 +33,19 @@ import java.util.function.BiFunction;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class SharedHttpClientConnectionGroup extends ManagedResource implements PoolConnector<HttpClientConnectionInternal> {
+class SharedHttpClientConnectionGroup extends ManagedResource implements PoolConnector<HttpClientConnection> {
 
   /**
    * LIFO pool selector.
    */
-  private static final BiFunction<PoolWaiter<HttpClientConnectionInternal>, List<PoolConnection<HttpClientConnectionInternal>>, PoolConnection<HttpClientConnectionInternal>> LIFO_SELECTOR = (waiter, connections) -> {
+  private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LIFO_SELECTOR = (waiter, connections) -> {
     int size = connections.size();
-    PoolConnection<HttpClientConnectionInternal> selected = null;
+    PoolConnection<HttpClientConnection> selected = null;
     long last = 0L;
     for (int i = 0; i < size; i++) {
-      PoolConnection<HttpClientConnectionInternal> pooled = connections.get(i);
+      PoolConnection<HttpClientConnection> pooled = connections.get(i);
       if (pooled.available() > 0) {
-        HttpClientConnectionInternal conn = pooled.get();
+        HttpClientConnection conn = pooled.get();
         if (selected == null) {
           selected = pooled;
         } else {
@@ -63,7 +63,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   private final HttpClientImpl client;
   private final ClientMetrics clientMetrics;
   private final HttpChannelConnector connector;
-  private final ConnectionPool<HttpClientConnectionInternal> pool;
+  private final ConnectionPool<HttpClientConnection> pool;
 
   public SharedHttpClientConnectionGroup(VertxInternal vertx,
                                          HttpClientImpl client,
@@ -73,7 +73,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
                                          int http1MaxSize,
                                          int http2MaxSize,
                                          HttpChannelConnector connector) {
-    ConnectionPool<HttpClientConnectionInternal> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
+    ConnectionPool<HttpClientConnection> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
 
     this.vertx = vertx;
@@ -85,7 +85,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   }
 
   @Override
-  public Future<ConnectResult<HttpClientConnectionInternal>> connect(ContextInternal context, Listener listener) {
+  public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
     return connector
       .httpConnect(context)
       .map(connection -> {
@@ -111,7 +111,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   }
 
   @Override
-  public boolean isValid(HttpClientConnectionInternal connection) {
+  public boolean isValid(HttpClientConnection connection) {
     return connection.isValid();
   }
 
@@ -124,15 +124,15 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
       });
   }
 
-  private class Request implements PoolWaiter.Listener<HttpClientConnectionInternal>, Completable<Lease<HttpClientConnectionInternal>> {
+  private class Request implements PoolWaiter.Listener<HttpClientConnection>, Completable<Lease<HttpClientConnection>> {
 
     private final ContextInternal context;
     private final HttpVersion protocol;
     private final long timeout;
-    private final Promise<Lease<HttpClientConnectionInternal>> promise;
+    private final Promise<Lease<HttpClientConnection>> promise;
     private long timerID;
 
-    Request(ContextInternal context, HttpVersion protocol, long timeout, Promise<Lease<HttpClientConnectionInternal>> promise) {
+    Request(ContextInternal context, HttpVersion protocol, long timeout, Promise<Lease<HttpClientConnection>> promise) {
       this.context = context;
       this.protocol = protocol;
       this.timeout = timeout;
@@ -141,12 +141,12 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
 
     @Override
-    public void onEnqueue(PoolWaiter<HttpClientConnectionInternal> waiter) {
+    public void onEnqueue(PoolWaiter<HttpClientConnection> waiter) {
       onConnect(waiter);
     }
 
     @Override
-    public void onConnect(PoolWaiter<HttpClientConnectionInternal> waiter) {
+    public void onConnect(PoolWaiter<HttpClientConnection> waiter) {
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
           pool.cancel(waiter, (res, err) -> {
@@ -158,7 +158,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
 
     @Override
-    public void complete(Lease<HttpClientConnectionInternal> result, Throwable failure) {
+    public void complete(Lease<HttpClientConnection> result, Throwable failure) {
       if (timerID >= 0) {
         context.owner().cancelTimer(timerID);
       }
@@ -170,8 +170,8 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
   }
 
-  public Future<Lease<HttpClientConnectionInternal>> requestConnection(ContextInternal ctx, long timeout) {
-    Future<Lease<HttpClientConnectionInternal>> fut = requestConnection2(ctx, timeout);
+  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, long timeout) {
+    Future<Lease<HttpClientConnection>> fut = requestConnection2(ctx, timeout);
     if (poolMetrics != null) {
       Object metric = poolMetrics.enqueue();
       fut = fut.andThen(ar -> {
@@ -181,8 +181,8 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     return fut;
   }
 
-  private Future<Lease<HttpClientConnectionInternal>> requestConnection2(ContextInternal ctx, long timeout) {
-    PromiseInternal<Lease<HttpClientConnectionInternal>> promise = ctx.promise();
+  private Future<Lease<HttpClientConnection>> requestConnection2(ContextInternal ctx, long timeout) {
+    PromiseInternal<Lease<HttpClientConnection>> promise = ctx.promise();
     // ctx.workerPool() -> not sure we want that in a pool
     ContextInternal connCtx = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     Request request = new Request(connCtx, client.options().getProtocolVersion(), timeout, promise);

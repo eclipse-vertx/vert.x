@@ -15,12 +15,14 @@ import io.vertx.core.http.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpTestBase;
-import io.vertx.tests.http.HttpOptionsFactory;
+import io.vertx.tests.http.Http2TestBase;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,14 +32,16 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   @Parameterized.Parameters
   public static Collection<Object[]> params() {
     ArrayList<Object[]> params = new ArrayList<>();
-    // h2
-    params.add(new Object[] { HttpOptionsFactory.createHttp2ClientOptions(), HttpOptionsFactory.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP });
-    // h2 + worker
-    params.add(new Object[] { HttpOptionsFactory.createHttp2ClientOptions(), HttpOptionsFactory.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.WORKER });
-    // h2c with upgrade
-    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP  });
-    // h2c direct
-    params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST), ThreadingModel.EVENT_LOOP  });
+    Arrays.asList(false, true).forEach(multiplex -> {
+      // h2
+      params.add(new Object[] { Http2TestBase.createHttp2ClientOptions().setHttp2MultiplexImplementation(multiplex), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST).setHttp2MultiplexImplementation(multiplex), ThreadingModel.EVENT_LOOP });
+      // h2 + worker
+      params.add(new Object[] { Http2TestBase.createHttp2ClientOptions().setHttp2MultiplexImplementation(multiplex), Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST).setHttp2MultiplexImplementation(multiplex), ThreadingModel.WORKER });
+      // h2c with upgrade
+      params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true).setHttp2MultiplexImplementation(multiplex), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setHttp2MultiplexImplementation(multiplex), ThreadingModel.EVENT_LOOP  });
+      // h2c direct-
+      params.add(new Object[] { new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false).setHttp2MultiplexImplementation(multiplex), new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setHttp2MultiplexImplementation(multiplex), ThreadingModel.EVENT_LOOP  });
+    });
     return params;
   }
 
@@ -63,6 +67,7 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
 
   @Test
   public void testPushPromise() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation() || clientOptions.getHttp2MultiplexImplementation());
     waitFor(2);
     int numBuffers = 10;
     int contentLength = numBuffers * 1000;

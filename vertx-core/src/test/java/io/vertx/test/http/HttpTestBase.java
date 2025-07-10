@@ -15,7 +15,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
@@ -24,7 +23,13 @@ import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -162,5 +167,18 @@ public class HttpTestBase extends VertxTestBase {
     }
     proxy.username(username);
     proxy.start(vertx);
+  }
+
+  protected File setupFile(String fileName, String content) throws Exception {
+    Path dir = Files.createTempDirectory("vertx");
+    File file = new File(dir.toFile(), fileName);
+    if (file.exists()) {
+      file.delete();
+    }
+    file.deleteOnExit();
+    try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
+      out.write(content);
+    }
+    return file;
   }
 }

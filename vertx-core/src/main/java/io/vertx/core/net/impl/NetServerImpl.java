@@ -277,15 +277,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (options.getLogActivity()) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
-    if (ssl || !options.isFileRegionEnabled() || !vertx.transport().supportFileRegion() || (options.getTrafficShapingOptions() != null && options.getTrafficShapingOptions().getOutboundGlobalBandwidth() > 0)) {
-      // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported or when outbound traffic shaping is enabled
-      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-    }
     int idleTimeout = options.getIdleTimeout();
     int readIdleTimeout = options.getReadIdleTimeout();
     int writeIdleTimeout = options.getWriteIdleTimeout();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+    }
+    if (ssl || !options.isFileRegionEnabled() || !vertx.transport().supportFileRegion() || (options.getTrafficShapingOptions() != null && options.getTrafficShapingOptions().getOutboundGlobalBandwidth() > 0)) {
+      // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported or when outbound traffic shaping is enabled
+      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
   }
 

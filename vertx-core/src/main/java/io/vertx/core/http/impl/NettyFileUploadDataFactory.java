@@ -25,13 +25,13 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
+public class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   private final ContextInternal context;
   private final HttpServerRequest request;
   private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  public NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
     this.request = request;

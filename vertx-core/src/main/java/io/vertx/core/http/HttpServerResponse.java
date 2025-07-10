@@ -20,6 +20,8 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Set;
 
 /**
@@ -37,7 +39,9 @@ import java.util.Set;
  * outgoing HTTP connection, bypassing user space altogether (where supported by
  * the underlying operating system). This is a very efficient way of
  * serving files from the server since buffers do not have to be read one by one
- * from the file and written to the outgoing socket.
+ * from the file and written to the outgoing socket. If the developer wants to use directly a
+ * {@link java.nio.channels.FileChannel} and manage its lifecycle use {@link #sendFile(FileChannel)}.
+ * This is not yet supported in HTTP/2 for {@link io.vertx.core.http.impl.Http2ServerResponse}.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
@@ -207,6 +211,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse endHandler(@Nullable Handler<Void> handler);
 
   /**
+   * Send the response headers.
+   *
+   * @return a future notified by the success or failure of the write
+   */
+  Future<Void> writeHead();
+
+  /**
    * Write a {@link String} to the response body, encoded using the encoding {@code enc}.
    *
    * @param chunk  the string to write
@@ -358,6 +369,90 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> sendFile(String filename, long offset, long length);
 
   /**
+   * Same as {@link #sendFile(FileChannel, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * file.
+   *
+   * @param channel the file channel to the file to serve
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(FileChannel channel) {
+    return sendFile(channel, 0);
+  }
+
+  /**
+   * Same as {@link #sendFile(FileChannel, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * file.
+   *
+   * @param channel the file channel to the file to serve
+   * @param offset offset to start serving from
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(FileChannel channel, long offset) {
+    return sendFile(channel, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Ask the OS to stream a file as specified by {@code channel} directly
+   * from disk to the outgoing connection, bypassing userspace altogether
+   * (where supported by the underlying operating system). Contrary to {@link HttpServerResponse#sendFile(String, long, long)},
+   * the caller is responsible to close {@code channel} when no more needed.
+   * This is a very efficient way to serve files.<p>
+   * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   * The developer is responsible to set the adequate Content-Type with {@link #putHeader(String, String)}. If not
+   * application/octet-stream will be set as default Content-Type.
+   *
+   * @param channel the file channel to the file to serve
+   * @param offset offset to start serving from
+   * @param length the number of bytes to send
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  Future<Void> sendFile(FileChannel channel, long offset, long length);
+
+  /**
+   * Same as {@link #sendFile(FileChannel)} with {@link RandomAccessFile}
+   *
+   * @param file the file to serve
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(RandomAccessFile file) {
+    return sendFile(file, 0);
+  }
+
+  /**
+   *
+   * Same as {@link #sendFile(FileChannel, long)} with {@link RandomAccessFile}
+   *
+   * @param file the file to serve
+   * @param offset offset to start serving from
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(RandomAccessFile file, long offset) {
+    return sendFile(file, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Same as {@link #sendFile(FileChannel, long, long)} with {@link RandomAccessFile}
+   *
+   * @param file the file to serve
+   * @param offset offset to start serving from
+   * @param length the number of bytes to send
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  Future<Void> sendFile(RandomAccessFile file, long offset, long length);
+
+  /**
    * @return has the response already ended?
    */
   boolean ended();
@@ -496,7 +591,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   default HttpServerResponse setStreamPriority(StreamPriorityBase streamPriority) {
-      return this;
+    return this;
   }
 
   /**

@@ -37,6 +37,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -52,7 +53,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.streams.WriteStream;
 
 import java.net.URI;
 import java.util.*;
@@ -65,7 +65,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xClientConnection extends Http1xConnection implements HttpClientConnectionInternal {
+public class Http1xClientConnection extends Http1xConnection implements HttpClientConnection {
 
   private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
@@ -125,19 +125,19 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   @Override
-  public HttpClientConnectionInternal evictionHandler(Handler<Void> handler) {
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientConnectionInternal invalidMessageHandler(Handler<Object> handler) {
+  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
     invalidMessageHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientConnectionInternal concurrencyChangeHandler(Handler<Long> handler) {
+  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     // Never changes
     return this;
   }
@@ -175,7 +175,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     HttpMethod method,
     String uri,
     MultiMap headerMap,
-    String authority,
+    HostAndPort authority,
     boolean chunked,
     ByteBuf buf,
     boolean end) {
@@ -187,7 +187,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       }
     }
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, authority);
+      request.headers().set(HOST, authority.toString(ssl));
     } else {
       headers.remove(TRANSFER_ENCODING);
     }
@@ -206,17 +206,17 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
     if (end) {
       if (buf != null) {
-        request = new AssembledFullHttpRequest(request, buf);
+        request = new VertxFullHttpRequest(request, buf);
       } else {
-        request = new AssembledFullHttpRequest(request);
+        request = new VertxFullHttpRequest(request);
       }
     } else if (buf != null) {
-      request = new AssembledHttpRequest(request, buf);
+      request = new VertxAssembledHttpRequest(request, buf);
     }
     return request;
   }
 
-  static CharSequence determineCompressionAcceptEncoding() {
+  public static CharSequence determineCompressionAcceptEncoding() {
     if (isBrotliAvailable() && isZstdAvailable()) {
       return DEFLATE_GZIP_ZSTD_BR_SNAPPY;
     }
@@ -240,7 +240,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return Zstd.isAvailable();
   }
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
-    request.id = stream.id;
     request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
@@ -424,7 +423,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private boolean closed;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
-    private Handler<MultiMap> endHandler;
+    private Handler<MultiMap> trailerHandler;
+    private Handler<Void> endHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
 
@@ -448,9 +448,13 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         @Override
         protected void handleMessage(Object item) {
           if (item instanceof MultiMap) {
-            Handler<MultiMap> handler = endHandler;
-            if (handler != null) {
-              context.dispatch((MultiMap) item, handler);
+            Handler<MultiMap> handler1 = trailerHandler;
+            if (handler1 != null) {
+              context.dispatch((MultiMap) item, handler1);
+            }
+            Handler<Void> handler2 = endHandler;
+            if (handler2 != null) {
+              context.dispatch(null, handler2);
             }
           } else {
             Buffer buffer = (Buffer) item;
@@ -464,13 +468,15 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void continueHandler(Handler<Void> handler) {
+    public HttpClientStream continueHandler(Handler<Void> handler) {
       continueHandler = handler;
+      return this;
     }
 
     @Override
-    public void earlyHintsHandler(Handler<MultiMap> handler) {
+    public HttpClientStream earlyHintsHandler(Handler<MultiMap> handler) {
       earlyHintsHandler = handler;
+      return this;
     }
 
     @Override
@@ -486,8 +492,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
-      return null;
+    public HttpClientStream setWriteQueueMaxSize(int maxSize) {
+      conn.doSetWriteQueueMaxSize(maxSize);
+      return this;
     }
 
     @Override
@@ -496,28 +503,33 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       this.headHandler = handler;
+      return this;
     }
 
     @Override
-    public void closeHandler(Handler<Void> handler) {
+    public HttpClientStream closeHandler(Handler<Void> handler) {
       closeHandler = handler;
+      return this;
     }
 
     @Override
-    public void priorityHandler(Handler<StreamPriorityBase> handler) {
+    public HttpClientStream priorityHandler(Handler<StreamPriorityBase> handler) {
       // No op
+      return this;
     }
 
     @Override
-    public void pushHandler(Handler<HttpClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
       // No op
+      return this;
     }
 
     @Override
-    public void unknownFrameHandler(Handler<HttpFrame> handler) {
+    public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
       // No op
+      return this;
     }
 
     @Override
@@ -541,12 +553,12 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientConnectionInternal connection() {
+    public HttpClientConnection connection() {
       return conn;
     }
 
     @Override
-    public ContextInternal getContext() {
+    public ContextInternal context() {
       return context;
     }
 
@@ -558,7 +570,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeBuffer(ByteBuf buff, boolean end) {
+    public Future<Void> write(ByteBuf buff, boolean end) {
       if (buff != null || end) {
         Promise<Void> listener = context.promise();
         conn.writeBuffer(this, buff, end, listener);
@@ -574,23 +586,21 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void doSetWriteQueueMaxSize(int size) {
-      conn.doSetWriteQueueMaxSize(size);
-    }
-
-    @Override
-    public boolean isNotWritable() {
-      return conn.writeQueueFull();
-    }
-
-    @Override
-    public void doPause() {
+    public HttpClientStream pause() {
       queue.pause();
+      return this;
     }
 
     @Override
-    public void doFetch(long amount) {
+    public HttpClientStream resume() {
+      queue.fetch(Long.MAX_VALUE);
+      return this;
+    }
+
+    @Override
+    public HttpClientStream fetch(long amount) {
       queue.fetch(amount);
+      return this;
     }
 
     @Override
@@ -624,7 +634,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void updatePriority(StreamPriorityBase streamPriority) {
+    public HttpClientStream updatePriority(StreamPriorityBase streamPriority) {
+      return this;
     }
 
     @Override
@@ -661,13 +672,21 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public void chunkHandler(Handler<Buffer> handler) {
+    public HttpClientStream handler(Handler<Buffer> handler) {
       chunkHandler = handler;
+      return this;
     }
 
     @Override
-    public void endHandler(Handler<MultiMap> handler) {
+    public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
+      trailerHandler = handler;
+      return this;
+    }
+
+    @Override
+    public HttpClientStream endHandler(Handler<Void> handler) {
       endHandler = handler;
+      return this;
     }
 
     void handleChunk(Buffer buff) {

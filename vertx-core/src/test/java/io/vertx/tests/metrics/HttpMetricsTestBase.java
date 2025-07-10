@@ -126,7 +126,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
             resp
               .write(chunk)
               .onComplete(onSuccess(v -> {
-                assertSame(serverMetric.get().response.get(), resp);
+                assertSame(serverMetric.get().response.get().headers(), resp.headers());
               }));
           }
         });
@@ -249,7 +249,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
           });
         }));
       req.setChunked(true);
-      req.sendHead();
+      req.writeHead();
     }));
     awaitLatch(requestBeginLatch);
     HttpClientMetric reqMetric = clientMetrics.getMetric(request.result());
@@ -280,29 +280,31 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
+    client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(1));
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    AtomicReference<HttpClientMetric> ref = new AtomicReference<>();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         HttpClientMetric metric = metrics.getMetric(resp.request());
         assertNotNull(metric);
+        ref.set(metric);
         assertFalse(metric.failed.get());
         req.connection().closeHandler(v1 -> {
           vertx.runOnContext(v2 -> {
             assertNull(metrics.getMetric(resp.request()));
-            assertTrue(metric.failed.get());
             testComplete();
           });
         });
       }));
     }));
+    assertWaitUntil(() -> ref.get() != null && ref.get().failed.get());
     await();
   }
 
   @Test
   public void testServerConnectionClosed() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(2));
+    server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(1));
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);

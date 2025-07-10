@@ -41,6 +41,7 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.util.UUID;
@@ -289,9 +290,14 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     }
     long actualLength = Math.min(length, file.length() - offset);
     long actualOffset = Math.min(offset, file.length());
-    ChannelFuture fut = sendFile(raf, actualOffset, actualLength);
+    ChannelFuture fut = sendFile(raf.getChannel(), actualOffset, actualLength);
     fut.addListener(promise);
-    return promise.future();
+    return promise.future().andThen(ar -> {
+      try {
+        raf.close();
+      } catch (IOException ignore) {
+      }
+    });
   }
 
   public NetSocketImpl exceptionHandler(Handler<Throwable> handler) {

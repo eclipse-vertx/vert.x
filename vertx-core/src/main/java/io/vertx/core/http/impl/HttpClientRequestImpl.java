@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
@@ -61,7 +62,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private String traceOperation;
 
   HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
-    super(connection, stream, stream.getContext().promise(), HttpMethod.GET, "/");
+    super(connection, stream, stream.context().promise(), HttpMethod.GET, "/");
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
@@ -80,7 +81,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headers != null) {
       headers().setAll(headers);
     }
-    HttpClientConnectionInternal conn = stream.connection();
+    HttpClientConnection conn = stream.connection();
     boolean useSSL = conn.isSsl();
     String requestURI = options.getURI();
     HttpMethod method = options.getMethod();
@@ -201,7 +202,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     checkEnded();
-    stream.doSetWriteQueueMaxSize(maxSize);
+    stream.setWriteQueueMaxSize(maxSize);
     return this;
   }
 
@@ -210,7 +211,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       checkEnded();
     }
-    return stream.isNotWritable();
+    return stream.writeQueueFull();
   }
 
   @Override
@@ -399,7 +400,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       handler = continueHandler;
     }
     if (handler != null) {
-      handler.handle(null);
+      context.dispatch(null, handler);
     }
   }
 
@@ -418,7 +419,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (followRedirects && numberOfRedirections < maxRedirects && statusCode >= 300 && statusCode < 400) {
       Function<HttpClientResponse, Future<HttpClientRequest>> handler = redirectHandler;
       if (handler != null) {
-        Future<HttpClientRequest> next = handler.apply(resp);
+        ContextInternal prev = context.beginDispatch();
+        Future<HttpClientRequest> next;
+        try {
+          next = handler.apply(resp);
+        } finally {
+          context.endDispatch(prev);
+        }
         if (next != null) {
           resp
             .end()
@@ -495,6 +502,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     boolean writeHead;
     boolean writeEnd;
     synchronized (this) {
+      if (reset != null) {
+        return context.failedFuture(reset);
+      }
       if (ended) {
         return context.failedFuture(new IllegalStateException("Request already complete"));
       }
@@ -523,7 +533,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      future = stream.writeBuffer(buff, writeEnd);
+      future = stream.write(buff, writeEnd);
     }
     if (end) {
       tryComplete();

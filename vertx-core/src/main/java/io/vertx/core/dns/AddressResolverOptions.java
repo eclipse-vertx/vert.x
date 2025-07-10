@@ -76,7 +76,7 @@ public class AddressResolverOptions {
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
 
   /**
-   * The default value for the hosts refresh value in millis = 0 (disabled)
+   * The default value for the hosts refresh value in nanos = 0 (disabled)
    */
   public static final int DEFAULT_HOSTS_REFRESH_PERIOD = 0;
 
@@ -208,14 +208,14 @@ public class AddressResolverOptions {
   }
 
   /**
-   * @return the hosts configuration refresh period in millis
+   * @return the hosts configuration refresh period in nanos
    */
   public int getHostsRefreshPeriod() {
     return hostsRefreshPeriod;
   }
 
   /**
-   * Set the hosts configuration refresh period in millis, {@code 0} disables it.
+   * Set the hosts configuration refresh period in nanos, {@code 0} disables it.
    * <p/>
    * The resolver caches the hosts configuration {@link #hostsPath file} after it has read it. When
    * the content of this file can change, setting a positive refresh period will load the configuration

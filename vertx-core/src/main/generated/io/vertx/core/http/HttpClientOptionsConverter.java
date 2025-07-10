@@ -34,6 +34,11 @@ public class HttpClientOptionsConverter {
             obj.setHttp2UpgradeMaxContentLength(((Number)member.getValue()).intValue());
           }
           break;
+        case "http2MultiplexImplementation":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHttp2MultiplexImplementation((Boolean)member.getValue());
+          }
+          break;
         case "keepAlive":
           if (member.getValue() instanceof Boolean) {
             obj.setKeepAlive((Boolean)member.getValue());
@@ -167,6 +172,7 @@ public class HttpClientOptionsConverter {
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
     json.put("http2UpgradeMaxContentLength", obj.getHttp2UpgradeMaxContentLength());
+    json.put("http2MultiplexImplementation", obj.getHttp2MultiplexImplementation());
     json.put("keepAlive", obj.isKeepAlive());
     json.put("keepAliveTimeout", obj.getKeepAliveTimeout());
     json.put("pipelining", obj.isPipelining());

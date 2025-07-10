@@ -21,10 +21,11 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.http2.codec.Http1xUpgradeToH2CHandler;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.json.JsonArray;
@@ -42,7 +43,6 @@ import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1977,7 +1977,7 @@ public class Http1xTest extends HttpTest {
               assertSameEventLoop(clientCtx, Vertx.currentContext());
               complete();
             }));
-          req.sendHead();
+          req.writeHead();
         }));
     });
     await();
@@ -2103,7 +2103,7 @@ public class Http1xTest extends HttpTest {
               assertSameEventLoop(requestCtx, Vertx.currentContext());
               req.end();
             });
-            req.sendHead().onComplete(version -> {
+            req.writeHead().onComplete(version -> {
               assertSameEventLoop(requestCtx, Vertx.currentContext());
               fill(data, req, cf::complete);
             });
@@ -2822,7 +2822,7 @@ public class Http1xTest extends HttpTest {
       // Send head to the server and trigger the request handler
       req
         .setChunked(true)
-        .sendHead();
+        .writeHead();
     }));
 
     client.request(new RequestOptions(requestOptions).setURI("/2"))
@@ -2892,7 +2892,7 @@ public class Http1xTest extends HttpTest {
       })
       .build();
     client.request(requestOptions)
-      .onComplete(onSuccess(HttpClientRequest::sendHead));
+      .onComplete(onSuccess(HttpClientRequest::writeHead));
     await();
   }
 
@@ -2916,7 +2916,7 @@ public class Http1xTest extends HttpTest {
         client.request(requestOptions)
           .onComplete(onSuccess(req -> {
             req.putHeader("the_header", TestUtils.randomAlphaString(10000));
-            req.sendHead();
+            req.writeHead();
           }));
       });
     await();
@@ -2937,7 +2937,7 @@ public class Http1xTest extends HttpTest {
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .putHeader("the_header", TestUtils.randomAlphaString(10000))
-        .sendHead();
+        .writeHead();
     }));
     await();
   }
@@ -3113,7 +3113,7 @@ public class Http1xTest extends HttpTest {
           client.request(requestOptions).onSuccess(req2 -> {
             req2
               .response().onComplete(onFailure(err -> complete()));
-            req2.sendHead().onComplete(onSuccess(v -> {
+            req2.writeHead().onComplete(onSuccess(v -> {
               assertTrue(req2.reset().succeeded());
             }));
           });
@@ -3179,7 +3179,7 @@ public class Http1xTest extends HttpTest {
           .setMethod(HttpMethod.POST)
         ).onComplete(onSuccess(req2 -> {
           req2.response().onComplete(onFailure(resp -> complete()));
-          req2.sendHead();
+          req2.writeHead();
           doReset.thenAccept(v2 -> {
             assertTrue(req2.reset().succeeded());
           });
@@ -3268,11 +3268,11 @@ public class Http1xTest extends HttpTest {
                   complete();
                 }));
             });
-            req1.sendHead().onComplete(v -> {
+            req1.writeHead().onComplete(v -> {
               assertTrue(req1.reset().succeeded());
             });
           } else {
-            req1.sendHead().onComplete(v -> {
+            req1.writeHead().onComplete(v -> {
               assertTrue(req1.reset().succeeded());
             });
             client.request(new RequestOptions(requestOptions).setURI("/somepath"))
@@ -3808,29 +3808,6 @@ public class Http1xTest extends HttpTest {
           }));
       }
     }
-    await();
-  }
-
-  @Test
-  public void testSendFileFailsWhenClientClosesConnection() throws Exception {
-    // 10 megs
-    final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(10 * 1024 * 1024));
-    server.requestHandler(req -> {
-      try {
-        req.response().sendFile(f.getAbsolutePath()).onComplete(onFailure(err -> {
-          // Broken pipe
-          testComplete();
-        }));
-      } catch (Exception e) {
-        // this was the bug reported with issues/issue-80
-        fail(e);
-      }
-    });
-    startServer(testAddress);
-    vertx.createNetClient().connect(testAddress).onComplete(onSuccess(socket -> {
-      socket.write("GET / HTTP/1.1\r\n\r\n");
-      socket.close();
-    }));
     await();
   }
 
@@ -4489,7 +4466,7 @@ public class Http1xTest extends HttpTest {
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
         req.response().onComplete(onSuccess(resp -> complete()));
-        req.sendHead();
+        req.writeHead();
         client.request(requestOptions).compose(HttpClientRequest::send).onComplete(resp -> complete());
         client.request(requestOptions).compose(HttpClientRequest::send).onComplete(resp -> complete());
         // Need to wait a little so requests 2 and 3 are appended to the first request
@@ -4619,7 +4596,7 @@ public class Http1xTest extends HttpTest {
           testComplete();
         }
       });
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         connected.set(true);
         sender.send();
       }));
@@ -4895,82 +4872,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
-    // Does not pass reliably in CI (timeout)
-    Assume.assumeTrue(!vertx.isNativeTransportEnabled() && !Utils.isWindows());
-    int expected = 32 * 1024 * 1024;
-    File file = TestUtils.tmpFile(".dat", expected);
-    // Estimate the delay to transfer a file with a 1ms pause in chunks
-    int delay = retrieveFileFromServer(file, createBaseServerOptions());
-    // Now test with timeout relative to this delay
-    int timeout = delay / 2;
-    delay = retrieveFileFromServer(file, createBaseServerOptions().setIdleTimeout(timeout).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
-    assertTrue(delay > timeout);
-  }
-
-  private int retrieveFileFromServer(File file, HttpServerOptions options) throws Exception {
-    server.close().await();
-    server = vertx
-      .createHttpServer(options)
-      .requestHandler(
-        req -> {
-          req.response().sendFile(file.getAbsolutePath());
-        });
-    startServer(testAddress);
-    long now = System.currentTimeMillis();
-    Integer len = getFile().await();
-    assertEquals((int)len, file.length());
-    return (int) (System.currentTimeMillis() - now);
-  }
-
-  private Future<Integer> getFile() {
-    int[] length = {0};
-    return client.request(requestOptions)
-      .compose(req -> req.send()
-        .compose(resp -> {
-          resp.handler(buff -> {
-            length[0] += buff.length();
-            resp.pause();
-            vertx.setTimer(1, id -> {
-              resp.resume();
-            });
-          });
-          resp.exceptionHandler(this::fail);
-          return resp.end();
-        }))
-      .map(v -> length[0]);
-  }
-
-  @Test
-  public void testSendFilePipelined() throws Exception {
-    int n = 2;
-    waitFor(n);
-    File sent = TestUtils.tmpFile(".dat", 16 * 1024);
-    server.requestHandler(
-      req -> {
-        req.response().sendFile(sent.getAbsolutePath());
-      });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
-    for (int i = 0;i < n;i++) {
-      client.request(requestOptions)
-        .compose(req -> req.send().compose(HttpClientResponse::body))
-        .onComplete(onSuccess(body -> {
-          complete();
-        }));
-    }
-    await();
-  }
-
-  @Test
-  public void testSendFileWithConnectionCloseHeader() throws Exception {
-    String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
-    sendFile("test-send-file.html", content, false,
-      () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
-  }
-
-  @Test
   public void testResponseEndHandlersConnectionClose() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -5102,7 +5003,7 @@ public class Http1xTest extends HttpTest {
             });
           });
         }));
-      req.setChunked(true).sendHead();
+      req.setChunked(true).writeHead();
     }));
     await();
   }
@@ -5660,7 +5561,7 @@ public class Http1xTest extends HttpTest {
           case 0:
             assertTrue(ar.succeeded());
             HttpClientRequest req = ar.result();
-            req.sendHead();
+            req.writeHead();
             req.response().onComplete(onSuccess(resp -> {
               complete();
             }));
@@ -5688,7 +5589,7 @@ public class Http1xTest extends HttpTest {
     for (int i = 0;i < numRequests;i++) {
       Future<HttpClientRequest> fut = client.request(requestOptions);
       fut.onComplete(onSuccess(request -> {
-        request.setChunked(true).sendHead();
+        request.setChunked(true).writeHead();
         request.response().compose(HttpClientResponse::body).onComplete(onSuccess(v -> {
           vertx.setTimer(10, id -> request.end());
           complete();
@@ -5718,7 +5619,7 @@ public class Http1xTest extends HttpTest {
           case 0:
             assertTrue(ar.succeeded());
             HttpClientRequest req = ar.result();
-            req.sendHead();
+            req.writeHead();
             req.response().onComplete(onSuccess(resp -> {
               complete();
             }));
@@ -5866,7 +5767,7 @@ public class Http1xTest extends HttpTest {
 
     HttpClientAgent client = vertx.httpClientBuilder().withConnectHandler(conn -> {
       List<Object> invalidMessages = new ArrayList<>();
-      ((HttpClientConnectionInternal) conn).invalidMessageHandler(invalidMessages::add);
+      ((HttpClientConnection) conn).invalidMessageHandler(invalidMessages::add);
       conn.exceptionHandler(err -> {
       });
       conn.closeHandler(v -> {

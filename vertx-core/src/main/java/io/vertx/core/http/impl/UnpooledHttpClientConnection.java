@@ -36,14 +36,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class UnpooledHttpClientConnection implements HttpClientConnection {
+public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClientConnection {
 
-  private final HttpClientConnectionInternal actual;
+  private final HttpClientConnection actual;
   private final Deque<PromiseInternal<HttpClientStream>> pending;
   private long concurrency;
   private long inflight;
 
-  public UnpooledHttpClientConnection(HttpClientConnectionInternal actual) {
+  public UnpooledHttpClientConnection(HttpClientConnection actual) {
     this.actual = actual;
     this.concurrency = actual.concurrency();
     this.pending = new ArrayDeque<>();

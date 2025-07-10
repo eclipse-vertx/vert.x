@@ -54,6 +54,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.net.URLEncoder;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -132,17 +133,6 @@ public abstract class HttpTest extends HttpTestBase {
     }
     assertEquals(3, successes);
     assertEquals(1, failures);
-  }
-
-  @Rule
-  public TemporaryFolder testFolder = TemporaryFolder.builder().assureDeletion().build();
-
-  protected File testDir;
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    testDir = testFolder.newFolder();
   }
 
   @Test
@@ -1253,7 +1243,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateExceptionAsync(() -> req.end("foo"));
       assertIllegalStateExceptionAsync(() -> req.end(buff));
       assertIllegalStateExceptionAsync(() -> req.end("foo", "UTF-8"));
-      assertIllegalStateException(() -> req.sendHead());
+      assertIllegalStateException(() -> req.writeHead());
       assertIllegalStateException(() -> req.setChunked(false));
       assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
       assertIllegalStateExceptionAsync(() -> req.write(buff));
@@ -1644,7 +1634,7 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
         .onComplete(onSuccess(req -> {
           req.setChunked(true);
-          req.sendHead().onComplete(v -> {
+          req.writeHead().onComplete(v -> {
             req.connection().close();
           });
       }));
@@ -1868,7 +1858,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
       assertIllegalStateException(() -> resp.writeQueueFull());
       assertIllegalStateException(() -> resp.putHeader("foo", "bar"));
-      assertIllegalStateException(() -> resp.sendFile("webroot/somefile.html"));
+      assertIllegalStateException(() -> resp.sendFile("a/a.txt"));
       assertIllegalStateException(() -> resp.end());
       assertIllegalStateException(() -> resp.end("foo"));
       assertIllegalStateException(() -> resp.end(buff));
@@ -1877,7 +1867,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> resp.write("foo"));
       assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
       assertIllegalStateException(() -> resp.write(buff));
-      assertIllegalStateException(() -> resp.sendFile("webroot/somefile.html"));
+      assertIllegalStateException(() -> resp.sendFile("a/a.txt"));
       assertIllegalStateException(() -> resp.end());
       assertIllegalStateException(() -> resp.end("foo"));
       assertIllegalStateException(() -> resp.end(buff));
@@ -2067,256 +2057,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  @DetectFileDescriptorLeaks
-  public void testSendFile() throws Exception {
-    String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, false,
-      () -> client.request(requestOptions));
-  }
-
-  @Test
-  public void testSendFileUpperCaseSuffix() throws Exception {
-    String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.HTML", content, true,
-      () -> client.request(requestOptions));
-  }
-
-  @Test
-  public void testSendFileWithHandler() throws Exception {
-    String content = TestUtils.randomUnicodeString(10000);
-    sendFile("test-send-file.html", content, true,
-      () -> client.request(requestOptions));
-  }
-
-  protected void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
-    waitFor(2);
-    File fileToSend = setupFile(fileName, contentExpected);
-    server.requestHandler(req -> {
-      if (useHandler) {
-        req.response().sendFile(fileToSend.getAbsolutePath()).onComplete(onSuccess(v -> complete()));
-      } else {
-        req.response().sendFile(fileToSend.getAbsolutePath());
-        complete();
-      }
-    });
-    startServer(testAddress);
-    requestFact.get().compose(req -> req
-        .send()
-        .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals("text/html", resp.headers().get("Content-Type"));
-          assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
-          resp.exceptionHandler(this::fail);
-        }))
-        .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(buff -> {
-        assertEquals(contentExpected, buff.toString());
-        complete();
-      }));
-    await();
-  }
-
-  @Test
-  public void testSendNonExistingFile() throws Exception {
-    server.requestHandler(req -> {
-      final Context ctx = vertx.getOrCreateContext();
-      req.response().sendFile("/not/existing/path").onComplete(event -> {
-        assertEquals(ctx, vertx.getOrCreateContext());
-        if (event.failed()) {
-          req.response().end("failed");
-        }
-      });
-    });
-
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(req -> req
-        .send()
-        .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::body)
-        .expecting(that(buff -> assertEquals("failed", buff.toString()))))
-      .onComplete(onSuccess(v -> testComplete()));
-
-    await();
-  }
-
-  @Test
-  public void testSendFileOverrideHeaders() throws Exception {
-    String content = TestUtils.randomUnicodeString(10000);
-    File file = setupFile("test-send-file.html", content);
-
-    server.requestHandler(req -> {
-      req.response().putHeader("Content-Type", "wibble");
-      req.response().sendFile(file.getAbsolutePath());
-    });
-
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(req -> req
-        .send()
-        .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
-          assertEquals("wibble", resp.headers().get("content-type"));
-        }))
-        .compose(HttpClientResponse::body)
-        .expecting(that(buff -> assertEquals(content, buff.toString()))))
-      .onComplete(onSuccess(v -> testComplete()));
-
-    await();
-  }
-
-  @Test
-  public void testSendFileNotFound() throws Exception {
-    waitFor(2);
-
-    server.requestHandler(req -> {
-      req.response().putHeader("Content-Type", "wibble");
-      req.response().sendFile("nosuchfile.html").onComplete(onFailure(v -> complete()));
-    });
-
-    startServer(testAddress);
-    AtomicBoolean completed = new AtomicBoolean();
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(ar -> {
-        if (!completed.get()) {
-          fail();
-        }
-      });
-    }));
-    vertx.setTimer(100, tid -> {
-      completed.set(true);
-      complete();
-    });
-
-    await();
-  }
-
-  @Test
-  public void testSendFileDirectoryWithHandler() throws Exception {
-
-    File dir = testFolder.newFolder();
-
-    server.requestHandler(req -> {
-      req.response().putHeader("Content-Type", "wibble");
-      req.response().sendFile(dir.getAbsolutePath())
-        .onComplete(onFailure(t -> {
-          assertTrue(t instanceof FileNotFoundException);
-          testComplete();
-        }));
-    });
-
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onFailure(err -> {}));
-    }));
-
-    await();
-  }
-
-  @Test
-  public void testSendOpenRangeFileFromClasspath() throws Exception {
-    server.requestHandler(res -> {
-      res.response().sendFile("hosts_config.txt", 13);
-    });
-    startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      client.request(requestOptions)
-        .compose(HttpClientRequest::send)
-        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
-        .compose(HttpClientResponse::body)
-        .onComplete(onSuccess(body -> {
-          assertTrue(body.toString().startsWith("server.net"));
-          assertEquals(10, body.toString().length());
-          testComplete();
-        }));
-    }));
-    await();
-  }
-
-  @Test
-  public void testSendRangeFileFromClasspath() throws Exception {
-    server.requestHandler(res -> {
-      res.response().sendFile("hosts_config.txt", 13, 10);
-    });
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(req -> req
-        .send()
-        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
-        .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(body -> {
-        assertEquals("server.net", body.toString());
-        assertEquals(10, body.toString().length());
-        testComplete();
-      }));
-    await();
-  }
-
-  @Test
-  public void testSendZeroRangeFile() throws Exception {
-    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
-    server.requestHandler(res -> res.response().sendFile(f.getAbsolutePath(), 23, 0));
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(req -> req
-        .send()
-        .expecting(that(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
-        .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(body -> {
-        assertEquals("", body.toString());
-        assertEquals(0, body.toString().length());
-        testComplete();
-      }));
-    await();
-  }
-
-  @Test
-  public void testSendFileOffsetIsHigherThanFileLength() throws Exception {
-    testSendFileWithFailure(
-      (resp, f) -> resp.sendFile(f.getAbsolutePath(), 33, 10),
-      err -> assertEquals("offset : 33 is larger than the requested file length : 23", err.getMessage()));
-  }
-
-  @Test
-  public void testSendFileWithNegativeLength() throws Exception {
-    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), 0, -100), err -> {
-      assertEquals("length : -100 (expected: >= 0)", err.getMessage());
-    });
-  }
-
-  @Test
-  public void testSendFileWithNegativeOffset() throws Exception {
-    testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), -100, 23), err -> {
-      assertEquals("offset : -100 (expected: >= 0)", err.getMessage());
-    });
-  }
-
-  private void testSendFileWithFailure(BiFunction<HttpServerResponse, File, Future<Void>> sendFile, Consumer<Throwable> checker) throws Exception {
-    waitFor(2);
-    File f = setupFile("twenty_three_bytes.txt", TestUtils.randomAlphaString(23));
-    server.requestHandler(res -> {
-        // Expected
-        sendFile
-        .apply(res.response(), f)
-        .andThen(onFailure(checker::accept))
-        .recover(v -> res.response().setStatusCode(500).end())
-        .onComplete(onSuccess(v -> {
-          complete();
-        }));
-    });
-    startServer(testAddress);
-    client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(response -> {
-        assertEquals(500, response.statusCode());
-        complete();
-      }));
-
-    await();
-  }
-
-  @Test
   public void test100ContinueHandledAutomatically() throws Exception {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
@@ -2341,7 +2081,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.write(toSend);
         req.end();
       });
-      req.sendHead();
+      req.writeHead();
     }));
 
     await();
@@ -2372,7 +2112,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.write(toSend);
         req.end();
       });
-      req.sendHead();
+      req.writeHead();
     }));
 
     await();
@@ -2400,7 +2140,7 @@ public abstract class HttpTest extends HttpTestBase {
       req.continueHandler(v -> {
         fail("should not be called");
       });
-      req.sendHead();
+      req.writeHead();
     }));
 
     await();
@@ -3050,18 +2790,20 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
-      client.request(requestOptions).onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertEquals(data, buff);
-            complete();
-          });
-          resp.pause();
-          vertx.setTimer(10, id -> {
-            resp.resume();
-          });
-        }));
-      }));
+      client.request(requestOptions)
+        .compose(req -> req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(resp -> Future.future(promise -> {
+            resp.bodyHandler(buff -> {
+              assertEquals(data, buff);
+              promise.complete();
+            });
+            resp.pause();
+            vertx.setTimer(10, id -> {
+              resp.resume();
+            });
+          }))).onComplete(onSuccess(v -> complete()));
     }
     await();
   }
@@ -4239,7 +3981,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testFollowRedirectSendHeadThenBody() throws Exception {
+  public void testFollowRedirectwriteHeadThenBody() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(2048));
     AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
@@ -4268,7 +4010,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertEquals(200, resp.statusCode());
           testComplete();
         }));
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         req.end(expected);
       }));
     }));
@@ -4704,7 +4446,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertFalse(Thread.holdsLock(req.connection()));
           complete();
         }));
-        req.setChunked(true).sendHead();
+        req.setChunked(true).writeHead();
       }));
     await();
   }
@@ -5018,17 +4760,6 @@ public abstract class HttpTest extends HttpTestBase {
     }
   }
 
-  protected File setupFile(String fileName, String content) throws Exception {
-    File file = new File(testDir, fileName);
-    if (file.exists()) {
-      file.delete();
-    }
-    BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
-    out.write(content);
-    out.close();
-    return file;
-  }
-
   protected static String generateQueryString(MultiMap params, char delim) {
     StringBuilder sb = new StringBuilder();
     int count = 0;
@@ -5281,9 +5012,6 @@ public abstract class HttpTest extends HttpTestBase {
             // Create pumps which echo stuff
             src.pipeTo(dst);
             dst.pipeTo(src);
-            dst.closeHandler(v -> {
-              src.close();
-            });
           }));
         }));
       });
@@ -5869,7 +5597,7 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.response().onComplete(onFailure(err -> complete()));
         req.exceptionHandler(err -> complete());
-        req.sendHead().onComplete(onSuccess(version -> req.reset(0)));
+        req.writeHead().onComplete(onSuccess(version -> req.reset(0)));
       }));
     });
     await();
@@ -6731,7 +6459,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
       req
         .setChunked(true)
-        .sendHead();
+        .writeHead();
       promise.future().onSuccess(v -> {
         req.connection().close();
       });
@@ -6964,7 +6692,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConcurrentWrites1() throws Exception {
     testConcurrentWrites(req -> req
-      .sendHead()
+      .writeHead()
       .compose(v -> {
         AtomicBoolean latch = new AtomicBoolean(false);
         new Thread(() -> {
@@ -6985,7 +6713,7 @@ public abstract class HttpTest extends HttpTestBase {
     testConcurrentWrites(req -> {
       AtomicBoolean latch = new AtomicBoolean(false);
       new Thread(() -> {
-        req.sendHead();
+        req.writeHead();
         latch.set(true); // Release Event-loop thread
       }).start();
       // Active wait for the event to be published
@@ -7017,5 +6745,97 @@ public abstract class HttpTest extends HttpTestBase {
       .onComplete(onSuccess(resp -> complete()));
     await();
     assertEquals("msg1msg2", received.get());
+  }
+
+  @Test
+  public void testHttpServerResponseWriteHead() throws Exception {
+    waitFor(2);
+    AtomicReference<Runnable> continuation = new AtomicReference<>();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      continuation.set(() -> resp.end("body"));
+      try {
+        resp.writeHead().onComplete(onSuccess(v -> {
+          complete();
+        }));
+        assertEquals(HttpVersion.HTTP_2, req.version());
+      } catch (IllegalStateException ignore) {
+        resp
+          .setChunked(true)
+          .writeHead()
+          .onComplete(onSuccess(v -> {
+            complete();
+          }));
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(response -> {
+        response.handler(chunk -> {
+          fail();
+        });
+        response.endHandler(v -> {
+          fail();
+        });
+        vertx.setTimer(200, id -> {
+          response.handler(null);
+          response.endHandler(null);
+          response.bodyHandler(body -> {
+            assertEquals("body", body.toString());
+            complete();
+          });
+          continuation.get().run();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientShutdown() throws Exception {
+    long timeout = 10000;
+    AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
+    server.requestHandler(request -> {
+      ref.set(request);
+    });
+    startServer(testAddress);
+    CountDownLatch shutdownLatch = new CountDownLatch(1);
+    HttpClientRequest request = client.request(requestOptions).await();
+    request.connection().shutdownHandler(v -> {
+      shutdownLatch.countDown();
+    });
+    Future<HttpClientResponse> fut = request.send();
+    long now = System.currentTimeMillis();
+    client.shutdown(timeout, TimeUnit.MILLISECONDS);
+    awaitLatch(shutdownLatch);
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+    waitUntil(() -> ref.get() != null);
+    ref.get().response().end();
+    fut.await();
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+  }
+
+  @Test
+  public void testServerShutdown() throws Exception {
+    long timeout = 10000;
+    AtomicReference<HttpServerRequest> ref = new AtomicReference<>();
+    CountDownLatch shutdownLatch = new CountDownLatch(1);
+    server.requestHandler(request -> {
+      request.connection().shutdownHandler(v -> {
+        shutdownLatch.countDown();
+      });
+      ref.set(request);
+    });
+    startServer(testAddress);
+    HttpClientRequest request = client.request(requestOptions).await();
+    Future<HttpClientResponse> fut = request.send();
+    long now = System.currentTimeMillis();
+    waitUntil(() -> ref.get() != null);
+    server.shutdown(timeout, TimeUnit.MILLISECONDS);
+    awaitLatch(shutdownLatch);
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
+    ref.get().response().end();
+    fut.await();
+    assertTrue((System.currentTimeMillis() - now) < timeout / 4);
   }
 }

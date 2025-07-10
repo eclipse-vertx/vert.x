@@ -73,12 +73,12 @@ import static io.vertx.core.http.Http2Settings.*;
  */
 public final class HttpUtils {
 
-  static final HttpClosedException CONNECTION_CLOSED_EXCEPTION = new HttpClosedException("Connection was closed");
-  static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
-  static final int SC_SWITCHING_PROTOCOLS = 101;
-  static final int SC_BAD_GATEWAY = 502;
+  public static final HttpClosedException CONNECTION_CLOSED_EXCEPTION = new HttpClosedException("Connection was closed");
+  public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
+  public static final int SC_SWITCHING_PROTOCOLS = 101;
+  public static final int SC_BAD_GATEWAY = 502;
 
-  static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpServerRequest req) {
       return req.query() == null ? 4 : 5;
@@ -119,14 +119,14 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<io.vertx.core.spi.observability.HttpResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
-    public int len(HttpServerResponse resp) {
+    public int len(io.vertx.core.spi.observability.HttpResponse resp) {
       return 1;
     }
 
     @Override
-    public String name(HttpServerResponse resp, int index) {
+    public String name(io.vertx.core.spi.observability.HttpResponse resp, int index) {
       if (index == 0) {
         return "http.response.status_code";
       }
@@ -134,15 +134,15 @@ public final class HttpUtils {
     }
 
     @Override
-    public String value(HttpServerResponse resp, int index) {
+    public String value(io.vertx.core.spi.observability.HttpResponse resp, int index) {
       if (index == 0) {
-        return Integer.toString(resp.getStatusCode());
+        return Integer.toString(resp.statusCode());
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
   };
 
-  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpRequestHead req) {
       return 2;
@@ -171,7 +171,7 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
     public int len(HttpResponseHead resp) {
       return 1;
@@ -194,7 +194,7 @@ public final class HttpUtils {
     }
   };
 
-  static final StreamPriorityBase DEFAULT_STREAM_PRIORITY = new Http2StreamPriority(new StreamPriority() {
+  public static final StreamPriorityBase DEFAULT_STREAM_PRIORITY = new StreamPriority() {
     @Override
     public StreamPriority setWeight(short weight) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
@@ -281,7 +281,7 @@ public final class HttpUtils {
   /**
    * Extract the path out of the uri.
    */
-  static String parsePath(String uri) {
+  public static String parsePath(String uri) {
     if (uri.isEmpty()) {
       return "";
     }
@@ -314,7 +314,7 @@ public final class HttpUtils {
   /**
    * Extract the query out of a uri or returns the empty string if no query was found.
    */
-  static String parseQuery(String uri) {
+  public static String parseQuery(String uri) {
     int i = uri.indexOf('?');
     if (i == -1) {
       return null;
@@ -323,7 +323,7 @@ public final class HttpUtils {
     }
   }
 
-  static String absoluteURI(String serverOrigin, HttpServerRequest req) {
+  public static String absoluteURI(String serverOrigin, HttpServerRequest req) {
     String uri = req.uri();
     if ("*".equals(uri)) {
       return null;
@@ -358,6 +358,12 @@ public final class HttpUtils {
       }
     }
     return params;
+  }
+
+  public static Http2Settings fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings) {
+    Http2Settings nettySettings = new Http2Settings();
+    fromVertxInitialSettings(server, vertxSettings, nettySettings);
+    return nettySettings;
   }
 
   public static void fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings, Http2Settings nettySettings) {
@@ -487,7 +493,7 @@ public final class HttpUtils {
     return http3Settings;
   }
 
-  static Http2Settings decodeSettings(String base64Settings) {
+  public static Http2Settings decodeSettings(String base64Settings) {
     try {
       Http2Settings settings = new Http2Settings();
       Buffer buffer = Buffer.buffer(Base64.getUrlDecoder().decode(base64Settings));
@@ -931,7 +937,7 @@ public final class HttpUtils {
       || method.equals(HttpMethod.DELETE);
   }
 
-  static Future<AsyncFile> resolveFile(ContextInternal context, String filename, long offset, long length) {
+  public static Future<AsyncFile> resolveFile(ContextInternal context, String filename, long offset, long length) {
     VertxInternal vertx = context.owner();
     File file_ = vertx.fileResolver().resolve(filename);
     if (!file_.exists()) {

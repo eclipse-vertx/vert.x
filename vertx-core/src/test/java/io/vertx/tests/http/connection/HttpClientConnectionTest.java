@@ -10,6 +10,8 @@
  */
 package io.vertx.tests.http.connection;
 
+import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnectOptions;
@@ -98,7 +100,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
   public void testRequestQueuing() throws Exception {
     int num = 1;
     server.requestHandler(req -> {
-      req.response().end("Echo:" + req.getHeader("id"));
+      req.response().putHeader("id", req.getHeader("id")).end();
     });
     startServer(testAddress);
     List<String> collected = Collections.synchronizedList(new ArrayList<>());
@@ -107,14 +109,14 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       for (int i = 0;i < concurrency + num;i++) {
         int val = i;
         conn.request().compose(req -> req
-            .putHeader("id", "" + val)
-            .send()
-            .compose(HttpClientResponse::body))
-          .onComplete(onSuccess(body -> {
-            collected.add(body.toString());
+          .putHeader("id", "echo-" + val)
+          .send()
+          .map(response -> response.getHeader("id")))
+          .onComplete(onSuccess(response -> {
+            collected.add(response);
             if (val == concurrency + num - 1) {
               List<String> expected = IntStream.range(0, concurrency + num)
-                .mapToObj(idx -> "Echo:" + idx)
+                .mapToObj(idx -> "echo-" + idx)
                 .collect(Collectors.toList());
               assertEquals(expected, collected);
               testComplete();

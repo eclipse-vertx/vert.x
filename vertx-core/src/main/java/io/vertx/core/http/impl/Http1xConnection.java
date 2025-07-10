@@ -141,8 +141,8 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
       return 0;
     }
     // try known vertx (non-interface) types: bi-morphic
-    if (obj instanceof AssembledHttpResponse) {
-      return ((AssembledHttpResponse) obj).content().readableBytes();
+    if (obj instanceof VertxAssembledHttpResponse) {
+      return ((VertxAssembledHttpResponse) obj).content().readableBytes();
     }
     if (obj instanceof Buffer) {
       return ((Buffer) obj).length();

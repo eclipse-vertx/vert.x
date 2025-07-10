@@ -32,6 +32,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.TimeUnit;
@@ -462,24 +463,28 @@ public class VertxConnection extends ConnectionBase {
    * The implementation splits the file into multiple regions to avoid stalling the pipeline
    * and producing idle timeouts for very large files.
    *
-   * @param file the file to send
+   * @param fc the file to send
    * @param offset the file offset
    * @param length the file length
    * @param writeFuture the write future to be completed when the transfer is done or failed
    */
-  private void sendFileRegion(RandomAccessFile file, long offset, long length, ChannelPromise writeFuture) {
+  private void sendFileRegion(FileChannel fc, long offset, long length, ChannelPromise writeFuture) {
     if (length < MAX_REGION_SIZE) {
-      writeToChannel(new DefaultFileRegion(file.getChannel(), offset, length), writeFuture);
+      FileRegion region = new DefaultFileRegion(fc, offset, length);
+      // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
+      // as been sent as the caller can need it again
+      region.retain();
+      writeToChannel(region, writeFuture);
     } else {
       ChannelPromise promise = chctx.newPromise();
-      FileRegion region = new DefaultFileRegion(file.getChannel(), offset, MAX_REGION_SIZE);
+      FileRegion region = new DefaultFileRegion(fc, offset, MAX_REGION_SIZE);
       // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
       // as been sent as we need it again
       region.retain();
       writeToChannel(region, promise);
       promise.addListener(future -> {
         if (future.isSuccess()) {
-          sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
+          sendFileRegion(fc, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
         } else {
           log.error(future.cause().getMessage(), future.cause());
           writeFuture.setFailure(future.cause());
@@ -488,21 +493,20 @@ public class VertxConnection extends ConnectionBase {
     }
   }
 
-  public ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) {
+  public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
       try {
-        writeToChannel(new ChunkedNioFile(raf.getChannel(), offset, length, 8192), writeFuture);
+        writeToChannel(new UncloseableChunkedNioFile(fc, offset, length), writeFuture);
       } catch (IOException e) {
         return chctx.newFailedFuture(e);
       }
     } else {
       // No encryption - use zero-copy.
-      sendFileRegion(raf, offset, length, writeFuture);
+      sendFileRegion(fc, offset, length, writeFuture);
     }
-    writeFuture.addListener(fut -> raf.close());
     return writeFuture;
   }
 

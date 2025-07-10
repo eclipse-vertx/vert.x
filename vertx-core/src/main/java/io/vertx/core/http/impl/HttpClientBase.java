@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class HttpClientBase implements MetricsProvider, Closeable {
 
   protected final VertxInternal vertx;
-  final HttpClientOptions options;
+  public final HttpClientOptions options;
   protected final NetClientInternal netClient;
   protected final List<String> alpnVersions;
   protected final HttpClientMetrics metrics;
@@ -160,7 +160,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return sslOptions;
   }
 
-  HttpClientMetrics metrics() {
+  public HttpClientMetrics metrics() {
     return metrics;
   }
 

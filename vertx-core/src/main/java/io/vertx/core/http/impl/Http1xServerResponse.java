@@ -14,8 +14,10 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -31,8 +33,6 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.Metrics;
@@ -41,7 +41,10 @@ import io.vertx.core.spi.observability.HttpResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -51,7 +54,6 @@ import static io.vertx.core.http.HttpHeaders.*;
 public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = BufferInternal.buffer(Unpooled.EMPTY_BUFFER);
-  private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
 
   private final VertxInternal vertx;
@@ -307,6 +309,26 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public Future<Void> writeHead() {
+    checkThread();
+    PromiseInternal<Void> promise = context.promise();
+    synchronized (conn) {
+      if (headWritten) {
+        throw new IllegalStateException();
+      }
+      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
+      VertxHttpObject msg;
+      prepareHeaders(-1);
+      msg = new VertxHttpResponse(head, version, status, headers);
+      conn.write(msg, promise);
+    }
+    return promise.future();
+  }
+
+  @Override
   public Future<Void> write(Buffer chunk) {
     PromiseInternal<Void> promise = context.promise();
     write(((BufferInternal)chunk).getByteBuf(), promise);
@@ -379,14 +401,14 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       written = true;
       ByteBuf data = ((BufferInternal)chunk).getByteBuf();
       bytesWritten += data.readableBytes();
-      AssembledHttpObject msg;
+      VertxHttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(head, version, status, data, headers, trailingHeaders);
+        msg = new VertxFullHttpResponse(head, version, status, data, headers, trailingHeaders);
       } else {
-        msg = new AssembledLastHttpContent(data, trailingHeaders);
+        msg = new VertxLastHttpContent(data, trailingHeaders);
       }
       conn.write(msg, listener);
       if (bodyEndHandler != null) {
@@ -420,82 +442,135 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    if (offset < 0) {
-      return context.failedFuture("offset : " + offset + " (expected: >= 0)");
+    File file = vertx.fileResolver().resolve(filename);
+    RandomAccessFile raf;
+    long size;
+    try {
+      raf = new RandomAccessFile(file, "r");
+      size = raf.length();
+    } catch (Exception e) {
+      return context.failedFuture(e);
     }
-    if (length < 0) {
-      return context.failedFuture("length : " + length + " (expected: >= 0)");
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      CharSequence mimeType = MimeMapping.mimeTypeForFilename(filename);
+      if (mimeType == null) {
+        mimeType = APPLICATION_OCTET_STREAM;
+      }
+      headers.set(CONTENT_TYPE, mimeType);
     }
-    synchronized (conn) {
-      checkValid();
-      if (headWritten) {
-        throw new IllegalStateException("Head already written");
-      }
-      File file = vertx.fileResolver().resolve(filename);
-      RandomAccessFile raf;
-      try {
-        raf = new RandomAccessFile(file, "r");
-      } catch (Exception e) {
-        return ctx.failedFuture(e);
-      }
-      long actualLength = Math.min(length, file.length() - offset);
-      long actualOffset = Math.min(offset, file.length());
+    return sendFileInternal(offset, length, size, raf, null, true);
+  }
 
-      // fail early before status code/headers are written to the response
+  @Override
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = file.length();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, file, null, false);
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
+      headers.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
+    }
+    long size;
+    try {
+      size = channel.size();
+    } catch (IOException e) {
+      return context.failedFuture(e);
+    }
+    return sendFileInternal(offset, length, size, null, channel, false);
+  }
+
+  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel fileChannel, boolean close) {
+    Future<Void> ret = null;
+    try {
+      ContextInternal ctx = vertx.getOrCreateContext();
+      if (offset < 0) {
+        return ctx.failedFuture("offset : " + offset + " (expected: >= 0)");
+      }
+      if (length < 0) {
+        return ctx.failedFuture("length : " + length + " (expected: >= 0)");
+      }
+      long actualLength = Math.min(length, size - offset);
+      long actualOffset = Math.min(offset, size);
       if (actualLength < 0) {
+        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + size);
+      }
+      synchronized (conn) {
+        checkValid();
+        if (headWritten) {
+          throw new IllegalStateException("Head already written");
+        }
+
+        // fail early before status code/headers are written to the response
+        prepareHeaders(actualLength);
+        bytesWritten = actualLength;
+        written = true;
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), null);
+        FileChannel toSend = fileChannel == null ? file.getChannel() : fileChannel;
+        ChannelFuture channelFuture = conn.sendFile(toSend, actualOffset, actualLength);
+        PromiseInternal<Void> promise = context.promise();
+        ret = promise.future();
+        channelFuture.addListener(future -> {
+          if (future.isSuccess()) {
+
+            // signal body end handler
+            Handler<Void> handler;
+            synchronized (conn) {
+              handler = bodyEndHandler;
+            }
+            if (handler != null) {
+              ctx.emit(handler);
+            }
+
+            // signal end handler
+            Handler<Void> end;
+            synchronized (conn) {
+              end = !closed ? endHandler : null;
+            }
+            if (null != end) {
+              ctx.emit(end);
+            }
+
+            // write an empty last content to let the http encoder know the response is complete
+            conn.write(new VertxLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), promise);
+          } else {
+            promise.fail(future.cause());
+          }
+
+          //
+          if (close) {
+            try {
+              if (file != null) {
+                file.close();
+              } else {
+                fileChannel.close();
+              }
+            } catch (IOException ignore) {
+            }
+          }
+        });
+      }
+      return ret;
+    } finally {
+      if (ret == null && close) {
         try {
-          raf.close();
+          if (file != null) {
+            file.close();
+          } else {
+            fileChannel.close();
+          }
         } catch (IOException ignore) {
         }
-        return ctx.failedFuture("offset : " + offset + " is larger than the requested file length : " + file.length());
       }
-
-      if (!headers.contains(HttpHeaders.CONTENT_TYPE)) {
-        String contentType = MimeMapping.mimeTypeForFilename(filename);
-        if (contentType != null) {
-          headers.set(HttpHeaders.CONTENT_TYPE, contentType);
-        }
-      }
-      prepareHeaders(actualLength);
-      bytesWritten = actualLength;
-      written = true;
-
-      conn.write(new AssembledHttpResponse(head, version, status, headers), null);
-
-      ChannelFuture channelFut = conn.sendFile(raf, actualOffset, actualLength);
-      channelFut.addListener(future -> {
-
-        // write an empty last content to let the http encoder know the response is complete
-        if (future.isSuccess()) {
-          conn.write(new AssembledLastHttpContent(Unpooled.buffer(0), DefaultHttpHeadersFactory.trailersFactory().newHeaders()), null);
-        }
-
-        // signal body end handler
-        Handler<Void> handler;
-        synchronized (conn) {
-          handler = bodyEndHandler;
-        }
-        if (handler != null) {
-          context.emit(handler);
-        }
-
-        // allow to write next response
-        // conn.responseComplete();
-
-        // signal end handler
-        Handler<Void> end;
-        synchronized (conn) {
-          end = !closed ? endHandler : null;
-        }
-        if (null != end) {
-          context.emit(end);
-        }
-      });
-
-      PromiseInternal<Void> promise = ctx.promise();
-      channelFut.addListener(promise);
-      return promise.future();
     }
   }
 
@@ -660,12 +735,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
       }
       bytesWritten += chunk.readableBytes();
-      AssembledHttpObject msg;
+      VertxHttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
-        msg = new AssembledHttpResponse(head, version, status, headers, chunk);
+        msg = new VertxAssembledHttpResponse(head, version, status, headers, chunk);
       } else {
-        msg = new AssembledHttpContent(chunk);
+        msg = new VertxHttpContent(chunk);
       }
       conn.write(msg, promise);
       return this;
@@ -682,10 +757,15 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
           return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
         }
+        ChannelPipeline pipeline = conn.channel().pipeline();
+        WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
+        if (wsHandler != null) {
+          pipeline.remove(wsHandler);
+        }
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
         PromiseInternal<Void> upgradePromise = context.promise();
-        conn.write(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
+        conn.write(new VertxAssembledHttpResponse(head, version, status, headers), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();

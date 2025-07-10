@@ -203,18 +203,19 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       String serverOrigin = (tcpOptions.isSsl() ? "https" : "http") + "://" + host + ":" + port;
       HttpServerConnectionHandler handler = new HttpServerConnectionHandler(
         this,
+        serverOrigin,
         requestHandler,
         invalidRequestHandler,
         webSocketHandler,
         webSocketHandhakeHandler,
         connectionHandler,
-        exceptionHandler);
+        exceptionHandler,
+        options.getHttp2ConnectionWindowSize());
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),
         streamContextSupplier,
         this,
-        vertx,
         options,
         serverOrigin,
         handler,

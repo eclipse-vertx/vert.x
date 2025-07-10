@@ -252,7 +252,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * has been set using this method, then the {@code handler} will be called.
    * <p>
    * You can then continue to write data to the request body and later end it. This is normally used in conjunction with
-   * the {@link #sendHead()} method to force the request header to be written before the request has ended.
+   * the {@link #writeHead()} method to force the request header to be written before the request has ended.
    *
    * @return a reference to this, so the API can be used fluently
    */
@@ -278,10 +278,25 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * This is normally used to implement HTTP 100-continue handling, see {@link #continueHandler(io.vertx.core.Handler)} for
    * more information.
    *
-   * @return a future notified when the {@link HttpVersion} if it can be determined or {@code null} otherwise
-   * @throws java.lang.IllegalStateException when no response handler is set
+   * @return a future notified with the result of the write operation
+   * @throws java.lang.IllegalStateException if the head has already been written
+   * @deprecated instead use {@link #writeHead()}, this is scheduled for removal in Vert.x 6
    */
+  @Deprecated(since = "5.1.0", forRemoval = true)
   Future<Void> sendHead();
+
+  /**
+   * Write the head of the request.
+   * <p>
+   * This can be used to implement HTTP 100-continue handling, see {@link #continueHandler(io.vertx.core.Handler)} for
+   * more information.
+   *
+   * @return a future notified with the result of the write operation
+   * @throws java.lang.IllegalStateException if the head has already been written
+   */
+  default Future<Void> writeHead() {
+    return sendHead();
+  }
 
   /**
    * Create an HTTP tunnel to the server.
@@ -396,7 +411,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   Future<Void> end(Buffer chunk);
 
   /**
-   * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
+   * Ends the request. If no data has been written to the request body, and {@link #writeHead()} has not been called then
    * the actual request won't get written until this method gets called.
    * <p>
    * Once the request has ended, it cannot be used any more,
@@ -495,7 +510,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * The frame is sent immediatly and is not subject to flow control.<p>
    *
    * This method must be called after the request headers have been sent and only for the protocol HTTP/2.
-   * The {@link #sendHead()} should be used for this purpose.
+   * The {@link #writeHead()} should be used for this purpose.
    *
    * @param type the 8-bit frame type
    * @param flags the 8-bit frame flags

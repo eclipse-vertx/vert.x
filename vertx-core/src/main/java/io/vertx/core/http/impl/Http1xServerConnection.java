@@ -120,13 +120,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     return tracingPolicy;
   }
 
-  @Override
   public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
     requestHandler = handler;
     return this;
   }
 
-  @Override
   public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
     invalidRequestHandler = handler;
     return this;
@@ -203,7 +201,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     }
   }
 
-  void write(AssembledHttpObject msg, Promise<Void> promise) {
+  void write(VertxHttpObject msg, Promise<Void> promise) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
@@ -432,7 +430,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   void write100Continue(Promise<Void> promise) {
-    write(new AssembledFullHttpResponse(
+    write(new VertxFullHttpResponse(
       false,
       HTTP_1_1,
       CONTINUE,
@@ -443,7 +441,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   void write103EarlyHints(HttpHeaders headers, Promise<Void> promise) {
-    write(new AssembledFullHttpResponse(false,
+    write(new VertxFullHttpResponse(false,
       HTTP_1_1,
       HttpResponseStatus.EARLY_HINTS,
       Unpooled.buffer(0),

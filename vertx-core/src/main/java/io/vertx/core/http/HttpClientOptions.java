@@ -158,6 +158,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
   /**
+   * Use HTTP/2 multiplex implementation = {@code false}
+   */
+  public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
+
+  /**
    * The default maximum number of concurrent streams per connection for HTTP/3 = -1
    */
   public static final int DEFAULT_HTTP3_MULTIPLEXING_LIMIT = -1;
@@ -171,6 +176,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
   private int http2UpgradeMaxContentLength;
+  private boolean http2MultiplexImplementation;
 
   private boolean decompressionSupported;
   private String defaultHost;
@@ -228,6 +234,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
     this.http2UpgradeMaxContentLength = other.getHttp2UpgradeMaxContentLength();
+    this.http2MultiplexImplementation = other.getHttp2MultiplexImplementation();
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
@@ -280,6 +287,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
     http2UpgradeMaxContentLength = DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH;
+    http2MultiplexImplementation = DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
@@ -565,6 +573,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setHttp2UpgradeMaxContentLength(int http2UpgradeMaxContentLength) {
     this.http2UpgradeMaxContentLength = http2UpgradeMaxContentLength;
+    return this;
+  }
+
+  /**
+   * @return whether to use the HTTP/2 implementation based on multiplexed channel
+   */
+  public boolean getHttp2MultiplexImplementation() {
+    return http2MultiplexImplementation;
+  }
+
+  /**
+   * Set which HTTP/2 implementation to use
+   *
+   * @param http2MultiplexImplementation whether to use the HTTP/2 multiplex implementation
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp2MultiplexImplementation(boolean http2MultiplexImplementation) {
+    this.http2MultiplexImplementation = http2MultiplexImplementation;
     return this;
   }
 

@@ -20,5 +20,6 @@ import java.lang.annotation.Target;
 public @interface DetectFileDescriptorLeaks {
   long baseline() default 20;
   long iterations() default 20;
+  long tearDown() default 20;
 }
 

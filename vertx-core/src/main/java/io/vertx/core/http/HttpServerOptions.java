@@ -206,6 +206,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_STRICT_THREAD_MODE_STRICT = false;
 
+  /**
+   * Use HTTP/2 multiplex implementation = {@code false}
+   */
+  public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private int compressionContentSizeThreshold;
@@ -240,6 +245,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int http2RstFloodWindowDuration;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
   private boolean strictThreadMode;
+  private boolean http2MultiplexImplementation;
 
   /**
    * Default constructor
@@ -291,6 +297,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.http2RstFloodWindowDuration = other.http2RstFloodWindowDuration;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
     this.strictThreadMode = other.strictThreadMode;
+    this.http2MultiplexImplementation = other.http2MultiplexImplementation;
   }
 
   /**
@@ -349,6 +356,7 @@ public class HttpServerOptions extends NetServerOptions {
     http2RstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
     http2RstFloodWindowDuration = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
+    http2MultiplexImplementation = DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
   }
 
   /**
@@ -1311,6 +1319,24 @@ public class HttpServerOptions extends NetServerOptions {
   @Unstable("Experimental")
   public HttpServerOptions setStrictThreadMode(boolean strictThreadMode) {
     this.strictThreadMode = strictThreadMode;
+    return this;
+  }
+
+  /**
+   * @return whether to use the HTTP/2 implementation based on multiplexed channel
+   */
+  public boolean getHttp2MultiplexImplementation() {
+    return http2MultiplexImplementation;
+  }
+
+  /**
+   * Set which HTTP/2 implementation to use
+   *
+   * @param http2MultiplexImplementation whether to use the HTTP/2 multiplex implementation
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2MultiplexImplementation(boolean http2MultiplexImplementation) {
+    this.http2MultiplexImplementation = http2MultiplexImplementation;
     return this;
   }
 }
