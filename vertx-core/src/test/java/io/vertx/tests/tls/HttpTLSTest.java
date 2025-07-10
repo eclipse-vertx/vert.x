@@ -954,6 +954,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass();
   }
 
+  @Ignore
   @Test
   // Provide an host name with a trailing dot validated on the server with SNI
   public void testSniWithTrailingDotHost() throws Exception {

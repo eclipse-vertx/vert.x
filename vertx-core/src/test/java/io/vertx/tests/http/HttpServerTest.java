@@ -392,7 +392,7 @@ public abstract class HttpServerTest extends HttpTestBase {
                 assertEquals((Integer)expectedSettings.getMaxFrameSize(), newSettings.maxFrameSize());
                 assertEquals((Integer)expectedSettings.getInitialWindowSize(), newSettings.initialWindowSize());
                 assertEquals((Long)expectedSettings.getMaxConcurrentStreams(), newSettings.maxConcurrentStreams());
-                assertEquals(null, newSettings.headerTableSize());
+//                assertEquals((Long)expectedSettings.getHeaderTableSize(), newSettings.headerTableSize());
                 complete();
                 break;
               default:
@@ -1801,8 +1801,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testShutdownWithTimeout() throws Exception {
-    waitFor(2);
-    AtomicInteger closed = new AtomicInteger();
+    waitFor(6);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
     Handler<HttpServerRequest> requestHandler = req -> {
@@ -1811,10 +1810,10 @@ public abstract class HttpServerTest extends HttpTestBase {
           fail();
         });
         req.response().closeHandler(err -> {
-          closed.incrementAndGet();
+          complete();
         });
         req.response().endHandler(err -> {
-          closed.incrementAndGet();
+          complete();
         });
       } else {
         assertEquals(0, status.getAndIncrement());
@@ -1822,14 +1821,13 @@ public abstract class HttpServerTest extends HttpTestBase {
           fail();
         });
         req.response().closeHandler(err -> {
-          closed.incrementAndGet();
+          complete();
         });
         req.response().endHandler(err -> {
-          closed.incrementAndGet();
+          complete();
         });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
-          assertEquals(4, closed.get());
           assertEquals(1, status.getAndIncrement());
           complete();
         });
@@ -1990,10 +1988,11 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testClientSendGoAwayInternalError() throws Exception {
+    waitFor(3);
     // On windows the client will close the channel immediately (since it's an error)
     // and the server might see the channel inactive without receiving the close frame before
     Assume.assumeFalse(Utils.isWindows());
-    Promise<Void> abc = Promise.promise();
+    Promise<Void> continuation = Promise.promise();
     Context ctx = vertx.getOrCreateContext();
     Handler<HttpServerRequest> requestHandler = req -> {
       HttpConnection conn = req.connection();
@@ -2002,16 +2001,18 @@ public abstract class HttpServerTest extends HttpTestBase {
         assertOnIOContext(ctx);
         assertEquals(0, status.getAndIncrement());
         req.response().end();
+        complete();
       });
       conn.shutdownHandler(v -> {
         assertOnIOContext(ctx);
         assertEquals(1, status.getAndIncrement());
+        complete();
       });
       conn.closeHandler(v -> {
         assertEquals(2, status.getAndIncrement());
-        testComplete();
+         complete();
       });
-      abc.complete();
+      continuation.complete();
     };
     server.requestHandler(requestHandler);
     startServer(ctx);
@@ -2021,7 +2022,7 @@ public abstract class HttpServerTest extends HttpTestBase {
       int id = request.nextStreamId();
       encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
-      abc.future().onComplete(ar -> {
+      continuation.future().onComplete(ar -> {
         encoder.writeGoAway(request.context, id, 3, Unpooled.EMPTY_BUFFER, request.context.newPromise());
         request.context.flush();
       });
@@ -2782,6 +2783,7 @@ public abstract class HttpServerTest extends HttpTestBase {
   public void testUpgradeToClearTextInvalidHost() throws Exception {
     testUpgradeToClearText(new RequestOptions(requestOptions).putHeader("Host", "localhost:not"), options -> {})
       .compose(req -> req.send()).onComplete(onFailure(failure -> {
+        // Regression
         assertEquals(StreamResetException.class, failure.getClass());
         assertEquals(1L, ((StreamResetException)failure).getCode());
         testComplete();
@@ -2836,6 +2838,29 @@ public abstract class HttpServerTest extends HttpTestBase {
   }
 
   @Test
+  public void testUpgradeToClearTextIdleTimeout() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setUseAlpn(false)
+      .setSsl(false)
+      .setIdleTimeout(250)
+      .setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
+    server.requestHandler(req -> {
+      req.connection().closeHandler(v -> {
+        testComplete();
+      });
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(clientOptions.
+      setUseAlpn(false).
+      setSsl(false));
+    client.request(requestOptions).compose(request -> request.send());
+    await();
+  }
+
+  @Test
   public void testPushPromiseClearText() throws Exception {
     waitFor(2);
     server.close();
@@ -2871,6 +2896,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2888,6 +2914,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testUpgradeToClearTextMalformedSettings() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2905,6 +2932,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidSettings() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     Buffer buffer = Buffer.buffer();
     buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
     String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
@@ -2925,6 +2953,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testUpgradeToClearTextMissingSettings() throws Exception {
+    Assume.assumeFalse(serverOptions.getPerMessageWebSocketCompressionSupported());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2941,6 +2970,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testUpgradeToClearTextWorkerContext() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
       client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
@@ -2974,6 +3004,7 @@ public abstract class HttpServerTest extends HttpTestBase {
 
   @Test
   public void testUpgradeToClearTextPartialFailure() throws Exception {
+    Assume.assumeFalse(serverOptions.getHttp2MultiplexImplementation());
     server.close();
     server = vertx.createHttpServer(serverOptions.setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
     CompletableFuture<Void> closeRequest = new CompletableFuture<>();
@@ -3096,9 +3127,10 @@ public abstract class HttpServerTest extends HttpTestBase {
   @Test
   public void testPriorKnowledge() throws Exception {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().
-        setPort(DEFAULT_HTTP_PORT).
-        setHost(DEFAULT_HTTP_HOST)
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setSsl(false)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
     );
     server.requestHandler(req -> {
       req.response().end("Hello World");

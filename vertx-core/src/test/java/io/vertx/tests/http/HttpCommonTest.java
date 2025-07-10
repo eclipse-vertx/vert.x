@@ -138,7 +138,7 @@ public abstract class HttpCommonTest extends HttpTest {
           assertTrue(err instanceof StreamResetException);
           complete();
         })
-        .sendHead();
+        .writeHead();
     }));
     await();
   }
@@ -173,7 +173,7 @@ public abstract class HttpCommonTest extends HttpTest {
         }));
         req
           .setChunked(true)
-          .sendHead();
+          .writeHead();
         new Thread(() -> {
           try {
             awaitLatch(latch2); // The next write won't be buffered
@@ -472,7 +472,7 @@ public abstract class HttpCommonTest extends HttpTest {
           complete();
         }));
       req
-        .sendHead()
+        .writeHead()
         .onComplete(h -> {
           req.setStreamPriority(requestStreamPriority2.copy());
           req.end();
@@ -507,7 +507,7 @@ public abstract class HttpCommonTest extends HttpTest {
         }));
       req.setStreamPriority(streamPriority.copy());
       req
-        .sendHead()
+        .writeHead()
         .onComplete(h -> {
           req.setStreamPriority(streamPriority.copy());
           req.end();
@@ -663,9 +663,11 @@ public abstract class HttpCommonTest extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(serverAlpnProtocolVersion()));
+//    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     client = vertx.httpClientBuilder()
-      .with(createBaseClientOptions())
+      .with(new HttpClientOptions().setProtocolVersion(serverAlpnProtocolVersion()))
+//      .with(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2))
       .withConnectHandler(conn -> {
         conn.goAwayHandler(ga -> {
           assertEquals(0, ga.getErrorCode());
@@ -703,7 +705,8 @@ public abstract class HttpCommonTest extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+//    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(serverAlpnProtocolVersion()));
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     client.request(new RequestOptions(requestOptions).setSsl(false)).onComplete(onSuccess(req -> {
       req.response().onComplete(onFailure(err -> {}));
       req.setChunked(true);
@@ -712,7 +715,7 @@ public abstract class HttpCommonTest extends HttpTest {
           testComplete();
         }
       });
-      req.sendHead();
+      req.writeHead();
     }));
     await();
   }
@@ -889,7 +892,7 @@ public abstract class HttpCommonTest extends HttpTest {
         testComplete();
       });
       // Force stream allocation
-      req.sendHead().onComplete(onSuccess(v -> {
+      req.writeHead().onComplete(onSuccess(v -> {
         req.reset(10);
       }));
     }));
@@ -1064,5 +1067,23 @@ public abstract class HttpCommonTest extends HttpTest {
       }
     });
     await();
+  }
+
+  @Test
+  public void testClearTextDirect() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setSsl(false).setHttp2ClearTextEnabled(true));
+    server.requestHandler(req -> {
+      assertFalse(req.isSSL());
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setSsl(false).setHttp2ClearTextUpgrade(false));
+    client.request(requestOptions).compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
   }
 }
