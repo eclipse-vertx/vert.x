@@ -13,8 +13,11 @@ package io.vertx.core.http.impl.headers;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
+import io.vertx.core.net.HostAndPort;
 
 import java.util.AbstractList;
 import java.util.Iterator;
@@ -27,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, T>> implements VertxHttpHeaders {
+public abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, T>> implements VertxHttpHeaders {
 
   private final boolean mutable;
   protected final T headers;
@@ -50,6 +53,190 @@ abstract class HttpHeadersAdaptor<T extends Headers<CharSequence, CharSequence, 
 
     this.mutable = mutable;
     this.headers = headers;
+  }
+
+  private Integer status;
+  private HttpMethod method;
+  private HostAndPort authority;
+  private String uri;
+  private String scheme;
+
+  public boolean validate(boolean isRequest) {
+    if (isRequest) {
+      CharSequence methodHeader = headers.get(HttpHeaders.PSEUDO_METHOD);
+      if (methodHeader == null) {
+        return false;
+      }
+      HttpMethod method = HttpMethod.valueOf(methodHeader.toString());
+
+      CharSequence schemeHeader = headers.get(HttpHeaders.PSEUDO_SCHEME);
+      String scheme = schemeHeader != null ? schemeHeader.toString() : null;
+
+      CharSequence pathHeader = headers.get(HttpHeaders.PSEUDO_PATH);
+      String uri = pathHeader != null ? pathHeader.toString() : null;
+
+      HostAndPort authority = null;
+      String authorityHeaderAsString;
+      CharSequence authorityHeader = headers.get(HttpHeaders.PSEUDO_AUTHORITY);
+      if (authorityHeader != null) {
+        authorityHeaderAsString = authorityHeader.toString();
+        authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+      }
+
+      CharSequence hostHeader = headers.get(HttpHeaders.HOST);
+      if (authority == null) {
+        headers.remove(HttpHeaders.HOST);
+        if (hostHeader != null) {
+          authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+        }
+      }
+
+      if (method == HttpMethod.CONNECT) {
+        if (scheme != null || uri != null || authority == null) {
+          return false;
+        }
+      } else {
+        if (scheme == null || uri == null || uri.isEmpty()) {
+          return false;
+        }
+      }
+
+      boolean hasAuthority = authorityHeader != null || hostHeader != null;
+      if (hasAuthority) {
+        if (authority == null) {
+          return false;
+        }
+        if (hostHeader != null) {
+          HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+          if (host == null || (!authority.host().equals(host.host()) || authority.port() != host.port())) {
+            return false;
+          }
+        }
+      }
+
+      this.method = method;
+      this.uri = uri;
+      this.authority = authority;
+      this.scheme = scheme;
+
+      return true;
+    } else {
+      CharSequence statusHeader = headers.get(HttpHeaders.PSEUDO_STATUS);
+      if (statusHeader == null) {
+        return false;
+      }
+      int status;
+      try {
+        status = Integer.parseInt(statusHeader.toString());
+      } catch (NumberFormatException e) {
+        return false;
+      }
+      this.status = status;
+      return true;
+    }
+  }
+
+  public HttpHeadersAdaptor<T> sanitize() {
+    headers.remove(HttpHeaders.PSEUDO_METHOD);
+    headers.remove(HttpHeaders.PSEUDO_PATH);
+    headers.remove(HttpHeaders.PSEUDO_SCHEME);
+    headers.remove(HttpHeaders.PSEUDO_AUTHORITY);
+    headers.remove(HttpHeaders.PSEUDO_STATUS);
+    return this;
+  }
+
+  public HttpHeadersAdaptor<T> prepare() {
+    boolean ssl = "ssl".equals(scheme);
+    if (method != null) {
+      headers.set(HttpHeaders.PSEUDO_METHOD, method.toString());
+    }
+    if (uri != null) {
+      headers.set(HttpHeaders.PSEUDO_PATH, uri);
+    }
+    if (scheme != null) {
+      headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
+    }
+    if (authority != null) {
+      headers.set(HttpHeaders.PSEUDO_AUTHORITY, authority.toString(ssl));
+    }
+    if (scheme != null) {
+      headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
+    }
+    if (status != null) {
+      headers.set(HttpHeaders.PSEUDO_STATUS, status.toString());
+    }
+    return this;
+  }
+
+  @Override
+  public HttpHeadersAdaptor<T> status(CharSequence status) {
+    if (status != null) {
+      headers.set(HttpHeaders.PSEUDO_STATUS, status);
+    } else {
+      headers.remove(HttpHeaders.PSEUDO_STATUS);
+    }
+    return this;
+  }
+
+  public Integer status() {
+    return status;
+  }
+
+  public HttpHeadersAdaptor<T> status(Integer status) {
+    this.status = status;
+    return this;
+  }
+
+  public HttpHeadersAdaptor<T> path(String path) {
+    this.uri = path;
+    return this;
+  }
+
+  public String path() {
+    return uri;
+  }
+
+  @Deprecated
+  @Override
+  public void path(CharSequence value) {
+    path(String.valueOf(value));
+  }
+
+  public HttpHeadersAdaptor<T> method(HttpMethod method) {
+    this.method = method;
+    return this;
+  }
+
+  public HttpMethod method() {
+    return method;
+  }
+
+  public HttpHeadersAdaptor<T> authority(HostAndPort authority) {
+    this.authority = authority;
+    return this;
+  }
+
+  public HostAndPort authority() {
+    return authority;
+  }
+
+  public String scheme() {
+    return scheme;
+  }
+
+  public HttpHeadersAdaptor<T> scheme(String scheme) {
+    this.scheme = scheme;
+    return this;
+  }
+
+  @Override
+  public void scheme(CharSequence value) {
+    this.scheme(String.valueOf(value));
+  }
+
+  public T unwrap() {
+    //TODO: remove me and rename getHeaders to unwrap!
+    return headers;
   }
 
   @Override

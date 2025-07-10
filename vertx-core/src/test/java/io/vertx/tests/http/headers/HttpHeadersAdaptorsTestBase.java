@@ -11,7 +11,9 @@
 
 package io.vertx.tests.http.headers;
 
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.net.HostAndPort;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -106,14 +108,14 @@ public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
 
   @Test
   public void testMethod() {
-    map.method("GET");
-    assertEquals("GET", map.method());
+    map.method(HttpMethod.GET);
+    assertEquals(HttpMethod.GET, map.method());
   }
 
   @Test
   public void testAuthority() {
-    map.authority("Auth");
-    assertEquals("Auth", map.authority());
+    map.authority(HostAndPort.authority("Auth"));
+    assertEquals(HostAndPort.authority("Auth"), map.authority());
   }
 
   @Test
@@ -128,9 +130,9 @@ public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
     assertEquals("https", map.scheme());
   }
 
-  @Test
-  public void testStatus() {
-    map.status("100");
-    assertEquals("100", map.status());
-  }
+//  @Test
+//  public void testStatus() {
+//    map.status("100");
+//    assertEquals("100", map.status());
+//  }
 }

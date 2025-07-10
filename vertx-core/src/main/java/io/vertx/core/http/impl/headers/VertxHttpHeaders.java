@@ -2,6 +2,8 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.HostAndPort;
 
 
 /**
@@ -11,11 +13,11 @@ public interface VertxHttpHeaders extends MultiMap {
 
   <T extends Headers<CharSequence, CharSequence, T>> T getHeaders();
 
-  void method(CharSequence value);
+  VertxHttpHeaders method(HttpMethod value);
 
-  void authority(CharSequence authority);
+  VertxHttpHeaders authority(HostAndPort authority);
 
-  CharSequence authority();
+  HostAndPort authority();
 
   void path(CharSequence value);
 
@@ -25,12 +27,15 @@ public interface VertxHttpHeaders extends MultiMap {
 
   CharSequence path();
 
-  CharSequence method();
+  HttpMethod method();
 
-  CharSequence status();
+  Integer status();
 
-  void status(CharSequence status);
+  VertxHttpHeaders status(CharSequence status);
 
   boolean contains(CharSequence name, CharSequence value);
 
+  VertxHttpHeaders prepare();
+
+  Headers<CharSequence, CharSequence, ?> unwrap();
 }
