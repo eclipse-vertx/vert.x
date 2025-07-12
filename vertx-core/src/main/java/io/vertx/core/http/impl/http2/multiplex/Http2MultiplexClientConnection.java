@@ -199,7 +199,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame(headers.prepare().getHeaders(), end), promise);
+    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) headers.prepare().unwrap(), end), promise);
   }
 
   @Override

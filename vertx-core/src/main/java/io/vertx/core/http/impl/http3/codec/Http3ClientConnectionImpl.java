@@ -20,6 +20,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http3.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -95,7 +96,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   @Override
   protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http3ClientStream stream0 = (Http3ClientStream) stream(streamChannel);
-    Http3HeadersMultiMap headersMap = new Http3HeadersMultiMap(headers);
+    Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
     if (!stream0.isTrailersReceived()) {
       if (!headersMap.validate(false)) {
         handler.writeReset(streamChannel, Http2Error.PROTOCOL_ERROR.code(), null);

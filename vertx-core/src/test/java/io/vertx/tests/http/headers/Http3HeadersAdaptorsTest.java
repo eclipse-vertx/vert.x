@@ -12,8 +12,7 @@
 package io.vertx.tests.http.headers;
 
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
-import io.vertx.core.http.impl.http3.Http3HeadersMultiMap;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -21,7 +20,7 @@ import io.vertx.core.http.impl.http3.Http3HeadersMultiMap;
 public class Http3HeadersAdaptorsTest extends HttpHeadersAdaptorsTestBase {
 
   @Override
-  protected VertxHttpHeaders newMultiMap() {
-    return new Http3HeadersMultiMap(new DefaultHttp3Headers());
+  protected Http2HeadersMultiMap newMultiMap() {
+    return new Http2HeadersMultiMap(new DefaultHttp3Headers());
   }
 }

@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.CookieJar;
 import io.vertx.core.http.impl.HttpNetSocket;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.ServerCookie;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -59,8 +60,8 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   private final Http3ServerConnection conn;
   private final ContextInternal context;
   private final boolean push;
-  private Http3HeadersMultiMap headersMap;
-  private Http3HeadersMultiMap trailedMap;
+  private Http2HeadersMultiMap headersMap;
+  private Http2HeadersMultiMap trailedMap;
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
@@ -243,7 +244,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
 
   @Override
   public MultiMap trailers() {
-    Http3HeadersMultiMap ret = trailedMap;
+    Http2HeadersMultiMap ret = trailedMap;
     if (ret == null) {
       ret = conn.newHeaders();
       trailedMap = ret;
@@ -330,7 +331,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = context.promise();
-    Http3HeadersMultiMap http3Headers = conn.newHeaders();
+    Http2HeadersMultiMap http3Headers = conn.newHeaders();
     for (Entry<String, String> header : headers) {
       http3Headers.add(header.getKey(), header.getValue());
     }
@@ -772,7 +773,7 @@ public class Http3ServerResponse implements HttpServerResponse, HttpResponse {
     }
 
     @Override
-    public void handleHeaders(Http3HeadersMultiMap headers) {
+    public void handleHeaders(Http2HeadersMultiMap headers) {
       // Do nothing ???
     }
 

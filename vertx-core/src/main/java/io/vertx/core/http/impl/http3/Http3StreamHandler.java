@@ -14,10 +14,11 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 
 public interface Http3StreamHandler {
 
-  void handleHeaders(Http3HeadersMultiMap head);
+  void handleHeaders(Http2HeadersMultiMap head);
   void handleReset(long errorCode);
   void handleException(Throwable cause);
   void handleClose();

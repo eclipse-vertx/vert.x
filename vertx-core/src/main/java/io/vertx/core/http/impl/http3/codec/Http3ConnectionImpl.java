@@ -31,7 +31,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.http3.Http3HeadersMultiMap;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http3.Http3StreamBase;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
@@ -91,8 +91,8 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 //    this.localSettings = handler.initialSettings();
   }
 
-  public Http3HeadersMultiMap newHeaders() {
-    return new Http3HeadersMultiMap(new DefaultHttp3Headers());
+  public Http2HeadersMultiMap newHeaders() {
+    return new Http2HeadersMultiMap(new DefaultHttp3Headers());
   }
 
   @Override
@@ -204,7 +204,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   public void onHeadersRead(ChannelHandlerContext ctx, Http3StreamBase stream,
                             Http3Headers headers, boolean endOfStream, QuicStreamChannel streamChannel) throws Http2Exception {
     if (stream != null && stream.isHeadersReceived()) {
-      stream.onTrailers(new Http3HeadersMultiMap(headers));
+      stream.onTrailers(new Http2HeadersMultiMap(headers));
     } else {
       onHeadersRead(stream, streamChannel, headers, null, endOfStream);
     }
@@ -486,7 +486,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   @Override
-  public void writeHeaders(QuicStreamChannel streamChannel, Http3HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(QuicStreamChannel streamChannel, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     handler.writeHeaders(streamChannel, headers.prepare(), end, priority, checkFlush, (FutureListener<Void>) promise);
   }
 

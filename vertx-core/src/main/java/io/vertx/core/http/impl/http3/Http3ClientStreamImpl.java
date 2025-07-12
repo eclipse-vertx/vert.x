@@ -263,7 +263,7 @@ public class Http3ClientStreamImpl implements HttpClientStream, Http3ClientStrea
   }
 
   @Override
-  public void handleHeaders(Http3HeadersMultiMap headers) {
+  public void handleHeaders(Http2HeadersMultiMap headers) {
     Handler<HttpResponseHead> handler = headHandler;
     if (handler != null) {
       int status = headers.status();

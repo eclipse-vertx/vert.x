@@ -16,10 +16,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -35,8 +35,8 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class Http3ServerStream extends Http3StreamBase {
 
   private final Http3ServerConnection connection;
-  private Http3HeadersMultiMap requestHeaders;
-  private Http3HeadersMultiMap responseHeaders;
+  private Http2HeadersMultiMap requestHeaders;
+  private Http2HeadersMultiMap responseHeaders;
   private String scheme;
   private HttpMethod method;
   private String uri;
@@ -56,7 +56,7 @@ public class Http3ServerStream extends Http3StreamBase {
                            HttpServerMetrics serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
-                           Http3HeadersMultiMap requestHeaders,
+                           Http2HeadersMultiMap requestHeaders,
                            HttpMethod method,
                            String uri,
                            TracingPolicy tracingPolicy,
@@ -111,7 +111,7 @@ public class Http3ServerStream extends Http3StreamBase {
     return handler;
   }
 
-  public Http3HeadersMultiMap headers() {
+  public Http2HeadersMultiMap headers() {
     return requestHeaders;
   }
 
@@ -140,7 +140,7 @@ public class Http3ServerStream extends Http3StreamBase {
     return connection;
   }
 
-  public void onHeaders(Http3HeadersMultiMap headers) {
+  public void onHeaders(Http2HeadersMultiMap headers) {
 
     this.method = headers.method();
     this.uri = headers.path();
@@ -152,7 +152,7 @@ public class Http3ServerStream extends Http3StreamBase {
   }
 
   @Override
-  void writeHeaders0(Http3HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     // Work around
     responseHeaders = headers;
     super.writeHeaders0(headers, end, checkFlush, promise);
@@ -176,7 +176,7 @@ public class Http3ServerStream extends Http3StreamBase {
       if (ar.succeeded()) {
         Http3ServerStream pushStream = ar.result();
         pushStream.priority(priority()); // Necessary ???
-        Http3HeadersMultiMap mmap = connection.newHeaders();
+        Http2HeadersMultiMap mmap = connection.newHeaders();
         if (headers != null) {
           mmap.addAll(headers);
         }
@@ -188,7 +188,7 @@ public class Http3ServerStream extends Http3StreamBase {
   }
 
   @Override
-  protected void observeOutboundHeaders(Http3HeadersMultiMap headers) {
+  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.responseBegin(metric, observableResponse());
@@ -211,7 +211,7 @@ public class Http3ServerStream extends Http3StreamBase {
   }
 
   @Override
-  protected void observeInboundHeaders(Http3HeadersMultiMap headers) {
+  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
         metric = serverMetrics.requestBegin(socketMetric, observableRequest());

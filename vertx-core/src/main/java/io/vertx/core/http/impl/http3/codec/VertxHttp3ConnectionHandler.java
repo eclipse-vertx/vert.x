@@ -52,7 +52,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http3.Http3StreamBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -227,13 +227,13 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     connection.onGoAwayReceived(new GoAway().setErrorCode(-1).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(Unpooled.EMPTY_BUFFER)));
   }
 
-  public void writeHeaders(QuicStreamChannel streamChannel, VertxHttpHeaders headers, boolean end,
+  public void writeHeaders(QuicStreamChannel streamChannel, Http2HeadersMultiMap headers, boolean end,
                            StreamPriority priority, boolean checkFlush, FutureListener<Void> listener) {
     log.debug(String.format("%s - Write header for channelId: %s, streamId: %s",
       agentType, streamChannel.id(), streamChannel.streamId()));
 
     streamChannel.updatePriority(new QuicStreamPriority(priority.getHttp3Urgency(), priority.isHttp3Incremental()));
-    Http3Headers http3Headers = headers.getHeaders();
+    Http3Headers http3Headers = (Http3Headers) headers.unwrap();
 
     ChannelPromise promise = streamChannel.newPromise();
     if (listener != null) {

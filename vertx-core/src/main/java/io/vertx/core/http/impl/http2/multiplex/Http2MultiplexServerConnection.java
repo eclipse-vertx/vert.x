@@ -27,7 +27,6 @@ import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerStream;
@@ -109,12 +108,12 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    VertxHttpHeaders prepare = headers.prepare();
+    Http2HeadersMultiMap prepare = headers.prepare();
     if (headers.status() != null && compressionManager != null) {
       Http2ServerStream stream = stream(streamId);
-      compressionManager.setContentEncoding(stream.headers().getHeaders(), headers.getHeaders());
+      compressionManager.setContentEncoding(stream.headers().unwrap(), headers.unwrap());
     }
-    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame(prepare.getHeaders(), end), promise);
+    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) prepare.unwrap(), end), promise);
   }
 
   @Override

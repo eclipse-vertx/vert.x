@@ -18,7 +18,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
+public class CaseInsensitiveHeadersTest extends Http2HeadersMultiMapTest {
 
   public CaseInsensitiveHeadersTest() {
     sameHash1 = "AZ";

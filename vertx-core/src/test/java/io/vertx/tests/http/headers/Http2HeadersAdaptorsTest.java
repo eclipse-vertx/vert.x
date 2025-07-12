@@ -12,7 +12,6 @@
 package io.vertx.tests.http.headers;
 
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 
 /**
@@ -21,7 +20,7 @@ import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 public class Http2HeadersAdaptorsTest extends HttpHeadersAdaptorsTestBase {
 
   @Override
-  protected VertxHttpHeaders newMultiMap() {
+  protected Http2HeadersMultiMap newMultiMap() {
     return new Http2HeadersMultiMap(new DefaultHttp2Headers());
   }
 }

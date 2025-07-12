@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.HttpEventHandler;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.NettyFileUpload;
 import io.vertx.core.http.impl.NettyFileUploadDataFactory;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
@@ -99,7 +100,7 @@ public class Http3ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
-  public void handleHeaders(Http3HeadersMultiMap headers) {
+  public void handleHeaders(Http2HeadersMultiMap headers) {
     this.headersMap = headers;
 
     // Check expect header and implement 100 continue automatically

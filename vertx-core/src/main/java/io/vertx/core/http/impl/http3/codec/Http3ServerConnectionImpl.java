@@ -24,7 +24,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.http3.Http3HeadersMultiMap;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http3.Http3ServerConnection;
 import io.vertx.core.http.impl.http3.Http3ServerStream;
 import io.vertx.core.http.impl.http3.Http3StreamBase;
@@ -89,7 +89,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
     }
   }
 
-  public String determineContentEncoding(Http3HeadersMultiMap headers) {
+  public String determineContentEncoding(Http2HeadersMultiMap headers) {
     String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
@@ -259,7 +259,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
   protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http3ServerStream stream0;
     if (stream == null) {
-      Http3HeadersMultiMap headersMap = new Http3HeadersMultiMap(headers);
+      Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
       if (!headersMap.validate(true)) {
         handler.writeReset(streamChannel, Http2Error.PROTOCOL_ERROR.code(), null);
         return;

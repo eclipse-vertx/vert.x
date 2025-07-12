@@ -25,7 +25,7 @@ import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
@@ -37,7 +37,7 @@ import io.vertx.core.net.impl.MessageWrite;
  */
 public abstract class Http3StreamBase {
 
-  private static final Http3HeadersMultiMap EMPTY = new Http3HeadersMultiMap(new DefaultHttp3Headers());
+  private static final Http2HeadersMultiMap EMPTY = new Http2HeadersMultiMap(new DefaultHttp3Headers());
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
@@ -203,7 +203,7 @@ public abstract class Http3StreamBase {
     context.execute(code, this::handleReset);
   }
 
-  public void onHeaders(Http3HeadersMultiMap headers) {
+  public void onHeaders(Http2HeadersMultiMap headers) {
     if (headersReceived) {
       throw new IllegalStateException();
     }
@@ -245,7 +245,7 @@ public abstract class Http3StreamBase {
     onTrailers(EMPTY);
   }
 
-  public final void onTrailers(Http3HeadersMultiMap trailers) {
+  public final void onTrailers(Http2HeadersMultiMap trailers) {
     if (trailersReceived) {
       throw new IllegalStateException();
     }
@@ -294,7 +294,7 @@ public abstract class Http3StreamBase {
     return promise.future();
   }
 
-  public final void writeHeaders(Http3HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public final void writeHeaders(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first_) {
       first_ = false;
       EventLoop eventLoop = connection.context().nettyEventLoop();
@@ -317,7 +317,7 @@ public abstract class Http3StreamBase {
     }
   }
 
-  void writeHeaders0(Http3HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (reset != -1L) {
       if (promise != null) {
         promise.fail("Stream reset");
@@ -472,7 +472,7 @@ public abstract class Http3StreamBase {
     }
   }
 
-  private void handleHeader(Http3HeadersMultiMap map) {
+  private void handleHeader(Http2HeadersMultiMap map) {
     Http3StreamHandler handler = handler();
     if (handler != null) {
       handler.handleHeaders(map);
@@ -505,13 +505,13 @@ public abstract class Http3StreamBase {
   protected void observeReset() {
   }
 
-  protected void observeInboundHeaders(Http3HeadersMultiMap headers) {
+  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
   }
 
   protected void observeOutboundTrailers() {
   }
 
-  protected void observeOutboundHeaders(Http3HeadersMultiMap headers) {
+  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
   }
 
   protected void observeInboundTrailers() {
@@ -521,7 +521,7 @@ public abstract class Http3StreamBase {
     return reset;
   }
 
-  public void determineIfTrailersReceived(VertxHttpHeaders headers) {
+  public void determineIfTrailersReceived(Http2HeadersMultiMap headers) {
     trailersReceived = headersReceived && headers.method() == null && headers.status() == null;
 //    headerReceivedCount++;
   }

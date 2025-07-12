@@ -12,7 +12,7 @@
 package io.vertx.tests.http.headers;
 
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.net.HostAndPort;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -28,9 +28,9 @@ import static org.junit.Assert.*;
  */
 public abstract class HttpHeadersAdaptorsTestBase extends HeadersTest {
 
-  protected VertxHttpHeaders map;
+  protected Http2HeadersMultiMap map;
 
-  protected abstract VertxHttpHeaders newMultiMap();
+  protected abstract Http2HeadersMultiMap newMultiMap();
 
   @Before
   public void setUp() {

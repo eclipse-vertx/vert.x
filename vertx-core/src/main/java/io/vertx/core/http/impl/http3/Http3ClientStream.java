@@ -20,6 +20,7 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -100,7 +101,7 @@ public class Http3ClientStream extends Http3StreamBase {
 
     @Override
     public void write() {
-      Http3HeadersMultiMap headers = connection.newHeaders();
+      Http2HeadersMultiMap headers = connection.newHeaders();
       headers.method(request.method);
       boolean e;
       if (request.method == HttpMethod.CONNECT) {
@@ -162,7 +163,7 @@ public class Http3ClientStream extends Http3StreamBase {
     return connection;
   }
 
-  public void onPush(Http3ClientStreamImpl pushStream, int promisedStreamId, Http3HeadersMultiMap headers, boolean writable) {
+  public void onPush(Http3ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
     Http3ClientPush push = new Http3ClientPush(headers, pushStream);
 /*
     pushStream.stream.init(promisedStreamId, writable);
@@ -183,7 +184,7 @@ public class Http3ClientStream extends Http3StreamBase {
     context.execute(null, v -> handleEarlyHints(headers));
   }
 
-  public void onHeaders(Http3HeadersMultiMap headers) {
+  public void onHeaders(Http2HeadersMultiMap headers) {
     int status = headers.status();
     if (status == 100) {
       onContinue();
@@ -233,7 +234,7 @@ public class Http3ClientStream extends Http3StreamBase {
   }
 
   @Override
-  protected void observeOutboundHeaders(Http3HeadersMultiMap headers) {
+  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
     if (clientMetrics != null) {
       metric = clientMetrics.requestBegin(requestHead.uri, requestHead);
     }
@@ -271,7 +272,7 @@ public class Http3ClientStream extends Http3StreamBase {
   }
 
   @Override
-  protected void observeInboundHeaders(Http3HeadersMultiMap headers) {
+  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
     if (clientMetrics != null) {
       clientMetrics.responseBegin(metric, responseHead);
     }
