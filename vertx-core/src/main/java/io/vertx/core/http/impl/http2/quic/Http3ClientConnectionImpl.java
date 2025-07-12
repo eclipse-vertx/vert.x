@@ -63,69 +63,13 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
     this.handler = connHandler;
   }
 
-//  @Override
-//  protected void onHeadersRead(Http3StreamBase stream, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream, QuicStreamChannel streamChannel) {
-//    stream.determineIfTrailersReceived(new Http3HeadersMultiMap(headers));
-//    if (!stream.isTrailersReceived()) {
-//      stream.onHeaders(new Http3HeadersMultiMap(headers));
-//    } else {
-//      stream.onTrailers(new Http3HeadersMultiMap(headers));
-//    }
-//  }
-
-
-
-//  protected synchronized void onHeadersRead(int streamId, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
-//    Http3ClientStream stream = (Http3ClientStream) stream(streamId);
-//    Http3Stream s = handler.connection().stream(streamId);
-//    Http3HeadersMultiMap headersMap = new Http3HeadersMultiMap(headers);
-//    if (!s.isTrailersReceived()) {
-//      if (!headersMap.validate(false)) {
-//        handler.writeReset(streamId, Http3Error.PROTOCOL_ERROR.code(), null);
-//      } else {
-//        headersMap.sanitize();
-//        if (streamPriority != null) {
-//          stream.priority(streamPriority);
-//        }
-//        stream.onHeaders(headersMap);
-//        if (endOfStream) {
-//          stream.onTrailers();
-//        }
-//      }
-//    } else {
-//      stream.onTrailers(headersMap);
-//    }
-//  }
+  HttpClientBase client() {
+    return client;
+  }
 
   @Override
   public HttpVersion version() {
     return HttpVersion.HTTP_3;
-  }
-
-  @Override
-  protected synchronized void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    Http2ClientStream stream0 = (Http2ClientStream) stream(streamChannel);
-    Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
-    if (!stream0.isTrailersReceived()) {
-      if (!headersMap.validate(false)) {
-        handler.writeReset(streamChannel, Http2Error.PROTOCOL_ERROR.code(), null);
-      } else {
-        headersMap.sanitize();
-        if (streamPriority != null) {
-          stream0.priority(streamPriority);
-        }
-        stream0.onHeaders(headersMap);
-        if (endOfStream) {
-          stream0.onTrailers();
-        }
-      }
-    } else {
-      stream0.onTrailers(headersMap);
-    }
-  }
-
-  HttpClientBase client() {
-    return client;
   }
 
   @Override
@@ -261,6 +205,27 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
     return 0L;
   }
 
+  @Override
+  protected synchronized void onHeadersRead(Http2StreamBase vertxStream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+    Http2ClientStream stream = (Http2ClientStream) stream(streamChannel);
+    Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+    if (!stream.isTrailersReceived()) {
+      if (!headersMap.validate(false)) {
+        handler.writeReset(streamChannel, Http2Error.PROTOCOL_ERROR.code(), null);
+      } else {
+        headersMap.sanitize();
+        if (streamPriority != null) {
+          stream.priority(streamPriority);
+        }
+        stream.onHeaders(headersMap);
+        if (endOfStream) {
+          stream.onTrailers();
+        }
+      }
+    } else {
+      stream.onTrailers(headersMap);
+    }
+  }
 
 //  @Override
 //  protected void handleIdle(IdleStateEvent event) {
@@ -322,6 +287,5 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
 
   @Override
   public void createStream(Http2ClientStream vertxStream) throws Exception {
-
   }
 }
