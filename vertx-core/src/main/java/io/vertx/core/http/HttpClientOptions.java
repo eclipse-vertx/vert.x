@@ -1069,28 +1069,4 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.name = name;
     return this;
   }
-
-  /**
-   * @return the maximum number of concurrent streams for an HTTP/3 connection
-   */
-  public int getHttp3MultiplexingLimit() {
-    return http3MultiplexingLimit;
-  }
-
-  /**
-   * Set a client limit of the number concurrent streams for each HTTP/3 connection, this limits the number
-   * of streams the client can create for a connection. The effective number of streams for a
-   * connection is the min of this value and http3InitialMaxStreamDataUnidirectional and http3InitialMaxStreamsBidirectional.
-   * <p/>
-   *
-   * @param limit the maximum concurrent for an HTTP/3 connection
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setHttp3MultiplexingLimit(int limit) {
-    if (limit == 0 || limit < -1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
-    }
-    this.http3MultiplexingLimit = limit;
-    return this;
-  }
 }

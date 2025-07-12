@@ -103,10 +103,10 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   public long concurrency() {
     long concurrency = Math.min(client.options().getSslOptions().getHttp3InitialMaxStreamsBidirectional(),
       client.options().getSslOptions().getHttp3InitialMaxStreamsUnidirectional());
-    long http3MaxConcurrency = client.options().getHttp3MultiplexingLimit() <= 0 ? Long.MAX_VALUE :
-      client.options().getHttp3MultiplexingLimit();
-    if (http3MaxConcurrency > 0) {
-      concurrency = Math.min(concurrency / 2, http3MaxConcurrency);
+    long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE :
+      client.options().getHttp2MultiplexingLimit();
+    if (http2MaxConcurrency > 0) {
+      concurrency = Math.min(concurrency / 2, http2MaxConcurrency);
     }
     return concurrency;
   }
@@ -151,7 +151,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    int limit = client.options().getHttp3MultiplexingLimit();
+    int limit = client.options().getHttp2MultiplexingLimit();
     if (limit > 0) {
       concurrency = Math.min(concurrency, limit);
     }
