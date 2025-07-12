@@ -24,6 +24,7 @@ import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpSettings;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
@@ -63,6 +64,11 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   public Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler) {
     this.streamHandler = handler;
     return this;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
   @Override
