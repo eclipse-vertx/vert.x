@@ -26,6 +26,6 @@ public class Http3ClientConnectionTest extends HttpClientConnectionTest {
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions().setHttp3MultiplexingLimit(10);
+    return HttpOptionsFactory.createH3HttpClientOptions().setHttp2MultiplexingLimit(10);
   }
 }

@@ -24,6 +24,6 @@ public class Http3ClientTimeoutTest extends HttpClientTimeoutTest {
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions().setHttp3MultiplexingLimit(5);
+    return HttpOptionsFactory.createH3HttpClientOptions().setHttp2MultiplexingLimit(5);
   }
 }
