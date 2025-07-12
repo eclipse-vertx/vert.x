@@ -27,6 +27,9 @@ import io.netty.incubator.codec.http3.Http3GoAwayFrame;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
+import io.netty.incubator.codec.quic.QuicCodecBuilder;
+import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
@@ -38,9 +41,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.net.SSLOptions;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongFunction;
 
@@ -123,6 +128,35 @@ public class Http3Utils {
       .initialMaxData(10000000)
       .initialMaxStreamDataBidirectionalLocal(1000000)
       .build();
+  }
+
+  public static QuicServerCodecBuilder newQuicServerCodecBuilder(SSLOptions sslOptions, Executor delegatedTaskExec) {
+    QuicServerCodecBuilder quicServerCodecBuilder = Http3.newQuicServerCodecBuilder();
+    return newQuicCodecBuilder(quicServerCodecBuilder, sslOptions, delegatedTaskExec);
+  }
+
+  public static QuicClientCodecBuilder newQuicClientCodecBuilder(SSLOptions sslOptions, Executor delegatedTaskExec) {
+    QuicClientCodecBuilder quicClientCodecBuilder = Http3.newQuicClientCodecBuilder();
+    return newQuicCodecBuilder(quicClientCodecBuilder, sslOptions, delegatedTaskExec);
+  }
+
+  private static <T extends QuicCodecBuilder<T>> T newQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions,
+                                                                       Executor delegatedTaskExec) {
+    quicCodecBuilder
+      // Enabling this option allows sending unreliable, connectionless data over QUIC
+      // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.
+      .datagram(2000000, 2000000)
+
+      .sslTaskExecutor(delegatedTaskExec)
+      .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
+      .initialMaxData(sslOptions.getHttp3InitialMaxData())
+      .initialMaxStreamsBidirectional(sslOptions.getHttp3InitialMaxStreamsBidirectional())
+      .initialMaxStreamDataBidirectionalLocal(sslOptions.getHttp3InitialMaxStreamDataBidirectionalLocal())
+      .initialMaxStreamDataBidirectionalRemote(sslOptions.getHttp3InitialMaxStreamDataBidirectionalRemote())
+      .initialMaxStreamsUnidirectional(sslOptions.getHttp3InitialMaxStreamsUnidirectional())
+      .initialMaxStreamDataUnidirectional(sslOptions.getHttp3InitialMaxStreamDataUnidirectional())
+    ;
+    return quicCodecBuilder;
   }
 
   public static class MyChannelInitializer extends ChannelInitializer<QuicChannel> {

@@ -30,6 +30,7 @@ import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.Http3Utils;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
@@ -64,7 +65,7 @@ public class SslChannelProvider {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (sslOptions.isHttp3()) {
       QuicSslContext quicSslContext = (QuicSslContext) ((VertxSslContext) sslContext).unwrap();
-      return configureQuicCodecBuilder(Http3.newQuicClientCodecBuilder(), sslOptions, delegatedTaskExec)
+      return Http3Utils.newQuicClientCodecBuilder(sslOptions, delegatedTaskExec)
         .sslEngineProvider(channel -> quicSslContext.newEngine(channel.alloc(), peerAddress.host(), peerAddress.port()))
         .build();
     }
@@ -98,7 +99,7 @@ public class SslChannelProvider {
       Arguments.require(handler != null, "handler can't be null for http/3");
 
       QuicSslContext quicSslContext = (QuicSslContext) ((VertxSslContext) sslContext).unwrap();
-      return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions, delegatedTaskExec)
+      return Http3Utils.newQuicServerCodecBuilder(sslOptions, delegatedTaskExec)
         .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
         .sslEngineProvider(quicChannel -> {
           InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
@@ -128,8 +129,7 @@ public class SslChannelProvider {
         QuicSslContextBuilder.buildForServerWithSni(sslContextProvider.serverNameMapping(sslOptions.isUseAlpn(),
           sslOptions.isHttp3()));
 
-      return configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder(), sslOptions,
-        delegatedTaskExec)
+      return Http3Utils.newQuicServerCodecBuilder(sslOptions, delegatedTaskExec)
         .sslEngineProvider(quicChannel -> {
           InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
           return serverSslContextWithSni.newEngine(quicChannel.alloc(), address.getHostString(), address.getPort());
@@ -142,25 +142,6 @@ public class SslChannelProvider {
     return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn(),
       sslOptions.isHttp3()), sslOptions.getSslHandshakeTimeoutUnit().toMillis(sslOptions.getSslHandshakeTimeout()),
       delegatedTaskExec, remoteAddress);
-  }
-
-  private static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions,
-                                                                             Executor delegatedTaskExec) {
-    quicCodecBuilder
-      // Enabling this option allows sending unreliable, connectionless data over QUIC
-      // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.
-      .datagram(2000000, 2000000)
-
-      .sslTaskExecutor(delegatedTaskExec)
-      .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
-      .initialMaxData(sslOptions.getHttp3InitialMaxData())
-      .initialMaxStreamsBidirectional(sslOptions.getHttp3InitialMaxStreamsBidirectional())
-      .initialMaxStreamDataBidirectionalLocal(sslOptions.getHttp3InitialMaxStreamDataBidirectionalLocal())
-      .initialMaxStreamDataBidirectionalRemote(sslOptions.getHttp3InitialMaxStreamDataBidirectionalRemote())
-      .initialMaxStreamsUnidirectional(sslOptions.getHttp3InitialMaxStreamsUnidirectional())
-      .initialMaxStreamDataUnidirectional(sslOptions.getHttp3InitialMaxStreamDataUnidirectional())
-    ;
-    return quicCodecBuilder;
   }
 
 }
