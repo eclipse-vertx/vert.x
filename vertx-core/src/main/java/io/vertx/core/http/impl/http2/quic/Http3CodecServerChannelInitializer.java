@@ -72,16 +72,16 @@ public class Http3CodecServerChannelInitializer implements Http2ServerChannelIni
     //TODO: set correct props for VertxHttp3ConnectionHandlerBuilder:
     VertxHttp3ConnectionHandler<Http3ServerConnectionImpl> handler =
       new VertxHttp3ConnectionHandlerBuilder<Http3ServerConnectionImpl>()
-      .server(true)
-      .trafficShapingHandler(trafficShapingHandler)
-      .httpSettings(HttpUtils.fromVertxSettings(options.getInitialHttp3Settings()))
-      .connectionFactory(connHandler -> {
-        Http3ServerConnectionImpl conn = new Http3ServerConnectionImpl(ctx, streamContextSupplier, connHandler,
-          compressionManager != null ? compressionManager::determineEncoding : null, options, serverMetrics);
-        conn.metric(metric);
-        return conn;
-      })
-      .build(ctx);
+        .server(true)
+        .trafficShapingHandler(trafficShapingHandler)
+        .httpSettings(HttpUtils.fromVertxSettings(options.getInitialHttp3Settings()))
+        .connectionFactory(connHandler -> {
+          Http3ServerConnectionImpl conn = new Http3ServerConnectionImpl(ctx, streamContextSupplier, connHandler,
+            compressionManager != null ? compressionManager::determineEncoding : null, options, serverMetrics);
+          conn.metric(metric);
+          return conn;
+        })
+        .build(ctx);
     handler.addHandler(connectionHandler::handle);
     return handler;
   }

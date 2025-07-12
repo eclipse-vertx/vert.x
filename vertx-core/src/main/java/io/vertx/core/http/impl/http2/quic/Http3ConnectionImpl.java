@@ -14,7 +14,8 @@ package io.vertx.core.http.impl.http2.quic;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.codec.http2.*;
+import io.netty.handler.codec.http2.Http2Exception;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.stream.ChunkedInput;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
@@ -41,7 +42,10 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.impl.ConnectionBase;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -59,6 +63,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     buffer.writeBytes(buf);
     return buffer;
   }
+
   protected abstract void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
   protected final ChannelHandlerContext handlerContext;
@@ -195,15 +200,15 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   // Http2FrameListener
 
-//  @Override
+  //  @Override
   public void onPriorityRead(ChannelHandlerContext ctx, Http2StreamBase stream, int streamDependency, short weight, boolean exclusive) {
-      if (stream != null) {
-        StreamPriority streamPriority = new StreamPriority()
-          .setDependency(streamDependency)
-          .setWeight(weight)
-          .setExclusive(exclusive);
-        stream.onPriorityChange(streamPriority);
-      }
+    if (stream != null) {
+      StreamPriority streamPriority = new StreamPriority()
+        .setDependency(streamDependency)
+        .setWeight(weight)
+        .setExclusive(exclusive);
+      stream.onPriorityChange(streamPriority);
+    }
   }
 
   //  @Override
@@ -256,7 +261,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) {
   }
 
-//  @Override
+  //  @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, Http2StreamBase stream,
                              ByteBuf payload) {
     if (stream != null) {
@@ -303,7 +308,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 //    } catch (Http2Exception e) {
 //      throw new VertxException(e);
 //    }
-      return this;
+    return this;
   }
 
   @Override
@@ -312,7 +317,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     if (lastStreamId < 0) {
       lastStreamId = handler.getLastStreamIdOnConnection();
     }
-    handler.writeGoAway(errorCode, lastStreamId, debugData != null ? ((BufferInternal)debugData).getByteBuf() : Unpooled.EMPTY_BUFFER);
+    handler.writeGoAway(errorCode, lastStreamId, debugData != null ? ((BufferInternal) debugData).getByteBuf() : Unpooled.EMPTY_BUFFER);
     return this;
   }
 
@@ -411,7 +416,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
       Long key = entry.getKey();
       if (!Objects.equals(settingsUpdate.get(key), entry.getValue())) {
         settingsNew.put(key, entry.getValue());
-  }
+      }
     });
 
     Promise<Void> promise = context.promise();

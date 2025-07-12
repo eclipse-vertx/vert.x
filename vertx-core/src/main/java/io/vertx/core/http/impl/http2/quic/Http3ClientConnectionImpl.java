@@ -20,7 +20,10 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.HttpClientBase;
+import io.vertx.core.http.impl.HttpClientConnection;
+import io.vertx.core.http.impl.HttpClientStream;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientStream;
 import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
@@ -136,7 +139,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
     return goneAway;
   }
 
-/**
+  /**
    * Try to evict the connection from the pool. This can be called multiple times since
    * the connection can be eagerly removed from the pool on emission or reception of a {@code GOAWAY}
    * frame.
@@ -261,7 +264,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
       .build(context);
     handler.addHandler(conn -> {
       if (metrics != null) {
-        if (!upgrade)  {
+        if (!upgrade) {
           met.endpointConnected(metrics);
         }
       }

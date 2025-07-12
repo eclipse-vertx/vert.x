@@ -41,6 +41,7 @@ public class VertxHttp3ConnectionHandlerBuilder<C extends Http3ConnectionImpl> {
     this.httpSettings = httpSettings;
     return this;
   }
+
   public VertxHttp3ConnectionHandlerBuilder<C> trafficShapingHandler(GlobalTrafficShapingHandler trafficShapingHandler) {
     this.trafficShapingHandler = trafficShapingHandler;
     return this;

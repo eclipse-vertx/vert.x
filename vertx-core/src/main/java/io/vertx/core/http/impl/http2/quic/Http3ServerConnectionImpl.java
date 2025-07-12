@@ -22,8 +22,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
@@ -268,7 +268,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 //      if (streamId == 1 && handler.upgraded) {
 //        stream0 = createStream(headers, true);
 //      } else {
-        stream0 = createStream(headers, endOfStream);
+      stream0 = createStream(headers, endOfStream);
 //      }
       initStream(streamChannel, stream0);
       if (streamPriority != null) {

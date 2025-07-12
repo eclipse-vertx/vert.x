@@ -90,7 +90,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     AttributeKey.valueOf(Long.class, "VERTX_LAST_STREAM_ID");
 
   public VertxHttp3ConnectionHandler(
-      Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
+    Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
     ContextInternal context,
     Http3SettingsFrame httpSettings,
     boolean isServer,
@@ -209,7 +209,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
       if (evt instanceof ShutdownEvent) {
         ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
         connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
-            } else if (evt instanceof IdleStateEvent) {
+      } else if (evt instanceof IdleStateEvent) {
         connection.handleIdle((IdleStateEvent) evt);
       } else if (evt instanceof QuicConnectionCloseEvent) {
         connection.onGoAwayReceived(new GoAway());
@@ -256,7 +256,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     ChannelPromise promise = streamChannel.newPromise();
     if (listener != null) {
       promise.addListener(listener);
-      }
+    }
 
     if (end) {
       promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
@@ -274,7 +274,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
   static Http2StreamBase getVertxStreamFromStreamChannel(ChannelHandlerContext ctx) {
     return getVertxStreamFromStreamChannel((QuicStreamChannel) ctx.channel());
-    }
+  }
 
   static Http2StreamBase getVertxStreamFromStreamChannel(QuicStreamChannel streamChannel) {
     return streamChannel.attr(VERTX_STREAM_KEY).get();
@@ -286,7 +286,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
   public static void setLastStreamIdOnConnection(QuicChannel quicChannel, long streamId) {
     quicChannel.attr(LAST_STREAM_ID_KEY).set(streamId);
-      }
+  }
 
   Long getLastStreamIdOnConnection() {
     return chctx.channel().attr(LAST_STREAM_ID_KEY).get();
@@ -563,7 +563,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
   private void handleOnStreamChannelClosed(QuicStreamChannel streamChannel) {
     log.debug(String.format("%s - called handleOnStreamChannelClosed for streamChannel with id: %s, streamId: %s",
-        agentType, streamChannel.id(), streamChannel.streamId()));
+      agentType, streamChannel.id(), streamChannel.streamId()));
     connection.onStreamClosed(streamChannel);
   }
 }
