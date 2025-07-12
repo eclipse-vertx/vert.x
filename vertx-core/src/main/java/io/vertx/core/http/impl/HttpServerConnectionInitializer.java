@@ -27,8 +27,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
-import io.vertx.core.http.impl.http3.Http3ServerChannelInitializer;
-import io.vertx.core.http.impl.http3.codec.Http3CodecServerChannelInitializer;
+import io.vertx.core.http.impl.http2.quic.Http3CodecServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
@@ -61,7 +60,7 @@ public class HttpServerConnectionInitializer {
   private final CompressionManager compressionManager;
   private final int compressionContentSizeThreshold;
   private final Http2ServerChannelInitializer http2ChannelInitializer;
-  private final Http3ServerChannelInitializer http3ChannelInitializer;
+  private final Http2ServerChannelInitializer http3ChannelInitializer;
   private final Function<String, String> encodingDetector;
 
   HttpServerConnectionInitializer(ContextInternal context,
@@ -91,7 +90,7 @@ public class HttpServerConnectionInitializer {
     }
 
     Http2ServerChannelInitializer http2ChannelInitalizer = null;
-    Http3ServerChannelInitializer http3ChannelInitalizer = null;
+    Http2ServerChannelInitializer http3ChannelInitalizer = null;
     if (options.getHttp2MultiplexImplementation()) {
       http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
         context,
@@ -224,7 +223,7 @@ public class HttpServerConnectionInitializer {
   }
 
   private void configureHttp3(ChannelPipeline pipeline) {
-    http3ChannelInitializer.configureHttp3(context, pipeline);
+    http3ChannelInitializer.configureHttp2(context, pipeline, true);
     configureHttp3Pipeline(pipeline);
   }
 

@@ -204,7 +204,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
 
   @Override
   public HttpVersion version() {
-    return HttpVersion.HTTP_2;
+    return conn.version();
   }
 
 

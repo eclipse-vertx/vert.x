@@ -486,4 +486,8 @@ public abstract class Http2StreamBase {
 
   protected void observeInboundTrailers() {
   }
+
+  public long getReset() {
+    return reset;
+  }
 }

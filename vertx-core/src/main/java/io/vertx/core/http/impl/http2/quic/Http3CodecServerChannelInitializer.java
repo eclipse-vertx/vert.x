@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
@@ -18,13 +18,15 @@ import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerConnectionInitializer;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.http3.Http3ServerChannelInitializer;
+import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.util.function.Supplier;
 
-public class Http3CodecServerChannelInitializer implements Http3ServerChannelInitializer {
+public class Http3CodecServerChannelInitializer implements Http2ServerChannelInitializer {
 
   private final HttpServerMetrics serverMetrics;
   private final Object metric;
@@ -53,7 +55,13 @@ public class Http3CodecServerChannelInitializer implements Http3ServerChannelIni
     this.trafficShapingHandler = trafficShapingHandler;
   }
 
-  public void configureHttp3(ContextInternal context, ChannelPipeline pipeline) {
+  @Override
+  public void configureHttp1OrH2CUpgradeHandler(ContextInternal context, ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
+    throw new RuntimeException("Not Implemented");
+  }
+
+  @Override
+  public void configureHttp2(ContextInternal context, ChannelPipeline pipeline, boolean ssl) {
     VertxHttp3ConnectionHandler<Http3ServerConnectionImpl> handler = buildHttp3ConnectionHandler(context);
     pipeline.replace("handler", "handler", handler);
     pipeline.addLast(handler.getHttp3ConnectionHandler());

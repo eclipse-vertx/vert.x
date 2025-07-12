@@ -7,8 +7,6 @@ import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientBase;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
-import io.vertx.core.http.impl.http3.codec.Http3ClientConnectionImpl;
-import io.vertx.core.http.impl.http3.codec.VertxHttp3ConnectionHandler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -53,7 +53,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http3.Http3StreamBase;
+import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -83,8 +83,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
   private final String agentType;
 
   private boolean read;
-  private static final AttributeKey<Http3StreamBase> VERTX_STREAM_KEY =
-    AttributeKey.valueOf(Http3StreamBase.class, "VERTX_CHANNEL_STREAM");
+  private static final AttributeKey<Http2StreamBase> VERTX_STREAM_KEY =
+    AttributeKey.valueOf(Http2StreamBase.class, "VERTX_CHANNEL_STREAM");
 
   private static final AttributeKey<Long> LAST_STREAM_ID_KEY =
     AttributeKey.valueOf(Long.class, "VERTX_LAST_STREAM_ID");
@@ -272,15 +272,15 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     }
   }
 
-  static Http3StreamBase getVertxStreamFromStreamChannel(ChannelHandlerContext ctx) {
+  static Http2StreamBase getVertxStreamFromStreamChannel(ChannelHandlerContext ctx) {
     return getVertxStreamFromStreamChannel((QuicStreamChannel) ctx.channel());
     }
 
-  static Http3StreamBase getVertxStreamFromStreamChannel(QuicStreamChannel streamChannel) {
+  static Http2StreamBase getVertxStreamFromStreamChannel(QuicStreamChannel streamChannel) {
     return streamChannel.attr(VERTX_STREAM_KEY).get();
   }
 
-  static void setVertxStreamOnStreamChannel(QuicStreamChannel streamChannel, Http3StreamBase vertxStream) {
+  static void setVertxStreamOnStreamChannel(QuicStreamChannel streamChannel, Http2StreamBase vertxStream) {
     streamChannel.attr(VERTX_STREAM_KEY).set(vertxStream);
   }
 
@@ -381,7 +381,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
       log.debug(String.format("%s - Received Header frame for channelId: %s", agentType, ctx.channel().id()));
       read = true;
       headerReceived = true;
-      Http3StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+      Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
       connection.onHeadersRead(ctx, vertxStream, frame.headers(), false, (QuicStreamChannel) ctx.channel());
       ReferenceCountUtil.release(frame);
     }
@@ -402,7 +402,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
       log.debug(String.format("%s - ChannelInputClosed called for channelId: %s, streamId: %s", agentType, ctx.channel().id(),
         ((QuicStreamChannel) ctx.channel()).streamId()));
-      Http3StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+      Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
       if (vertxStream != null) {
         vertxStream.onTrailers();
       }
@@ -423,7 +423,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
       Exception exception_ = exception;
       if (exception.error() == QuicError.STREAM_RESET) {
 
-        Http3StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+        Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
         if (vertxStream != null) {
           vertxStream.onReset(-1);
         } else {
@@ -455,9 +455,9 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
         evt.getClass().getSimpleName()));
 
       if (evt == ChannelInputShutdownEvent.INSTANCE) {
-        Http3StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
+        Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
         if (vertxStream != null && vertxStream.getReset() > -1) {
-          connection.onStreamClosed(vertxStream);
+          connection.onStreamClosed(((QuicStreamChannel) (ctx.channel())));
           return;
         }
       }
@@ -479,7 +479,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
         log.debug(String.format("%s - Received frame http3UnknownFrame : %s", agentType, byteBufToString(frame.content())));
       }
 
-      Http3StreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(ctx);
+      Http2StreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(ctx);
       connection.onUnknownFrame(ctx, (byte) frame.type(), vertxStream, frame.content());
       super.channelRead(ctx, frame);
     }
@@ -564,9 +564,6 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
   private void handleOnStreamChannelClosed(QuicStreamChannel streamChannel) {
     log.debug(String.format("%s - called handleOnStreamChannelClosed for streamChannel with id: %s, streamId: %s",
         agentType, streamChannel.id(), streamChannel.streamId()));
-    Http3StreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(streamChannel);
-    if (vertxStream != null) {
-      connection.onStreamClosed(vertxStream);
-    }
+    connection.onStreamClosed(streamChannel);
   }
 }

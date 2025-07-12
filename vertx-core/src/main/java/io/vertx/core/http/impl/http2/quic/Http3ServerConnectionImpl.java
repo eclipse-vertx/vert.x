@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
@@ -23,11 +23,12 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http3.Http3ServerConnection;
-import io.vertx.core.http.impl.http3.Http3ServerStream;
-import io.vertx.core.http.impl.http3.Http3StreamBase;
+import io.vertx.core.http.impl.http2.Http2ServerConnection;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
+import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -39,7 +40,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements HttpServerConnection, Http3ServerConnection {
+public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
   private final HttpServerOptions options;
   private final HttpServerMetrics metrics;
@@ -47,7 +48,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp3ConnectionHandler handler;
 
-  private Handler<Http3ServerStream> streamHandler;
+  private Handler<Http2ServerStream> streamHandler;
   private int concurrentStreams;
 //  private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
@@ -68,9 +69,14 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
   }
 
   @Override
-  public Http3ServerConnection streamHandler(Handler<Http3ServerStream> handler) {
+  public Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler) {
     this.streamHandler = handler;
     return this;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_3;
   }
 
   public HttpServerMetrics metrics() {
@@ -97,8 +103,8 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
     return null;
   }
 
-  private Http3ServerStream createStream(Http3Headers headers, boolean streamEnded) {
-    return new Http3ServerStream(
+  private Http2ServerStream createStream(Http3Headers headers, boolean streamEnded) {
+    return new Http2ServerStream(
       this,
       metrics,
       metric(),
@@ -107,14 +113,13 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
     );
   }
 
-  private void initStream(QuicStreamChannel streamChannel, Http3ServerStream vertxStream) {
-    vertxStream.init(streamChannel, streamChannel.isWritable());
+  private void initStream(QuicStreamChannel streamChannel, Http2ServerStream vertxStream) {
+    vertxStream.init(Math.toIntExact(streamChannel.streamId()), streamChannel.isWritable());
     init_(vertxStream, streamChannel);
   }
-
 /*
   @Override
-  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriorityBase streamPriority, boolean endOfStream) {
+  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2Stream nettyStream = handler.connection().stream(streamId);
     Http2ServerStream stream;
     if (nettyStream.getProperty(streamKey) == null) {
@@ -144,9 +149,8 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
       stream.onTrailers();
     }
   }
-*/
 
-/*  @Override
+  @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
     super.onRstStreamRead(ctx, streamId, errorCode);
     Pending pendingPush = pendingPushes.remove(streamId);
@@ -155,9 +159,8 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
       checkNextPendingPush();
       pendingPush.promise.fail(new StreamResetException(errorCode));
     }
-  }*/
+  }
 
-/*
   private void checkNextPendingPush() {
     int maxConcurrentStreams = handler.maxConcurrentStreams();
     Iterator<Map.Entry<Integer, Pending>> it = pendingPushes.entrySet().iterator();
@@ -173,23 +176,19 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
       pending.promise.complete(stream);
     }
   }
-*/
 
-/*
   @Override
-  void onStreamClosed(Http2Stream s) {
-    super.onStreamClosed(s);
-    if (pendingPushes.remove(s.id()) != null) {
+  void onStreamClosed(QuicStreamChannel streamChannel) {
+    super.onStreamClosed(streamChannel);
+    if (pendingPushes.remove(streamChannel.id()) != null) {
       //
     } else {
       concurrentStreams--;
       checkNextPendingPush();
     }
   }
-*/
-/*
 
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http2ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -205,9 +204,10 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
       this.stream = stream;
       this.promise = promise;
     }
-  }
+  }*/
+/*
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriorityBase streamPriority, Promise<Http2ServerStream> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());
@@ -223,11 +223,11 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
     Future<Integer> fut = handler.writePushPromise(streamId, headers_);
     fut.addListener((FutureListener<Integer>) future -> {
       if (future.isSuccess()) {
-        synchronized (Http3ServerConnectionImpl.this) {
+        synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
           Http2ServerStream vertxStream = new Http2ServerStream(
-            null,
+            this,
             metrics,
             metric(),
             context,
@@ -236,7 +236,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
             path,
             options.getTracingPolicy(),
             promisedStreamId);
-//          promisedStream.setProperty(streamKey, vertxStream);
+          promisedStream.setProperty(streamKey, vertxStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();
           if (concurrentStreams < maxConcurrentStreams) {
             concurrentStreams++;
@@ -245,7 +245,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
             }
             promise.complete(vertxStream);
           } else {
-            pendingPushes.put(promisedStreamId, new Pending(vertxStream, promise));
+            pendingPushes.put(promisedStreamId, new Http2ServerConnectionImpl.Pending(vertxStream, promise));
           }
         }
       } else {
@@ -256,8 +256,8 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 */
 
   @Override
-  protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    Http3ServerStream stream0;
+  protected synchronized void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+    Http2ServerStream stream0;
     if (stream == null) {
       Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
       if (!headersMap.validate(true)) {
@@ -279,55 +279,16 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
       stream0.onHeaders(headersMap);
     } else {
       // Http server request trailer - not implemented yet (in api)
-      stream0 = (Http3ServerStream) stream(streamChannel);
+      stream0 = (Http2ServerStream) stream(streamChannel);
     }
     if (endOfStream) {
       stream0.onTrailers();
     }
   }
 
-  /*
-  //TODO: remove block.
-  //TODO: it is the old http3 impl
   @Override
-  protected void onHeadersRead(Http3StreamBase stream, Http3Headers headers, StreamPriorityBase streamPriority, boolean endOfStream, QuicStreamChannel streamChannel) {
-    //TODO: Alter the logic of this method based on onHeadersRead method in the Http2ServerConnection class.
-    Http3ServerStream stream0 = null;
-    if (stream == null) {
-//      if (streamId == 1) {
-//        stream = createStream(headers, true);
-//        upgraded = stream;
-//      } else {
-      stream0 = createStream(headers, endOfStream);
-//      }
-      Http3HeadersMultiMap headersMap = new Http3HeadersMultiMap(headers);
-
-      if (!headersMap.validate(true)) {
-//        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
-        return;
-      }
-      headersMap.sanitize();
-
-*//*
-      if (isMalformedRequest(stream0)) {
-//        handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
-        return;
-      }
-*//*
-      initStream(streamChannel, stream0);
-      stream0.context().execute(stream0, streamHandler);
-      stream0.onHeaders(headersMap);
-    } else {
-      // Http server request trailer - not implemented yet (in api)
-      stream0 = (Http3ServerStream) stream;
-    }
-    if (endOfStream) {
-      stream0.onTrailers();
-    }
-  }*/
-
-  @Override
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http3ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
 
   }
+
 }

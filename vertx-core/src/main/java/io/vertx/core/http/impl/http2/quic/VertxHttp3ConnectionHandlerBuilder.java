@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;

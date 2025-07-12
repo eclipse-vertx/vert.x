@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.incubator.codec.http3.Http3Headers;
@@ -18,10 +18,14 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.http2.Http2ClientConnection;
+import io.vertx.core.http.impl.http2.Http2ClientStream;
+import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http3.*;
+import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -30,7 +34,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements HttpClientConnection, Http3ClientConnection {
+public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
@@ -94,8 +98,13 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
 //  }
 
   @Override
-  protected synchronized void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    Http3ClientStream stream0 = (Http3ClientStream) stream(streamChannel);
+  public HttpVersion version() {
+    return HttpVersion.HTTP_3;
+  }
+
+  @Override
+  protected synchronized void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+    Http2ClientStream stream0 = (Http2ClientStream) stream(streamChannel);
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
     if (!stream0.isTrailersReceived()) {
       if (!headersMap.validate(false)) {
@@ -113,11 +122,6 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
     } else {
       stream0.onTrailers(headersMap);
     }
-  }
-
-
-  @Override
-  public void consumeCredits(QuicStreamChannel streamChannel, int amountOfBytes) {
   }
 
   HttpClientBase client() {
@@ -151,6 +155,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
     return this;
   }
 
+  @Override
   public long concurrency() {
     long concurrency = Math.min(client.options().getSslOptions().getHttp3InitialMaxStreamsBidirectional(),
       client.options().getSslOptions().getHttp3InitialMaxStreamsUnidirectional());
@@ -222,7 +227,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   public Future<HttpClientStream> createStream(ContextInternal context) {
     synchronized (this) {
       try {
-        Http3ClientStreamImpl stream = createStream3(context);
+        Http2ClientStreamImpl stream = createStream3(context);
         return context.succeededFuture(stream);
       } catch (Exception e) {
         return context.failedFuture(e);
@@ -230,8 +235,8 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
     }
   }
 
-  private Http3ClientStreamImpl createStream3(ContextInternal context) {
-    return new Http3ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+  private Http2ClientStreamImpl createStream3(ContextInternal context) {
+    return new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
   }
 
   private void recycle() {
@@ -240,8 +245,8 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   }
 
   @Override
-  void onStreamClosed(Http3StreamBase stream) {
-    super.onStreamClosed(stream);
+  void onStreamClosed(QuicStreamChannel streamChannel) {
+    super.onStreamClosed(streamChannel);
     recycle();
   }
 
@@ -306,12 +311,17 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   }
 
   @Override
-  public void createStream(Http3ClientStream vertxStream, Handler<QuicStreamChannel> onComplete) throws Exception {
+  public void createStream(Http2ClientStream vertxStream, Handler<Void> onComplete) throws Exception {
     Future<QuicStreamChannel> streamChannel1 = handler.createStreamChannel();
     streamChannel1.onSuccess(streamChannel -> {
       init_(vertxStream, streamChannel);
-      vertxStream.init(streamChannel);
-      onComplete.handle(streamChannel);
+      vertxStream.init(Math.toIntExact(streamChannel.streamId()), streamChannel.isWritable());
+      onComplete.handle(null);
     }).onFailure(this::handleException);
+  }
+
+  @Override
+  public void createStream(Http2ClientStream vertxStream) throws Exception {
+
   }
 }

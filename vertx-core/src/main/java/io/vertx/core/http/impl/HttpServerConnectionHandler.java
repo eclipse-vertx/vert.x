@@ -25,8 +25,6 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerRequest;
-import io.vertx.core.http.impl.http3.Http3ServerConnection;
-import io.vertx.core.http.impl.http3.Http3ServerRequest;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.ArrayList;
@@ -103,15 +101,6 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
       http2Conn.streamHandler(stream -> {
         HttpServerOptions options = server.options;
         Http2ServerRequest request = new Http2ServerRequest(stream, stream.context(), options.isHandle100ContinueAutomatically(),
-          options.getMaxFormAttributeSize(), options.getMaxFormFields(), options.getMaxFormBufferedBytes(), serverOrigin);
-        request.handler = requestHandler;
-        stream.handler(request);
-      });
-    } else if (conn instanceof Http3ServerConnection) {
-      Http3ServerConnection http3Conn = (Http3ServerConnection) conn;
-      http3Conn.streamHandler(stream -> {
-        HttpServerOptions options = server.options;
-        Http3ServerRequest request = new Http3ServerRequest(stream, stream.context(), options.isHandle100ContinueAutomatically(),
           options.getMaxFormAttributeSize(), options.getMaxFormFields(), options.getMaxFormBufferedBytes(), serverOrigin);
         request.handler = requestHandler;
         stream.handler(request);

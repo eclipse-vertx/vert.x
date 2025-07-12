@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -32,7 +32,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http3.Http3StreamBase;
+import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnection, io.vertx.core.http.impl.http3.Http3Connection {
+abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnection, io.vertx.core.http.impl.http2.Http2Connection {
 
   private static final Logger log = LoggerFactory.getLogger(Http3ConnectionImpl.class);
 
@@ -59,7 +59,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     buffer.writeBytes(buf);
     return buffer;
   }
-  protected abstract void onHeadersRead(Http3StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
+  protected abstract void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
 
   protected final ChannelHandlerContext handlerContext;
   private final VertxHttp3ConnectionHandler handler;
@@ -106,11 +106,11 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   synchronized void onConnectionError(Throwable cause) {
-    ArrayList<Http3StreamBase> vertxHttpStreams = new ArrayList<>();
+    ArrayList<Http2StreamBase> vertxHttpStreams = new ArrayList<>();
     getActiveQuicStreamChannels().forEach(quicStreamChannel -> {
       vertxHttpStreams.add(stream(quicStreamChannel));
     });
-    for (Http3StreamBase stream : vertxHttpStreams) {
+    for (Http2StreamBase stream : vertxHttpStreams) {
       stream.context().dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
@@ -120,27 +120,32 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     return quicStreamChannels.values().stream().filter(Channel::isActive).collect(Collectors.toList());
   }
 
-  public Http3StreamBase stream(QuicStreamChannel streamChannel) {
+  protected QuicStreamChannel getStreamChannel(long streamId) {
+    return this.quicStreamChannels.get(streamId);
+  }
+
+  public Http2StreamBase stream(QuicStreamChannel streamChannel) {
     if (streamChannel == null) {
       return null;
     }
     return VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(streamChannel);
   }
 
-  void onStreamError(Http3StreamBase stream, Throwable cause) {
+  void onStreamError(Http2StreamBase stream, Throwable cause) {
     if (stream != null) {
       stream.onException(cause);
     }
   }
 
-  void onStreamWritabilityChanged(Http3StreamBase stream) {
+  void onStreamWritabilityChanged(Http2StreamBase stream) {
 //    this.handler.getHttp3ConnectionHandler().channelWritabilityChanged();
     if (stream != null) {
       stream.onWritabilityChanged();
     }
   }
 
-  void onStreamClosed(Http3StreamBase stream) {
+  void onStreamClosed(QuicStreamChannel streamChannel) {
+    Http2StreamBase stream = stream(streamChannel);
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -190,7 +195,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   // Http2FrameListener
 
 //  @Override
-  public void onPriorityRead(ChannelHandlerContext ctx, Http3StreamBase stream, int streamDependency, short weight, boolean exclusive) {
+  public void onPriorityRead(ChannelHandlerContext ctx, Http2StreamBase stream, int streamDependency, short weight, boolean exclusive) {
       if (stream != null) {
         StreamPriority streamPriority = new StreamPriority()
           .setDependency(streamDependency)
@@ -201,7 +206,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   //  @Override
-  public void onHeadersRead(ChannelHandlerContext ctx, Http3StreamBase stream,
+  public void onHeadersRead(ChannelHandlerContext ctx, Http2StreamBase stream,
                             Http3Headers headers, boolean endOfStream, QuicStreamChannel streamChannel) throws Http2Exception {
     if (stream != null && stream.isHeadersReceived()) {
       stream.onTrailers(new Http2HeadersMultiMap(headers));
@@ -251,7 +256,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
 //  @Override
-  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, Http3StreamBase stream,
+  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, Http2StreamBase stream,
                              ByteBuf payload) {
     if (stream != null) {
       Buffer buff = BufferInternal.buffer(safeBuffer(payload));
@@ -260,15 +265,15 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   //  @Override
-  public void onRstStreamRead(ChannelHandlerContext ctx, Http3StreamBase stream, long errorCode) {
-//    Http3StreamBase<?, ?, Http2Headers> stream = stream(streamId);
+  public void onRstStreamRead(ChannelHandlerContext ctx, Http2StreamBase stream, long errorCode) {
+//    Http2StreamBase<?, ?, Http2Headers> stream = stream(streamId);
     if (stream != null) {
       stream.onReset(errorCode);
     }
   }
 
   //  @Override
-  public int onDataRead(ChannelHandlerContext ctx, Http3StreamBase stream,
+  public int onDataRead(ChannelHandlerContext ctx, Http2StreamBase stream,
                         ByteBuf data, int padding, boolean endOfStream) {
     if (stream != null) {
       data = safeBuffer(data);
@@ -450,7 +455,8 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     return (Http3ConnectionImpl) super.exceptionHandler(handler);
   }
 
-  public void consumeCredits(QuicStreamChannel stream, int numBytes) {
+  @Override
+  public void consumeCredits(int streamId, int numBytes) {
 //    throw new RuntimeException("Method not implemented");
   }
 
@@ -460,7 +466,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   @Override
-  public void sendFile(QuicStreamChannel streamChannel, ChunkedInput<ByteBuf> file, Promise<Void> promise) {
+  public void sendFile(int streamId, ChunkedInput<ByteBuf> file, Promise<Void> promise) {
     promise.fail("Send file not supported");
   }
 
@@ -476,32 +482,31 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   @Override
-  public void writeFrame(QuicStreamChannel streamChannel, int type, int flags, ByteBuf payload, Promise<Void> promise) {
-    handler.writeFrame(streamChannel, (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
+  public void writeFrame(int streamId, int type, int flags, ByteBuf payload, Promise<Void> promise) {
+    handler.writeFrame(getStreamChannel(streamId), (byte) type, (short) flags, payload, (FutureListener<Void>) promise);
   }
 
   @Override
-  public void writePriorityFrame(QuicStreamChannel streamChannel, StreamPriority priority) {
-    handler.writePriority(streamChannel, priority);
+  public void writePriorityFrame(int streamId, StreamPriority priority) {
+    handler.writePriority(getStreamChannel(streamId), priority);
   }
 
   @Override
-  public void writeHeaders(QuicStreamChannel streamChannel, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    handler.writeHeaders(streamChannel, headers.prepare(), end, priority, checkFlush, (FutureListener<Void>) promise);
-  }
-
-
-  @Override
-  public void writeData(QuicStreamChannel streamChannel, ByteBuf buf, boolean end, Promise<Void> promise) {
-    handler.writeData(streamChannel, buf, end, (FutureListener<Void>) promise);
+  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    handler.writeHeaders(getStreamChannel(streamId), headers.prepare(), end, priority, checkFlush, (FutureListener<Void>) promise);
   }
 
   @Override
-  public void writeReset(QuicStreamChannel streamChannel, long code, Promise<Void> promise) {
-    handler.writeReset(streamChannel, code, null);
+  public void writeData(int streamId, ByteBuf buf, boolean end, Promise<Void> promise) {
+    handler.writeData(getStreamChannel(streamId), buf, end, (FutureListener<Void>) promise);
   }
 
-  protected void init_(Http3StreamBase vertxStream, QuicStreamChannel streamChannel) {
+  @Override
+  public void writeReset(int streamId, long code, Promise<Void> promise) {
+    handler.writeReset(getStreamChannel(streamId), code, null);
+  }
+
+  protected void init_(Http2StreamBase vertxStream, QuicStreamChannel streamChannel) {
     VertxHttp3ConnectionHandler.setVertxStreamOnStreamChannel(streamChannel, vertxStream);
     VertxHttp3ConnectionHandler.setLastStreamIdOnConnection(streamChannel.parent(), streamChannel.streamId());
     this.quicStreamChannels.put(streamChannel.streamId(), streamChannel);
