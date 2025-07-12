@@ -108,7 +108,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   synchronized void onConnectionError(Throwable cause) {
     ArrayList<Http2StreamBase> vertxHttpStreams = new ArrayList<>();
     getActiveQuicStreamChannels().forEach(quicStreamChannel -> {
-      vertxHttpStreams.add(stream(quicStreamChannel));
+      vertxHttpStreams.add(stream(quicStreamChannel.streamId()));
     });
     for (Http2StreamBase stream : vertxHttpStreams) {
       stream.context().dispatch(v -> stream.handleException(cause));
@@ -124,7 +124,8 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     return this.quicStreamChannels.get(streamId);
   }
 
-  public Http2StreamBase stream(QuicStreamChannel streamChannel) {
+  public Http2StreamBase stream(long id) {
+    QuicStreamChannel streamChannel = getStreamChannel(id);
     if (streamChannel == null) {
       return null;
     }
@@ -145,7 +146,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   void onStreamClosed(QuicStreamChannel streamChannel) {
-    Http2StreamBase stream = stream(streamChannel);
+    Http2StreamBase stream = stream(streamChannel.streamId());
     if (stream != null) {
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
@@ -344,7 +345,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
       return;
     }
     handler.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
-    ChannelFuture fut = channel().close();
+    ChannelFuture fut = channel.close();
     fut.addListener(promise);
   }
 

@@ -279,7 +279,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
       stream0.onHeaders(headersMap);
     } else {
       // Http server request trailer - not implemented yet (in api)
-      stream0 = (Http2ServerStream) stream(streamChannel);
+      stream0 = (Http2ServerStream) stream(streamChannel.streamId());
     }
     if (endOfStream) {
       stream0.onTrailers();
