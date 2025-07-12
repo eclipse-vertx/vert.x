@@ -27,8 +27,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
-import io.vertx.core.http.impl.http3.Http3ClientChannelInitializer;
-import io.vertx.core.http.impl.http3.codec.Http3CodecClientChannelInitializer;
+import io.vertx.core.http.impl.http2.quic.Http3CodecClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -68,7 +67,7 @@ public class HttpChannelConnector {
   private final boolean pooled;
   private final long maxLifetime;
   private final Http2ClientChannelInitializer http2ChannelInitializer;
-  private final Http3ClientChannelInitializer http3ChannelInitializer;
+  private final Http2ClientChannelInitializer http3ChannelInitializer;
 
   public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
@@ -84,7 +83,7 @@ public class HttpChannelConnector {
                               long maxLifetimeMillis) {
 
     Http2ClientChannelInitializer http2ChannelInitializer = null;
-    Http3ClientChannelInitializer http3ChannelInitializer = null;
+    Http2ClientChannelInitializer http3ChannelInitializer = null;
     if (client.options.getHttp2MultiplexImplementation()) {
       http2ChannelInitializer = new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(client.options.getInitialSettings()),
@@ -168,7 +167,7 @@ public class HttpChannelConnector {
       if (useAlpn) {
         if (protocol != null && protocol.startsWith("h3")) {
           applyHttp3ConnectionOptions(ch.pipeline());
-          http3ChannelInitializer.http3Connected(context, metric, ch ,promise);
+          http3ChannelInitializer.http2Connected(context, metric, ch ,promise);
         } else if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           http2ChannelInitializer.http2Connected(context, metric, ch ,promise);
@@ -185,7 +184,7 @@ public class HttpChannelConnector {
     } else {
       if (version == HttpVersion.HTTP_3) {
         applyHttp3ConnectionOptions(pipeline);
-        http3ChannelInitializer.http3Connected(context, metric, ch, promise);
+        http3ChannelInitializer.http2Connected(context, metric, ch, promise);
       } else if (version == HttpVersion.HTTP_2) {
         if (this.options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);

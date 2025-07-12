@@ -1,16 +1,20 @@
-package io.vertx.core.http.impl.http3.codec;
+package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.channel.Channel;
 import io.vertx.core.Promise;
+import io.vertx.core.http.impl.Http1xClientConnection;
+import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientBase;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.http3.Http3ClientChannelInitializer;
+import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
+import io.vertx.core.http.impl.http3.codec.Http3ClientConnectionImpl;
+import io.vertx.core.http.impl.http3.codec.VertxHttp3ConnectionHandler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
-public class Http3CodecClientChannelInitializer implements Http3ClientChannelInitializer {
+public class Http3CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
   private HttpClientBase client;
   private ClientMetrics metrics;
@@ -27,10 +31,12 @@ public class Http3CodecClientChannelInitializer implements Http3ClientChannelIni
   }
 
   @Override
-  public void http3Connected(ContextInternal context,
-                              Object metric,
-                              Channel ch,
-                              PromiseInternal<HttpClientConnection> promise) {
+  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn) {
+    throw new RuntimeException("Quic does not support channel upgrades");
+  }
+
+  @Override
+  public void http2Connected(ContextInternal context, Object metric, Channel ch, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp3ConnectionHandler<Http3ClientConnectionImpl> clientHandler;
     try {
       clientHandler = Http3ClientConnectionImpl.createHttp3ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
