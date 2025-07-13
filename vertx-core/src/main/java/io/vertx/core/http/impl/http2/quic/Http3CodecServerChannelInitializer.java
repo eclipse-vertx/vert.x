@@ -26,6 +26,9 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.util.function.Supplier;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 public class Http3CodecServerChannelInitializer implements Http2ServerChannelInitializer {
 
   private final HttpServerMetrics serverMetrics;

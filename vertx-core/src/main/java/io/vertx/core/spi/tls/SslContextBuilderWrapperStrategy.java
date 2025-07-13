@@ -12,6 +12,9 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.util.Collection;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 interface SslContextBuilderWrapperStrategy {
   void keyManager(KeyManagerFactory kmf);
 

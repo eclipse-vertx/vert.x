@@ -12,6 +12,9 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
 public class Http3CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
   private HttpClientBase client;

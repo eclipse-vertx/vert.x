@@ -45,10 +45,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnection, io.vertx.core.http.impl.http2.Http2Connection {
 

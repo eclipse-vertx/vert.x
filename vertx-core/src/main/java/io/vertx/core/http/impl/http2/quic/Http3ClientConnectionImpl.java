@@ -35,7 +35,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 

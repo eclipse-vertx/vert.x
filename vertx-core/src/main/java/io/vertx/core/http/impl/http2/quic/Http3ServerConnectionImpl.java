@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
