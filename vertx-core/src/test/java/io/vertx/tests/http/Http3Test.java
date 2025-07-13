@@ -340,13 +340,6 @@ public class Http3Test extends HttpCommonTest {
 
   @Test
   @Ignore
-  public void testDumpManyRequestsOnQueue() throws Exception {
-    //TODO: resolve this test issue.
-    super.testDumpManyRequestsOnQueue();
-  }
-
-  @Test
-  @Ignore
   public void testServerLogging() throws Exception {
     //TODO: resolve this test issue.
     super.testServerLogging();
