@@ -13,6 +13,7 @@ package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -62,7 +63,11 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.core.net.impl.ShutdownEvent;
 
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -86,8 +91,11 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
   private static final AttributeKey<Http2StreamBase> VERTX_STREAM_KEY =
     AttributeKey.valueOf(Http2StreamBase.class, "VERTX_CHANNEL_STREAM");
 
-  private static final AttributeKey<Long> LAST_STREAM_ID_KEY =
-    AttributeKey.valueOf(Long.class, "VERTX_LAST_STREAM_ID");
+  private static final AttributeKey<ConcurrentLinkedDeque<Long>> STREAM_ID_LIST_KEY =
+    AttributeKey.valueOf(ConcurrentLinkedDeque.class, "HTTP3_STREAM_ID_LIST");
+
+  private static final AttributeKey<ConcurrentHashMap<Long, QuicStreamChannel>> STREAM_CHANNEL_MAP_KEY =
+    AttributeKey.valueOf(ConcurrentHashMap.class, "HTTP3_STREAM_CHANNEL_MAP");
 
   public VertxHttp3ConnectionHandler(
     Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory,
@@ -160,6 +168,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     chctx = ctx;
     connectFuture = new DefaultPromise<>(ctx.executor());
     connection = connectionFactory.apply(this);
+    initConnectionStreams((QuicChannel) ctx.channel());
   }
 
   @Override
@@ -167,10 +176,14 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     log.debug(String.format("%s - close on channelId : %s!", agentType, ctx.channel().id()));
 
     if (chctx.channel().isOpen() && chctx.channel().isActive()) {
-      if (!isServer) {  // TODO: find a better solution instead of checking isServer!
-        connection.goAway(0);  // TODO: goAway make issue for http3Proxies!
-      }
+      log.debug(String.format("%s - channel is active and open on close : %s!", agentType, ctx.channel().id()));
+      connection.goAwayOnConnectionClose(0);  // TODO: goAway make issue for http3Proxies!
     }
+
+    promise.addListener(future -> {
+      ConcurrentLinkedDeque<Long> streamIdList = getStreamIdList((QuicChannel) ctx.channel());
+      streamIdList.forEach(id -> unregisterStream(getStreamChannel(id)));
+    });
 
     super.close(ctx, promise);
   }
@@ -272,6 +285,35 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     }
   }
 
+  public static void initConnectionStreams(QuicChannel quicChannel) {
+    if (getStreamChannelMap(quicChannel) == null) {
+      quicChannel.attr(STREAM_CHANNEL_MAP_KEY).set(new ConcurrentHashMap<>());
+    }
+    if (getStreamIdList(quicChannel) == null) {
+      quicChannel.attr(STREAM_ID_LIST_KEY).set(new ConcurrentLinkedDeque<>());
+    }
+  }
+
+  private static void registerStream(QuicStreamChannel streamChannel) {
+    QuicChannel parentConnection = streamChannel.parent();
+    long streamId = streamChannel.streamId();
+
+    getStreamChannelMap(parentConnection).put(streamId, streamChannel);
+    getStreamIdList(parentConnection).addLast(streamId);
+  }
+
+  public static void unregisterStream(QuicStreamChannel streamChannel) {
+    QuicChannel parentConnection = streamChannel.parent();
+    long streamId = streamChannel.streamId();
+
+    getStreamChannelMap(parentConnection).remove(streamId);
+    getStreamIdList(parentConnection).remove(streamId);
+  }
+
+  public static ConcurrentHashMap<Long, QuicStreamChannel> getStreamChannelMap(QuicChannel quicChannel) {
+    return quicChannel.attr(STREAM_CHANNEL_MAP_KEY).get();
+  }
+
   static Http2StreamBase getVertxStreamFromStreamChannel(ChannelHandlerContext ctx) {
     return getVertxStreamFromStreamChannel((QuicStreamChannel) ctx.channel());
   }
@@ -284,12 +326,27 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     streamChannel.attr(VERTX_STREAM_KEY).set(vertxStream);
   }
 
-  public static void setLastStreamIdOnConnection(QuicChannel quicChannel, long streamId) {
-    quicChannel.attr(LAST_STREAM_ID_KEY).set(streamId);
+  public long getLastStreamId() {
+    ConcurrentLinkedDeque<Long> streamIds = getStreamIdList((QuicChannel) chctx.channel());
+    if (streamIds != null) {
+      Long lastStreamId = streamIds.peekLast();
+      if (lastStreamId != null) {
+        return lastStreamId;
+      }
+    }
+    return -1;
   }
 
-  Long getLastStreamIdOnConnection() {
-    return chctx.channel().attr(LAST_STREAM_ID_KEY).get();
+  private static ConcurrentLinkedDeque<Long> getStreamIdList(QuicChannel quicChannel) {
+    return quicChannel.attr(STREAM_ID_LIST_KEY).get();
+  }
+
+  public QuicStreamChannel getStreamChannel(long streamId) {
+    return getStreamChannelMap((QuicChannel) chctx.channel()).get(streamId);
+  }
+
+  public List<QuicStreamChannel> getActiveQuicStreamChannels() {
+    return getStreamChannelMap((QuicChannel) chctx.channel()).values().stream().filter(Channel::isActive).collect(Collectors.toList());
   }
 
   void writeFrame(QuicStreamChannel streamChannel, byte type, short flags, ByteBuf payload, FutureListener<Void> listener) {
@@ -321,9 +378,14 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
     assert controlStreamChannel != null;
 
+    log.debug(String.format(
+      "%s - _writeGoAway called with lastStreamId=%s, controlStreamChannel (streamId=%s, active=%s, open=%s)",
+      agentType, lastStreamId, controlStreamChannel.streamId(), controlStreamChannel.isActive(), controlStreamChannel.isOpen()
+    ));
+
     ChannelPromise promise = controlStreamChannel.newPromise();
     promise.addListener(future -> log.debug(String.format("%s - Writing goAway %s for channelId: %s, streamId: %s",
-      agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
+          agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
       controlStreamChannel.streamId())));
 
     Http3GoAwayFrame goAwayFrame = new DefaultHttp3GoAwayFrame(lastStreamId);
@@ -479,7 +541,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
         log.debug(String.format("%s - Received frame http3UnknownFrame : %s", agentType, byteBufToString(frame.content())));
       }
 
-      Http2StreamBase vertxStream = VertxHttp3ConnectionHandler.getVertxStreamFromStreamChannel(ctx);
+      Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
       connection.onUnknownFrame(ctx, (byte) frame.type(), vertxStream, frame.content());
       super.channelRead(ctx, frame);
     }
@@ -488,6 +550,12 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
       log.debug(String.format("%s - Caught exception on channelId : %s!", agentType, ctx.channel().id(), cause));
       super.exceptionCaught(ctx, cause);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+      registerStream((QuicStreamChannel) ctx.channel());
+      super.channelActive(ctx);
     }
   }
 
@@ -504,7 +572,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
         .newServerConnectionHandlerBuilder()
         .requestStreamHandler(streamChannel -> {
           streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
-          streamChannel.pipeline().addLast(new VertxHttp3ConnectionHandler.StreamChannelHandler());
+          streamChannel.pipeline().addLast(new StreamChannelHandler());
           if (trafficShapingHandler != null) {
             streamChannel.pipeline().addFirst("streamTrafficShaping", trafficShapingHandler);
           }
@@ -557,7 +625,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
   public io.vertx.core.Future<QuicStreamChannel> createStreamChannel() {
     return Http3Utils.newRequestStream((QuicChannel) chctx.channel(), streamChannel -> {
       streamChannel.closeFuture().addListener(ignored -> handleOnStreamChannelClosed(streamChannel));
-      streamChannel.pipeline().addLast(new VertxHttp3ConnectionHandler.StreamChannelHandler());
+      streamChannel.pipeline().addLast(new StreamChannelHandler());
     });
   }
 
@@ -565,5 +633,9 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     log.debug(String.format("%s - called handleOnStreamChannelClosed for streamChannel with id: %s, streamId: %s",
       agentType, streamChannel.id(), streamChannel.streamId()));
     connection.onStreamClosed(streamChannel);
+  }
+
+  public String getAgentType() {
+    return agentType;
   }
 }

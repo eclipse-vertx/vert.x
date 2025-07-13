@@ -319,4 +319,7 @@ public interface HttpConnection {
    */
   String indicatedServerName();
 
+  default void goAwayOnConnectionClose(int errorCode) {
+    goAway(errorCode);
+  }
 }

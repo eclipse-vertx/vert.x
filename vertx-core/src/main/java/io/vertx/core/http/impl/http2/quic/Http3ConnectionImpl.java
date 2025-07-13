@@ -23,8 +23,6 @@ import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
 import io.netty.incubator.codec.http3.Http3Headers;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.util.collection.LongObjectHashMap;
-import io.netty.util.collection.LongObjectMap;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -55,8 +53,6 @@ import java.util.stream.Collectors;
 abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnection, io.vertx.core.http.impl.http2.Http2Connection {
 
   private static final Logger log = LoggerFactory.getLogger(Http3ConnectionImpl.class);
-
-  protected final LongObjectMap<QuicStreamChannel> quicStreamChannels = new LongObjectHashMap<>();
 
   private static ByteBuf safeBuffer(ByteBuf buf) {
     ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
@@ -112,8 +108,12 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   synchronized void onConnectionError(Throwable cause) {
     ArrayList<Http2StreamBase> vertxHttpStreams = new ArrayList<>();
-    getActiveQuicStreamChannels().forEach(quicStreamChannel -> {
-      vertxHttpStreams.add(stream(quicStreamChannel.streamId()));
+    List<QuicStreamChannel> streamChannels = handler.getActiveQuicStreamChannels();
+    streamChannels.forEach(quicStreamChannel -> {
+      Http2StreamBase stream = stream(quicStreamChannel.streamId());
+      if (stream != null) {
+        vertxHttpStreams.add(stream);
+      }
     });
     for (Http2StreamBase stream : vertxHttpStreams) {
       stream.context().dispatch(v -> stream.handleException(cause));
@@ -121,12 +121,8 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
     handleException(cause);
   }
 
-  protected List<QuicStreamChannel> getActiveQuicStreamChannels() {
-    return quicStreamChannels.values().stream().filter(Channel::isActive).collect(Collectors.toList());
-  }
-
   protected QuicStreamChannel getStreamChannel(long streamId) {
-    return this.quicStreamChannels.get(streamId);
+    return handler.getStreamChannel(streamId);
   }
 
   public Http2StreamBase stream(long id) {
@@ -151,8 +147,11 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   void onStreamClosed(QuicStreamChannel streamChannel) {
+    log.debug(String.format("%s - onStreamClosed called for streamChannel (id=%s, quicStreamId=%s)", handler.getAgentType(), streamChannel.id(), streamChannel.streamId()));
     Http2StreamBase stream = stream(streamChannel.streamId());
     if (stream != null) {
+      log.debug(String.format("%s - onStreamClosed called for vertxStream, underlying streamChannel (id=%s, quicStreamId=%s)", handler.getAgentType(), streamChannel.id(), streamChannel.streamId()));
+
       boolean active = chctx.channel().isActive();
       if (goAwayStatus != null) {
         stream.onException(new HttpClosedException(goAwayStatus));
@@ -313,9 +312,11 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   @Override
   public HttpConnection goAway(long errorCode, int lastStreamId_, Buffer debugData) {
+    log.debug(String.format("goAway called with lastStreamId_: %s", lastStreamId_));
     long lastStreamId = lastStreamId_;
     if (lastStreamId < 0) {
-      lastStreamId = handler.getLastStreamIdOnConnection();
+      lastStreamId = handler.getLastStreamId();
+      log.debug(String.format("goAway called with retrieved lastStreamId: %s", lastStreamId));
     }
     handler.writeGoAway(errorCode, lastStreamId, debugData != null ? ((BufferInternal) debugData).getByteBuf() : Unpooled.EMPTY_BUFFER);
     return this;
@@ -514,7 +515,5 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   protected void init_(Http2StreamBase vertxStream, QuicStreamChannel streamChannel) {
     VertxHttp3ConnectionHandler.setVertxStreamOnStreamChannel(streamChannel, vertxStream);
-    VertxHttp3ConnectionHandler.setLastStreamIdOnConnection(streamChannel.parent(), streamChannel.streamId());
-    this.quicStreamChannels.put(streamChannel.streamId(), streamChannel);
   }
 }

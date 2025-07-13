@@ -116,7 +116,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
 
   @Override
   public long activeStreams() {
-    return getActiveQuicStreamChannels().size();
+    return handler.getActiveQuicStreamChannels().size();
   }
 
   @Override

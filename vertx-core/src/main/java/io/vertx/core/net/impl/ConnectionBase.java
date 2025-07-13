@@ -163,6 +163,7 @@ public abstract class ConnectionBase {
 
   private void close(CloseChannelPromise promise) {
     channel.close(promise);
+    log.debug(String.format("%s was closed", channel.getClass().getSimpleName()));
   }
 
   final void handleClose(ChannelPromise promise) {
