@@ -19,7 +19,6 @@ import io.netty.incubator.codec.http3.DefaultHttp3DataFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3Headers;
 import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpFrameImpl;
@@ -51,6 +50,16 @@ public class Http3ClientTest extends HttpClientTest {
   @Override
   protected HttpVersion httpVersion() {
     return HttpVersion.HTTP_3;
+  }
+
+  @Override
+  protected void manageMaxQueueRequestsCount(Long max) {
+    if (max != null) {
+      serverOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
+      clientOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
+    }
+    Http3Settings serverSettings = new Http3Settings();
+    serverOptions.setInitialHttp3Settings(serverSettings);
   }
 
   @Override
@@ -99,16 +108,6 @@ public class Http3ClientTest extends HttpClientTest {
   @Override
   protected void assertStreamReset(int expectedCode, StreamResetException reset) {
     assertEquals(0, reset.getCode());
-  }
-
-  @Override
-  protected void manageMaxQueueRequestsCount(Long max) {
-    if (max != null) {
-      serverOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
-      clientOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
-    }
-    Http3Settings serverSettings = new Http3Settings();
-    serverOptions.setInitialHttp3Settings(serverSettings);
   }
 
   @Override

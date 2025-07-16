@@ -22,17 +22,12 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.*;
+import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.*;
 import io.netty.util.AsciiString;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.test.core.TestUtils;
@@ -124,7 +119,7 @@ public class Http2ClientTest extends HttpClientTest {
   private Http2ConnectionHandler createHttpConnectionHandler(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler) {
 
     class Handler extends Http2ConnectionHandler {
-      public Handler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, io.netty.handler.codec.http2.Http2Settings initialSettings) {
+      public Handler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) {
         super(decoder, encoder, initialSettings);
         decoder.frameListener(handler.apply(decoder, encoder));
       }
@@ -132,7 +127,7 @@ public class Http2ClientTest extends HttpClientTest {
 
     class Builder extends AbstractHttp2ConnectionHandlerBuilder<Handler, Builder> {
       @Override
-      protected Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, io.netty.handler.codec.http2.Http2Settings initialSettings) throws Exception {
+      protected Handler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
         return new Handler(decoder, encoder, initialSettings);
       }
 
@@ -198,7 +193,7 @@ public class Http2ClientTest extends HttpClientTest {
               Http2ConnectionHandler httpConnectionHandler = createHttpConnectionHandler((a, b) -> {
                 return new Http2FrameListenerDecorator(handler.apply(a, b)) {
                   @Override
-                  public void onSettingsRead(ChannelHandlerContext ctx, io.netty.handler.codec.http2.Http2Settings settings) throws Http2Exception {
+                  public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
                     super.onSettingsRead(ctx, settings);
                     Http2Connection conn = a.connection();
                     Http2Stream stream = conn.stream(1);
