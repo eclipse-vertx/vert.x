@@ -108,7 +108,7 @@ import static io.vertx.tests.http.HttpOptionsFactory.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpServerTest extends HttpTestBase {
+public abstract class HttpServerTest extends Http2TestBase {
 
   protected HttpServerOptions serverOptions;
   protected HttpClientOptions clientOptions;
