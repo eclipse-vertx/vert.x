@@ -32,6 +32,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.*;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.resolver.NameResolver;
@@ -230,7 +231,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
-        if (!options.isHttp3()) {
+        if (!HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
           configureChannelSslHandler(ch, sslContextProvider, null);
         }
 
@@ -246,7 +247,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
-      if (trafficShapingHandler != null && !options.isHttp3()) {
+      if (trafficShapingHandler != null && !HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
         ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
       }
     }
@@ -353,7 +354,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           updateInProgress = null;
           if (ar.succeeded()) {
             sslContextProvider = fut;
-            if (options.isHttp3() && datagramChannel != null) {
+            if (HttpVersion.supportsQuic(options.getApplicationLayerProtocols()) && datagramChannel != null) {
               configureChannelSslHandler(datagramChannel, sslContextProvider.result(), channelBalancer);
             }
           }
@@ -473,10 +474,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 
         //
-        if (options.isHttp3() && !options.isSsl()) {
-          return context.failedFuture("HTTP/3 requires SSL/TLS encryption. Please enable SSL to use HTTP/3.");
-        }
-
         if (options.isSsl() && options.getKeyCertOptions() == null && options.getTrustOptions() == null) {
           return context.failedFuture("Key/certificate is mandatory for SSL");
         }
@@ -574,7 +571,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   private AbstractBootstrap buildServerBootstrap(SocketAddress localAddress) {
-    if (options.isHttp3()) {
+    if (options.isSsl() && HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
       // TODO: Alter the logic of this method based on the ServerBootstrap creation in a normal scenario without HTTP/3
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
@@ -626,8 +623,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       channel.pipeline().remove(SERVER_SSL_HANDLER_NAME);
     }
 
-    SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider,
-      options.isSni());
+    SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, options.isSni());
     channel.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
       HttpUtils.socketAddressToHostAndPort(channel.remoteAddress()), http3ChannelInitializer));
   }
@@ -799,7 +795,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   private static void setChannelFactory(SocketAddress socketAddress, AbstractBootstrap bootstrap,
                                         NetServerOptions options, VertxInternal vertx) {
-    if (options.isHttp3()) {
+    if (options.isSsl() && HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
       bootstrap.channelFactory(() -> vertx.transport().datagramChannel());
     } else {
       bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));

@@ -48,7 +48,6 @@ public class HTTP3ServerExamplesAsyncTestCase {
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
       .setIdleTimeoutUnit(TimeUnit.HOURS)
-      .setHttp3(true)
       .setUseAlpn(true)
       .setSsl(true)
       .getSslOptions()

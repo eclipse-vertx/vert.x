@@ -97,8 +97,7 @@ public class SslContextProvider {
                                        KeyManagerFactory keyManagerFactory,
                                        TrustManager[] trustManagers,
                                        String serverName,
-                                       boolean useAlpn,
-                                       boolean http3) {
+                                       boolean useAlpn) {
     if (keyManagerFactory == null) {
       keyManagerFactory = defaultKeyManagerFactory();
     }
@@ -106,40 +105,40 @@ public class SslContextProvider {
       trustManagers = defaultTrustManagers();
     }
     if (server) {
-      return createServerContext(keyManagerFactory, trustManagers, serverName, useAlpn, http3);
+      return createServerContext(keyManagerFactory, trustManagers, serverName, useAlpn);
     } else {
-      return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn, http3);
+      return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn);
     }
   }
 
-  public SslContext sslClientContext(String serverName, boolean useAlpn, boolean http3) {
+  public SslContext sslClientContext(String serverName, boolean useAlpn) {
     try {
-      return sslContext(serverName, useAlpn, http3, false);
+      return sslContext(serverName, useAlpn, false);
     } catch (Exception e) {
       throw new VertxException(e);
     }
   }
 
-  public SslContext sslContext(String serverName, boolean useAlpn, boolean http3, boolean server) throws Exception {
+  public SslContext sslContext(String serverName, boolean useAlpn, boolean server) throws Exception {
     int idx = idx(useAlpn);
     if (serverName != null) {
       KeyManagerFactory kmf = resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
         return sslContextMaps[idx].computeIfAbsent(serverName, s -> createContext(server, kmf, trustManagers, s,
-          useAlpn, http3));
+          useAlpn));
       }
     }
     if (sslContexts[idx] == null) {
-      SslContext context = createContext(server, null, null, serverName, useAlpn, http3);
+      SslContext context = createContext(server, null, null, serverName, useAlpn);
       sslContexts[idx] = context;
     }
     return sslContexts[idx];
   }
 
-  public SslContext sslServerContext(boolean useAlpn, boolean http3) {
+  public SslContext sslServerContext(boolean useAlpn) {
     try {
-      return sslContext(null, useAlpn, http3, true);
+      return sslContext(null, useAlpn, true);
     } catch (Exception e) {
       throw new VertxException(e);
     }
@@ -150,13 +149,12 @@ public class SslContextProvider {
    *
    * @return the {@link AsyncMapping}
    */
-  public AsyncMapping<? super String, ? extends SslContext> serverNameMapping(Executor workerPool, boolean useAlpn,
-                                                                              boolean http3) {
+  public AsyncMapping<? super String, ? extends SslContext> serverNameMapping(Executor workerPool, boolean useAlpn) {
     return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
       workerPool.execute(() -> {
         SslContext sslContext;
         try {
-          sslContext = sslContext(serverName, useAlpn, http3, true);
+          sslContext = sslContext(serverName, useAlpn, true);
         } catch (Exception e) {
           promise.setFailure(e);
           return;
@@ -172,10 +170,10 @@ public class SslContextProvider {
    *
    * @return the {@link Mapping}
    */
-  public Mapping<? super String, ? extends QuicSslContext> serverNameMapping(boolean useAlpn, boolean http3) {
+  public Mapping<? super String, ? extends QuicSslContext> serverNameMapping(boolean useAlpn) {
     return (Mapping<String, QuicSslContext>) serverName -> {
       try {
-        VertxSslContext sslContext = (VertxSslContext) sslContext(serverName, useAlpn, http3, true);
+        VertxSslContext sslContext = (VertxSslContext) sslContext(serverName, useAlpn, true);
         return (QuicSslContext) sslContext.unwrap();
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -183,20 +181,18 @@ public class SslContextProvider {
     };
   }
 
-  public VertxSslContext createContext(boolean server, boolean useAlpn, boolean http3) {
-    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn, http3);
+  public VertxSslContext createContext(boolean server, boolean useAlpn) {
+    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn);
   }
 
   public VertxSslContext createClientContext(
     KeyManagerFactory keyManagerFactory,
     TrustManager[] trustManagers,
     String serverName,
-    boolean useAlpn,
-    boolean http3) {
+    boolean useAlpn) {
     try {
       SslContextFactory factory = provider.get()
         .useAlpn(useAlpn)
-        .http3(http3)
         .forClient(true)
         .enabledCipherSuites(enabledCipherSuites)
         .applicationProtocols(applicationProtocols);
@@ -222,12 +218,10 @@ public class SslContextProvider {
   public VertxSslContext createServerContext(KeyManagerFactory keyManagerFactory,
                                         TrustManager[] trustManagers,
                                         String serverName,
-                                        boolean useAlpn,
-                                        boolean http3) {
+                                        boolean useAlpn) {
     try {
       SslContextFactory factory = provider.get()
         .useAlpn(useAlpn)
-        .http3(http3)
         .forClient(false)
         .enabledCipherSuites(enabledCipherSuites)
         .applicationProtocols(applicationProtocols);

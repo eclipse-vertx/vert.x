@@ -233,7 +233,6 @@ class NetClientImpl implements NetClientInternal {
     ContextInternal ctx = vertx.getOrCreateContext();
     synchronized (this) {
       this.sslOptions = options;
-      this.sslOptions.setHttp3(this.options.getProtocolVersion() == HttpVersion.HTTP_3);
     }
     return ctx.succeededFuture(true);
   }
@@ -253,7 +252,6 @@ class NetClientImpl implements NetClientInternal {
           connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
           return;
         }
-        sslOptions.setHttp3(options.getProtocolVersion() == HttpVersion.HTTP_3);
 
         Future<SslContextProvider> fut;
         fut = sslContextManager.resolveSslContextProvider(
@@ -367,7 +365,7 @@ class NetClientImpl implements NetClientInternal {
   }
 
   private String applicationProtocol(Channel channel) {
-    if (sslOptions != null && sslOptions.isHttp3()) {
+    if (HttpVersion.isHttp3(options.getProtocolVersion())) {
       return Objects.requireNonNull(((QuicChannel) channel).sslEngine()).getApplicationProtocol();
     }
     ChannelPipeline pipeline = channel.pipeline();

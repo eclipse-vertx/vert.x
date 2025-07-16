@@ -37,9 +37,8 @@ public class HTTP3ServerExamplesVertxHandler {
 
   protected NetServerOptions createNetServerOptions() {
     NetServerOptions options = new NetServerOptions().setPort(8090);
-    options.setHttp3(true).setUseAlpn(true).setSsl(true);
+    options.setUseAlpn(true).setSsl(true);
     options
-      .setHttp3(true)
       .getSslOptions()
       .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     options
@@ -94,7 +93,6 @@ public class HTTP3ServerExamplesVertxHandler {
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
       .setIdleTimeoutUnit(TimeUnit.HOURS)
-      .setHttp3(true)
       .setUseAlpn(true)
       .setSsl(true)
       .getSslOptions()

@@ -20,6 +20,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.vertx.core.http.HttpVersion;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
@@ -50,7 +51,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
   private Set<String> enabledCipherSuites;
   private List<String> applicationProtocols;
   private boolean useAlpn;
-  private boolean http3;
+  private boolean supportsQuic;
   private ClientAuth clientAuth;
   private boolean forClient;
   private KeyManagerFactory kmf;
@@ -59,12 +60,6 @@ public class DefaultSslContextFactory implements SslContextFactory {
   @Override
   public SslContextFactory useAlpn(boolean useAlpn) {
     this.useAlpn = useAlpn;
-    return this;
-  }
-
-  @Override
-  public SslContextFactory http3(boolean http3) {
-    this.http3 = http3;
     return this;
   }
 
@@ -106,6 +101,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
   @Override
   public SslContextFactory applicationProtocols(List<String> applicationProtocols) {
     this.applicationProtocols = applicationProtocols;
+    this.supportsQuic = HttpVersion.supportsQuic(applicationProtocols);
     return this;
   }
 
@@ -120,12 +116,12 @@ public class DefaultSslContextFactory implements SslContextFactory {
   private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
     SslContextBuilderWrapperStrategy builder;
     if (client) {
-      builder = http3 ? new QuicSslContextBuilderWrapper(QuicSslContextBuilder.forClient()) : new SslContextBuilderWrapper(SslContextBuilder.forClient());
+      builder = supportsQuic ? new QuicSslContextBuilderWrapper(QuicSslContextBuilder.forClient()) : new SslContextBuilderWrapper(SslContextBuilder.forClient());
       if (kmf != null) {
         builder.keyManager(kmf);
       }
     } else {
-      builder = http3 ? new QuicSslContextBuilderWrapper(QuicSslContextBuilder.forServer(kmf, null)) : new SslContextBuilderWrapper(SslContextBuilder.forServer(kmf));
+      builder = supportsQuic ? new QuicSslContextBuilderWrapper(QuicSslContextBuilder.forServer(kmf, null)) : new SslContextBuilderWrapper(SslContextBuilder.forServer(kmf));
     }
     Collection<String> cipherSuites = enabledCipherSuites;
     switch (sslProvider) {
@@ -151,7 +147,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
       builder.ciphers(cipherSuites);
     }
     if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
-      if(http3) {
+      if(supportsQuic) {
         builder.supportedApplicationProtocols(applicationProtocols.toArray(new String[]{}));
       } else {
         ApplicationProtocolConfig.SelectorFailureBehavior sfb;

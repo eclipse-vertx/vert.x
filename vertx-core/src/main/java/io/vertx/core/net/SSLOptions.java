@@ -41,11 +41,6 @@ public class SSLOptions {
   public static final boolean DEFAULT_USE_ALPN = false;
 
   /**
-   * Default use http3 = false
-   */
-  public static final boolean DEFAULT_HTTP3 = false;
-
-  /**
    * Default use initialMaxStreamsBidirectional = 100
    */
   public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAMS_BIDIRECTIONAL = 100;
@@ -132,7 +127,6 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.http3 = other.http3;
     this.http3InitialMaxStreamsBidirectional = other.http3InitialMaxStreamsBidirectional;
     this.http3InitialMaxData = other.http3InitialMaxData;
     this.http3InitialMaxStreamDataBidirectionalLocal = other.http3InitialMaxStreamDataBidirectionalLocal;
@@ -161,7 +155,6 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
-    http3 = DEFAULT_HTTP3;
     http3InitialMaxStreamsBidirectional = DEFAULT_HTTP3_INITIAL_MAX_STREAMS_BIDIRECTIONAL;
     http3InitialMaxData = DEFAULT_HTTP3_INITIAL_MAX_DATA;
     http3InitialMaxStreamDataBidirectionalLocal = DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_LOCAL;
@@ -306,23 +299,6 @@ public class SSLOptions {
    */
   public SSLOptions setUseAlpn(boolean useAlpn) {
     this.useAlpn = useAlpn;
-    return this;
-  }
-
-  /**
-   * @return whether to use or not HTTP3
-   */
-  public boolean isHttp3() {
-    return http3;
-  }
-
-  /**
-   * Set the http3 usage.
-   *
-   * @param http3 true when http3 should be used
-   */
-  public SSLOptions setHttp3(boolean http3) {
-    this.http3 = http3;
     return this;
   }
 
@@ -538,7 +514,6 @@ public class SSLOptions {
          Objects.equals(crlPaths, that.crlPaths) &&
          Objects.equals(crlValues, that.crlValues) &&
          useAlpn == that.useAlpn &&
-         http3 == that.http3 &&
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;
@@ -546,7 +521,7 @@ public class SSLOptions {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, enabledSecureTransportProtocols, http3);
+    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, enabledSecureTransportProtocols);
   }
 
   /**

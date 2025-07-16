@@ -83,11 +83,6 @@ public class TCPSSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "http3":
-          if (member.getValue() instanceof Boolean) {
-            obj.setHttp3((Boolean)member.getValue());
-          }
-          break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
@@ -163,7 +158,6 @@ public class TCPSSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("http3", obj.isHttp3());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));

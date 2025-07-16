@@ -30,7 +30,6 @@ public class HTTP3ClientExamplesVertxHandler {
   protected NetClientOptions createNetClientOptions() {
     NetClientOptions options = new NetClientOptions();
     options
-      .setHttp3(true)
       .getSslOptions()
       .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     options

@@ -24,6 +24,7 @@ import io.netty.incubator.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
@@ -91,30 +92,7 @@ public class HttpServerConnectionInitializer {
 
     Http2ServerChannelInitializer http2ChannelInitalizer = null;
     Http2ServerChannelInitializer http3ChannelInitalizer = null;
-    if (options.getHttp2MultiplexImplementation()) {
-      http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
-        context,
-        compressionManager,
-        options.isDecompressionSupported(),
-        (HttpServerMetrics) server.getMetrics(),
-        metric,
-        streamContextSupplier,
-        connectionHandler,
-        HttpUtils.fromVertxInitialSettings(true, options.getInitialSettings()),
-        options.getLogActivity());
-    } else if (!options.isHttp3()) {
-      http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
-        this,
-        (HttpServerMetrics) server.getMetrics(),
-        options,
-        compressionManager,
-        streamContextSupplier,
-        connectionHandler,
-        serverOrigin,
-        metric,
-        options.getLogActivity()
-      );
-    } else {
+    if (HttpVersion.supportsQuicVersion(options.getAlpnVersions())) {
       http3ChannelInitalizer = new Http3CodecServerChannelInitializer(
         this,
         (HttpServerMetrics) server.getMetrics(),
@@ -126,6 +104,29 @@ public class HttpServerConnectionInitializer {
         metric,
         options.getLogActivity(),
         trafficShapingHandler
+      );
+    } else if (options.getHttp2MultiplexImplementation()) {
+      http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
+        context,
+        compressionManager,
+        options.isDecompressionSupported(),
+        (HttpServerMetrics) server.getMetrics(),
+        metric,
+        streamContextSupplier,
+        connectionHandler,
+        HttpUtils.fromVertxInitialSettings(true, options.getInitialSettings()),
+        options.getLogActivity());
+    } else {
+      http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
+        this,
+        (HttpServerMetrics) server.getMetrics(),
+        options,
+        compressionManager,
+        streamContextSupplier,
+        connectionHandler,
+        serverOrigin,
+        metric,
+        options.getLogActivity()
       );
     }
 
@@ -151,7 +152,7 @@ public class HttpServerConnectionInitializer {
     if (options.isSsl()) {
       if (options.isUseAlpn()) {
         String protocol;
-        if (options.isHttp3()) {
+        if (ch instanceof QuicChannel) {
           protocol = Objects.requireNonNull(((QuicChannel) ch).sslEngine()).getApplicationProtocol();
         } else {
           protocol = pipeline.get(SslHandler.class).applicationProtocol();

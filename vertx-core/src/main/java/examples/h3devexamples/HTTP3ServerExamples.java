@@ -49,7 +49,6 @@ public class HTTP3ServerExamples {
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
       .setIdleTimeoutUnit(TimeUnit.HOURS)
-      .setHttp3(true)
       .setUseAlpn(true)
       .setSsl(true)
       .getSslOptions()

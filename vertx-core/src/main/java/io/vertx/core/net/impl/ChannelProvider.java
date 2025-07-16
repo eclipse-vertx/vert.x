@@ -247,7 +247,7 @@ public final class ChannelProvider {
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
         Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
 
-        if (sslOptions != null && sslOptions.isHttp3()) {
+        if (sslOptions != null && HttpVersion.isHttp3(clientOptions.getProtocolVersion())) {
           bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 

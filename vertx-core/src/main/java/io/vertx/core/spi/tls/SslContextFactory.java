@@ -38,16 +38,6 @@ public interface SslContextFactory {
   }
 
   /**
-   * Set whether to use http3.
-   *
-   * @param http3 {@code true} to use http3
-   * @return a reference to this, so the API can be used fluently
-   */
-  default SslContextFactory http3(boolean http3) {
-    return this;
-  }
-
-  /**
    * Configures the client auth
    * @param clientAuth the client auth to use
    * @return a reference to this, so the API can be used fluently

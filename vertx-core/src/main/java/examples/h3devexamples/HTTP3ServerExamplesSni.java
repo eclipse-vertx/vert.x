@@ -49,7 +49,6 @@ public class HTTP3ServerExamplesSni {
       .setReadIdleTimeout(1)
       .setWriteIdleTimeout(1)
       .setIdleTimeoutUnit(TimeUnit.HOURS)
-      .setHttp3(true)
       .setUseAlpn(true)
       .setSni(true)
       .setSsl(true)

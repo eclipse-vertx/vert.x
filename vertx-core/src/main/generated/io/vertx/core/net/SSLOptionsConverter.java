@@ -43,11 +43,6 @@ public class SSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "http3":
-          if (member.getValue() instanceof Boolean) {
-            obj.setHttp3((Boolean)member.getValue());
-          }
-          break;
         case "http3InitialMaxStreamsBidirectional":
           if (member.getValue() instanceof Number) {
             obj.setHttp3InitialMaxStreamsBidirectional(((Number)member.getValue()).longValue());
@@ -133,7 +128,6 @@ public class SSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("http3", obj.isHttp3());
     json.put("http3InitialMaxStreamsBidirectional", obj.getHttp3InitialMaxStreamsBidirectional());
     json.put("http3InitialMaxData", obj.getHttp3InitialMaxData());
     json.put("http3InitialMaxStreamDataBidirectionalLocal", obj.getHttp3InitialMaxStreamDataBidirectionalLocal());

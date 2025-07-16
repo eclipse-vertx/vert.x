@@ -32,7 +32,6 @@ public class Http3TLSTest extends HttpTLSTest {
     HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTP_HOST)
-      .setHttp3(true)
       .setAlpnVersions(Arrays.asList(HttpVersion.HTTP_3))
       .setUseAlpn(true)
       .setSsl(true);
@@ -46,7 +45,6 @@ public class Http3TLSTest extends HttpTLSTest {
       .setUseAlpn(true)
       .setSsl(true)
       .setProtocolVersion(HttpVersion.HTTP_3);
-    httpClientOptions.setHttp3(true);
     return httpClientOptions;
   }
 

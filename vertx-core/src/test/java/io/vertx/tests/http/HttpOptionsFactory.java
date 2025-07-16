@@ -69,7 +69,6 @@ public class HttpOptionsFactory {
       .setUseAlpn(true)
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get())
-      .setHttp3(true)
       .getSslOptions()
       .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
     return options;
@@ -83,7 +82,6 @@ public class HttpOptionsFactory {
       .setHostnameVerificationAlgorithm("")
       .setProtocolVersion(HttpVersion.HTTP_3)
       .setTrustOptions(Trust.SERVER_JKS.get())
-      .setHttp3(true)
       .getSslOptions()
       .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
 
@@ -103,11 +101,6 @@ public class HttpOptionsFactory {
   }
   public static HttpServerOptions createH3HttpServerOptions() {
     HttpServerOptions options = new HttpServerOptions();
-
-    options
-      .setHttp3(true)
-      .getSslOptions()
-      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
 
     options.setAlpnVersions(List.of(
       HttpVersion.HTTP_3,
@@ -132,10 +125,18 @@ public class HttpOptionsFactory {
 
   public static HttpClientOptions createH3HttpClientOptions() {
     HttpClientOptions httpClientOptions = new HttpClientOptions();
-    httpClientOptions
-      .setHttp3(true)
-      .getSslOptions()
-      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
+
+    httpClientOptions.setAlpnVersions(List.of(
+      HttpVersion.HTTP_3,
+      HttpVersion.HTTP_3_27,
+      HttpVersion.HTTP_3_29,
+      HttpVersion.HTTP_3_30,
+      HttpVersion.HTTP_3_31,
+      HttpVersion.HTTP_3_32,
+      HttpVersion.HTTP_2,
+      HttpVersion.HTTP_1_1,
+      HttpVersion.HTTP_1_0
+    ));
     return httpClientOptions
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
