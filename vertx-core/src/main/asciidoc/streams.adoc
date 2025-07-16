@@ -138,9 +138,11 @@ or when end of request is reached if it's an HTTP request, or when the connectio
 
 A read stream is either in _flowing_ or _fetch_ mode
 
-* initially the stream is in <i>flowing</i> mode
 * when the stream is in _flowing_ mode, elements are delivered to the handler
 * when the stream is in _fetch_ mode, only the number of requested elements will be delivered to the handler
+
+When a hot read stream is obtained (e.g. `HttpServerRequest`), the read stream is in flowing mode, when a cold read stream
+is obtained (e.g. `AsyncFile`), the read stream is in fetch mode with no demand.
 
 {@link io.vertx.core.streams.ReadStream#pause()}, {@link io.vertx.core.streams.ReadStream#resume()} and {@link io.vertx.core.streams.ReadStream#fetch}
 change the mode

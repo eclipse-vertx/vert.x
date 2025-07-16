@@ -49,6 +49,9 @@ import java.util.stream.StreamSupport;
  *   <li>Calling {@link #fetch(long)} requests a specific amount of elements and adds it to the actual demand</li>
  * </ul>
  *
+ * <p>When a hot read stream is obtained (e.g. `HttpServerRequest`), the read stream is in flowing mode, when a cold
+ * read stream is obtained (e.g. `AsyncFile`), the read stream is in fetch mode with no demand.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen(concrete = false)
@@ -96,6 +99,7 @@ public interface ReadStream<T> extends StreamBase {
    * be added to the current stream demand.
    *
    * @return a reference to this, so the API can be used fluently
+   * @throws IllegalArgumentException when the amount is a negative value
    */
   @Fluent
   ReadStream<T> fetch(long amount);

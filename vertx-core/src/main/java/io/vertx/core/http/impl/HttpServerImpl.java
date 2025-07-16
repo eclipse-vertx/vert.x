@@ -242,7 +242,14 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   }
 
   private void doClose(NetServer netServer, Completable<Void> p) {
-    netServer.close().onComplete(p);
+    if (requestHandler instanceof Closeable) {
+      Closeable closeable = (Closeable) requestHandler;
+      closeable.close((res, err) -> {
+        netServer.close().onComplete(p);
+      });
+    } else {
+      netServer.close().onComplete(p);
+    }
   }
 
   public Future<Void> shutdown(long timeout, TimeUnit unit) {

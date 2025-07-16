@@ -195,7 +195,7 @@ public class BufferImpl implements BufferInternal {
 
   private void checkUpperBound(int index, int size) {
     int length = buffer.writerIndex();
-    if ((index | length - (index + size)) < 0) {
+    if (index < 0 || index + size < 0 || index + size > length) {
       throw new IndexOutOfBoundsException(index + " + " + size + " > " + length);
     }
   }
