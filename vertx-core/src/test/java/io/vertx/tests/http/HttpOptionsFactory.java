@@ -24,6 +24,9 @@ import io.vertx.test.tls.Trust;
 
 import java.util.List;
 
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -47,6 +50,17 @@ public class HttpOptionsFactory {
       .setSsl(true)
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setProtocolVersion(HttpVersion.HTTP_2);
+  }
+
+  public static HttpServerOptions createHttp2ServerOptionsWithoutSSL(int port, String host) {
+    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
+  }
+
+  public static HttpClientOptions createHttp2ClientOptionsWithoutSSL() {
+    return new HttpClientOptions()
+      .setProtocolVersion(HttpVersion.HTTP_2)
+      .setDefaultPort(DEFAULT_HTTP_PORT)
+      .setDefaultHost(DEFAULT_HTTP_HOST);
   }
 
   public static NetServerOptions createH3NetServerOptions() {
