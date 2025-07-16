@@ -32,15 +32,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -66,11 +63,13 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     return buffer;
   }
 
+  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
+
   protected final ChannelHandlerContext handlerContext;
   private final VertxHttp2ConnectionHandler handler;
   protected final Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
-  private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
+  private Handler<Http2Settings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings;
@@ -220,8 +219,6 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     onHeadersRead(streamId, headers, null, endOfStream);
   }
 
-  protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
-
   @Override
   public void onSettingsAckRead(ChannelHandlerContext ctx) {
     Handler<Void> handler;
@@ -240,7 +237,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     boolean changed;
-    Handler<io.vertx.core.http.Http2Settings> handler;
+    Handler<Http2Settings> handler;
     synchronized (this) {
       Long val = settings.maxConcurrentStreams();
       if (val != null) {
@@ -257,7 +254,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.dispatch(HttpUtils.toVertxSettings(settings), handler);
+      context.dispatch(settings, handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -411,24 +408,24 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
-    remoteSettingsHandler = handler;
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    this.remoteSettingsHandler = http2Settings -> handler.handle(HttpUtils.toVertxSettings(http2Settings));
     return this;
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
+  public io.vertx.core.http.Http2Settings remoteHttpSettings() {
     return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings settings() {
+  public io.vertx.core.http.Http2Settings httpSettings() {
     return HttpUtils.toVertxSettings(localSettings);
   }
 
   @Override
-  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    return updateSettings(HttpUtils.fromVertxSettings(settings));
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings(HttpUtils.fromVertxSettings((io.vertx.core.http.Http2Settings) settings));
   }
 
   protected Future<Void> updateSettings(Http2Settings settingsUpdate) {
@@ -527,13 +524,13 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   @Override
   public void writePriorityFrame(int streamId, StreamPriority priority) {
     Http2Stream s = handler.connection().stream(streamId);
-    handler.writePriority(s, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+    handler.writePriority(s, priority);
   }
 
   @Override
   public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2Stream s = handler.connection().stream(streamId);
-    handler.writeHeaders(s, (Http2Headers) headers.prepare().unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    handler.writeHeaders(s, headers.prepare(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
   @Override

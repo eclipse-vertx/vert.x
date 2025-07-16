@@ -10,7 +10,14 @@
  */
 package io.vertx.core.http.impl.http2;
 
+import io.vertx.core.Handler;
+
 public interface Http2ClientConnection extends Http2Connection {
+
+  default void createStream(Http2ClientStream vertxStream, Handler<Void> onComplete) throws Exception {
+    createStream(vertxStream);
+    onComplete.handle(null);
+  }
 
   void createStream(Http2ClientStream vertxStream) throws Exception;
 

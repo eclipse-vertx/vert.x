@@ -75,6 +75,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     return this;
   }
 
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
+  }
+
   public HttpServerMetrics metrics() {
     return metrics;
   }

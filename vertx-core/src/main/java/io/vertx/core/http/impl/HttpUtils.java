@@ -16,7 +16,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
+import io.netty.incubator.codec.http3.Http3SettingsFrame;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
@@ -25,9 +29,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -48,6 +52,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -201,8 +206,17 @@ public final class HttpUtils {
     public StreamPriority setExclusive(boolean exclusive) {
       throw new UnsupportedOperationException("Unmodifiable stream priority");
     }
-  };
 
+    @Override
+    public StreamPriority setHttp3Urgency(int http3Urgency) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+
+    @Override
+    public StreamPriority setHttp3Incremental(boolean http3Incremental) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+  };
 
   private HttpUtils() {
   }
@@ -434,6 +448,53 @@ public final class HttpUtils {
       }
     });
     return converted;
+  }
+  public static Http3SettingsFrame fromVertxSettings(io.vertx.core.http.Http3Settings settings) {
+    Http3SettingsFrame converted = new DefaultHttp3SettingsFrame();
+    converted.put(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY, settings.getQpackMaxTableCapacity());
+    converted.put(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE, settings.getMaxFieldSectionSize());
+    converted.put(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_BLOCKED_STREAMS, settings.getQpackMaxBlockedStreams());
+    converted.put(Http3Settings.HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL, settings.getEnableConnectProtocol());
+    converted.put(Http3Settings.HTTP3_SETTINGS_H3_DATAGRAM, settings.getH3Datagram());
+    converted.put(Http3Settings.HTTP3_SETTINGS_ENABLE_METADATA, settings.getEnableMetadata());
+    if (settings.getExtraSettings() != null) {
+      settings.getExtraSettings().forEach((key, value) -> {
+        if (Http3Settings.VALID_H3_SETTINGS_KEYS.contains(key)) {
+          converted.put(key, value);
+        }
+      });
+    }
+    return converted;
+  }
+
+  public static io.vertx.core.http.Http3Settings toVertxSettings(Http3SettingsFrame settings) {
+    Http3Settings http3Settings = new Http3Settings();
+    http3Settings.setQpackMaxTableCapacity(
+      settings.getOrDefault(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_MAX_TABLE_CAPACITY,
+        Http3Settings.DEFAULT_QPACK_MAX_TABLE_CAPACITY));
+    http3Settings.setMaxFieldSectionSize(settings.getOrDefault(Http3SettingsFrame.HTTP3_SETTINGS_MAX_FIELD_SECTION_SIZE,
+      Http3Settings.DEFAULT_MAX_FIELD_SECTION_SIZE));
+    http3Settings.setQpackMaxBlockedStreams(
+      Math.toIntExact(settings.getOrDefault(Http3SettingsFrame.HTTP3_SETTINGS_QPACK_BLOCKED_STREAMS,
+        Http3Settings.DEFAULT_QPACK_BLOCKED_STREAMS)));
+    http3Settings.setEnableConnectProtocol(settings.getOrDefault(Http3Settings.HTTP3_SETTINGS_ENABLE_CONNECT_PROTOCOL,
+      Http3Settings.DEFAULT_ENABLE_CONNECT_PROTOCOL));
+    http3Settings.setH3Datagram(settings.getOrDefault(Http3Settings.HTTP3_SETTINGS_H3_DATAGRAM,
+      Http3Settings.DEFAULT_H3_DATAGRAM));
+    http3Settings.setEnableMetadata(settings.getOrDefault(Http3Settings.HTTP3_SETTINGS_ENABLE_METADATA,
+      Http3Settings.DEFAULT_ENABLE_METADATA));
+
+    http3Settings.setExtraSettings(Http3Settings.DEFAULT_EXTRA_SETTINGS);
+
+    settings.forEach(entry -> {
+      if (!Http3Settings.SETTING_KEYS.contains(entry.getKey())) {
+        if (http3Settings.getExtraSettings() == null) {
+          http3Settings.setExtraSettings(new HashMap<>());
+        }
+        http3Settings.getExtraSettings().put(entry.getKey(), entry.getValue());
+      }
+    });
+    return http3Settings;
   }
 
   public static Http2Settings decodeSettings(String base64Settings) {

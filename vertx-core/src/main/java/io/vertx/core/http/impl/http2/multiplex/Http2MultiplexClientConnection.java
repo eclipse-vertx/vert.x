@@ -22,6 +22,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpSettings;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
@@ -72,6 +75,11 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     this.lifetimeEvictionTimestampMillis = maxLifetimeMillis > 0 ? System.currentTimeMillis() + maxLifetimeMillis : Long.MAX_VALUE;
     this.evicted = false;
     this.decompressionSupported = decompressionSupported;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
   @Override
@@ -232,5 +240,26 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
       completion = null;
       promise.fail(ConnectionBase.CLOSED_EXCEPTION);
     }
+  }
+
+  //TODO: checkit: remove the following.
+  @Override
+  public HttpSettings httpSettings() {
+    return settings();
+  }
+
+  @Override
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings((Http2Settings) settings);
+  }
+
+  @Override
+  public HttpSettings remoteHttpSettings() {
+    return remoteSettings();
+  }
+
+  @Override
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    return remoteSettingsHandler(handler::handle);
   }
 }

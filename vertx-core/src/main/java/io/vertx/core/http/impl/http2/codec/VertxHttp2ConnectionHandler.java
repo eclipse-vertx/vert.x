@@ -23,6 +23,8 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
+import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.net.impl.ShutdownEvent;
@@ -220,9 +222,9 @@ public class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends 
 
   //
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
+  void writeHeaders(Http2Stream stream, Http2HeadersMultiMap headers, boolean end, int streamDependency, short weight, boolean exclusive, boolean checkFlush, FutureListener<Void> listener) {
     ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
-    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, promise);
+    encoder().writeHeaders(chctx, stream.id(), (Http2Headers) headers.unwrap(), streamDependency, weight, exclusive, 0, end, promise);
     if (checkFlush) {
       checkFlush();
     }
@@ -454,17 +456,17 @@ public class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends 
     throw new UnsupportedOperationException();
   }
 
-  private void _writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
-      encoder().writePriority(chctx, stream.id(), streamDependency, weight, exclusive, chctx.newPromise());
+  private void _writePriority(Http2Stream stream, StreamPriority priority) {
+      encoder().writePriority(chctx, stream.id(), priority.getDependency(), priority.getWeight(), priority.isExclusive(), chctx.newPromise());
   }
 
-  void writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
+  void writePriority(Http2Stream stream, StreamPriority priority) {
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
-      _writePriority(stream, streamDependency, weight, exclusive);
+      _writePriority(stream, priority);
     } else {
       executor.execute(() -> {
-        _writePriority(stream, streamDependency, weight, exclusive);
+        _writePriority(stream, priority);
       });
     }
   }

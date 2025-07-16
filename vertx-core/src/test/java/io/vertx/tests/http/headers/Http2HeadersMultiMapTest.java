@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxHttpHeadersTest extends HeadersTest {
+public class Http2HeadersMultiMapTest extends HeadersTest {
 
   // Same hash
   protected String sameHash1;
@@ -37,7 +37,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
   protected String sameBucket1;
   protected String sameBucket2;
 
-  public VertxHttpHeadersTest() {
+  public Http2HeadersMultiMapTest() {
     sameHash1 = "ABCDEF";
     sameHash2 = "HOBOURN";
     sameBucket1 = "ZEITOUN";

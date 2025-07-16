@@ -89,5 +89,4 @@ public interface HttpClientStream extends WriteStream<Buffer>, ReadStream<Buffer
 
   StreamPriority priority();
   HttpClientStream updatePriority(StreamPriority streamPriority);
-
 }

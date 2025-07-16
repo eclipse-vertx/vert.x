@@ -918,4 +918,25 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                  boolean pooled,
                  UpgradeResult result);
   }
+
+  //TODO: checkit: remove the following.
+  @Override
+  public HttpSettings httpSettings() {
+    return settings();
+  }
+
+  @Override
+  public Future<Void> updateHttpSettings(HttpSettings settings) {
+    return updateSettings((Http2Settings) settings);
+  }
+
+  @Override
+  public HttpSettings remoteHttpSettings() {
+    return remoteSettings();
+  }
+
+  @Override
+  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+    return remoteSettingsHandler(handler::handle);
+  }
 }
