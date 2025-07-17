@@ -213,6 +213,10 @@ public final class ChannelProvider {
               : new Socks4ProxyHandler(proxyAddr);
             break;
         }
+        long connectTimeout = proxyOptions.getConnectTimeout();
+        if (connectTimeout > 0) {
+          proxy.setConnectTimeoutMillis(connectTimeout);
+        }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);

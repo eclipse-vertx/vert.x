@@ -11,11 +11,11 @@
 
 package io.vertx.core.net;
 
-import java.util.Objects;
-
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
+
+import java.util.Objects;
 
 /**
  * Proxy options for a net client or a net client.
@@ -33,7 +33,7 @@ public class ProxyOptions {
 
   /**
    * The default port for proxy connect = 3128
-   *
+   * <p>
    * 3128 is the default port for Squid
    */
   public static final int DEFAULT_PORT = 3128;
@@ -43,11 +43,17 @@ public class ProxyOptions {
    */
   public static final String DEFAULT_HOST = "localhost";
 
+  /**
+   * The default timeout in milliseconds for proxy connect = 10000
+   */
+  public static final long DEFAULT_CONNECT_TIMEOUT = 10000;
+
   private String host;
   private int port;
   private String username;
   private String password;
   private ProxyType type;
+  private long connectTimeout;
 
   /**
    * Default constructor.
@@ -56,6 +62,7 @@ public class ProxyOptions {
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     type = DEFAULT_TYPE;
+    connectTimeout = DEFAULT_CONNECT_TIMEOUT;
   }
 
   /**
@@ -69,6 +76,7 @@ public class ProxyOptions {
     username = other.getUsername();
     password = other.getPassword();
     type = other.getType();
+    connectTimeout = other.getConnectTimeout();
   }
 
   /**
@@ -198,6 +206,33 @@ public class ProxyOptions {
   public ProxyOptions setType(ProxyType type) {
     Objects.requireNonNull(type, "Proxy type may not be null");
     this.type = type;
+    return this;
+  }
+
+  /**
+   * Get the connection timeout in milliseconds, defaults to {@code 10000}.
+   * <p>
+   * A connection to the proxy is considered successful when:
+   *
+   * <ul>
+   *   <li>the client received a {@code 200} response to the {@code CONNECT} request for HTTP proxies, or</li>
+   *   <li>the {@code SOCKS} handshake ended with the {@code SUCCESS} status, for SOCKS proxies.</li>
+   * </ul>
+   *
+   * @return the connection timeout
+   */
+  public long getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  /**
+   * Set the connection timeout in milliseconds.
+   *
+   * @param connectTimeout the connection timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions setConnectTimeout(long connectTimeout) {
+    this.connectTimeout = connectTimeout;
     return this;
   }
 }

@@ -38,6 +38,7 @@ open module io.vertx.core.tests {
   requires static io.netty.codec.haproxy;
   requires io.netty.codec.http2;
   requires io.netty.resolver.dns;
+  requires io.netty.handler.proxy;
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 

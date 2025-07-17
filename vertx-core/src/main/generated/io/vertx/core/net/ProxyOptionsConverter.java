@@ -37,6 +37,11 @@ public class ProxyOptionsConverter {
             obj.setType(io.vertx.core.net.ProxyType.valueOf((String)member.getValue()));
           }
           break;
+        case "connectTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setConnectTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
       }
     }
   }
@@ -59,5 +64,6 @@ public class ProxyOptionsConverter {
     if (obj.getType() != null) {
       json.put("type", obj.getType().name());
     }
+    json.put("connectTimeout", obj.getConnectTimeout());
   }
 }

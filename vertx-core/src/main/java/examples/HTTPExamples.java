@@ -20,10 +20,10 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
@@ -1288,6 +1288,10 @@ public class HTTPExamples {
       .onSuccess(body -> {
         System.out.println("Received response");
       });
+  }
+
+  public void proxyOptionsConnectTimeout(ProxyOptions proxyOptions) {
+    proxyOptions.setConnectTimeout(60000); // Timeout in milliseconds
   }
 
   public void example60(Vertx vertx) {
