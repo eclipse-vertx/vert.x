@@ -14,7 +14,16 @@ import io.netty.handler.proxy.ProxyConnectException;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.PoolOptions;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.net.ProxyOptions;
@@ -28,7 +37,13 @@ import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
-import java.util.*;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -624,15 +639,15 @@ public class Http1xProxyTest extends HttpTestBase {
     } else {
       proxy = new SocksProxy();
     }
-    long delayMillis = 1000;
-    proxy.username((String) null).successDelayMillis(delayMillis);
+    Duration delay = Duration.ofSeconds(1);
+    proxy.username((String) null).successDelayMillis(delay.toMillis());
     proxy.start(vertx);
 
     ProxyOptions proxyOptions = new ProxyOptions()
       .setType(proxyType)
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(proxy.port())
-      .setConnectTimeout(shouldTimeout ? delayMillis / 2 : delayMillis * 2);
+      .setConnectTimeout(shouldTimeout ? delay.dividedBy(2) : delay.multipliedBy(2));
     HttpClientOptions clientOptions = createBaseClientOptions()
       .setSsl(true)
       .setTrustOptions(Cert.SERVER_JKS.get())
@@ -641,7 +656,7 @@ public class Http1xProxyTest extends HttpTestBase {
 
     RequestOptions requestOptions = new RequestOptions(this.requestOptions)
       .setPort(DEFAULT_HTTPS_PORT)
-      .setConnectTimeout(3 * delayMillis);
+      .setConnectTimeout(delay.multipliedBy(3).toMillis());
     client.request(requestOptions)
       .compose(req -> req.send().compose(HttpClientResponse::body)).onComplete(ar -> {
         if (shouldTimeout) {

@@ -12,8 +12,17 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
-import io.netty.handler.proxy.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.proxy.HttpProxyHandler;
+import io.netty.handler.proxy.ProxyConnectionEvent;
+import io.netty.handler.proxy.ProxyHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
+import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.resolver.NoopAddressResolverGroup;
@@ -213,7 +222,7 @@ public final class ChannelProvider {
               : new Socks4ProxyHandler(proxyAddr);
             break;
         }
-        long connectTimeout = proxyOptions.getConnectTimeout();
+        long connectTimeout = proxyOptions.getConnectTimeout().toMillis();
         if (connectTimeout > 0) {
           proxy.setConnectTimeoutMillis(connectTimeout);
         }

@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
+import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -44,16 +45,16 @@ public class ProxyOptions {
   public static final String DEFAULT_HOST = "localhost";
 
   /**
-   * The default timeout in milliseconds for proxy connect = 10000
+   * The default timeout for proxy connect = 10 seconds
    */
-  public static final long DEFAULT_CONNECT_TIMEOUT = 10000;
+  public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
 
   private String host;
   private int port;
   private String username;
   private String password;
   private ProxyType type;
-  private long connectTimeout;
+  private Duration connectTimeout;
 
   /**
    * Default constructor.
@@ -210,7 +211,7 @@ public class ProxyOptions {
   }
 
   /**
-   * Get the connection timeout in milliseconds, defaults to {@code 10000}.
+   * Get the connection timeout , defaults to {@code 10} seconds.
    * <p>
    * A connection to the proxy is considered successful when:
    *
@@ -221,17 +222,17 @@ public class ProxyOptions {
    *
    * @return the connection timeout
    */
-  public long getConnectTimeout() {
+  public Duration getConnectTimeout() {
     return connectTimeout;
   }
 
   /**
-   * Set the connection timeout in milliseconds.
+   * Set the connection timeout.
    *
    * @param connectTimeout the connection timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setConnectTimeout(long connectTimeout) {
+  public ProxyOptions setConnectTimeout(Duration connectTimeout) {
     this.connectTimeout = connectTimeout;
     return this;
   }
