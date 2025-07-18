@@ -19,15 +19,27 @@ import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.verticles.*;
+import io.vertx.test.verticles.ExtraCPVerticleAlreadyInParentLoader;
+import io.vertx.test.verticles.ExtraCPVerticleNotInParentLoader;
+import io.vertx.test.verticles.TestVerticle;
+import io.vertx.test.verticles.TestVerticle2;
+import io.vertx.test.verticles.TestVerticle3;
 import io.vertx.test.verticles.sourceverticle.SourceVerticle;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -1729,6 +1741,39 @@ public class DeploymentTest extends VertxTestBase {
       if (stopConsumer != null) {
         stopConsumer.accept(stopPromise);
       }
+    }
+  }
+
+  @Test
+  public void testVerticleNotLeakedWithSharedServers() {
+    class HttpServer extends AbstractVerticle {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        vertx.createHttpServer()
+          .requestHandler(request -> request.response().end())
+          .listen(8080)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }
+
+    // Deploy first verticle
+    vertx.deployVerticle(new HttpServer()).toCompletionStage().toCompletableFuture().join();
+
+    // Deploy and undeploy other verticles
+    List<WeakReference<HttpServer>> verticles = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      HttpServer verticle = new HttpServer();
+      verticles.add(new WeakReference<>(verticle));
+      vertx.deployVerticle(verticle)
+        .compose(id -> vertx.undeploy(id))
+        .toCompletionStage().toCompletableFuture().join();
+    }
+
+    VertxTest.runGC();
+
+    for (WeakReference<HttpServer> verticle : verticles) {
+      assertNull(verticle.get());
     }
   }
 }
