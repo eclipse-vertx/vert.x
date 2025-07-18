@@ -12,20 +12,42 @@
 package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.*;
-import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
+import io.vertx.core.Context;
+import io.vertx.core.Deployable;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
+import io.vertx.core.Verticle;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.tests.vertx.VertxTest;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1518,6 +1540,39 @@ public class DeploymentTest extends VertxTestBase {
       if (stopConsumer != null) {
         stopConsumer.accept(stopPromise);
       }
+    }
+  }
+
+  @Test
+  public void testVerticleNotLeakedWithSharedServers() {
+    class HttpServer extends AbstractVerticle {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        vertx.createHttpServer()
+          .requestHandler(request -> request.response().end())
+          .listen(8080)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }
+
+    // Deploy first verticle
+    vertx.deployVerticle(new HttpServer()).toCompletionStage().toCompletableFuture().join();
+
+    // Deploy and undeploy other verticles
+    List<WeakReference<HttpServer>> verticles = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      HttpServer verticle = new HttpServer();
+      verticles.add(new WeakReference<>(verticle));
+      vertx.deployVerticle(verticle)
+        .compose(id -> vertx.undeploy(id))
+        .toCompletionStage().toCompletableFuture().join();
+    }
+
+    VertxTest.runGC();
+
+    for (WeakReference<HttpServer> verticle : verticles) {
+      assertNull(verticle.get());
     }
   }
 }
