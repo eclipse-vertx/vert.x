@@ -13,21 +13,53 @@ package examples;
 
 import io.netty.handler.codec.compression.GzipOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Expectation;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.http.*;
+import io.vertx.core.http.ClientForm;
+import io.vertx.core.http.ClientMultipartForm;
+import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientAgent;
+import io.vertx.core.http.HttpClientConnection;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnectOptions;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpResponseHead;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.PoolOptions;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebSocket;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -1288,6 +1320,10 @@ public class HTTPExamples {
       .onSuccess(body -> {
         System.out.println("Received response");
       });
+  }
+
+  public void proxyOptionsConnectTimeout(ProxyOptions proxyOptions) {
+    proxyOptions.setConnectTimeout(Duration.ofSeconds(60));
   }
 
   public void example60(Vertx vertx) {
