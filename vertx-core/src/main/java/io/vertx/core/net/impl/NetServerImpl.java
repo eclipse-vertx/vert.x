@@ -13,7 +13,14 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -25,37 +32,41 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.*;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.CloseSequence;
-import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,7 +104,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
-  private Set<NetServerImpl> servers;
   private TCPMetrics<?> metrics;
   private volatile int actualPort;
   private Channel datagramChannel;
@@ -469,8 +479,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           Future<SslContextProvider> scp = sslContextProvider;
           initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
         };
-        servers = new HashSet<>();
-        servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 
         //
@@ -523,7 +531,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           Future<SslContextProvider> scp = actualServer.sslContextProvider;
           initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
         };
-        actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
         main.bindFuture.onComplete(promise);
