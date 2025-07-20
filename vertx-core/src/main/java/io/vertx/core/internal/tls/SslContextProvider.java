@@ -10,17 +10,26 @@
  */
 package io.vertx.core.internal.tls;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.ChannelHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.incubator.codec.quic.QuicSslContext;
+import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.incubator.codec.quic.QuicSslEngine;
 import io.netty.util.AsyncMapping;
 import io.netty.util.Mapping;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.net.VertxSslContext;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
+import java.net.InetSocketAddress;
 import java.security.cert.CRL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -53,6 +62,7 @@ public class SslContextProvider {
   private final TrustManagerFactory trustManagerFactory;
   private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
+  private final Http3Utils.QuicCodecBuilderInitializer quicCodecBuilderInitializer;
 
   private final SslContext[] sslContexts = new SslContext[2];
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
@@ -63,6 +73,7 @@ public class SslContextProvider {
                             ClientAuth clientAuth,
                             String endpointIdentificationAlgorithm,
                             List<String> applicationProtocols,
+                            Http3Utils.QuicCodecBuilderInitializer quicCodecBuilderInitializer,
                             Set<String> enabledCipherSuites,
                             Set<String> enabledProtocols,
                             KeyManagerFactory keyManagerFactory,
@@ -76,6 +87,7 @@ public class SslContextProvider {
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     this.applicationProtocols = applicationProtocols;
+    this.quicCodecBuilderInitializer = quicCodecBuilderInitializer;
     this.enabledCipherSuites = new HashSet<>(enabledCipherSuites);
     this.enabledProtocols = enabledProtocols;
     this.keyManagerFactory = keyManagerFactory;
@@ -165,6 +177,18 @@ public class SslContextProvider {
     };
   }
 
+  public ChannelHandler buildForQuicServerWithSni(Executor workerPool, boolean useAlpn, HostAndPort remoteAddress) {
+    QuicSslContext serverSslContextWithSni = QuicSslContextBuilder.buildForServerWithSni(serverNameMapping(useAlpn));
+    return Http3Utils.newQuicServerHandler(workerPool, serverSslContextWithSni, quicChannel -> {
+        if (remoteAddress != null) {
+          return serverSslContextWithSni.newEngine(quicChannel.alloc(), remoteAddress.host(), remoteAddress.port());
+        }
+        InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
+        return serverSslContextWithSni.newEngine(quicChannel.alloc(), address.getHostString(), address.getPort());
+      }, quicCodecBuilderInitializer)
+      .build();
+  }
+
   /**
    * Server name for {@link SniHandler}
    *
@@ -209,6 +233,33 @@ public class SslContextProvider {
         protected void initEngine(SSLEngine engine) {
           configureEngine(engine, enabledProtocols, serverName, true);
         }
+
+        @Override
+        public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
+          if (HttpVersion.supportsQuic(applicationProtocols)) {
+            QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
+            return Http3Utils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+          }
+          return super.newHandler(alloc, executor);
+        }
+
+        @Override
+        protected SslHandler newHandler(ByteBufAllocator alloc, boolean startTls, Executor executor) {
+          if (HttpVersion.supportsQuic(applicationProtocols)) {
+            QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
+            return Http3Utils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+          }
+          return super.newHandler(alloc, startTls, executor);
+        }
+
+        @Override
+        protected SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, boolean startTls, Executor executor) {
+          if (HttpVersion.supportsQuic(applicationProtocols)) {
+            QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc, peerHost, peerPort);
+            return Http3Utils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+          }
+          return super.newHandler(alloc, peerHost, peerPort, startTls, executor);
+        }
       };
     } catch (Exception e) {
       throw new VertxException(e);
@@ -241,6 +292,24 @@ public class SslContextProvider {
         @Override
         protected void initEngine(SSLEngine engine) {
           configureEngine(engine, enabledProtocols, serverName, false);
+        }
+
+        @Override
+        public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
+          if (HttpVersion.supportsQuic(applicationProtocols)) {
+            QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc);
+            return Http3Utils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+          }
+          return super.newHandler(alloc, executor);
+        }
+
+        @Override
+        public SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, Executor executor) {
+          if (HttpVersion.supportsQuic(applicationProtocols)) {
+            QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc, peerHost, peerPort);
+            return Http3Utils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+          }
+          return super.newHandler(alloc, peerHost, peerPort, executor);
         }
       };
     } catch (Exception e) {
@@ -342,6 +411,9 @@ public class SslContextProvider {
   public void configureEngine(SSLEngine engine, Set<String> enabledProtocols, String serverName, boolean client) {
     Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
     protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
+    if (HttpVersion.supportsQuic(applicationProtocols)) {
+      return;
+    }
     engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));
     if (client) {
       SSLParameters sslParameters = engine.getSSLParameters();

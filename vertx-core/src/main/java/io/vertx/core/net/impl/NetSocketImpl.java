@@ -336,6 +336,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           clientSSLOptions.getHostnameVerificationAlgorithm(),
           null,
           null,
+          null,
           context).map(p -> new SslChannelProvider(context.owner(), p, false));
       } else {
         ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
@@ -347,7 +348,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           sslOptions,
           null,
           clientAuth,
-          null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
+          null, null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
       }
       return f.compose(provider -> {
         PromiseInternal<Void> p = context.promise();
@@ -362,7 +363,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
               sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions);
             } else {
               sslHandler = provider.createServerHandler(sslOptions,
-                HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()), null);
+                HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
             }
             chctx.pipeline().addFirst("ssl", sslHandler);
             channelPromise.addListener(p);

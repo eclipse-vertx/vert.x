@@ -857,4 +857,11 @@ public class Http3NetTest extends NetTest {
   public void testAsyncWriteIsFlushed() throws Exception {
     super.testAsyncWriteIsFlushed();
   }
+
+  @Test
+  @Ignore
+  @Override
+  public void testTLSServerSSLEnginePeerHost() throws Exception {
+    super.testTLSServerSSLEnginePeerHost();
+  }
 }

@@ -15,6 +15,8 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
 import io.netty.incubator.codec.http3.DefaultHttp3SettingsFrame;
@@ -26,12 +28,14 @@ import io.netty.incubator.codec.http3.Http3FrameToHttpObjectCodec;
 import io.netty.incubator.codec.http3.Http3GoAwayFrame;
 import io.netty.incubator.codec.http3.Http3ServerConnectionHandler;
 import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
 import io.netty.incubator.codec.quic.QuicChannel;
 import io.netty.incubator.codec.quic.QuicClientCodecBuilder;
 import io.netty.incubator.codec.quic.QuicCodecBuilder;
 import io.netty.incubator.codec.quic.QuicServerCodecBuilder;
 import io.netty.incubator.codec.quic.QuicSslContext;
 import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.incubator.codec.quic.QuicSslEngine;
 import io.netty.incubator.codec.quic.QuicStreamChannel;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.util.ReferenceCountUtil;
@@ -43,10 +47,13 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.SSLOptions;
 
+import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.LongFunction;
 
 /**
@@ -130,24 +137,57 @@ public class Http3Utils {
       .build();
   }
 
-  public static QuicServerCodecBuilder newQuicServerCodecBuilder(SSLOptions sslOptions, Executor delegatedTaskExec) {
-    QuicServerCodecBuilder quicServerCodecBuilder = Http3.newQuicServerCodecBuilder();
-    return newQuicCodecBuilder(quicServerCodecBuilder, sslOptions, delegatedTaskExec);
+  public static QuicCodecBuilderInitializer createServerQuicCodecBuilderInitializer(SSLOptions sslOptions, ChannelHandler handler) {
+    return new QuicCodecBuilderInitializer() {
+      @Override
+      public void initServerCodecBuilder(QuicServerCodecBuilder quicServerCodecBuilder) {
+        configureQuicCodecBuilder(quicServerCodecBuilder, sslOptions)
+          .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
+          .handler(handler);
+      }
+    };
   }
 
-  public static QuicClientCodecBuilder newQuicClientCodecBuilder(SSLOptions sslOptions, Executor delegatedTaskExec) {
-    QuicClientCodecBuilder quicClientCodecBuilder = Http3.newQuicClientCodecBuilder();
-    return newQuicCodecBuilder(quicClientCodecBuilder, sslOptions, delegatedTaskExec);
+  public static QuicCodecBuilderInitializer createClientQuicCodecBuilderInitializer(SSLOptions sslOptions) {
+    return new QuicCodecBuilderInitializer() {
+      @Override
+      public void initClientCodecBuilder(QuicClientCodecBuilder quicClientCodecBuilder) {
+        configureQuicCodecBuilder(quicClientCodecBuilder, sslOptions);
+      }
+    };
   }
 
-  private static <T extends QuicCodecBuilder<T>> T newQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions,
-                                                                       Executor delegatedTaskExec) {
+  public static QuicSslHandlerWrapper newQuicServerSslHandler(QuicSslEngine sslEngine, Executor delegatedTaskExecutor, SslContext sslContext, QuicCodecBuilderInitializer initializer) {
+    ChannelHandler handler = newQuicServerHandler(delegatedTaskExecutor, (QuicSslContext) sslContext, quicChannel -> sslEngine, initializer).build();
+    return new QuicSslHandlerWrapper(sslEngine, delegatedTaskExecutor, handler);
+  }
+
+  public static QuicServerCodecBuilder newQuicServerHandler(Executor delegatedTaskExecutor, QuicSslContext sslContext, Function<QuicChannel, ? extends QuicSslEngine> sslEngineProvider, QuicCodecBuilderInitializer initializer) {
+    QuicServerCodecBuilder quicCodecBuilder = Http3.newQuicServerCodecBuilder();
+    initializer.initServerCodecBuilder(quicCodecBuilder);
+    return quicCodecBuilder
+      .sslTaskExecutor(delegatedTaskExecutor)
+      .sslContext(sslContext)
+      .sslEngineProvider(sslEngineProvider);
+  }
+
+  public static QuicSslHandlerWrapper newQuicClientSslHandler(QuicSslEngine engine, Executor delegatedTaskExecutor, SslContext sslContext, QuicCodecBuilderInitializer initializer) {
+    QuicClientCodecBuilder quicCodecBuilder = Http3.newQuicClientCodecBuilder();
+    initializer.initClientCodecBuilder(quicCodecBuilder);
+    ChannelHandler handler = quicCodecBuilder
+      .sslTaskExecutor(delegatedTaskExecutor)
+      .sslContext((QuicSslContext) sslContext)
+      .sslEngineProvider(quicChannel -> engine)
+      .build();
+    return new QuicSslHandlerWrapper(engine, delegatedTaskExecutor, handler);
+  }
+
+  public static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions) {
     quicCodecBuilder
       // Enabling this option allows sending unreliable, connectionless data over QUIC
       // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.
       .datagram(2000000, 2000000)
 
-      .sslTaskExecutor(delegatedTaskExec)
       .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
       .initialMaxData(sslOptions.getHttp3InitialMaxData())
       .initialMaxStreamsBidirectional(sslOptions.getHttp3InitialMaxStreamsBidirectional())
@@ -360,4 +400,116 @@ public class Http3Utils {
     }
   }
 
+  public static class QuicSslHandlerWrapper extends SslHandler implements ChannelInboundHandler {
+    private final ChannelDuplexHandler delegate;
+
+    QuicSslHandlerWrapper(SSLEngine engine, Executor delegatedTaskExecutor, ChannelHandler quicSslHandler) {
+      super(engine, delegatedTaskExecutor);
+      delegate = (ChannelDuplexHandler) quicSslHandler;
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.channelRegistered(channelHandlerContext);
+    }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.channelUnregistered(channelHandlerContext);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.channelActive(channelHandlerContext);
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.channelInactive(channelHandlerContext);
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
+      delegate.channelRead(channelHandlerContext, o);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.channelReadComplete(channelHandlerContext);
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
+      delegate.userEventTriggered(channelHandlerContext, o);
+    }
+
+    @Override
+    public void channelWritabilityChanged(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.channelWritabilityChanged(channelHandlerContext);
+    }
+
+    @Override
+    public void bind(ChannelHandlerContext channelHandlerContext, SocketAddress socketAddress, ChannelPromise channelPromise) throws Exception {
+      delegate.bind(channelHandlerContext, socketAddress, channelPromise);
+    }
+
+    @Override
+    public void connect(ChannelHandlerContext channelHandlerContext, SocketAddress socketAddress, SocketAddress socketAddress1, ChannelPromise channelPromise) throws Exception {
+      delegate.connect(channelHandlerContext, socketAddress, socketAddress1, channelPromise);
+    }
+
+    @Override
+    public void disconnect(ChannelHandlerContext channelHandlerContext, ChannelPromise channelPromise) throws Exception {
+      delegate.disconnect(channelHandlerContext, channelPromise);
+    }
+
+    @Override
+    public void close(ChannelHandlerContext channelHandlerContext, ChannelPromise channelPromise) throws Exception {
+      delegate.close(channelHandlerContext, channelPromise);
+    }
+
+    @Override
+    public void deregister(ChannelHandlerContext channelHandlerContext, ChannelPromise channelPromise) throws Exception {
+      delegate.deregister(channelHandlerContext, channelPromise);
+    }
+
+    @Override
+    public void read(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.read(channelHandlerContext);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext channelHandlerContext, Object o, ChannelPromise channelPromise) throws Exception {
+      delegate.write(channelHandlerContext, o, channelPromise);
+    }
+
+    @Override
+    public void flush(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.flush(channelHandlerContext);
+    }
+
+    @Override
+    public void handlerAdded(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.handlerAdded(channelHandlerContext);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) throws Exception {
+      delegate.exceptionCaught(channelHandlerContext, throwable);
+    }
+
+    @Override
+    public void handlerRemoved0(ChannelHandlerContext channelHandlerContext) throws Exception {
+      delegate.handlerRemoved(channelHandlerContext);
+    }
+  }
+
+  public interface QuicCodecBuilderInitializer {
+    default void initServerCodecBuilder(QuicServerCodecBuilder quicServerCodecBuilder) {
+      throw new RuntimeException("Not implemented");
+    }
+    default void initClientCodecBuilder(QuicClientCodecBuilder quicClientCodecBuilder) {
+      throw new RuntimeException("Not implemented");
+    }
+  }
 }

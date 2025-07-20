@@ -12,26 +12,17 @@ package io.vertx.core.internal.net;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelInitializer;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.incubator.codec.quic.InsecureQuicTokenHandler;
-import io.netty.incubator.codec.quic.QuicSslContext;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.Http3Utils;
 
-import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
 /**
@@ -40,7 +31,6 @@ import java.util.concurrent.Executor;
  * {@link SslContext} instances are cached and reused.
  */
 public class SslChannelProvider {
-  private static final Logger log = LoggerFactory.getLogger(SslChannelProvider.class);
 
   private final Executor workerPool;
   private final boolean sni;
@@ -58,19 +48,12 @@ public class SslChannelProvider {
     return sslContextProvider;
   }
 
-  public ChannelHandler createClientSslHandler(SocketAddress peerAddress, String serverName, SSLOptions sslOptions) {
+  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, SSLOptions sslOptions) {
     SslContext sslContext = sslContextProvider.sslClientContext(serverName, sslOptions.isUseAlpn());
-    Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (HttpVersion.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
-      QuicSslContext quicSslContext = (QuicSslContext) ((VertxSslContext) sslContext).unwrap();
-      return Http3Utils.newQuicClientCodecBuilder(sslOptions, delegatedTaskExec)
-        .sslEngineProvider(channel -> quicSslContext.newEngine(channel.alloc(), peerAddress.host(), peerAddress.port()))
-        .build();
-    }
     SslHandler sslHandler;
+    Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (peerAddress != null && peerAddress.isInetSocket()) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peerAddress.host(), peerAddress.port(),
-        delegatedTaskExec);
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peerAddress.host(), peerAddress.port(), delegatedTaskExec);
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
@@ -78,64 +61,32 @@ public class SslChannelProvider {
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
-                                            ChannelInitializer handler) {
+  public ChannelHandler createServerHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
     if (sni) {
-      return createSniHandler(sslOptions, remoteAddress, handler);
+      return createSniHandler(sslOptions, remoteAddress);
     } else {
-      return createServerSslHandler(sslOptions, remoteAddress, handler);
+      return createServerSslHandler(sslOptions, remoteAddress);
     }
   }
 
-  private ChannelHandler createServerSslHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
-                                                ChannelInitializer handler) {
-    log.debug("Creating Server Ssl Handler ... ");
+  private SslHandler createServerSslHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
     SslContext sslContext = sslContextProvider.sslServerContext(sslOptions.isUseAlpn());
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (HttpVersion.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
-      log.debug("Creating HTTP/3 Server Ssl Handler ... ");
-      Arguments.require(handler != null, "handler can't be null for http/3");
-
-      QuicSslContext quicSslContext = (QuicSslContext) ((VertxSslContext) sslContext).unwrap();
-      return Http3Utils.newQuicServerCodecBuilder(sslOptions, delegatedTaskExec)
-        .sslContext((QuicSslContext) ((VertxSslContext) sslContext).unwrap())
-        .sslEngineProvider(quicChannel -> {
-          InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
-          return quicSslContext.newEngine(quicChannel.alloc(), address.getHostString(), address.getPort());
-        })
-        .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
-        .handler(handler)
-        .build();
-    }
     SslHandler sslHandler;
     if (remoteAddress != null) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(),
-        delegatedTaskExec);
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-
     sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
     return sslHandler;
   }
 
-  private ChannelHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress,
-                                          ChannelInitializer handler) {
+  private ChannelHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (HttpVersion.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
-      QuicSslContext serverSslContextWithSni =
-        QuicSslContextBuilder.buildForServerWithSni(sslContextProvider.serverNameMapping(sslOptions.isUseAlpn()));
-
-      return Http3Utils.newQuicServerCodecBuilder(sslOptions, delegatedTaskExec)
-        .sslEngineProvider(quicChannel -> {
-          InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
-          return serverSslContextWithSni.newEngine(quicChannel.alloc(), address.getHostString(), address.getPort());
-        })
-        .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
-        .handler(handler)
-        .build();
+      return sslContextProvider.buildForQuicServerWithSni(delegatedTaskExec, sslOptions.isUseAlpn(), remoteAddress);
     }
-
     return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn()),
       sslOptions.getSslHandshakeTimeoutUnit().toMillis(sslOptions.getSslHandshakeTimeout()),
       delegatedTaskExec, remoteAddress);

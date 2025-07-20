@@ -259,6 +259,7 @@ class NetClientImpl implements NetClientInternal {
           sslOptions.getHostnameVerificationAlgorithm(),
           null,
           sslOptions.getApplicationLayerProtocols(),
+          Http3Utils.createClientQuicCodecBuilderInitializer(sslOptions),
           context);
         fut.onComplete(ar -> {
           if (ar.succeeded()) {

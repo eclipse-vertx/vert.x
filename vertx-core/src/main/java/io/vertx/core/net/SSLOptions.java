@@ -97,7 +97,6 @@ public class SSLOptions {
   List<String> crlPaths;
   List<Buffer> crlValues;
   private boolean useAlpn;
-  private boolean http3;
   private Set<String> enabledSecureTransportProtocols;
   private List<String> applicationLayerProtocols;
   private long http3InitialMaxStreamsBidirectional;
