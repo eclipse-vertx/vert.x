@@ -208,12 +208,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else if (addr instanceof SocketAddress) {
       server = (SocketAddress) addr;
       if (port == null) {
-        port = connect.getPort();
-      }
-      if (host == null) {
-        host = connect.getHost();
-      }
-      if (port == null) {
         port = server.port();
       }
       if (host == null) {
@@ -264,12 +258,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       addr = SocketAddress.inetSocketAddress(port, host);
     } else if (addr instanceof SocketAddress) {
       SocketAddress socketAddr = (SocketAddress) addr;
-      if (port == null) {
-        port = request.getPort();
-      }
-      if (host == null) {
-        host = request.getHost();
-      }
       if (port == null) {
         port = socketAddr.port();
       }
