@@ -2071,14 +2071,12 @@ The addresses of the handlers are given by {@link io.vertx.core.http.WebSocket#b
 
 === Using a proxy for HTTP/HTTPS connections
 
-The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
-The CONNECT protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
+The {@link io.vertx.core.http.HttpClient} supports accessing HTTP/HTTPS URLs via an HTTP proxy (e.g. Squid), a _SOCKS4a_, or a _SOCKS5_ proxy.
+The `CONNECT` protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 servers.
 
-Connecting to h2c (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support
-HTTP/1.1 only.
+Connecting to `h2c` (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support HTTP/1.1 only.
 
-The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting a
-{@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
+The proxy can be configured in the {@link io.vertx.core.http.HttpClientOptions} by setting a {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
 
 Here's an example of using an HTTP proxy:
 
@@ -2087,11 +2085,9 @@ Here's an example of using an HTTP proxy:
 {@link examples.HTTPExamples#example58}
 ----
 
-When the client connects to an http URL, it connects to the proxy server and provides the full URL in the
-HTTP request ("GET http://www.somehost.com/path/file.html HTTP/1.1").
+When the client connects to an HTTP URL, it connects to the proxy server and provides the full URL in the HTTP request, like `GET http://www.somehost.com/path/file.html HTTP/1.1`.
 
-When the client connects to an https URL, it asks the proxy to create a tunnel to the remote host with
-the CONNECT method.
+When the client connects to an HTTPS URL, it asks the proxy to create a tunnel to the remote host with the `CONNECT` method.
 
 For a SOCKS5 proxy:
 
@@ -2100,25 +2096,35 @@ For a SOCKS5 proxy:
 {@link examples.HTTPExamples#example59}
 ----
 
-The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
-to resolve the DNS address locally.
+The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary to resolve the DNS address locally.
 
-Proxy options can also be set per request:
+{@link io.vertx.core.net.ProxyOptions} can also be set per request:
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#perRequestProxyOptions}
 ----
 
-NOTE: client connection pooling is aware of proxies (including authentication), consequently two requests to the same host through different proxies
-do not share the same pooled connection
+[NOTE]
+====
+Client connection pooling is aware of proxies (including authentication).
+Consequently, two requests to the same host through different proxies do not share the same pooled connection.
+====
 
-You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing
-the proxy. The lists accept `*` wildcard for matching domains:
+You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing the proxy.
+The list accepts `*` wildcard for matching domains:
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#nonProxyHosts}
+----
+
+By default, a 10 seconds connection timeout is set for the proxy handler in the Vert.x HTTP client.
+If the target server takes longer than that to accept the connection, or if the proxy is too busy and delays completion of the handshake with the client, you might increase this timeout:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#proxyOptionsConnectTimeout}
 ----
 
 ==== Handling of other protocols
