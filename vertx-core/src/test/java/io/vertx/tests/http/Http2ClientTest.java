@@ -379,6 +379,23 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testRemoveAuthority() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("fromHost", req.authority().host());
+      assertEquals(1234, req.authority().port());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions().setServer(testAddress)
+                                       .addHeader("Host", "fromHost:1234")
+          )
+          .onSuccess(req -> req.authority(null))
+          .compose(HttpClientRequest::send)
+          .onComplete(onSuccess(resp -> testComplete()));
+    await();
+  }
+
+  @Test
   public void testTrailers() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();

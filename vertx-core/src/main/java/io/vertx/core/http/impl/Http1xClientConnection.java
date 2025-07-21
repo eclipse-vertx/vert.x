@@ -176,6 +176,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     String uri,
     MultiMap headerMap,
     HostAndPort authority,
+    SocketAddress remoteAddress,
     boolean chunked,
     ByteBuf buf,
     boolean end) {
@@ -187,7 +188,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       }
     }
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, authority.toString(ssl));
+      // Host header is mandatory, if not present forge it from remote address.
+      HostAndPort host = authority != null ? authority : HostAndPort.create(remoteAddress.host(), remoteAddress.port());
+      request.headers().set(HOST, host.toString(ssl));
     } else {
       headers.remove(TRANSFER_ENCODING);
     }
@@ -242,7 +245,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
     request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
-    HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
+    HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, request.remoteAddress, chunked, buf, end);
     synchronized (this) {
       responses.add(stream);
       this.isConnect = connect;

@@ -68,6 +68,8 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * Override the request authority, when using HTTP/1.x this overrides the request {@code host} header, when using
    * HTTP/2 this sets the {@code authority} pseudo header. When the port is a negative value, the default
    * scheme port will be used.
+   * <p>A {@code null} value means no {@code :authority} pseudo header for HTTP/2 and will be ignored for HTTP/1.x
+   * since a {@code Host} header is mandatory.
    *
    * <p>The default request authority is the server host and port when connecting to the server.
    *

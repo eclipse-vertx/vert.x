@@ -32,6 +32,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final ContextInternal context;
   protected final HttpClientStream stream;
   protected final boolean ssl;
+  private final HostAndPort connectionAuthority;
   private io.vertx.core.http.HttpMethod method;
   private HostAndPort authority;
   private String uri;
@@ -52,7 +53,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
-    this.authority = stream.connection().authority();
+    connectionAuthority = stream.connection().authority();
+    this.authority = connectionAuthority;
     this.ssl = stream.connection().isSsl();
 
     //
@@ -72,6 +74,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return authority;
   }
 
+  protected HostAndPort connectionAuthority() {
+    return connectionAuthority;
+  }
+
   @Override
   public int streamId() {
     return stream.id();
@@ -79,7 +85,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public String absoluteURI() {
-    return (ssl ? "https://" : "http://") + authority() + uri;
+    HostAndPort authority = authority();
+    if (authority == null) {
+      authority = connectionAuthority();
+    }
+    return (ssl ? "https://" : "http://") + authority.toString(ssl) + uri;
   }
 
   public String query() {
@@ -117,7 +127,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest authority(HostAndPort authority) {
-    Objects.requireNonNull(authority);
     this.authority = authority;
     return this;
   }
@@ -205,7 +214,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
           return;
         }
       }
-      cause = timeoutEx(timeoutMs, method, authority, uri);
+      cause = timeoutEx(timeoutMs, method, authority != null ? authority : connectionAuthority, uri);
     }
     reset(cause);
   }

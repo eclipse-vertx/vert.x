@@ -53,6 +53,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.vertx.core.http.HttpMethod.PUT;
+import static io.vertx.core.net.HostAndPort.authority;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 
@@ -5442,6 +5443,23 @@ public class Http1xTest extends HttpTest {
     nc.connect(testAddress).onComplete(onSuccess(so -> {
       so.write("GET / HTTP/1.1\r\n\r\n");
     }));
+    await();
+  }
+
+  @Test
+  public void testIgnoreMissingAuthority() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(authority(testAddress.host(), testAddress.port()), req.authority());
+      assertEquals(testAddress.host() + ":" + testAddress.port(), req.getHeader("Host"));
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions().setServer(testAddress))
+          .onSuccess(req -> req.authority(null))
+          .compose(req -> req
+            .send()
+            .compose(HttpClientResponse::body))
+          .onComplete(onSuccess(v -> testComplete()));
     await();
   }
 
