@@ -10,10 +10,20 @@
  */
 package io.vertx.tests.http;
 
+import io.netty.handler.proxy.ProxyConnectException;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.PoolOptions;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.net.ProxyOptions;
@@ -21,15 +31,24 @@ import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.HttpProxy;
+import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
-import java.util.*;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class Http1xProxyTest extends HttpTestBase {
 
@@ -572,6 +591,83 @@ public class Http1xProxyTest extends HttpTestBase {
         ws.write(Buffer.buffer("Hello world"));
       }));
     });
+    await();
+  }
+
+  @Test
+  public void testNoConnectTimeoutHttpProxy() throws Exception {
+    testConnectTimeout(ProxyType.HTTP, false);
+  }
+
+  @Test
+  public void testNoConnectTimeoutSocksProxy() throws Exception {
+    testConnectTimeout(ProxyType.SOCKS4, false);
+  }
+
+  @Test
+  public void testNoConnectTimeoutSocks5Proxy() throws Exception {
+    testConnectTimeout(ProxyType.SOCKS5, false);
+  }
+
+  @Test
+  public void testConnectTimeoutHttpProxy() throws Exception {
+    testConnectTimeout(ProxyType.HTTP, true);
+  }
+
+  @Test
+  public void testConnectTimeoutSocksProxy() throws Exception {
+    testConnectTimeout(ProxyType.SOCKS4, true);
+  }
+
+  @Test
+  public void testConnectTimeoutSocks5Proxy() throws Exception {
+    testConnectTimeout(ProxyType.SOCKS5, true);
+  }
+
+  private void testConnectTimeout(ProxyType proxyType, boolean shouldTimeout) throws Exception {
+    server.close();
+    HttpServerOptions serverOptions = createBaseServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get());
+    server = vertx.createHttpServer(serverOptions).requestHandler(request -> request.response().end());
+    startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
+
+    if (proxyType == ProxyType.HTTP) {
+      proxy = new HttpProxy();
+    } else if (proxyType == ProxyType.SOCKS4) {
+      proxy = new Socks4Proxy();
+    } else {
+      proxy = new SocksProxy();
+    }
+    Duration delay = Duration.ofSeconds(1);
+    proxy.username((String) null).successDelayMillis(delay.toMillis());
+    proxy.start(vertx);
+
+    ProxyOptions proxyOptions = new ProxyOptions()
+      .setType(proxyType)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(proxy.port())
+      .setConnectTimeout(shouldTimeout ? delay.dividedBy(2) : delay.multipliedBy(2));
+    HttpClientOptions clientOptions = createBaseClientOptions()
+      .setSsl(true)
+      .setTrustOptions(Cert.SERVER_JKS.get())
+      .setProxyOptions(proxyOptions);
+    client = vertx.createHttpClient(clientOptions);
+
+    RequestOptions requestOptions = new RequestOptions(this.requestOptions)
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setConnectTimeout(delay.multipliedBy(3).toMillis());
+    client.request(requestOptions)
+      .compose(req -> req.send().compose(HttpClientResponse::body)).onComplete(ar -> {
+        if (shouldTimeout) {
+          assertTrue(ar.failed());
+          assertThat(ar.cause(), instanceOf(ProxyConnectException.class));
+        } else {
+          assertTrue(ar.succeeded());
+        }
+        testComplete();
+      });
+
     await();
   }
 }
