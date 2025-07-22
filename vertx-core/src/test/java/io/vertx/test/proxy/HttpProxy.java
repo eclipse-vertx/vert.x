@@ -11,12 +11,6 @@
 
 package io.vertx.test.proxy;
 
-import java.net.UnknownHostException;
-import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -26,6 +20,11 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.http.HttpTestBase;
+
+import java.net.UnknownHostException;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Http Proxy for testing
@@ -115,18 +114,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
           client.connect(port, host).onComplete(ar1 -> {
             if (ar1.succeeded()) {
               localAddresses.add(ar1.result().localAddress().toString());
-              request.toNetSocket().onComplete(ar2 -> {
-                if (ar2.succeeded()) {
-                  NetSocket serverSocket = ar2.result();
-                  NetSocket clientSocket = ar1.result();
-                  serverSocket.closeHandler(v -> clientSocket.close());
-                  clientSocket.closeHandler(v -> serverSocket.close());
-                  serverSocket.pipeTo(clientSocket);
-                  clientSocket.pipeTo(serverSocket);
-                } else {
-                  // Not handled
-                }
-              });
+              toNetSocket(vertx, request, ar1.result());
             } else {
               request.response().setStatusCode(403).end("request failed");
             }
@@ -187,6 +175,26 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
       }
     });
     return server.listen();
+  }
+
+  private void toNetSocket(Vertx vertx, HttpServerRequest request, NetSocket clientSocket) {
+    Future<HttpServerRequest> fut;
+    if (successDelayMillis > 0) {
+      fut = vertx.timer(successDelayMillis).map(v -> request);
+    } else {
+      fut = Future.succeededFuture(request);
+    }
+    fut.compose(req -> req.toNetSocket().onComplete(ar2 -> {
+      if (ar2.succeeded()) {
+        NetSocket serverSocket = ar2.result();
+        serverSocket.closeHandler(v -> clientSocket.close());
+        clientSocket.closeHandler(v -> serverSocket.close());
+        serverSocket.pipeTo(clientSocket);
+        clientSocket.pipeTo(serverSocket);
+      } else {
+        // Not handled
+      }
+    }));
   }
 
   /**

@@ -23,11 +23,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.tests.http.HttpOptionsFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -44,6 +40,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
   protected String lastUri;
   protected String forceUri;
   protected List<String> localAddresses = Collections.synchronizedList(new ArrayList<>());
+  protected long successDelayMillis = 0;
   protected boolean http3 = false;
 
   public TestProxyBase() {
@@ -169,4 +166,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
 
   public abstract void stop();
 
+  public void successDelayMillis(long delayMillis) {
+    this.successDelayMillis = delayMillis;
+  }
 }

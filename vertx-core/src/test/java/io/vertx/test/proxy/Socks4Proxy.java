@@ -16,11 +16,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -97,7 +93,11 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
-              socket.write(connectResponse);
+              if (successDelayMillis > 0) {
+                vertx.setTimer(successDelayMillis, tid -> socket.write(connectResponse));
+              } else {
+                socket.write(connectResponse);
+              }
               log.debug("connected, starting pump");
               NetSocket clientSocket = result.result();
               socket.closeHandler(v -> clientSocket.close());

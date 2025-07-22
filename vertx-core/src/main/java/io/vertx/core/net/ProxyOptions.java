@@ -11,13 +11,12 @@
 
 package io.vertx.core.net;
 
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
-import io.netty.util.internal.ObjectUtil;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
+
+import java.time.Duration;
+import java.util.Objects;
 
 /**
  * Proxy options for a net client or a net client.
@@ -35,7 +34,7 @@ public class ProxyOptions {
 
   /**
    * The default port for proxy connect = 3128
-   *
+   * <p>
    * 3128 is the default port for Squid
    */
   public static final int DEFAULT_PORT = 3128;
@@ -46,23 +45,16 @@ public class ProxyOptions {
   public static final String DEFAULT_HOST = "localhost";
 
   /**
-   * The default value of proxy connect timeout = 10
+   * The default timeout for proxy connect = 10 seconds
    */
-  public static final long DEFAULT_CONNECT_TIMEOUT = 10L;
-
-  /**
-   * Default proxy connect timeout time unit = SECONDS
-   */
-  public static final TimeUnit DEFAULT_CONNECT_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+  public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
 
   private String host;
   private int port;
   private String username;
   private String password;
   private ProxyType type;
-  private long connectTimeout;
-  private TimeUnit connectTimeoutUnit;
-
+  private Duration connectTimeout;
 
   /**
    * Default constructor.
@@ -72,7 +64,6 @@ public class ProxyOptions {
     port = DEFAULT_PORT;
     type = DEFAULT_TYPE;
     connectTimeout = DEFAULT_CONNECT_TIMEOUT;
-    connectTimeoutUnit = DEFAULT_CONNECT_TIMEOUT_TIME_UNIT;
   }
 
   /**
@@ -86,8 +77,7 @@ public class ProxyOptions {
     username = other.getUsername();
     password = other.getPassword();
     type = other.getType();
-    connectTimeout = other.connectTimeout;
-    connectTimeoutUnit = other.connectTimeoutUnit;
+    connectTimeout = other.getConnectTimeout();
   }
 
   /**
@@ -221,44 +211,29 @@ public class ProxyOptions {
   }
 
   /**
-   * Get proxy connect timeout.
+   * Get the connection timeout , defaults to {@code 10} seconds.
+   * <p>
+   * A connection to the proxy is considered successful when:
    *
-   * @return  connect timeout
+   * <ul>
+   *   <li>the client received a {@code 200} response to the {@code CONNECT} request for HTTP proxies, or</li>
+   *   <li>the {@code SOCKS} handshake ended with the {@code SUCCESS} status, for SOCKS proxies.</li>
+   * </ul>
+   *
+   * @return the connection timeout
    */
-  public long getConnectTimeout() {
+  public Duration getConnectTimeout() {
     return connectTimeout;
   }
 
   /**
-   * Set proxy connect timeout.
+   * Set the connection timeout.
    *
-   * @param connectTimeout the proxy connect timeout
+   * @param connectTimeout the connection timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public ProxyOptions setConnectTimeout(long connectTimeout) {
-    ObjectUtil.checkPositive(connectTimeout , "connectTimeout");
+  public ProxyOptions setConnectTimeout(Duration connectTimeout) {
     this.connectTimeout = connectTimeout;
-    return this;
-  }
-
-  /**
-   * Get connect timeout unit.
-   *
-   * @return connect timeout unit
-   */
-  public TimeUnit getConnectTimeoutUnit() {
-    return connectTimeoutUnit;
-  }
-
-  /**
-   * Set connect timeout unit.
-   *
-   * @param connectTimeoutUnit the proxy connect timeout unit
-   * @return a reference to this, so the API can be used fluently
-   */
-  public ProxyOptions setConnectTimeoutUnit(TimeUnit connectTimeoutUnit) {
-    Objects.requireNonNull(connectTimeoutUnit, "ConnectTimeoutUnit may not be null");
-    this.connectTimeoutUnit = connectTimeoutUnit;
     return this;
   }
 }

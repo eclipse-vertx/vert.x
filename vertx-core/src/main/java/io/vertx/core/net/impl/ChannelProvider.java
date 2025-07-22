@@ -12,11 +12,18 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.quic.QuicChannel;
+import io.netty.handler.codec.quic.QuicClosedChannelException;
+import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.proxy.*;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicClosedChannelException;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -261,7 +268,10 @@ public final class ChannelProvider {
             });
           return;
         }
-
+        long connectTimeout = proxyOptions.getConnectTimeout().toMillis();
+        if (connectTimeout > 0) {
+          proxy.setConnectTimeoutMillis(connectTimeout);
+        }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
