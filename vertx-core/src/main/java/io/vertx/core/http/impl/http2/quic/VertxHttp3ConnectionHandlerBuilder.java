@@ -12,7 +12,7 @@
 package io.vertx.core.http.impl.http2.quic;
 
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.handler.codec.http3.Http3SettingsFrame;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.function.Function;

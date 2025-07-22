@@ -11,7 +11,7 @@
 
 package io.vertx.tests.http;
 
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.handler.codec.http3.Http3SettingsFrame;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.test.core.TestUtils;

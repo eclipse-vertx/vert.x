@@ -39,8 +39,8 @@ open module io.vertx.core.tests {
   requires io.netty.codec.http2;
   requires io.netty.resolver.dns;
   requires io.netty.handler.proxy;
-  requires io.netty.incubator.codec.http3;
-  requires io.netty.incubator.codec.classes.quic;
+  requires io.netty.codec.http3;
+  requires io.netty.codec.classes.quic;
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 

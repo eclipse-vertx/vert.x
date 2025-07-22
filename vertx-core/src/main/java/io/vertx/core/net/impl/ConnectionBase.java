@@ -16,7 +16,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
-import io.netty.incubator.codec.quic.QuicChannel;
+import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;

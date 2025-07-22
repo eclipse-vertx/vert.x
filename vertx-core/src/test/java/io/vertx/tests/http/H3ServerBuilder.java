@@ -6,8 +6,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.incubator.codec.http3.*;
-import io.netty.incubator.codec.quic.*;
+import io.netty.handler.codec.http3.Http3;
+import io.netty.handler.codec.http3.Http3ConnectionHandler;
+import io.netty.handler.codec.http3.Http3DataFrame;
+import io.netty.handler.codec.http3.Http3Frame;
+import io.netty.handler.codec.http3.Http3GoAwayFrame;
+import io.netty.handler.codec.http3.Http3HeadersFrame;
+import io.netty.handler.codec.http3.Http3RequestStreamInboundHandler;
+import io.netty.handler.codec.quic.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.logging.Logger;
@@ -138,7 +144,7 @@ class H3ServerBuilder {
     @Override
     protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
       log.debug(String.format("%s - Caught exception in QuicStreamChannel handler, %s", AGENT_SERVER, exception.getMessage()));
-      if (exception.error() == QuicError.STREAM_RESET) {
+      if ("STREAM_RESET".equals(exception.getMessage())) {
         streamResetHandler.handle(ctx);
       }
       super.handleQuicException(ctx, exception);

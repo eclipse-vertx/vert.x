@@ -11,7 +11,7 @@
 
 package io.vertx.tests.http.headers;
 
-import io.netty.incubator.codec.http3.DefaultHttp3Headers;
+import io.netty.handler.codec.http3.DefaultHttp3Headers;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 
 /**

@@ -19,7 +19,7 @@ import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.vertx.core.http.HttpVersion;
 
 import javax.net.ssl.KeyManagerFactory;

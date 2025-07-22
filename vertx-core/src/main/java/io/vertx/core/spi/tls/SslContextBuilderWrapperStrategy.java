@@ -5,7 +5,7 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
-import io.netty.incubator.codec.quic.QuicSslContextBuilder;
+import io.netty.handler.codec.quic.QuicSslContextBuilder;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;

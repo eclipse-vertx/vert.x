@@ -19,29 +19,28 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
+import io.netty.handler.codec.quic.QuicChannel;
+import io.netty.handler.codec.quic.QuicConnectionCloseEvent;
+import io.netty.handler.codec.quic.QuicException;
+import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.handler.codec.quic.QuicStreamPriority;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import io.netty.incubator.codec.http3.DefaultHttp3DataFrame;
-import io.netty.incubator.codec.http3.DefaultHttp3GoAwayFrame;
-import io.netty.incubator.codec.http3.DefaultHttp3HeadersFrame;
-import io.netty.incubator.codec.http3.DefaultHttp3UnknownFrame;
-import io.netty.incubator.codec.http3.Http3;
-import io.netty.incubator.codec.http3.Http3ConnectionHandler;
-import io.netty.incubator.codec.http3.Http3DataFrame;
-import io.netty.incubator.codec.http3.Http3ErrorCode;
-import io.netty.incubator.codec.http3.Http3Exception;
-import io.netty.incubator.codec.http3.Http3GoAwayFrame;
-import io.netty.incubator.codec.http3.Http3Headers;
-import io.netty.incubator.codec.http3.Http3HeadersFrame;
-import io.netty.incubator.codec.http3.Http3RequestStreamInboundHandler;
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
-import io.netty.incubator.codec.http3.Http3UnknownFrame;
-import io.netty.incubator.codec.quic.QuicChannel;
-import io.netty.incubator.codec.quic.QuicConnectionCloseEvent;
-import io.netty.incubator.codec.quic.QuicError;
-import io.netty.incubator.codec.quic.QuicException;
-import io.netty.incubator.codec.quic.QuicStreamChannel;
-import io.netty.incubator.codec.quic.QuicStreamPriority;
+import io.netty.handler.codec.http3.DefaultHttp3DataFrame;
+import io.netty.handler.codec.http3.DefaultHttp3GoAwayFrame;
+import io.netty.handler.codec.http3.DefaultHttp3HeadersFrame;
+import io.netty.handler.codec.http3.DefaultHttp3UnknownFrame;
+import io.netty.handler.codec.http3.Http3;
+import io.netty.handler.codec.http3.Http3ConnectionHandler;
+import io.netty.handler.codec.http3.Http3DataFrame;
+import io.netty.handler.codec.http3.Http3ErrorCode;
+import io.netty.handler.codec.http3.Http3Exception;
+import io.netty.handler.codec.http3.Http3GoAwayFrame;
+import io.netty.handler.codec.http3.Http3Headers;
+import io.netty.handler.codec.http3.Http3HeadersFrame;
+import io.netty.handler.codec.http3.Http3RequestStreamInboundHandler;
+import io.netty.handler.codec.http3.Http3SettingsFrame;
+import io.netty.handler.codec.http3.Http3UnknownFrame;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.DefaultPromise;
@@ -483,7 +482,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
       log.debug(String.format("%s - handleQuicException() called", agentType));
       super.handleQuicException(ctx, exception);
       Exception exception_ = exception;
-      if (exception.error() == QuicError.STREAM_RESET) {
+      if ("STREAM_RESET".equals(exception.getMessage())) {
 
         Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
         if (vertxStream != null) {

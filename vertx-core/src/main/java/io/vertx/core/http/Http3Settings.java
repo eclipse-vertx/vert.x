@@ -11,7 +11,7 @@
 
 package io.vertx.core.http;
 
-import io.netty.incubator.codec.http3.Http3SettingsFrame;
+import io.netty.handler.codec.http3.Http3SettingsFrame;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
