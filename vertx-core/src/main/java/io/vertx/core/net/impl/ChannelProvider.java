@@ -268,10 +268,6 @@ public final class ChannelProvider {
             });
           return;
         }
-        long connectTimeout = proxyOptions.getConnectTimeout().toMillis();
-        if (connectTimeout > 0) {
-          proxy.setConnectTimeoutMillis(connectTimeout);
-        }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);

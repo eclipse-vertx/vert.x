@@ -42,11 +42,6 @@ public class ProxyOptionsConverter {
             obj.setConnectTimeout(java.time.Duration.of(((Number)member.getValue()).longValue(), java.time.temporal.ChronoUnit.MILLIS));
           }
           break;
-        case "connectTimeoutUnit":
-          if (member.getValue() instanceof String) {
-            obj.setConnectTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
-          }
-          break;
       }
     }
   }
@@ -71,9 +66,6 @@ public class ProxyOptionsConverter {
     }
     if (obj.getConnectTimeout() != null) {
       json.put("connectTimeout", obj.getConnectTimeout().toMillis());
-    }
-    if (obj.getConnectTimeoutUnit() != null) {
-      json.put("connectTimeoutUnit", obj.getConnectTimeoutUnit().name());
     }
   }
 }

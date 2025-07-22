@@ -62,6 +62,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -125,7 +126,7 @@ public abstract class NetTest extends VertxTestBase {
   protected abstract SslContext createSSLContext();
 
   protected ProxyOptions createProxyOptions() {
-    return new ProxyOptions().setConnectTimeout(isDebug() ? 6000 : 10);
+    return new ProxyOptions().setConnectTimeout(isDebug() ? Duration.ofMinutes(30) : Duration.ofSeconds(10));
   }
 
   @Override
