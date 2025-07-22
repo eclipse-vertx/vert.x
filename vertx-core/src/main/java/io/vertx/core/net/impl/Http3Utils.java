@@ -45,7 +45,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.net.SSLOptions;
+import io.vertx.core.net.QuicOptions;
 
 import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
@@ -137,22 +137,22 @@ public class Http3Utils {
       .build();
   }
 
-  public static QuicCodecBuilderInitializer createServerQuicCodecBuilderInitializer(SSLOptions sslOptions, ChannelHandler handler) {
+  public static QuicCodecBuilderInitializer createServerQuicCodecBuilderInitializer(QuicOptions quicOptions, ChannelHandler handler) {
     return new QuicCodecBuilderInitializer() {
       @Override
       public void initServerCodecBuilder(QuicServerCodecBuilder quicServerCodecBuilder) {
-        configureQuicCodecBuilder(quicServerCodecBuilder, sslOptions)
+        configureQuicCodecBuilder(quicServerCodecBuilder, quicOptions)
           .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
           .handler(handler);
       }
     };
   }
 
-  public static QuicCodecBuilderInitializer createClientQuicCodecBuilderInitializer(SSLOptions sslOptions) {
+  public static QuicCodecBuilderInitializer createClientQuicCodecBuilderInitializer(QuicOptions quicOptions) {
     return new QuicCodecBuilderInitializer() {
       @Override
       public void initClientCodecBuilder(QuicClientCodecBuilder quicClientCodecBuilder) {
-        configureQuicCodecBuilder(quicClientCodecBuilder, sslOptions);
+        configureQuicCodecBuilder(quicClientCodecBuilder, quicOptions);
       }
     };
   }
@@ -182,19 +182,19 @@ public class Http3Utils {
     return new QuicSslHandlerWrapper(engine, delegatedTaskExecutor, handler);
   }
 
-  public static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, SSLOptions sslOptions) {
+  public static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, QuicOptions quicOptions) {
     quicCodecBuilder
       // Enabling this option allows sending unreliable, connectionless data over QUIC
       // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.
       .datagram(2000000, 2000000)
 
-      .maxIdleTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit())
-      .initialMaxData(sslOptions.getHttp3InitialMaxData())
-      .initialMaxStreamsBidirectional(sslOptions.getHttp3InitialMaxStreamsBidirectional())
-      .initialMaxStreamDataBidirectionalLocal(sslOptions.getHttp3InitialMaxStreamDataBidirectionalLocal())
-      .initialMaxStreamDataBidirectionalRemote(sslOptions.getHttp3InitialMaxStreamDataBidirectionalRemote())
-      .initialMaxStreamsUnidirectional(sslOptions.getHttp3InitialMaxStreamsUnidirectional())
-      .initialMaxStreamDataUnidirectional(sslOptions.getHttp3InitialMaxStreamDataUnidirectional())
+      .maxIdleTimeout(quicOptions.getSslHandshakeTimeout(), quicOptions.getSslHandshakeTimeoutUnit())
+      .initialMaxData(quicOptions.getHttp3InitialMaxData())
+      .initialMaxStreamsBidirectional(quicOptions.getHttp3InitialMaxStreamsBidirectional())
+      .initialMaxStreamDataBidirectionalLocal(quicOptions.getHttp3InitialMaxStreamDataBidirectionalLocal())
+      .initialMaxStreamDataBidirectionalRemote(quicOptions.getHttp3InitialMaxStreamDataBidirectionalRemote())
+      .initialMaxStreamsUnidirectional(quicOptions.getHttp3InitialMaxStreamsUnidirectional())
+      .initialMaxStreamDataUnidirectional(quicOptions.getHttp3InitialMaxStreamDataUnidirectional())
     ;
     return quicCodecBuilder;
   }

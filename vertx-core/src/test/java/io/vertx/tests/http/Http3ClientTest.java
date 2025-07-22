@@ -55,8 +55,8 @@ public class Http3ClientTest extends HttpClientTest {
   @Override
   protected void manageMaxQueueRequestsCount(Long max) {
     if (max != null) {
-      serverOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
-      clientOptions.getSslOptions().setHttp3InitialMaxStreamsBidirectional(max);
+      serverOptions.getQuicOptions().setHttp3InitialMaxStreamsBidirectional(max);
+      clientOptions.getQuicOptions().setHttp3InitialMaxStreamsBidirectional(max);
     }
     Http3Settings serverSettings = new Http3Settings();
     serverOptions.setInitialHttp3Settings(serverSettings);

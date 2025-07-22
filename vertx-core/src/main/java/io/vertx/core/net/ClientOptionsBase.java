@@ -47,12 +47,18 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
 
+  /**
+   * Whether a write-handler should be registered by default
+   */
+  public static final QuicOptions DEFAULT_QUIC_OPTIONS = new QuicOptions();
+
   private int connectTimeout;
   private String metricsName;
   private ProxyOptions proxyOptions;
   private String localAddress;
   private List<String> nonProxyHosts;
   private HttpVersion protocolVersion;
+  private QuicOptions quicOptions;
 
   /**
    * Default constructor
@@ -75,6 +81,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.localAddress = other.localAddress;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
     this.protocolVersion = other.protocolVersion;
+    this.quicOptions = other.quicOptions;
   }
 
   /**
@@ -105,6 +112,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = null;
     this.localAddress = null;
     this.protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    this.quicOptions = DEFAULT_QUIC_OPTIONS;
   }
 
   @GenIgnore
@@ -421,4 +429,37 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   public ClientOptionsBase setTcpUserTimeout(int tcpUserTimeout) {
     return (ClientOptionsBase) super.setTcpUserTimeout(tcpUserTimeout);
   }
+
+    public ClientOptionsBase setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    if (quicOptions != null) {
+      quicOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
+    }
+    return (ClientOptionsBase) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
+  public ClientOptionsBase setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    if (quicOptions != null) {
+      quicOptions.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+    }
+    return (ClientOptionsBase) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
+  /**
+   * @return  the value of quicOptions
+   */
+  public QuicOptions getQuicOptions() {
+    return quicOptions;
+  }
+
+  /**
+   * Set the value of quicOptions
+   *
+   * @param quicOptions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setQuicOptions(QuicOptions quicOptions) {
+    this.quicOptions = quicOptions;
+    return this;
+  }
+
 }
