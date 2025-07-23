@@ -23,11 +23,13 @@ import java.util.concurrent.TimeUnit;
 public class Http3ServerTest extends HttpServerTest {
 
   @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions = HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createH3HttpClientOptions();
-    super.setUp();
+  protected HttpServerOptions createBaseServerOptions() {
+    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+  }
+
+  @Override
+  protected HttpClientOptions createBaseClientOptions() {
+    return HttpOptionsFactory.createH3HttpClientOptions().setDefaultPort(DEFAULT_HTTPS_PORT).setDefaultHost(DEFAULT_HTTPS_HOST);
   }
 
   @Override
@@ -41,15 +43,5 @@ public class Http3ServerTest extends HttpServerTest {
     for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
       eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
     }
-  }
-
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
   }
 }

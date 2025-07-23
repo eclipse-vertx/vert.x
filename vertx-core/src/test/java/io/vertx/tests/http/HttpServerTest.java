@@ -108,18 +108,6 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  */
 public abstract class HttpServerTest extends Http2TestBase {
 
-  protected HttpServerOptions serverOptions;
-  protected HttpClientOptions clientOptions;
-  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
-
-  @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions = createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
-    super.setUp();
-  }
-
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
@@ -130,12 +118,12 @@ public abstract class HttpServerTest extends Http2TestBase {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
+    return createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
+    return HttpOptionsFactory.createHttp2ClientOptions();
   }
 
   @Override

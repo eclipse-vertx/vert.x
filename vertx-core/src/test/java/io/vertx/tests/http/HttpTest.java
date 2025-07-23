@@ -1595,7 +1595,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testServerExceptionHandlerOnClose() {
     waitFor(3);
-    vertx.createHttpServer().requestHandler(req -> {
+    vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
       HttpServerResponse resp = req.response();
       AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
       AtomicInteger respExceptionHandlerCount = new AtomicInteger();
@@ -1631,7 +1631,7 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     }).listen(testAddress).onComplete(onSuccess(ar -> {
-      HttpClient client = vertx.createHttpClient();
+      HttpClient client = vertx.createHttpClient(createBaseClientOptions());
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
         .onComplete(onSuccess(req -> {
           req.setChunked(true);

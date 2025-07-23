@@ -11,6 +11,7 @@
 
 package io.vertx.test.http;
 
+import io.netty.channel.EventLoopGroup;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -30,6 +31,8 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -54,25 +57,32 @@ public class HttpTestBase extends VertxTestBase {
   protected SocketAddress testAddress;
   protected RequestOptions requestOptions;
   private File tmp;
+  protected HttpServerOptions serverOptions;
+  protected HttpClientOptions clientOptions;
+  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }
 
   protected HttpClientOptions createBaseClientOptions() {
-    return new HttpClientOptions();
+    return new HttpClientOptions().setDefaultPort(DEFAULT_HTTP_PORT).setDefaultHost(DEFAULT_HTTP_HOST);
   }
 
   public void setUp() throws Exception {
     super.setUp();
-    HttpServerOptions baseServerOptions = createBaseServerOptions();
-    testAddress = SocketAddress.inetSocketAddress(baseServerOptions.getPort(), baseServerOptions.getHost());
+
+    eventLoopGroups.clear();
+    serverOptions = createBaseServerOptions();
+    clientOptions = createBaseClientOptions();
+
+    testAddress = SocketAddress.inetSocketAddress(serverOptions.getPort(), serverOptions.getHost());
     requestOptions = new RequestOptions()
-      .setHost(baseServerOptions.getHost())
-      .setPort(baseServerOptions.getPort())
+      .setHost(serverOptions.getHost())
+      .setPort(serverOptions.getPort())
       .setURI(DEFAULT_TEST_URI);
-    server = vertx.createHttpServer(baseServerOptions);
-    client = vertx.createHttpClient(createBaseClientOptions());
+    server = vertx.createHttpServer(serverOptions);
+    client = vertx.createHttpClient(clientOptions);
   }
 
   /**

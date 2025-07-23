@@ -15,6 +15,7 @@ import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http3.DefaultHttp3DataFrame;
 import io.netty.handler.codec.http3.DefaultHttp3Headers;
 import io.netty.handler.codec.http3.DefaultHttp3HeadersFrame;
@@ -34,17 +35,22 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class Http3ClientTest extends HttpClientTest {
-
-  protected Vertx getVertx() {
-    return vertx;
+  @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
   }
 
   @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions = HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createH3HttpClientOptions();
-    super.setUp();
+  protected HttpClientOptions createBaseClientOptions() {
+    return HttpOptionsFactory.createH3HttpClientOptions();
+  }
+
+  public void addEventLoop(NioEventLoopGroup eventLoopGroup) {
+    eventLoopGroups.add(eventLoopGroup);
+  }
+
+  protected Vertx getVertx() {
+    return vertx;
   }
 
   @Override
@@ -88,16 +94,6 @@ public class Http3ClientTest extends HttpClientTest {
     for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
       eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
     }
-  }
-
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
   }
 
   @Override

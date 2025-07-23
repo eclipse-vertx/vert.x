@@ -42,6 +42,9 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.test.core.TestUtils;
 
+import static io.vertx.tests.http.Http2TestBase.createHttp2ClientOptions;
+import static io.vertx.tests.http.Http2TestBase.createHttp2ServerOptions;
+
 @RunWith(Parameterized.class)
 public class HttpBandwidthLimitingTest extends HttpTestBase {
 
@@ -87,13 +90,7 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
     this.clientFactory = clientFactory;
     this.nonTrafficShapedServerFactory = nonTrafficShapedServerFactory;
   }
-  @Before
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions =  HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
-    super.setUp();
-  }
+
   @Override
   protected void configureDomainSockets() throws Exception {
     // Nope
@@ -109,12 +106,12 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
+    return createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
+    return createHttp2ClientOptions();
   }
 
 

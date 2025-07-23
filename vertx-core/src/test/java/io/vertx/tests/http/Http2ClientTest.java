@@ -40,13 +40,6 @@ import java.util.function.BiFunction;
 
 
 public class Http2ClientTest extends HttpClientTest {
-  @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
-    super.setUp();
-  }
 
   @Override
   protected HttpVersion httpVersion() {

@@ -54,10 +54,6 @@ import static io.vertx.test.core.AssertExpectations.that;
  */
 public abstract class HttpClientTest extends Http2TestBase {
 
-  protected HttpServerOptions serverOptions;
-  protected HttpClientOptions clientOptions;
-  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
-
   protected abstract StreamPriority generateStreamPriority();
   protected abstract StreamPriority defaultStreamPriority();
   protected abstract HttpFrame generateCustomFrame();

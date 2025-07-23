@@ -23,14 +23,6 @@ import java.util.concurrent.TimeUnit;
 public class Http2ServerTest extends HttpServerTest {
 
   @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
-    clientOptions = HttpOptionsFactory.createHttp2ClientOptions();
-    super.setUp();
-  }
-
-  @Override
   protected void configureDomainSockets() throws Exception {
     // Nope
   }
@@ -41,15 +33,5 @@ public class Http2ServerTest extends HttpServerTest {
     for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
       eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
     }
-  }
-
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return serverOptions;
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return clientOptions;
   }
 }

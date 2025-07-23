@@ -13,10 +13,12 @@ package io.vertx.tests.http.sendfile;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
@@ -37,6 +39,16 @@ import java.util.function.Supplier;
 import static io.vertx.test.core.AssertExpectations.that;
 
 public abstract class HttpSendFileTest extends HttpTestBase {
+
+  @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
+  }
+
+  @Override
+  protected HttpClientOptions createBaseClientOptions() {
+    return new HttpClientOptions().setDefaultPort(DEFAULT_HTTP_PORT).setDefaultHost(DEFAULT_HTTP_HOST);
+  }
 
   @Test
   @DetectFileDescriptorLeaks(iterations = 40)

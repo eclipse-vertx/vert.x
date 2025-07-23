@@ -47,7 +47,7 @@ class H3ServerBuilder {
     AbstractBootstrap bootstrap = new Bootstrap();
 
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-    http3ClientTest.eventLoopGroups.add(eventLoopGroup);
+    http3ClientTest.addEventLoop(eventLoopGroup);
     bootstrap.group(eventLoopGroup);
     bootstrap.channel(NioDatagramChannel.class);
 
