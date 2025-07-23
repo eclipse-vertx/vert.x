@@ -14,7 +14,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -37,7 +36,6 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -61,7 +59,6 @@ public class HttpServerConnectionInitializer {
   private final int compressionContentSizeThreshold;
   private final Http2ServerChannelInitializer http2ChannelInitializer;
   private final Http2ServerChannelInitializer http3ChannelInitializer;
-  private final Function<String, String> encodingDetector;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
@@ -143,7 +140,6 @@ public class HttpServerConnectionInitializer {
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
     this.http2ChannelInitializer = http2ChannelInitalizer;
     this.http3ChannelInitializer = http3ChannelInitalizer;
-    this.encodingDetector = compressionOptions != null ? new EncodingDetector(options.getCompressionContentSizeThreshold(), compressionOptions)::determineEncoding : null;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
@@ -298,17 +294,5 @@ public class HttpServerConnectionInitializer {
     pipeline.replace(VertxHandler.class, "handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     connectionHandler.handle(conn);
-  }
-
-  private static class EncodingDetector extends HttpContentCompressor {
-
-    private EncodingDetector(int contentSizeThreshold, CompressionOptions[] compressionOptions) {
-      super(contentSizeThreshold, compressionOptions);
-    }
-
-    @Override
-    protected String determineEncoding(String acceptEncoding) {
-      return super.determineEncoding(acceptEncoding);
-    }
   }
 }

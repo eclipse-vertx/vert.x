@@ -11,9 +11,6 @@
 
 package io.vertx.core.http.impl.http2.quic;
 
-import io.netty.handler.codec.compression.CompressionOptions;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http3.Http3Headers;
 import io.netty.handler.codec.quic.QuicStreamChannel;
@@ -44,7 +41,6 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 
   private final HttpServerOptions options;
   private final HttpServerMetrics metrics;
-  private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp3ConnectionHandler handler;
 
@@ -62,7 +58,6 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
     super(context, connHandler);
 
     this.options = options;
-    this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
     this.handler = connHandler;
@@ -81,26 +76,6 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 
   public HttpServerMetrics metrics() {
     return metrics;
-  }
-
-  private static class EncodingDetector extends HttpContentCompressor {
-
-    private EncodingDetector(CompressionOptions[] compressionOptions) {
-      super(compressionOptions);
-    }
-
-    @Override
-    protected String determineEncoding(String acceptEncoding) {
-      return super.determineEncoding(acceptEncoding);
-    }
-  }
-
-  public String determineContentEncoding(Http2HeadersMultiMap headers) {
-    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
-    if (acceptEncoding != null && encodingDetector != null) {
-      return encodingDetector.apply(acceptEncoding);
-    }
-    return null;
   }
 
   private Http2ServerStream createStream(Http3Headers headers, boolean streamEnded) {
