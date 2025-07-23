@@ -85,7 +85,15 @@ public class SslChannelProvider {
   private ChannelHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (HttpUtils.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
-      return sslContextProvider.buildForQuicServerWithSni(delegatedTaskExec, sslOptions.isUseAlpn(), remoteAddress);
+      SslContext sslContext = sslContextProvider.quicSniSslServerContext(sslOptions.isUseAlpn());
+      SslHandler sslHandler;
+      if (remoteAddress != null) {
+        sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
+      } else {
+        sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
+      }
+      sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+      return sslHandler;
     }
     return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn()),
       sslOptions.getSslHandshakeTimeoutUnit().toMillis(sslOptions.getSslHandshakeTimeout()),

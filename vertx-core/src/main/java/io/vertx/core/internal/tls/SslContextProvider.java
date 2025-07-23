@@ -156,6 +156,33 @@ public class SslContextProvider {
     }
   }
 
+  public SslContext quicSniSslServerContext(boolean useAlpn) {
+    try {
+      SslContext sniSslContext = QuicSslContextBuilder.buildForServerWithSni(serverNameMapping(useAlpn));
+
+      return new VertxSslContext(sniSslContext) {
+        @Override
+        protected void initEngine(SSLEngine engine) {
+          configureEngine(engine, enabledProtocols, null, false);
+        }
+
+        @Override
+        public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
+          QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc);
+          return Http3Utils.newQuicServerSslHandler(sslEngine, executor, sniSslContext, quicCodecBuilderInitializer);
+        }
+
+        @Override
+        public SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, Executor executor) {
+          QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc, peerHost, peerPort);
+          return Http3Utils.newQuicServerSslHandler(sslEngine, executor, sniSslContext, quicCodecBuilderInitializer);
+        }
+      };
+    } catch (Exception e) {
+      throw new VertxException(e);
+    }
+  }
+
   /**
    * Server name {@link AsyncMapping} for {@link SniHandler}, mapping happens on a Vert.x worker thread.
    *
@@ -175,18 +202,6 @@ public class SslContextProvider {
       });
       return promise;
     };
-  }
-
-  public ChannelHandler buildForQuicServerWithSni(Executor workerPool, boolean useAlpn, HostAndPort remoteAddress) {
-    QuicSslContext serverSslContextWithSni = QuicSslContextBuilder.buildForServerWithSni(serverNameMapping(useAlpn));
-    return Http3Utils.newQuicServerHandler(workerPool, serverSslContextWithSni, quicChannel -> {
-        if (remoteAddress != null) {
-          return serverSslContextWithSni.newEngine(quicChannel.alloc(), remoteAddress.host(), remoteAddress.port());
-        }
-        InetSocketAddress address = ((InetSocketAddress) quicChannel.remoteSocketAddress());
-        return serverSslContextWithSni.newEngine(quicChannel.alloc(), address.getHostString(), address.getPort());
-      }, quicCodecBuilderInitializer)
-      .build();
   }
 
   /**
