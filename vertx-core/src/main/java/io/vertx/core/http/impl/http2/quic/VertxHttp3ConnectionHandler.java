@@ -517,7 +517,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
       if (evt == ChannelInputShutdownEvent.INSTANCE) {
         Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
-        if (vertxStream != null && vertxStream.getReset() > -1) {
+        if (vertxStream != null && vertxStream.isReset()) {
           connection.onStreamClosed(((QuicStreamChannel) (ctx.channel())));
           return;
         }
