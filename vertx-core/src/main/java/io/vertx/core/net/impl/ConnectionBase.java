@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
-import io.netty.channel.socket.DatagramChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.handler.codec.quic.QuicChannel;
@@ -393,17 +392,7 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null || isHttp3SslHandler();
-  }
-
-  private boolean isHttp3SslHandler() {
-    ChannelPipeline pipeline = getDatagramChannelPipeline(channel);
-    return pipeline != null && pipeline.names().contains(ChannelProvider.CLIENT_SSL_HANDLER_NAME);
-  }
-
-  private ChannelPipeline getDatagramChannelPipeline(Channel channel) {
-    channel = channel != null ? channel.parent() : null;
-    return channel instanceof DatagramChannel ? channel.pipeline() : null;
+    return chctx.pipeline().get(SslHandler.class) != null || (chctx.channel().parent() != null && chctx.channel().parent().pipeline().get(SslHandlerWrapper.class) != null);
   }
 
   public boolean isTrafficShaped() {
@@ -411,11 +400,12 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
-    if (isHttp3SslHandler()) {
-      return ((QuicChannel) channel).sslEngine().getSession();
-    }
-
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
+    if (sslHandlerContext == null) {
+      if (chctx.channel().parent() != null) {
+        sslHandlerContext = chctx.channel().parent().pipeline().context(SslHandlerWrapper.class);
+      }
+    }
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession();

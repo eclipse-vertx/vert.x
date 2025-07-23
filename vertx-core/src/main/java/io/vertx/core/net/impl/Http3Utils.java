@@ -16,7 +16,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.codec.http3.DefaultHttp3GoAwayFrame;
 import io.netty.handler.codec.http3.DefaultHttp3SettingsFrame;
@@ -47,9 +46,7 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.QuicOptions;
 
-import javax.net.ssl.SSLEngine;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -157,9 +154,9 @@ public class Http3Utils {
     };
   }
 
-  public static QuicSslHandlerWrapper newQuicServerSslHandler(QuicSslEngine sslEngine, Executor delegatedTaskExecutor, SslContext sslContext, QuicCodecBuilderInitializer initializer) {
+  public static SslHandlerWrapper newQuicServerSslHandler(QuicSslEngine sslEngine, Executor delegatedTaskExecutor, SslContext sslContext, QuicCodecBuilderInitializer initializer) {
     ChannelHandler handler = newQuicServerHandler(delegatedTaskExecutor, (QuicSslContext) sslContext, quicChannel -> sslEngine, initializer).build();
-    return new QuicSslHandlerWrapper(sslEngine, delegatedTaskExecutor, handler);
+    return new SslHandlerWrapper(sslEngine, delegatedTaskExecutor, handler);
   }
 
   public static QuicServerCodecBuilder newQuicServerHandler(Executor delegatedTaskExecutor, QuicSslContext sslContext, Function<QuicChannel, ? extends QuicSslEngine> sslEngineProvider, QuicCodecBuilderInitializer initializer) {
@@ -171,7 +168,7 @@ public class Http3Utils {
       .sslEngineProvider(sslEngineProvider);
   }
 
-  public static QuicSslHandlerWrapper newQuicClientSslHandler(QuicSslEngine engine, Executor delegatedTaskExecutor, SslContext sslContext, QuicCodecBuilderInitializer initializer) {
+  public static SslHandlerWrapper newQuicClientSslHandler(QuicSslEngine engine, Executor delegatedTaskExecutor, SslContext sslContext, QuicCodecBuilderInitializer initializer) {
     QuicClientCodecBuilder quicCodecBuilder = Http3.newQuicClientCodecBuilder();
     initializer.initClientCodecBuilder(quicCodecBuilder);
     ChannelHandler handler = quicCodecBuilder
@@ -179,7 +176,7 @@ public class Http3Utils {
       .sslContext((QuicSslContext) sslContext)
       .sslEngineProvider(quicChannel -> engine)
       .build();
-    return new QuicSslHandlerWrapper(engine, delegatedTaskExecutor, handler);
+    return new SslHandlerWrapper(engine, delegatedTaskExecutor, handler);
   }
 
   public static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, QuicOptions quicOptions) {
@@ -397,110 +394,6 @@ public class Http3Utils {
     public Http3ControlStreamChannelHandler http3GoAwayFrameHandler(Handler<Http3GoAwayFrame> http3GoAwayFrameHandler) {
       this.http3GoAwayFrameHandler = http3GoAwayFrameHandler;
       return this;
-    }
-  }
-
-  public static class QuicSslHandlerWrapper extends SslHandler implements ChannelInboundHandler {
-    private final ChannelDuplexHandler delegate;
-
-    QuicSslHandlerWrapper(SSLEngine engine, Executor delegatedTaskExecutor, ChannelHandler quicSslHandler) {
-      super(engine, delegatedTaskExecutor);
-      delegate = (ChannelDuplexHandler) quicSslHandler;
-    }
-
-    @Override
-    public void channelRegistered(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.channelRegistered(channelHandlerContext);
-    }
-
-    @Override
-    public void channelUnregistered(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.channelUnregistered(channelHandlerContext);
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.channelActive(channelHandlerContext);
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.channelInactive(channelHandlerContext);
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
-      delegate.channelRead(channelHandlerContext, o);
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.channelReadComplete(channelHandlerContext);
-    }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
-      delegate.userEventTriggered(channelHandlerContext, o);
-    }
-
-    @Override
-    public void channelWritabilityChanged(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.channelWritabilityChanged(channelHandlerContext);
-    }
-
-    @Override
-    public void bind(ChannelHandlerContext channelHandlerContext, SocketAddress socketAddress, ChannelPromise channelPromise) throws Exception {
-      delegate.bind(channelHandlerContext, socketAddress, channelPromise);
-    }
-
-    @Override
-    public void connect(ChannelHandlerContext channelHandlerContext, SocketAddress socketAddress, SocketAddress socketAddress1, ChannelPromise channelPromise) throws Exception {
-      delegate.connect(channelHandlerContext, socketAddress, socketAddress1, channelPromise);
-    }
-
-    @Override
-    public void disconnect(ChannelHandlerContext channelHandlerContext, ChannelPromise channelPromise) throws Exception {
-      delegate.disconnect(channelHandlerContext, channelPromise);
-    }
-
-    @Override
-    public void close(ChannelHandlerContext channelHandlerContext, ChannelPromise channelPromise) throws Exception {
-      delegate.close(channelHandlerContext, channelPromise);
-    }
-
-    @Override
-    public void deregister(ChannelHandlerContext channelHandlerContext, ChannelPromise channelPromise) throws Exception {
-      delegate.deregister(channelHandlerContext, channelPromise);
-    }
-
-    @Override
-    public void read(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.read(channelHandlerContext);
-    }
-
-    @Override
-    public void write(ChannelHandlerContext channelHandlerContext, Object o, ChannelPromise channelPromise) throws Exception {
-      delegate.write(channelHandlerContext, o, channelPromise);
-    }
-
-    @Override
-    public void flush(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.flush(channelHandlerContext);
-    }
-
-    @Override
-    public void handlerAdded(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.handlerAdded(channelHandlerContext);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) throws Exception {
-      delegate.exceptionCaught(channelHandlerContext, throwable);
-    }
-
-    @Override
-    public void handlerRemoved0(ChannelHandlerContext channelHandlerContext) throws Exception {
-      delegate.handlerRemoved(channelHandlerContext);
     }
   }
 
