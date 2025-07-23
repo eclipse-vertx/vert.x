@@ -28,7 +28,4 @@ public interface HttpServerConnection extends HttpConnection {
 
   ChannelHandlerContext channelHandlerContext();
 
-  default void goAwayOnConnectionClose(int errorCode) {
-  }
-
 }

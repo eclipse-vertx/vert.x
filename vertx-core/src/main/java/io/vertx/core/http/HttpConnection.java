@@ -306,8 +306,4 @@ public interface HttpConnection {
    * @return the indicated server name
    */
   String indicatedServerName();
-
-  default void goAwayOnConnectionClose(int errorCode) {
-    goAway(errorCode);
-  }
 }

@@ -291,4 +291,9 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   @Override
   public void createStream(Http2ClientStream vertxStream) throws Exception {
   }
+
+  @Override
+  public void goAwayOnConnectionClose(int errorCode) {
+    goAway(errorCode);
+  }
 }

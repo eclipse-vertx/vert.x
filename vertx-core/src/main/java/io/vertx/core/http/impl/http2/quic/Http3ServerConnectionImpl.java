@@ -266,4 +266,8 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 
   }
 
+  @Override
+  public void goAwayOnConnectionClose(int errorCode) {
+
+  }
 }

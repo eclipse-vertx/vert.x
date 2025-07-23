@@ -60,6 +60,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   }
 
   protected abstract void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream);
+  public abstract void goAwayOnConnectionClose(int errorCode);
 
   protected final ChannelHandlerContext handlerContext;
   private final VertxHttp3ConnectionHandler handler;
