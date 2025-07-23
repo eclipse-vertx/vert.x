@@ -57,13 +57,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.vertx.core.http.Http2Settings.*;
-
+import static io.vertx.core.http.HttpVersion.*;
 /**
  * Various http utils.
  *
@@ -75,10 +76,11 @@ public final class HttpUtils {
   public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
   public static final int SC_SWITCHING_PROTOCOLS = 101;
   public static final int SC_BAD_GATEWAY = 502;
-  private static final Set<String> HTTP3_APPLICATION_PROTOCOLS = Set.of(
-      io.vertx.core.http.HttpVersion.HTTP_3.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_27.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_29.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_30.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_31.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_32.alpnName()
+  private static final Set<io.vertx.core.http.HttpVersion> HTTP3_VERSIONS = Set.of(
+      HTTP_3, HTTP_3_27, HTTP_3_29, HTTP_3_30, HTTP_3_31, HTTP_3_32
   );
-  private static final Set<io.vertx.core.http.HttpVersion> FRAME_BASED_VERSIONS = Set.of(io.vertx.core.http.HttpVersion.HTTP_2, io.vertx.core.http.HttpVersion.HTTP_3);
+  private static final Set<String> HTTP3_ALPN_NAMES = HTTP3_VERSIONS.stream().map(io.vertx.core.http.HttpVersion::alpnName).collect(Collectors.toUnmodifiableSet());
+  private static final Set<io.vertx.core.http.HttpVersion> FRAME_BASED_VERSIONS = Set.of(HTTP_2, HTTP_3);
 
   public static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
@@ -1068,7 +1070,7 @@ public final class HttpUtils {
   }
 
   public static boolean isHttp3(io.vertx.core.http.HttpVersion protocolVersion) {
-    return HTTP3_APPLICATION_PROTOCOLS.contains(protocolVersion.alpnName());
+    return HTTP3_VERSIONS.contains(protocolVersion);
   }
 
   public static boolean supportsQuic(List<String>applicationProtocols) {
@@ -1076,7 +1078,7 @@ public final class HttpUtils {
       return false;
     }
     for (String applicationProtocol : applicationProtocols) {
-      if (HTTP3_APPLICATION_PROTOCOLS.contains(applicationProtocol)) {
+      if (HTTP3_ALPN_NAMES.contains(applicationProtocol)) {
         return true;
       }
     }
