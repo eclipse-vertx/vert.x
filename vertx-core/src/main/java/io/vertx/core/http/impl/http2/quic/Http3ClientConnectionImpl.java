@@ -14,6 +14,7 @@ package io.vertx.core.http.impl.http2.quic;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http3.Http3Headers;
 import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.GoAway;
@@ -279,12 +280,12 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   }
 
   @Override
-  public void createStream(Http2ClientStream vertxStream, Handler<Void> onComplete) throws Exception {
+  public void createStream(Http2ClientStream vertxStream, Completable<Void> onStreamCreated) throws Exception {
     Future<QuicStreamChannel> streamChannel1 = handler.createStreamChannel();
     streamChannel1.onSuccess(streamChannel -> {
       init_(vertxStream, streamChannel);
       vertxStream.init(Math.toIntExact(streamChannel.streamId()), streamChannel.isWritable());
-      onComplete.handle(null);
+      onStreamCreated.succeed();
     }).onFailure(this::handleException);
   }
 

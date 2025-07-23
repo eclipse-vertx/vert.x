@@ -133,7 +133,7 @@ public class Http2ClientStream extends Http2StreamBase {
       request.remoteAddress = ((HttpConnection) connection).remoteAddress();
       requestHead = request;
       try {
-        connection.createStream(Http2ClientStream.this, streamChannel_ -> {
+        connection.createStream(Http2ClientStream.this, (result, failure) -> {
           if (buf != null) {
             writeHeaders0(headers, false, false, null);
             writeData0(buf, e, promise);
