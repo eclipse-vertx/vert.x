@@ -16,7 +16,7 @@ import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.ImmediateExecutor;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
@@ -84,7 +84,7 @@ public class SslChannelProvider {
 
   private ChannelHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (HttpVersion.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
+    if (HttpUtils.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
       return sslContextProvider.buildForQuicServerWithSni(delegatedTaskExec, sslOptions.isUseAlpn(), remoteAddress);
     }
     return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn()),

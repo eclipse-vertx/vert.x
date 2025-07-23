@@ -25,7 +25,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
@@ -365,7 +365,7 @@ class NetClientImpl implements NetClientInternal {
   }
 
   private String applicationProtocol(Channel channel) {
-    if (HttpVersion.isHttp3(options.getProtocolVersion())) {
+    if (HttpUtils.isHttp3(options.getProtocolVersion())) {
       return Objects.requireNonNull(((QuicChannel) channel).sslEngine()).getApplicationProtocol();
     }
     ChannelPipeline pipeline = channel.pipeline();

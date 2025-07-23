@@ -11,11 +11,8 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.impl.Arguments;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Represents the version of the HTTP protocol.
@@ -27,21 +24,21 @@ public enum HttpVersion {
   HTTP_1_0("http/1.0"),
   HTTP_1_1("http/1.1"),
   HTTP_2("h2"),
+  @Unstable
   HTTP_3("h3"),
+  @Unstable
   HTTP_3_27("h3-27"),
+  @Unstable
   HTTP_3_29("h3-29"),
+  @Unstable
   HTTP_3_30("h3-30"),
+  @Unstable
   HTTP_3_31("h3-31"),
+  @Unstable
   HTTP_3_32("h3-32"),
   ;
 
   private final String alpnName;
-
-  private static final Set<HttpVersion> VALID_VERSIONS = Set.of(HTTP_1_0, HTTP_1_1, HTTP_2, HTTP_3);
-  private static final Set<String> HTTP3_APPLICATION_PROTOCOLS = Set.of(
-      HTTP_3.alpnName(), HTTP_3_27.alpnName(), HTTP_3_29.alpnName(), HTTP_3_30.alpnName(), HTTP_3_31.alpnName(), HTTP_3_32.alpnName()
-  );
-  private static final Set<HttpVersion> FRAME_BASED_VERSIONS = Set.of(HTTP_2, HTTP_3);
 
   HttpVersion(String alpnName) {
     this.alpnName = alpnName;
@@ -54,43 +51,4 @@ public enum HttpVersion {
     return alpnName;
   }
 
-  public static void validateProtocolVersion(HttpVersion protocolVersion) {
-    Arguments.require(HttpVersion.VALID_VERSIONS.contains(protocolVersion), "Protocol version is not valid!");
-  }
-
-  public static boolean isFrameBased(HttpVersion version) {
-    return FRAME_BASED_VERSIONS.contains(version);
-  }
-
-  public static boolean isHttp3(String applicationProtocol) {
-    return HTTP3_APPLICATION_PROTOCOLS.contains(applicationProtocol);
-  }
-
-  public static boolean isHttp3(HttpVersion protocolVersion) {
-    return isHttp3(protocolVersion.alpnName());
-  }
-
-  public static boolean supportsQuic(List<String>applicationProtocols) {
-    if (applicationProtocols == null || applicationProtocols.isEmpty()) {
-      return false;
-    }
-    for (String applicationProtocol : applicationProtocols) {
-      if (HttpVersion.isHttp3(applicationProtocol)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public static boolean supportsQuicVersion(List<HttpVersion>applicationProtocols) {
-    if (applicationProtocols == null || applicationProtocols.isEmpty()) {
-      return false;
-    }
-    for (HttpVersion applicationProtocol : applicationProtocols) {
-      if (HttpVersion.isHttp3(applicationProtocol)) {
-        return true;
-      }
-    }
-    return false;
-  }
 }

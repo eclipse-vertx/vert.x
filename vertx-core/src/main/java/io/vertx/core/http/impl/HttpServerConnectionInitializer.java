@@ -24,7 +24,6 @@ import io.netty.handler.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
@@ -92,7 +91,7 @@ public class HttpServerConnectionInitializer {
 
     Http2ServerChannelInitializer http2ChannelInitalizer = null;
     Http2ServerChannelInitializer http3ChannelInitalizer = null;
-    if (HttpVersion.supportsQuicVersion(options.getAlpnVersions())) {
+    if (HttpUtils.supportsQuicVersion(options.getAlpnVersions())) {
       http3ChannelInitalizer = new Http3CodecServerChannelInitializer(
         this,
         (HttpServerMetrics) server.getMetrics(),

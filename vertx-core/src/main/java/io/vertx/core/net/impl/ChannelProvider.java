@@ -23,13 +23,13 @@ import io.netty.handler.codec.quic.QuicClosedChannelException;
 import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.proxy.*;
 import io.netty.resolver.NoopAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -254,7 +254,7 @@ public final class ChannelProvider {
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
         Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
 
-        if (sslOptions != null && HttpVersion.isHttp3(clientOptions.getProtocolVersion())) {
+        if (sslOptions != null && HttpUtils.isHttp3(clientOptions.getProtocolVersion())) {
           bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 

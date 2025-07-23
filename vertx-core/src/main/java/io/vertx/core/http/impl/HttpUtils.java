@@ -55,6 +55,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
@@ -74,6 +75,10 @@ public final class HttpUtils {
   public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
   public static final int SC_SWITCHING_PROTOCOLS = 101;
   public static final int SC_BAD_GATEWAY = 502;
+  private static final Set<String> HTTP3_APPLICATION_PROTOCOLS = Set.of(
+      io.vertx.core.http.HttpVersion.HTTP_3.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_27.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_29.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_30.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_31.alpnName(), io.vertx.core.http.HttpVersion.HTTP_3_32.alpnName()
+  );
+  private static final Set<io.vertx.core.http.HttpVersion> FRAME_BASED_VERSIONS = Set.of(io.vertx.core.http.HttpVersion.HTTP_2, io.vertx.core.http.HttpVersion.HTTP_3);
 
   public static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
@@ -1056,5 +1061,37 @@ public final class HttpUtils {
       SMALL_POSITIVE_LONGS[index] = str;
     }
     return str;
+  }
+
+  public static boolean isFrameBased(io.vertx.core.http.HttpVersion version) {
+    return FRAME_BASED_VERSIONS.contains(version);
+  }
+
+  public static boolean isHttp3(io.vertx.core.http.HttpVersion protocolVersion) {
+    return HTTP3_APPLICATION_PROTOCOLS.contains(protocolVersion.alpnName());
+  }
+
+  public static boolean supportsQuic(List<String>applicationProtocols) {
+    if (applicationProtocols == null || applicationProtocols.isEmpty()) {
+      return false;
+    }
+    for (String applicationProtocol : applicationProtocols) {
+      if (HTTP3_APPLICATION_PROTOCOLS.contains(applicationProtocol)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static boolean supportsQuicVersion(List<io.vertx.core.http.HttpVersion>applicationProtocols) {
+    if (applicationProtocols == null || applicationProtocols.isEmpty()) {
+      return false;
+    }
+    for (io.vertx.core.http.HttpVersion applicationProtocol : applicationProtocols) {
+      if (isHttp3(applicationProtocol)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

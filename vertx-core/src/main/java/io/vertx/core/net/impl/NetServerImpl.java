@@ -40,7 +40,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.CloseSequence;
@@ -242,7 +241,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
-        if (!HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+        if (!HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
           configureChannelSslHandler(ch, sslContextProvider);
         }
 
@@ -258,7 +257,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
-      if (trafficShapingHandler != null && !HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+      if (trafficShapingHandler != null && !HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
         ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
       }
     }
@@ -366,7 +365,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           updateInProgress = null;
           if (ar.succeeded()) {
             sslContextProvider = fut;
-            if (HttpVersion.supportsQuic(options.getApplicationLayerProtocols()) && datagramChannel != null) {
+            if (HttpUtils.supportsQuic(options.getApplicationLayerProtocols()) && datagramChannel != null) {
               configureChannelSslHandler(datagramChannel, sslContextProvider.result());
             }
           }
@@ -581,7 +580,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   private AbstractBootstrap buildServerBootstrap(SocketAddress localAddress) {
-    if (options.isSsl() && HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+    if (options.isSsl() && HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
       // TODO: Alter the logic of this method based on the ServerBootstrap creation in a normal scenario without HTTP/3
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
@@ -805,7 +804,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   private static void setChannelFactory(SocketAddress socketAddress, AbstractBootstrap bootstrap,
                                         NetServerOptions options, VertxInternal vertx) {
-    if (options.isSsl() && HttpVersion.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+    if (options.isSsl() && HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
       bootstrap.channelFactory(() -> vertx.transport().datagramChannel());
     } else {
       bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));

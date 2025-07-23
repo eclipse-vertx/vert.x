@@ -182,7 +182,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       configureApplicationLayerProtocols(tcpOptions.getSslOptions());
     }
     ContextInternal context = vertx.getOrCreateContext();
-    if (HttpVersion.supportsQuicVersion(options.getAlpnVersions()) && !options.isSsl()) {
+    if (HttpUtils.supportsQuicVersion(options.getAlpnVersions()) && !options.isSsl()) {
       throw new IllegalStateException("HTTP/3 requires SSL/TLS encryption. Please enable SSL to use HTTP/3.");
     }
     ContextInternal listenContext;

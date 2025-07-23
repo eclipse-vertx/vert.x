@@ -22,7 +22,7 @@ import io.netty.util.AsyncMapping;
 import io.netty.util.Mapping;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.net.VertxSslContext;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.Http3Utils;
@@ -236,7 +236,7 @@ public class SslContextProvider {
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
-          if (HttpVersion.supportsQuic(applicationProtocols)) {
+          if (HttpUtils.supportsQuic(applicationProtocols)) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
             return Http3Utils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -245,7 +245,7 @@ public class SslContextProvider {
 
         @Override
         protected SslHandler newHandler(ByteBufAllocator alloc, boolean startTls, Executor executor) {
-          if (HttpVersion.supportsQuic(applicationProtocols)) {
+          if (HttpUtils.supportsQuic(applicationProtocols)) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
             return Http3Utils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -254,7 +254,7 @@ public class SslContextProvider {
 
         @Override
         protected SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, boolean startTls, Executor executor) {
-          if (HttpVersion.supportsQuic(applicationProtocols)) {
+          if (HttpUtils.supportsQuic(applicationProtocols)) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc, peerHost, peerPort);
             return Http3Utils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -296,7 +296,7 @@ public class SslContextProvider {
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
-          if (HttpVersion.supportsQuic(applicationProtocols)) {
+          if (HttpUtils.supportsQuic(applicationProtocols)) {
             QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc);
             return Http3Utils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -305,7 +305,7 @@ public class SslContextProvider {
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, Executor executor) {
-          if (HttpVersion.supportsQuic(applicationProtocols)) {
+          if (HttpUtils.supportsQuic(applicationProtocols)) {
             QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc, peerHost, peerPort);
             return Http3Utils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -411,7 +411,7 @@ public class SslContextProvider {
   public void configureEngine(SSLEngine engine, Set<String> enabledProtocols, String serverName, boolean client) {
     Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
     protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
-    if (HttpVersion.supportsQuic(applicationProtocols)) {
+    if (HttpUtils.supportsQuic(applicationProtocols)) {
       return;
     }
     engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));

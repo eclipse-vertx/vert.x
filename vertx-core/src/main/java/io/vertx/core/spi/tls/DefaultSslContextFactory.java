@@ -20,7 +20,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpUtils;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
@@ -101,7 +101,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
   @Override
   public SslContextFactory applicationProtocols(List<String> applicationProtocols) {
     this.applicationProtocols = applicationProtocols;
-    this.supportsQuic = HttpVersion.supportsQuic(applicationProtocols);
+    this.supportsQuic = HttpUtils.supportsQuic(applicationProtocols);
     return this;
   }
 

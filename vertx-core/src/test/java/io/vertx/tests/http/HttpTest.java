@@ -25,6 +25,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
@@ -600,9 +601,9 @@ public abstract class HttpTest extends HttpTestBase {
     }
     String resource = absolute && path.isEmpty() ? "/" + path : path;
     server.requestHandler(req -> {
-      String expectedPath = req.method() == HttpMethod.CONNECT && HttpVersion.isFrameBased(req.version()) ? null :
+      String expectedPath = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null :
         resource;
-      String expectedQuery = req.method() == HttpMethod.CONNECT && HttpVersion.isFrameBased(req.version()) ? null :
+      String expectedQuery = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null :
         query;
       assertEquals(expectedPath, req.path());
       assertEquals(method, req.method());
@@ -1748,7 +1749,7 @@ public abstract class HttpTest extends HttpTestBase {
         } else {
           theCode = code;
         }
-        if (statusMessage != null && !HttpVersion.isFrameBased(resp.version())) {
+        if (statusMessage != null && !HttpUtils.isFrameBased(resp.version())) {
           assertEquals(statusMessage, resp.statusMessage());
         } else {
           assertEquals(HttpResponseStatus.valueOf(theCode).reasonPhrase(), resp.statusMessage());
@@ -6034,7 +6035,7 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     server.requestHandler(req -> {
       assertEquals(chunked ? null : contentLength, req.getHeader(HttpHeaders.CONTENT_LENGTH));
-      assertEquals(chunked && !HttpVersion.isFrameBased(req.version()) ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+      assertEquals(chunked && !HttpUtils.isFrameBased(req.version()) ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
       req.bodyHandler(body -> {
         assertEquals(HttpMethod.PUT, req.method());
         assertEquals(Buffer.buffer(expected), body);
