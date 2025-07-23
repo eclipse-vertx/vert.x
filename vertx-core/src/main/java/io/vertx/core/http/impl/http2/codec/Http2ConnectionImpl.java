@@ -408,24 +408,24 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+  public HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
     this.remoteSettingsHandler = http2Settings -> handler.handle(HttpUtils.toVertxSettings(http2Settings));
     return this;
   }
 
   @Override
-  public io.vertx.core.http.Http2Settings remoteHttpSettings() {
+  public io.vertx.core.http.Http2Settings remoteSettings() {
     return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
-  public io.vertx.core.http.Http2Settings httpSettings() {
-    return HttpUtils.toVertxSettings(localSettings);
+  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
+    return updateSettings(HttpUtils.fromVertxSettings(settings));
   }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settings) {
-    return updateSettings(HttpUtils.fromVertxSettings((io.vertx.core.http.Http2Settings) settings));
+  public io.vertx.core.http.Http2Settings settings() {
+    return HttpUtils.toVertxSettings(localSettings);
   }
 
   protected Future<Void> updateSettings(Http2Settings settingsUpdate) {
@@ -542,5 +542,25 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   @Override
   public void writeReset(int streamId, long code, Promise<Void> promise) {
     handler.writeReset(streamId, code, null);
+  }
+
+  @Override
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Http3Settings remoteHttp3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Http3Settings http3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 }

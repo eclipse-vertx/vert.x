@@ -274,7 +274,7 @@ public class Http3Test extends HttpCommonTest {
     });
     server.connectionHandler(conn -> {
       vertx.setTimer(500, id -> {
-        conn.updateHttpSettings(new Http3Settings().setMaxFieldSectionSize(10));
+        conn.updateHttp3Settings(new Http3Settings().setMaxFieldSectionSize(10));
       });
     });
     startServer(testAddress);
@@ -282,9 +282,9 @@ public class Http3Test extends HttpCommonTest {
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
       .withConnectHandler(conn -> {
-        assertEquals(50000, ((Http3Settings) conn.remoteHttpSettings()).getMaxFieldSectionSize());
-        conn.remoteHttpSettingsHandler(settings -> {
-          assertEquals(10, ((Http3Settings) conn.remoteHttpSettings()).getMaxFieldSectionSize());
+        assertEquals(50000, conn.remoteHttp3Settings().getMaxFieldSectionSize());
+        conn.remoteHttp3SettingsHandler(settings -> {
+          assertEquals(10, conn.remoteHttp3Settings().getMaxFieldSectionSize());
           complete();
         });
       })
@@ -308,7 +308,7 @@ public class Http3Test extends HttpCommonTest {
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         assertEquals(Http3Settings.DEFAULT_MAX_FIELD_SECTION_SIZE,
-          ((Http3Settings) (resp.request().connection().remoteHttpSettings())).getMaxFieldSectionSize());
+          resp.request().connection().remoteHttp3Settings().getMaxFieldSectionSize());
         testComplete();
       }));
     await();

@@ -919,24 +919,23 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                  UpgradeResult result);
   }
 
-  //TODO: checkit: remove the following.
   @Override
-  public HttpSettings httpSettings() {
-    return settings();
+  public Http3Settings http3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settings) {
-    return updateSettings((Http2Settings) settings);
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 
   @Override
-  public HttpSettings remoteHttpSettings() {
-    return remoteSettings();
+  public Http3Settings remoteHttp3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 
   @Override
-  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
-    return remoteSettingsHandler(handler::handle);
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 }

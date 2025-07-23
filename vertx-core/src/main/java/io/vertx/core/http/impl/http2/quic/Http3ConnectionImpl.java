@@ -64,7 +64,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
   protected final ChannelHandlerContext handlerContext;
   private final VertxHttp3ConnectionHandler handler;
   private boolean shutdown;
-  private Handler<HttpSettings> remoteSettingsHandler;
+  private Handler<Http3Settings> remoteHttp3SettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http3SettingsFrame localSettings;
@@ -236,10 +236,10 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   //  @Override
   public void onSettingsRead(Http3SettingsFrame settings) {
-    Handler<HttpSettings> handler;
+    Handler<Http3Settings> handler;
     synchronized (this) {
       remoteSettings = settings;
-      handler = remoteSettingsHandler;
+      handler = remoteHttp3SettingsHandler;
     }
     if (handler != null) {
       context.dispatch(HttpUtils.toVertxSettings(settings), handler);
@@ -382,18 +382,18 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 //  }
 
   @Override
-  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
-    remoteSettingsHandler = handler;
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    remoteHttp3SettingsHandler = handler;
     return this;
   }
 
   @Override
-  public Http3Settings remoteHttpSettings() {
+  public Http3Settings remoteHttp3Settings() {
     return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
-  public Http3Settings httpSettings() {
+  public Http3Settings http3Settings() {
     return HttpUtils.toVertxSettings(localSettings);
   }
 //  @Override
@@ -405,7 +405,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 //  }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settingsUpdate0) {
+  public Future<Void> updateHttp3Settings(Http3Settings settingsUpdate0) {
     Http3SettingsFrame settingsUpdate = HttpUtils.fromVertxSettings((Http3Settings) settingsUpdate0);
 
     Http3SettingsFrame settingsNew = new DefaultHttp3SettingsFrame();
@@ -514,5 +514,25 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   protected void init_(Http2StreamBase vertxStream, QuicStreamChannel streamChannel) {
     VertxHttp3ConnectionHandler.setVertxStreamOnStreamChannel(streamChannel, vertxStream);
+  }
+
+  @Override
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/3 connections don't support http2settings");
+  }
+
+  @Override
+  public Http2Settings remoteSettings() {
+    throw new UnsupportedOperationException("HTTP/3 connections don't support http2settings");
+  }
+
+  @Override
+  public Future<Void> updateSettings(Http2Settings settings) {
+    throw new UnsupportedOperationException("HTTP/3 connections don't support http2settings");
+  }
+
+  @Override
+  public Http2Settings settings() {
+    throw new UnsupportedOperationException("HTTP/3 connections don't support http2settings");
   }
 }

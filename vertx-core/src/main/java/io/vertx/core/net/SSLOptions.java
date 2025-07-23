@@ -68,6 +68,7 @@ public class SSLOptions {
   private boolean useAlpn;
   private Set<String> enabledSecureTransportProtocols;
   private List<String> applicationLayerProtocols;
+
   /**
    * Default constructor
    */

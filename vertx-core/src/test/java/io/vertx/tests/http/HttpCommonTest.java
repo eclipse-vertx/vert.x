@@ -378,7 +378,7 @@ public abstract class HttpCommonTest extends HttpTest {
     client.request(new RequestOptions(requestOptions).setTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
-        assertEquals(Integer.MAX_VALUE, ((Http2Settings) resp.request().connection().remoteHttpSettings()).getMaxHeaderListSize());
+        assertEquals(Integer.MAX_VALUE, resp.request().connection().remoteSettings().getMaxHeaderListSize());
         testComplete();
       }));
     await();

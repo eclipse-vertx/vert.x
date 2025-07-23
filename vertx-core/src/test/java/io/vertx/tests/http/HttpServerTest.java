@@ -67,7 +67,6 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -103,7 +102,6 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import static io.vertx.test.core.TestUtils.assertIllegalStateException;
-import static io.vertx.tests.http.HttpOptionsFactory.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -356,9 +354,9 @@ public abstract class HttpServerTest extends Http2TestBase {
     server.connectionHandler(conn -> {
       Context ctx = Vertx.currentContext();
       otherContext.runOnContext(v -> {
-        conn.updateHttpSettings(expectedSettings).onComplete(ar -> {
+        conn.updateSettings(expectedSettings).onComplete(ar -> {
           assertSame(ctx, Vertx.currentContext());
-          io.vertx.core.http.Http2Settings ackedSettings = (io.vertx.core.http.Http2Settings) conn.httpSettings();
+          io.vertx.core.http.Http2Settings ackedSettings = conn.settings();
           assertEquals(expectedSettings.getMaxHeaderListSize(), ackedSettings.getMaxHeaderListSize());
           assertEquals(expectedSettings.getMaxFrameSize(), ackedSettings.getMaxFrameSize());
           assertEquals(expectedSettings.getInitialWindowSize(), ackedSettings.getInitialWindowSize());
@@ -413,7 +411,7 @@ public abstract class HttpServerTest extends Http2TestBase {
     io.vertx.core.http.Http2Settings updatedSettings = TestUtils.randomHttp2Settings();
     AtomicInteger count = new AtomicInteger();
     server.connectionHandler(conn -> {
-      io.vertx.core.http.Http2Settings settings = ((io.vertx.core.http.Http2Settings) conn.remoteHttpSettings());
+      io.vertx.core.http.Http2Settings settings = conn.remoteSettings();
       assertEquals(initialSettings.isPushEnabled(), settings.isPushEnabled());
 
       // Netty bug ?
@@ -425,11 +423,11 @@ public abstract class HttpServerTest extends Http2TestBase {
       assertEquals((Long)(long)initialSettings.getMaxConcurrentStreams(), (Long)(long)settings.getMaxConcurrentStreams());
       assertEquals(initialSettings.getHeaderTableSize(), settings.getHeaderTableSize());
 
-      conn.remoteHttpSettingsHandler(update0 -> {
+      conn.remoteSettingsHandler(update0 -> {
         assertOnIOContext(ctx);
         switch (count.getAndIncrement()) {
           case 0:
-            io.vertx.core.http.Http2Settings update = (io.vertx.core.http.Http2Settings) update0;
+            io.vertx.core.http.Http2Settings update = update0;
             assertEquals(updatedSettings.isPushEnabled(), update.isPushEnabled());
             assertEquals(updatedSettings.getMaxHeaderListSize(), update.getMaxHeaderListSize());
             assertEquals(updatedSettings.getMaxFrameSize(), update.getMaxFrameSize());
@@ -2819,7 +2817,7 @@ public abstract class HttpServerTest extends Http2TestBase {
       assertEquals("http", req.scheme());
       assertEquals(request.getMethod(), req.method());
       assertEquals(HttpVersion.HTTP_2, req.version());
-      assertEquals(10000, ((io.vertx.core.http.Http2Settings) req.connection().remoteHttpSettings()).getMaxConcurrentStreams());
+      assertEquals(10000, req.connection().remoteSettings().getMaxConcurrentStreams());
       assertFalse(req.isSSL());
       req.bodyHandler(body -> {
         vertx.setTimer(10, id -> {

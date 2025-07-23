@@ -252,7 +252,6 @@ class NetClientImpl implements NetClientInternal {
           connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
           return;
         }
-
         Future<SslContextProvider> fut;
         fut = sslContextManager.resolveSslContextProvider(
           sslOptions,

@@ -220,17 +220,17 @@ public class HTTP2Examples {
   }
 
   public void example20(HttpConnection connection) {
-    connection.updateHttpSettings(new Http2Settings().setMaxConcurrentStreams(100));
+    connection.updateSettings(new Http2Settings().setMaxConcurrentStreams(100));
   }
 
   public void example21(HttpConnection connection) {
     connection
-      .updateHttpSettings(new Http2Settings().setMaxConcurrentStreams(100))
+      .updateSettings(new Http2Settings().setMaxConcurrentStreams(100))
       .onSuccess(v -> System.out.println("The settings update has been acknowledged "));
   }
 
   public void example22(HttpConnection connection) {
-    connection.remoteHttpSettingsHandler(settings -> {
+    connection.remoteHttp3SettingsHandler(settings -> {
       System.out.println("Received new settings");
     });
   }

@@ -19,6 +19,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.List;
+
 /**
  * Represents a client-side HTTP response.
  * <p>

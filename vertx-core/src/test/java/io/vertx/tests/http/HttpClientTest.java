@@ -31,7 +31,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpTestBase;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -175,7 +174,7 @@ public abstract class HttpClientTest extends Http2TestBase {
     Context otherContext = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
       otherContext.runOnContext(v -> {
-        conn.updateHttpSettings(expectedSettings);
+        conn.updateSettings(expectedSettings);
       });
     });
     server.requestHandler(req -> {
@@ -186,10 +185,10 @@ public abstract class HttpClientTest extends Http2TestBase {
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
       .withConnectHandler(conn -> {
-        conn.remoteHttpSettingsHandler(settings0 -> {
+        conn.remoteSettingsHandler(settings0 -> {
           switch (count.getAndIncrement()) {
             case 0:
-              Http2Settings settings = (Http2Settings) settings0;
+              Http2Settings settings = settings0;
               assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
               assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
               assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
@@ -222,7 +221,7 @@ public abstract class HttpClientTest extends Http2TestBase {
         vertx.setTimer(30, id -> {
           HttpConnection conn = req.connection();
           if (max == 10) {
-            conn.updateHttpSettings(((io.vertx.core.http.Http2Settings)(conn.httpSettings())).setMaxConcurrentStreams(max / 2));
+            conn.updateSettings(conn.settings().setMaxConcurrentStreams(max / 2));
             flipped.set(true);
           }
           requests.forEach(request -> request.response().end());
@@ -235,7 +234,7 @@ public abstract class HttpClientTest extends Http2TestBase {
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
       .withConnectHandler(conn -> {
-        conn.remoteHttpSettingsHandler(settings -> {
+        conn.remoteHttp3SettingsHandler(settings -> {
           conn.ping(Buffer.buffer("settings"));
         });
       })
@@ -659,7 +658,7 @@ public abstract class HttpClientTest extends Http2TestBase {
       .withConnectHandler(conn -> {
         if (httpVersion() != HttpVersion.HTTP_3) {
           assertEquals(max == null ? 0xFFFFFFFFL : max,
-            ((Http2Settings) conn.remoteHttpSettings()).getMaxConcurrentStreams());
+            conn.remoteSettings().getMaxConcurrentStreams());
         }
         latch.countDown();
       })

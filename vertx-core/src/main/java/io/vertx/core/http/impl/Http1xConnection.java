@@ -25,8 +25,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
+import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpSettings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
@@ -103,23 +103,23 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   }
 
   @Override
-  public HttpSettings httpSettings() {
+  public Http3Settings http3Settings() {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settings) {
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
 
   @Override
-  public HttpSettings remoteHttpSettings() {
+  public Http3Settings remoteHttp3Settings() {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
 
 
   @Override
-  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
 

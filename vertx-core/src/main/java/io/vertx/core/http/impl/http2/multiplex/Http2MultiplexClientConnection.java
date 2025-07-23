@@ -22,8 +22,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpClientConnection;
@@ -242,24 +242,23 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     }
   }
 
-  //TODO: checkit: remove the following.
   @Override
-  public HttpSettings httpSettings() {
-    return settings();
+  public Http3Settings http3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 
   @Override
-  public Future<Void> updateHttpSettings(HttpSettings settings) {
-    return updateSettings((Http2Settings) settings);
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 
   @Override
-  public HttpSettings remoteHttpSettings() {
-    return remoteSettings();
+  public Http3Settings remoteHttp3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 
   @Override
-  public HttpConnection remoteHttpSettingsHandler(Handler<HttpSettings> handler) {
-    return remoteSettingsHandler(handler::handle);
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 }
