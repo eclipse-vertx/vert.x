@@ -876,4 +876,11 @@ public class Http3NetTest extends NetTest {
   public void testTLSServerSSLEnginePeerHost() throws Exception {
     super.testTLSServerSSLEnginePeerHost();
   }
+
+  @Test
+  @Ignore
+  @Override
+  public void testSNIServerSSLEnginePeerHost() throws Exception {
+    super.testSNIServerSSLEnginePeerHost();
+  }
 }

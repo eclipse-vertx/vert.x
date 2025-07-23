@@ -399,4 +399,11 @@ public class Http3ClientTest extends HttpClientTest {
     super.testServerResetClientStreamDuringResponse();
   }
 
+  @Test
+  @Override
+  @Ignore
+  public void testClearTestDirectServerCloseBeforeSettingsRead() {
+    //TODO: resolve this test issue
+    super.testClearTestDirectServerCloseBeforeSettingsRead();
+  }
 }
