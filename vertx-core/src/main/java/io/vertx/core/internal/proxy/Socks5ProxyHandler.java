@@ -43,8 +43,9 @@ import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 
-//TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
-// Actually this class is the same as netty ProxyHandler.
+// TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+// This is currently a temporary duplicate of a class with the same name in Netty.
+// See: https://github.com/netty/netty/pull/14993
 
 /**
  * Handler that establishes a blind forwarding proxy tunnel using

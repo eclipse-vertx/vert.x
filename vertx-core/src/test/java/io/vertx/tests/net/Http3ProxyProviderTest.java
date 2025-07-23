@@ -58,7 +58,9 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
     testProxy_(ProxyType.SOCKS5);
   }
 
-  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
   @Category(Http3ProxyProvider.class)
   @Test
   public void testNettyBasedSocks5Proxy() throws Exception {
@@ -73,7 +75,9 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
     testProxy_(ProxyType.SOCKS4);
   }
 
-  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
   @Category(Http3ProxyProvider.class)
   @Test
   public void testNettyBasedSocks4Proxy() throws Exception {
@@ -89,7 +93,9 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
     testProxy_(ProxyType.HTTP);
   }
 
-  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
   @Category(Http3ProxyProvider.class)
   @Ignore("It is not possible to use an HTTP proxy without modifying Netty.")
   @Test

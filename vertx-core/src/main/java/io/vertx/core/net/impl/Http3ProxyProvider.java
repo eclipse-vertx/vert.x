@@ -55,7 +55,9 @@ public class Http3ProxyProvider {
   private static final String CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL = "mySecondProxyQuicChannelHandler";
   private static final String CHANNEL_HANDLER_CLIENT_CONNECTION = "myHttp3ClientConnectionHandler";
 
-  //TODO: This var is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
   public static boolean IS_NETTY_BASED_PROXY = false;
 
   private final EventLoop eventLoop;
@@ -64,7 +66,9 @@ public class Http3ProxyProvider {
     this.eventLoop = eventLoop;
   }
 
-  //TODO: This method is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
   public Future<Channel> createProxyQuicChannel(InetSocketAddress proxyAddress, InetSocketAddress remoteAddress,
                                                 ProxyOptions proxyOptions) {
     Promise<Channel> channelPromise = eventLoop.newPromise();
@@ -283,7 +287,10 @@ public class Http3ProxyProvider {
     }
   }
 
-  //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
+
   private static class SecondProxyQuicChannelHandler extends ChannelOutboundHandlerAdapter {
     private final NioDatagramChannel channel;
 
@@ -303,7 +310,10 @@ public class Http3ProxyProvider {
     }
   }
 
-  //TODO: This class is removed once Netty accepts our PR to add the destination to the ProxyHandler constructor.
+  // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
+  // This is currently a temporary duplicate of a class with the same name in Netty.
+  // See: https://github.com/netty/netty/pull/14993
+
   public static class ProxyHandlerWrapper extends ChannelDuplexHandler {
     private static final Logger log = LoggerFactory.getLogger(ProxyHandlerWrapper.class);
 
