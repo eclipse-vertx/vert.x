@@ -379,6 +379,31 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testNoAuthority() throws Exception {
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertNull(headers.authority());
+          encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
+          ctx.flush();
+        });
+      }
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    client.request(new RequestOptions().setServer(testAddress)
+        .setPort(4444)
+        .setHost("localhost")
+      )
+      .compose(request -> {
+        request.authority(null);
+        return request.send();
+      })
+      .onComplete(onSuccess(resp -> testComplete()));
+    await();
+  }
+
+  @Test
   public void testTrailers() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
