@@ -349,6 +349,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
+  public @Nullable HostAndPort authority(boolean real) {
+    return stream.authority(real);
+  }
+
+  @Override
   public long bytesRead() {
     return stream.bytesRead();
   }
