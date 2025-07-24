@@ -187,7 +187,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       }
     }
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, authority);
+      if (authority != null) {
+        request.headers().set(HOST, authority);
+      }
     } else {
       headers.remove(TRANSFER_ENCODING);
     }
