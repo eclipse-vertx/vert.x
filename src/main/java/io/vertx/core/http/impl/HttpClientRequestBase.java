@@ -122,9 +122,13 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest authority(HostAndPort authority) {
-    Objects.requireNonNull(authority);
-    this.host = authority.host();
-    this.port = authority.port();
+    if (authority != null) {
+      this.host = authority.host();
+      this.port = authority.port();
+    } else {
+      this.host = null;
+      this.port = -1;
+    }
     return this;
   }
 
