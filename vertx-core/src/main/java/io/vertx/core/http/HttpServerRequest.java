@@ -117,13 +117,25 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
   String scheme();
 
   /**
-   * @return the request authority. For HTTP/2 the {@literal :authority} pseudo header is returned, for HTTP/1.x the
-   *         {@literal Host} header is returned or {@code null} when no such header is present. When the authority
-   *         string does not carry a port, the {@link HostAndPort#port()} returns {@code -1} to indicate the
-   *         scheme port is prevalent.
+   * @return the request authority.
+   *         <ul>
+   *           <li>HTTP/2: the {@literal :authority} pseudo header is returned if present, otherwise the {@literal Host}
+   *           header value is returned.
+   *           <li>HTTP/1.x: the {@literal Host} header is returned
+   *           <li>or {@code null} when no such header is present
+   *         </ul>
+   *         When the authority string does not carry a port, the {@link HostAndPort#port()} returns {@code -1} to
+   *         indicate the scheme port is prevalent.
    */
   @Nullable
   HostAndPort authority();
+
+  /**
+   * @param real whether to return the value of the real HTTP/2 {@literal :authority} header, or the computed one.
+   * @return the authority, either computed or real. May be null when {@literal real} is {@code true}.
+   */
+  @Nullable
+  HostAndPort authority(boolean real);
 
   /**
    * @return the total number of bytes read for the body of the request.

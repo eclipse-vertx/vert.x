@@ -321,7 +321,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public @Nullable HostAndPort authority() {
-    return stream.authority;
+    return stream.authority();
+  }
+
+  @Override
+  public @Nullable HostAndPort authority(boolean real) {
+    return stream.authority(real);
   }
 
   @Override

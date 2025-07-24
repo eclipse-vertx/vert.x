@@ -639,7 +639,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new IllegalStateException("A push response cannot promise another push");
     }
     if (authority == null) {
-      authority = stream.authority;
+      authority = stream.authority();
     }
     synchronized (conn) {
       checkValid();
