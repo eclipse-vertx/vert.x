@@ -727,7 +727,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new IllegalStateException("A push response cannot promise another push");
     }
     if (authority == null) {
-      authority = stream.authority;
+      authority = stream.authority();
     }
     synchronized (conn) {
       checkValid();
@@ -747,7 +747,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       hostAndPort = HostAndPort.parseAuthority(authority, -1);
     }
     if (hostAndPort == null) {
-      hostAndPort = stream.authority;
+      hostAndPort = stream.authority();
     }
     synchronized (conn) {
       checkValid();

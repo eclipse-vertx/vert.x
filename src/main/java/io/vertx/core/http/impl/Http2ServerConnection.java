@@ -85,7 +85,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     if (request.method == HttpMethod.CONNECT) {
-      if (request.scheme != null || request.uri != null || request.authority == null) {
+      if (request.scheme != null || request.uri != null || request.authority() == null) {
         return true;
       }
     } else {
@@ -94,13 +94,13 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
       }
     }
     if (request.hasAuthority) {
-      if (request.authority == null) {
+      if (request.authority() == null) {
         return true;
       }
       CharSequence hostHeader = request.headers.get(HttpHeaders.HOST);
       if (hostHeader != null) {
         HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-        return host == null || (!request.authority.host().equals(host.host()) || request.authority.port() != host.port());
+        return host == null || (!request.authority().host().equals(host.host()) || request.authority().port() != host.port());
       }
     }
     return false;
@@ -129,18 +129,20 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
   private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
     CharSequence schemeHeader = headers.getAndRemove(HttpHeaders.PSEUDO_SCHEME);
-    HostAndPort authority = null;
+    HostAndPort computedAuthority = null;
+    HostAndPort realAuthority = null;
     String authorityHeaderAsString;
     CharSequence authorityHeader = headers.getAndRemove(HttpHeaders.PSEUDO_AUTHORITY);
     if (authorityHeader != null) {
       authorityHeaderAsString = authorityHeader.toString();
-      authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+      realAuthority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+      computedAuthority = realAuthority;
     }
     CharSequence hostHeader = null;
-    if (authority == null) {
+    if (computedAuthority == null) {
       hostHeader = headers.getAndRemove(HttpHeaders.HOST);
       if (hostHeader != null) {
-        authority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+        computedAuthority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
       }
     }
     CharSequence pathHeader = headers.getAndRemove(HttpHeaders.PSEUDO_PATH);
@@ -151,7 +153,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
       headers,
       schemeHeader != null ? schemeHeader.toString() : null,
       authorityHeader != null || hostHeader != null,
-      authority,
+      realAuthority,
+      computedAuthority,
       methodHeader != null ? HttpMethod.valueOf(methodHeader.toString()) : null,
       pathHeader != null ? pathHeader.toString() : null,
       options.getTracingPolicy(), streamEnded);

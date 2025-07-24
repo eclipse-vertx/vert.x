@@ -41,7 +41,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
   protected final String uri;
   protected final String host; // deprecated
   protected final boolean hasAuthority;
-  protected final HostAndPort authority;
+  private final HostAndPort computedAuthority;
+  private final HostAndPort realAuthority;
   private final TracingPolicy tracingPolicy;
   private Object metric;
   private Object trace;
@@ -64,7 +65,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     this.scheme = null;
     this.host = null;
     this.hasAuthority = false;
-    this.authority = null;
+    this.computedAuthority = null;
+    this.realAuthority = null;
     this.tracingPolicy = tracingPolicy;
     this.halfClosedRemote = halfClosedRemote;
   }
@@ -74,7 +76,8 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
                     Http2Headers headers,
                     String scheme,
                     boolean hasAuthority,
-                    HostAndPort authority,
+                    HostAndPort realAuthority,
+                    HostAndPort computedAuthority,
                     HttpMethod method,
                     String uri,
                     TracingPolicy tracingPolicy,
@@ -84,8 +87,9 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
     this.scheme = scheme;
     this.headers = headers;
     this.hasAuthority = hasAuthority;
-    this.authority = authority;
-    this.host = authority != null ? authority.toString() : null;
+    this.realAuthority = realAuthority;
+    this.computedAuthority = computedAuthority;
+    this.host = computedAuthority != null ? computedAuthority.toString() : null;
     this.uri = uri;
     this.method = method;
     this.tracingPolicy = tracingPolicy;
@@ -103,6 +107,14 @@ class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
         }
       }
     }
+  }
+
+  public HostAndPort authority() {
+    return computedAuthority;
+  }
+
+  public HostAndPort authority(boolean real) {
+    return real ? realAuthority : computedAuthority;
   }
 
   @Override
