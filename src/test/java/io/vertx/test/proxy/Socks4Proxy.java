@@ -104,7 +104,11 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
-              socket.write(connectResponse);
+              if (successDelayMillis > 0) {
+                vertx.setTimer(successDelayMillis, tid -> socket.write(connectResponse));
+              } else {
+                socket.write(connectResponse);
+              }
               log.debug("connected, starting pump");
               NetSocket clientSocket = result.result();
               socket.closeHandler(v -> clientSocket.close());

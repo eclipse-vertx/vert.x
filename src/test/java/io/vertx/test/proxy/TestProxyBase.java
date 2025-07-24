@@ -14,7 +14,6 @@ package io.vertx.test.proxy;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.net.SocketAddress;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +33,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
   protected String lastUri;
   protected String forceUri;
   protected List<String> localAddresses = Collections.synchronizedList(new ArrayList<>());
+  protected long successDelayMillis = 0;
 
   public TestProxyBase() {
     port = defaultPort();
@@ -112,4 +112,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
   public abstract TestProxyBase start(Vertx vertx) throws Exception;
   public abstract void stop();
 
+  public void successDelayMillis(long delayMillis) {
+    this.successDelayMillis = delayMillis;
+  }
 }
