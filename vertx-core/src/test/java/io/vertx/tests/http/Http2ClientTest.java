@@ -366,6 +366,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.requestHandler(req -> {
       assertEquals("localhost", req.authority().host());
       assertEquals(4444, req.authority().port());
+      assertEquals(req.authority(), req.authorityPseudoHeader());
       req.response().end();
     });
     startServer(testAddress);
@@ -383,6 +384,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.requestHandler(req -> {
       assertEquals("fromHost", req.authority().host());
       assertEquals(1234, req.authority().port());
+      assertNull(req.authorityPseudoHeader());
       req.response().end();
     });
     startServer(testAddress);
