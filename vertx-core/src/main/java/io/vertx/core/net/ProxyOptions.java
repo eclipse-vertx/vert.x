@@ -11,11 +11,16 @@
 
 package io.vertx.core.net;
 
-import java.util.Objects;
-
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Objects;
+
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
 
 /**
  * Proxy options for a net client or a net client.
@@ -33,7 +38,7 @@ public class ProxyOptions {
 
   /**
    * The default port for proxy connect = 3128
-   *
+   * <p>
    * 3128 is the default port for Squid
    */
   public static final int DEFAULT_PORT = 3128;
@@ -43,11 +48,18 @@ public class ProxyOptions {
    */
   public static final String DEFAULT_HOST = "localhost";
 
+  /**
+   * The default timeout for proxy connect = 10 seconds
+   */
+  @GenIgnore(PERMITTED_TYPE)
+  public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+
   private String host;
   private int port;
   private String username;
   private String password;
   private ProxyType type;
+  private Duration connectTimeout;
 
   /**
    * Default constructor.
@@ -56,6 +68,7 @@ public class ProxyOptions {
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
     type = DEFAULT_TYPE;
+    connectTimeout = DEFAULT_CONNECT_TIMEOUT;
   }
 
   /**
@@ -69,6 +82,7 @@ public class ProxyOptions {
     username = other.getUsername();
     password = other.getPassword();
     type = other.getType();
+    connectTimeout = other.getConnectTimeout();
   }
 
   /**
@@ -79,6 +93,10 @@ public class ProxyOptions {
   public ProxyOptions(JsonObject json) {
     this();
     ProxyOptionsConverter.fromJson(json, this);
+    Object connectTimeout = json.getValue("connectTimeout");
+    if (connectTimeout instanceof Number) {
+      setConnectTimeout(Duration.of(((Number) connectTimeout).longValue(), ChronoUnit.MILLIS));
+    }
   }
 
   /**
@@ -89,6 +107,10 @@ public class ProxyOptions {
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     ProxyOptionsConverter.toJson(this, json);
+    Duration connectTimeout = getConnectTimeout();
+    if (connectTimeout != null) {
+      json.put("connectTimeout", connectTimeout.toMillis());
+    }
     return json;
   }
 
@@ -198,6 +220,35 @@ public class ProxyOptions {
   public ProxyOptions setType(ProxyType type) {
     Objects.requireNonNull(type, "Proxy type may not be null");
     this.type = type;
+    return this;
+  }
+
+  /**
+   * Get the connection timeout , defaults to {@code 10} seconds.
+   * <p>
+   * A connection to the proxy is considered successful when:
+   *
+   * <ul>
+   *   <li>the client received a {@code 200} response to the {@code CONNECT} request for HTTP proxies, or</li>
+   *   <li>the {@code SOCKS} handshake ended with the {@code SUCCESS} status, for SOCKS proxies.</li>
+   * </ul>
+   *
+   * @return the connection timeout
+   */
+  @GenIgnore(PERMITTED_TYPE)
+  public Duration getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  /**
+   * Set the connection timeout.
+   *
+   * @param connectTimeout the connection timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore(PERMITTED_TYPE)
+  public ProxyOptions setConnectTimeout(Duration connectTimeout) {
+    this.connectTimeout = connectTimeout;
     return this;
   }
 }
