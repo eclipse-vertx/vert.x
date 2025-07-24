@@ -59,7 +59,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   public Handler<HttpServerRequest> handler;
 
   // Accessed on context thread
-  private MultiMap headersMap;
+  private Http2HeadersMultiMap headersMap;
   private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
   private boolean semicolonIsNormalCharInParams;
@@ -346,6 +346,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   @Override
   public @Nullable HostAndPort authority() {
     return stream.authority();
+  }
+
+  @Override
+  public @Nullable HostAndPort authorityPseudoHeader() {
+    return headersMap.originalAuthority();
   }
 
   @Override
