@@ -32,8 +32,10 @@ import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
+import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -60,6 +62,61 @@ public class Http2ClientTest extends HttpClientTest {
       .setDependency(0)
       .setWeight(Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT)
       .setExclusive(false);
+  }
+
+    @Test
+  public void testNoAuthority() throws Exception {
+    AbstractBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        vertx.runOnContext(v -> {
+          assertNull(headers.authority());
+          encoder.writeHeaders(ctx, streamId, new DefaultHttp2Headers().status("200"), 0, true, ctx.newPromise());
+          ctx.flush();
+        });
+      }
+    });
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    client.request(new RequestOptions().setServer(testAddress)
+        .setPort(4444)
+        .setHost("localhost")
+      )
+      .compose(request -> {
+        request.authority(null);
+        return request.send();
+      })
+      .onComplete(onSuccess(resp -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testTrailers() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.write("some-content");
+      resp.putTrailer("Foo", "foo_value");
+      resp.putTrailer("bar", "bar_value");
+      resp.putTrailer("juu", (List<String>) Arrays.asList("juu_value_1", "juu_value_2"));
+      resp.end();
+    });
+    startServer();
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        assertEquals(null, resp.getTrailer("foo"));
+        resp.exceptionHandler(this::fail);
+        resp.endHandler(v -> {
+          assertEquals("foo_value", resp.getTrailer("foo"));
+          assertEquals("foo_value", resp.getTrailer("Foo"));
+          assertEquals("bar_value", resp.getTrailer("bar"));
+          assertEquals(2, resp.trailers().getAll("juu").size());
+          assertEquals("juu_value_1", resp.trailers().getAll("juu").get(0));
+          assertEquals("juu_value_2", resp.trailers().getAll("juu").get(1));
+          testComplete();
+        });
+      }));
+    }));
+    await();
   }
 
   @Override
