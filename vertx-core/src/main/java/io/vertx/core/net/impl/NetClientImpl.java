@@ -335,7 +335,9 @@ class NetClientImpl implements NetClientInternal {
         peerAddress,
         connectOptions.getSniServerName(),
         connectOptions.isSsl(),
-        sslOptions);
+        sslOptions,
+        options.getQuicOptions()
+      );
       fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
         if (!future.isSuccess()) {
           Throwable cause = future.cause();

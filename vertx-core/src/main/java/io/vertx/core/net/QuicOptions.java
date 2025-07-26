@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +58,8 @@ public class QuicOptions {
    * Default use http3InitialMaxStreamDataUnidirectional = 131,072 ~ 128KB
    */
   public static final long DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_UNIDIRECTIONAL = 131_072;
+
+  public static final Duration MAX_SSL_HANDSHAKE_TIMEOUT = Duration.ofDays(1);
 
   private long sslHandshakeTimeout;
   private TimeUnit sslHandshakeTimeoutUnit;

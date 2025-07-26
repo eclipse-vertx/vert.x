@@ -162,7 +162,7 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
     InetSocketAddress remoteAddress = new InetSocketAddress("localhost", server.actualPort());
 
     ProxyOptions proxyOptions = new ProxyOptions().setType(proxyType);
-    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions)
+    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions, createBaseClientOptions().getQuicOptions())
       .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
         if (!channelFuture.isSuccess()) {
           fail(channelFuture.cause());

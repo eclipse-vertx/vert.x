@@ -39,6 +39,7 @@ import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.QuicOptions;
 import io.vertx.core.net.SocketAddress;
 
 import java.net.ConnectException;
@@ -108,13 +109,13 @@ public final class ChannelProvider {
     return this;
   }
 
-  public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions) {
+  public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, QuicOptions quicOptions) {
     Promise<Channel> p = context.nettyEventLoop().newPromise();
-    connect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, p);
+    connect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, quicOptions, p);
     return p;
   }
 
-  private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> p) {
+  private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, QuicOptions quicOptions, Promise<Channel> p) {
     try {
       if (version == HttpVersion.HTTP_3) {
         bootstrap.channelFactory(() -> context.owner().transport().datagramChannel());
@@ -126,7 +127,7 @@ public final class ChannelProvider {
       return;
     }
     if (proxyOptions != null) {
-      handleProxyConnect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, p);
+      handleProxyConnect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, quicOptions, p);
     } else {
       handleConnect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, p);
     }
@@ -242,7 +243,7 @@ public final class ChannelProvider {
   /**
    * A channel provider that connects via a Proxy : HTTP or SOCKS
    */
-  private void handleProxyConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
+  private void handleProxyConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, QuicOptions quicOptions, Promise<Channel> channelHandler) {
 
     final VertxInternal vertx = context.owner();
     final String proxyHost = proxyOptions.getHost();
@@ -258,7 +259,7 @@ public final class ChannelProvider {
           bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
-          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions)
+          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions, quicOptions)
             .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 channelHandler.tryFailure(channelFuture.cause());

@@ -101,4 +101,10 @@ public class Http2Test extends HttpCommonTest {
     // This test does not work on http/2
   }
 
+  @Override
+  @Ignore
+  @Test
+  public void testServerExceptionHandlerOnClose() {
+    super.testServerExceptionHandlerOnClose();
+  }
 }

@@ -15,7 +15,6 @@ import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -23,6 +22,7 @@ import io.netty.handler.codec.quic.QuicException;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.NetServer;
@@ -256,7 +256,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   @Test
   public void testGet() throws Exception {
     AbstractBootstrap bootstrap = createServerForGet();
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
@@ -281,8 +281,8 @@ public abstract class HttpClientTest extends Http2TestBase {
       assertEquals("https", req.scheme());
       assertEquals(HttpMethod.GET, req.method());
       assertEquals("/somepath", req.path());
-      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
-      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
+      assertEquals(serverOptions.getHost(), req.authority().host());
+      assertEquals(serverOptions.getPort(), req.authority().port());
       assertEquals("foo_request_value", req.getHeader("Foo_request"));
       assertEquals("bar_request_value", req.getHeader("bar_request"));
       assertEquals(2, req.headers().getAll("juu_request").size());
@@ -299,8 +299,8 @@ public abstract class HttpClientTest extends Http2TestBase {
     });
     startServer();
     client.request(new RequestOptions()
-      .setPort(DEFAULT_HTTPS_PORT)
-      .setHost(DEFAULT_HTTPS_HOST)
+      .setPort(serverOptions.getPort())
+      .setHost(serverOptions.getHost())
       .setURI("/somepath")
       )
       .onComplete(onSuccess(req -> {
@@ -382,6 +382,26 @@ public abstract class HttpClientTest extends Http2TestBase {
       .setHost("localhost")
     )
       .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> testComplete()));
+    await();
+  }
+
+  protected AbstractBootstrap createServerForNoAuthority() {
+    throw new RuntimeException("Method not implemented. Please implement this method to run the test case.");
+  }
+
+  @Test
+  public void testNoAuthority() throws Exception {
+    AbstractBootstrap bootstrap = createServerForNoAuthority();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
+    client.request(new RequestOptions().setServer(testAddress)
+        .setPort(4444)
+        .setHost("localhost")
+      )
+      .compose(request -> {
+        request.authority(null);
+        return request.send();
+      })
       .onComplete(onSuccess(resp -> testComplete()));
     await();
   }
@@ -823,7 +843,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   private void testClientResetServerStream(boolean endClient, boolean endServer) throws Exception {
     waitFor(1);
     AbstractBootstrap bootstrap = createServerForClientResetServerStream(endServer);
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       if (endClient) {
         req.end(Buffer.buffer("ping"));
@@ -1126,8 +1146,8 @@ public abstract class HttpClientTest extends Http2TestBase {
       req1.send().onComplete(onSuccess(resp -> {
         resp.request().connection().goAway(0);
         client.request(new RequestOptions()
-          .setHost(DEFAULT_HTTPS_HOST)
-          .setPort(DEFAULT_HTTPS_PORT)
+          .setHost(serverOptions.getHost())
+          .setPort(serverOptions.getPort())
           .setURI("/somepath")
           .setTimeout(5000)).onComplete(onSuccess(req2 -> {
             req2.send().onComplete(onSuccess(resp2 -> {
@@ -1147,7 +1167,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   public void testStreamError() throws Exception {
     waitFor(3);
     AbstractBootstrap bootstrap = createServerForStreamError();
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.close();
       Context ctx = vertx.getOrCreateContext();
@@ -1166,8 +1186,8 @@ public abstract class HttpClientTest extends Http2TestBase {
           .build();
         client.request(new RequestOptions()
           .setMethod(HttpMethod.PUT)
-          .setHost(DEFAULT_HTTPS_HOST)
-          .setPort(DEFAULT_HTTPS_PORT)
+          .setHost(serverOptions.getHost())
+          .setPort(serverOptions.getPort())
           .setURI(DEFAULT_TEST_URI)
         ).onComplete(onSuccess(req -> {
           req
@@ -1202,7 +1222,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   public void testConnectionDecodeError() throws Exception {
     waitFor(3);
     AbstractBootstrap bootstrap = createServerForConnectionDecodeError();
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
       client.close();
@@ -1221,8 +1241,8 @@ public abstract class HttpClientTest extends Http2TestBase {
           .build();
         client.request(new RequestOptions()
           .setMethod(HttpMethod.PUT)
-          .setHost(DEFAULT_HTTPS_HOST)
-          .setPort(DEFAULT_HTTPS_PORT)
+          .setHost(serverOptions.getHost())
+          .setPort(serverOptions.getPort())
           .setURI(DEFAULT_TEST_URI)).onComplete(onSuccess(req -> {
           req.response().onComplete(onSuccess(resp -> {
             resp.exceptionHandler(err -> {
@@ -1255,7 +1275,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   @Test
   public void testInvalidServerResponse() throws Exception {
     AbstractBootstrap bootstrap = createServerForInvalidServerResponse();
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       Context ctx = vertx.getOrCreateContext();
       client.close();
@@ -1570,7 +1590,7 @@ public abstract class HttpClientTest extends Http2TestBase {
     Assume.assumeTrue(testAddress.isInetSocket());
     List<String> requests = new ArrayList<>();
     AbstractBootstrap bootstrap = createServerForClearText(requests, withUpgrade);
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.close();
       client = vertx.createHttpClient(createBaseClientOptions()
@@ -1611,8 +1631,8 @@ public abstract class HttpClientTest extends Http2TestBase {
       } else {
         assertNull(upgrade);
       }
-      assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
-      assertEquals(DEFAULT_HTTPS_PORT, req.authority().port());
+      assertEquals(serverOptions.getHost(), req.authority().host());
+      assertEquals(serverOptions.getPort(), req.authority().port());
       req.response().end("wibble");
       assertEquals(HttpVersion.HTTP_1_1, req.version());
     });
@@ -1888,7 +1908,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   @Test
   public void testConnectionWindowSize() throws Exception {
     AbstractBootstrap bootstrap = createServerForConnectionWindowSize();
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2ConnectionWindowSize(65535 * 2));
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::send));
@@ -1902,7 +1922,7 @@ public abstract class HttpClientTest extends Http2TestBase {
   @Test
   public void testUpdateConnectionWindowSize() throws Exception {
     AbstractBootstrap bootstrap = createServerForUpdateConnectionWindowSize();
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     client.close();
     client = vertx.httpClientBuilder()
       .with(createBaseClientOptions())
@@ -1939,7 +1959,7 @@ public abstract class HttpClientTest extends Http2TestBase {
         setHttp2MaxStreams(10));
     AtomicInteger respCount = new AtomicInteger();
     for (int i = 0;i < 10;i++) {
-      client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+      client.get(serverOptions.getPort(), serverOptions.getHost(), "/somepath", resp -> {
         resp.endHandler(v -> {
         });
       });
@@ -1959,7 +1979,7 @@ public abstract class HttpClientTest extends Http2TestBase {
 
     waitFor(2);
     AbstractBootstrap bootstrap = createServerForStreamPriority(requestStreamPriority, responseStreamPriority);
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req
@@ -1991,11 +2011,11 @@ public abstract class HttpClientTest extends Http2TestBase {
     StreamPriority responseStreamPriority2 = new StreamPriority().setDependency(253).setWeight((short)175).setExclusive(true);
     waitFor(5);
     AbstractBootstrap bootstrap = createServerForStreamPriorityChange(requestStreamPriority, responseStreamPriority, requestStreamPriority2, responseStreamPriority2);
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.request(new RequestOptions()
-        .setPort(DEFAULT_HTTPS_PORT)
-        .setHost(DEFAULT_HTTPS_HOST)
+        .setPort(serverOptions.getPort())
+        .setHost(serverOptions.getHost())
         .setURI("/somepath")).onComplete(onSuccess(req -> {
         req
           .response().onComplete(onSuccess(resp -> {
@@ -2037,11 +2057,11 @@ public abstract class HttpClientTest extends Http2TestBase {
     waitFor(2);
     Promise<Void> latch = Promise.promise();
     AbstractBootstrap bootstrap = createServerForClientStreamPriorityNoChange(streamPriority, latch);
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.request(new RequestOptions()
-        .setHost(DEFAULT_HTTPS_HOST)
-        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(serverOptions.getHost())
+        .setPort(serverOptions.getPort())
         .setURI("/somepath")).onComplete(onSuccess(req -> {
         req
           .response().onComplete(onSuccess(resp -> {
@@ -2072,7 +2092,7 @@ public abstract class HttpClientTest extends Http2TestBase {
     StreamPriority streamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
     waitFor(1);
     AbstractBootstrap bootstrap = createServerForServerStreamPriorityNoChange(streamPriority);
-    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    ChannelFuture s = bootstrap.bind(serverOptions.getHost(), serverOptions.getPort()).sync();
     try {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
@@ -2100,7 +2120,7 @@ public abstract class HttpClientTest extends Http2TestBase {
         conn.close();
       });
     });
-    server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(s -> {
+    server.listen(serverOptions.getPort(), serverOptions.getHost()).onComplete(onSuccess(s -> {
       client.close();
       client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false));
       client.request(requestOptions).onComplete(onFailure(err -> {

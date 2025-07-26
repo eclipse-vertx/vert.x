@@ -73,6 +73,7 @@ import java.util.function.Function;
 import java.util.function.LongPredicate;
 import java.util.function.Supplier;
 
+import static io.vertx.core.net.QuicOptions.MAX_SSL_HANDSHAKE_TIMEOUT;
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static io.vertx.test.core.TestUtils.cnOf;
@@ -265,7 +266,7 @@ public abstract class NetTest extends VertxTestBase {
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
     assertEquals(SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
-    long randLong = TestUtils.randomPositiveLong();
+    long randLong = TestUtils.randomPositiveInt((int) MAX_SSL_HANDSHAKE_TIMEOUT.toSeconds());
     assertEquals(options, options.setSslHandshakeTimeout(randLong));
     assertEquals(randLong, options.getSslHandshakeTimeout());
     assertIllegalArgumentException(() -> options.setSslHandshakeTimeout(-123));
@@ -373,7 +374,7 @@ public abstract class NetTest extends VertxTestBase {
     assertTrue(options.isSni());
 
     assertEquals(SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT, options.getSslHandshakeTimeout());
-    long randomSslTimeout = TestUtils.randomPositiveLong();
+    long randomSslTimeout = TestUtils.randomPositiveInt((int) MAX_SSL_HANDSHAKE_TIMEOUT.toSeconds());
     assertEquals(options, options.setSslHandshakeTimeout(randomSslTimeout));
     assertEquals(randomSslTimeout, options.getSslHandshakeTimeout());
     assertIllegalArgumentException(() -> options.setSslHandshakeTimeout(-123));
@@ -420,7 +421,7 @@ public abstract class NetTest extends VertxTestBase {
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
-    long sslHandshakeTimeout = TestUtils.randomPositiveLong();
+    long sslHandshakeTimeout = TestUtils.randomPositiveInt((int) MAX_SSL_HANDSHAKE_TIMEOUT.toSeconds());
 
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
     options.setSendBufferSize(sendBufferSize);
@@ -630,7 +631,7 @@ public abstract class NetTest extends VertxTestBase {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
     boolean sni = TestUtils.randomBoolean();
-    long sslHandshakeTimeout = TestUtils.randomPositiveLong();
+    long sslHandshakeTimeout = TestUtils.randomPositiveInt((int) MAX_SSL_HANDSHAKE_TIMEOUT.toSeconds());
     boolean useProxyProtocol = TestUtils.randomBoolean();
     long proxyProtocolTimeout = TestUtils.randomPositiveLong();
 

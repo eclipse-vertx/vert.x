@@ -68,11 +68,6 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final boolean DEFAULT_REGISTER_WRITE_HANDLER = false;
 
-  /**
-   * Whether a write-handler should be registered by default = false.
-   */
-  public static final QuicOptions DEFAULT_QUIC_OPTIONS = new QuicOptions();
-
   private int port;
   private String host;
   private int acceptBacklog;
@@ -108,7 +103,7 @@ public class NetServerOptions extends TCPSSLOptions {
       DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = other.registerWriteHandler;
     this.trafficShapingOptions = other.getTrafficShapingOptions();
-    this.quicOptions = other.quicOptions.copy();
+    this.quicOptions = other.getQuicOptions() != null ? other.getQuicOptions().copy() : null;
   }
 
   /**
@@ -508,7 +503,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.proxyProtocolTimeout = DEFAULT_PROXY_PROTOCOL_TIMEOUT;
     this.proxyProtocolTimeoutUnit = DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = DEFAULT_REGISTER_WRITE_HANDLER;
-    this.quicOptions = DEFAULT_QUIC_OPTIONS;
+    this.quicOptions = new QuicOptions();
   }
 
   /**

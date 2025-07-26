@@ -47,11 +47,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
 
-  /**
-   * Whether a write-handler should be registered by default
-   */
-  public static final QuicOptions DEFAULT_QUIC_OPTIONS = new QuicOptions();
-
   private int connectTimeout;
   private String metricsName;
   private ProxyOptions proxyOptions;
@@ -81,7 +76,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.localAddress = other.localAddress;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
     this.protocolVersion = other.protocolVersion;
-    this.quicOptions = other.quicOptions;
+    this.quicOptions = other.getQuicOptions() != null ? other.getQuicOptions().copy() : null;
   }
 
   /**
@@ -112,7 +107,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = null;
     this.localAddress = null;
     this.protocolVersion = DEFAULT_PROTOCOL_VERSION;
-    this.quicOptions = DEFAULT_QUIC_OPTIONS;
+    this.quicOptions = new QuicOptions();
   }
 
   @GenIgnore
@@ -429,7 +424,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientOptionsBase) super.setTcpUserTimeout(tcpUserTimeout);
   }
 
-    public ClientOptionsBase setSslHandshakeTimeout(long sslHandshakeTimeout) {
+  public ClientOptionsBase setSslHandshakeTimeout(long sslHandshakeTimeout) {
     if (quicOptions != null) {
       quicOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
     }

@@ -47,11 +47,14 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.QuicOptions;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.LongFunction;
+
+import static io.vertx.core.net.QuicOptions.MAX_SSL_HANDSHAKE_TIMEOUT;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -121,17 +124,16 @@ public class Http3Utils {
     return listener;
   }
 
-  public static ChannelHandler newClientSslContext() {
+  public static ChannelHandler newClientSslContext(QuicOptions quicOptions) {
     QuicSslContext context = QuicSslContextBuilder.forClient()
       .trustManager(InsecureTrustManagerFactory.INSTANCE)
       .applicationProtocols(Http3.supportedApplicationProtocols()).build();
-    return Http3.newQuicClientCodecBuilder()
-      .sslContext(context)
-      .datagram(2000000, 2000000)
-      .maxIdleTimeout(5000, TimeUnit.HOURS)
-      .initialMaxData(10000000)
-      .initialMaxStreamDataBidirectionalLocal(1000000)
-      .build();
+
+    quicOptions.setSslHandshakeTimeout(5);
+    quicOptions.setSslHandshakeTimeoutUnit(TimeUnit.HOURS);
+    quicOptions.setHttp3InitialMaxData(10000000);
+
+    return configureQuicCodecBuilder(Http3.newQuicClientCodecBuilder().sslContext(context), quicOptions).build();
   }
 
   public static QuicCodecBuilderInitializer createServerQuicCodecBuilderInitializer(QuicOptions quicOptions, ChannelHandler handler) {
@@ -180,6 +182,11 @@ public class Http3Utils {
   }
 
   public static <T extends QuicCodecBuilder<T>> T configureQuicCodecBuilder(T quicCodecBuilder, QuicOptions quicOptions) {
+    if (Duration.of(quicOptions.getSslHandshakeTimeout(), quicOptions.getSslHandshakeTimeoutUnit().toChronoUnit()).compareTo(MAX_SSL_HANDSHAKE_TIMEOUT) > 0) {
+      // Very large values can trigger crashes in lower-level Rust code
+      throw new IllegalArgumentException("sslHandshakeTimeout must be ≤ " + MAX_SSL_HANDSHAKE_TIMEOUT);
+    }
+
     quicCodecBuilder
       // Enabling this option allows sending unreliable, connectionless data over QUIC
       // via QUIC datagrams. It is required for VertxHandler and net socket to function properly.

@@ -108,7 +108,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForGet() {
-    return new H3ServerBuilder(this)
+    return new H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         vertx.runOnContext(v -> {
           ChannelPromise promise = headersHolder.streamChannel().newPromise();
@@ -128,7 +128,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForInvalidServerResponse() {
-    return new H3ServerBuilder(this)
+    return new H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         ChannelPromise promise = headersHolder.streamChannel().newPromise();
         promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
@@ -141,7 +141,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
-    return new H3ServerBuilder(this)
+    return new H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         ChannelPromise promise = headersHolder.streamChannel().newPromise();
         headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
@@ -167,7 +167,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForConnectionDecodeError() {
-    return new H3ServerBuilder(this)
+    return new H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         vertx.runOnContext(v -> {
           ChannelPromise promise1 = headersHolder.streamChannel().newPromise();
@@ -179,6 +179,14 @@ public class Http3ClientTest extends HttpClientTest {
       })
       .dataHandler(ignored -> fail())
       .build();
+  }
+
+
+  @Test
+  @Override
+  @Ignore("Authority is in the list of mandatory headers in HTTP/3")
+  public void testNoAuthority() throws Exception {
+    super.testNoAuthority();
   }
 
   @Test

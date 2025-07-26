@@ -40,6 +40,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.proxy.HttpProxyHandler;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.QuicOptions;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -70,12 +71,12 @@ public class Http3ProxyProvider {
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
   public Future<Channel> createProxyQuicChannel(InetSocketAddress proxyAddress, InetSocketAddress remoteAddress,
-                                                ProxyOptions proxyOptions) {
+                                                ProxyOptions proxyOptions, QuicOptions quicOptions) {
     Promise<Channel> channelPromise = eventLoop.newPromise();
 
     ChannelHandler proxyHandler = new ProxyHandlerSelector(proxyOptions, proxyAddress, remoteAddress).select(true);
 
-    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext())
+    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext(quicOptions))
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel datagramChannel = (NioDatagramChannel) future.channel();
         if (IS_NETTY_BASED_PROXY) {

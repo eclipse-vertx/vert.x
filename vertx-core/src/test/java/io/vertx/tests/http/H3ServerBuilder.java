@@ -16,6 +16,7 @@ import io.netty.handler.codec.http3.Http3RequestStreamInboundHandler;
 import io.netty.handler.codec.quic.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.impl.Http3Utils;
@@ -28,14 +29,16 @@ class H3ServerBuilder {
   private static final String AGENT_SERVER = "SERVER-TEST_MODE";
 
   private final Http3ClientTest http3ClientTest;
+  private final HttpServerOptions serverOptions;
 
   private Handler<FrameHolder<Http3HeadersFrame>> headerHandler;
   private Handler<FrameHolder<Http3DataFrame>> dataHandler;
   private Handler<Http3GoAwayFrame> goAwayHandler;
   private Handler<ChannelHandlerContext> streamResetHandler;
 
-  public H3ServerBuilder(Http3ClientTest http3ClientTest) {
+  public H3ServerBuilder(Http3ClientTest http3ClientTest, HttpServerOptions httpServerOptions) {
     this.http3ClientTest = http3ClientTest;
+    this.serverOptions = httpServerOptions;
     this.headerHandler = frameHolder -> ReferenceCountUtil.release(frameHolder.frame());
     this.dataHandler = frameHolder -> ReferenceCountUtil.release(frameHolder.frame());
     this.goAwayHandler = ReferenceCountUtil::release;
@@ -59,18 +62,8 @@ class H3ServerBuilder {
       throw new RuntimeException(e);
     }
 
-    ChannelHandler codec = Http3.newQuicServerCodecBuilder()
+    ChannelHandler codec = Http3Utils.configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder()
       .sslContext(sslContext)
-//      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-      .maxIdleTimeout(5, TimeUnit.HOURS)
-      .initialMaxData(10000000)
-      .initialMaxStreamDataBidirectionalLocal(1000000)
-      .initialMaxStreamDataBidirectionalRemote(1000000)
-      .initialMaxStreamDataUnidirectional(1000000000000L)
-      .initialMaxStreamsUnidirectional(1000000000)
-      .initialMaxStreamsBidirectional(100)
-      .initialMaxStreamsUnidirectional(100)
-
       .datagram(2000000, 2000000)
 
       .maxRecvUdpPayloadSize(1000000000000L)  // 1 MB for receiving UDP payloads
@@ -83,7 +76,7 @@ class H3ServerBuilder {
           channel.pipeline().addLast(createHttpConnectionHandler());
           channel.pipeline().addLast(new MyLoggerHandler());
         }
-      })
+      }), serverOptions.getQuicOptions())
       .build();
 
     bootstrap.handler(codec);
