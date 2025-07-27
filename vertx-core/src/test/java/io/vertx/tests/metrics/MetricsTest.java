@@ -35,7 +35,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Trust;
-import io.vertx.tests.http.HttpOptionsFactory;
+import io.vertx.tests.http.Http2TestBase;
 import org.junit.Test;
 
 import java.util.*;
@@ -44,7 +44,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -1199,7 +1198,7 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testHTTP2ConnectionCloseBeforePrefaceIsReceived() throws Exception {
     // Let the server close the connection with an idle timeout
-    HttpServerOptions options = HttpOptionsFactory
+    HttpServerOptions options = Http2TestBase
       .createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST)
       .setIdleTimeout(1);
     HttpServer server = vertx.createHttpServer(options);

@@ -29,10 +29,8 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.net.TrafficShapingOptions;
-import io.vertx.test.http.HttpTestBase;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,11 +40,8 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.test.core.TestUtils;
 
-import static io.vertx.tests.http.Http2TestBase.createHttp2ClientOptions;
-import static io.vertx.tests.http.Http2TestBase.createHttp2ServerOptions;
-
 @RunWith(Parameterized.class)
-public class HttpBandwidthLimitingTest extends HttpTestBase {
+public class HttpBandwidthLimitingTest extends Http2TestBase {
 
   private static final int OUTBOUND_LIMIT = 64 * 1024;  // 64KB/s
   private static final int INBOUND_LIMIT = 64 * 1024;   // 64KB/s
@@ -69,7 +64,7 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
     Function<Vertx, HttpServer> http2NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpServer> http3NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpClient> http1ClientFactory = (v) -> v.createHttpClient();
-    Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(HttpOptionsFactory.createHttp2ClientOptions());
+    Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     Function<Vertx, HttpClient> http3ClientFactory = (v) -> v.createHttpClient(HttpOptionsFactory.createH3HttpClientOptions());
 
     return Arrays.asList(new Object[][] {
@@ -439,7 +434,7 @@ public class HttpBandwidthLimitingTest extends HttpTestBase {
     }
 
     private static HttpServer http2Server(Vertx vertx, int inboundLimit, int outboundLimit) {
-      HttpServerOptions options = HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+      HttpServerOptions options = Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
 
       if (inboundLimit != 0 || outboundLimit != 0) {
         options.setTrafficShapingOptions(new TrafficShapingOptions()

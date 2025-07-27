@@ -50,7 +50,7 @@ public class Http2Test extends HttpTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
@@ -70,7 +70,7 @@ public class Http2Test extends HttpTest {
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp2ClientOptions();
+    return Http2TestBase.createHttp2ClientOptions();
   }
 
   @Override

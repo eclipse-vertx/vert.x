@@ -63,11 +63,11 @@ public abstract class HttpClientTest extends Http2TestBase {
   protected abstract void manageMaxQueueRequestsCount(Long max);
 
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp2ClientOptions();
+    return Http2TestBase.createHttp2ClientOptions();
   }
 
   protected HttpServerOptions createBaseServerOptionsWithoutSSL() {

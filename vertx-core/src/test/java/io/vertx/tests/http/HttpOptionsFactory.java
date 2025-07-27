@@ -31,26 +31,6 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
  */
 public class HttpOptionsFactory {
 
-  public static HttpServerOptions createHttp2ServerOptions(int port, String host) {
-    return new HttpServerOptions()
-      .setPort(port)
-      .setHost(host)
-      .setSslEngineOptions(new JdkSSLEngineOptions())
-      .setUseAlpn(true)
-      .setSsl(true)
-      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
-      .setKeyCertOptions(Cert.SERVER_JKS.get());
-  }
-
-  public static HttpClientOptions createHttp2ClientOptions() {
-    return new HttpClientOptions()
-      .setSslEngineOptions(new JdkSSLEngineOptions())
-      .setUseAlpn(true)
-      .setSsl(true)
-      .setTrustOptions(Trust.SERVER_JKS.get())
-      .setProtocolVersion(HttpVersion.HTTP_2);
-  }
-
   public static HttpServerOptions createHttp2ServerOptionsWithoutSSL(int port, String host) {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }

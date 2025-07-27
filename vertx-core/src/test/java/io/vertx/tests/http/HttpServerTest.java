@@ -79,7 +79,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -123,7 +122,7 @@ public abstract class HttpServerTest extends Http2TestBase {
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp2ClientOptions();
+    return Http2TestBase.createHttp2ClientOptions();
   }
 
   @Override

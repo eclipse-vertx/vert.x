@@ -19,13 +19,13 @@ public class Http2ClientTimeoutTest extends HttpClientTimeoutTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory
+    return Http2ServerTest
       .createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST)
       .setInitialSettings(new Http2Settings().setMaxConcurrentStreams(5));
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp2ClientOptions();
+    return Http2ServerTest.createHttp2ClientOptions();
   }
 }

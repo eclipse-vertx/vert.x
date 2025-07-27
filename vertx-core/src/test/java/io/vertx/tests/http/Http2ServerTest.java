@@ -12,8 +12,6 @@
 package io.vertx.tests.http;
 
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
 
 import java.util.concurrent.TimeUnit;
 

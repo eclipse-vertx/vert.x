@@ -51,7 +51,7 @@ import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import io.vertx.tests.http.HttpOptionsFactory;
+import io.vertx.tests.http.Http2TestBase;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -75,7 +75,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongPredicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static io.vertx.core.net.QuicOptions.MAX_SSL_HANDSHAKE_TIMEOUT;
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
@@ -116,11 +115,11 @@ public class NetTest extends VertxTestBase {
   }
 
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createHttp2ClientOptions();
+    return Http2TestBase.createHttp2ClientOptions();
   }
 
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   protected HttpServerOptions createHttpServerOptionsForNetTest() {
