@@ -210,7 +210,7 @@ public class Http3ClientConnectionImpl extends Http3ConnectionImpl implements Ht
   }
 
   @Override
-  protected synchronized void onHeadersRead(Http2StreamBase vertxStream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+  protected void onHeadersRead(Http2StreamBase vertxStream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2ClientStream stream = (Http2ClientStream) stream(streamChannel.streamId());
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
     if (!stream.isTrailersReceived()) {

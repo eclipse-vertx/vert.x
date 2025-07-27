@@ -94,7 +94,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
   }
 /*
   @Override
-  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+  protected void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2Stream nettyStream = handler.connection().stream(streamId);
     Http2ServerStream stream;
     if (nettyStream.getProperty(streamKey) == null) {
@@ -231,7 +231,7 @@ public class Http3ServerConnectionImpl extends Http3ConnectionImpl implements Ht
 */
 
   @Override
-  protected synchronized void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+  protected void onHeadersRead(Http2StreamBase stream, QuicStreamChannel streamChannel, Http3Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2ServerStream stream0;
     if (stream == null) {
       Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
