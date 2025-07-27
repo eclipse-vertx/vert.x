@@ -52,6 +52,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,11 +77,11 @@ public final class HttpUtils {
   public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
   public static final int SC_SWITCHING_PROTOCOLS = 101;
   public static final int SC_BAD_GATEWAY = 502;
-  private static final Set<io.vertx.core.http.HttpVersion> HTTP3_VERSIONS = Set.of(
+  private static final EnumSet<io.vertx.core.http.HttpVersion> HTTP3_VERSIONS = EnumSet.of(
       HTTP_3, HTTP_3_27, HTTP_3_29, HTTP_3_30, HTTP_3_31, HTTP_3_32
   );
   private static final Set<String> HTTP3_ALPN_NAMES = HTTP3_VERSIONS.stream().map(io.vertx.core.http.HttpVersion::alpnName).collect(Collectors.toUnmodifiableSet());
-  private static final Set<io.vertx.core.http.HttpVersion> FRAME_BASED_VERSIONS = Set.of(HTTP_2, HTTP_3);
+  private static final EnumSet<io.vertx.core.http.HttpVersion> FRAME_BASED_VERSIONS = EnumSet.of(HTTP_2, HTTP_3);
 
   public static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
