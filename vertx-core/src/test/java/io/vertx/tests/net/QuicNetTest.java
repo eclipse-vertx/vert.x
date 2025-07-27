@@ -45,6 +45,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -104,6 +105,11 @@ public class QuicNetTest extends NetTest {
     HAProxy haProxy = new HAProxy(remoteAddress, header);
     haProxy.http3(true);
     return haProxy;
+  }
+
+  @Override
+  protected List<String> alpnNames() {
+    return List.of(io.vertx.core.http.HttpVersion.HTTP_3.alpnName());
   }
 
   @Override

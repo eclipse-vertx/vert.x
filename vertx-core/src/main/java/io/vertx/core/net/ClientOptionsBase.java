@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.http.HttpClientOptions.DEFAULT_PROTOCOL_VERSION;
+
 /**
  * Base class for Client options
  *
@@ -41,11 +43,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    * The default value of the client metrics = "":
    */
   public static final String DEFAULT_METRICS_NAME = "";
-
-  /**
-   * The default protocol version = HTTP/1.1
-   */
-  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = HttpVersion.HTTP_1_1;
 
   private int connectTimeout;
   private String metricsName;

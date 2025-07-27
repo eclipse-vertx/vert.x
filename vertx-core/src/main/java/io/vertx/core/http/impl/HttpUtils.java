@@ -1075,9 +1075,6 @@ public final class HttpUtils {
   }
 
   public static boolean supportsQuic(List<String>applicationProtocols) {
-    if (applicationProtocols == null || applicationProtocols.isEmpty()) {
-      return false;
-    }
     for (String applicationProtocol : applicationProtocols) {
       if (HTTP3_ALPN_NAMES.contains(applicationProtocol)) {
         return true;
@@ -1087,9 +1084,6 @@ public final class HttpUtils {
   }
 
   public static boolean supportsQuicVersion(List<io.vertx.core.http.HttpVersion>applicationProtocols) {
-    if (applicationProtocols == null || applicationProtocols.isEmpty()) {
-      return false;
-    }
     for (io.vertx.core.http.HttpVersion applicationProtocol : applicationProtocols) {
       if (isHttp3(applicationProtocol)) {
         return true;
