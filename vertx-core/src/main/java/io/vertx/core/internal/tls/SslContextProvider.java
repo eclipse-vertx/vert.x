@@ -94,6 +94,10 @@ public class SslContextProvider {
     this.crls = crls;
   }
 
+  public boolean isQuicSupported() {
+    return HttpUtils.supportsQuic(applicationProtocols);
+  }
+
   public boolean useWorkerPool() {
     return useWorkerPool;
   }
@@ -248,7 +252,7 @@ public class SslContextProvider {
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
-          if (HttpUtils.supportsQuic(applicationProtocols)) {
+          if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
             return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -257,7 +261,7 @@ public class SslContextProvider {
 
         @Override
         protected SslHandler newHandler(ByteBufAllocator alloc, boolean startTls, Executor executor) {
-          if (HttpUtils.supportsQuic(applicationProtocols)) {
+          if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
             return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -266,7 +270,7 @@ public class SslContextProvider {
 
         @Override
         protected SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, boolean startTls, Executor executor) {
-          if (HttpUtils.supportsQuic(applicationProtocols)) {
+          if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc, peerHost, peerPort);
             return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -308,7 +312,7 @@ public class SslContextProvider {
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
-          if (HttpUtils.supportsQuic(applicationProtocols)) {
+          if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc);
             return QuicUtils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -317,7 +321,7 @@ public class SslContextProvider {
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, Executor executor) {
-          if (HttpUtils.supportsQuic(applicationProtocols)) {
+          if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc, peerHost, peerPort);
             return QuicUtils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
           }
@@ -423,7 +427,7 @@ public class SslContextProvider {
   public void configureEngine(SSLEngine engine, Set<String> enabledProtocols, String serverName, boolean client) {
     Set<String> protocols = new LinkedHashSet<>(enabledProtocols);
     protocols.retainAll(Arrays.asList(engine.getSupportedProtocols()));
-    if (HttpUtils.supportsQuic(applicationProtocols)) {
+    if (isQuicSupported()) {
       return;
     }
     engine.setEnabledProtocols(protocols.toArray(new String[protocols.size()]));

@@ -24,6 +24,7 @@ import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provider for Netty {@link SslHandler} and {@link SniHandler}.
@@ -48,8 +49,8 @@ public class SslChannelProvider {
     return sslContextProvider;
   }
 
-  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, SSLOptions sslOptions) {
-    SslContext sslContext = sslContextProvider.sslClientContext(serverName, sslOptions.isUseAlpn());
+  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+    SslContext sslContext = sslContextProvider.sslClientContext(serverName, useAlpn);
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (peerAddress != null && peerAddress.isInetSocket()) {
@@ -57,20 +58,20 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
+  public ChannelHandler createServerHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
     if (sni) {
-      return createSniHandler(sslOptions, remoteAddress);
+      return createSniHandler(useAlpn, sslHandshakeTimeout, sslHandshakeTimeoutUnit, remoteAddress);
     } else {
-      return createServerSslHandler(sslOptions, remoteAddress);
+      return createServerSslHandler(useAlpn, sslHandshakeTimeout, sslHandshakeTimeoutUnit, remoteAddress);
     }
   }
 
-  private SslHandler createServerSslHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
-    SslContext sslContext = sslContextProvider.sslServerContext(sslOptions.isUseAlpn());
+  private SslHandler createServerSslHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
+    SslContext sslContext = sslContextProvider.sslServerContext(useAlpn);
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     SslHandler sslHandler;
     if (remoteAddress != null) {
@@ -78,25 +79,25 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+    sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  private ChannelHandler createSniHandler(SSLOptions sslOptions, HostAndPort remoteAddress) {
+  private ChannelHandler createSniHandler(boolean useAlpn, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (HttpUtils.supportsQuic(sslOptions.getApplicationLayerProtocols())) {
-      SslContext sslContext = sslContextProvider.quicSniSslServerContext(sslOptions.isUseAlpn());
+  if (sslContextProvider.isQuicSupported()) {
+      SslContext sslContext = sslContextProvider.quicSniSslServerContext(useAlpn);
       SslHandler sslHandler;
       if (remoteAddress != null) {
         sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
       } else {
         sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
       }
-      sslHandler.setHandshakeTimeout(sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
+      sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
       return sslHandler;
     }
-    return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, sslOptions.isUseAlpn()),
-      sslOptions.getSslHandshakeTimeoutUnit().toMillis(sslOptions.getSslHandshakeTimeout()),
+    return new VertxSniHandler(sslContextProvider.serverNameMapping(delegatedTaskExec, useAlpn),
+      sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout),
       delegatedTaskExec, remoteAddress);
   }
 

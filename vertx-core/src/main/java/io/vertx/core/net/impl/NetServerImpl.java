@@ -633,7 +633,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
 
     SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, options.isSni());
-    channel.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.getSslOptions(),
+    channel.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
+      options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(),
       HttpUtils.socketAddressToHostAndPort(channel.remoteAddress())));
   }
 
