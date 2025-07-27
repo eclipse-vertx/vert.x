@@ -17,12 +17,11 @@ import io.netty.handler.codec.quic.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.core.net.impl.QuicUtils;
 import io.vertx.test.tls.Cert;
-
-import java.util.concurrent.TimeUnit;
 
 class H3ServerBuilder {
   private static final Logger log = LoggerFactory.getLogger(H3ServerBuilder.class);
@@ -62,7 +61,7 @@ class H3ServerBuilder {
       throw new RuntimeException(e);
     }
 
-    ChannelHandler codec = Http3Utils.configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder()
+    ChannelHandler codec = QuicUtils.configureQuicCodecBuilder(Http3.newQuicServerCodecBuilder()
       .sslContext(sslContext)
       .datagram(2000000, 2000000)
 

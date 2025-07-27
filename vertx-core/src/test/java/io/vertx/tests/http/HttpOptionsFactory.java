@@ -14,10 +14,10 @@ package io.vertx.tests.http;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.Http3Utils;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 

@@ -18,12 +18,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.impl.Http3Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;

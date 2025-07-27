@@ -1,4 +1,4 @@
-package io.vertx.core.http.impl.http2.quic;
+package io.vertx.core.http.impl.http2.h3;
 
 import io.netty.channel.Channel;
 import io.vertx.core.Promise;

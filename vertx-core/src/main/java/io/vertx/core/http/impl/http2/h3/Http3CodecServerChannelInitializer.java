@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.http2.quic;
+package io.vertx.core.http.impl.http2.h3;
 
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;

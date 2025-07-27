@@ -26,7 +26,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
-import io.vertx.core.http.impl.http2.quic.Http3CodecServerChannelInitializer;
+import io.vertx.core.http.impl.http2.h3.Http3CodecServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;

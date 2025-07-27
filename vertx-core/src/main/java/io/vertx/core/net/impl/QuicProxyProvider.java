@@ -35,6 +35,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.proxy.HttpProxyHandler;
@@ -48,8 +49,8 @@ import java.net.SocketAddress;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3ProxyProvider {
-  private static final Logger log = LoggerFactory.getLogger(Http3ProxyProvider.class);
+public class QuicProxyProvider {
+  private static final Logger log = LoggerFactory.getLogger(QuicProxyProvider.class);
   public static final String CHANNEL_HANDLER_CONNECT_REQUEST_HEADER_CLEANER = "vertxConnectRequestHeaderCleaner";
   public static final String CHANNEL_HANDLER_PROXY = "myProxyHandler";
   public static final String CHANNEL_HANDLER_PROXY_CONNECTED = "myProxyConnectedHandler";
@@ -63,7 +64,7 @@ public class Http3ProxyProvider {
 
   private final EventLoop eventLoop;
 
-  public Http3ProxyProvider(EventLoop eventLoop) {
+  public QuicProxyProvider(EventLoop eventLoop) {
     this.eventLoop = eventLoop;
   }
 
@@ -76,7 +77,7 @@ public class Http3ProxyProvider {
 
     ChannelHandler proxyHandler = new ProxyHandlerSelector(proxyOptions, proxyAddress, remoteAddress).select(true);
 
-    Http3Utils.newDatagramChannel(eventLoop, proxyAddress, Http3Utils.newClientSslContext(quicOptions))
+    QuicUtils.newDatagramChannel(eventLoop, proxyAddress, QuicUtils.newClientSslContext(quicOptions))
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel datagramChannel = (NioDatagramChannel) future.channel();
         if (IS_NETTY_BASED_PROXY) {
@@ -100,7 +101,7 @@ public class Http3ProxyProvider {
   private void createVertxBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                     Promise<Channel> channelPromise) {
     Promise<QuicStreamChannel> quicStreamChannelPromise = eventLoop.newPromise();
-    Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+    QuicUtils.newQuicChannel(datagramChannel, quicChannel -> {
         quicChannel.pipeline().addLast(CHANNEL_HANDLER_CLIENT_CONNECTION,
           Http3Utils.newClientConnectionHandlerBuilder()
             .http3SettingsFrameHandler(settingsFrame -> {
@@ -114,7 +115,7 @@ public class Http3ProxyProvider {
                 pipeline.addLast(CHANNEL_HANDLER_CONNECT_REQUEST_HEADER_CLEANER, new ConnectRequestHeaderCleaner());
                 pipeline.addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
                 pipeline.addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
-                  , Http3ProxyProvider.this::removeProxyChannelHandlers));
+                  , QuicProxyProvider.this::removeProxyChannelHandlers));
 
               });
             }).build());
@@ -130,10 +131,10 @@ public class Http3ProxyProvider {
 
   private void createVertxBasedSocksProxyQuicChannel(NioDatagramChannel channel, ChannelHandler proxyHandler,
                                                      Promise<Channel> channelPromise) {
-    Http3Utils.newQuicChannel(channel, ch -> {
+    QuicUtils.newQuicChannel(channel, ch -> {
         ch.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
         ch.pipeline().addLast(CHANNEL_HANDLER_PROXY_CONNECTED, new ProxyConnectedChannelHandler(channelPromise
-          , Http3ProxyProvider.this::removeProxyChannelHandlers));
+          , QuicProxyProvider.this::removeProxyChannelHandlers));
       })
       .addListener((GenericFutureListener<Future<QuicChannel>>) quicChannelFut -> {
         if (!quicChannelFut.isSuccess()) {
@@ -146,7 +147,7 @@ public class Http3ProxyProvider {
   private void createNettyBasedHttpProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                     Promise<Channel> channelPromise) {
     Promise<QuicStreamChannel> quicStreamChannelPromise = eventLoop.newPromise();
-    Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+    QuicUtils.newQuicChannel(datagramChannel, quicChannel -> {
 
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL,
         new SecondProxyQuicChannelHandler(datagramChannel));
@@ -184,7 +185,7 @@ public class Http3ProxyProvider {
 
   private void createNettyBasedSocksProxyQuicChannel(NioDatagramChannel datagramChannel, ChannelHandler proxyHandler,
                                                      Promise<Channel> channelPromise) {
-    Http3Utils.newQuicChannel(datagramChannel, quicChannel -> {
+    QuicUtils.newQuicChannel(datagramChannel, quicChannel -> {
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_SECONDARY_PROXY_CHANNEL,
         new SecondProxyQuicChannelHandler(datagramChannel));
       quicChannel.pipeline().addLast(CHANNEL_HANDLER_PROXY, proxyHandler);
@@ -303,7 +304,7 @@ public class Http3ProxyProvider {
     public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
                         ChannelPromise promise) {
       log.trace("Connect method called.");
-      Http3Utils.newQuicChannel(channel, new Http3Utils.MyChannelInitializer())
+      QuicUtils.newQuicChannel(channel, new QuicUtils.MyChannelInitializer())
         .addListener((GenericFutureListener<Future<QuicChannel>>) newQuicChannelFut -> {
           QuicConnectionAddress proxyAddress = newQuicChannelFut.get().remoteAddress();
           ctx.connect(proxyAddress, localAddress, promise);

@@ -47,7 +47,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.PortUnreachableException;
 
-import static io.vertx.core.net.impl.Http3ProxyProvider.*;
+import static io.vertx.core.net.impl.QuicProxyProvider.*;
 
 /**
  * The logic for connecting to an host, this implementations performs a connection
@@ -193,7 +193,7 @@ public final class ChannelProvider {
       }
       NioDatagramChannel nioDatagramChannel = (NioDatagramChannel) fut.channel();
 
-      Http3Utils.newQuicChannel(nioDatagramChannel, quicChannel -> {
+      QuicUtils.newQuicChannel(nioDatagramChannel, quicChannel -> {
         context.owner().transport().configure(clientOptions, connectTimeout, quicChannel);
         Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
         promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
@@ -253,7 +253,7 @@ public final class ChannelProvider {
       if (dnsRes.succeeded()) {
         InetAddress address = dnsRes.result();
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
-        Http3ProxyProvider proxyProvider = new Http3ProxyProvider(context.nettyEventLoop());
+        QuicProxyProvider proxyProvider = new QuicProxyProvider(context.nettyEventLoop());
 
         if (sslOptions != null && HttpUtils.isHttp3(clientOptions.getProtocolVersion())) {
           bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());

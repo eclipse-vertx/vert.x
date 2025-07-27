@@ -15,7 +15,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.impl.Http3ProxyProvider;
+import io.vertx.core.net.impl.QuicProxyProvider;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
@@ -30,7 +30,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static io.vertx.test.http.HttpTestBase.*;
 
-public class Http3ProxyProviderTest extends ProxyProviderTest {
+public class QuicProxyProviderTest extends ProxyProviderTest {
 
   protected NetServerOptions createNetServerOptions() {
     return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.host()).setPort(testAddress.port());
@@ -51,56 +51,56 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
   }
 
 
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testVertxBasedSocks5Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.SOCKS5);
   }
 
   // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testNettyBasedSocks5Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.SOCKS5);
   }
 
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testVertxBasedSocks4Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.SOCKS4);
   }
 
   // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testNettyBasedSocks4Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.SOCKS4);
   }
 
   @Ignore
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testVertxBasedHttpProxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.HTTP);
   }
 
   // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Ignore("It is not possible to use an HTTP proxy without modifying Netty.")
   @Test
   public void testNettyBasedHttpProxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.HTTP);
   }
 
@@ -156,7 +156,7 @@ public class Http3ProxyProviderTest extends ProxyProviderTest {
     awaitLatch(latch);
 
     // Start of client part
-    Http3ProxyProvider proxyProvider = new Http3ProxyProvider(((VertxInternal)vertx).getOrCreateContext().nettyEventLoop());
+    QuicProxyProvider proxyProvider = new QuicProxyProvider(((VertxInternal)vertx).getOrCreateContext().nettyEventLoop());
 
     InetSocketAddress proxyAddress = new InetSocketAddress("localhost", proxy.port());
     InetSocketAddress remoteAddress = new InetSocketAddress("localhost", server.actualPort());

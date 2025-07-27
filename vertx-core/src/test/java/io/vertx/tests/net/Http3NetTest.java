@@ -29,10 +29,11 @@ import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.Http3ProxyProvider;
-import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.core.net.impl.QuicProxyProvider;
+import io.vertx.core.net.impl.QuicUtils;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.proxy.HttpProxy;
@@ -170,7 +171,7 @@ public class Http3NetTest extends NetTest {
 
       Http3Utils.newRequestStream((QuicChannel) soInt.channelHandlerContext().channel(),
         ch -> {
-          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newClientFrameToHttpObjectCodec());
+          ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", QuicUtils.newClientFrameToHttpObjectCodec());
           ch.pipeline().addLast("myHttpHandler", new ChannelInboundHandlerAdapter() {
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object obj) {
@@ -216,7 +217,7 @@ public class Http3NetTest extends NetTest {
     waitFor(2);
 
     Handler<QuicStreamChannel> requestStreamHandler = ch -> {
-      ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", Http3Utils.newServerFrameToHttpObjectCodec());
+      ch.pipeline().addLast("myHttp3FrameToHttpObjectCodec", QuicUtils.newServerFrameToHttpObjectCodec());
       ch.pipeline().addLast(new ChannelDuplexHandler() {
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -268,58 +269,58 @@ public class Http3NetTest extends NetTest {
     await();
   }
 
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testVertxBasedSocks5Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.SOCKS5);
   }
 
   // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   @Ignore
   public void testNettyBasedSocks5Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.SOCKS5);
   }
 
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   @Ignore
   public void testVertxBasedSocks4Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.SOCKS4);
   }
 
   // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   public void testNettyBasedSocks4Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.SOCKS4);
   }
 
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Test
   @Ignore
   public void testVertxBasedHttpProxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     testProxy_(ProxyType.HTTP);
   }
 
   // TODO: Remove this method/class/field once Netty merges PR #14993, which adds destination support to ProxyHandler's.
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
-  @Category(Http3ProxyProvider.class)
+  @Category(QuicProxyProvider.class)
   @Ignore("It is not possible to use an HTTP proxy without modifying Netty.")
   @Test
   public void testNettyBasedHttpProxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     testProxy_(ProxyType.HTTP);
   }
 
@@ -397,13 +398,13 @@ public class Http3NetTest extends NetTest {
   @Override
   @Test
   public void testWithSocks5Proxy() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = false;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = false;
     super.testWithSocks5Proxy();
   }
 
   @Test
   public void testWithSocks5ProxyNettyBased() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     super.testWithSocks5Proxy();
   }
 
@@ -412,7 +413,7 @@ public class Http3NetTest extends NetTest {
   // See: https://github.com/netty/netty/pull/14993
   @Test
   public void testWithSocks4aProxyAuthNettyBased() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     super.testWithSocks4aProxyAuth();
   }
 
@@ -421,7 +422,7 @@ public class Http3NetTest extends NetTest {
   // See: https://github.com/netty/netty/pull/14993
   @Test
   public void testWithSocks4aProxyNettyBased() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     super.testWithSocks4aProxy();
   }
 
@@ -430,7 +431,7 @@ public class Http3NetTest extends NetTest {
   // See: https://github.com/netty/netty/pull/14993
   @Test
   public void testWithSocks5ProxyAuthNettyBased() throws Exception {
-    Http3ProxyProvider.IS_NETTY_BASED_PROXY = true;
+    QuicProxyProvider.IS_NETTY_BASED_PROXY = true;
     super.testWithSocks5ProxyAuth();
   }
 

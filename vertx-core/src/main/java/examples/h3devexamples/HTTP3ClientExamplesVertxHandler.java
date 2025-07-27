@@ -16,12 +16,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.Http3Utils;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>

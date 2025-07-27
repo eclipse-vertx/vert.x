@@ -19,7 +19,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.Http3Utils;
+import io.vertx.core.net.impl.QuicUtils;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
@@ -114,11 +114,11 @@ public class SslContextManager {
     this(sslEngineOptions, 256);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, Http3Utils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, ContextInternal ctx) {
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, ContextInternal ctx) {
     return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, applicationProtocols, quicCodecBuilderInitializer, false, ctx);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, Http3Utils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, boolean force, ContextInternal ctx) {
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, boolean force, ContextInternal ctx) {
     Promise<SslContextProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
@@ -148,14 +148,14 @@ public class SslContextManager {
                                                      String hostnameVerificationAlgorithm,
                                                      ClientAuth clientAuth,
                                                      List<String> applicationProtocols,
-                                                     Http3Utils.QuicCodecBuilderInitializer quicCodecBuilderInitializer,
+                                                     QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer,
                                                      boolean force,
                                                      ContextInternal ctx) {
     return buildConfig(sslOptions, force, ctx)
       .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, quicCodecBuilderInitializer, config));
   }
 
-  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Http3Utils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, Config config) {
+  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, Config config) {
     if (clientAuth == null && hostnameVerificationAlgorithm == null) {
       throw new VertxException("Missing hostname verification algorithm: you must set TCP client options host name" +
         " verification algorithm");

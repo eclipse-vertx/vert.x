@@ -84,8 +84,6 @@ import static io.vertx.tests.tls.HttpTLSTest.testPeerHostServerCert;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static io.vertx.test.core.TestUtils.*;
-import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 

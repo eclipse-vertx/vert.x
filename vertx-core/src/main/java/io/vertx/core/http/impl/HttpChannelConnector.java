@@ -27,7 +27,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
-import io.vertx.core.http.impl.http2.quic.Http3CodecClientChannelInitializer;
+import io.vertx.core.http.impl.http2.h3.Http3CodecClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;

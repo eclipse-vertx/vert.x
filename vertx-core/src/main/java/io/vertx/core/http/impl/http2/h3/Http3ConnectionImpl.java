@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http2.quic;
+package io.vertx.core.http.impl.http2.h3;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

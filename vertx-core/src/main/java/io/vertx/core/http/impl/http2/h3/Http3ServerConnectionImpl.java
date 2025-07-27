@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http2.quic;
+package io.vertx.core.http.impl.http2.h3;
 
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http3.Http3Headers;
