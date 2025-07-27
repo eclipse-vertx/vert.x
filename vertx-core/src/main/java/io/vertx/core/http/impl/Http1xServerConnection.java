@@ -284,10 +284,6 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     return serverOrigin;
   }
 
-  public VertxInternal vertx() {
-    return vertx;
-  }
-
   void createWebSocket(Http1xServerRequest request, PromiseInternal<ServerWebSocketHandshake> promise) {
     wantClose = false;
     context.execute(() -> {

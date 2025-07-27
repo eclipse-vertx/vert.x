@@ -535,8 +535,4 @@ public abstract class ConnectionBase {
       return localAddress();
     }
   }
-
-  public VertxInternal vertx() {
-    return vertx;
-  }
 }
