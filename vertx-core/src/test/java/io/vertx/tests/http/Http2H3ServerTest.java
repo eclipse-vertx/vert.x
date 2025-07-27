@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http2H3ServerTest extends HttpServerTest {
+public class Http2H3ServerTest extends Http2ServerTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {

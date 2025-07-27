@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http2H3ClientTest extends HttpClientTest {
+public class Http2H3ClientTest extends Http2ClientTest {
   @Override
   protected HttpServerOptions createBaseServerOptions() {
     return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);

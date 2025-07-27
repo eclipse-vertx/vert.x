@@ -16,11 +16,9 @@ import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.ImmediateExecutor;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.concurrent.Executor;
