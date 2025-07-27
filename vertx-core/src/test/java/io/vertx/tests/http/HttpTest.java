@@ -578,7 +578,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testSimpleRequest(String uri, HttpMethod method, boolean absolute, Handler<HttpClientResponse> handler) throws Exception {
-    boolean ssl = this instanceof Http2Test || this instanceof Http3Test;
+    boolean ssl = this instanceof Http2Test || this instanceof Http2H3Test;
     RequestOptions options;
     if (absolute) {
       options = new RequestOptions(requestOptions).setServer(testAddress).setMethod(method).setAbsoluteURI((ssl ? "https://" : "http://") + DEFAULT_HTTP_HOST_AND_PORT + uri);

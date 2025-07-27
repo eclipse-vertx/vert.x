@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3Test extends HttpCommonTest {
+public class Http2H3Test extends HttpCommonTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {

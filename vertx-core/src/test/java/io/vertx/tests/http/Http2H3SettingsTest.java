@@ -26,7 +26,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3SettingsTest {
+public class Http2H3SettingsTest {
 
   Long[] keys = new ArrayList<>(Http3Settings.SETTING_KEYS).toArray(new Long[0]);
   Map<Long, Long> min = Map.of(

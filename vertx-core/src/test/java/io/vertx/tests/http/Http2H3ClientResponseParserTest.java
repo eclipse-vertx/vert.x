@@ -8,22 +8,25 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+
 package io.vertx.tests.http;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.test.http.HttpTestBase;
 
-public class Http3ClientTimeoutTest extends HttpClientTimeoutTest {
+/**
+ * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
+ */
+public class Http2H3ClientResponseParserTest extends HttpClientResponseParserTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory
-      .createH3HttpServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST);
+    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions().setHttp2MultiplexingLimit(5);
+    return HttpOptionsFactory.createH3HttpClientOptions();
   }
+
 }

@@ -23,11 +23,11 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.impl.QuicUtils;
 import io.vertx.test.tls.Cert;
 
-class H3ServerBuilder {
-  private static final Logger log = LoggerFactory.getLogger(H3ServerBuilder.class);
+class Http2H3ServerBuilder {
+  private static final Logger log = LoggerFactory.getLogger(Http2H3ServerBuilder.class);
   private static final String AGENT_SERVER = "SERVER-TEST_MODE";
 
-  private final Http3ClientTest http3ClientTest;
+  private final Http2H3ClientTest http2H3ClientTest;
   private final HttpServerOptions serverOptions;
 
   private Handler<FrameHolder<Http3HeadersFrame>> headerHandler;
@@ -35,8 +35,8 @@ class H3ServerBuilder {
   private Handler<Http3GoAwayFrame> goAwayHandler;
   private Handler<ChannelHandlerContext> streamResetHandler;
 
-  public H3ServerBuilder(Http3ClientTest http3ClientTest, HttpServerOptions httpServerOptions) {
-    this.http3ClientTest = http3ClientTest;
+  public Http2H3ServerBuilder(Http2H3ClientTest http2H3ClientTest, HttpServerOptions httpServerOptions) {
+    this.http2H3ClientTest = http2H3ClientTest;
     this.serverOptions = httpServerOptions;
     this.headerHandler = frameHolder -> ReferenceCountUtil.release(frameHolder.frame());
     this.dataHandler = frameHolder -> ReferenceCountUtil.release(frameHolder.frame());
@@ -49,13 +49,13 @@ class H3ServerBuilder {
     AbstractBootstrap bootstrap = new Bootstrap();
 
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-    http3ClientTest.addEventLoop(eventLoopGroup);
+    http2H3ClientTest.addEventLoop(eventLoopGroup);
     bootstrap.group(eventLoopGroup);
     bootstrap.channel(NioDatagramChannel.class);
 
     QuicSslContext sslContext = null;
     try {
-      sslContext = QuicSslContextBuilder.forServer(Cert.SERVER_JKS.get().getKeyManagerFactory(http3ClientTest.getVertx()), null)
+      sslContext = QuicSslContextBuilder.forServer(Cert.SERVER_JKS.get().getKeyManagerFactory(http2H3ClientTest.getVertx()), null)
         .applicationProtocols(Http3.supportedApplicationProtocols()).build();
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -182,22 +182,22 @@ class H3ServerBuilder {
 
   }
 
-  public H3ServerBuilder headerHandler(Handler<FrameHolder<Http3HeadersFrame>> headerHandler) {
+  public Http2H3ServerBuilder headerHandler(Handler<FrameHolder<Http3HeadersFrame>> headerHandler) {
     this.headerHandler = headerHandler;
     return this;
   }
 
-  public H3ServerBuilder dataHandler(Handler<FrameHolder<Http3DataFrame>> dataHandler) {
+  public Http2H3ServerBuilder dataHandler(Handler<FrameHolder<Http3DataFrame>> dataHandler) {
     this.dataHandler = dataHandler;
     return this;
   }
 
-  public H3ServerBuilder goAwayHandler(Handler<Http3GoAwayFrame> goAwayHandler) {
+  public Http2H3ServerBuilder goAwayHandler(Handler<Http3GoAwayFrame> goAwayHandler) {
     this.goAwayHandler = goAwayHandler;
     return this;
   }
 
-  public H3ServerBuilder streamResetHandler(Handler<ChannelHandlerContext> streamResetHandler) {
+  public Http2H3ServerBuilder streamResetHandler(Handler<ChannelHandlerContext> streamResetHandler) {
     this.streamResetHandler = streamResetHandler;
     return this;
   }

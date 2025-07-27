@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3ClientTest extends HttpClientTest {
+public class Http2H3ClientTest extends HttpClientTest {
   @Override
   protected HttpServerOptions createBaseServerOptions() {
     return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
@@ -108,7 +108,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForGet() {
-    return new H3ServerBuilder(this, createBaseServerOptions())
+    return new Http2H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         vertx.runOnContext(v -> {
           ChannelPromise promise = headersHolder.streamChannel().newPromise();
@@ -128,7 +128,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForInvalidServerResponse() {
-    return new H3ServerBuilder(this, createBaseServerOptions())
+    return new Http2H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         ChannelPromise promise = headersHolder.streamChannel().newPromise();
         promise.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
@@ -141,7 +141,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForClientResetServerStream(boolean endServer) {
-    return new H3ServerBuilder(this, createBaseServerOptions())
+    return new Http2H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         ChannelPromise promise = headersHolder.streamChannel().newPromise();
         headersHolder.streamChannel().write(new DefaultHttp3HeadersFrame(new DefaultHttp3Headers().status("200")), promise);
@@ -167,7 +167,7 @@ public class Http3ClientTest extends HttpClientTest {
 
   @Override
   protected AbstractBootstrap createServerForConnectionDecodeError() {
-    return new H3ServerBuilder(this, createBaseServerOptions())
+    return new Http2H3ServerBuilder(this, createBaseServerOptions())
       .headerHandler(headersHolder -> {
         vertx.runOnContext(v -> {
           ChannelPromise promise1 = headersHolder.streamChannel().newPromise();
