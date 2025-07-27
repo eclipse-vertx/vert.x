@@ -54,7 +54,7 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3NetTest extends NetTest {
+public class QuicNetTest extends NetTest {
 
   protected NetServerOptions createNetServerOptions() {
     return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.host()).setPort(testAddress.port());

@@ -17,6 +17,9 @@ import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
+import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
@@ -48,18 +51,18 @@ import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.*;
@@ -80,6 +83,8 @@ import static io.vertx.test.core.TestUtils.cnOf;
 import static io.vertx.test.core.TestUtils.randomBuffer;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 import static io.vertx.tests.tls.HttpTLSTest.testPeerHostServerCert;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -90,7 +95,7 @@ import static org.junit.Assume.assumeTrue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class NetTest extends VertxTestBase {
+public class NetTest extends VertxTestBase {
 
   protected SocketAddress testAddress;
   protected NetServer server;
@@ -101,27 +106,77 @@ public abstract class NetTest extends VertxTestBase {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
-  protected abstract NetServerOptions createNetServerOptions();
+  protected NetServerOptions createNetServerOptions() {
+    return new NetServerOptions();
+  }
 
-  protected abstract NetClientOptions createNetClientOptions();
+  protected NetClientOptions createNetClientOptions() {
+    return new NetClientOptions();
+  }
 
-  protected abstract HttpServerOptions createBaseServerOptions();
+  protected HttpClientOptions createBaseClientOptions() {
+    return HttpOptionsFactory.createHttp2ClientOptions();
+  }
 
-  protected abstract HttpClientOptions createBaseClientOptions();
+  protected HttpServerOptions createBaseServerOptions() {
+    return HttpOptionsFactory.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+  }
 
-  protected abstract HttpServerOptions createHttpServerOptionsForNetTest();
+  protected HttpServerOptions createHttpServerOptionsForNetTest() {
+    return new HttpServerOptions();
+  }
 
-  protected abstract HttpClientOptions createHttpClientOptionsForNetTest();
+  protected HttpClientOptions createHttpClientOptionsForNetTest() {
+    return new HttpClientOptions();
+  }
 
-  protected abstract Socks4Proxy createSocks4Proxy();
+  protected Socks4Proxy createSocks4Proxy() {
+    return new Socks4Proxy();
+  }
 
-  protected abstract SocksProxy createSocksProxy();
+  protected SocksProxy createSocksProxy() {
+    return new SocksProxy();
+  }
 
-  protected abstract HttpProxy createHttpProxy();
+  protected HttpProxy createHttpProxy() {
+    return new HttpProxy();
+  }
 
-  protected abstract HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header);
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    return new HAProxy(remoteAddress, header);
+  }
 
-  protected abstract SslContext createSSLContext();
+  protected SslContext createSSLContext() {
+    Buffer trust = vertx.fileSystem().readFileBlocking(Trust.SERVER_JKS.get().getPath());
+
+    try {
+      TrustManagerFactory tmFactory;
+      try (InputStream trustStoreStream = new ByteArrayInputStream(trust.getBytes())) {
+        KeyStore trustStore = KeyStore.getInstance("jks");
+        trustStore.load(trustStoreStream, Trust.SERVER_JKS.get().getPassword().toCharArray());
+        tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmFactory.init(trustStore);
+      }
+
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(
+        null,
+        tmFactory.getTrustManagers(),
+        null
+      );
+      return new JdkSslContext(
+        sslContext,
+        true,
+        null,
+        IdentityCipherSuiteFilter.INSTANCE,
+        ApplicationProtocolConfig.DISABLED,
+        io.netty.handler.ssl.ClientAuth.NONE,
+        null,
+        false);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   protected ProxyOptions createProxyOptions() {
     return new ProxyOptions().setConnectTimeout(isDebug() ? Duration.ofMinutes(30) : Duration.ofSeconds(10));
