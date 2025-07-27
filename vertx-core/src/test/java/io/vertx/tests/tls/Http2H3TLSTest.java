@@ -25,7 +25,7 @@ import java.util.Arrays;
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3TLSTest extends HttpTLSTest {
+public class Http2H3TLSTest extends Http2TLSTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
