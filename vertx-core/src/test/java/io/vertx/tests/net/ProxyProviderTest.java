@@ -11,6 +11,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.TestProxyBase;
 
 import java.io.File;
@@ -23,13 +24,21 @@ public abstract class ProxyProviderTest extends VertxTestBase {
   protected TestProxyBase proxy;
   private File tmp;
 
-  protected abstract NetServerOptions createNetServerOptions();
+  protected NetServerOptions createNetServerOptions() {
+    return NetTest.createH3NetServerOptions();
+  }
 
-  protected abstract NetClientOptions createNetClientOptions();
+  protected NetClientOptions createNetClientOptions() {
+    return NetTest.createH3NetClientOptions();
+  }
 
-  protected abstract HttpServerOptions createBaseServerOptions();
+  protected HttpServerOptions createBaseServerOptions() {
+    return HttpTestBase.createH3HttpServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST);
+  }
 
-  protected abstract HttpClientOptions createBaseClientOptions();
+  protected HttpClientOptions createBaseClientOptions() {
+    return HttpTestBase.createH3HttpClientOptions();
+  }
 
   @Override
   public void setUp() throws Exception {

@@ -12,7 +12,6 @@ package io.vertx.tests.http.fileupload;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.tests.http.HttpOptionsFactory;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -21,12 +20,12 @@ public class Http3ServerFileUploadTest extends HttpServerFileUploadTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions();
+    return createH3HttpClientOptions();
   }
 
 }

@@ -19,6 +19,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.proxy.HAProxy;
+import io.vertx.tests.net.NetTest;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -31,17 +32,17 @@ public class Http2H3Test extends Http2Test {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected NetClientOptions createNetClientOptions() {
-    return HttpOptionsFactory.createH3NetClientOptions();
+    return NetTest.createH3NetClientOptions();
   }
 
   @Override
   protected NetServerOptions createNetServerOptions() {
-    return HttpOptionsFactory.createH3NetServerOptions();
+    return NetTest.createH3NetServerOptions();
   }
 
   @Override
@@ -53,7 +54,7 @@ public class Http2H3Test extends Http2Test {
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions();
+    return createH3HttpClientOptions();
   }
 
   @Override

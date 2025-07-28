@@ -35,11 +35,11 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.QuicProxyProvider;
 import io.vertx.core.net.impl.QuicUtils;
 import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
-import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,40 +49,37 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
-import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
-
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class QuicNetTest extends NetTest {
 
   protected NetServerOptions createNetServerOptions() {
-    return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.host()).setPort(testAddress.port());
+    return createH3NetServerOptions();
   }
 
   protected NetClientOptions createNetClientOptions() {
-    return HttpOptionsFactory.createH3NetClientOptions();
+    return createH3NetClientOptions();
   }
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return HttpTestBase.createH3HttpServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions();
+    return HttpTestBase.createH3HttpClientOptions();
   }
 
   @Override
   protected HttpServerOptions createHttpServerOptionsForNetTest() {
-    return HttpOptionsFactory.createH3HttpServerOptions();
+    return HttpTestBase.createH3HttpServerOptions();
   }
 
   @Override
   protected HttpClientOptions createHttpClientOptionsForNetTest() {
-    return HttpOptionsFactory.createH3HttpClientOptions();
+    return HttpTestBase.createH3HttpClientOptions();
   }
 
   @Override

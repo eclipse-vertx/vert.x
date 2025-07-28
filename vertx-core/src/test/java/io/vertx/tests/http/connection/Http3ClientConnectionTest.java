@@ -12,7 +12,6 @@ package io.vertx.tests.http.connection;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.tests.http.HttpOptionsFactory;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -21,11 +20,11 @@ public class Http3ClientConnectionTest extends HttpClientConnectionTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    return createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions().setHttp2MultiplexingLimit(10);
+    return createH3HttpClientOptions().setHttp2MultiplexingLimit(10);
   }
 }

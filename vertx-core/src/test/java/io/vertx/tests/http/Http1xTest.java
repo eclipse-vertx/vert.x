@@ -74,11 +74,11 @@ public class Http1xTest extends HttpTest {
   }
 
   protected NetClientOptions createNetClientOptions() {
-    return HttpOptionsFactory.createH2NetClientOptions();
+    return new NetClientOptions();
   }
 
   protected NetServerOptions createNetServerOptions() {
-    return HttpOptionsFactory.createH2NetServerOptions();
+    return new NetServerOptions();
   }
 
   @Override

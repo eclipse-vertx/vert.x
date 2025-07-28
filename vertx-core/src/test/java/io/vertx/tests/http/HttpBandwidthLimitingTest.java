@@ -29,6 +29,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.net.TrafficShapingOptions;
+import io.vertx.test.http.HttpTestBase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     Function<Vertx, HttpServer> http3NonTrafficShapedServerFactory = (v) -> Providers.http1Server(v, 0, 0);
     Function<Vertx, HttpClient> http1ClientFactory = (v) -> v.createHttpClient();
     Function<Vertx, HttpClient> http2ClientFactory = (v) -> v.createHttpClient(Http2TestBase.createHttp2ClientOptions());
-    Function<Vertx, HttpClient> http3ClientFactory = (v) -> v.createHttpClient(HttpOptionsFactory.createH3HttpClientOptions());
+    Function<Vertx, HttpClient> http3ClientFactory = (v) -> v.createHttpClient(Http2TestBase.createH3HttpClientOptions());
 
     return Arrays.asList(new Object[][] {
       { 1.1, http1ServerFactory, http1ClientFactory, http1NonTrafficShapedServerFactory },
@@ -446,7 +447,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     }
 
     private static HttpServer http3Server(Vertx vertx, int inboundLimit, int outboundLimit) {
-      HttpServerOptions options = HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+      HttpServerOptions options = HttpTestBase.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
 
       if (inboundLimit != 0 || outboundLimit != 0) {
         options.setTrafficShapingOptions(new TrafficShapingOptions()

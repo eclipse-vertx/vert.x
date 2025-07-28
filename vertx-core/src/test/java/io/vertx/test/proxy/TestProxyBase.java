@@ -14,14 +14,14 @@ package io.vertx.test.proxy;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.tests.http.HttpOptionsFactory;
+import io.vertx.test.http.HttpTestBase;
+import io.vertx.tests.net.NetTest;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -127,19 +127,15 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
   }
 
   protected NetClientOptions createNetClientOptions() {
-    return http3 ? HttpOptionsFactory.createH3NetClientOptions() : new NetClientOptions();
+    return http3 ? NetTest.createH3NetClientOptions() : new NetClientOptions();
   }
 
   protected NetServerOptions createNetServerOptions() {
-    return http3 ? HttpOptionsFactory.createH3NetServerOptions() : new NetServerOptions();
-  }
-
-  protected HttpClientOptions createHttpClientOptions() {
-    return http3 ? HttpOptionsFactory.createH3HttpClientOptions() : new HttpClientOptions();
+    return http3 ? NetTest.createH3NetServerOptions() : new NetServerOptions();
   }
 
   protected HttpServerOptions createHttpServerOptions() {
-    return http3 ? HttpOptionsFactory.createH3HttpServerOptions() : new HttpServerOptions();
+    return http3 ? HttpTestBase.createH3HttpServerOptions() : new HttpServerOptions();
   }
 
   protected abstract<T> Future<T> start0(Vertx vertx);

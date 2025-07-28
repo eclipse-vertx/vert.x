@@ -55,12 +55,12 @@ public class Http2Test extends HttpTest {
 
   @Override
   protected NetClientOptions createNetClientOptions() {
-    return HttpOptionsFactory.createH2NetClientOptions();
+    return new NetClientOptions();
   }
 
   @Override
   protected NetServerOptions createNetServerOptions() {
-    return HttpOptionsFactory.createH2NetServerOptions();
+    return new NetServerOptions();
   }
 
   @Override

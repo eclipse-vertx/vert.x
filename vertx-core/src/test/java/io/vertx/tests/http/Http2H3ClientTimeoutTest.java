@@ -18,12 +18,11 @@ public class Http2H3ClientTimeoutTest extends HttpClientTimeoutTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory
-      .createH3HttpServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST);
+    return createH3HttpServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions().setHttp2MultiplexingLimit(5);
+    return createH3HttpClientOptions().setHttp2MultiplexingLimit(5);
   }
 }

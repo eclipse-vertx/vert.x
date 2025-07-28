@@ -16,6 +16,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
@@ -23,6 +24,8 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -67,6 +70,56 @@ public class HttpTestBase extends VertxTestBase {
 
   protected HttpClientOptions createBaseClientOptions() {
     return new HttpClientOptions().setDefaultPort(DEFAULT_HTTP_PORT).setDefaultHost(DEFAULT_HTTP_HOST);
+  }
+
+  public static HttpServerOptions createH3HttpServerOptions(int port, String host) {
+    return createH3HttpServerOptions().setPort(port).setHost(host);
+  }
+
+  public static HttpServerOptions createH3HttpServerOptions() {
+    HttpServerOptions options = new HttpServerOptions();
+
+    options.setAlpnVersions(List.of(
+      HttpVersion.HTTP_3,
+      HttpVersion.HTTP_3_27,
+      HttpVersion.HTTP_3_29,
+      HttpVersion.HTTP_3_30,
+      HttpVersion.HTTP_3_31,
+      HttpVersion.HTTP_3_32,
+      HttpVersion.HTTP_2,
+      HttpVersion.HTTP_1_1,
+      HttpVersion.HTTP_1_0
+    ));
+
+    return options
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA")
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+      ;
+  }
+
+  public static HttpClientOptions createH3HttpClientOptions() {
+    HttpClientOptions httpClientOptions = new HttpClientOptions();
+
+    httpClientOptions.setAlpnVersions(List.of(
+      HttpVersion.HTTP_3,
+      HttpVersion.HTTP_3_27,
+      HttpVersion.HTTP_3_29,
+      HttpVersion.HTTP_3_30,
+      HttpVersion.HTTP_3_31,
+      HttpVersion.HTTP_3_32,
+      HttpVersion.HTTP_2,
+      HttpVersion.HTTP_1_1,
+      HttpVersion.HTTP_1_0
+    ));
+    return httpClientOptions
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setProtocolVersion(HttpVersion.HTTP_3);
   }
 
   public void setUp() throws Exception {

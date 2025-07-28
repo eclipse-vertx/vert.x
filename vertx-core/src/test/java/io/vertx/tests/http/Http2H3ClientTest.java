@@ -37,12 +37,12 @@ import java.util.concurrent.TimeUnit;
 public class Http2H3ClientTest extends Http2ClientTest {
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+    return createH3HttpServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions();
+    return createH3HttpClientOptions();
   }
 
   public void addEventLoop(NioEventLoopGroup eventLoopGroup) {

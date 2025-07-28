@@ -7,11 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -19,7 +15,6 @@ import io.vertx.core.net.impl.QuicProxyProvider;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
-import io.vertx.tests.http.HttpOptionsFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,28 +23,8 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 
-import static io.vertx.test.http.HttpTestBase.*;
 
 public class QuicProxyProviderTest extends ProxyProviderTest {
-
-  protected NetServerOptions createNetServerOptions() {
-    return HttpOptionsFactory.createH3NetServerOptions().setHost(testAddress.host()).setPort(testAddress.port());
-  }
-
-  protected NetClientOptions createNetClientOptions() {
-    return HttpOptionsFactory.createH3NetClientOptions();
-  }
-
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return HttpOptionsFactory.createH3HttpServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return HttpOptionsFactory.createH3HttpClientOptions();
-  }
-
 
   @Category(QuicProxyProvider.class)
   @Test

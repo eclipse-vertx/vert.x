@@ -30,6 +30,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -121,6 +122,32 @@ public class NetTest extends VertxTestBase {
   protected HttpServerOptions createBaseServerOptions() {
     return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
+
+  public static NetServerOptions createH3NetServerOptions() {
+    NetServerOptions options = new NetServerOptions();
+      options
+        .setUseAlpn(true)
+        .setSsl(true)
+        .setKeyCertOptions(Cert.SERVER_JKS.get())
+        .getSslOptions()
+        .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
+      return options;
+  }
+
+  public static NetClientOptions createH3NetClientOptions() {
+    NetClientOptions options = new NetClientOptions();
+    options
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setHostnameVerificationAlgorithm("")
+      .setProtocolVersion(io.vertx.core.http.HttpVersion.HTTP_3)
+      .setTrustOptions(Trust.SERVER_JKS.get())
+      .getSslOptions()
+      .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());
+
+    return options;
+  }
+
 
   protected HttpServerOptions createHttpServerOptionsForNetTest() {
     return new HttpServerOptions();
