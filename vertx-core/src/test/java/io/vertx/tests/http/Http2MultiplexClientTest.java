@@ -28,16 +28,6 @@ public class Http2MultiplexClientTest extends Http2ClientTest {
   }
 
   @Override
-  protected HttpServerOptions createBaseServerOptionsWithoutSSL() {
-    return super.createBaseServerOptionsWithoutSSL().setHttp2MultiplexImplementation(true);
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptionsWithoutSSL() {
-    return super.createBaseClientOptionsWithoutSSL().setHttp2MultiplexImplementation(true);
-  }
-
-  @Override
   protected void manageMaxQueueRequestsCount(Long max) {
     io.vertx.core.http.Http2Settings serverSettings = new io.vertx.core.http.Http2Settings();
     if (max != null) {

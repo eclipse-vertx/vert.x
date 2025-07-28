@@ -66,14 +66,6 @@ import static io.vertx.test.core.AssertExpectations.that;
  */
 public class Http2ClientTest extends Http2TestBase {
 
-  protected HttpServerOptions createBaseServerOptionsWithoutSSL() {
-    return HttpOptionsFactory.createHttp2ServerOptionsWithoutSSL(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
-  }
-
-  protected HttpClientOptions createBaseClientOptionsWithoutSSL() {
-    return HttpOptionsFactory.createHttp2ClientOptionsWithoutSSL();
-  }
-
   protected HttpVersion httpVersion() {
     return HttpVersion.HTTP_2;
   }
@@ -87,19 +79,6 @@ public class Http2ClientTest extends Http2TestBase {
 
   protected HttpFrame generateCustomFrame() {
     return new HttpFrameImpl(TestUtils.randomPositiveInt(50), new Http2Flags().ack(true).endOfStream(true).value(), TestUtils.randomBuffer(500));
-  }
-
-  @Override
-  protected void configureDomainSockets() throws Exception {
-    // Nope
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
-      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-    }
   }
 
   protected void resetResponse(HttpServerResponse response, int code) {
@@ -1906,14 +1885,14 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testIdleTimeoutClearTextUpgrade() throws Exception {
-    testIdleTimeout(createBaseServerOptionsWithoutSSL(),
-        createBaseClientOptionsWithoutSSL().setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(true));
+    testIdleTimeout(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST),
+        clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(true));
   }
 
   @Test
   public void testIdleTimeoutClearTextDirect() throws Exception {
-    testIdleTimeout(createBaseServerOptionsWithoutSSL(),
-        createBaseClientOptionsWithoutSSL().setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
+    testIdleTimeout(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTPS_HOST),
+        clientOptions.setDefaultPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
   }
 
   private void testIdleTimeout(HttpServerOptions serverOptions, HttpClientOptions clientOptions) throws Exception {
@@ -1984,14 +1963,19 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testDisableIdleTimeoutClearTextUpgrade() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptionsWithoutSSL());
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost("localhost"));
     server.requestHandler(req -> {
       req.response().end();
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptionsWithoutSSL()
-      .setIdleTimeout(2));
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setIdleTimeout(2)
+      .setProtocolVersion(HttpVersion.HTTP_2)
+      .setDefaultPort(DEFAULT_HTTP_PORT)
+      .setDefaultHost("localhost"));
     client.request(HttpMethod.GET, "/somepath")
       .compose(req -> req.send().compose(HttpClientResponse::body))
       .onComplete(onSuccess(body1 -> {

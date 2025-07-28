@@ -31,17 +31,6 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
  */
 public class HttpOptionsFactory {
 
-  public static HttpServerOptions createHttp2ServerOptionsWithoutSSL(int port, String host) {
-    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
-  }
-
-  public static HttpClientOptions createHttp2ClientOptionsWithoutSSL() {
-    return new HttpClientOptions()
-      .setProtocolVersion(HttpVersion.HTTP_2)
-      .setDefaultPort(DEFAULT_HTTP_PORT)
-      .setDefaultHost(DEFAULT_HTTP_HOST);
-  }
-
   public static NetServerOptions createH3NetServerOptions() {
     NetServerOptions options = new NetServerOptions();
     options
