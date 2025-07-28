@@ -74,11 +74,6 @@ public class Http2H3ClientTest extends Http2ClientTest {
   }
 
   @Override
-  protected StreamPriority defaultStreamPriority() {
-    return new StreamPriority();
-  }
-
-  @Override
   protected HttpFrame generateCustomFrame() {
     return new HttpFrameImpl(TestUtils.randomPositiveInt(50) + 64, 0, TestUtils.randomBuffer(500));
   }
