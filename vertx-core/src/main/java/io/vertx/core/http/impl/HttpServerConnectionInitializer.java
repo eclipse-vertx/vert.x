@@ -194,6 +194,7 @@ class HttpServerConnectionInitializer {
       .server(true)
       .useCompression(compressionOptions)
       .gracefulShutdownTimeoutMillis(0)
+      .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
