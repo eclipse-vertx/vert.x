@@ -158,18 +158,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenSocketAddress() throws Exception {
-//    NetClient netClient = vertx.createNetClient(createNetClientOptions());
-//    server.close();
-//    HttpServerOptions serverOptions = createBaseServerOptions();
-//    if (!serverOptions.isHttp3()) {
-//      serverOptions.setSsl(false);
-//    }
-//    server = vertx.createHttpServer(serverOptions).requestHandler(req -> req.response().end());
-  NetClient netClient = vertx.createNetClient();
-  server.close();
-  server = vertx.createHttpServer().requestHandler(req -> req.response().end());
-
-  SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    NetClient netClient = vertx.createNetClient();
+    server.close();
+    server = vertx.createHttpServer().requestHandler(req -> req.response().end());
+    SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
     startServer(sockAddress);
     netClient
       .connect(sockAddress)
@@ -601,10 +593,8 @@ public abstract class HttpTest extends HttpTestBase {
     }
     String resource = absolute && path.isEmpty() ? "/" + path : path;
     server.requestHandler(req -> {
-      String expectedPath = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null :
-        resource;
-      String expectedQuery = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null :
-        query;
+      String expectedPath = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null : resource;
+      String expectedQuery = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null : query;
       assertEquals(expectedPath, req.path());
       assertEquals(method, req.method());
       assertEquals(expectedQuery, req.query());
