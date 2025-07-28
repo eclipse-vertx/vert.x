@@ -32,7 +32,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.GoAway;
+import io.vertx.core.http.Http3Settings;
+import io.vertx.core.http.HttpClosedException;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2StreamBase;
@@ -408,24 +412,24 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
+  public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
     this.remoteSettingsHandler = http2Settings -> handler.handle(HttpUtils.toVertxSettings(http2Settings));
     return this;
   }
 
   @Override
-  public io.vertx.core.http.Http2Settings remoteSettings() {
+  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
     return HttpUtils.toVertxSettings(remoteSettings);
+  }
+
+  @Override
+  public synchronized io.vertx.core.http.Http2Settings settings() {
+    return HttpUtils.toVertxSettings(localSettings);
   }
 
   @Override
   public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
     return updateSettings(HttpUtils.fromVertxSettings(settings));
-  }
-
-  @Override
-  public io.vertx.core.http.Http2Settings settings() {
-    return HttpUtils.toVertxSettings(localSettings);
   }
 
   protected Future<Void> updateSettings(Http2Settings settingsUpdate) {

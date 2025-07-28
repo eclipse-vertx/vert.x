@@ -569,7 +569,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         }
         // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
         if (bindAddress.isInetSocket()) {
-          actualPort = ((InetSocketAddress) ch.localAddress()).getPort();
+          actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
         }
         metrics = createMetrics(localAddress);
         promise.complete(ch);
@@ -812,8 +812,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
   }
 
-  private static void bind(AbstractBootstrap bootstrap, InetAddress address, int port,
-                           io.netty.util.concurrent.Promise<Channel> promise) {
+  private static void bind(AbstractBootstrap bootstrap, InetAddress address, int port, io.netty.util.concurrent.Promise<Channel> promise) {
     InetSocketAddress t = new InetSocketAddress(address, port);
     ChannelFuture future = bootstrap.bind(t);
     future.addListener(f -> {

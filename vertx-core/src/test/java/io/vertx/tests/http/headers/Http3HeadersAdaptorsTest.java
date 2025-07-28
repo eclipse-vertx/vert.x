@@ -11,16 +11,16 @@
 
 package io.vertx.tests.http.headers;
 
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http3.DefaultHttp3Headers;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
-public class Http3HeadersAdaptorsTest extends HttpHeadersAdaptorsTestBase {
+public class Http3HeadersAdaptorsTest extends Http2HeadersAdaptorsTest {
 
   @Override
-  protected Http2HeadersMultiMap newMultiMap() {
-    return new Http2HeadersMultiMap(new DefaultHttp3Headers());
+  protected Headers<CharSequence, CharSequence, ?> createHeaders() {
+    return new DefaultHttp3Headers();
   }
 }

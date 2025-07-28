@@ -33,7 +33,6 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocketHandshake;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;

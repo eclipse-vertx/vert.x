@@ -29,8 +29,6 @@ import io.netty.handler.codec.quic.QuicSslEngine;
 import io.netty.resolver.DefaultAddressResolverGroup;
 import io.netty.util.concurrent.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.QuicOptions;
 
 import java.net.InetSocketAddress;
@@ -45,8 +43,6 @@ import static io.vertx.core.net.QuicOptions.MAX_SSL_HANDSHAKE_TIMEOUT;
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
  */
 public class QuicUtils {
-
-  private static final Logger log = LoggerFactory.getLogger(QuicUtils.class);
 
   public static Http3FrameToHttpObjectCodec newClientFrameToHttpObjectCodec() {
     return new Http3FrameToHttpObjectCodec(false);

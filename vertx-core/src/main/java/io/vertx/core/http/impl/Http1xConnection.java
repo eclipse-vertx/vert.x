@@ -117,7 +117,6 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
 
-
   @Override
   public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
