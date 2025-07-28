@@ -54,6 +54,11 @@ public class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionImpl> e
   }
 
   @Override
+  public VertxHttp2ConnectionHandlerBuilder<C> encoderEnforceMaxRstFramesPerWindow(int maxRstFramesPerWindow, int secondsPerWindow) {
+    return super.encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow);
+  }
+
+  @Override
   public VertxHttp2ConnectionHandlerBuilder<C> gracefulShutdownTimeoutMillis(long gracefulShutdownTimeoutMillis) {
     return super.gracefulShutdownTimeoutMillis(gracefulShutdownTimeoutMillis);
   }
