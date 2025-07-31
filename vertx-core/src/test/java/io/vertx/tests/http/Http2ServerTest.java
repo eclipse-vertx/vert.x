@@ -3047,14 +3047,15 @@ public class Http2ServerTest extends Http2TestBase {
         super.accept(request);
         requestHandler.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
         requestHandler.flush();
+
+        request.channel.closeFuture().addListener(v1 -> {
+          vertx.runOnContext(v2 -> {
+            complete();
+          });
+        });
       }
     });
     fut.sync();
-    ((Channel)(fut.get())).closeFuture().addListener(v1 -> {
-      vertx.runOnContext(v2 -> {
-        complete();
-      });
-    });
     await();
   }
 
