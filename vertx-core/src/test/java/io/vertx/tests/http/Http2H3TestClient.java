@@ -96,6 +96,7 @@ class Http2H3TestClient extends Http2TestClient {
   private class StreamChannelHandler extends Http3RequestStreamInboundHandler {
     private final GeneralConnectionHandler handler;
     private boolean headerReceived = false;
+    private Http3DataFrame lastDataFrame;
 
     public StreamChannelHandler(GeneralConnectionHandler handler) {
       this.handler = handler;
@@ -120,12 +121,19 @@ class Http2H3TestClient extends Http2TestClient {
     protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
       headerReceived = false;
       QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
-      handler.onDataRead(ctx, (int) streamChannel.streamId(), frame.content(), 0, true);
-      ReferenceCountUtil.release(frame);
+
+      if (lastDataFrame != null) {
+        handler.onDataRead(ctx, (int) streamChannel.streamId(), lastDataFrame.content(), 0, false);
+      }
+      lastDataFrame = frame;
     }
 
     @Override
     protected void channelInputClosed(ChannelHandlerContext ctx) throws Exception {
+      if (lastDataFrame != null) {
+        handler.onDataRead(ctx, (int) ((QuicStreamChannel)ctx.channel()).streamId(), lastDataFrame.content(), 0, true);
+        lastDataFrame = null;
+      }
     }
 
     @Override

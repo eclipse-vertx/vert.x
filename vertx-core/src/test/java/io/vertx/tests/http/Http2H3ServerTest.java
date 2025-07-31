@@ -320,14 +320,6 @@ public class Http2H3ServerTest extends Http2ServerTest {
   @Ignore
   @Override
   @Test
-  public void testNetSocketSendFile() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testNetSocketSendFile();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testServerResetClientStream2() throws Exception {
     //TODO: resolve this test issue. this test case fails randomly!
     super.testServerResetClientStream2();
@@ -339,14 +331,6 @@ public class Http2H3ServerTest extends Http2ServerTest {
   public void testNetSocketPauseResume() throws Exception {
     //TODO: resolve this test issue. this test case fails randomly!
     super.testNetSocketPauseResume();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSendEmptyFile() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testSendEmptyFile();
   }
 
   @Ignore
@@ -397,29 +381,6 @@ public class Http2H3ServerTest extends Http2ServerTest {
     super.testNetSocketConnect();
   }
 
-  @Ignore
-  @Override
-  @Test
-  public void testSendFileRange() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testSendFileRange();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testSendFile() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testSendFile();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testNetSocketSendFileRange() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testNetSocketSendFileRange();
-  }
 
   @Ignore
   @Override
