@@ -16,11 +16,15 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.*;
+import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.ssl.*;
+import io.netty.util.concurrent.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.test.tls.Trust;
 
 import java.net.InetSocketAddress;
@@ -33,16 +37,16 @@ class Http2TestClient {
 
   protected Vertx vertx;
   protected List<EventLoopGroup> eventLoopGroups;
-
-  public Http2TestClient(Vertx vertx, List<EventLoopGroup> eventLoopGroups) {
-    this.vertx = vertx;
-    this.eventLoopGroups = eventLoopGroups;
-  }
-
+  protected RequestHandler requestHandler;
   final Http2Settings settings = new Http2Settings();
 
+  public Http2TestClient(Vertx vertx, List<EventLoopGroup> eventLoopGroups, RequestHandler requestHandler) {
+    this.vertx = vertx;
+    this.eventLoopGroups = eventLoopGroups;
+    this.requestHandler = requestHandler;
+  }
 
-  public class Connection {
+  public static class Connection {
     public final Channel channel;
     public final ChannelHandlerContext context;
     public final Http2Connection connection;
@@ -71,7 +75,9 @@ class Http2TestClient {
 
     void writeSettings(io.vertx.core.http.Http2Settings updatedSettings);
 
-    void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endStream, ChannelPromise promise);
+    void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int padding, boolean endStream, ChannelPromise promise);
+
+    void writeHeaders(ChannelHandlerContext ctx, int streamId, Headers<CharSequence, CharSequence, ?> headers, int padding, boolean endStream, ChannelPromise promise);
 
     void writeData(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endStream, ChannelPromise promise);
 
@@ -88,11 +94,13 @@ class Http2TestClient {
 
     void writePing(ChannelHandlerContext ctx, boolean ack, long data, ChannelPromise promise);
 
-    void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers headers,
+    void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers,
                       int streamDependency, short weight, boolean exclusive, int padding, boolean endStream,
                       ChannelPromise promise);
 
     boolean isWritable(int id);
+
+    boolean consumeBytes(int id, int numBytes) throws Http2Exception;
   }
 
 
@@ -110,7 +118,9 @@ class Http2TestClient {
 
     @Override
     public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
-      frameHandler.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
+      Http2HeadersMultiMap headers1 = new Http2HeadersMultiMap(headers);
+      headers1.validate(false);
+      frameHandler.onHeadersRead(ctx, streamId, headers1, streamDependency, weight, exclusive, padding, endStream);
     }
 
     @Override
@@ -129,7 +139,9 @@ class Http2TestClient {
     @Override
     public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
       super.onPushPromiseRead(ctx, streamId, promisedStreamId, headers, padding);
-      frameHandler.onPushPromiseRead(ctx, streamId, promisedStreamId, headers, padding);
+      Http2HeadersMultiMap headers1 = new Http2HeadersMultiMap(headers);
+      headers1.validate(true);
+      frameHandler.onPushPromiseRead(ctx, streamId, promisedStreamId, headers1, padding);
     }
 
     @Override
@@ -183,21 +195,26 @@ class Http2TestClient {
     }
 
     @Override
-    public final void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endStream, ChannelPromise promise) {
-      request.encoder.writeHeaders(ctx, streamId, headers, padding, endStream, promise);
+    public final void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int padding, boolean endStream, ChannelPromise promise) {
+      request.encoder.writeHeaders(ctx, streamId, (Http2Headers) headers.unwrap(), padding, endStream, promise);
       if (endStream) {
         request.context.flush();
       }
     }
 
     @Override
-    public final void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers headers,
+    public final void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers,
                                    int streamDependency, short weight, boolean exclusive, int padding, boolean endStream,
                                    ChannelPromise promise) {
-      request.encoder.writeHeaders(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream, promise);
+      request.encoder.writeHeaders(ctx, streamId, (Http2Headers) headers.unwrap(), streamDependency, weight, exclusive, padding, endStream, promise);
       if (endStream) {
         request.context.flush();
       }
+    }
+
+    @Override
+    public void writeHeaders(ChannelHandlerContext ctx, int streamId, Headers<CharSequence, CharSequence, ?> headers, int padding, boolean endStream, ChannelPromise promise) {
+      writeHeaders(ctx, streamId, new Http2HeadersMultiMap(headers), padding, endStream, promise);
     }
 
     public final void writeData(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endStream, ChannelPromise promise) {
@@ -241,6 +258,11 @@ class Http2TestClient {
     public final boolean isWritable(int id) {
       return request.encoder.flowController().isWritable(request.connection.stream(id));
     }
+
+    @Override
+    public boolean consumeBytes(int id, int numBytes) throws Http2Exception {
+      return request.decoder.flowController().consumeBytes(request.connection.stream(id), numBytes);
+    }
   }
 
 
@@ -249,14 +271,16 @@ class Http2TestClient {
 
     protected int id;
 
-    public GeneralConnectionHandler(RequestHandler requestHandler) {
-      this.requestHandler = requestHandler;
+    public GeneralConnectionHandler() {
     }
 
     public final void accept0(Connection conn) {
       requestHandler.setConnection(conn);
-      conn.decoder.frameListener(new MyHttp2FrameAdapter(this));
-      this.id = requestHandler.nextStreamId();
+
+      if (!(conn.channel instanceof QuicStreamChannel)) {
+        conn.decoder.frameListener(new MyHttp2FrameAdapter(this));
+        this.id = requestHandler.nextStreamId();
+      }
 
       accept(conn);
     }
@@ -272,14 +296,14 @@ class Http2TestClient {
     }
 
     public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId,
-                                  Http2Headers headers, int padding) throws Http2Exception {
+                                  Http2HeadersMultiMap headers, int padding) throws Http2Exception {
     }
 
     public void onSettingsRead(Http2Settings newSettings) {
 
     }
 
-    public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+    public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
 
     }
 
@@ -305,16 +329,16 @@ class Http2TestClient {
 
   class TestClientHandler extends Http2ConnectionHandler {
 
-    private final GeneralConnectionHandler requestHandler;
+    private final GeneralConnectionHandler myConnectionHandler;
     private boolean handled;
 
     public TestClientHandler(
-      GeneralConnectionHandler requestHandler,
+      GeneralConnectionHandler myConnectionHandler,
       Http2ConnectionDecoder decoder,
       Http2ConnectionEncoder encoder,
       Http2Settings initialSettings) {
       super(decoder, encoder, initialSettings);
-      this.requestHandler = requestHandler;
+      this.myConnectionHandler = myConnectionHandler;
     }
 
     @Override
@@ -335,7 +359,7 @@ class Http2TestClient {
       if (!handled) {
         handled = true;
         Connection conn = new Connection(ctx, connection(), encoder(), decoder());
-        requestHandler.accept0(conn);
+        myConnectionHandler.accept0(conn);
       }
     }
 
@@ -348,15 +372,16 @@ class Http2TestClient {
 
   class TestClientHandlerBuilder extends AbstractHttp2ConnectionHandlerBuilder<TestClientHandler, TestClientHandlerBuilder> {
 
-    private final GeneralConnectionHandler requestHandler;
+    private final GeneralConnectionHandler myConnectionHandler;
 
-    public TestClientHandlerBuilder(GeneralConnectionHandler requestHandler) {
-      this.requestHandler = requestHandler;
+    public TestClientHandlerBuilder(GeneralConnectionHandler myConnectionHandler, RequestHandler requestHandler) {
+      this.myConnectionHandler = myConnectionHandler;
+      this.myConnectionHandler.requestHandler = requestHandler;
     }
 
     @Override
     protected TestClientHandler build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-      return new TestClientHandler(requestHandler, decoder, encoder, initialSettings);
+      return new TestClientHandler(myConnectionHandler, decoder, encoder, initialSettings);
     }
 
     public TestClientHandler build(Http2Connection conn) {
@@ -394,7 +419,7 @@ class Http2TestClient {
             if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
               ChannelPipeline p = ctx.pipeline();
               Http2Connection connection = new DefaultHttp2Connection(false);
-              TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler);
+              TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler, requestHandler);
               TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
               p.addLast(clientHandler);
               return;
@@ -407,7 +432,7 @@ class Http2TestClient {
     };
   }
 
-  public ChannelFuture connect(int port, String host, GeneralConnectionHandler handler) {
+  public Future connect(int port, String host, GeneralConnectionHandler handler) {
     Bootstrap bootstrap = new Bootstrap();
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     eventLoopGroups.add(eventLoopGroup);

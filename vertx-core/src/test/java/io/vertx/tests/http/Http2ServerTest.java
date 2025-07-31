@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -42,6 +41,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
@@ -86,29 +86,34 @@ import static io.vertx.test.core.TestUtils.assertIllegalStateException;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ServerTest extends Http2TestBase {
+  private final static HostAndPort HTTPS_HOST_AND_PORT = HostAndPort.authority(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
 
   protected Http2TestClient createClient() {
-    return new Http2TestClient(vertx, eventLoopGroups);
+    return new Http2TestClient(vertx, eventLoopGroups, new Http2TestClient.Http2RequestHandler());
   }
 
-  protected Http2TestClient.Http2RequestHandler createRequestHandler() {
-    return new Http2TestClient.Http2RequestHandler();
+  private static Http2HeadersMultiMap headers(String method, String scheme, String path, String authority) {
+    Http2Headers headers = new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
+    if (authority != null) {
+      headers.authority(authority);
+    }
+    return new Http2HeadersMultiMap(headers);
   }
 
-  private static Http2Headers headers(String method, String scheme, String path) {
-    return new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
+  private static Http2HeadersMultiMap GET(String scheme, String path) {
+    return headers("GET", scheme, path, null);
   }
 
-  private static Http2Headers GET(String scheme, String path) {
-    return headers("GET", scheme, path);
+  private static Http2HeadersMultiMap GET(String scheme, String path, String authority) {
+    return headers("GET", scheme, path, authority);
   }
 
-  private static Http2Headers GET(String path) {
-    return headers("GET", "https", path);
+  private static Http2HeadersMultiMap GET(String path) {
+    return headers("GET", "https", path, null);
   }
 
-  private static Http2Headers POST(String path) {
-    return headers("POST", "https", path);
+  private static Http2HeadersMultiMap POST(String path) {
+    return headers("POST", "https", path, null);
   }
 
   @Test
@@ -123,7 +128,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> fail());
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection connection) {
         vertx.runOnContext(v -> {
@@ -143,8 +148,8 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> fail());
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST,
-      new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST,
+      new Http2TestClient.GeneralConnectionHandler() {
         @Override
         public void onSettingsRead(Http2Settings newSettings) {
           vertx.runOnContext(v -> {
@@ -190,7 +195,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       AtomicInteger count = new AtomicInteger();
       Context context = vertx.getOrCreateContext();
 
@@ -263,7 +268,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
     Http2TestClient client = createClient();
     client.settings.putAll(HttpUtils.fromVertxSettings(initialSettings));
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -309,24 +314,27 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST,
-      new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future<Channel> fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST,
+      new Http2TestClient.GeneralConnectionHandler() {
         @Override
         public void accept(Http2TestClient.Connection request) {
           super.accept(request);
           expectedStreamId.set(id);
 
-          Http2Headers headers = GET("/").authority(DEFAULT_HTTPS_HOST_AND_PORT);
+          Http2HeadersMultiMap headers = GET("https", "/", DEFAULT_HTTPS_HOST_AND_PORT);
           headers.set("foo_request", "foo_request_value");
           headers.set("bar_request", "bar_request_value");
-          headers.set("juu_request", "juu_request_value_1", "juu_request_value_2");
-          headers.set("cookie", Arrays.asList("cookie_1", "cookie_2", "cookie_3"));
+          headers.add("juu_request", "juu_request_value_1");
+          headers.add("juu_request", "juu_request_value_2");
+          headers.add("cookie", "cookie_1");
+          headers.add("cookie", "cookie_2");
+          headers.add("cookie", "cookie_3");
 
           requestHandler.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
         }
 
         @Override
-        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
           super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
           vertx.runOnContext(v -> {
             assertEquals(id, streamId);
@@ -340,6 +348,7 @@ public class Http2ServerTest extends Http2TestBase {
             assertFalse(endStream);
           });
         }
+
         @Override
         public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           super.onDataRead(ctx, streamId, data, padding, endOfStream);
@@ -368,7 +377,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -400,15 +409,15 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
-        Http2Headers headers = new DefaultHttp2Headers().
+        Http2HeadersMultiMap headers = new Http2HeadersMultiMap(new DefaultHttp2Headers().
           method("GET").
           scheme("http").
           authority("whatever.com").
-          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2");
+          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2"));
         requestHandler.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       }
     });
@@ -434,7 +443,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(/*createRequestHandler()*/) {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -442,7 +451,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
         vertx.runOnContext(v -> {
           assertEquals("some-header", headers.get("some").toString());
@@ -473,7 +482,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -504,7 +513,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -551,7 +560,7 @@ public class Http2ServerTest extends Http2TestBase {
         "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
 
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -577,11 +586,11 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
-        Http2Headers headers = new DefaultHttp2Headers().method("CONNECT").authority("whatever.com");
+        Http2HeadersMultiMap headers = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").authority("whatever.com"));
         requestHandler.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       }
     });
@@ -624,7 +633,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
 
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -695,7 +704,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
 
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       AtomicInteger toAck = new AtomicInteger();
       StringBuilder received = new StringBuilder();
 
@@ -708,7 +717,7 @@ public class Http2ServerTest extends Http2TestBase {
         whenFull.future().onComplete(ar -> {
           request.context.executor().execute(() -> {
             try {
-              request.decoder.flowController().consumeBytes(request.connection.stream(id), toAck.intValue());
+              requestHandler.consumeBytes(id, toAck.intValue());
               requestHandler.flush();
             } catch (Http2Exception e) {
               e.printStackTrace();
@@ -762,7 +771,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       int count;
 
       @Override
@@ -773,7 +782,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
         switch (count++) {
           case 0:
@@ -850,7 +859,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
 
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -902,7 +911,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
 
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -935,7 +944,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
 
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -944,7 +953,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext context, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext context, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         super.onHeadersRead(context, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
         context.close();
       }
@@ -955,7 +964,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPushPromise() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), (resp, handler) -> {
+    testPushPromise(GET("https", "/", "whatever.com"), (resp, handler) -> {
       resp.push(HttpMethod.GET, "/wibble").onComplete(handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
@@ -967,7 +976,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPushPromiseHeaders() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+    testPushPromise(GET("https", "/", "whatever.com"), (resp, handler ) -> {
       resp.push(HttpMethod.GET, "/wibble", HttpHeaders.
           set("foo", "foo_value").
           set("bar", Arrays.<CharSequence>asList("bar_value_1", "bar_value_2"))).onComplete(handler);
@@ -983,7 +992,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPushPromiseNoAuthority() throws Exception {
-    Http2Headers get = GET("/");
+    Http2HeadersMultiMap get = GET("/");
     get.remove("authority");
     testPushPromise(get, (resp, handler ) -> {
       resp.push(HttpMethod.GET, "/wibble").onComplete(handler);
@@ -997,7 +1006,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testPushPromiseOverrideAuthority() throws Exception {
-    testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
+    testPushPromise(GET("https", "/", "whatever.com"), (resp, handler ) -> {
       resp.push(HttpMethod.GET, HostAndPort.authority("override.com"), "/wibble").onComplete(handler);
     }, headers -> {
       assertEquals("GET", headers.method().toString());
@@ -1008,9 +1017,9 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
 
-  private void testPushPromise(Http2Headers requestHeaders,
+  private void testPushPromise(Http2HeadersMultiMap requestHeaders,
                                BiConsumer<HttpServerResponse, Handler<AsyncResult<HttpServerResponse>>> pusher,
-                               Consumer<Http2Headers> headerChecker) throws Exception {
+                               Consumer<Http2HeadersMultiMap> headerChecker) throws Exception {
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       Handler<AsyncResult<HttpServerResponse>> handler = ar -> {
@@ -1024,8 +1033,8 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
-      Map<Integer, Http2Headers> pushed = new HashMap<>();
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
+      Map<Integer, Http2HeadersMultiMap> pushed = new HashMap<>();
 
       @Override
       public void accept(Http2TestClient.Connection request) {
@@ -1034,7 +1043,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2HeadersMultiMap headers, int padding) throws Http2Exception {
         super.onPushPromiseRead(ctx, streamId, promisedStreamId, headers, padding);
         pushed.put(promisedStreamId, headers);
       }
@@ -1045,7 +1054,7 @@ public class Http2ServerTest extends Http2TestBase {
         vertx.runOnContext(v -> {
           assertEquals(Collections.singleton(streamId), pushed.keySet());
           assertEquals("the_content", content);
-          Http2Headers pushedHeaders = pushed.get(streamId);
+          Http2HeadersMultiMap pushedHeaders = pushed.get(streamId);
           headerChecker.accept(pushedHeaders);
           testComplete();
         });
@@ -1078,7 +1087,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1118,7 +1127,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
     Http2TestClient client = createClient();
     client.settings.maxConcurrentStreams(3);
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       int count = numPushes;
       Set<String> pushReceived = new HashSet<>();
 
@@ -1129,7 +1138,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2HeadersMultiMap headers, int padding) throws Http2Exception {
         super.onPushPromiseRead(ctx, streamId, promisedStreamId, headers, padding);
         pushReceived.add(headers.path().toString());
       }
@@ -1162,7 +1171,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(ctx);
     Http2TestClient client = createClient();
     client.settings.maxConcurrentStreams(0);
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1170,7 +1179,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2HeadersMultiMap headers, int padding) throws Http2Exception {
         super.onPushPromiseRead(ctx, streamId, promisedStreamId, headers, padding);
         requestHandler.writeRstStream(ctx, promisedStreamId, Http2Error.CANCEL.code(), ctx.newPromise());
         requestHandler.flush();
@@ -1183,7 +1192,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testHostHeaderInsteadOfAuthorityPseudoHeader() throws Exception {
     // build the HTTP/2 headers, omit the ":authority" pseudo-header and include the "host" header instead
-    Http2Headers headers = new DefaultHttp2Headers().method("GET").scheme("https").path("/").set("host", DEFAULT_HTTPS_HOST_AND_PORT);
+    Http2HeadersMultiMap headers = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("https").path("/").set("host", DEFAULT_HTTPS_HOST_AND_PORT));
     server.requestHandler(req -> {
       // validate that the authority is properly populated
       assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
@@ -1192,7 +1201,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1205,63 +1214,73 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testMissingMethodPseudoHeader() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().scheme("http").path("/"));
+    final Http2HeadersMultiMap http = new Http2HeadersMultiMap(new DefaultHttp2Headers().scheme("http").path("/"));
+    testMalformedRequestHeaders(http);
   }
 
   @Test
   public void testMissingSchemePseudoHeader() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").path("/"));
+    final Http2HeadersMultiMap get = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").path("/"));
+    testMalformedRequestHeaders(get);
   }
 
   @Test
   public void testMissingPathPseudoHeader() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http"));
+    final Http2HeadersMultiMap scheme = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http"));
+    testMalformedRequestHeaders(scheme);
   }
 
   @Test
   public void testInvalidAuthority() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT).path("/"));
+    final Http2HeadersMultiMap path = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@" + HTTPS_HOST_AND_PORT).path("/"));
+    testMalformedRequestHeaders(path);
   }
 
   @Test
   public void testInvalidHost1() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+    testMalformedRequestHeaders(set);
   }
 
   @Test
   public void testInvalidHost2() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "another-host:" + DEFAULT_HTTPS_PORT));
+    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "another-host:" + DEFAULT_HTTPS_PORT));
+    testMalformedRequestHeaders(set);
   }
 
   @Test
   public void testInvalidHost3() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", DEFAULT_HTTP_HOST));
+    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", DEFAULT_HTTP_HOST));
+    testMalformedRequestHeaders(set);
   }
 
   @Test
   public void testConnectInvalidPath() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").path("/").authority(DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap connect = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").path("/").authority(DEFAULT_HTTPS_HOST_AND_PORT));
+    testMalformedRequestHeaders(connect);
   }
 
   @Test
   public void testConnectInvalidScheme() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap authority = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT));
+    testMalformedRequestHeaders(authority);
   }
 
   @Test
   public void testConnectInvalidAuthority() throws Exception {
-    testMalformedRequestHeaders(new DefaultHttp2Headers().method("CONNECT").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap connect = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+    testMalformedRequestHeaders(connect);
   }
 
-  private void testMalformedRequestHeaders(Http2Headers headers) throws Exception {
+  private void testMalformedRequestHeaders(Http2HeadersMultiMap headers1) throws Exception {
     server.requestHandler(req -> fail());
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
-        requestHandler.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
+        requestHandler.writeHeaders(request.context, id, headers1, 0, true, request.context.newPromise());
       }
 
       @Override
@@ -1331,7 +1350,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1388,9 +1407,9 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       Buffer buffer = Buffer.buffer();
-      Http2Headers responseHeaders;
+      Http2HeadersMultiMap responseHeaders;
 
       private void endStream() {
         vertx.runOnContext(v -> {
@@ -1409,7 +1428,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
         responseHeaders = headers;
         if (endStream) {
@@ -1463,7 +1482,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1516,7 +1535,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1525,7 +1544,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
+      public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2HeadersMultiMap headers, int padding) throws Http2Exception {
         when.future().onComplete(ar -> {
           requestHandler.writeHeaders(ctx, promisedStreamId, GET("/"), 0, false, ctx.newPromise());
           requestHandler.flush();
@@ -1578,7 +1597,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1765,7 +1784,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(requestHandler);
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1806,7 +1825,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(requestHandler);
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1863,7 +1882,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(requestHandler);
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1911,7 +1930,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(requestHandler);
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -1942,7 +1961,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(requestHandler);
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2007,7 +2026,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2028,7 +2047,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2038,7 +2057,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
         vertx.runOnContext(v -> {
           assertEquals(null, headers.get(HttpHeaderNames.CONTENT_ENCODING));
           complete();
@@ -2071,7 +2090,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2081,7 +2100,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
         vertx.runOnContext(v -> {
           assertEquals("gzip", headers.get(HttpHeaderNames.CONTENT_ENCODING).toString());
           complete();
@@ -2135,7 +2154,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2145,7 +2164,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
         vertx.runOnContext(v -> {
           assertEquals("gzip", headers.get(HttpHeaderNames.CONTENT_ENCODING).toString());
           complete();
@@ -2200,7 +2219,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2210,7 +2229,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
         vertx.runOnContext(v -> {
           assertFalse(headers.contains(HttpHeaderNames.CONTENT_ENCODING));
           complete();
@@ -2253,7 +2272,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2298,7 +2317,7 @@ public class Http2ServerTest extends Http2TestBase {
   private void test100Continue() throws Exception {
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       int count = 0;
 
       @Override
@@ -2310,7 +2329,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) {
         switch (count++) {
           case 0:
             vertx.runOnContext(v -> {
@@ -2347,7 +2366,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       int count = 0;
 
       @Override
@@ -2359,7 +2378,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         switch (count++) {
           case 0:
             vertx.runOnContext(v -> {
@@ -2412,7 +2431,7 @@ public class Http2ServerTest extends Http2TestBase {
 
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2422,7 +2441,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         vertx.runOnContext(v -> {
           assertEquals("200", headers.status().toString());
           assertFalse(endStream);
@@ -2485,7 +2504,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2495,7 +2514,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         vertx.runOnContext(v -> {
           assertEquals("200", headers.status().toString());
           assertFalse(endStream);
@@ -2558,7 +2577,7 @@ public class Http2ServerTest extends Http2TestBase {
 
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2570,7 +2589,7 @@ public class Http2ServerTest extends Http2TestBase {
       int count = 0;
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         int c = count++;
         vertx.runOnContext(v -> {
           assertEquals(0, c);
@@ -2622,7 +2641,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2634,7 +2653,7 @@ public class Http2ServerTest extends Http2TestBase {
       int count = 0;
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         int c = count++;
         vertx.runOnContext(v -> {
           assertEquals(0, c);
@@ -2675,7 +2694,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -2688,7 +2707,7 @@ public class Http2ServerTest extends Http2TestBase {
       int status = 0;
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         int s = status++;
         vertx.runOnContext(v -> {
           assertEquals(0, s);
@@ -3022,7 +3041,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3031,7 +3050,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
     });
     fut.sync();
-    fut.channel().closeFuture().addListener(v1 -> {
+    ((Channel)(fut.get())).closeFuture().addListener(v1 -> {
       vertx.runOnContext(v2 -> {
         complete();
       });
@@ -3054,7 +3073,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> fail());
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3088,7 +3107,7 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> fail());
     startServer(ctx);
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3111,7 +3130,7 @@ public class Http2ServerTest extends Http2TestBase {
       req.response().end("Hello World");
     });
     startServer();
-    Http2TestClient client = new Http2TestClient(vertx, eventLoopGroups) {
+    Http2TestClient client = new Http2TestClient(vertx, eventLoopGroups, new Http2TestClient.Http2RequestHandler()) {
       @Override
       protected ChannelInitializer channelInitializer(int port, String host, GeneralConnectionHandler handler) {
         return new ChannelInitializer() {
@@ -3119,14 +3138,14 @@ public class Http2ServerTest extends Http2TestBase {
           protected void initChannel(Channel ch) throws Exception {
             ChannelPipeline p = ch.pipeline();
             Http2Connection connection = new DefaultHttp2Connection(false);
-            TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler);
+            TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler, requestHandler);
             TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
             p.addLast(clientHandler);
           }
         };
       }
     };
-    ChannelFuture fut = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3136,7 +3155,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
         vertx.runOnContext(v -> {
           testComplete();
         });
@@ -3156,7 +3175,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3187,7 +3206,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3314,7 +3333,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3323,7 +3342,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding,
                                 boolean endStream) throws Http2Exception {
         vertx.runOnContext(v -> {
           assertEquals(id, streamId);
@@ -3387,7 +3406,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     Http2TestClient client = createClient();
     Context context = vertx.getOrCreateContext();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3400,7 +3419,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding,
                                 boolean endStream) throws Http2Exception {
         super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
         context.runOnContext(v -> {
@@ -3475,7 +3494,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     Http2TestClient client = createClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler(createRequestHandler()) {
+    io.netty.util.concurrent.Future fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, new Http2TestClient.GeneralConnectionHandler() {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
@@ -3488,7 +3507,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding,
                                 boolean endStream) throws Http2Exception {
         super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
         vertx.runOnContext(v -> {

@@ -11,11 +11,8 @@
 
 package io.vertx.tests.http;
 
-import io.netty.channel.EventLoopGroup;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -33,15 +30,8 @@ public class Http2H3ServerTest extends Http2ServerTest {
   }
 
   @Override
-  protected void configureDomainSockets() throws Exception {
-    // Nope
+  protected Http2TestClient createClient() {
+    return new Http2H3TestClient(vertx, eventLoopGroups, new Http2H3RequestHandler());
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
-      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-    }
-  }
 }
