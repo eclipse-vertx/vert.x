@@ -230,12 +230,12 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
 
   @Override
   public int nextStreamId() {
-    return 0;
+    throw new RuntimeException("Not Implemented");
   }
 
   @Override
   public void writeSettings(io.vertx.core.http.Http2Settings updatedSettings) {
-
+    throw new RuntimeException("Not Implemented");
   }
 
   @Override
@@ -267,7 +267,7 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
 
   @Override
   public void writePriority(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive, ChannelPromise promise) {
-
+    throw new RuntimeException("Not Implemented");
   }
 
   @Override
@@ -288,12 +288,12 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
 
   @Override
   public void writePing(ChannelHandlerContext ctx, boolean ack, long data, ChannelPromise promise) {
-
+    throw new RuntimeException("Not Implemented");
   }
 
   @Override
   public void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream, ChannelPromise promise) {
-
+    throw new RuntimeException("Not Implemented");
   }
 
   @Override
