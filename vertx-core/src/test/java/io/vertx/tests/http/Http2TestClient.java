@@ -125,9 +125,7 @@ class Http2TestClient {
 
     @Override
     public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-      frameHandler.onDataRead(ctx, streamId, data, padding, endOfStream);
-      int delta = super.onDataRead(ctx, streamId, data, padding, endOfStream);
-      return frameHandler.onAfterDataRead(ctx, delta, streamId, data, padding, endOfStream);
+      return frameHandler.onDataRead(ctx, streamId, data, padding, endOfStream);
     }
 
     @Override
@@ -288,11 +286,8 @@ class Http2TestClient {
     public void accept(Connection request) {
     }
 
-    public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-    }
-
-    public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-      return delta;
+    public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      return data.readableBytes() + padding;
     }
 
     public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId,

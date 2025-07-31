@@ -350,8 +350,7 @@ public class Http2ServerTest extends Http2TestBase {
         }
 
         @Override
-        public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-          super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           String actual = data.toString(StandardCharsets.UTF_8);
           vertx.runOnContext(v -> {
             assertEquals(id, streamId);
@@ -359,6 +358,7 @@ public class Http2ServerTest extends Http2TestBase {
             assertTrue(endOfStream);
             testComplete();
           });
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
         }
       });
     fut.sync();
@@ -729,13 +729,9 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         received.append(data.toString(StandardCharsets.UTF_8));
-      }
-
-      @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+        int delta = super.onDataRead(ctx, streamId, data, padding, endOfStream);
         if (endOfStream) {
           vertx.runOnContext(v -> {
             assertEquals(expected.toString(), received.toString());
@@ -1049,7 +1045,8 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+        int delta = super.onDataRead(ctx, streamId, data, padding, endOfStream);
         String content = data.toString(StandardCharsets.UTF_8);
         vertx.runOnContext(v -> {
           assertEquals(Collections.singleton(streamId), pushed.keySet());
@@ -1095,10 +1092,10 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         requestHandler.writeRstStream(ctx, streamId, Http2Error.CANCEL.code(), ctx.newPromise());
         requestHandler.flush();
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
     fut.sync();
@@ -1144,7 +1141,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         if (count-- == 0) {
           vertx.runOnContext(v -> {
             assertEquals(numPushes, pushSent.size());
@@ -1152,7 +1149,7 @@ public class Http2ServerTest extends Http2TestBase {
             testComplete();
           });
         }
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
     fut.sync();
@@ -1439,8 +1436,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-        super.onAfterDataRead(ctx, delta, streamId, data, padding, endOfStream);
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         buffer.appendBuffer(BufferInternal.buffer(data.duplicate()));
         if (endOfStream) {
           endStream();
@@ -2067,13 +2063,13 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         String s = data.toString(StandardCharsets.UTF_8);
         vertx.runOnContext(v -> {
           assertEquals(expected, s);
           complete();
         });
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
 
     });
@@ -2110,7 +2106,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         byte[] bytes = new byte[data.readableBytes()];
         data.readBytes(bytes);
         vertx.runOnContext(v -> {
@@ -2133,7 +2129,7 @@ public class Http2ServerTest extends Http2TestBase {
           assertEquals(expected, decoded);
           complete();
         });
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
     fut.sync();
@@ -2174,7 +2170,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         byte[] bytes = new byte[data.readableBytes()];
         data.readBytes(bytes);
         vertx.runOnContext(v -> {
@@ -2197,7 +2193,7 @@ public class Http2ServerTest extends Http2TestBase {
           assertEquals(expected, decoded);
           complete();
         });
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
 
     });
@@ -2239,7 +2235,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         byte[] bytes = new byte[data.readableBytes()];
         data.readBytes(bytes);
         vertx.runOnContext(v -> {
@@ -2247,7 +2243,7 @@ public class Http2ServerTest extends Http2TestBase {
           assertEquals(expected, decoded);
           complete();
         });
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
 
     });
@@ -2455,7 +2451,7 @@ public class Http2ServerTest extends Http2TestBase {
       StringBuilder received = new StringBuilder();
 
       @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         String s = data.toString(StandardCharsets.UTF_8);
         received.append(s);
         if (received.toString().equals("some-data")) {
@@ -2526,7 +2522,7 @@ public class Http2ServerTest extends Http2TestBase {
       Buffer received = Buffer.buffer();
 
       @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         byte[] tmp = new byte[data.readableBytes()];
         data.getBytes(data.readerIndex(), tmp);
         received.appendBytes(tmp);
@@ -2603,7 +2599,7 @@ public class Http2ServerTest extends Http2TestBase {
       StringBuilder received = new StringBuilder();
 
       @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         String s = data.toString(StandardCharsets.UTF_8);
         received.append(s);
         if (endOfStream) {
@@ -2731,7 +2727,7 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public int onAfterDataRead(ChannelHandlerContext ctx, int delta, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx,int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         int len = data.readableBytes();
         int s = status++;
         vertx.runOnContext(v -> {
@@ -3368,13 +3364,13 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         if (endOfStream) {
           vertx.runOnContext(v -> {
             complete();
           });
         }
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
     fut.sync();
@@ -3461,13 +3457,13 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         if (endOfStream) {
           context.runOnContext(v -> {
             complete();
           });
         }
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
     fut.sync();
@@ -3534,13 +3530,13 @@ public class Http2ServerTest extends Http2TestBase {
       }
 
       @Override
-      public void onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+      public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
         if (endOfStream) {
           vertx.runOnContext(v -> {
             complete();
           });
         }
-        super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
     });
     fut.sync();
