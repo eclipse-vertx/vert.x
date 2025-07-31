@@ -62,6 +62,11 @@ public class NetServerOptionsConverter {
             obj.setRegisterWriteHandler((Boolean)member.getValue());
           }
           break;
+        case "quicOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setQuicOptions(new io.vertx.core.net.QuicOptions((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -89,5 +94,8 @@ public class NetServerOptionsConverter {
       json.put("trafficShapingOptions", obj.getTrafficShapingOptions().toJson());
     }
     json.put("registerWriteHandler", obj.isRegisterWriteHandler());
+    if (obj.getQuicOptions() != null) {
+      json.put("quicOptions", obj.getQuicOptions().toJson());
+    }
   }
 }

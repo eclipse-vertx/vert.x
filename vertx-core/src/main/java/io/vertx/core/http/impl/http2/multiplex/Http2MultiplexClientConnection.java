@@ -22,6 +22,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.Http3Settings;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
@@ -72,6 +75,11 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     this.lifetimeEvictionTimestampMillis = maxLifetimeMillis > 0 ? System.currentTimeMillis() + maxLifetimeMillis : Long.MAX_VALUE;
     this.evicted = false;
     this.decompressionSupported = decompressionSupported;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
   @Override
@@ -232,5 +240,25 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
       completion = null;
       promise.fail(ConnectionBase.CLOSED_EXCEPTION);
     }
+  }
+
+  @Override
+  public Http3Settings http3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Http3Settings remoteHttp3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 }

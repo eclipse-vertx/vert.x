@@ -30,15 +30,15 @@ public class Http2MultiplexTest extends Http2Test {
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependency() throws Exception {
-    super.testStreamWeightAndDependency();
+  public void testStreamPriority() throws Exception {
+    super.testStreamPriority();
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyChange() throws Exception {
-    super.testStreamWeightAndDependencyChange();
+  public void testStreamPriorityChange() throws Exception {
+    super.testStreamPriorityChange();
   }
 
   @Test
@@ -58,29 +58,29 @@ public class Http2MultiplexTest extends Http2Test {
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyInheritance() throws Exception {
-    super.testStreamWeightAndDependencyInheritance();
+  public void testStreamPriorityInheritance() throws Exception {
+    super.testStreamPriorityInheritance();
   }
 
   @Test
   @Ignore
   @Override
-  public void testDefaultStreamWeightAndDependency() throws Exception {
-    super.testDefaultStreamWeightAndDependency();
+  public void testDefaultPriority() throws Exception {
+    super.testDefaultPriority();
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyPushPromise() throws Exception {
-    super.testStreamWeightAndDependencyPushPromise();
+  public void testStreamPriorityPushPromise() throws Exception {
+    super.testStreamPriorityPushPromise();
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyInheritancePushPromise() throws Exception {
-    super.testStreamWeightAndDependencyInheritancePushPromise();
+  public void testStreamPriorityInheritancePushPromise() throws Exception {
+    super.testStreamPriorityInheritancePushPromise();
   }
 
   @Test
