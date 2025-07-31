@@ -2674,6 +2674,10 @@ public class Http2ServerTest extends Http2TestBase {
     testStreamWritability(req -> req.toNetSocket().map(so -> so));
   }
 
+  protected void assertEqualsUnknownFrameFlags(int expected, Http2Flags actual) {
+    assertEquals(expected, actual.value());
+  }
+
   @Test
   public void testUnknownFrame() throws Exception {
     Buffer expectedSend = TestUtils.randomBuffer(500);
@@ -2682,11 +2686,11 @@ public class Http2ServerTest extends Http2TestBase {
     server.requestHandler(req -> {
       req.customFrameHandler(frame -> {
         assertOnIOContext(ctx);
-        assertEquals(10, frame.type());
-        assertEquals(253, frame.flags());
+        assertEquals(110, frame.type());
+        assertEqualsUnknownFrameFlags(253, new Http2Flags((short) frame.flags()));
         assertEquals(expectedSend, frame.payload());
         HttpServerResponse resp = req.response();
-        resp.writeCustomFrame(12, 134, expectedRecv);
+        resp.writeCustomFrame(112, 134, expectedRecv);
         resp.end();
       });
     });
@@ -2698,7 +2702,7 @@ public class Http2ServerTest extends Http2TestBase {
         super.accept(request);
 
         requestHandler.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
-        requestHandler.writeFrame(request.context, (byte) 10, id, new Http2Flags((short) 253), ((BufferInternal) expectedSend).getByteBuf(), request.context.newPromise());
+        requestHandler.writeFrame(request.context, (byte) 110, id, new Http2Flags((short) 253), ((BufferInternal) expectedSend).getByteBuf(), request.context.newPromise());
         requestHandler.flush();
       }
 
@@ -2720,8 +2724,8 @@ public class Http2ServerTest extends Http2TestBase {
         Buffer recv = Buffer.buffer().appendBytes(tmp);
         vertx.runOnContext(v -> {
           assertEquals(1, s);
-          assertEquals(12, frameType);
-          assertEquals(134, flags.value());
+          assertEquals(112, frameType);
+          assertEqualsUnknownFrameFlags(134, flags);
           assertEquals(expectedRecv, recv);
         });
       }

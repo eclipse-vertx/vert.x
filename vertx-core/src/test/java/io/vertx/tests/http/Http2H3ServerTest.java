@@ -11,6 +11,7 @@
 
 package io.vertx.tests.http;
 
+import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http3.DefaultHttp3Headers;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
@@ -41,6 +42,11 @@ public class Http2H3ServerTest extends Http2ServerTest {
   @Override
   protected void setInvalidAuthority(Http2HeadersMultiMap http2HeadersMultiMap, String authority) {
     ((DefaultHttp3Headers) http2HeadersMultiMap.unwrap()).authority(authority);
+  }
+
+  @Override
+  protected void assertEqualsUnknownFrameFlags(int expected, Http2Flags actual) {
+    //Http3 has no flags!
   }
 
   @Override
