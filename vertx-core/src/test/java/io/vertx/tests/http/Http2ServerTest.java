@@ -2493,6 +2493,7 @@ public class Http2ServerTest extends Http2TestBase {
 
 
   private void testNetSocketSendFile(Buffer expected, String path, long offset, long length) throws Exception {
+    waitFor(2);
     server.requestHandler(req -> {
       req.toNetSocket().onComplete(onSuccess(socket -> {
         socket.sendFile(path, offset, length).onComplete(onSuccess(v -> {
@@ -2516,6 +2517,7 @@ public class Http2ServerTest extends Http2TestBase {
         vertx.runOnContext(v -> {
           assertEquals("200", headers.status().toString());
           assertFalse(endStream);
+          complete();
         });
       }
 
@@ -2529,7 +2531,7 @@ public class Http2ServerTest extends Http2TestBase {
         if (endOfStream) {
           vertx.runOnContext(v -> {
             assertEquals(received, expected);
-            testComplete();
+            complete();
           });
         }
         return data.readableBytes() + padding;
