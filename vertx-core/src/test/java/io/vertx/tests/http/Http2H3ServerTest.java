@@ -11,8 +11,10 @@
 
 package io.vertx.tests.http;
 
+import io.netty.handler.codec.http3.DefaultHttp3Headers;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -34,4 +36,18 @@ public class Http2H3ServerTest extends Http2ServerTest {
     return new Http2H3TestClient(vertx, eventLoopGroups, new Http2H3RequestHandler());
   }
 
+  @Override
+  protected void setInvalidAuthority(Http2HeadersMultiMap http2HeadersMultiMap, String authority) {
+    ((DefaultHttp3Headers) http2HeadersMultiMap.unwrap()).authority(authority);
+  }
+
+  @Override
+  protected Http2HeadersMultiMap createHttpHeader() {
+    return new Http2HeadersMultiMap(new DefaultHttp3Headers());
+  }
+
+  @Override
+  public void testGet() throws Exception {
+    super.testGet();
+  }
 }
