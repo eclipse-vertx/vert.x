@@ -94,6 +94,10 @@ public class Http2ServerTest extends Http2TestBase {
     return new Http2HeadersMultiMap(new DefaultHttp2Headers());
   }
 
+  protected void setInvalidAuthority(Http2HeadersMultiMap http2HeadersMultiMap, String authority) {
+    ((DefaultHttp2Headers) http2HeadersMultiMap.unwrap()).authority(authority);
+  }
+
   private Http2HeadersMultiMap GET(String scheme, String path) {
     return headers("GET", scheme, path, null);
   }
@@ -103,11 +107,11 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private Http2HeadersMultiMap GET(String path) {
-    return headers("GET", "https", path, null);
+    return headers("GET", "https", path, DEFAULT_HTTPS_HOST_AND_PORT);
   }
 
   private Http2HeadersMultiMap POST(String path) {
-    return headers("POST", "https", path, null);
+    return headers("POST", "https", path, DEFAULT_HTTPS_HOST_AND_PORT);
   }
 
 
@@ -989,7 +993,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testPushPromiseNoAuthority() throws Exception {
     Http2HeadersMultiMap get = GET("/");
-    get.remove("authority");
+    get.remove(":authority");
     testPushPromise(get, (resp, handler ) -> {
       resp.push(HttpMethod.GET, "/wibble").onComplete(handler);
     }, headers -> {
@@ -1238,10 +1242,6 @@ public class Http2ServerTest extends Http2TestBase {
     final Http2HeadersMultiMap set = createHttpHeader().method(HttpMethod.GET).scheme("http").path("/").prepare();
     setInvalidAuthority(set, "foo@" + DEFAULT_HTTPS_HOST_AND_PORT);
     testMalformedRequestHeaders(set);
-  }
-
-  protected void setInvalidAuthority(Http2HeadersMultiMap http2HeadersMultiMap, String authority) {
-    ((DefaultHttp2Headers) http2HeadersMultiMap.unwrap()).authority(authority);
   }
 
   @Test

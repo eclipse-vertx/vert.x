@@ -160,6 +160,14 @@ class Http2H3TestClient extends Http2TestClient {
     @Override
     protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
       super.handleQuicException(ctx, exception);
+      if ("STREAM_RESET".equals(exception.getMessage())) {
+        QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
+        try {
+          handler.onRstStreamRead((int) streamChannel.streamId(), 1);
+        } catch (Http2Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
     }
 
     @Override
@@ -260,11 +268,18 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
   @Override
   public void writeHeaders(ChannelHandlerContext ctx, int streamId, Http2HeadersMultiMap headers, int padding, boolean endStream, ChannelPromise promise) {
     ctx.write(new DefaultHttp3HeadersFrame((Http3Headers) headers.unwrap()), promise);
+    if (endStream) {
+      flush();
+    }
   }
 
   @Override
   public void writeData(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endStream, ChannelPromise promise) {
-
+    ctx.write(new DefaultHttp3DataFrame(data), promise);
+    if (endStream) {
+      flush();
+      ctx.close();
+    }
   }
 
   @Override
