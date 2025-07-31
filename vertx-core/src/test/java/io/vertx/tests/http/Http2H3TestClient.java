@@ -42,25 +42,6 @@ class Http2H3TestClient extends Http2TestClient {
           .initialMaxStreamDataBidirectionalLocal(1000000)
           .build();
 
-
-        ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
-          @Override
-          protected void configurePipeline(ChannelHandlerContext ctx, String protocol) {
-            if ("h3".equals(protocol)) {
-              System.out.println("ctx = " + ctx);
-            } else if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
-              ChannelPipeline p = ctx.pipeline();
-              Http2Connection connection = new DefaultHttp2Connection(false);
-              TestClientHandlerBuilder clientHandlerBuilder = new TestClientHandlerBuilder(handler, requestHandler);
-              TestClientHandler clientHandler = clientHandlerBuilder.build(connection);
-              p.addLast(clientHandler);
-              return;
-            }
-            ctx.close();
-            throw new IllegalStateException("unknown protocol: " + protocol);
-          }
-        });
-
         ch.pipeline().addLast(codec);
       }
     };
@@ -99,11 +80,6 @@ class Http2H3TestClient extends Http2TestClient {
     }
 
     return Http3.newRequestStream(fut2.getNow(), new ChannelInitializer<QuicStreamChannel>() {
-      @Override
-      public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
-      }
-
       @Override
       protected void initChannel(QuicStreamChannel streamChannel) {
         streamChannel.pipeline().addLast(new StreamChannelHandler(handler));
