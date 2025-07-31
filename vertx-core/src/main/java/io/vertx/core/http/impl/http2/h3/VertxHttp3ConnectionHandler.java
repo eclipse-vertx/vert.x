@@ -495,8 +495,6 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
     @Override
     protected void handleQuicException(ChannelHandlerContext ctx, QuicException exception) {
-      log.debug(String.format("%s - handleQuicException() called", agentType));
-      super.handleQuicException(ctx, exception);
       Exception exception_ = exception;
       if ("STREAM_RESET".equals(exception.getMessage())) {
 
@@ -506,6 +504,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
         } else {
           exception_ = new StreamResetException(0, exception);
         }
+      } else {
+        log.error(String.format("%s - handleQuicException() called", agentType), exception);
       }
       connection.onConnectionError(exception_);
       if (!settingsRead) {
@@ -516,8 +516,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
     @Override
     protected void handleHttp3Exception(ChannelHandlerContext ctx, Http3Exception exception) {
-      log.debug(String.format("%s - handleHttp3Exception() called", agentType));
-      super.handleHttp3Exception(ctx, exception);
+      log.error(String.format("%s - handleHttp3Exception() called", agentType), exception);
       connection.onConnectionError(exception);
       if (!settingsRead) {
         connectFuture.setFailure(exception);
@@ -563,11 +562,17 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+      if (cause instanceof QuicException) {
+        log.error(String.format("%s - Caught QuicException on channelId : %s!", agentType, ctx.channel().id()));
+        super.exceptionCaught(ctx, cause);
+        return;
+      }
       if (cause instanceof Http3HeadersValidationException) {
         log.error(String.format("%s - Caught Http3HeadersValidationException on channelId : %s!", agentType, ctx.channel().id()));
         return;
       }
       log.error(String.format("%s - Caught exception on channelId : %s!", agentType, ctx.channel().id()), cause);
+      super.exceptionCaught(ctx, cause);
     }
 
     @Override
