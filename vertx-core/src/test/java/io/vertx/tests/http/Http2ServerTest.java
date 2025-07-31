@@ -13,22 +13,12 @@ package io.vertx.tests.http;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http2.DefaultHttp2Connection;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Connection;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2Exception;
-import io.netty.handler.codec.http2.Http2Flags;
-import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.*;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -92,29 +82,36 @@ public class Http2ServerTest extends Http2TestBase {
     return new Http2TestClient(vertx, eventLoopGroups, new Http2TestClient.Http2RequestHandler());
   }
 
-  private static Http2HeadersMultiMap headers(String method, String scheme, String path, String authority) {
-    Http2Headers headers = new DefaultHttp2Headers().method(method).scheme(scheme).path(path);
+  private Http2HeadersMultiMap headers(String method, String scheme, String path, String authority) {
+    Http2Headers headers = createHttpHeader().method(method).scheme(scheme).path(path);
     if (authority != null) {
       headers.authority(authority);
     }
-    return new Http2HeadersMultiMap(headers);
+    Http2HeadersMultiMap http2HeadersMultiMap = new Http2HeadersMultiMap(headers);
+    return http2HeadersMultiMap.prepare();
   }
 
-  private static Http2HeadersMultiMap GET(String scheme, String path) {
+  protected DefaultHttp2Headers createHttpHeader() {
+    return new DefaultHttp2Headers();
+  }
+
+  private Http2HeadersMultiMap GET(String scheme, String path) {
     return headers("GET", scheme, path, null);
   }
 
-  private static Http2HeadersMultiMap GET(String scheme, String path, String authority) {
+  private Http2HeadersMultiMap GET(String scheme, String path, String authority) {
     return headers("GET", scheme, path, authority);
   }
 
-  private static Http2HeadersMultiMap GET(String path) {
+  private Http2HeadersMultiMap GET(String path) {
     return headers("GET", "https", path, null);
   }
 
-  private static Http2HeadersMultiMap POST(String path) {
+  private Http2HeadersMultiMap POST(String path) {
     return headers("POST", "https", path, null);
   }
+
+
 
   @Test
   public void testConnectionHandler() throws Exception {
@@ -413,11 +410,11 @@ public class Http2ServerTest extends Http2TestBase {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
-        Http2HeadersMultiMap headers = new Http2HeadersMultiMap(new DefaultHttp2Headers().
+        Http2HeadersMultiMap headers = new Http2HeadersMultiMap(createHttpHeader().
           method("GET").
           scheme("http").
           authority("whatever.com").
-          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2"));
+          path("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2")).prepare();
         requestHandler.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       }
     });
@@ -590,7 +587,7 @@ public class Http2ServerTest extends Http2TestBase {
       @Override
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
-        Http2HeadersMultiMap headers = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").authority("whatever.com"));
+        Http2HeadersMultiMap headers = new Http2HeadersMultiMap(createHttpHeader().method("CONNECT").authority("whatever.com")).prepare();
         requestHandler.writeHeaders(request.context, id, headers, 0, true, request.context.newPromise());
       }
     });
@@ -1192,7 +1189,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testHostHeaderInsteadOfAuthorityPseudoHeader() throws Exception {
     // build the HTTP/2 headers, omit the ":authority" pseudo-header and include the "host" header instead
-    Http2HeadersMultiMap headers = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("https").path("/").set("host", DEFAULT_HTTPS_HOST_AND_PORT));
+    Http2HeadersMultiMap headers = new Http2HeadersMultiMap(createHttpHeader().method("GET").scheme("https").path("/").set("host", DEFAULT_HTTPS_HOST_AND_PORT)).prepare();
     server.requestHandler(req -> {
       // validate that the authority is properly populated
       assertEquals(DEFAULT_HTTPS_HOST, req.authority().host());
@@ -1214,61 +1211,61 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testMissingMethodPseudoHeader() throws Exception {
-    final Http2HeadersMultiMap http = new Http2HeadersMultiMap(new DefaultHttp2Headers().scheme("http").path("/"));
+    final Http2HeadersMultiMap http = new Http2HeadersMultiMap(createHttpHeader().scheme("http").path("/"));
     testMalformedRequestHeaders(http);
   }
 
   @Test
   public void testMissingSchemePseudoHeader() throws Exception {
-    final Http2HeadersMultiMap get = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").path("/"));
+    final Http2HeadersMultiMap get = new Http2HeadersMultiMap(createHttpHeader().method("GET").path("/"));
     testMalformedRequestHeaders(get);
   }
 
   @Test
   public void testMissingPathPseudoHeader() throws Exception {
-    final Http2HeadersMultiMap scheme = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http"));
+    final Http2HeadersMultiMap scheme = new Http2HeadersMultiMap(createHttpHeader().method("GET").scheme("http"));
     testMalformedRequestHeaders(scheme);
   }
 
   @Test
   public void testInvalidAuthority() throws Exception {
-    final Http2HeadersMultiMap path = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority("foo@" + HTTPS_HOST_AND_PORT).path("/"));
+    final Http2HeadersMultiMap path = new Http2HeadersMultiMap(createHttpHeader().method("GET").scheme("http").authority("foo@" + HTTPS_HOST_AND_PORT).path("/")).prepare();
     testMalformedRequestHeaders(path);
   }
 
   @Test
   public void testInvalidHost1() throws Exception {
-    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(createHttpHeader().method("GET").scheme("http").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT).path("/")).prepare();
     testMalformedRequestHeaders(set);
   }
 
   @Test
   public void testInvalidHost2() throws Exception {
-    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "another-host:" + DEFAULT_HTTPS_PORT));
+    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(createHttpHeader().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", "another-host:" + DEFAULT_HTTPS_PORT)).prepare();
     testMalformedRequestHeaders(set);
   }
 
   @Test
   public void testInvalidHost3() throws Exception {
-    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", DEFAULT_HTTP_HOST));
+    final Http2HeadersMultiMap set = new Http2HeadersMultiMap(createHttpHeader().method("GET").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT).path("/").set("host", DEFAULT_HTTP_HOST)).prepare();
     testMalformedRequestHeaders(set);
   }
 
   @Test
   public void testConnectInvalidPath() throws Exception {
-    final Http2HeadersMultiMap connect = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").path("/").authority(DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap connect = new Http2HeadersMultiMap(createHttpHeader().method("CONNECT").path("/").authority(DEFAULT_HTTPS_HOST_AND_PORT));
     testMalformedRequestHeaders(connect);
   }
 
   @Test
   public void testConnectInvalidScheme() throws Exception {
-    final Http2HeadersMultiMap authority = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap authority = new Http2HeadersMultiMap(createHttpHeader().method("CONNECT").scheme("http").authority(DEFAULT_HTTPS_HOST_AND_PORT)).prepare();
     testMalformedRequestHeaders(authority);
   }
 
   @Test
   public void testConnectInvalidAuthority() throws Exception {
-    final Http2HeadersMultiMap connect = new Http2HeadersMultiMap(new DefaultHttp2Headers().method("CONNECT").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT));
+    final Http2HeadersMultiMap connect = new Http2HeadersMultiMap(createHttpHeader().method("CONNECT").authority("foo@" + DEFAULT_HTTPS_HOST_AND_PORT)).prepare();
     testMalformedRequestHeaders(connect);
   }
 
@@ -2436,7 +2433,7 @@ public class Http2ServerTest extends Http2TestBase {
       public void accept(Http2TestClient.Connection request) {
         super.accept(request);
 
-        requestHandler.writeHeaders(request.context, id, new DefaultHttp2Headers().method("CONNECT").authority("example.com:80"), 0, false, request.context.newPromise());
+        requestHandler.writeHeaders(request.context, id, new Http2HeadersMultiMap(createHttpHeader().method("CONNECT").authority("example.com:80")).prepare(), 0, false, request.context.newPromise());
         requestHandler.flush();
       }
 
