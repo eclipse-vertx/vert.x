@@ -136,7 +136,7 @@ class Http2H3TestClient extends Http2TestClient {
       QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
       Http2HeadersMultiMap headersMultiMap = new Http2HeadersMultiMap(frame.headers());
       headersMultiMap.validate(false);
-      handler.onHeadersRead(ctx, (int)streamChannel.streamId(), headersMultiMap, 0, (short) 0, false, 0, false);
+      handler.onHeadersRead(ctx, (int) streamChannel.streamId(), headersMultiMap, 0, (short) 0, false, 0, false);
       ReferenceCountUtil.release(frame);
     }
 
@@ -144,7 +144,7 @@ class Http2H3TestClient extends Http2TestClient {
     protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) throws Exception {
       headerReceived = false;
       QuicStreamChannel streamChannel = (QuicStreamChannel) ctx.channel();
-      handler.onDataRead(ctx, (int)streamChannel.streamId(), frame.content(), 0, true);
+      handler.onDataRead(ctx, (int) streamChannel.streamId(), frame.content(), 0, true);
       ReferenceCountUtil.release(frame);
     }
 
@@ -184,6 +184,7 @@ class Http2H3TestClient extends Http2TestClient {
     @Override
     protected void channelRead(ChannelHandlerContext ctx, Http3UnknownFrame frame) {
       super.channelRead(ctx, frame);
+      handler.onUnknownFrame(ctx, (byte) frame.type(), (int) ((QuicStreamChannel) ctx.channel()).streamId(), null, frame.content());
     }
 
     @Override
@@ -202,52 +203,53 @@ class Http2H3TestClient extends Http2TestClient {
 
 class TestH3ClientHandler extends ChannelInboundHandlerAdapter {
 
-    private final Http2TestClient.GeneralConnectionHandler myConnectionHandler;
-    private boolean handled;
+  private final Http2TestClient.GeneralConnectionHandler myConnectionHandler;
+  private boolean handled;
 
-    public TestH3ClientHandler(
-      Http2TestClient.GeneralConnectionHandler myConnectionHandler,
-      Http2ConnectionDecoder decoder,
-      Http2ConnectionEncoder encoder,
-      Http2Settings initialSettings) {
+  public TestH3ClientHandler(
+    Http2TestClient.GeneralConnectionHandler myConnectionHandler,
+    Http2ConnectionDecoder decoder,
+    Http2ConnectionEncoder encoder,
+    Http2Settings initialSettings) {
 //      super(decoder, encoder, initialSettings);
-      this.myConnectionHandler = myConnectionHandler;
-    }
+    this.myConnectionHandler = myConnectionHandler;
+  }
 
-    @Override
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-      super.handlerAdded(ctx);
-      if (ctx.channel().isActive()) {
-        checkHandle(ctx);
-      }
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-      super.channelActive(ctx);
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    super.handlerAdded(ctx);
+    if (ctx.channel().isActive()) {
       checkHandle(ctx);
-    }
-
-    private void checkHandle(ChannelHandlerContext ctx) {
-      if (!handled) {
-        handled = true;
-        Http2TestClient.Connection conn = new Http2TestClient.Connection(ctx, null, null, null);
-        myConnectionHandler.accept0(conn);
-      }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-      // Ignore
     }
   }
 
+  @Override
+  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    super.channelActive(ctx);
+    checkHandle(ctx);
+  }
+
+  private void checkHandle(ChannelHandlerContext ctx) {
+    if (!handled) {
+      handled = true;
+      Http2TestClient.Connection conn = new Http2TestClient.Connection(ctx, null, null, null);
+      myConnectionHandler.accept0(conn);
+    }
+  }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    // Ignore
+  }
+}
+
 
 class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
+  private Http2TestClient.Connection request;
 
   @Override
   public void setConnection(Http2TestClient.Connection request) {
-
+    this.request = request;
   }
 
   @Override
@@ -284,7 +286,7 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
 
   @Override
   public void writeRstStream(ChannelHandlerContext ctx, int streamId, long errorCode, ChannelPromise promise) {
-
+    ((QuicStreamChannel) ctx.channel()).shutdownOutput((int) errorCode, promise);
   }
 
   @Override
@@ -294,17 +296,18 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
 
   @Override
   public void flush() {
-
+    request.channel.parent().flush();
   }
 
   @Override
   public void writeGoAway(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData, ChannelPromise promise) {
-
+    QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(ctx.channel().parent());
+    controlStreamChannel.write(new DefaultHttp3GoAwayFrame(lastStreamId));
   }
 
   @Override
   public void writeFrame(ChannelHandlerContext ctx, byte b, int id, Http2Flags http2Flags, ByteBuf byteBuf, ChannelPromise channelPromise) {
-
+    ctx.channel().write(new DefaultHttp3UnknownFrame(b, byteBuf));
   }
 
   @Override
@@ -319,7 +322,7 @@ class Http2H3RequestHandler implements Http2TestClient.RequestHandler {
 
   @Override
   public boolean isWritable(int id) {
-    return false;
+    return request.channel.isWritable();
   }
 
   @Override
