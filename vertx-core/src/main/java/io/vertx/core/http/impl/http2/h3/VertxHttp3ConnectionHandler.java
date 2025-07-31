@@ -72,6 +72,7 @@ import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2StreamBase;
 import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -92,6 +93,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
   private final Function<VertxHttp3ConnectionHandler<C>, C> connectionFactory;
   private final GlobalTrafficShapingHandler trafficShapingHandler;
+  private final ContextInternal context;
   private C connection;
   private ChannelHandlerContext chctx;
   private Promise<C> connectFuture;
@@ -119,6 +121,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     boolean isServer,
     GlobalTrafficShapingHandler trafficShapingHandler) {
     this.connectionFactory = connectionFactory;
+    this.context = context;
     this.httpSettings = httpSettings;
     this.isServer = isServer;
     this.trafficShapingHandler = trafficShapingHandler;
@@ -252,7 +255,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
   void onGoAwayReceived(Http3GoAwayFrame http3GoAwayFrame) {
     int lastStreamId = (int) http3GoAwayFrame.id();
     log.debug(String.format("%s - onGoAwayReceived() called for streamId: %s", agentType, lastStreamId));
-    connection.onGoAwayReceived(new GoAway().setErrorCode(-1).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(Unpooled.EMPTY_BUFFER)));
+    connection.onGoAwayReceived(new GoAway().setErrorCode(0).setLastStreamId(lastStreamId).setDebugData(BufferInternal.buffer(Unpooled.EMPTY_BUFFER)));
   }
 
   public void writeHeaders(QuicStreamChannel streamChannel, Http2HeadersMultiMap headers, boolean end,
@@ -378,18 +381,20 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     streamChannel.shutdownOutput((int) code, promise);
   }
 
-  void writeGoAway(long errorCode, long lastStreamId, ByteBuf debugData) {
+  io.vertx.core.Future<Object> writeGoAway(long errorCode, long lastStreamId, ByteBuf debugData) {
+    PromiseInternal<Object> promise = context.promise();
     EventExecutor executor = chctx.executor();
     if (executor.inEventLoop()) {
-      _writeGoAway(errorCode, lastStreamId, debugData);
+      _writeGoAway(errorCode, lastStreamId, debugData, promise);
     } else {
       executor.execute(() -> {
-        _writeGoAway(errorCode, lastStreamId, debugData);
+        _writeGoAway(errorCode, lastStreamId, debugData, promise);
       });
     }
+    return promise.future();
   }
 
-  private void _writeGoAway(long errorCode, long lastStreamId, ByteBuf debugData) {
+  private void _writeGoAway(long errorCode, long lastStreamId, ByteBuf debugData, PromiseInternal<Object> promise) {
     QuicStreamChannel controlStreamChannel = Http3.getLocalControlStream(chctx.channel());
     assert controlStreamChannel != null;
 
@@ -398,15 +403,18 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
       agentType, lastStreamId, controlStreamChannel.streamId(), controlStreamChannel.isActive(), controlStreamChannel.isOpen()
     ));
 
-    ChannelPromise promise = controlStreamChannel.newPromise();
-    promise.addListener(future -> log.debug(String.format("%s - Writing goAway %s for channelId: %s, streamId: %s",
-          agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
-      controlStreamChannel.streamId())));
+    ChannelPromise promise0 = controlStreamChannel.newPromise();
+    promise0.addListener(future -> {
+      log.debug(String.format("%s - Writing goAway %s for channelId: %s, streamId: %s",
+        agentType, future.isSuccess() ? "succeeded" : "failed", controlStreamChannel.id(),
+        controlStreamChannel.streamId()));
+      promise.tryComplete();
+    });
 
     Http3GoAwayFrame goAwayFrame = new DefaultHttp3GoAwayFrame(lastStreamId);
 
     onGoAwaySent(Math.toIntExact(lastStreamId), errorCode, debugData);
-    controlStreamChannel.write(goAwayFrame, promise);
+    controlStreamChannel.write(goAwayFrame, promise0);
     checkFlush();
   }
 
@@ -500,7 +508,7 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
 
         Http2StreamBase vertxStream = getVertxStreamFromStreamChannel(ctx);
         if (vertxStream != null) {
-          vertxStream.onReset(-1);
+          vertxStream.onReset(0);
         } else {
           exception_ = new StreamResetException(0, exception);
         }
@@ -632,8 +640,8 @@ public class VertxHttp3ConnectionHandler<C extends Http3ConnectionImpl> extends 
     return httpSettings;
   }
 
-  public void gracefulShutdownTimeoutMillis(long timeout) {
-    //TODO: implement
+  public io.vertx.core.Future<Object> gracefulShutdownTimeoutMillis(long timeout) {
+    return writeGoAway(1, getLastStreamId() > 0 ? getLastStreamId() : 0, Unpooled.EMPTY_BUFFER);
   }
 
   public boolean goAwayReceived() {

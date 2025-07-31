@@ -244,15 +244,7 @@ public class Http2H3ServerTest extends Http2ServerTest {
     super.testServerSettings();
   }
 
-  @Ignore
-  @Override
-  @Test
-  public void testServerClose() throws Exception {
-    //TODO: resolve this test issue.
-    super.testServerClose();
-  }
-
-  @Ignore
+   @Ignore
   @Override
   @Test
   public void testUpdateConnectionWindowSize() throws Exception {
@@ -352,14 +344,6 @@ public class Http2H3ServerTest extends Http2ServerTest {
   @Ignore
   @Override
   @Test
-  public void testClientSendGoAwayNoError() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testClientSendGoAwayNoError();
-  }
-
-  @Ignore
-  @Override
-  @Test
   public void testTrailers() throws Exception {
     //TODO: resolve this test issue. this test case fails randomly!
     super.testTrailers();
@@ -379,15 +363,6 @@ public class Http2H3ServerTest extends Http2ServerTest {
   public void testNetSocketConnect() throws Exception {
     //TODO: resolve this test issue. this test case fails randomly!
     super.testNetSocketConnect();
-  }
-
-
-  @Ignore
-  @Override
-  @Test
-  public void testServerCloseNetSocket() throws Exception {
-    //TODO: resolve this test issue. this test case fails randomly!
-    super.testServerCloseNetSocket();
   }
 
   @Ignore
@@ -420,14 +395,6 @@ public class Http2H3ServerTest extends Http2ServerTest {
   public void testConnectionWindowSize() throws Exception {
     //TODO: resolve this test issue.
     super.testConnectionWindowSize();
-  }
-
-  @Ignore
-  @Override
-  @Test
-  public void testNetSocketHandleReset() throws Exception {
-    //TODO: resolve this test issue.
-    super.testNetSocketHandleReset();
   }
 
   @Ignore

@@ -98,7 +98,9 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
 
   @Override
   public void handleClosed() {
-    super.handleClosed();
+    handler.gracefulShutdownTimeoutMillis(0).onComplete(event -> {
+      super.handleClosed();
+    });
   }
 
   protected void handleIdle(IdleStateEvent event) {
@@ -350,7 +352,7 @@ abstract class Http3ConnectionImpl extends ConnectionBase implements HttpConnect
       promise.fail("Invalid timeout value " + timeout);
       return;
     }
-    handler.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
+//    handler.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
     ChannelFuture fut = channel.close();
     fut.addListener(promise);
   }
