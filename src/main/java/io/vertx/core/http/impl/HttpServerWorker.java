@@ -257,6 +257,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
       .server(true)
       .useCompression(compressionOptions)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
+      .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
       .useUniformStreamByteDistributor(server.useH2UniformStreamByteDistributor)
