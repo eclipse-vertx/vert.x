@@ -24,7 +24,7 @@ public class AddressResolverOptionsConverter {
           break;
         case "hostsRefreshPeriod":
           if (member.getValue() instanceof Number) {
-            obj.setHostsRefreshPeriod(((Number)member.getValue()).intValue());
+            obj.setHostsRefreshPeriod(((Number)member.getValue()).longValue());
           }
           break;
         case "servers":
