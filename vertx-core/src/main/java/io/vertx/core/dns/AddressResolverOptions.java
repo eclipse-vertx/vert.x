@@ -78,7 +78,7 @@ public class AddressResolverOptions {
   /**
    * The default value for the hosts refresh value in nanos = 0 (disabled)
    */
-  public static final int DEFAULT_HOSTS_REFRESH_PERIOD = 0;
+  public static final long DEFAULT_HOSTS_REFRESH_PERIOD = 0;
 
   /**
    * The default value for the max dns queries per query = 4
@@ -112,7 +112,7 @@ public class AddressResolverOptions {
 
   private String hostsPath;
   private Buffer hostsValue;
-  private int hostsRefreshPeriod;
+  private long hostsRefreshPeriod;
   private List<String> servers;
   private boolean optResourceEnabled;
   private int cacheMinTimeToLive;
@@ -210,7 +210,7 @@ public class AddressResolverOptions {
   /**
    * @return the hosts configuration refresh period in nanos
    */
-  public int getHostsRefreshPeriod() {
+  public long getHostsRefreshPeriod() {
     return hostsRefreshPeriod;
   }
 
@@ -223,7 +223,7 @@ public class AddressResolverOptions {
    *
    * @param hostsRefreshPeriod the hosts configuration refresh period
    */
-  public AddressResolverOptions setHostsRefreshPeriod(int hostsRefreshPeriod) {
+  public AddressResolverOptions setHostsRefreshPeriod(long hostsRefreshPeriod) {
     if (hostsRefreshPeriod < 0) {
       throw new IllegalArgumentException("hostsRefreshPeriod must be >= 0");
     }
