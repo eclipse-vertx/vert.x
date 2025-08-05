@@ -100,7 +100,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     this.vertx = vertx;
     this.hostsPath = options.getHostsPath();
     this.hostsValue = options.getHostsValue();
-    this.hostsRefreshPeriodNanos = options.getHostsRefreshPeriod();
+    this.hostsRefreshPeriodNanos = options.getHostsRefreshPeriodUnit().toNanos(options.getHostsRefreshPeriod());
 
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
     builder.hostsFileEntriesResolver(this);
