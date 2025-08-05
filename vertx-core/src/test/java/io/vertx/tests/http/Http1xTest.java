@@ -5431,7 +5431,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testMissingHostHeader() throws Exception {
+  public void testServerMissingHostHeader() throws Exception {
     server.requestHandler(req -> {
       assertEquals(null, req.authority());
       assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
@@ -5443,6 +5443,23 @@ public class Http1xTest extends HttpTest {
       so.write("GET / HTTP/1.1\r\n\r\n");
     }));
     await();
+  }
+
+  @Test
+  public void testClientMissingHostHeader() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(null, req.authority());
+      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(request -> request
+        .authority(null)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
   @Test
