@@ -20,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.impl.Utils.isLinux;
 import static io.vertx.core.internal.resolver.NameResolver.parseLinux;
@@ -76,7 +77,12 @@ public class AddressResolverOptions {
   public static final int DEFAULT_QUERY_TIMEOUT = 5000;
 
   /**
-   * The default value for the hosts refresh value in nanos = 0 (disabled)
+   * The default time unit for the hosts refresh value = NANOSECONDS
+   */
+  public static final TimeUnit DEFAULT_HOSTS_REFRESH_PERIOD_UNIT = TimeUnit.NANOSECONDS;
+
+  /**
+   * The default value for the hosts refresh value = 0 (disabled)
    */
   public static final int DEFAULT_HOSTS_REFRESH_PERIOD = 0;
 
@@ -112,6 +118,7 @@ public class AddressResolverOptions {
 
   private String hostsPath;
   private Buffer hostsValue;
+  private TimeUnit hostsRefreshPeriodUnit;
   private int hostsRefreshPeriod;
   private List<String> servers;
   private boolean optResourceEnabled;
@@ -139,12 +146,14 @@ public class AddressResolverOptions {
     ndots = DEFAULT_NDOTS;
     rotateServers = DEFAULT_ROTATE_SERVERS;
     roundRobinInetAddress = DEFAULT_ROUND_ROBIN_INET_ADDRESS;
+    hostsRefreshPeriodUnit = DEFAULT_HOSTS_REFRESH_PERIOD_UNIT;
     hostsRefreshPeriod = DEFAULT_HOSTS_REFRESH_PERIOD;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
     this.hostsPath = other.hostsPath;
     this.hostsValue = other.hostsValue != null ? other.hostsValue.copy() : null;
+    this.hostsRefreshPeriodUnit = other.getHostsRefreshPeriodUnit() != null ? other.getHostsRefreshPeriodUnit() : DEFAULT_HOSTS_REFRESH_PERIOD_UNIT;
     this.hostsRefreshPeriod = other.hostsRefreshPeriod;
     this.servers = other.servers != null ? new ArrayList<>(other.servers) : null;
     this.optResourceEnabled = other.optResourceEnabled;
@@ -204,6 +213,24 @@ public class AddressResolverOptions {
    */
   public AddressResolverOptions setHostsValue(Buffer hostsValue) {
     this.hostsValue = hostsValue;
+    return this;
+  }
+
+  /**
+   * @return the hosts configuration refresh period time unit
+   */
+  public TimeUnit getHostsRefreshPeriodUnit() {
+    return hostsRefreshPeriodUnit;
+  }
+
+  /**
+   * Set the hosts configuration refresh period time unit. If not specified, default is nanoseconds.
+   *
+   * @param hostsRefreshPeriodUnit specify time unit
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setHostsRefreshPeriodUnit(TimeUnit hostsRefreshPeriodUnit) {
+    this.hostsRefreshPeriodUnit = hostsRefreshPeriodUnit;
     return this;
   }
 
