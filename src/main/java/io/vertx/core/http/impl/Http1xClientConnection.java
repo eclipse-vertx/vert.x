@@ -1311,7 +1311,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
+    // The readWindow check is here because it's possible for a connection to released back to the pool
+    // if a request ends, but the client has not consumed the response. In this case, readWindow will be
+    // high and can lead to the channel autoRead being disabled if a new request comes in, causing this new
+    // request to hang until the first client consumes the response of the first request.
+    // So instead, exclude such connections from being reused until the client has finished consuming the response.
+    return (expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp) && readWindow == 0;
   }
 
   private synchronized void shutdownNow() {

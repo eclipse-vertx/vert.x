@@ -45,9 +45,11 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
       if (pooled.available() > 0) {
         HttpClientConnection conn = pooled.get();
         if (selected == null) {
-          selected = pooled;
+          if (pooled.get().isValid()) {
+            selected = pooled;
+          }
         } else {
-          if (conn.lastResponseReceivedTimestamp() > last) {
+          if (conn.lastResponseReceivedTimestamp() > last && conn.isValid()) {
             selected = pooled;
           }
         }
