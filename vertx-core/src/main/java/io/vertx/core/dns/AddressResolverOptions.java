@@ -235,14 +235,14 @@ public class AddressResolverOptions {
   }
 
   /**
-   * @return the hosts configuration refresh period in nanos
+   * @return the hosts configuration refresh period in time unit specified by {@link #getHostsRefreshPeriodUnit()}.
    */
   public int getHostsRefreshPeriod() {
     return hostsRefreshPeriod;
   }
 
   /**
-   * Set the hosts configuration refresh period in nanos, {@code 0} disables it.
+   * Set the hosts configuration refresh period in time unit specified by {@link #getHostsRefreshPeriodUnit()}, {@code 0} disables it.
    * <p/>
    * The resolver caches the hosts configuration {@link #hostsPath file} after it has read it. When
    * the content of this file can change, setting a positive refresh period will load the configuration
