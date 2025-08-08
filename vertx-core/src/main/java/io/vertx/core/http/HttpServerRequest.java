@@ -126,16 +126,18 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
    *         </ul>
    *         When the authority string does not carry a port, the {@link HostAndPort#port()} returns {@code -1} to
    *         indicate the scheme port is prevalent.
+   * @deprecated Instead use {@link #authority(boolean)} with {@code false}.
    */
+  @Deprecated(since = "5.0.2", forRemoval = true)
   @Nullable
   HostAndPort authority();
 
   /**
-   * @return the request {@literal :authority} pseudo header for HTTP/2, can be {@code null}. Always {@code null} for
-   *         HTTP/1.x.
+   * @param real whether to return the value of the real HTTP/2 {@literal :authority} header, or the computed one.
+   * @return the authority, either computed or real. May be null when {@literal real} is {@code true}.
    */
   @Nullable
-  HostAndPort authorityPseudoHeader();
+  HostAndPort authority(boolean real);
 
   /**
    * @return the total number of bytes read for the body of the request.

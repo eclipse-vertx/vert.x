@@ -345,12 +345,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public @Nullable HostAndPort authority() {
-    return stream.authority();
+    return headersMap.authority(false);
   }
 
   @Override
-  public @Nullable HostAndPort authorityPseudoHeader() {
-    return headersMap.originalAuthority();
+  public @Nullable HostAndPort authority(boolean real) {
+    return headersMap.authority(real);
   }
 
   @Override

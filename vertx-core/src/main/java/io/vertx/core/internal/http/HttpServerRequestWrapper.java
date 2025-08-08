@@ -102,8 +102,8 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
-  public @Nullable HostAndPort authorityPseudoHeader() {
-    return delegate.authorityPseudoHeader();
+  public @Nullable HostAndPort authority(boolean real) {
+    return delegate.authority(real);
   }
 
   @Override

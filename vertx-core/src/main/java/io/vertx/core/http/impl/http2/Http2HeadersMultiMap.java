@@ -58,7 +58,7 @@ public class Http2HeadersMultiMap implements MultiMap {
   private Integer status;
   private HttpMethod method;
   private HostAndPort computedAuthority;
-  private HostAndPort originalAuthority;
+  private HostAndPort realAuthority;
   private String uri;
   private String scheme;
 
@@ -81,8 +81,8 @@ public class Http2HeadersMultiMap implements MultiMap {
       CharSequence authorityHeader = headers.get(HttpHeaders.PSEUDO_AUTHORITY);
       if (authorityHeader != null) {
         authorityHeaderAsString = authorityHeader.toString();
-        this.originalAuthority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
-        currentAuthority = this.originalAuthority;
+        this.realAuthority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+        currentAuthority = this.realAuthority;
       }
 
       CharSequence hostHeader = headers.get(HttpHeaders.HOST);
@@ -211,12 +211,13 @@ public class Http2HeadersMultiMap implements MultiMap {
     return this;
   }
 
+  @Deprecated(since="5.0.2", forRemoval = true)
   public HostAndPort authority() {
     return computedAuthority;
   }
 
-  public HostAndPort originalAuthority() {
-    return originalAuthority;
+  public HostAndPort authority(boolean real) {
+    return real ? realAuthority : computedAuthority;
   }
 
   public String scheme() {

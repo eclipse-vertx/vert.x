@@ -283,8 +283,8 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public HostAndPort authorityPseudoHeader() {
-    return null;
+  public HostAndPort authority(boolean real) {
+    return real ? null : authority();
   }
 
   @Override
