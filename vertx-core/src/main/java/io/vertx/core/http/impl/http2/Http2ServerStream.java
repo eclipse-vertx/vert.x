@@ -39,7 +39,6 @@ public class Http2ServerStream extends Http2StreamBase {
   private String scheme;
   private HttpMethod method;
   private String uri;
-  private HostAndPort authority;
   private Http2ServerStreamHandler handler;
 
   // Observability
@@ -67,7 +66,6 @@ public class Http2ServerStream extends Http2StreamBase {
     this.method = method;
     this.uri = uri;
     this.scheme = null;
-    this.authority = null;
     this.tracingPolicy = tracingPolicy;
     this.serverMetrics = serverMetrics;
     this.socketMetric = socketMetric;
@@ -88,7 +86,7 @@ public class Http2ServerStream extends Http2StreamBase {
 
   private HttpRequest observableRequest() {
     if (observableRequest == null) {
-      observableRequest = new HttpRequestHead(method, uri, requestHeaders, authority, null, null);
+      observableRequest = new HttpRequestHead(method, uri, requestHeaders, requestHeaders.authority(false), null, null);
     }
     return observableRequest;
   }
@@ -126,8 +124,13 @@ public class Http2ServerStream extends Http2StreamBase {
     return scheme;
   }
 
+  @Deprecated(since="5.0.2", forRemoval = true)
   public HostAndPort authority() {
-    return authority;
+    return requestHeaders.authority(false);
+  }
+
+  public HostAndPort authority(boolean real) {
+    return requestHeaders.authority(real);
   }
 
   public Object metric() {
@@ -143,7 +146,6 @@ public class Http2ServerStream extends Http2StreamBase {
 
     this.method = headers.method();
     this.uri = headers.path();
-    this.authority = headers.authority();
     this.scheme = headers.scheme();
     this.requestHeaders = headers;
 

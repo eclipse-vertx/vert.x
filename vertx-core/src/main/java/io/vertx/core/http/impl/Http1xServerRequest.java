@@ -283,6 +283,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
+  public HostAndPort authority(boolean real) {
+    return real ? null : authority();
+  }
+
+  @Override
   public long bytesRead() {
     synchronized (conn) {
       return bytesRead;
