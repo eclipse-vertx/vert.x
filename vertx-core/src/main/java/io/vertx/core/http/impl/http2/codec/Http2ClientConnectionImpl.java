@@ -65,6 +65,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
+  }
+
+  @Override
   public HostAndPort authority() {
     return authority;
   }

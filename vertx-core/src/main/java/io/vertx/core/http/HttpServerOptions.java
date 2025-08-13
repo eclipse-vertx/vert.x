@@ -226,6 +226,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxFormFields;
   private int maxFormBufferedBytes;
   private Http2Settings initialSettings;
+  private Http3Settings initialHttp3Settings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextEnabled;
   private int http2ConnectionWindowSize;
@@ -277,6 +278,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxFormFields = other.getMaxFormFields();
     this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.initialHttp3Settings = other.initialHttp3Settings != null ? new Http3Settings(other.initialHttp3Settings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextEnabled = other.http2ClearTextEnabled;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
@@ -336,6 +338,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
+    initialHttp3Settings = new Http3Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
@@ -894,6 +897,25 @@ public class HttpServerOptions extends NetServerOptions {
     this.initialSettings = settings;
     return this;
   }
+
+  /**
+   * @return the initial HTTP/3 connection settings
+   */
+  public Http3Settings getInitialHttp3Settings() {
+    return initialHttp3Settings;
+  }
+
+  /**
+   * Set the HTTP/3 connection settings immediately sent by to the server when the client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setInitialHttp3Settings(Http3Settings settings) {
+    this.initialHttp3Settings = settings;
+    return this;
+  }
+
 
   /**
    * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation

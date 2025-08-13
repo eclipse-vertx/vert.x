@@ -10,10 +10,13 @@
  */
 package io.vertx.core.net.impl;
 
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
@@ -22,6 +25,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -33,6 +37,7 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
@@ -73,6 +78,7 @@ import java.util.concurrent.TimeUnit;
 public class NetServerImpl implements Closeable, MetricsProvider, NetServerInternal {
 
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
+  public static final String SERVER_SSL_HANDLER_NAME = "ssl";
 
   private final VertxInternal vertx;
   private final NetServerOptions options;
@@ -100,6 +106,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private Future<Channel> bindFuture;
   private TCPMetrics<?> metrics;
   private volatile int actualPort;
+  private Channel datagramChannel;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
 
@@ -234,9 +241,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
-        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(),
-          options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
+        if (!HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+          configureChannelSslHandler(ch, sslContextProvider);
+        }
+
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
@@ -249,7 +257,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       } else {
         connected(ch, sslContextManager, sslOptions);
       }
-      if (trafficShapingHandler != null) {
+      if (trafficShapingHandler != null && !HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
         ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
       }
     }
@@ -344,6 +352,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             null,
             clientAuth,
             sslOptions.getApplicationLayerProtocols(),
+            QuicUtils.createServerQuicCodecBuilderInitializer(this.options.getQuicOptions(), channelBalancer),
             force,
             ctx);
           fut = updateInProgress;
@@ -356,6 +365,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           updateInProgress = null;
           if (ar.succeeded()) {
             sslContextProvider = fut;
+            if (HttpUtils.supportsQuic(options.getApplicationLayerProtocols()) && datagramChannel != null) {
+              configureChannelSslHandler(datagramChannel, sslContextProvider.result());
+            }
           }
         }
       });
@@ -485,7 +497,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         if (options.isSsl()) {
           ServerSSLOptions sslOptions = options.getSslOptions();
           configure(sslOptions);
-          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, null, sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext).onComplete(ar -> {
+          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, null,
+            sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(),
+            QuicUtils.createServerQuicCodecBuilderInitializer(this.options.getQuicOptions(), channelBalancer), listenContext);
+
+          sslContextProvider.onComplete(ar -> {
             if (ar.succeeded()) {
               bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
             } else {
@@ -536,14 +552,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     ServerID id) {
     // Socket bind
     channelBalancer.addWorker(eventLoop, worker);
-    ServerBootstrap bootstrap = new ServerBootstrap();
-    bootstrap.group(vertx.acceptorEventLoopGroup(), channelBalancer.workers());
-    bootstrap.childHandler(channelBalancer);
-    bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
-    applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+    AbstractBootstrap bootstrap = buildServerBootstrap(localAddress);
 
     // Actual bind
-    io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap);
+    io.netty.util.concurrent.Future<Channel> bindFuture = resolveAndBind(context, bindAddress, bootstrap, options);
     bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
       if (res.isSuccess()) {
         Channel ch = res.getNow();
@@ -565,6 +577,65 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         promise.fail(res.cause());
       }
     });
+  }
+
+  private AbstractBootstrap buildServerBootstrap(SocketAddress localAddress) {
+    if (options.isSsl() && HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+      // TODO: Alter the logic of this method based on the ServerBootstrap creation in a normal scenario without HTTP/3
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(eventLoop);
+      bootstrap.handler(new ChannelInitializer<NioDatagramChannel>() {
+        @Override
+        protected void initChannel(NioDatagramChannel ch) throws Exception {
+          datagramChannel = ch;
+          applyConnectionOptions(ch);
+          configureChannelSslHandler(datagramChannel, sslContextProvider.result());
+        }
+      });
+      applyConnectionOptions(bootstrap);
+
+      return bootstrap;
+    }
+    ServerBootstrap bootstrap = new ServerBootstrap();
+    bootstrap.group(vertx.acceptorEventLoopGroup(), channelBalancer.workers());
+
+    bootstrap.childHandler(channelBalancer);
+    bootstrap.childOption(ChannelOption.ALLOCATOR, VertxByteBufAllocator.POOLED_ALLOCATOR);
+    applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+    return bootstrap;
+  }
+
+  private void applyConnectionOptions(NioDatagramChannel datagramChannel) {
+    DatagramSocketOptions datagramSocketOptions = new DatagramSocketOptions();
+
+    datagramSocketOptions.setLogActivity(options.getLogActivity());
+    datagramSocketOptions.setSendBufferSize(options.getSendBufferSize());
+    datagramSocketOptions.setReceiveBufferSize(options.getReceiveBufferSize());
+    datagramSocketOptions.setReuseAddress(options.isReuseAddress());
+    datagramSocketOptions.setReusePort(options.isReusePort());
+    datagramSocketOptions.setTrafficClass(options.getTrafficClass());
+    datagramSocketOptions.setLogActivity(options.getLogActivity());
+    datagramSocketOptions.setActivityLogDataFormat(options.getActivityLogDataFormat());
+
+    //TODO: set the following attrs
+//    datagramSocketOptions.setBrsetIpV6();
+//    datagramSocketOptions.setLoopbackModeDsetIpV6();
+//    datagramSocketOptions.setMulticastTimsetIpV6();
+//    datagramSocketOptions.setMulticastNetworkInsetIpV6();
+//    datagramSocketOptions.setIpV6();
+
+    vertx.transport().configure(datagramChannel, datagramSocketOptions);
+  }
+
+  private void configureChannelSslHandler(Channel channel, SslContextProvider sslContextProvider) {
+    if (channel.pipeline().get(SERVER_SSL_HANDLER_NAME) != null) {
+      channel.pipeline().remove(SERVER_SSL_HANDLER_NAME);
+    }
+
+    SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, options.isSni());
+    channel.pipeline().addLast(SERVER_SSL_HANDLER_NAME, sslChannelProvider.createServerHandler(options.isUseAlpn(),
+      options.getSslHandshakeTimeout(), options.getSslHandshakeTimeoutUnit(),
+      HttpUtils.socketAddressToHostAndPort(channel.remoteAddress())));
   }
 
   public boolean isListening() {
@@ -591,6 +662,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
    */
   private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
     vertx.transport().configure(options, domainSocket, bootstrap);
+  }
+
+  private void applyConnectionOptions(Bootstrap bootstrap) {
+    vertx.transport().configure(options, bootstrap);
   }
 
 
@@ -689,11 +764,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   public static io.netty.util.concurrent.Future<Channel> resolveAndBind(ContextInternal context,
                                                                         SocketAddress socketAddress,
-                                                                        ServerBootstrap bootstrap) {
+                                                                        AbstractBootstrap bootstrap,
+                                                                        NetServerOptions options) {
     VertxInternal vertx = context.owner();
     io.netty.util.concurrent.Promise<Channel> promise = vertx.acceptorEventLoopGroup().next().newPromise();
     try {
-      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+      setChannelFactory(socketAddress, bootstrap, options, vertx);
     } catch (Exception e) {
       promise.setFailure(e);
       return promise;
@@ -727,7 +803,16 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return promise;
   }
 
-  private static void bind(ServerBootstrap bootstrap, InetAddress address, int port, io.netty.util.concurrent.Promise<Channel> promise) {
+  private static void setChannelFactory(SocketAddress socketAddress, AbstractBootstrap bootstrap,
+                                        NetServerOptions options, VertxInternal vertx) {
+    if (options.isSsl() && HttpUtils.supportsQuic(options.getSslOptions().getApplicationLayerProtocols())) {
+      bootstrap.channelFactory(() -> vertx.transport().datagramChannel());
+    } else {
+      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.isDomainSocket()));
+    }
+  }
+
+  private static void bind(AbstractBootstrap bootstrap, InetAddress address, int port, io.netty.util.concurrent.Promise<Channel> promise) {
     InetSocketAddress t = new InetSocketAddress(address, port);
     ChannelFuture future = bootstrap.bind(t);
     future.addListener(f -> {
@@ -737,5 +822,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         promise.setFailure(f.cause());
       }
     });
+  }
+
+  public GlobalTrafficShapingHandler getTrafficShapingHandler() {
+    return trafficShapingHandler;
   }
 }

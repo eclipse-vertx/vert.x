@@ -110,6 +110,10 @@
       <version>4.2.4.Final-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-http3</artifactId>
+    </dependency>
 
     <!-- Jackson -->
     <dependency>

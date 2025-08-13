@@ -11,14 +11,29 @@
 package io.vertx.tests.http;
 
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpServerOptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class Http2MultiplexClientTest extends Http2ClientTest {
 
   @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return super.createBaseServerOptions().setHttp2MultiplexImplementation(true);
+  }
+
+  @Override
   protected HttpClientOptions createBaseClientOptions() {
     return super.createBaseClientOptions().setHttp2MultiplexImplementation(true);
+  }
+
+  @Override
+  protected void manageMaxQueueRequestsCount(Long max) {
+    io.vertx.core.http.Http2Settings serverSettings = new io.vertx.core.http.Http2Settings();
+    if (max != null) {
+      serverSettings.setMaxConcurrentStreams(max);
+    }
+    serverOptions.setInitialSettings(serverSettings);
   }
 
   @Test
