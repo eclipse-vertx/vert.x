@@ -44,70 +44,57 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-common</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-handler</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-handler-proxy</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-http2</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-resolver-dns</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-haproxy</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-epoll</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-io_uring</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-kqueue</artifactId>
-      <version>4.2.4.Final-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
 
@@ -878,14 +865,12 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-epoll</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-io_uring</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -904,14 +889,12 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-epoll</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-io_uring</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -930,14 +913,12 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-epoll</artifactId>
           <classifier>linux-aarch_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-io_uring</artifactId>
           <classifier>linux-aarch_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -956,14 +937,12 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-resolver-dns-native-macos</artifactId>
           <classifier>osx-x86_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-kqueue</artifactId>
           <classifier>osx-x86_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -982,14 +961,12 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-resolver-dns-native-macos</artifactId>
           <classifier>osx-aarch_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-kqueue</artifactId>
           <classifier>osx-aarch_64</classifier>
-          <version>4.2.4.Final-SNAPSHOT</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
