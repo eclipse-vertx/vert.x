@@ -220,7 +220,7 @@ public class JacksonCodec implements JsonCodec {
     JsonToken remaining;
     try {
       parser.nextToken();
-      res = parseAny(parser);
+      res = parseValue(parser);
       remaining = parser.nextToken();
     } catch (IOException e) {
       throw new DecodeException(e.getMessage(), e);
@@ -233,12 +233,19 @@ public class JacksonCodec implements JsonCodec {
     return cast(res, type);
   }
 
-  private static Object parseAny(JsonParser parser) throws IOException, DecodeException {
+  /**
+   * Parse a JSON value given the {@code parser}, consuming the current parser token and possibly more
+   * when parsing an object or an array.
+   *
+   * @param parser the parser
+   * @return the parsed value as an object
+   */
+  public static Object parseValue(JsonParser parser) throws IOException, DecodeException {
     switch (parser.currentTokenId()) {
       case JsonTokenId.ID_START_OBJECT:
-        return parseObject(parser);
+        return internalParseObject(parser);
       case JsonTokenId.ID_START_ARRAY:
-        return parseArray(parser);
+        return internalParseArray(parser);
       case JsonTokenId.ID_STRING:
         return parser.getText();
       case JsonTokenId.ID_NUMBER_FLOAT:
@@ -255,13 +262,26 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
-  private static Map<String, Object> parseObject(JsonParser parser) throws IOException {
+  /**
+   * Parse a JSON object given the {@code parser}, the parser current token must be {@link JsonTokenId#ID_START_OBJECT}
+   *
+   * @param parser the parser
+   * @return the parsed object
+   */
+  public static Map<String, Object> parseObject(JsonParser parser) throws IOException {
+    if (parser.currentTokenId() != JsonTokenId.ID_START_OBJECT) {
+      throw new DecodeException("Expecting the current parser token to be the start of an object");
+    }
+    return internalParseObject(parser);
+  }
+
+  private static Map<String, Object> internalParseObject(JsonParser parser) throws IOException {
     String key1 = parser.nextFieldName();
     if (key1 == null) {
       return new LinkedHashMap<>(2);
     }
     parser.nextToken();
-    Object value1 = parseAny(parser);
+    Object value1 = parseValue(parser);
     String key2 = parser.nextFieldName();
     if (key2 == null) {
       LinkedHashMap<String, Object> obj = new LinkedHashMap<>(2);
@@ -269,7 +289,7 @@ public class JacksonCodec implements JsonCodec {
       return obj;
     }
     parser.nextToken();
-    Object value2 = parseAny(parser);
+    Object value2 = parseValue(parser);
     String key = parser.nextFieldName();
     if (key == null) {
       LinkedHashMap<String, Object> obj = new LinkedHashMap<>(2);
@@ -283,14 +303,27 @@ public class JacksonCodec implements JsonCodec {
     obj.put(key2, value2);
     do {
       parser.nextToken();
-      Object value = parseAny(parser);
+      Object value = parseValue(parser);
       obj.put(key, value);
       key = parser.nextFieldName();
     } while (key != null);
     return obj;
   }
 
-  private static List<Object> parseArray(JsonParser parser) throws IOException {
+  /**
+   * Parse a JSON array given the {@code parser}, the parser current token must be {@link JsonTokenId#ID_START_ARRAY}
+   *
+   * @param parser the parser
+   * @return the parsed array
+   */
+  public static List<Object> parseArray(JsonParser parser) throws IOException {
+    if (parser.currentTokenId() != JsonTokenId.ID_START_ARRAY) {
+      throw new DecodeException("Expecting the current parser token to be the start of an array");
+    }
+    return internalParseArray(parser);
+  }
+
+  private static List<Object> internalParseArray(JsonParser parser) throws IOException {
     List<Object> array = new ArrayList<>();
     while (true) {
       parser.nextToken();
@@ -300,7 +333,7 @@ public class JacksonCodec implements JsonCodec {
       } else if (tokenId == JsonTokenId.ID_END_ARRAY) {
         return array;
       }
-      Object value = parseAny(parser);
+      Object value = parseValue(parser);
       array.add(value);
     }
   }
