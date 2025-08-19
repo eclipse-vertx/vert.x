@@ -121,6 +121,27 @@ public final class JsonUtil {
     }
   }
 
+  /**
+   * Compares two objects to check if they are equal. This method handled the equality comparison
+   * in the following order.
+   *
+   * <ol>
+   *   <li>Check if both the objects are numbers. If both the objects are numbers, then the
+   *   equality of numbers will be checked.</li>
+   *   <li>If both the numbers are of different types, both the objects will be cast to the
+   *   class {@code Numbers}, and then both the numbers are compared for equality.</li>
+   *   <li>If both the objects are of a {@code CharSequence} type, then both the objects
+   *   will be converted to strings to check for the equality of the string representation
+   *   of the objects.</li>
+   *   <li>Finally, if none of the objects are equal, then the objets are compared to each
+   *   other for equality. In this case, it is the responsibility of the developer to define
+   *   the {@code equals(Object o1, Object o2)} for the class they define.</li>
+   * </ol>
+   *
+   * @param o1 The first object that will be compared.
+   * @param o2 The second object that will be compared.
+   * @return True, if the two objects are equal, false otherwise.
+   */
   public static boolean compare(Object o1, Object o2) {
     if (o1 instanceof Number && o2 instanceof Number) {
       if (o1.getClass() == o2.getClass()) {
