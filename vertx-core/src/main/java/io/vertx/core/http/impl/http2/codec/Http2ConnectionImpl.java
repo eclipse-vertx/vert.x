@@ -147,12 +147,12 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   void onStreamClosed(Http2Stream s) {
     Http2StreamBase stream = s.getProperty(streamKey);
     if (stream != null) {
-//      boolean active = chctx.channel().isActive();
-//      if (goAwayStatus != null) {
-//        stream.onException(new HttpClosedException(goAwayStatus));
-//      } else if (!active) {
-//        stream.onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
-//      }
+      boolean active = chctx.channel().isActive();
+      if (goAwayStatus != null) {
+        stream.onException(new HttpClosedException(goAwayStatus));
+      } else if (!active) {
+        stream.onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
+      }
       stream.onClose();
     }
   }
