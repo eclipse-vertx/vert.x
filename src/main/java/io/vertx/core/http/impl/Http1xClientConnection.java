@@ -333,7 +333,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     readWindow += len;
     boolean gt = readWindow > highWaterMark;
     if (le && gt) {
-      System.out.println("pause");
       doPause();
     }
   }
