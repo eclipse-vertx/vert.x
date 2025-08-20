@@ -208,7 +208,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    if (goAwayStatus == null) {
+    if (goAwayStatus == null || endOfStream) {
       StreamPriority streamPriority = new StreamPriority()
         .setDependency(streamDependency)
         .setWeight(weight)
@@ -219,7 +219,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
-    if (goAwayStatus == null) {
+    if (goAwayStatus == null || endOfStream) {
       onHeadersRead(streamId, headers, null, endOfStream);
     }
   }
