@@ -265,13 +265,13 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
   @Test
   public void testDynamicInboundRateUpdate() {
     Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
-    long startTime = System.nanoTime();
 
     Buffer expected = TestUtils.randomBuffer(64 * 1024 * 4);
-    Buffer received = Buffer.buffer();
     NetServer server = netServer();
 
     server.connectHandler(sock -> {
+      Buffer received = Buffer.buffer();
+      long startTime = System.nanoTime();
       sock.handler(buff -> {
         received.appendBuffer(buff);
         if (received.length() == expected.length()) {
@@ -281,8 +281,6 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
           testComplete();
         }
       });
-      // Send some data to the client to trigger the buffer write
-      sock.write("foo");
     });
     server.listen(testAddress).await();
 
@@ -294,9 +292,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
 
     Future<NetSocket> clientConnect = client.connect(testAddress);
     clientConnect.onComplete(onSuccess(sock -> {
-      sock.handler(buf -> {
-        sock.write(expected);
-      });
+      sock.write(expected);
     }));
     await();
   }
