@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
@@ -20,7 +21,22 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpVersion {
-  HTTP_1_0("http/1.0"), HTTP_1_1("http/1.1"), HTTP_2("h2");
+  HTTP_1_0("http/1.0"),
+  HTTP_1_1("http/1.1"),
+  HTTP_2("h2"),
+  @Unstable
+  HTTP_3("h3"),
+  @Unstable
+  HTTP_3_27("h3-27"),
+  @Unstable
+  HTTP_3_29("h3-29"),
+  @Unstable
+  HTTP_3_30("h3-30"),
+  @Unstable
+  HTTP_3_31("h3-31"),
+  @Unstable
+  HTTP_3_32("h3-32"),
+  ;
 
   private final String alpnName;
 
@@ -34,4 +50,5 @@ public enum HttpVersion {
   public String alpnName() {
     return alpnName;
   }
+
 }

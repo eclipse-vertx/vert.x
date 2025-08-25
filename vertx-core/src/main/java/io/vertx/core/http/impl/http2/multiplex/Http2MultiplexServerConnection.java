@@ -16,10 +16,14 @@ import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2FrameStream;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.http.Http3Settings;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
@@ -59,6 +63,11 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   public Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler) {
     this.streamHandler = handler;
     return this;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
   @Override
@@ -120,5 +129,25 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   @Override
   public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     promise.fail("Push not supported");
+  }
+
+  @Override
+  public Http3Settings http3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public Http3Settings remoteHttp3Settings() {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
+  }
+
+  @Override
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/2 connections don't support QUIC");
   }
 }
