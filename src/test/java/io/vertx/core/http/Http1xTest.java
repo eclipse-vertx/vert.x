@@ -2260,6 +2260,72 @@ public class Http1xTest extends HttpTest {
     }
   }
 
+  @Repeat(times = 16)
+  @Test
+  public void testClientResponseWindowAckRaceFromAnotherEventLoop() throws Exception {
+    Buffer chunk = TestUtils.randomBuffer(1024);
+    int numChunks = 64 * 16 * 16;
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      switch (request.uri()) {
+        case "/tiny":
+          response.end();
+          break;
+        case "/large":
+          sendResponse(response.setChunked(true), chunk, numChunks);
+          break;
+        default:
+          response.setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    AtomicReference<EventLoop> eventLoopRef = new AtomicReference<>();
+    client.request(new RequestOptions(requestOptions).setURI("/tiny"))
+      .compose(req -> {
+        eventLoopRef.set(((ContextInternal) Vertx.currentContext()).nettyEventLoop());
+        return req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
+      })
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(10, TimeUnit.SECONDS);
+    ContextInternal otherContext = ((VertxInternal) vertx).createEventLoopContext();
+    assertNotSame(eventLoopRef.get(), otherContext.nettyEventLoop());
+    otherContext.runOnContext(v -> {
+      client.request(new RequestOptions(requestOptions).setURI("/large")).onComplete(onSuccess(request -> {
+        request
+          .send()
+          .onComplete(onSuccess(response -> {
+            Buffer body = Buffer.buffer();
+            response.handler(body::appendBuffer);
+            response.endHandler(v2 -> {
+              assertEquals(body.length(), numChunks * chunk.length());
+              testComplete();
+            });
+          }));
+      }));
+    });
+    await();
+  }
+
+  private void sendResponse(HttpServerResponse response, Buffer chunk, int numChunks) {
+    int sent = 0;
+    while (sent++ < numChunks) {
+      response.write(chunk);
+      if (response.writeQueueFull()) {
+        int next = numChunks - sent;
+        response.drainHandler(v -> {
+          sendResponse(response, chunk, next);
+        });
+        return;
+      }
+    }
+    response.end();
+  }
+
   @Test
   public void testAckHttpClientResponseReadWindowOnEnd() throws Exception {
     int highWaterMark = 65536;
