@@ -372,7 +372,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     protected final void ackBytes(long len) {
-      EventLoop eventLoop = context.nettyEventLoop();
+      EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
         if (!responseEnded) {
           readWindow -= len;
