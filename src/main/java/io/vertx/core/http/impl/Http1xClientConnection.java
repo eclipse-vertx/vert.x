@@ -186,7 +186,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
     }
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, authority);
+      if (authority != null) {
+        request.headers().set(HOST, authority);
+      }
     } else {
       headers.remove(TRANSFER_ENCODING);
     }
@@ -335,21 +337,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
-  private void ackBytes(int len) {
-    EventLoop eventLoop = context.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      boolean gt = readWindow > lowWaterMark;
-      readWindow -= len;
-      boolean le = readWindow <= lowWaterMark;
-      if (gt && le) {
-        doResume();
-      }
-    } else {
-      eventLoop.execute(() -> ackBytes(len));
+  private void ackBytes(long len) {
+    boolean gt = readWindow > lowWaterMark;
+    readWindow -= len;
+    boolean le = readWindow <= lowWaterMark;
+    if (gt && le) {
+      doResume();
     }
   }
 
   private abstract static class Stream {
+
+    protected final Http1xClientConnection conn;
 
     protected final Promise<HttpClientStream> promise;
     protected final ContextInternal context;
@@ -363,11 +362,32 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private boolean responseEnded;
     private long bytesRead;
     private long bytesWritten;
+    private long readWindow;
 
-    Stream(ContextInternal context, int id) {
+    Stream(Http1xClientConnection conn, ContextInternal context, int id) {
+      this.conn = conn;
       this.context = context;
       this.id = id;
       this.promise = context.promise();
+    }
+
+    protected final void ackBytes(long len) {
+      EventLoop eventLoop = conn.context.nettyEventLoop();
+      if (eventLoop.inEventLoop()) {
+        if (!responseEnded) {
+          readWindow -= len;
+          conn.ackBytes(len);
+        }
+      } else {
+        eventLoop.execute(() -> ackBytes(len));
+      }
+    }
+
+    void receiveChunk(Buffer chunk) {
+      int len = chunk.length();
+      bytesRead += len;
+      readWindow += len;
+      context.execute(chunk, this::handleChunk);
     }
 
     // Not really elegant... but well
@@ -396,7 +416,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
    */
   private static class StreamImpl extends Stream implements HttpClientStream {
 
-    private final Http1xClientConnection conn;
     private final InboundBuffer<Object> queue;
     private Throwable reset;
     private boolean closed;
@@ -412,9 +431,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<Void> closeHandler;
 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
-      super(context, id);
+      super(conn, context, id);
 
-      this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
         .handler(item -> {
           if (reset == null) {
@@ -426,7 +444,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             } else {
               Buffer buffer = (Buffer) item;
               int len = buffer.length();
-              conn.ackBytes(len);
+              ackBytes(len);
               Handler<Buffer> handler = chunkHandler;
               if (handler != null) {
                 handler.handle(buffer);
@@ -909,8 +927,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk));
     int len = buff.length();
     receiveBytes(len);
-    stream.bytesRead += len;
-    stream.context.execute(buff, stream::handleChunk);
+    stream.receiveChunk(buff);
   }
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
@@ -947,6 +964,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           }
         }
       }
+      ackBytes(stream.readWindow);
       stream.responseEnded = true;
       check = requests.peek() != stream;
     }

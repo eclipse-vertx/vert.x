@@ -163,11 +163,19 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
             }
           });
           log.debug("writing: " + toHex(serverReplyAuth));
-          socket.write(serverReplyAuth);
+          if (successDelayMillis > 0) {
+            vertx.setTimer(successDelayMillis, tid -> socket.write(serverReplyAuth));
+          } else {
+            socket.write(serverReplyAuth);
+          }
         } else {
           socket.handler(handler);
           log.debug("writing: " + toHex(serverReply));
-          socket.write(serverReply);
+          if (successDelayMillis > 0) {
+            vertx.setTimer(successDelayMillis, tid -> socket.write(serverReply));
+          } else {
+            socket.write(serverReply);
+          }
         }
       });
     });

@@ -11,22 +11,33 @@
 
 package io.vertx.test.proxy;
 
-import java.net.UnknownHostException;
-import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpTestBase;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
+
+import java.net.UnknownHostException;
+import java.util.Base64;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Http Proxy for testing
@@ -119,18 +130,7 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
           netClient.connect(port, host, ar1 -> {
             if (ar1.succeeded()) {
               localAddresses.add(ar1.result().localAddress().toString());
-              request.toNetSocket().onComplete(ar2 -> {
-                if (ar2.succeeded()) {
-                  NetSocket serverSocket = ar2.result();
-                  NetSocket clientSocket = ar1.result();
-                  serverSocket.closeHandler(v -> clientSocket.close());
-                  clientSocket.closeHandler(v -> serverSocket.close());
-                  Pump.pump(serverSocket, clientSocket).start();
-                  Pump.pump(clientSocket, serverSocket).start();
-                } else {
-                  // Not handled
-                }
-              });
+              toNetSocket(vertx, request, ar1.result());
             } else {
               request.response().setStatusCode(403).end("request failed");
             }
@@ -198,6 +198,26 @@ public class HttpProxy extends TestProxyBase<HttpProxy> {
     });
     fut.get(10, TimeUnit.SECONDS);
     return this;
+  }
+
+  private void toNetSocket(Vertx vertx, HttpServerRequest request, NetSocket clientSocket) {
+    Future<HttpServerRequest> fut;
+    if (successDelayMillis > 0) {
+      fut = vertx.timer(successDelayMillis).map(v -> request);
+    } else {
+      fut = Future.succeededFuture(request);
+    }
+    fut.compose(req -> req.toNetSocket().onComplete(ar2 -> {
+      if (ar2.succeeded()) {
+        NetSocket serverSocket = ar2.result();
+        serverSocket.closeHandler(v -> clientSocket.close());
+        clientSocket.closeHandler(v -> serverSocket.close());
+        Pump.pump(serverSocket, clientSocket).start();
+        Pump.pump(clientSocket, serverSocket).start();
+      } else {
+        // Not handled
+      }
+    }));
   }
 
   /**

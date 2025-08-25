@@ -2260,6 +2260,109 @@ public class Http1xTest extends HttpTest {
     }
   }
 
+  @Repeat(times = 16)
+  @Test
+  public void testClientResponseWindowAckRaceFromAnotherEventLoop() throws Exception {
+    Buffer chunk = TestUtils.randomBuffer(1024);
+    int numChunks = 64 * 16 * 16;
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      switch (request.uri()) {
+        case "/tiny":
+          response.end();
+          break;
+        case "/large":
+          sendResponse(response.setChunked(true), chunk, numChunks);
+          break;
+        default:
+          response.setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    AtomicReference<EventLoop> eventLoopRef = new AtomicReference<>();
+    client.request(new RequestOptions(requestOptions).setURI("/tiny"))
+      .compose(req -> {
+        eventLoopRef.set(((ContextInternal) Vertx.currentContext()).nettyEventLoop());
+        return req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
+      })
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(10, TimeUnit.SECONDS);
+    ContextInternal otherContext = ((VertxInternal) vertx).createEventLoopContext();
+    assertNotSame(eventLoopRef.get(), otherContext.nettyEventLoop());
+    otherContext.runOnContext(v -> {
+      client.request(new RequestOptions(requestOptions).setURI("/large")).onComplete(onSuccess(request -> {
+        request
+          .send()
+          .onComplete(onSuccess(response -> {
+            Buffer body = Buffer.buffer();
+            response.handler(body::appendBuffer);
+            response.endHandler(v2 -> {
+              assertEquals(body.length(), numChunks * chunk.length());
+              testComplete();
+            });
+          }));
+      }));
+    });
+    await();
+  }
+
+  private void sendResponse(HttpServerResponse response, Buffer chunk, int numChunks) {
+    int sent = 0;
+    while (sent++ < numChunks) {
+      response.write(chunk);
+      if (response.writeQueueFull()) {
+        int next = numChunks - sent;
+        response.drainHandler(v -> {
+          sendResponse(response, chunk, next);
+        });
+        return;
+      }
+    }
+    response.end();
+  }
+
+  @Test
+  public void testAckHttpClientResponseReadWindowOnEnd() throws Exception {
+    int highWaterMark = 65536;
+    int numRequests = 10;
+    waitFor(numRequests);
+    Buffer buffer = TestUtils.randomBuffer(highWaterMark);
+    server.requestHandler(req -> {
+      req.response().end(buffer);
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    List<HttpClientResponse> responses = new ArrayList<>();
+    for (int i = 0;i < numRequests;i++) {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.pause();
+          resp.endHandler(v -> {
+            complete();
+          });
+          List<HttpClientResponse> responsesToResume;
+          synchronized (responses) {
+            responses.add(resp);
+            if (responses.size() < 10) {
+              return;
+            }
+            responsesToResume = new ArrayList<>(responses);
+          }
+          for (HttpClientResponse responseToResume : responsesToResume) {
+            responseToResume.resume();
+          }
+        }));
+      }));
+    }
+    await();
+  }
+
   @Test
   public void testEndServerResponseResumeTheConnection() throws Exception {
     server.requestHandler(req -> {
@@ -5318,7 +5421,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testMissingHostHeader() throws Exception {
+  public void testServerMissingHostHeader() throws Exception {
     server.requestHandler(req -> {
       assertEquals(null, req.host());
       assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
@@ -5331,6 +5434,25 @@ public class Http1xTest extends HttpTest {
       so.write("GET / HTTP/1.1\r\n\r\n");
     }));
     await();
+  }
+
+  @Test
+  public void testClientMissingHostHeader() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(null, req.authority());
+      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(request -> request
+        .authority(null)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(10, TimeUnit.SECONDS);
   }
 
   @Test
