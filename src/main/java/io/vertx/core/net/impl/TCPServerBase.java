@@ -171,9 +171,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
           trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
         }
-      }
-      else {
-        log.info("Not updating traffic shaping options as they have not changed");
+      } else {
+        log.debug("Not updating traffic shaping options as they have not changed");
       }
     }
   }

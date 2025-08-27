@@ -270,7 +270,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
                   }));
       }
     }));
-    awaitLatch(waitForResponse);
+    awaitLatch(waitForResponse, 20, TimeUnit.SECONDS);
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }
