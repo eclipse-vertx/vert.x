@@ -20,8 +20,6 @@ import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,18 +45,6 @@ public class Http2TestBase extends HttpTestBase {
       .setSsl(true)
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setProtocolVersion(HttpVersion.HTTP_2);
-  }
-
-  protected HttpServerOptions serverOptions;
-  protected HttpClientOptions clientOptions;
-  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
-
-  @Override
-  public void setUp() throws Exception {
-    eventLoopGroups.clear();
-    serverOptions =  createBaseServerOptions();
-    clientOptions = createBaseClientOptions();
-    super.setUp();
   }
 
   @Override

@@ -230,7 +230,7 @@ public class HTTP2Examples {
   }
 
   public void example22(HttpConnection connection) {
-    connection.remoteSettingsHandler(settings -> {
+    connection.remoteHttp3SettingsHandler(settings -> {
       System.out.println("Received new settings");
     });
   }

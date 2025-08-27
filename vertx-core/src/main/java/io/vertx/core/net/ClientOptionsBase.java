@@ -15,12 +15,15 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static io.vertx.core.http.HttpClientOptions.DEFAULT_PROTOCOL_VERSION;
 
 /**
  * Base class for Client options
@@ -46,6 +49,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private ProxyOptions proxyOptions;
   private String localAddress;
   private List<String> nonProxyHosts;
+  private HttpVersion protocolVersion;
+  private QuicOptions quicOptions;
 
   /**
    * Default constructor
@@ -67,6 +72,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
+    this.protocolVersion = other.protocolVersion;
+    this.quicOptions = other.getQuicOptions() != null ? other.getQuicOptions().copy() : null;
   }
 
   /**
@@ -96,6 +103,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.localAddress = null;
+    this.protocolVersion = DEFAULT_PROTOCOL_VERSION;
+    this.quicOptions = new QuicOptions();
   }
 
   @GenIgnore
@@ -126,6 +135,29 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase setTrustAll(boolean trustAll) {
     getOrCreateSSLOptions().setTrustAll(trustAll);
+    return this;
+  }
+
+  /**
+   * Get the protocol version.
+   *
+   * @return the protocol version
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
+  }
+
+  /**
+   * Set the protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setProtocolVersion(HttpVersion protocolVersion) {
+    if (protocolVersion == null) {
+      throw new IllegalArgumentException("protocolVersion must not be null");
+    }
+    this.protocolVersion = protocolVersion;
     return this;
   }
 
@@ -388,4 +420,37 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   public ClientOptionsBase setTcpUserTimeout(int tcpUserTimeout) {
     return (ClientOptionsBase) super.setTcpUserTimeout(tcpUserTimeout);
   }
+
+  public ClientOptionsBase setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    if (quicOptions != null) {
+      quicOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
+    }
+    return (ClientOptionsBase) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
+  public ClientOptionsBase setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    if (quicOptions != null) {
+      quicOptions.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+    }
+    return (ClientOptionsBase) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
+  /**
+   * @return  the value of quicOptions
+   */
+  public QuicOptions getQuicOptions() {
+    return quicOptions;
+  }
+
+  /**
+   * Set the value of quicOptions
+   *
+   * @param quicOptions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setQuicOptions(QuicOptions quicOptions) {
+    this.quicOptions = quicOptions;
+    return this;
+  }
+
 }

@@ -312,7 +312,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpVersion version() {
-    return HttpVersion.HTTP_2;
+    return connection.version();
   }
 
   @Override

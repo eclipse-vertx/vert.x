@@ -96,7 +96,7 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
       Http1xServerConnection http1Conn = (Http1xServerConnection) conn;
       http1Conn.handler(requestHandler);
       http1Conn.invalidRequestHandler(invalidRequestHandler);
-    } else {
+    } else if (conn instanceof Http2ServerConnection) {
       Http2ServerConnection http2Conn = (Http2ServerConnection) conn;
       http2Conn.streamHandler(stream -> {
         HttpServerOptions options = server.options;
@@ -105,6 +105,8 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
         request.handler = requestHandler;
         stream.handler(request);
       });
+    } else {
+      throw new RuntimeException("Not Implemented");
     }
 
     if (connectionHandler != null) {
