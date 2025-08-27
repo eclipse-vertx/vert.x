@@ -175,7 +175,6 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
     testFileUploadFormMultipart(32 * 1024, false);
   }
 
-  @Repeat(times = 1000)
   @Test
   public void testFileUploadFormMultipart32M() throws Exception {
     Assume.assumeTrue(!Utils.isWindows());
