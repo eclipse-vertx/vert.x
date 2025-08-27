@@ -312,6 +312,7 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
       });
       req.endHandler(v -> {
         req.response().end();
+        checker.accept(req);
       });
     });
     startServer();
@@ -323,7 +324,7 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
         .compose(HttpClientResponse::body))
       .await();
 
-    return toUpload;
+    return uploads;
   }
 
   static class Upload {
