@@ -65,7 +65,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   // Main
   private SSLHelper sslHelper;
   private volatile Future<SslContextUpdate> sslChannelProvider;
-  private GlobalTrafficShapingHandler trafficShapingHandler;
+  private volatile GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
   private TCPMetrics<?> metrics;
@@ -153,7 +153,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     if (server != null && server != this) {
       server.updateTrafficShapingOptions(options);
     } else {
-      if (trafficShapingHandler == null) {
+      GlobalTrafficShapingHandler handler = trafficShapingHandler;
+      if (handler == null) {
         throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
                                         "to use traffic shaping during startup");
       }
@@ -162,14 +163,14 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       if(!options.equals(server.options.getTrafficShapingOptions())) {
         server.options.setTrafficShapingOptions(options);
         long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
-        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+        handler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
 
         if (options.getPeakOutboundGlobalBandwidth() != 0) {
-          trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+          handler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
         }
         if (options.getMaxDelayToWait() != 0) {
           long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
-          trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
+          handler.setMaxWriteDelay(maxDelayToWaitInMillis);
         }
       } else {
         log.debug("Not updating traffic shaping options as they have not changed");
