@@ -16,6 +16,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
@@ -33,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public abstract class HttpClientFileUploadTest extends HttpTestBase {
 
@@ -173,6 +175,7 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
     testFileUploadFormMultipart(32 * 1024, false);
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testFileUploadFormMultipart32M() throws Exception {
     Assume.assumeTrue(!Utils.isWindows());
@@ -195,14 +198,14 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
     ClientMultipartForm form = ClientMultipartForm.multipartForm()
       .attribute("toolkit", "vert.x")
       .attribute("runtime", "jvm");
-    testFileUploadFormMultipart(form, Collections.singletonList(upload), (req, uploads) -> {
+    List<Upload> uploads = testFileUploadFormMultipart(form, Collections.singletonList(upload), (req) -> {
       assertEquals("vert.x", req.getFormAttribute("toolkit"));
       assertEquals("jvm", req.getFormAttribute("runtime"));
-      assertEquals(1, uploads.size());
-      assertEquals("test", uploads.get(0).name);
-      assertEquals("test.txt", uploads.get(0).filename);
-      assertEquals(content, uploads.get(0).data);
     });
+    assertEquals(1, uploads.size());
+    assertEquals("test", uploads.get(0).name);
+    assertEquals("test.txt", uploads.get(0).filename);
+    assertEquals(content, uploads.get(0).data);
   }
 
   @Test
@@ -214,17 +217,17 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
       Upload.fileUpload("test2", "test2.txt", content2)
     );
     ClientMultipartForm form = ClientMultipartForm.multipartForm();
-    testFileUploadFormMultipart(form, toUpload, (req, uploads) -> {
-      assertEquals(2, uploads.size());
-      assertEquals("test1", uploads.get(0).name);
-      assertEquals("test1.txt", uploads.get(0).filename);
-      assertEquals("UTF-8", uploads.get(0).charset);
-      assertEquals(content1, uploads.get(0).data);
-      assertEquals("test2", uploads.get(1).name);
-      assertEquals("test2.txt", uploads.get(1).filename);
-      assertEquals("UTF-8", uploads.get(1).charset);
-      assertEquals(content2, uploads.get(1).data);
+    List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
     });
+    assertEquals(2, uploads.size());
+    assertEquals("test1", uploads.get(0).name);
+    assertEquals("test1.txt", uploads.get(0).filename);
+    assertEquals("UTF-8", uploads.get(0).charset);
+    assertEquals(content1, uploads.get(0).data);
+    assertEquals("test2", uploads.get(1).name);
+    assertEquals("test2.txt", uploads.get(1).filename);
+    assertEquals("UTF-8", uploads.get(1).charset);
+    assertEquals(content2, uploads.get(1).data);
   }
 
     @Test
@@ -232,12 +235,12 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
       Buffer content = Buffer.buffer(TestUtils.randomAlphaString(16));
       List<Upload> toUpload = Collections.singletonList(Upload.fileUpload("test1", "test1.txt", content));
       ClientMultipartForm form = ClientMultipartForm.multipartForm().charset(StandardCharsets.ISO_8859_1);
-      testFileUploadFormMultipart(form, toUpload, (req, uploads) -> {
-        assertEquals(1, uploads.size());
-        assertEquals("test1", uploads.get(0).name);
-        assertEquals("test1.txt", uploads.get(0).filename);
-        assertEquals("ISO-8859-1", uploads.get(0).charset);
+      List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
       });
+      assertEquals(1, uploads.size());
+      assertEquals("test1", uploads.get(0).name);
+      assertEquals("test1.txt", uploads.get(0).filename);
+      assertEquals("ISO-8859-1", uploads.get(0).charset);
     }
 
     @Test
@@ -249,15 +252,15 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
         Upload.fileUpload("test", "test2.txt", content2)
       );
       ClientMultipartForm form = ClientMultipartForm.multipartForm();
-      testFileUploadFormMultipart(form, toUpload, (req, uploads) -> {
-        assertEquals(2, uploads.size());
-        assertEquals("test", uploads.get(0).name);
-        assertEquals("test1.txt", uploads.get(0).filename);
-        assertEquals(content1, uploads.get(0).data);
-        assertEquals("test", uploads.get(1).name);
-        assertEquals("test2.txt", uploads.get(1).filename);
-        assertEquals(content2, uploads.get(1).data);
+      List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
       });
+      assertEquals(2, uploads.size());
+      assertEquals("test", uploads.get(0).name);
+      assertEquals("test1.txt", uploads.get(0).filename);
+      assertEquals(content1, uploads.get(0).data);
+      assertEquals("test", uploads.get(1).name);
+      assertEquals("test2.txt", uploads.get(1).filename);
+      assertEquals(content2, uploads.get(1).data);
     }
 
   @Test
@@ -269,22 +272,22 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
       Upload.fileUpload("test", "test2.txt", content2)
     );
     ClientMultipartForm form = ClientMultipartForm.multipartForm().mixed(false);
-    testFileUploadFormMultipart(form, toUpload, (req, uploads) -> {
-      assertEquals(2, uploads.size());
-      assertEquals("test", uploads.get(0).name);
-      assertEquals("test1.txt", uploads.get(0).filename);
-      assertEquals(content1, uploads.get(0).data);
-      assertEquals("test", uploads.get(1).name);
-      assertEquals("test2.txt", uploads.get(1).filename);
-      assertEquals(content2, uploads.get(1).data);
+    List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
     });
+    assertEquals(2, uploads.size());
+    assertEquals("test", uploads.get(0).name);
+    assertEquals("test1.txt", uploads.get(0).filename);
+    assertEquals(content1, uploads.get(0).data);
+    assertEquals("test", uploads.get(1).name);
+    assertEquals("test2.txt", uploads.get(1).filename);
+    assertEquals(content2, uploads.get(1).data);
   }
 
-  private void testFileUploadFormMultipart(
+  private List<Upload> testFileUploadFormMultipart(
     ClientMultipartForm form,
     List<Upload> toUpload,
-    BiConsumer<HttpServerRequest,
-      List<Upload>> checker) throws Exception {
+    Consumer<HttpServerRequest> checker) throws Exception {
+    List<Upload> uploads = Collections.synchronizedList(new ArrayList<>());
     File[] testFiles = new File[toUpload.size()];
     for (int i = 0;i < testFiles.length;i++) {
       Upload upload = toUpload.get(i);
@@ -300,7 +303,6 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
-      List<Upload> uploads = new ArrayList<>();
       req.uploadHandler(upload -> {
         Buffer fileBuffer = Buffer.buffer();
         assertEquals("text/plain", upload.contentType());
@@ -310,7 +312,6 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
         });
       });
       req.endHandler(v -> {
-        checker.accept(req, uploads);
         req.response().end();
       });
     });
@@ -322,6 +323,8 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .await();
+
+    return toUpload;
   }
 
   static class Upload {
