@@ -41,7 +41,6 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -77,7 +76,7 @@ public abstract class ConnectionBase {
   protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private final AtomicInteger writeInProgress = new AtomicInteger();
+  private int writeInProgress;
   private Object metric;
   private SocketAddress remoteAddress;
   private SocketAddress realRemoteAddress;
@@ -220,15 +219,33 @@ public abstract class ConnectionBase {
   }
 
   public final void writeToChannel(Object msg, boolean forceFlush, ChannelPromise promise) {
-    if (!chctx.executor().inEventLoop() || writeInProgress.get() > 0) {
-      // Two "sequential" calls to writeToChannel should preserve the message order independently of the thread.
-      // To achieve this we need to reschedule messages not on the event loop or if there are pending async message for the channel.
-      writeInProgress.incrementAndGet();
-      chctx.executor().execute(() -> write(msg, writeInProgress.decrementAndGet() == 0 || forceFlush, promise));
-    } else {
-      // On the event loop thread
-      write(msg, forceFlush ? true : null, promise);
+    synchronized (this) {
+      if (!chctx.executor().inEventLoop() || writeInProgress > 0) {
+        // Make sure we serialize all the messages as this method can be called from various threads:
+        // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
+        // the message order independently of the thread. To achieve this we need to reschedule messages
+        // not on the event loop or if there are pending async message for the channel.
+        queueForWrite(msg, forceFlush, promise);
+        return;
+      }
     }
+    // On the event loop thread
+    write(msg, forceFlush ? true : null, promise);
+  }
+
+  private void queueForWrite(Object msg, boolean forceFlush, ChannelPromise promise) {
+    writeInProgress++;
+    chctx.executor().execute(() -> {
+      boolean flush;
+      if (forceFlush) {
+        flush = true;
+      } else {
+        synchronized (this) {
+          flush = --writeInProgress == 0;
+        }
+      }
+      write(msg, flush, promise);
+    });
   }
 
   public void writeToChannel(Object obj) {
