@@ -105,6 +105,11 @@ public class AddressResolverOptionsConverter {
             obj.setServers(list);
           }
           break;
+        case "useTcpForFallbackDnsResolving":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseTcpForFallbackDnsResolving((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -141,5 +146,6 @@ public class AddressResolverOptionsConverter {
       obj.getServers().forEach(item -> array.add(item));
       json.put("servers", array);
     }
+    json.put("useTcpForFallbackDnsResolving", obj.isUseTcpForFallbackDnsResolving());
   }
 }
