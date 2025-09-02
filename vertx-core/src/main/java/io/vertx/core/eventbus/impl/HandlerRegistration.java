@@ -58,7 +58,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   protected abstract void doReceive(Message<T> msg);
 
-  protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
+  protected abstract void dispatchMessage(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
   synchronized void register(boolean broadcast, boolean localOnly, Completable<Void> promise) {
     if (registered != null) {
@@ -90,9 +90,28 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return promise.future();
   }
 
-  void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
-    InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
-    deliveryCtx.dispatch();
+  void dispatchMessage(Handler<Message<T>> theHandler, MessageImpl<?, T> message, ContextInternal context) {
+    Runnable dispatch = () -> dispatch(context, message, theHandler);
+    DeliveryContextImpl<T> deliveryCtx = new DeliveryContextImpl<>(message, message.bus.inboundInterceptors(), context, message.receivedBody, dispatch);
+    deliveryCtx.next();
+  }
+
+  private void dispatch(ContextInternal ctx, MessageImpl<?, T> message, Handler<Message<T>> handler) {
+    Object m = metric;
+    VertxTracer tracer = ctx.tracer();
+    if (bus.metrics != null) {
+      bus.metrics.messageDelivered(m, message.isLocal());
+    }
+    if (tracer != null && !src) {
+      message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+      dispatchMessage(message, ctx, handler);
+      Object trace = message.trace;
+      if (message.replyAddress == null && trace != null) {
+        tracer.sendResponse(ctx, null, trace, null, TagExtractor.empty());
+      }
+    } else {
+      dispatchMessage(message, ctx, handler);
+    }
   }
 
   void discardMessage(Message<T> msg) {
@@ -103,46 +122,6 @@ public abstract class HandlerRegistration<T> implements Closeable {
     String replyAddress = msg.replyAddress();
     if (replyAddress != null) {
       msg.reply(new ReplyException(ReplyFailure.TIMEOUT, "Discarded the request. address: " + replyAddress + ", repliedAddress: " + msg.address()));
-    }
-  }
-
-  private class InboundDeliveryContext extends DeliveryContextBase<T> {
-
-    private final Handler<Message<T>> handler;
-
-    private InboundDeliveryContext(MessageImpl<?, T> message, Handler<Message<T>> handler, ContextInternal context) {
-      super(message, message.bus.inboundInterceptors(), context);
-
-      this.handler = handler;
-    }
-
-    protected void execute() {
-      ContextInternal ctx = InboundDeliveryContext.super.context;
-      Object m = metric;
-      VertxTracer tracer = ctx.tracer();
-      if (bus.metrics != null) {
-        bus.metrics.messageDelivered(m, message.isLocal());
-      }
-      if (tracer != null && !src) {
-        message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
-        HandlerRegistration.this.dispatch(message, ctx, handler);
-        Object trace = message.trace;
-        if (message.replyAddress == null && trace != null) {
-          tracer.sendResponse(this.context, null, trace, null, TagExtractor.empty());
-        }
-      } else {
-        HandlerRegistration.this.dispatch(message, ctx, handler);
-      }
-    }
-
-    @Override
-    public boolean send() {
-      return message.isSend();
-    }
-
-    @Override
-    public Object body() {
-      return message.receivedBody;
     }
   }
 

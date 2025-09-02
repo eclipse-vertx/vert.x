@@ -75,7 +75,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
   @Override
   protected void doReceive(Message<T> reply) {
-    dispatch(null, reply, context);
+    dispatchMessage(null, (MessageImpl<?, T>) reply, context);
   }
 
   void register() {
@@ -83,7 +83,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  protected void dispatch(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
+  protected void dispatchMessage(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
     if (context.owner().cancelTimer(timeoutID)) {
       unregister();
       if (reply.body() instanceof ReplyException) {

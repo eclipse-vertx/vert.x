@@ -11,7 +11,9 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
@@ -24,23 +26,30 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.BiConsumer;
 
-public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implements Promise<Void> {
+public class SendContext<T> implements Promise<Void> {
 
+  private final ReplyHandler<T> replyHandler;
+  private boolean src;
+  public final MessageImpl<?, T> message;
   public final ContextInternal ctx;
   public final DeliveryOptions options;
-  public final ReplyHandler<T> replyHandler;
   public final Promise<Void> writePromise;
-  private boolean src;
 
   EventBusImpl bus;
   EventBusMetrics metrics;
 
-  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler) {
-    super(message, message.bus.outboundInterceptors(), ctx);
+  SendContext(ContextInternal ctx, MessageImpl<?, T> message, DeliveryOptions options, ReplyHandler<T> replyHandler) {
+    this.message = message;
     this.ctx = ctx;
     this.options = options;
     this.replyHandler = replyHandler;
     this.writePromise = ctx.promise();
+  }
+
+  public void send() {
+    Handler<DeliveryContext<?>>[] interceptors = message.bus.outboundInterceptors();
+    DeliveryContextImpl<T> deliveryContext = new DeliveryContextImpl<>(message, interceptors, ctx,  message.sentBody, this::execute);
+    deliveryContext.next();
   }
 
   @Override
@@ -100,7 +109,6 @@ public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implement
     }
   }
 
-  @Override
   protected void execute() {
     VertxTracer tracer = ctx.tracer();
     if (tracer != null) {
@@ -120,13 +128,4 @@ public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implement
     bus.sendOrPub(this);
   }
 
-  @Override
-  public boolean send() {
-    return message.isSend();
-  }
-
-  @Override
-  public Object body() {
-    return message.sentBody;
-  }
 }

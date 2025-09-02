@@ -17,25 +17,25 @@ import io.vertx.core.internal.ContextInternal;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
+class DeliveryContextImpl<T> implements DeliveryContext<T> {
 
-  private static final AtomicIntegerFieldUpdater<DeliveryContextBase> UPDATER = AtomicIntegerFieldUpdater.newUpdater(DeliveryContextBase.class, "interceptorIdx");
+  private static final AtomicIntegerFieldUpdater<DeliveryContextImpl> UPDATER = AtomicIntegerFieldUpdater.newUpdater(DeliveryContextImpl.class, "interceptorIdx");
 
-  public final MessageImpl<?, T> message;
-  public final ContextInternal context;
-
-  private final Handler<DeliveryContext>[] interceptors;
+  private final MessageImpl<?, T> message;
+  private final ContextInternal context;
+  private final Object body;
+  private final Runnable dispatch;
+  private final Handler<DeliveryContext<?>>[] interceptors;
   private volatile int interceptorIdx;
 
-  protected DeliveryContextBase(MessageImpl<?, T> message, Handler<DeliveryContext>[] interceptors, ContextInternal context) {
+  protected DeliveryContextImpl(MessageImpl<?, T> message, Handler<DeliveryContext<?>>[] interceptors,
+                                ContextInternal context, Object body, Runnable dispatch) {
     this.message = message;
     this.interceptors = interceptors;
     this.context = context;
     this.interceptorIdx = 0;
-  }
-
-  void dispatch() {
-    next();
+    this.body = body;
+    this.dispatch = dispatch;
   }
 
   @Override
@@ -43,13 +43,21 @@ abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
     return message;
   }
 
-  protected abstract void execute();
+  @Override
+  public boolean send() {
+    return message.isSend();
+  }
+
+  @Override
+  public Object body() {
+    return body;
+  }
 
   @Override
   public void next() {
     int idx = UPDATER.getAndIncrement(this);
     if (idx < interceptors.length) {
-      Handler<DeliveryContext> interceptor = interceptors[idx];
+      Handler<DeliveryContext<?>> interceptor = interceptors[idx];
       if (context.inThread()) {
         context.dispatch(this, interceptor);
       } else {
@@ -60,7 +68,7 @@ abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
         }
       }
     } else if (idx == interceptors.length) {
-      execute();
+      dispatch.run();
     } else {
       throw new IllegalStateException();
     }
