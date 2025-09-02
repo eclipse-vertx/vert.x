@@ -46,10 +46,14 @@ public class SendContext<T> implements Promise<Void> {
     this.writePromise = ctx.promise();
   }
 
-  public void send() {
+  void send() {
     Handler<DeliveryContext<?>>[] interceptors = message.bus.outboundInterceptors();
-    DeliveryContextImpl<T> deliveryContext = new DeliveryContextImpl<>(message, interceptors, ctx,  message.sentBody, this::execute);
-    deliveryContext.next();
+    if (interceptors.length > 0) {
+      DeliveryContextImpl<T> deliveryContext = new DeliveryContextImpl<>(message, interceptors, ctx,  message.sentBody, this::sendOrPub);
+      deliveryContext.next();
+    } else {
+      sendOrPub();
+    }
   }
 
   @Override
@@ -109,7 +113,7 @@ public class SendContext<T> implements Promise<Void> {
     }
   }
 
-  protected void execute() {
+  private void sendOrPub() {
     VertxTracer tracer = ctx.tracer();
     if (tracer != null) {
       if (message.trace == null) {

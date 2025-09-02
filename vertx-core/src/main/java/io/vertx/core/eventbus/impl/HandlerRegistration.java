@@ -11,6 +11,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.*;
+import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -90,10 +91,15 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return promise.future();
   }
 
-  void dispatchMessage(Handler<Message<T>> theHandler, MessageImpl<?, T> message, ContextInternal context) {
-    Runnable dispatch = () -> dispatch(context, message, theHandler);
-    DeliveryContextImpl<T> deliveryCtx = new DeliveryContextImpl<>(message, message.bus.inboundInterceptors(), context, message.receivedBody, dispatch);
-    deliveryCtx.next();
+  void dispatchMessage(Handler<Message<T>> handler, MessageImpl<?, T> message, ContextInternal context) {
+    Handler<DeliveryContext<?>>[] interceptors = message.bus.inboundInterceptors();
+    if (interceptors.length > 0) {
+      Runnable dispatch = () -> dispatch(context, message, handler);
+      DeliveryContextImpl<T> deliveryCtx = new DeliveryContextImpl<>(message, interceptors, context, message.receivedBody, dispatch);
+      deliveryCtx.next();
+    } else {
+      dispatch(context, message, handler);
+    }
   }
 
   private void dispatch(ContextInternal ctx, MessageImpl<?, T> message, Handler<Message<T>> handler) {
