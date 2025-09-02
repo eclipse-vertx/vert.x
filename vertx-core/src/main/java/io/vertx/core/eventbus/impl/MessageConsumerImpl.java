@@ -57,7 +57,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
           handler = MessageConsumerImpl.this.handler;
         }
         if (handler != null) {
-          dispatch(handler, msg, context.duplicate());
+          dispatchMessage(handler, (MessageImpl<?, T>) msg, context.duplicate());
         } else {
           handleDiscard(msg, false);
         }
@@ -118,7 +118,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  protected void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
+  protected void dispatchMessage(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
     if (handler == null) {
       throw new NullPointerException();
     }
