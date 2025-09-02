@@ -17,16 +17,17 @@ import io.vertx.core.impl.ContextInternal;
 
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
 abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
+
+  private static final AtomicIntegerFieldUpdater<DeliveryContextBase> UPDATER = AtomicIntegerFieldUpdater.newUpdater(DeliveryContextBase.class, "interceptorIdx");
 
   public final MessageImpl<?, T> message;
   public final ContextInternal context;
 
   private final Handler<DeliveryContext>[] interceptors;
-
-  private int interceptorIdx;
-  private boolean invoking;
-  private boolean invokeNext;
+  private volatile int interceptorIdx;
 
   protected DeliveryContextBase(MessageImpl<?, T> message, Handler<DeliveryContext>[] interceptors, ContextInternal context) {
     this.message = message;
@@ -36,12 +37,7 @@ abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
   }
 
   void dispatch() {
-    this.interceptorIdx = 0;
-    if (invoking) {
-      this.invokeNext = true;
-    } else {
-      next();
-    }
+    next();
   }
 
   @Override
@@ -51,33 +47,24 @@ abstract class DeliveryContextBase<T> implements DeliveryContext<T> {
 
   protected abstract void execute();
 
-
   @Override
   public void next() {
-    if (invoking) {
-      invokeNext = true;
-    } else {
-      while (interceptorIdx < interceptors.length) {
-        Handler<DeliveryContext> interceptor = interceptors[interceptorIdx];
-        invoking = true;
-        interceptorIdx++;
-        if (context.inThread()) {
-          context.dispatch(this, interceptor);
-        } else {
-          try {
-            interceptor.handle(this);
-          } catch (Throwable t) {
-            context.reportException(t);
-          }
+    int idx = UPDATER.getAndIncrement(this);
+    if (idx < interceptors.length) {
+      Handler<DeliveryContext> interceptor = interceptors[idx];
+      if (context.inThread()) {
+        context.dispatch(this, interceptor);
+      } else {
+        try {
+          interceptor.handle(this);
+        } catch (Throwable t) {
+          context.reportException(t);
         }
-        invoking = false;
-        if (!invokeNext) {
-          return;
-        }
-        invokeNext = false;
       }
-      interceptorIdx = 0;
+    } else if (idx == interceptors.length) {
       execute();
+    } else {
+      throw new IllegalStateException();
     }
   }
 }
