@@ -17,11 +17,11 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-core-aggregator</artifactId>
-    <version>5.0.4</version>
+    <version>5.0.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>vertx-core-logging</artifactId>
-  <version>5.0.4</version>
+  <version>5.0.5-SNAPSHOT</version>
 
   <name>Vert.x Core Logging</name>
 
