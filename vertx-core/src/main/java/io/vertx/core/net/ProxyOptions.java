@@ -233,6 +233,9 @@ public class ProxyOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public ProxyOptions setConnectTimeout(Duration connectTimeout) {
+    if (connectTimeout.isNegative()) {
+      throw new IllegalArgumentException("Invalid connection timeout " + connectTimeout);
+    }
     this.connectTimeout = connectTimeout;
     return this;
   }
