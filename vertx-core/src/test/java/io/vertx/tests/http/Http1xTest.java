@@ -2670,10 +2670,10 @@ public class Http1xTest extends HttpTest {
       socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
         if (firstRequest.getAndSet(false)) {
           socket.write("HTTP/1.0 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 4\r\n"
-              + "Connection: keep-alive\r\n" + "\n" + "xxx\n");
+              + "Connection: keep-alive\r\n" + "\r\n" + "xxx\r\n");
         } else {
           socket.write("HTTP/1.0 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 1\r\n"
-              + "\r\n" + "\n");
+              + "\r\n" + "\r\n");
           socket.close();
         }
       }));
