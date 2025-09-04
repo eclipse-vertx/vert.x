@@ -37,6 +37,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.tracing.TagExtractor;
 
@@ -1074,7 +1075,15 @@ public final class HttpUtils {
     return HTTP3_VERSIONS.contains(protocolVersion);
   }
 
+  public static boolean supportsQuic(ServerSSLOptions options) {
+    return options != null && supportsQuic(options.getApplicationLayerProtocols());
+  }
+
   public static boolean supportsQuic(List<String>applicationProtocols) {
+    if (applicationProtocols == null) {
+      // todo : remove this
+      return false;
+    }
     for (String applicationProtocol : applicationProtocols) {
       if (HTTP3_ALPN_NAMES.contains(applicationProtocol)) {
         return true;
