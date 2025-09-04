@@ -11,9 +11,12 @@
 
 package io.vertx.core.file.impl;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.BufferImpl;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.FileProps;
@@ -876,7 +879,8 @@ public class FileSystemImpl implements FileSystem {
         try {
           Path target = resolveFile(path).toPath();
           byte[] bytes = Files.readAllBytes(target);
-          return Buffer.buffer(bytes);
+          ByteBuf bb = Unpooled.wrappedBuffer(bytes);
+          return new BufferImpl(bb);
         } catch (IOException e) {
           throw new FileSystemException(getFileAccessErrorMessage("read", path), e);
         }
