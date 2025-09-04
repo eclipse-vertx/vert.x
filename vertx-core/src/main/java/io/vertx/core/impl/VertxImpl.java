@@ -203,7 +203,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", internalBlockingPoolSize) : null;
 
     ThreadFactory virtualThreadFactory = virtualThreadFactory();
-    PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", options.getWorkerPoolSize()) : null;
+    PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", -1) : null;
 
     contextLocals = LocalSeq.get();
     contextLocalsList = Collections.unmodifiableList(Arrays.asList(contextLocals));
