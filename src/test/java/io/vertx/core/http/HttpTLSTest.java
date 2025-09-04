@@ -328,7 +328,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Provide an host name with a trailing dot
   public void testTLSTrailingDotHost() throws Exception {
-    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
