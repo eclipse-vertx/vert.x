@@ -21,6 +21,7 @@ import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.test.core.ContextLocalHelper;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -1240,5 +1241,15 @@ public class ContextTest extends VertxTestBase {
     assertSame(ContextInternal.LOCAL_MAP, locals.get(0));
     assertSame(contextLocal, locals.get(1));
     assertSame(locals, ((VertxInternal) vertx).contextLocals());
+  }
+
+  @Test
+  public void testVirtualThreadContextHasPoolMetrics() {
+    Assume.assumeTrue(isVirtualThreadAvailable());
+    Vertx vertxWithMetrics = Vertx.builder()
+      .withMetrics(new FakeMetricsFactory())
+      .build();
+    ContextInternal context = ((VertxImpl) vertxWithMetrics).createVirtualThreadContext();
+    assertNotNull(context.workerPool().metrics());
   }
 }
