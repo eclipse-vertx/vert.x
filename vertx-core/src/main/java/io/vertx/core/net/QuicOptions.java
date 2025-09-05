@@ -27,7 +27,7 @@ import static io.vertx.core.net.SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UN
  */
 @DataObject
 @JsonGen(publicConverter = false)
-public class QuicOptions {
+public class QuicOptions extends TransportOptions {
 
   /**
    * Default use initialMaxStreamsBidirectional = 100
