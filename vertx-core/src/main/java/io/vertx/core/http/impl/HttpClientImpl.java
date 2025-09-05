@@ -229,8 +229,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Boolean ssl = connect.isSsl();
     boolean useSSL = ssl != null ? ssl : this.options.isSsl();
     boolean useAlpn = options.isUseAlpn();
-    if (!useAlpn && useSSL && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
+    if (!useAlpn && useSSL && HttpUtils.isFrameBased(this.options.getProtocolVersion())) {
+      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2 or H3");
     }
     checkClosed();
     HttpChannelConnector connector = new HttpChannelConnector(
@@ -305,8 +305,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Objects.requireNonNull(requestURI, "no null requestURI accepted");
     boolean useAlpn = this.options.isUseAlpn();
     boolean useSSL = ssl != null ? ssl : this.options.isSsl();
-    if (!useAlpn && useSSL && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
+    if (!useAlpn && useSSL && HttpUtils.isFrameBased(this.options.getProtocolVersion())) {
+      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2 or H3");
     }
     checkClosed();
     HostAndPort authority;

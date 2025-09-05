@@ -47,6 +47,11 @@ public class ClientOptionsBaseConverter {
             obj.setLocalAddress((String)member.getValue());
           }
           break;
+        case "quicOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setQuicOptions(new io.vertx.core.net.QuicOptions((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
       }
     }
   }
@@ -71,6 +76,9 @@ public class ClientOptionsBaseConverter {
     }
     if (obj.getLocalAddress() != null) {
       json.put("localAddress", obj.getLocalAddress());
+    }
+    if (obj.getQuicOptions() != null) {
+      json.put("quicOptions", obj.getQuicOptions().toJson());
     }
   }
 }

@@ -25,6 +25,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
@@ -33,7 +34,6 @@ import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.FakeDNSServer;
@@ -41,18 +41,17 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
+import io.vertx.test.socket.SocketConnection;
+import io.vertx.test.socket.TcpServerSocket;
+import io.vertx.test.socket.UdpDatagramSocket;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Assume;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.URLEncoder;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -76,6 +75,12 @@ import static org.junit.Assume.assumeTrue;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpTest extends HttpTestBase {
+
+  protected abstract HttpVersion clientAlpnProtocolVersion();
+  protected abstract HttpVersion serverAlpnProtocolVersion();
+  protected abstract NetClientOptions createNetClientOptions();
+  protected abstract NetServerOptions createNetServerOptions();
+  protected abstract HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header);
 
   @Test
   public void testCloseMulti() throws Exception {
@@ -565,7 +570,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testSimpleRequest(String uri, HttpMethod method, boolean absolute, Handler<HttpClientResponse> handler) throws Exception {
-    boolean ssl = this instanceof Http2Test;
+    boolean ssl = this instanceof Http2Test || this instanceof Http2H3Test;
     RequestOptions options;
     if (absolute) {
       options = new RequestOptions(requestOptions).setServer(testAddress).setMethod(method).setAbsoluteURI((ssl ? "https://" : "http://") + DEFAULT_HTTP_HOST_AND_PORT + uri);
@@ -588,8 +593,8 @@ public abstract class HttpTest extends HttpTestBase {
     }
     String resource = absolute && path.isEmpty() ? "/" + path : path;
     server.requestHandler(req -> {
-      String expectedPath = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : resource;
-      String expectedQuery = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : query;
+      String expectedPath = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null : resource;
+      String expectedQuery = req.method() == HttpMethod.CONNECT && HttpUtils.isFrameBased(req.version()) ? null : query;
       assertEquals(expectedPath, req.path());
       assertEquals(method, req.method());
       assertEquals(expectedQuery, req.query());
@@ -1580,7 +1585,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testServerExceptionHandlerOnClose() {
     waitFor(3);
-    vertx.createHttpServer().requestHandler(req -> {
+    vertx.createHttpServer(createBaseServerOptions()).requestHandler(req -> {
       HttpServerResponse resp = req.response();
       AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
       AtomicInteger respExceptionHandlerCount = new AtomicInteger();
@@ -1616,7 +1621,7 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     }).listen(testAddress).onComplete(onSuccess(ar -> {
-      HttpClient client = vertx.createHttpClient();
+      HttpClient client = vertx.createHttpClient(createBaseClientOptions());
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
         .onComplete(onSuccess(req -> {
           req.setChunked(true);
@@ -1734,7 +1739,7 @@ public abstract class HttpTest extends HttpTestBase {
         } else {
           theCode = code;
         }
-        if (statusMessage != null && resp.version() != HttpVersion.HTTP_2) {
+        if (statusMessage != null && !HttpUtils.isFrameBased(resp.version())) {
           assertEquals(statusMessage, resp.statusMessage());
         } else {
           assertEquals(HttpResponseStatus.valueOf(theCode).reasonPhrase(), resp.statusMessage());
@@ -1874,7 +1879,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       try {
         req.response().setStatusMessage("hello\nworld");
-        assertEquals(HttpVersion.HTTP_2, req.version());
+        assertEquals(serverAlpnProtocolVersion(), req.version());
       } catch (IllegalArgumentException ignore) {
         assertEquals(HttpVersion.HTTP_1_1, req.version());
       }
@@ -2609,12 +2614,12 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidPort() throws Exception {
     server.close();
-    ServerSocket occupied = null;
+    SocketConnection occupied = null;
     try{
       /* Ask to be given a usable port, then use it exclusively so Vert.x can't use the port number */
-      occupied = new ServerSocket(0);
+      occupied = serverAlpnProtocolVersion() == HttpVersion.HTTP_3 ? new UdpDatagramSocket() : new TcpServerSocket();
       occupied.setReuseAddress(false);
-      server = vertx.createHttpServer(new HttpServerOptions().setPort(occupied.getLocalPort()));
+      server = vertx.createHttpServer(createBaseServerOptions().setPort(occupied.getLocalPort()));
       server.requestHandler(noOpHandler()).listen().onComplete(onFailure(server -> testComplete()));
       await();
     }finally {
@@ -2627,7 +2632,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
+    server = vertx.createHttpServer(createBaseServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
     server.requestHandler(noOpHandler());
     server.listen().onComplete(onFailure(s -> testComplete()));
     await();
@@ -3017,7 +3022,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertTrue(ctx.isEventLoopContext());
         }
         Thread thr = Thread.currentThread();
-        server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        server = vertx.createHttpServer(createBaseServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
           assertSameEventLoop(ctx, Vertx.currentContext());
@@ -3033,7 +3038,7 @@ public abstract class HttpTest extends HttpTestBase {
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
-          client = vertx.createHttpClient(new HttpClientOptions());
+          client = vertx.createHttpClient(createBaseClientOptions());
           client
             .request(requestOptions)
             .compose(HttpClientRequest::send)
@@ -3227,7 +3232,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testMultipleServerClose() {
-    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    this.server = vertx.createHttpServer(createBaseServerOptions().setPort(DEFAULT_HTTP_PORT));
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
@@ -4714,7 +4719,7 @@ public abstract class HttpTest extends HttpTestBase {
     try {
       int poolSize = 2;
       client.close();
-      client = vertx.createHttpClient(new HttpClientOptions(), new PoolOptions().setHttp1MaxSize(poolSize));
+      client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(poolSize));
       AtomicInteger failures = new AtomicInteger();
       vertx.runOnContext(v -> {
         for (int i = 0; i < (poolSize + 1); i++) {
@@ -4981,14 +4986,14 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     CompletableFuture<Void> closeSocket = new CompletableFuture<>();
-    vertx.createNetServer(new NetServerOptions().setPort(1235).setHost("localhost")).connectHandler(socket -> {
+    vertx.createNetServer(createNetServerOptions().setPort(1235).setHost("localhost")).connectHandler(socket -> {
       socket.handler(socket::write);
       closeSocket.thenAccept(v -> {
         socket.close();
       });
     }).listen().onComplete(onSuccess(netServer -> {
       server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(1235, "localhost").onComplete(onSuccess(dst -> {
+        vertx.createNetClient(createNetClientOptions()).connect(1235, "localhost").onComplete(onSuccess(dst -> {
 
           req.response().setStatusCode(sc);
           req.response().setStatusMessage("Connection established");
@@ -6020,7 +6025,7 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     server.requestHandler(req -> {
       assertEquals(chunked ? null : contentLength, req.getHeader(HttpHeaders.CONTENT_LENGTH));
-      assertEquals(chunked & req.version() != HttpVersion.HTTP_2 ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+      assertEquals(chunked && !HttpUtils.isFrameBased(req.version()) ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
       req.bodyHandler(body -> {
         assertEquals(HttpMethod.PUT, req.method());
         assertEquals(Buffer.buffer(expected), body);
@@ -6744,7 +6749,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp.writeHead().onComplete(onSuccess(v -> {
           complete();
         }));
-        assertEquals(HttpVersion.HTTP_2, req.version());
+        assertEquals(serverAlpnProtocolVersion(), req.version());
       } catch (IllegalStateException ignore) {
         resp
           .setChunked(true)

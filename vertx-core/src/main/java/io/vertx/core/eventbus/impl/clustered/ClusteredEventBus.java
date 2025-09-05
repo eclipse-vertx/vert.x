@@ -391,4 +391,3 @@ public final class ClusteredEventBus extends EventBusImpl {
       });
   }
 }
-

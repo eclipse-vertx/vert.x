@@ -13,8 +13,6 @@ package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.compression.CompressionOptions;
-import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.codec.http2.Http2Settings;
@@ -75,20 +73,13 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     return this;
   }
 
-  public HttpServerMetrics metrics() {
-    return metrics;
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
-  private static class EncodingDetector extends HttpContentCompressor {
-
-    private EncodingDetector(CompressionOptions[] compressionOptions) {
-      super(compressionOptions);
-    }
-
-    @Override
-    protected String determineEncoding(String acceptEncoding) {
-      return super.determineEncoding(acceptEncoding);
-    }
+  public HttpServerMetrics metrics() {
+    return metrics;
   }
 
   public String determineContentEncoding(Http2HeadersMultiMap headers) {
