@@ -513,6 +513,7 @@ public class Http2ClientTest extends Http2TestBase {
     server.requestHandler(req -> {
       assertEquals("localhost", req.authority().host());
       assertEquals(4444, req.authority().port());
+      assertEquals(req.authority(), req.authority(true));
       req.response().end();
     });
     startServer(testAddress);
@@ -543,14 +544,11 @@ public class Http2ClientTest extends Http2TestBase {
     AbstractBootstrap bootstrap = createServerForNoAuthority();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     client.request(new RequestOptions().setServer(testAddress)
-        .setPort(4444)
-        .setHost("localhost")
-      )
-      .compose(request -> {
-        request.authority(null);
-        return request.send();
-      })
-      .onComplete(onSuccess(resp -> testComplete()));
+                                       .addHeader("Host", "fromHost:1234")
+          )
+          .onSuccess(req -> req.authority(null))
+          .compose(HttpClientRequest::send)
+          .onComplete(onSuccess(resp -> testComplete()));
     await();
   }
 

@@ -31,6 +31,16 @@ class Http2CustomFrameCodecBuilder extends Http2FrameCodecBuilder {
   }
 
   @Override
+  public Http2CustomFrameCodecBuilder encoderEnforceMaxRstFramesPerWindow(int maxRstFramesPerWindow, int secondsPerWindow) {
+    return (Http2CustomFrameCodecBuilder) super.encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow);
+  }
+
+  @Override
+  public Http2CustomFrameCodecBuilder decoderEnforceMaxRstFramesPerWindow(int maxRstFramesPerWindow, int secondsPerWindow) {
+    return (Http2CustomFrameCodecBuilder) super.decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow);
+  }
+
+  @Override
   public Http2CustomFrameCodecBuilder server(boolean isServer) {
     return (Http2CustomFrameCodecBuilder) super.server(isServer);
   }
