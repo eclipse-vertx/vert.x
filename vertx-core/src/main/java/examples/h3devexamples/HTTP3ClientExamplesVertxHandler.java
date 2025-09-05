@@ -40,7 +40,7 @@ public class HTTP3ClientExamplesVertxHandler {
 //      .setHostnameVerificationAlgorithm("HTTPS")
       .setHostnameVerificationAlgorithm("")
 //      .setTrustOptions(Trust.SERVER_JKS.get())
-      .setProtocolVersion(HttpVersion.HTTP_3);
+      ;
 
 
     return options;

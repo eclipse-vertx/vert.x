@@ -140,7 +140,7 @@ public class QuicNetTest extends NetTest {
   @Test
   public void testMissingClientSSLOptions() throws Exception {
     NetClientOptions options = new NetClientOptions();
-    options.setProtocolVersion(io.vertx.core.http.HttpVersion.HTTP_3);
+    options.setQuicOptions(new QuicOptions());
     client = vertx.createNetClient(options);
 
     super.testMissingClientSSLOptions();

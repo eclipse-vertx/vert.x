@@ -49,7 +49,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private ProxyOptions proxyOptions;
   private String localAddress;
   private List<String> nonProxyHosts;
-  private HttpVersion protocolVersion;
   private QuicOptions quicOptions;
 
   /**
@@ -72,7 +71,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
-    this.protocolVersion = other.protocolVersion;
     this.quicOptions = other.getQuicOptions() != null ? other.getQuicOptions().copy() : null;
   }
 
@@ -103,7 +101,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.localAddress = null;
-    this.protocolVersion = DEFAULT_PROTOCOL_VERSION;
     this.quicOptions = null;
   }
 
@@ -135,29 +132,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase setTrustAll(boolean trustAll) {
     getOrCreateSSLOptions().setTrustAll(trustAll);
-    return this;
-  }
-
-  /**
-   * Get the protocol version.
-   *
-   * @return the protocol version
-   */
-  public HttpVersion getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  /**
-   * Set the protocol version.
-   *
-   * @param protocolVersion the protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
-  public ClientOptionsBase setProtocolVersion(HttpVersion protocolVersion) {
-    if (protocolVersion == null) {
-      throw new IllegalArgumentException("protocolVersion must not be null");
-    }
-    this.protocolVersion = protocolVersion;
     return this;
   }
 

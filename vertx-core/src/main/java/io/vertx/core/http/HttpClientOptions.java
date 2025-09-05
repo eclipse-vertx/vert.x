@@ -193,6 +193,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean forceSni;
   private int decoderInitialBufferSize;
 
+  private HttpVersion protocolVersion;
+
   private TracingPolicy tracingPolicy;
 
   private boolean shared;
@@ -253,6 +255,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.shared = other.shared;
     this.name = other.name;
     this.http3MultiplexingLimit = other.http3MultiplexingLimit;
+    this.protocolVersion = other.protocolVersion;
   }
 
   /**
@@ -306,6 +309,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
     http3MultiplexingLimit = DEFAULT_HTTP3_MULTIPLEXING_LIMIT;
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
   }
 
   @Override
@@ -762,12 +766,28 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
-  @Override
-  public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
-    super.setProtocolVersion(protocolVersion);
-    return this;
+  /**
+   * Get the protocol version.
+   *
+   * @return the protocol version
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
   }
 
+  /**
+   * Set the protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
+    if (protocolVersion == null) {
+      throw new IllegalArgumentException("protocolVersion must not be null");
+    }
+    this.protocolVersion = protocolVersion;
+    return this;
+  }
   /**
    * Set the maximum HTTP chunk size
    * @param maxChunkSize the maximum chunk size

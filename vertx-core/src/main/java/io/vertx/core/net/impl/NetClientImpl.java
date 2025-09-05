@@ -317,7 +317,7 @@ class NetClientImpl implements NetClientInternal {
       }
 
       ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context, options, connectTimeout)
-        .proxyOptions(proxyOptions).version(options.getProtocolVersion());;
+        .proxyOptions(proxyOptions);
 
       SocketAddress captured = remoteAddress;
 
@@ -366,7 +366,7 @@ class NetClientImpl implements NetClientInternal {
   }
 
   private String applicationProtocol(Channel channel) {
-    if (HttpUtils.isHttp3(options.getProtocolVersion())) {
+    if (options.getQuicOptions() != null) {
       return Objects.requireNonNull(((QuicChannel) channel).sslEngine()).getApplicationProtocol();
     }
     ChannelPipeline pipeline = channel.pipeline();
