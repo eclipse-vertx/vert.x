@@ -503,7 +503,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.proxyProtocolTimeout = DEFAULT_PROXY_PROTOCOL_TIMEOUT;
     this.proxyProtocolTimeoutUnit = DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = DEFAULT_REGISTER_WRITE_HANDLER;
-    this.quicOptions = new QuicOptions();
+    this.quicOptions = null;
   }
 
   /**

@@ -126,6 +126,7 @@ public class NetTest extends VertxTestBase {
   public static NetServerOptions createH3NetServerOptions() {
     NetServerOptions options = new NetServerOptions();
       options
+        .setQuicOptions(new QuicOptions())
         .setUseAlpn(true)
         .setSsl(true)
         .setKeyCertOptions(Cert.SERVER_JKS.get())

@@ -95,7 +95,7 @@ public class SslContextProvider {
   }
 
   public boolean isQuicSupported() {
-    return HttpUtils.supportsQuic(applicationProtocols);
+    return quicCodecBuilderInitializer != null;
   }
 
   public boolean useWorkerPool() {

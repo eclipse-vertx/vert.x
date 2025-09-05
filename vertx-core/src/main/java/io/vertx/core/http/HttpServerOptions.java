@@ -23,6 +23,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.QuicOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.TrustOptions;
@@ -366,6 +367,12 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions copy() {
     return new HttpServerOptions(this);
+  }
+
+  @Override
+  public HttpServerOptions setQuicOptions(QuicOptions quicOptions) {
+    super.setQuicOptions(quicOptions);
+    return this;
   }
 
   @Override

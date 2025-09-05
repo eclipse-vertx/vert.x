@@ -18,6 +18,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.QuicOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -92,6 +93,7 @@ public class HttpTestBase extends VertxTestBase {
     ));
 
     return options
+      .setQuicOptions(new QuicOptions())
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)
       .setSsl(true)

@@ -352,7 +352,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             null,
             clientAuth,
             sslOptions.getApplicationLayerProtocols(),
-            QuicUtils.createServerQuicCodecBuilderInitializer(this.options.getQuicOptions(), channelBalancer),
+            this.options.getQuicOptions() != null ? QuicUtils.createServerQuicCodecBuilderInitializer(this.options.getQuicOptions(), channelBalancer) : null,
             force,
             ctx);
           fut = updateInProgress;
@@ -499,7 +499,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           configure(sslOptions);
           sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, null,
             sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(),
-            QuicUtils.createServerQuicCodecBuilderInitializer(this.options.getQuicOptions(), channelBalancer), listenContext);
+            options.getQuicOptions() != null ? QuicUtils.createServerQuicCodecBuilderInitializer(options.getQuicOptions(), channelBalancer) : null,
+            listenContext);
 
           sslContextProvider.onComplete(ar -> {
             if (ar.succeeded()) {
