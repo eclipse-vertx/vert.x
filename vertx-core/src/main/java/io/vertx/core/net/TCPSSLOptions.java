@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-@JsonGen(publicConverter = false)
+@JsonGen(publicConverter = false, inheritConverter = true)
 public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
@@ -97,9 +97,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
 
-  private boolean tcpNoDelay;
-  private boolean tcpKeepAlive;
-  private int soLinger;
+  private TcpOptions transportOptions;
   private int idleTimeout;
   private int readIdleTimeout;
   private int writeIdleTimeout;
@@ -107,10 +105,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean ssl;
   private SSLEngineOptions sslEngineOptions;
   private SSLOptions sslOptions;
-  private boolean tcpFastOpen;
-  private boolean tcpCork;
-  private boolean tcpQuickAck;
-  private int tcpUserTimeout;
 
   private Set<String> enabledCipherSuites;
   private List<String> crlPaths;
@@ -131,19 +125,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions(TCPSSLOptions other) {
     super(other);
-    this.tcpNoDelay = other.isTcpNoDelay();
-    this.tcpKeepAlive = other.isTcpKeepAlive();
-    this.soLinger = other.getSoLinger();
     this.idleTimeout = other.getIdleTimeout();
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.readIdleTimeout = other.getReadIdleTimeout();
     this.writeIdleTimeout = other.getWriteIdleTimeout();
     this.ssl = other.isSsl();
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
-    this.tcpFastOpen = other.isTcpFastOpen();
-    this.tcpCork = other.isTcpCork();
-    this.tcpQuickAck = other.isTcpQuickAck();
-    this.tcpUserTimeout = other.getTcpUserTimeout();
+    this.transportOptions = other.transportOptions != null ? other.transportOptions.copy() : new TcpOptions();
 
     SSLOptions sslOptions = other.sslOptions;
     if (sslOptions != null) {
@@ -193,7 +181,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the JSON
    */
   public JsonObject toJson() {
-    JsonObject json = super.toJson();
+    JsonObject json = new JsonObject();
     TCPSSLOptionsConverter.toJson(this, json);
     if (sslOptions != null) {
       KeyCertOptions keyCertOptions = sslOptions.getKeyCertOptions();
@@ -227,19 +215,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   private void init() {
-    tcpNoDelay = DEFAULT_TCP_NO_DELAY;
-    tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
-    soLinger = DEFAULT_SO_LINGER;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     readIdleTimeout = DEFAULT_READ_IDLE_TIMEOUT;
     writeIdleTimeout = DEFAULT_WRITE_IDLE_TIMEOUT;
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
     sslEngineOptions = DEFAULT_SSL_ENGINE;
-    tcpFastOpen = DEFAULT_TCP_FAST_OPEN;
-    tcpCork = DEFAULT_TCP_CORK;
-    tcpQuickAck = DEFAULT_TCP_QUICKACK;
-    tcpUserTimeout = DEFAULT_TCP_USER_TIMEOUT;
+    transportOptions = new TcpOptions();
     sslOptions = null;
   }
 
@@ -267,15 +249,31 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @GenIgnore
+  public TcpOptions getTransportOptions() {
+    return transportOptions;
+  }
+
+  @GenIgnore
   public SSLOptions getSslOptions() {
     return sslOptions;
+  }
+
+  @Override
+  public boolean isReusePort() {
+    return transportOptions.isReusePort();
+  }
+
+  @Override
+  public TCPSSLOptions setReusePort(boolean reusePort) {
+    transportOptions.setReusePort(reusePort);
+    return this;
   }
 
   /**
    * @return TCP no delay enabled ?
    */
   public boolean isTcpNoDelay() {
-    return tcpNoDelay;
+    return transportOptions.isTcpNoDelay();
   }
 
   /**
@@ -285,7 +283,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTcpNoDelay(boolean tcpNoDelay) {
-    this.tcpNoDelay = tcpNoDelay;
+    transportOptions.setTcpNoDelay(tcpNoDelay);
     return this;
   }
 
@@ -293,7 +291,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return is TCP keep alive enabled?
    */
   public boolean isTcpKeepAlive() {
-    return tcpKeepAlive;
+    return transportOptions.isTcpKeepAlive();
   }
 
   /**
@@ -303,7 +301,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setTcpKeepAlive(boolean tcpKeepAlive) {
-    this.tcpKeepAlive = tcpKeepAlive;
+    transportOptions.setTcpKeepAlive(tcpKeepAlive);
     return this;
   }
 
@@ -312,7 +310,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return is SO_linger enabled
    */
   public int getSoLinger() {
-    return soLinger;
+    return transportOptions.getSoLinger();
   }
 
   /**
@@ -325,7 +323,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     if (soLinger < 0 && soLinger != DEFAULT_SO_LINGER) {
       throw new IllegalArgumentException("soLinger must be >= 0");
     }
-    this.soLinger = soLinger;
+    transportOptions.setSoLinger(soLinger);
     return this;
   }
 
@@ -636,7 +634,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return wether {@code TCP_FASTOPEN} option is enabled
    */
   public boolean isTcpFastOpen() {
-    return tcpFastOpen;
+    return transportOptions.isTcpFastOpen();
   }
 
   /**
@@ -645,7 +643,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param tcpFastOpen the fast open value
    */
   public TCPSSLOptions setTcpFastOpen(boolean tcpFastOpen) {
-    this.tcpFastOpen = tcpFastOpen;
+    transportOptions.setTcpFastOpen(tcpFastOpen);
     return this;
   }
 
@@ -653,7 +651,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return wether {@code TCP_CORK} option is enabled
    */
   public boolean isTcpCork() {
-    return tcpCork;
+    return transportOptions.isTcpCork();
   }
 
   /**
@@ -662,7 +660,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param tcpCork the cork value
    */
   public TCPSSLOptions setTcpCork(boolean tcpCork) {
-    this.tcpCork = tcpCork;
+    transportOptions.setTcpCork(tcpCork);
     return this;
   }
 
@@ -670,7 +668,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return wether {@code TCP_QUICKACK} option is enabled
    */
   public boolean isTcpQuickAck() {
-    return tcpQuickAck;
+    return transportOptions.isTcpQuickAck();
   }
 
   /**
@@ -679,7 +677,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param tcpQuickAck the quick ack value
    */
   public TCPSSLOptions setTcpQuickAck(boolean tcpQuickAck) {
-    this.tcpQuickAck = tcpQuickAck;
+    transportOptions.setTcpQuickAck(tcpQuickAck);
     return this;
   }
 
@@ -688,7 +686,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the {@code TCP_USER_TIMEOUT} value
    */
   public int getTcpUserTimeout() {
-    return tcpUserTimeout;
+    return transportOptions.getTcpUserTimeout();
   }
 
   /**
@@ -697,7 +695,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param tcpUserTimeout the tcp user timeout value
    */
   public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
-    this.tcpUserTimeout = tcpUserTimeout;
+    transportOptions.setTcpUserTimeout(tcpUserTimeout);
     return this;
   }
 
@@ -778,8 +776,4 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return (TCPSSLOptions) super.setTrafficClass(trafficClass);
   }
 
-  @Override
-  public TCPSSLOptions setReusePort(boolean reusePort) {
-    return (TCPSSLOptions) super.setReusePort(reusePort);
-  }
 }

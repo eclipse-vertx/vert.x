@@ -24,7 +24,7 @@ import io.netty.handler.logging.ByteBufFormat;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-@JsonGen(publicConverter = false)
+@JsonGen(publicConverter = false, inheritConverter = true)
 public class DatagramSocketOptions extends NetworkOptions {
 
   /**
@@ -57,6 +57,7 @@ public class DatagramSocketOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_IPV6 = false;
 
+  private boolean reusePort;
   private boolean broadcast;
   private boolean loopbackModeDisabled;
   private int multicastTimeToLive;
@@ -79,6 +80,7 @@ public class DatagramSocketOptions extends NetworkOptions {
    */
   public DatagramSocketOptions(DatagramSocketOptions other) {
     super(other);
+    this.reusePort = other.reusePort;
     this.broadcast = other.isBroadcast();
     this.loopbackModeDisabled = other.isLoopbackModeDisabled();
     this.multicastTimeToLive = other.getMulticastTimeToLive();
@@ -98,11 +100,23 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   private void init() {
+    reusePort = DEFAULT_REUSE_PORT;
     broadcast = DEFAULT_BROADCAST;
     loopbackModeDisabled = DEFAULT_LOOPBACK_MODE_DISABLED;
     multicastTimeToLive = DEFAULT_MULTICAST_TIME_TO_LIVE;
     multicastNetworkInterface = DEFAULT_MULTICAST_NETWORK_INTERFACE;
     ipV6 = DEFAULT_IPV6;
+  }
+
+  @Override
+  public boolean isReusePort() {
+    return reusePort;
+  }
+
+  @Override
+  public DatagramSocketOptions setReusePort(boolean reusePort) {
+    this.reusePort = reusePort;
+    return this;
   }
 
   @Override
@@ -131,11 +145,6 @@ public class DatagramSocketOptions extends NetworkOptions {
   public DatagramSocketOptions setReuseAddress(boolean reuseAddress) {
     super.setReuseAddress(reuseAddress);
     return this;
-  }
-
-  @Override
-  public DatagramSocketOptions setReusePort(boolean reusePort) {
-    return (DatagramSocketOptions) super.setReusePort(reusePort);
   }
 
   @Override
@@ -251,5 +260,12 @@ public class DatagramSocketOptions extends NetworkOptions {
   @Override
   public DatagramSocketOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
     return (DatagramSocketOptions) super.setActivityLogDataFormat(activityLogDataFormat);
+  }
+
+  @Override
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    DatagramSocketOptionsConverter.toJson(this, json);
+    return json;
   }
 }

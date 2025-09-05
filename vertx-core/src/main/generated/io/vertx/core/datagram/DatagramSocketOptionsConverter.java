@@ -12,6 +12,41 @@ public class DatagramSocketOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DatagramSocketOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "reuseAddress":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReuseAddress((Boolean)member.getValue());
+          }
+          break;
+        case "logActivity":
+          if (member.getValue() instanceof Boolean) {
+            obj.setLogActivity((Boolean)member.getValue());
+          }
+          break;
+        case "activityLogDataFormat":
+          if (member.getValue() instanceof String) {
+            obj.setActivityLogDataFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
+          }
+          break;
+        case "reusePort":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReusePort((Boolean)member.getValue());
+          }
+          break;
+        case "sendBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setSendBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "receiveBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setReceiveBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "trafficClass":
+          if (member.getValue() instanceof Number) {
+            obj.setTrafficClass(((Number)member.getValue()).intValue());
+          }
+          break;
         case "broadcast":
           if (member.getValue() instanceof Boolean) {
             obj.setBroadcast((Boolean)member.getValue());
@@ -46,6 +81,15 @@ public class DatagramSocketOptionsConverter {
   }
 
    static void toJson(DatagramSocketOptions obj, java.util.Map<String, Object> json) {
+    json.put("reuseAddress", obj.isReuseAddress());
+    json.put("logActivity", obj.getLogActivity());
+    if (obj.getActivityLogDataFormat() != null) {
+      json.put("activityLogDataFormat", obj.getActivityLogDataFormat().name());
+    }
+    json.put("reusePort", obj.isReusePort());
+    json.put("sendBufferSize", obj.getSendBufferSize());
+    json.put("receiveBufferSize", obj.getReceiveBufferSize());
+    json.put("trafficClass", obj.getTrafficClass());
     json.put("broadcast", obj.isBroadcast());
     json.put("loopbackModeDisabled", obj.isLoopbackModeDisabled());
     json.put("multicastTimeToLive", obj.getMulticastTimeToLive());
