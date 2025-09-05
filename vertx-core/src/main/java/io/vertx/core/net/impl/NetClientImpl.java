@@ -298,7 +298,31 @@ class NetClientImpl implements NetClientInternal {
       if (connectTimeout < 0) {
         connectTimeout = options.getConnectTimeout();
       }
-      vertx.transport().configure(options, connectTimeout, remoteAddress.isDomainSocket(), bootstrap);
+      String localAddress = options.getLocalAddress();
+      boolean domainSocket = remoteAddress.isDomainSocket();
+
+      // Transport specific TCP configuration
+      vertx.transport().configure(options.getTransportOptions(), domainSocket, bootstrap);
+
+      if (localAddress != null) {
+        bootstrap.localAddress(localAddress, 0);
+      }
+
+      //
+      if (options.getSendBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+      }
+      if (!domainSocket) {
+        bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+      }
+      if (options.getTrafficClass() != -1) {
+        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
+      }
+      if (options.getReceiveBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+      }
+      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
 
       ProxyOptions proxyOptions = connectOptions.getProxyOptions();
       if (proxyOptions == null) {

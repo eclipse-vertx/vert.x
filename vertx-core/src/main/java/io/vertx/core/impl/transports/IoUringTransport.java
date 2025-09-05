@@ -18,8 +18,7 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.channel.uring.*;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.TcpOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.transport.Transport;
 
@@ -130,7 +129,7 @@ public class IoUringTransport implements Transport {
   }
 
   @Override
-  public void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
+  public void configure(TcpOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
     if (domainSocket) {
       throw new IllegalArgumentException();
     }
@@ -144,7 +143,7 @@ public class IoUringTransport implements Transport {
   }
 
   @Override
-  public void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
+  public void configure(TcpOptions options, boolean domainSocket, Bootstrap bootstrap) {
     if (domainSocket) {
       throw new IllegalArgumentException();
     }
@@ -153,6 +152,6 @@ public class IoUringTransport implements Transport {
     }
     bootstrap.option(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.option(IoUringChannelOption.TCP_CORK, options.isTcpCork());
-    Transport.super.configure(options, connectTimeout, false, bootstrap);
+    Transport.super.configure(options, false, bootstrap);
   }
 }
