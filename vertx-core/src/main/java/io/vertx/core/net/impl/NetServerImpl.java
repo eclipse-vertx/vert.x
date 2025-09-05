@@ -19,6 +19,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -590,7 +591,30 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
    * @param bootstrap the Netty server bootstrap
    */
   private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
-    vertx.transport().configure(options, domainSocket, bootstrap);
+
+    // Server socket channel
+    if (options.getAcceptBacklog() != -1) {
+      bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    }
+
+    //  Socket/Datagram channel
+    if (options.getSendBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    }
+    if (!domainSocket) {
+      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+    }
+    if (options.getTrafficClass() != -1) {
+      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
+    }
+
+    // Channel
+    if (options.getReceiveBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    }
+
+    vertx.transport().configure(options.getTransportOptions(), domainSocket, bootstrap);
   }
 
 
