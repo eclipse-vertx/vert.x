@@ -309,6 +309,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setQuicOptions(QuicOptions quicOptions) {
+    super.setQuicOptions(quicOptions);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;

@@ -137,6 +137,7 @@ public class NetTest extends VertxTestBase {
   public static NetClientOptions createH3NetClientOptions() {
     NetClientOptions options = new NetClientOptions();
     options
+      .setQuicOptions(new QuicOptions())
       .setUseAlpn(true)
       .setSsl(true)
       .setHostnameVerificationAlgorithm("")

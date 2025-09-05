@@ -102,6 +102,12 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setQuicOptions(QuicOptions quicOptions) {
+    super.setQuicOptions(quicOptions);
+    return this;
+  }
+
+  @Override
   public NetClientOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;

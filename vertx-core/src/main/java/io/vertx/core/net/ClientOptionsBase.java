@@ -104,7 +104,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.proxyOptions = null;
     this.localAddress = null;
     this.protocolVersion = DEFAULT_PROTOCOL_VERSION;
-    this.quicOptions = new QuicOptions();
+    this.quicOptions = null;
   }
 
   @GenIgnore

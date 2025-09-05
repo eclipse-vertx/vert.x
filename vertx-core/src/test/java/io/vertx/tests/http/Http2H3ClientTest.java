@@ -23,6 +23,7 @@ import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpFrameImpl;
+import io.vertx.core.net.QuicOptions;
 import io.vertx.test.core.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -62,6 +63,7 @@ public class Http2H3ClientTest extends Http2ClientTest {
   protected void manageMaxQueueRequestsCount(Long max) {
     if (max != null) {
       serverOptions.getQuicOptions().setHttp3InitialMaxStreamsBidirectional(max);
+      clientOptions.setQuicOptions(new QuicOptions());
       clientOptions.getQuicOptions().setHttp3InitialMaxStreamsBidirectional(max);
     }
     Http3Settings serverSettings = new Http3Settings();
