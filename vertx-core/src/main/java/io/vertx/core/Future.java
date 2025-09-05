@@ -76,6 +76,13 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Like {@link #all(Future, Future)} but with a variable number of futures.
+   */
+  static CompositeFuture all(Future<?> ... futures) {
+    return CompositeFutureImpl.all(futures);
+  }
+
+  /**
    * Like {@link #all(Future, Future)} but with a list of futures.<p>
    *
    * When the list is empty, the returned future will be already completed.
@@ -126,6 +133,15 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Like {@link #any(Future, Future)} but with a variable number of futures.
+   *
+   * When the list is empty, the returned future will be already completed.
+   */
+  static <T> CompositeFuture any(Future<?> ... futures) {
+    return CompositeFutureImpl.any(futures);
+  }
+
+  /**
    * Like {@link #any(Future, Future)} but with a list of futures.<p>
    *
    * When the list is empty, the returned future will be already completed.
@@ -173,6 +189,15 @@ public interface Future<T> extends AsyncResult<T> {
    */
   static CompositeFuture join(Future<?> f1, Future<?> f2, Future<?> f3, Future<?> f4, Future<?> f5, Future<?> f6) {
     return CompositeFutureImpl.join(f1, f2, f3, f4, f5, f6);
+  }
+
+  /**
+   * Like {@link #join(Future, Future)} but with a variable number of futures.
+   *
+   * When the list is empty, the returned future will be already completed.
+   */
+  static <T> CompositeFuture join(Future<?> ... futures) {
+    return CompositeFutureImpl.join(futures);
   }
 
   /**
