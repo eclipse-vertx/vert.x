@@ -63,6 +63,7 @@ public class DnsMessageEncoder
 
     map.put( RecordType.SOA, new StartOfAuthorityRecordEncoder() );
     map.put( RecordType.A, new AddressRecordEncoder() );
+    map.put( RecordType.AAAA, new AddressRecordEncoder() );
     map.put( RecordType.NS, new NameServerRecordEncoder() );
     map.put( RecordType.CNAME, new CanonicalNameRecordEncoder() );
     map.put( RecordType.PTR, new PointerRecordEncoder() );
