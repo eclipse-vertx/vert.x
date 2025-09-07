@@ -14,7 +14,6 @@ package io.vertx.tests.future;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.Repeat;
 import org.junit.Ignore;
@@ -199,7 +198,7 @@ public class FutureTest extends FutureTestBase {
   public void testCreateFailedWithNullFailure() {
     io.vertx.core.Future<String> future = io.vertx.core.Future.failedFuture((Throwable)null);
     Checker<String> checker = new Checker<>(future);
-    NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
+    VertxException failure = (VertxException) checker.assertFailed();
     assertNull(failure.getMessage());
   }
 
@@ -208,7 +207,7 @@ public class FutureTest extends FutureTestBase {
     Promise<String> promise = Promise.promise();
     promise.fail((Throwable)null);
     Checker<String> checker = new Checker<>(promise.future());
-    NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
+    VertxException failure = (VertxException) checker.assertFailed();
     assertNull(failure.getMessage());
   }
 
@@ -1732,7 +1731,7 @@ public class FutureTest extends FutureTestBase {
   @Test
   public void testAndThenComplete() {
     waitFor(4);
-    Throwable throwable = new NoStackTraceThrowable("test");
+    Throwable throwable = new VertxException("test");
 
     testAndThen(io.vertx.core.Future.succeededFuture(), null, null);
 
@@ -1753,7 +1752,7 @@ public class FutureTest extends FutureTestBase {
   @Repeat(times = 50)
   public void testAndThenCompleteContextual() {
     waitFor(4);
-    Throwable throwable = new NoStackTraceThrowable("test");
+    Throwable throwable = new VertxException("test");
 
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
 

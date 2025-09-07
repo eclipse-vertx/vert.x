@@ -10,8 +10,6 @@
  */
 package io.vertx.core;
 
-import io.vertx.core.impl.NoStackTraceThrowable;
-
 /**
  * A view of something that can be completed with a success or failure.
  *
@@ -57,7 +55,7 @@ public interface Completable<T> {
    * @throws IllegalStateException when this instance is already completed or failed
    */
   default void fail(String message) {
-    complete(null, new NoStackTraceThrowable(message));
+    complete(null, new VertxException(message));
   }
 
   /**

@@ -11,12 +11,8 @@
 
 package io.vertx.core.impl.future;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Completable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
 
 import java.util.function.Function;
 
@@ -43,7 +39,7 @@ public final class FailedFuture<T> extends FutureBase<T> {
    */
   public FailedFuture(ContextInternal context, Throwable t) {
     super(context);
-    this.cause = t != null ? t : new NoStackTraceThrowable(null);
+    this.cause = t != null ? t : new VertxException((String) null);
   }
 
   /**
@@ -59,7 +55,7 @@ public final class FailedFuture<T> extends FutureBase<T> {
    * @param failureMessage the failure message
    */
   public FailedFuture(ContextInternal context, String failureMessage) {
-    this(context, new NoStackTraceThrowable(failureMessage));
+    this(context, new VertxException(failureMessage));
   }
 
   @Override
