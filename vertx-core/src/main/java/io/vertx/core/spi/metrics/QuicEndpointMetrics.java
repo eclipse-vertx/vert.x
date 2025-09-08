@@ -8,13 +8,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net;
+
+package io.vertx.core.spi.metrics;
 
 /**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ * <p>An SPI used internally by Vert.x to gather metrics on a socket transport which serves
+ * as a base class for things like HttpServer and HttpClient, all of which serve connections.</p>
+ *
+ * <p>Transport can be TCP or QUIC.</p>
+ *
+ * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public abstract class TransportOptions {
-
-  protected abstract TransportOptions copy();
-
+public interface QuicEndpointMetrics<C, S> extends TransportMetrics<C> {
 }

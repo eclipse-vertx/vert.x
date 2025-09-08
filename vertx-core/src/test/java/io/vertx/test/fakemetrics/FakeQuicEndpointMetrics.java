@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,13 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net;
+package io.vertx.test.fakemetrics;
 
-/**
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
-public abstract class TransportOptions {
+import io.vertx.core.spi.metrics.QuicEndpointMetrics;
 
-  protected abstract TransportOptions copy();
+public class FakeQuicEndpointMetrics extends FakeTransportMetrics implements QuicEndpointMetrics<SocketMetric, Object> {
 
+  public FakeQuicEndpointMetrics() {
+    super("quic");
+  }
 }

@@ -13,10 +13,10 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
@@ -29,6 +29,7 @@ import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -36,7 +37,6 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Abstract base class for connections managed by a vertx instance. This base implementation does not handle
@@ -187,8 +187,8 @@ public abstract class ConnectionBase {
     if (metrics != null) {
       flushBytesRead();
       flushBytesWritten();
-      if (metrics instanceof TCPMetrics) {
-        ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+      if (metrics instanceof TransportMetrics<?>) {
+        ((TransportMetrics<Object>) metrics).disconnected(metric(), remoteAddress());
       }
     }
     context.execute(() -> {
@@ -352,7 +352,12 @@ public abstract class ConnectionBase {
   }
 
   private SocketAddress channelRemoteAddress() {
-    java.net.SocketAddress addr = channel.remoteAddress();
+    java.net.SocketAddress addr;
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel)channel).remoteSocketAddress();
+    } else {
+      addr = channel.remoteAddress();
+    }
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -393,7 +398,12 @@ public abstract class ConnectionBase {
   }
 
   private SocketAddress channelLocalAddress() {
-    java.net.SocketAddress addr = channel.localAddress();
+    java.net.SocketAddress addr;
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel)channel).localSocketAddress();
+    } else {
+      addr = channel.localAddress();
+    }
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
