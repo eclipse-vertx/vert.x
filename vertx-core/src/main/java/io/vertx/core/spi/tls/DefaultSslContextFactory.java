@@ -21,6 +21,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -46,11 +47,15 @@ public class DefaultSslContextFactory implements SslContextFactory {
     this.sslSessionCacheEnabled = sslSessionCacheEnabled;
   }
 
+  private boolean forClient;
+  private boolean forServer;
+  private String serverName;
+  private String endpointIdentificationAlgorithm;
+  private Set<String> enabledProtocols;
   private Set<String> enabledCipherSuites;
   private List<String> applicationProtocols;
   private boolean useAlpn;
   private ClientAuth clientAuth;
-  private boolean forClient;
   private KeyManagerFactory kmf;
   private TrustManagerFactory tmf;
 
@@ -61,14 +66,23 @@ public class DefaultSslContextFactory implements SslContextFactory {
   }
 
   @Override
-  public SslContextFactory clientAuth(ClientAuth clientAuth) {
+  public SslContextFactory forServer(ClientAuth clientAuth) {
     this.clientAuth = clientAuth;
+    this.forServer = true;
     return this;
   }
 
   @Override
-  public SslContextFactory forClient(boolean forClient) {
-    this.forClient = forClient;
+  public SslContextFactory forClient(String serverName, String endpointIdentificationAlgorithm) {
+    this.forClient = true;
+    this.serverName = serverName;
+    this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
+    return this;
+  }
+
+  @Override
+  public SslContextFactory enabledProtocols(Set<String> enabledProtocols) {
+    this.enabledProtocols = enabledProtocols;
     return this;
   }
 
@@ -86,6 +100,9 @@ public class DefaultSslContextFactory implements SslContextFactory {
 
   @Override
   public SslContext create() throws SSLException {
+    if (forClient == forServer) {
+      throw new IllegalStateException("Invalid configuration");
+    }
     return createContext(useAlpn, forClient, kmf, tmf);
   }
 
@@ -160,8 +177,18 @@ public class DefaultSslContextFactory implements SslContextFactory {
         applicationProtocols
       ));
     }
-    if (clientAuth != null) {
-      builder.clientAuth(clientAuth);
+    if (client) {
+      if (serverName != null) {
+        builder.serverName(new SNIHostName(serverName));
+      }
+      builder.endpointIdentificationAlgorithm(endpointIdentificationAlgorithm == null ? "" : endpointIdentificationAlgorithm);
+    } else {
+      if (clientAuth != null) {
+        builder.clientAuth(clientAuth);
+      }
+    }
+    if (enabledProtocols != null) {
+      builder.protocols(enabledProtocols);
     }
     SslContext ctx = builder.build();
     if (ctx instanceof OpenSslServerContext){
