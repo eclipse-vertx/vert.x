@@ -72,6 +72,10 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
+      <artifactId>netty-codec-http3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
       <artifactId>netty-resolver</artifactId>
     </dependency>
     <dependency>
@@ -96,6 +100,16 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-kqueue</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-classes-quic</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-native-quic</artifactId>
       <optional>true</optional>
     </dependency>
 
@@ -893,6 +907,12 @@
           <classifier>linux-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-native-quic</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -914,6 +934,12 @@
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-io_uring</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-native-quic</artifactId>
           <classifier>linux-x86_64</classifier>
           <scope>test</scope>
         </dependency>
@@ -941,6 +967,12 @@
           <classifier>linux-aarch_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-native-quic</artifactId>
+          <classifier>linux-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -965,6 +997,12 @@
           <classifier>osx-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-native-quic</artifactId>
+          <classifier>osx-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -986,6 +1024,12 @@
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-kqueue</artifactId>
+          <classifier>osx-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-native-quic</artifactId>
           <classifier>osx-aarch_64</classifier>
           <scope>test</scope>
         </dependency>
