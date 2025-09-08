@@ -26,6 +26,7 @@ module io.vertx.core {
   requires static io.netty.transport.classes.kqueue;
   requires static io.netty.transport.unix.common;
   requires static io.netty.codec.haproxy;
+  requires static io.netty.codec.classes.quic;
 
   // Annotation processing
 
@@ -88,6 +89,7 @@ module io.vertx.core {
   exports io.vertx.core.internal.buffer;
   exports io.vertx.core.internal.net;
   exports io.vertx.core.internal.net.endpoint;
+  exports io.vertx.core.internal.quic;
   exports io.vertx.core.internal.pool;
   exports io.vertx.core.internal.tls;
   exports io.vertx.core.internal.threadchecker;
@@ -123,5 +125,6 @@ module io.vertx.core {
     exports io.vertx.core.http.impl.http2 to io.vertx.core.tests;
   exports io.vertx.core.http.impl.http2.codec to io.vertx.core.tests;
   exports io.vertx.core.net.impl.tcp to io.vertx.core.tests;
+  exports io.vertx.core.net.impl.quic to io.vertx.core.tests;
 
 }

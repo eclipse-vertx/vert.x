@@ -13,6 +13,7 @@ package io.vertx.core.internal.tls;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.AsyncMapping;
+import io.netty.util.Mapping;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -148,11 +149,27 @@ public class SslContextProvider {
   }
 
   /**
+   *
+   * @param useAlpn
+   * @return
+   */
+  public Mapping<? super String, ? extends SslContext> serverNameMapping(boolean useAlpn) {
+    return (Mapping<String, SslContext>) serverName -> {
+      try {
+        return sslContext(serverName, useAlpn, true);
+      } catch (Exception e) {
+        // Log this
+        return null;
+      }
+    };
+  }
+
+  /**
    * Server name {@link AsyncMapping} for {@link SniHandler}, mapping happens on a Vert.x worker thread.
    *
    * @return the {@link AsyncMapping}
    */
-  public AsyncMapping<? super String, ? extends SslContext> serverNameMapping(Executor workerPool, boolean useAlpn) {
+  public AsyncMapping<? super String, ? extends SslContext> serverNameAsyncMapping(Executor workerPool, boolean useAlpn) {
     return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
       workerPool.execute(() -> {
         SslContext sslContext;

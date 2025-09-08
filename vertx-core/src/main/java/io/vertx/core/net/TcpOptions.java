@@ -54,7 +54,7 @@ public class TcpOptions extends TransportOptions {
   }
 
   @Override
-  TcpOptions copy() {
+  protected TcpOptions copy() {
     return new TcpOptions(this);
   }
 
