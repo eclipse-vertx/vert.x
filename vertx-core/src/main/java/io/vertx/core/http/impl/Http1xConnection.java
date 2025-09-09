@@ -62,9 +62,9 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   }
 
   @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(Object reason, ChannelPromise promise) {
     closeInitiated = true;
-    super.handleClose(reason, promise);
+    super.writeClose(reason, promise);
   }
 
   protected void closeInternal() {

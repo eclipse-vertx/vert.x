@@ -563,7 +563,7 @@ public class VertxConnectionTest extends VertxTestBase {
         shutdown.set(true);
       }
       @Override
-      protected void handleClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(Object reason, ChannelPromise promise) {
         closed.set(true);
         promise.setSuccess();
       }
@@ -589,7 +589,7 @@ public class VertxConnectionTest extends VertxTestBase {
         shutdown.set(true);
       }
       @Override
-      protected void handleClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(Object reason, ChannelPromise promise) {
         closed.set(true);
       }
     });
@@ -617,7 +617,7 @@ public class VertxConnectionTest extends VertxTestBase {
         assertTrue(closed.get());
       }
       @Override
-      protected void handleClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(Object reason, ChannelPromise promise) {
         closed.set(true);
       }
     });
@@ -648,7 +648,7 @@ public class VertxConnectionTest extends VertxTestBase {
         assertEquals(1L, closed.get());
       }
       @Override
-      protected void handleClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(Object reason, ChannelPromise promise) {
         closed.getAndIncrement();
       }
     });

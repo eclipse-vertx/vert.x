@@ -403,18 +403,6 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
-    throw new UnsupportedOperationException();
-  }
-
-  protected void handleClose(Object reason, PromiseInternal<Void> promise) {
-    ChannelPromise pr = chctx.newPromise();
-    ChannelPromise channelPromise = pr.addListener(promise); // TRY IMPROVE ?????
-    handlerContext.writeAndFlush(Unpooled.EMPTY_BUFFER, pr);
-    channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L, TimeUnit.SECONDS));
-  }
-
-  @Override
   public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
     remoteSettingsHandler = handler;
     return this;

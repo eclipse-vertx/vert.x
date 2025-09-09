@@ -83,7 +83,7 @@ final class WebSocketConnectionImpl extends VertxConnection {
   }
 
   @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(Object reason, ChannelPromise promise) {
     assert !closeSent;
     closeSent = true;
     closePromise = promise;
@@ -205,7 +205,7 @@ final class WebSocketConnectionImpl extends VertxConnection {
       closingTimeout = null;
       ChannelPromise p = closePromise;
       closePromise = null;
-      super.handleClose(closeReason, p);
+      super.writeClose(closeReason, p);
     }
   }
 

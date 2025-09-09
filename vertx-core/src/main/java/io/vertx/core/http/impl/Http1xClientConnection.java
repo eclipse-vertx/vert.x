@@ -739,7 +739,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(Object reason, ChannelPromise promise) {
     // Maybe move to handleShutdown
     if (!evicted) {
       evicted = true;
@@ -747,7 +747,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         evictionHandler.handle(null);
       }
     }
-    super.handleClose(reason, promise);
+    super.writeClose(reason, promise);
   }
 
   private Throwable validateMessage(Object msg) {

@@ -12,7 +12,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.stream.ChunkedNioFile;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
@@ -26,12 +25,12 @@ import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -73,6 +72,10 @@ public class VertxConnection extends ConnectionBase {
   private boolean paused;
   private boolean autoRead;
   private ScheduledFuture<?> shutdownTimeout;
+
+  // State accessed exclusively from the event loop thread
+  private ChannelPromise closeInitiated;
+  private boolean closeFinished;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
@@ -164,28 +167,124 @@ public class VertxConnection extends ConnectionBase {
     if (t != null) {
       shutdownTimeout = null;
       t.cancel(false);
-      super.handleClose(reason, 0L, TimeUnit.SECONDS, promise);
+      terminateClose(reason, promise);
     }
   }
 
-  @Override
-  final void handleClose(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    if (timeout == 0L) {
-      super.handleClose(reason, timeout, unit, promise);
+  /**
+   * Close the connection
+   */
+  public final Future<Void> close() {
+    return close((Object) null);
+  }
+
+  private static class CloseChannelPromise extends DefaultChannelPromise {
+    final Object reason;
+    final long timeout;
+    final TimeUnit unit;
+    public CloseChannelPromise(Channel channel, Object reason, long timeout, TimeUnit unit) {
+      super(channel);
+      this.reason = reason;
+      this.timeout = timeout;
+      this.unit = unit;
+    }
+  }
+
+  /**
+   * Close the connection
+   */
+  public final Future<Void> close(Object reason) {
+    return close(reason, 0L, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Close the connection
+   */
+  public final Future<Void> close(Object reason, long timeout, TimeUnit unit) {
+    EventExecutor exec = chctx.executor();
+    CloseChannelPromise promise = new CloseChannelPromise(channel, reason, timeout, unit);
+    if (exec.inEventLoop()) {
+      close(promise);
     } else {
-      EventExecutor el = chctx.executor();
-      shutdownTimeout = el.schedule(() -> {
-        shutdownTimeout = null;
-        super.handleClose(reason, 0L, TimeUnit.SECONDS, promise);
-      }, timeout, unit);
-      Handler<Void> handler;
-      synchronized (this) {
-        handler = shutdownHandler;
+      exec.execute(() -> close(promise));
+    }
+    PromiseInternal<Void> p = context.promise();
+    promise.addListener(p);
+    return p.future();
+  }
+
+  private void close(CloseChannelPromise promise) {
+    channel.close(promise);
+  }
+
+  private void terminateClose(Object reason, ChannelPromise promise) {
+    if (!closeFinished) {
+      closeFinished = true;
+      writeClose(reason, promise);
+    }
+  }
+
+  /**
+   * Called exclusively by the Netty handler close method.
+   */
+  final void handleClose(ChannelPromise promise) {
+    if (closeInitiated != null) {
+      long timeout;
+      Object closeReason;
+      if (promise instanceof CloseChannelPromise) {
+        timeout = ((CloseChannelPromise)promise).timeout;
+        closeReason = ((CloseChannelPromise)promise).reason;
+      } else {
+        timeout = 0L;
+        closeReason = null;
       }
-      if (handler != null) {
-        context.emit(handler);
+      if (timeout == 0L && !closeFinished) {
+        closeFinished = true;
+        closeInitiated = promise;
+        writeClose(closeReason, promise);
+      } else {
+        channel
+          .closeFuture()
+          .addListener(future -> {
+            if (future.isSuccess()) {
+              promise.setSuccess();
+            } else {
+              promise.setFailure(future.cause());
+            }
+          });
       }
-      handleShutdown(reason, timeout, unit, promise);
+    } else {
+      closeInitiated = promise;
+      Object reason;
+      long timeout;
+      TimeUnit unit;
+      if (promise instanceof CloseChannelPromise) {
+        CloseChannelPromise closeChannelPromise = (CloseChannelPromise) promise;
+        reason = closeChannelPromise.reason;
+        timeout = closeChannelPromise.timeout;
+        unit = closeChannelPromise.unit;
+      } else {
+        reason = null;
+        timeout = 0L;
+        unit = TimeUnit.SECONDS;
+      }
+      if (timeout == 0L) {
+        terminateClose(reason, promise);
+      } else {
+        EventExecutor el = chctx.executor();
+        shutdownTimeout = el.schedule(() -> {
+          shutdownTimeout = null;
+          terminateClose(reason, promise);
+        }, timeout, unit);
+        Handler<Void> handler;
+        synchronized (this) {
+          handler = shutdownHandler;
+        }
+        if (handler != null) {
+          context.emit(handler);
+        }
+        handleShutdown(reason, timeout, unit, promise);
+      }
     }
   }
 
@@ -198,8 +297,7 @@ public class VertxConnection extends ConnectionBase {
    * <p/>
    * This method is exclusively called on the event-loop thread and relays a channel user event.
    */
-  @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(Object reason, ChannelPromise promise) {
     writeClose(promise);
   }
 
