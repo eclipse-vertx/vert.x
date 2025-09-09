@@ -2330,4 +2330,52 @@ public class Http2ClientTest extends Http2TestBase {
     }));
     await();
   }
+
+  @Test
+  public void testWriteChunked() throws Exception {
+    String p1 = "12345";
+    String p2 = "56789";
+    server.requestHandler(req -> {
+      Buffer buffer = Buffer.buffer();
+      AtomicInteger handleChunkCount = new AtomicInteger();
+      req.handler(buff -> {
+        buffer.appendBuffer(buff);
+        handleChunkCount.incrementAndGet();
+      });
+      req.endHandler(v -> {
+        assertEquals(handleChunkCount.get(), 2);
+        assertEquals(buffer.toString(), p1 + p2);
+
+        HttpServerResponse response = req.response();
+        response.setStatusCode(200);
+        response
+          .write(p2)
+          .flatMap(v0 -> response.end(p1));
+      });
+    });
+    startServer();
+
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.write(p1)
+        .flatMap(v -> req.end(p2));
+
+      AtomicInteger handleChunkCount = new AtomicInteger();
+      Buffer buffer = Buffer.buffer();
+      req.response().onComplete(onSuccess(response -> {
+        response.handler(buf -> {
+          buffer.appendBuffer(buf);
+          handleChunkCount.incrementAndGet();
+        });
+
+        response.endHandler(v -> {
+          assertEquals(handleChunkCount.get(), 2);
+          assertEquals(buffer.toString(), p2 + p1);
+          complete();
+        });
+      }));
+    }));
+
+    await();
+  }
+
 }
