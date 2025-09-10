@@ -543,6 +543,12 @@ public class Http2ClientTest extends Http2TestBase {
   public void testNoAuthority() throws Exception {
     AbstractBootstrap bootstrap = createServerForNoAuthority();
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    server.requestHandler(req -> {
+      assertEquals("fromHost", req.authority().host());
+      assertEquals(1234, req.authority().port());
+      assertNull(req.authority(true));
+      req.response().end();
+    });
     client.request(new RequestOptions().setServer(testAddress)
                                        .addHeader("Host", "fromHost:1234")
           )
