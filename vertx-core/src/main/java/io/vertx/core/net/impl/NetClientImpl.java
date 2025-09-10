@@ -245,22 +245,19 @@ class NetClientImpl implements NetClientInternal {
         ClientSSLOptions sslOptions = connectOptions.getSslOptions() != null ? connectOptions.getSslOptions().copy() : this.sslOptions;
         if (sslOptions == null) {
           connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
-          return;
+        } else if (sslOptions.getHostnameVerificationAlgorithm() == null) {
+          connectHandler.fail("Missing hostname verification algorithm");
+        } else {
+          Future<SslContextProvider> fut;
+          fut = sslContextManager.resolveSslContextProvider(sslOptions, context);
+          fut.onComplete(ar -> {
+            if (ar.succeeded()) {
+              connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
+            } else {
+              connectHandler.fail(ar.cause());
+            }
+          });
         }
-        Future<SslContextProvider> fut;
-        fut = sslContextManager.resolveSslContextProvider(
-          sslOptions,
-          sslOptions.getHostnameVerificationAlgorithm(),
-          null,
-          sslOptions.getApplicationLayerProtocols(),
-          context);
-        fut.onComplete(ar -> {
-          if (ar.succeeded()) {
-            connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
-          } else {
-            connectHandler.fail(ar.cause());
-          }
-        });
       } else {
         connectInternal2(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts);
       }
@@ -275,7 +272,6 @@ class NetClientImpl implements NetClientInternal {
                                 ContextInternal context,
                                 int remainingAttempts) {
     EventLoop eventLoop = context.nettyEventLoop();
-
     if (eventLoop.inEventLoop()) {
       Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
       Bootstrap bootstrap = new Bootstrap();

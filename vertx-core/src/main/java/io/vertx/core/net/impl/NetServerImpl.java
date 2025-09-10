@@ -344,7 +344,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             sslOptions,
             null,
             clientAuth,
-            sslOptions.getApplicationLayerProtocols(),
             force,
             ctx);
           fut = updateInProgress;
@@ -486,7 +485,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         if (options.isSsl()) {
           ServerSSLOptions sslOptions = options.getSslOptions();
           configure(sslOptions);
-          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, null, sslOptions.getClientAuth(), sslOptions.getApplicationLayerProtocols(), listenContext).onComplete(ar -> {
+          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, listenContext).onComplete(ar -> {
             if (ar.succeeded()) {
               bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
             } else {

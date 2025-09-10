@@ -27,7 +27,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -321,6 +320,9 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     if (sslOptions == null) {
       return context.failedFuture("Missing SSL options");
     }
+    if (sslOptions instanceof ClientSSLOptions && ((ClientSSLOptions)sslOptions).getHostnameVerificationAlgorithm() == null) {
+      return context.failedFuture("Missing hostname verification algorithm");
+    }
     if (remoteAddress != null && !(sslOptions instanceof ClientSSLOptions)) {
       return context.failedFuture("Client socket upgrade must use ClientSSLOptions");
     } else if (remoteAddress == null && !(sslOptions instanceof ServerSSLOptions)) {
@@ -331,23 +333,12 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
       Future<SslChannelProvider> f;
       if (sslOptions instanceof ClientSSLOptions) {
         ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
-        f = sslContextManager.resolveSslContextProvider(
-          sslOptions,
-          clientSSLOptions.getHostnameVerificationAlgorithm(),
-          null,
-          null,
-          context).map(p -> new SslChannelProvider(context.owner(), p, false));
+        f = sslContextManager.resolveSslContextProvider(clientSSLOptions, context)
+          .map(p -> new SslChannelProvider(context.owner(), p, false));
       } else {
         ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
-        ClientAuth clientAuth = serverSSLOptions.getClientAuth();
-        if (clientAuth == null) {
-          clientAuth = ClientAuth.NONE;
-        }
-        f = sslContextManager.resolveSslContextProvider(
-          sslOptions,
-          null,
-          clientAuth,
-          null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
+        f = sslContextManager.resolveSslContextProvider(serverSSLOptions, context)
+          .map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
       }
       return f.compose(provider -> {
         PromiseInternal<Void> p = context.promise();
