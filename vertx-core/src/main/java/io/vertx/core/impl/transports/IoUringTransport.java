@@ -97,13 +97,13 @@ public class IoUringTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel() {
+  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
     return new IoUringDatagramChannel();
   }
 
   @Override
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
-    return new IoUringDatagramChannel();
+  public ChannelFactory<? extends DatagramChannel> datagramChannelFactory() {
+    return IoUringDatagramChannel::new;
   }
 
   @Override
