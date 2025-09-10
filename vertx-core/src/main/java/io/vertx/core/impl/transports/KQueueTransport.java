@@ -70,13 +70,13 @@ public class KQueueTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel() {
+  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
     return new KQueueDatagramChannel();
   }
 
   @Override
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
-    return new KQueueDatagramChannel();
+  public ChannelFactory<? extends DatagramChannel> datagramChannelFactory() {
+    return KQueueDatagramChannel::new;
   }
 
   @Override

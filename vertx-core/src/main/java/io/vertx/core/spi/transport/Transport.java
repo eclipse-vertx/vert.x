@@ -95,22 +95,22 @@ public interface Transport {
   /**
    * @return a new datagram channel
    */
-  DatagramChannel datagramChannel();
-
-  /**
-   * @return a new datagram channel
-   */
   DatagramChannel datagramChannel(InternetProtocolFamily family);
 
   /**
-   * @return the type for channel
-   * @param domainSocket whether to create a unix domain channel or a socket channel
+   * @return the datagram channel
+   */
+  ChannelFactory<? extends DatagramChannel> datagramChannelFactory();
+
+  /**
+   * @return the suitable factory for TCP channels
+   * @param domainSocket whether to create a unix domain socket channel or a TCP socket channel
    */
   ChannelFactory<? extends Channel> channelFactory(boolean domainSocket);
 
   /**
-   * @return the type for server channel
-   * @param domainSocket whether to create a server unix domain channel or a regular server socket channel
+   * @return the suitable factory for TCP server channels
+   * @param domainSocket whether to create a unix domain server socket channel or a TCP server socket channel
    */
   ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket);
 

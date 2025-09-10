@@ -104,7 +104,7 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
 
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
     builder.hostsFileEntriesResolver(this);
-    builder.channelFactory(() -> vertx.transport().datagramChannel());
+    builder.datagramChannelFactory(vertx.transport().datagramChannelFactory());
     builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
     builder.nameServerProvider(nameServerAddressProvider);
     builder.queryServerAddressStream(new ThreadLocalNameServerAddressStream(nameServerAddressProvider, ""));
