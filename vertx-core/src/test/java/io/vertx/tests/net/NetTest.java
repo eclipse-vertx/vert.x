@@ -1501,7 +1501,6 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testTLSTrailingDotHost() throws Exception {
-    assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = new TLSTest()

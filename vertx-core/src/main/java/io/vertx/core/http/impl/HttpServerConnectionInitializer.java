@@ -111,6 +111,8 @@ public class HttpServerConnectionInitializer {
         streamContextSupplier,
         connectionHandler,
         HttpUtils.fromVertxInitialSettings(true, options.getInitialSettings()),
+        options.getHttp2RstFloodMaxRstFramePerWindow(),
+        options.getHttp2RstFloodWindowDuration(),
         options.getLogActivity());
     } else {
       http2ChannelInitalizer = new Http2CodecServerChannelInitializer(

@@ -27,6 +27,7 @@
 
   <properties>
     <apacheds-protocol-dns.version>2.0.0.AM27</apacheds-protocol-dns.version>
+    <org.bouncycastle.version>1.69</org.bouncycastle.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <jmh.version>1.37</jmh.version>
     <vertx.surefire.nettyTransport>jdk</vertx.surefire.nettyTransport>
@@ -159,6 +160,12 @@
       <groupId>org.apache.directory.server</groupId>
       <artifactId>apacheds-protocol-dns</artifactId>
       <version>${apacheds-protocol-dns.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>bouncycastle</groupId>
+          <artifactId>bcprov-jdk15</artifactId>
+        </exclusion>
+      </exclusions>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -177,6 +184,19 @@
       <artifactId>log4j-core</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>${org.bouncycastle.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${org.bouncycastle.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-boringssl-static</artifactId>

@@ -75,6 +75,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
       .useCompression(compressionManager != null ? compressionManager.options() : null)
       .gracefulShutdownTimeoutMillis(0)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
+      .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
       .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {

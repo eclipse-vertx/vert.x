@@ -2262,6 +2262,43 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testAckHttpClientResponseReadWindowOnEnd() throws Exception {
+    int highWaterMark = 65536;
+    int numRequests = 10;
+    waitFor(numRequests);
+    Buffer buffer = TestUtils.randomBuffer(highWaterMark);
+    server.requestHandler(req -> {
+      req.response().end(buffer);
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    List<HttpClientResponse> responses = new ArrayList<>();
+    for (int i = 0;i < numRequests;i++) {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.pause();
+          resp.endHandler(v -> {
+            complete();
+          });
+          List<HttpClientResponse> responsesToResume;
+          synchronized (responses) {
+            responses.add(resp);
+            if (responses.size() < 10) {
+              return;
+            }
+            responsesToResume = new ArrayList<>(responses);
+          }
+          for (HttpClientResponse responseToResume : responsesToResume) {
+            responseToResume.resume();
+          }
+        }));
+      }));
+    }
+    await();
+  }
+
+  @Test
   public void testEndServerResponseResumeTheConnection() throws Exception {
     server.requestHandler(req -> {
       req.endHandler(v -> {
@@ -2696,10 +2733,10 @@ public class Http1xTest extends HttpTest {
       socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
         if (firstRequest.getAndSet(false)) {
           socket.write("HTTP/1.0 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 4\r\n"
-              + "Connection: keep-alive\r\n" + "\n" + "xxx\n");
+              + "Connection: keep-alive\r\n" + "\r\n" + "xxx\r\n");
         } else {
           socket.write("HTTP/1.0 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 1\r\n"
-              + "\r\n" + "\n");
+              + "\r\n" + "\r\n");
           socket.close();
         }
       }));

@@ -22,6 +22,11 @@ public class AddressResolverOptionsConverter {
             obj.setHostsValue(io.vertx.core.buffer.Buffer.fromJson((String)member.getValue()));
           }
           break;
+        case "hostsRefreshPeriodUnit":
+          if (member.getValue() instanceof String) {
+            obj.setHostsRefreshPeriodUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
         case "hostsRefreshPeriod":
           if (member.getValue() instanceof Number) {
             obj.setHostsRefreshPeriod(((Number)member.getValue()).intValue());
@@ -111,6 +116,9 @@ public class AddressResolverOptionsConverter {
     }
     if (obj.getHostsValue() != null) {
       json.put("hostsValue", obj.getHostsValue().toJson());
+    }
+    if (obj.getHostsRefreshPeriodUnit() != null) {
+      json.put("hostsRefreshPeriodUnit", obj.getHostsRefreshPeriodUnit().name());
     }
     json.put("hostsRefreshPeriod", obj.getHostsRefreshPeriod());
     if (obj.getServers() != null) {

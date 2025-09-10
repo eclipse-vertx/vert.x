@@ -431,25 +431,42 @@ public class NameResolverTest extends VertxTestBase {
   @Test
   public void testRefreshHosts1() throws Exception {
     Assume.assumeFalse(Utils.isWindows());
-    InetAddress addr = testRefreshHosts((int) TimeUnit.SECONDS.toNanos(1));
+    InetAddress addr = testRefreshHosts((int) TimeUnit.SECONDS.toNanos(1), null);
     assertEquals("192.168.0.16", addr.getHostAddress());
     assertEquals("server.net", addr.getHostName());
   }
 
   @Test
   public void testRefreshHosts2() throws Exception {
-    InetAddress addr = testRefreshHosts(0);
+    InetAddress addr = testRefreshHosts(0, null);
     assertEquals("192.168.0.15", addr.getHostAddress());
     assertEquals("server.net", addr.getHostName());
   }
 
-  private InetAddress testRefreshHosts(int period) throws Exception {
+  @Test
+  public void testRefreshHosts3() throws Exception {
+    InetAddress addr = testRefreshHosts(100, TimeUnit.MILLISECONDS);
+    assertEquals("192.168.0.16", addr.getHostAddress());
+    assertEquals("server.net", addr.getHostName());
+  }
+
+  @Test
+  public void testRefreshHosts4() throws Exception {
+    InetAddress addr = testRefreshHosts(2, TimeUnit.SECONDS);
+    assertEquals("192.168.0.15", addr.getHostAddress());
+    assertEquals("server.net", addr.getHostName());
+  }
+
+  private InetAddress testRefreshHosts(int period, TimeUnit timeUnit) throws Exception {
     File hosts = File.createTempFile("vertx", "hosts");
     hosts.deleteOnExit();
     Files.writeString(hosts.toPath(), "192.168.0.15 server.net");
     AddressResolverOptions options = new AddressResolverOptions()
       .setHostsPath(hosts.getAbsolutePath())
       .setHostsRefreshPeriod(period);
+    if (timeUnit != null) {
+      options.setHostsRefreshPeriodUnit(timeUnit);
+    }
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(options));
     InetAddress addr = awaitFuture(resolve(vertx, "server.net"));
     assertEquals("192.168.0.15", addr.getHostAddress());

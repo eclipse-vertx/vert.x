@@ -34,6 +34,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
   private final boolean decompressionSupported;
   private final Http2Settings initialSettings;
   private final Http2MultiplexConnectionFactory connectionFactory;
+  private final int rstFloodMaxRstFramePerWindow;
+  private final int rstFloodWindowDuration;
   private final boolean logEnabled;
 
   public Http2MultiplexServerChannelInitializer(ContextInternal context,
@@ -44,6 +46,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
                                                 Supplier<ContextInternal> streamContextSupplier,
                                                 Handler<HttpServerConnection> connectionHandler,
                                                 Http2Settings initialSettings,
+                                                int rstFloodMaxRstFramePerWindow,
+                                                int rstFloodWindowDuration,
                                                 boolean logEnabled) {
     Http2MultiplexConnectionFactory connectionFactory = (handler, chctx) -> {
       Http2MultiplexServerConnection connection = new Http2MultiplexServerConnection(
@@ -61,6 +65,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
     this.connectionFactory = connectionFactory;
     this.compressionManager = compressionManager;
     this.decompressionSupported = decompressionSupported;
+    this.rstFloodMaxRstFramePerWindow = rstFloodMaxRstFramePerWindow;
+    this.rstFloodWindowDuration = rstFloodWindowDuration;
     this.logEnabled = logEnabled;
   }
 
@@ -74,6 +80,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
 
     Http2FrameCodec frameCodec = new Http2CustomFrameCodecBuilder(compressionManager, decompressionSupported)
       .server(true)
+      .decoderEnforceMaxRstFramesPerWindow(rstFloodMaxRstFramePerWindow, rstFloodWindowDuration)
+      .encoderEnforceMaxRstFramesPerWindow(rstFloodMaxRstFramePerWindow, rstFloodWindowDuration)
       .initialSettings(initialSettings)
       .logEnabled(logEnabled)
       .build();
