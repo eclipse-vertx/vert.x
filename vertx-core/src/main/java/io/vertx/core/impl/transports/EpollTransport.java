@@ -94,13 +94,13 @@ public class EpollTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel() {
+  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
     return new EpollDatagramChannel();
   }
 
   @Override
-  public DatagramChannel datagramChannel(InternetProtocolFamily family) {
-    return new EpollDatagramChannel();
+  public ChannelFactory<? extends DatagramChannel> datagramChannelFactory() {
+    return EpollDatagramChannel::new;
   }
 
   @Override
