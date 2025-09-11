@@ -17,15 +17,11 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.Repeat;
-import io.vertx.tests.future.helper.EightFunction;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -2056,5 +2052,17 @@ public class FutureTest extends FutureTestBase {
     fut.onComplete((res, err) -> {
       String cq = res;
     });
+  }
+
+  @FunctionalInterface
+  private interface EightFunction<A, B, C, D, E, F, G, H, R> {
+
+    R apply(A a, B b, C c, D d, E e, F f, G g, H h);
+
+    default <V> EightFunction<A, B, C, D, E, F, G, H, V> andThen(
+      Function<? super R, ? extends V> after) {
+      Objects.requireNonNull(after);
+      return (a, b, c, d, e, f, g, h) -> after.apply(apply(a, b, c, d, e, f, g, h));
+    }
   }
 }
