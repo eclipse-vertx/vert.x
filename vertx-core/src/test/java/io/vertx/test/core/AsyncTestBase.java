@@ -13,8 +13,8 @@ package io.vertx.test.core;
 
 import io.vertx.core.*;
 import io.vertx.core.Future;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import org.hamcrest.Matcher;
@@ -500,6 +500,19 @@ public class AsyncTestBase {
     checkThread();
     try {
       Assert.assertNotSame(message, unexpected, actual);
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
+  protected void assertNotEquals(Object unexpected, Object actual) {
+    assertNotEquals(null, unexpected, actual);
+  }
+
+  protected void assertNotEquals(String message, Object unexpected, Object actual) {
+    checkThread();
+    try {
+      Assert.assertNotEquals(message, unexpected, actual);
     } catch (AssertionError e) {
       handleThrowable(e);
     }

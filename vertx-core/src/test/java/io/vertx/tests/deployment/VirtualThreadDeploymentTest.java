@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -91,7 +90,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
           p.fail(e);
           return;
         }
-        assertNotSame(Thread.currentThread().getName(), res);
+        assertNotEquals(Thread.currentThread().getName(), res);
         p.complete();
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD)).await();
