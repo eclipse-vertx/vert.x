@@ -140,7 +140,6 @@ public class NetTest extends VertxTestBase {
       .setUseAlpn(true)
       .setSsl(true)
       .setHostnameVerificationAlgorithm("")
-      .setProtocolVersion(io.vertx.core.http.HttpVersion.HTTP_3)
       .setTrustOptions(Trust.SERVER_JKS.get())
       .getSslOptions()
       .setApplicationLayerProtocols(Http3Utils.supportedApplicationProtocols());

@@ -261,14 +261,15 @@ class NetClientImpl implements NetClientInternal {
           QuicUtils.createClientQuicCodecBuilderInitializer(options.getQuicOptions()),
           context);
         fut.onComplete(ar -> {
+          boolean supportsQuic = sslOptions.getApplicationLayerProtocols() != null && HttpUtils.supportsQuic(sslOptions.getApplicationLayerProtocols());
           if (ar.succeeded()) {
-            connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
+            connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts, supportsQuic);
           } else {
             connectHandler.fail(ar.cause());
           }
         });
       } else {
-        connectInternal2(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts);
+        connectInternal2(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts, false);
       }
     }
   }
@@ -279,7 +280,8 @@ class NetClientImpl implements NetClientInternal {
                                 boolean registerWriteHandlers,
                                 Promise<NetSocket> connectHandler,
                                 ContextInternal context,
-                                int remainingAttempts) {
+                                int remainingAttempts,
+                                boolean supportsQuic) {
     EventLoop eventLoop = context.nettyEventLoop();
 
     if (eventLoop.inEventLoop()) {
@@ -304,7 +306,7 @@ class NetClientImpl implements NetClientInternal {
       if (connectTimeout < 0) {
         connectTimeout = options.getConnectTimeout();
       }
-      vertx.transport().configure(options, connectTimeout, remoteAddress.isDomainSocket(), bootstrap);
+      vertx.transport().configure(options, connectTimeout, remoteAddress.isDomainSocket(), bootstrap, supportsQuic);
 
       ProxyOptions proxyOptions = connectOptions.getProxyOptions();
       if (proxyOptions == null) {
@@ -316,8 +318,8 @@ class NetClientImpl implements NetClientInternal {
         }
       }
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context, options, connectTimeout)
-        .proxyOptions(proxyOptions).version(options.getProtocolVersion());;
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context, options, connectTimeout, supportsQuic)
+        .proxyOptions(proxyOptions);
 
       SocketAddress captured = remoteAddress;
 
@@ -328,7 +330,7 @@ class NetClientImpl implements NetClientInternal {
         connectHandler,
         captured,
         connectOptions.isSsl(),
-        applicationProtocol(ch),
+        applicationProtocol(ch, supportsQuic),
         registerWriteHandlers));
       io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(
         remoteAddress,
@@ -362,12 +364,12 @@ class NetClientImpl implements NetClientInternal {
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context, remainingAttempts, supportsQuic));
     }
   }
 
-  private String applicationProtocol(Channel channel) {
-    if (HttpUtils.isHttp3(options.getProtocolVersion())) {
+  private String applicationProtocol(Channel channel, boolean supportsQuic) {
+    if (supportsQuic) {
       return Objects.requireNonNull(((QuicChannel) channel).sslEngine()).getApplicationProtocol();
     }
     ChannelPipeline pipeline = channel.pipeline();

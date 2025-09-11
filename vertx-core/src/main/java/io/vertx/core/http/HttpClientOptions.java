@@ -181,6 +181,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
+  private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
@@ -238,6 +239,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
+    this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
@@ -291,6 +293,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
@@ -756,9 +759,26 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
-  @Override
+    /**
+   * Get the protocol version.
+   *
+   * @return the protocol version
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
+  }
+
+  /**
+   * Set the protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
   public HttpClientOptions setProtocolVersion(HttpVersion protocolVersion) {
-    super.setProtocolVersion(protocolVersion);
+    if (protocolVersion == null) {
+      throw new IllegalArgumentException("protocolVersion must not be null");
+    }
+    this.protocolVersion = protocolVersion;
     return this;
   }
 

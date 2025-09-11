@@ -68,18 +68,20 @@ public final class ChannelProvider {
   private final int connectTimeout;
   private ProxyOptions proxyOptions;
   private Handler<Channel> handler;
-  private HttpVersion version;
+  private final boolean supportsQuic;
 
   public ChannelProvider(Bootstrap bootstrap,
                          SslContextProvider sslContextProvider,
                          ContextInternal context,
                          NetClientOptions clientOptions,
-                         int connectTimeout) {
+                         int connectTimeout,
+                         boolean supportsQuic) {
     this.bootstrap = bootstrap;
     this.context = context;
     this.sslContextProvider = sslContextProvider;
     this.clientOptions = clientOptions;
     this.connectTimeout = connectTimeout;
+    this.supportsQuic = supportsQuic;
   }
 
   /**
@@ -90,11 +92,6 @@ public final class ChannelProvider {
    */
   public ChannelProvider proxyOptions(ProxyOptions proxyOptions) {
     this.proxyOptions = proxyOptions;
-    return this;
-  }
-
-  public ChannelProvider version(HttpVersion version) {
-    this.version = version;
     return this;
   }
 
@@ -117,7 +114,7 @@ public final class ChannelProvider {
 
   private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, QuicOptions quicOptions, Promise<Channel> p) {
     try {
-      if (version == HttpVersion.HTTP_3) {
+      if (supportsQuic) {
         bootstrap.channelFactory(() -> context.owner().transport().datagramChannel());
       } else {
         bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
@@ -153,7 +150,7 @@ public final class ChannelProvider {
         }
       });
 
-      if (version != HttpVersion.HTTP_3) {
+      if (!supportsQuic) {
         Promise<ChannelHandlerContext> promise = context.nettyEventLoop().newPromise();
         promise.addListener((GenericFutureListener<Future<ChannelHandlerContext>>) future -> {
           if (!future.isSuccess()) {
@@ -186,7 +183,7 @@ public final class ChannelProvider {
         channelHandler.tryFailure(res.cause());
         return;
       }
-      if (version != HttpVersion.HTTP_3) {
+      if (!supportsQuic) {
         if (!ssl) {
           connected(fut.channel(), channelHandler);
         }
@@ -256,7 +253,7 @@ public final class ChannelProvider {
         InetSocketAddress proxyAddr = new InetSocketAddress(address, proxyPort);
         QuicProxyProvider proxyProvider = new QuicProxyProvider(context.nettyEventLoop());
 
-        if (sslOptions != null && HttpUtils.isHttp3(clientOptions.getProtocolVersion())) {
+        if (sslOptions != null && supportsQuic) {
           bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 

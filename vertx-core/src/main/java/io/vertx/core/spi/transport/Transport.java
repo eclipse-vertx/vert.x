@@ -145,8 +145,8 @@ public interface Transport {
     }
   }
 
-  default void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
-    if (!domainSocket && options.getProtocolVersion() != HttpVersion.HTTP_3) {
+  default void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap, boolean supportsQuic) {
+    if (!domainSocket && !supportsQuic) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
