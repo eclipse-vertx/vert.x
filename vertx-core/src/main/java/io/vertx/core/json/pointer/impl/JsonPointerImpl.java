@@ -11,6 +11,8 @@
 
 package io.vertx.core.json.pointer.impl;
 
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.core.json.pointer.JsonPointerIterator;
 
@@ -30,6 +32,8 @@ import java.util.stream.Stream;
  * @author Francesco Guardiani @slinkydeveloper
  */
 public class JsonPointerImpl implements JsonPointer {
+
+  private final Logger logger = LoggerFactory.getLogger(JsonPointerImpl.class);
 
   final public static Pattern VALID_POINTER_PATTERN = Pattern.compile("^(/(([^/~])|(~[01]))*)*$");
 
@@ -287,7 +291,7 @@ public class JsonPointerImpl implements JsonPointer {
         return new URI(oldURI.getScheme(), oldURI.getSchemeSpecificPart(), fragment);
       } else return new URI(null, null, fragment);
     } catch (URISyntaxException e) {
-      e.printStackTrace();
+      logger.error("Error creating URI: " + e.getMessage() + Arrays.toString(e.getStackTrace()));
       return null;
     }
   }
