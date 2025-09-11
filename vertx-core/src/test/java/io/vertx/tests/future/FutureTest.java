@@ -17,7 +17,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.Repeat;
-import io.vertx.tests.future.helper.EightFunction;
 import org.junit.Ignore;
 import org.junit.Test;
 

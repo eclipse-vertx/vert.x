@@ -1,10 +1,10 @@
-package io.vertx.tests.future.helper;
+package io.vertx.tests.future;
 
 import java.util.Objects;
 import java.util.function.Function;
 
 @FunctionalInterface
-public interface EightFunction<A, B, C, D, E, F, G, H, R> {
+interface EightFunction<A, B, C, D, E, F, G, H, R> {
 
   R apply(A a, B b, C c, D d, E e, F f, G g, H h);
 
