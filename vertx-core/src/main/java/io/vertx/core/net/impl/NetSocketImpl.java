@@ -337,6 +337,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           null,
           sslOptions.getApplicationLayerProtocols(),
           null,
+          null,
           context).map(p -> new SslChannelProvider(context.owner(), p, false));
       } else {
         ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
@@ -348,7 +349,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           sslOptions,
           null,
           clientAuth,
-          sslOptions.getApplicationLayerProtocols(), null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
+          sslOptions.getApplicationLayerProtocols(), null, null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
       }
       return f.compose(provider -> {
         PromiseInternal<Void> p = context.promise();

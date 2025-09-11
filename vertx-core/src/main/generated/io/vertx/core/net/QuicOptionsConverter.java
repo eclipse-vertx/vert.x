@@ -42,16 +42,6 @@ public class QuicOptionsConverter {
             obj.setHttp3InitialMaxStreamsUnidirectional(((Number)member.getValue()).longValue());
           }
           break;
-        case "sslHandshakeTimeout":
-          if (member.getValue() instanceof Number) {
-            obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "sslHandshakeTimeoutUnit":
-          if (member.getValue() instanceof String) {
-            obj.setSslHandshakeTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
-          }
-          break;
       }
     }
   }
@@ -67,9 +57,5 @@ public class QuicOptionsConverter {
     json.put("http3InitialMaxStreamDataBidirectionalRemote", obj.getHttp3InitialMaxStreamDataBidirectionalRemote());
     json.put("http3InitialMaxStreamDataUnidirectional", obj.getHttp3InitialMaxStreamDataUnidirectional());
     json.put("http3InitialMaxStreamsUnidirectional", obj.getHttp3InitialMaxStreamsUnidirectional());
-    json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
-    if (obj.getSslHandshakeTimeoutUnit() != null) {
-      json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());
-    }
   }
 }

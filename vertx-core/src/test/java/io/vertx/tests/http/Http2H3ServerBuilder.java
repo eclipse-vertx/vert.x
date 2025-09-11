@@ -75,7 +75,7 @@ class Http2H3ServerBuilder {
           channel.pipeline().addLast(createHttpConnectionHandler());
           channel.pipeline().addLast(new MyLoggerHandler());
         }
-      }), serverOptions.getQuicOptions())
+      }), serverOptions.getQuicOptions(), serverOptions.getSslHandshakeTimeout(), serverOptions.getSslHandshakeTimeoutUnit())
       .build();
 
     bootstrap.handler(codec);

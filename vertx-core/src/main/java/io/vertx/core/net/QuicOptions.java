@@ -17,10 +17,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
-import static io.vertx.core.net.SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT;
-import static io.vertx.core.net.SSLOptions.DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
 
 /**
  * @author <a href="mailto:zolfaghari19@gmail.com">Iman Zolfaghari</a>
@@ -61,8 +57,6 @@ public class QuicOptions {
 
   public static final Duration MAX_SSL_HANDSHAKE_TIMEOUT = Duration.ofDays(1);
 
-  private long sslHandshakeTimeout;
-  private TimeUnit sslHandshakeTimeoutUnit;
   private long http3InitialMaxStreamsBidirectional;
   private long http3InitialMaxData;
   private long http3InitialMaxStreamDataBidirectionalLocal;
@@ -83,8 +77,6 @@ public class QuicOptions {
    * @param other the options to copy
    */
   public QuicOptions(QuicOptions other) {
-    this.sslHandshakeTimeout = other.sslHandshakeTimeout;
-    this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     this.http3InitialMaxStreamsBidirectional = other.http3InitialMaxStreamsBidirectional;
     this.http3InitialMaxData = other.http3InitialMaxData;
     this.http3InitialMaxStreamDataBidirectionalLocal = other.http3InitialMaxStreamDataBidirectionalLocal;
@@ -104,8 +96,6 @@ public class QuicOptions {
   }
 
   protected void init() {
-    sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
-    sslHandshakeTimeoutUnit = DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     http3InitialMaxStreamsBidirectional = DEFAULT_HTTP3_INITIAL_MAX_STREAMS_BIDIRECTIONAL;
     http3InitialMaxData = DEFAULT_HTTP3_INITIAL_MAX_DATA;
     http3InitialMaxStreamDataBidirectionalLocal = DEFAULT_HTTP3_INITIAL_MAX_STREAM_DATA_BIDIRECTIONAL_LOCAL;
@@ -220,45 +210,6 @@ public class QuicOptions {
   public QuicOptions setHttp3InitialMaxStreamsUnidirectional(long http3InitialMaxStreamsUnidirectional) {
     this.http3InitialMaxStreamsUnidirectional = http3InitialMaxStreamsUnidirectional;
     return this;
-  }
-
-    /**
-   * @return the SSL handshake timeout, in time unit specified by {@link #getSslHandshakeTimeoutUnit()}.
-   */
-  public long getSslHandshakeTimeout() {
-    return sslHandshakeTimeout;
-  }
-
-  /**
-   * Set the SSL handshake timeout, default time unit is seconds.
-   *
-   * @param sslHandshakeTimeout the SSL handshake timeout to set, in milliseconds
-   * @return a reference to this, so the API can be used fluently
-   */
-  public QuicOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
-    if (sslHandshakeTimeout < 0) {
-      throw new IllegalArgumentException("sslHandshakeTimeout must be >= 0");
-    }
-    this.sslHandshakeTimeout = sslHandshakeTimeout;
-    return this;
-  }
-
-  /**
-   * Set the SSL handshake timeout unit. If not specified, default is seconds.
-   *
-   * @param sslHandshakeTimeoutUnit specify time unit.
-   * @return a reference to this, so the API can be used fluently
-   */
-  public QuicOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
-    this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
-    return this;
-  }
-
-  /**
-   * @return the SSL handshake timeout unit.
-   */
-  public TimeUnit getSslHandshakeTimeoutUnit() {
-    return sslHandshakeTimeoutUnit;
   }
 
   @Override

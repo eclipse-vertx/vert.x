@@ -397,16 +397,10 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   public ClientOptionsBase setSslHandshakeTimeout(long sslHandshakeTimeout) {
-    if (quicOptions != null) {
-      quicOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
-    }
     return (ClientOptionsBase) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }
 
   public ClientOptionsBase setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
-    if (quicOptions != null) {
-      quicOptions.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
-    }
     return (ClientOptionsBase) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
   }
 

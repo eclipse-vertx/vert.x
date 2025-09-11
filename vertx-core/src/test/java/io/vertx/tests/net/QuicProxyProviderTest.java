@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
@@ -137,7 +138,8 @@ public class QuicProxyProviderTest extends ProxyProviderTest {
     InetSocketAddress remoteAddress = new InetSocketAddress("localhost", server.actualPort());
 
     ProxyOptions proxyOptions = new ProxyOptions().setType(proxyType);
-    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions, createBaseClientOptions().getQuicOptions())
+    HttpClientOptions baseClientOptions = createBaseClientOptions();
+    proxyProvider.createProxyQuicChannel(proxyAddress, remoteAddress, proxyOptions, baseClientOptions.getQuicOptions(), baseClientOptions.getSslOptions())
       .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
         if (!channelFuture.isSuccess()) {
           fail(channelFuture.cause());

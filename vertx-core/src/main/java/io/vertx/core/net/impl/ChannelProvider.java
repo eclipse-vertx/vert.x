@@ -257,7 +257,7 @@ public final class ChannelProvider {
           bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
           java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
-          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions, quicOptions)
+          proxyProvider.createProxyQuicChannel(proxyAddr, (InetSocketAddress) targetAddress, proxyOptions, quicOptions, sslOptions)
             .addListener((GenericFutureListener<Future<Channel>>) channelFuture -> {
               if (!channelFuture.isSuccess()) {
                 channelHandler.tryFailure(channelFuture.cause());

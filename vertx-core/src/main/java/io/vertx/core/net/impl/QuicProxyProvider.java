@@ -39,6 +39,7 @@ import io.vertx.core.http.impl.http2.Http3Utils;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.proxy.HttpProxyHandler;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.QuicOptions;
@@ -72,12 +73,12 @@ public class QuicProxyProvider {
   // This is currently a temporary duplicate of a class with the same name in Netty.
   // See: https://github.com/netty/netty/pull/14993
   public Future<Channel> createProxyQuicChannel(InetSocketAddress proxyAddress, InetSocketAddress remoteAddress,
-                                                ProxyOptions proxyOptions, QuicOptions quicOptions) {
+                                                ProxyOptions proxyOptions, QuicOptions quicOptions, ClientSSLOptions sslOptions) {
     Promise<Channel> channelPromise = eventLoop.newPromise();
 
     ChannelHandler proxyHandler = new ProxyHandlerSelector(proxyOptions, proxyAddress, remoteAddress).select(true);
 
-    QuicUtils.newDatagramChannel(eventLoop, proxyAddress, QuicUtils.newClientSslContext(quicOptions))
+    QuicUtils.newDatagramChannel(eventLoop, proxyAddress, QuicUtils.newClientSslContext(quicOptions, sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit()))
       .addListener((ChannelFutureListener) future -> {
         NioDatagramChannel datagramChannel = (NioDatagramChannel) future.channel();
         if (IS_NETTY_BASED_PROXY) {

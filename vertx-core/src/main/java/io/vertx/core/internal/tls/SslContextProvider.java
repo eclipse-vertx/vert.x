@@ -59,7 +59,8 @@ public class SslContextProvider {
   private final TrustManagerFactory trustManagerFactory;
   private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
-  private final QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer;
+  private final QuicUtils.ServerQuicCodecBuilderInitializer serverQuicCodecBuilderInitializer;
+  private final QuicUtils.ClientQuicCodecBuilderInitializer clientQuicCodecBuilderInitializer;
 
   private final SslContext[] sslContexts = new SslContext[2];
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
@@ -70,7 +71,8 @@ public class SslContextProvider {
                             ClientAuth clientAuth,
                             String endpointIdentificationAlgorithm,
                             List<String> applicationProtocols,
-                            QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer,
+                            QuicUtils.ServerQuicCodecBuilderInitializer serverQuicCodecBuilderInitializer,
+                            QuicUtils.ClientQuicCodecBuilderInitializer clientQuicCodecBuilderInitializer,
                             Set<String> enabledCipherSuites,
                             Set<String> enabledProtocols,
                             KeyManagerFactory keyManagerFactory,
@@ -84,7 +86,8 @@ public class SslContextProvider {
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     this.applicationProtocols = applicationProtocols;
-    this.quicCodecBuilderInitializer = quicCodecBuilderInitializer;
+    this.serverQuicCodecBuilderInitializer = serverQuicCodecBuilderInitializer;
+    this.clientQuicCodecBuilderInitializer = clientQuicCodecBuilderInitializer;
     this.enabledCipherSuites = new HashSet<>(enabledCipherSuites);
     this.enabledProtocols = enabledProtocols;
     this.keyManagerFactory = keyManagerFactory;
@@ -170,13 +173,13 @@ public class SslContextProvider {
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
           QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc);
-          return QuicUtils.newQuicServerSslHandler(sslEngine, executor, sniSslContext, quicCodecBuilderInitializer);
+          return QuicUtils.newQuicServerSslHandler(sslEngine, executor, sniSslContext, serverQuicCodecBuilderInitializer);
         }
 
         @Override
         public SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, Executor executor) {
           QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc, peerHost, peerPort);
-          return QuicUtils.newQuicServerSslHandler(sslEngine, executor, sniSslContext, quicCodecBuilderInitializer);
+          return QuicUtils.newQuicServerSslHandler(sslEngine, executor, sniSslContext, serverQuicCodecBuilderInitializer);
         }
       };
     } catch (Exception e) {
@@ -254,7 +257,7 @@ public class SslContextProvider {
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
           if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
-            return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+            return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, clientQuicCodecBuilderInitializer);
           }
           return super.newHandler(alloc, executor);
         }
@@ -263,7 +266,7 @@ public class SslContextProvider {
         protected SslHandler newHandler(ByteBufAllocator alloc, boolean startTls, Executor executor) {
           if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc);
-            return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+            return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, clientQuicCodecBuilderInitializer);
           }
           return super.newHandler(alloc, startTls, executor);
         }
@@ -272,7 +275,7 @@ public class SslContextProvider {
         protected SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, boolean startTls, Executor executor) {
           if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) context.newEngine(alloc, peerHost, peerPort);
-            return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+            return QuicUtils.newQuicClientSslHandler(sslEngine, executor, context, clientQuicCodecBuilderInitializer);
           }
           return super.newHandler(alloc, peerHost, peerPort, startTls, executor);
         }
@@ -314,7 +317,7 @@ public class SslContextProvider {
         public SslHandler newHandler(ByteBufAllocator alloc, Executor executor) {
           if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc);
-            return QuicUtils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+            return QuicUtils.newQuicServerSslHandler(sslEngine, executor, context, serverQuicCodecBuilderInitializer);
           }
           return super.newHandler(alloc, executor);
         }
@@ -323,7 +326,7 @@ public class SslContextProvider {
         public SslHandler newHandler(ByteBufAllocator alloc, String peerHost, int peerPort, Executor executor) {
           if (isQuicSupported()) {
             QuicSslEngine sslEngine = (QuicSslEngine) newEngine(alloc, peerHost, peerPort);
-            return QuicUtils.newQuicServerSslHandler(sslEngine, executor, context, quicCodecBuilderInitializer);
+            return QuicUtils.newQuicServerSslHandler(sslEngine, executor, context, serverQuicCodecBuilderInitializer);
           }
           return super.newHandler(alloc, peerHost, peerPort, executor);
         }

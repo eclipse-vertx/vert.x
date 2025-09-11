@@ -114,11 +114,11 @@ public class SslContextManager {
     this(sslEngineOptions, 256);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, ContextInternal ctx) {
-    return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, applicationProtocols, quicCodecBuilderInitializer, false, ctx);
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.ServerQuicCodecBuilderInitializer serverQuicCodecBuilderInitializer, QuicUtils.ClientQuicCodecBuilderInitializer clientQuicCodecBuilderInitializer, ContextInternal ctx) {
+    return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, applicationProtocols, serverQuicCodecBuilderInitializer, clientQuicCodecBuilderInitializer, false, ctx);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, boolean force, ContextInternal ctx) {
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.ServerQuicCodecBuilderInitializer serverQuicCodecBuilderInitializer, QuicUtils.ClientQuicCodecBuilderInitializer clientQuicCodecBuilderInitializer, boolean force, ContextInternal ctx) {
     Promise<SslContextProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
@@ -133,7 +133,7 @@ public class SslContextManager {
       promise = Promise.promise();
       sslContextProviderMap.put(k, promise.future());
     }
-    buildSslContextProvider(options, hostnameVerificationAlgorithm, clientAuth, applicationProtocols, quicCodecBuilderInitializer, force, ctx)
+    buildSslContextProvider(options, hostnameVerificationAlgorithm, clientAuth, applicationProtocols, serverQuicCodecBuilderInitializer, clientQuicCodecBuilderInitializer, force, ctx)
       .onComplete(promise);
     return promise.future();
   }
@@ -148,14 +148,15 @@ public class SslContextManager {
                                                      String hostnameVerificationAlgorithm,
                                                      ClientAuth clientAuth,
                                                      List<String> applicationProtocols,
-                                                     QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer,
+                                                     QuicUtils.ServerQuicCodecBuilderInitializer serverQuicCodecBuilderInitializer,
+                                                     QuicUtils.ClientQuicCodecBuilderInitializer clientQuicCodecBuilderInitializer,
                                                      boolean force,
                                                      ContextInternal ctx) {
     return buildConfig(sslOptions, force, ctx)
-      .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, quicCodecBuilderInitializer, config));
+      .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, serverQuicCodecBuilderInitializer, clientQuicCodecBuilderInitializer, config));
   }
 
-  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.QuicCodecBuilderInitializer quicCodecBuilderInitializer, Config config) {
+  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, QuicUtils.ServerQuicCodecBuilderInitializer serverQuicCodecBuilderInitializer, QuicUtils.ClientQuicCodecBuilderInitializer clientQuicCodecBuilderInitializer, Config config) {
     if (clientAuth == null && hostnameVerificationAlgorithm == null) {
       throw new VertxException("Missing hostname verification algorithm: you must set TCP client options host name" +
         " verification algorithm");
@@ -165,7 +166,8 @@ public class SslContextManager {
       clientAuth,
       hostnameVerificationAlgorithm,
       applicationProtocols,
-      quicCodecBuilderInitializer,
+      serverQuicCodecBuilderInitializer,
+      clientQuicCodecBuilderInitializer,
       sslOptions.getEnabledCipherSuites(),
       sslOptions.getEnabledSecureTransportProtocols(),
       config.keyManagerFactory,

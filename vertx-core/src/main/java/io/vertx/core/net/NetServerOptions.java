@@ -305,17 +305,11 @@ public class NetServerOptions extends TCPSSLOptions {
 
   @Override
   public NetServerOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
-    if (quicOptions != null) {
-      quicOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
-    }
     return (NetServerOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }
 
   @Override
   public NetServerOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
-    if (quicOptions != null) {
-      quicOptions.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
-    }
     return (NetServerOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
   }
 
