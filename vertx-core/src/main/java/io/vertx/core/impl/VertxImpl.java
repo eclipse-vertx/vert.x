@@ -148,7 +148,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final List<ContextLocal<?>> contextLocalsList;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
-  final WorkerPool virtualThreaWorkerPool;
+  final WorkerPool virtualThreadWorkerPool;
   private final VertxThreadFactory threadFactory;
   private final ExecutorServiceFactory executorServiceFactory;
   private final ThreadFactory eventLoopThreadFactory;
@@ -203,6 +203,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", internalBlockingPoolSize) : null;
 
     ThreadFactory virtualThreadFactory = virtualThreadFactory();
+    PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", -1) : null;
 
     contextLocals = LocalSeq.get();
     contextLocalsList = Collections.unmodifiableList(Arrays.asList(contextLocals));
@@ -215,7 +216,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
     virtualThreadExecutor = virtualThreadFactory != null ? new ThreadPerTaskExecutorService(virtualThreadFactory) : null;
-    virtualThreaWorkerPool = virtualThreadFactory != null ? new WorkerPool(virtualThreadExecutor, null) : null;
+    virtualThreadWorkerPool = virtualThreadFactory != null ? new WorkerPool(virtualThreadExecutor, virtualThreadWorkerPoolMetrics) : null;
     internalWorkerPool = new WorkerPool(internalWorkerExec, internalBlockingPoolMetrics);
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
@@ -609,8 +610,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         if (!isVirtualThreadAvailable()) {
           throw new IllegalStateException("This Java runtime does not support virtual threads");
         }
-        wp = virtualThreaWorkerPool;
-        eventExecutor = new WorkerExecutor(virtualThreaWorkerPool, new WorkerTaskQueue());
+        wp = virtualThreadWorkerPool;
+        eventExecutor = new WorkerExecutor(virtualThreadWorkerPool, new WorkerTaskQueue());
         break;
       default:
         throw new UnsupportedOperationException();

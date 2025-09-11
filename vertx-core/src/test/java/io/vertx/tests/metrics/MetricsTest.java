@@ -1251,4 +1251,11 @@ public class MetricsTest extends VertxTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testVirtualThreadWorkerPoolMetrics() {
+    Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
+    assertTrue(all.containsKey("vert.x-virtual-thread"));
+    assertNotNull(all.get("vert.x-virtual-thread"));
+  }
 }
