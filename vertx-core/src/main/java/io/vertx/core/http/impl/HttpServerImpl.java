@@ -182,6 +182,9 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       configureApplicationLayerProtocols(tcpOptions.getSslOptions());
     }
     ContextInternal context = vertx.getOrCreateContext();
+    if (HttpUtils.supportsQuicVersion(options.getAlpnVersions()) && !options.isSsl()) {
+      throw new IllegalStateException("HTTP/3 requires SSL/TLS encryption. Please enable SSL to use HTTP/3.");
+    }
     ContextInternal listenContext;
     // Not sure of this
     if (context.isEventLoopContext()) {
@@ -220,7 +223,8 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         serverOrigin,
         handler,
         exceptionHandler,
-        soi.metric());
+        soi.metric(),
+        server.getTrafficShapingHandler());
       initializer.configurePipeline(soi.channel(), null, null);
     });
     tcpServer = server;

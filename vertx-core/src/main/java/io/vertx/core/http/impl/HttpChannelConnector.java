@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
+import io.vertx.core.http.impl.http2.h3.Http3CodecClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpHeadersInternal;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.http.HttpMethod.OPTIONS;
+import static io.vertx.core.net.impl.ChannelProvider.CLIENT_SSL_HANDLER_NAME;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -65,6 +67,7 @@ public class HttpChannelConnector {
   private final boolean pooled;
   private final long maxLifetime;
   private final Http2ClientChannelInitializer http2ChannelInitializer;
+  private final Http2ClientChannelInitializer http3ChannelInitializer;
 
   public HttpChannelConnector(HttpClientBase client,
                               NetClientInternal netClient,
@@ -79,7 +82,8 @@ public class HttpChannelConnector {
                               boolean pooled,
                               long maxLifetimeMillis) {
 
-    Http2ClientChannelInitializer http2ChannelInitializer;
+    Http2ClientChannelInitializer http2ChannelInitializer = null;
+    Http2ClientChannelInitializer http3ChannelInitializer = null;
     if (client.options.getHttp2MultiplexImplementation()) {
       http2ChannelInitializer = new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(client.options.getInitialSettings()),
@@ -91,8 +95,10 @@ public class HttpChannelConnector {
         client.options.getHttp2MultiplexingLimit(),
         client.options.isDecompressionSupported(),
         client.options.getLogActivity());
-    } else {
+    } else if (client.options.getProtocolVersion() == HttpVersion.HTTP_2) {
       http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, pooled, maxLifetimeMillis, authority);
+    } else {
+      http3ChannelInitializer = new Http3CodecClientChannelInitializer(client, metrics, pooled, maxLifetimeMillis, authority);
     }
 
     this.client = client;
@@ -109,6 +115,7 @@ public class HttpChannelConnector {
     this.pooled = pooled;
     this.maxLifetime = maxLifetimeMillis;
     this.http2ChannelInitializer = http2ChannelInitializer;
+    this.http3ChannelInitializer = http3ChannelInitializer;
   }
 
   public SocketAddress server() {
@@ -147,7 +154,7 @@ public class HttpChannelConnector {
     List<ChannelHandler> removedHandlers = new ArrayList<>();
     for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : pipeline) {
       ChannelHandler handler = stringChannelHandlerEntry.getValue();
-      if (!(handler instanceof SslHandler)) {
+      if (!(handler instanceof SslHandler) && !(CLIENT_SSL_HANDLER_NAME.equals(stringChannelHandlerEntry.getKey()))) {
         removedHandlers.add(handler);
       }
     }
@@ -158,7 +165,10 @@ public class HttpChannelConnector {
     if (ssl) {
       String protocol = so.applicationLayerProtocol();
       if (useAlpn) {
-        if ("h2".equals(protocol)) {
+        if (protocol != null && protocol.startsWith("h3")) {
+          applyHttp3ConnectionOptions(ch.pipeline());
+          http3ChannelInitializer.http2Connected(context, metric, ch ,promise);
+        } else if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           http2ChannelInitializer.http2Connected(context, metric, ch ,promise);
         } else {
@@ -172,7 +182,10 @@ public class HttpChannelConnector {
         http1xConnected(version, server, true, context, metric, ch, promise);
       }
     } else {
-      if (version == HttpVersion.HTTP_2) {
+      if (version == HttpVersion.HTTP_3) {
+        applyHttp3ConnectionOptions(pipeline);
+        http3ChannelInitializer.http2Connected(context, metric, ch, promise);
+      } else if (version == HttpVersion.HTTP_2) {
         if (this.options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
           http1xConnected(version, server, false, context, metric, ch, promise);
@@ -204,6 +217,16 @@ public class HttpChannelConnector {
     int writeIdleTimeout = options.getWriteIdleTimeout();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+    }
+  }
+
+  private void applyHttp3ConnectionOptions(ChannelPipeline pipeline) {
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout,
+        options.getIdleTimeoutUnit()));
     }
   }
 

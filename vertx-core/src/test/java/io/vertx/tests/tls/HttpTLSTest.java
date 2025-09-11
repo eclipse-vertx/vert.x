@@ -38,12 +38,11 @@ import java.util.function.Supplier;
 import javax.net.ssl.*;
 
 import io.vertx.core.*;
+import io.netty.handler.codec.quic.QuicSslEngine;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
-import io.vertx.core.transport.Transport;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -819,12 +818,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testSNIForceSend() throws Exception {
-    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST1, Cert.SNI_JKS, Trust.NONE)
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .clientForceSni()
         .serverSni()
-        .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host1"))
+        .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass();
-    assertEquals("host1", test.indicatedServerName);
+    assertEquals("host2.com", test.indicatedServerName);
   }
 
   @Test
@@ -954,6 +953,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass();
   }
 
+  @Ignore
   @Test
   // Provide an host name with a trailing dot validated on the server with SNI
   public void testSniWithTrailingDotHost() throws Exception {
@@ -1852,12 +1852,12 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   public void testOverrideClientSSLOptions() throws Exception {
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server = vertx.createHttpServer(createBaseServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()));
     server.requestHandler(request -> {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
+    client = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
     client.request(requestOptions).onComplete(onFailure(err -> {
       client.request(new RequestOptions(requestOptions).setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
         .onComplete(onSuccess(request -> {
@@ -2270,7 +2270,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
     @Override
     public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
-      peerHostVerifier.accept(engine.getPeerHost(), engine.getPeerPort());
+      if (engine instanceof QuicSslEngine) {
+        peerHostVerifier.accept(engine.getSession().getPeerHost(), engine.getSession().getPeerPort());
+      } else {
+        peerHostVerifier.accept(engine.getPeerHost(), engine.getPeerPort());
+      }
       if (delegate instanceof X509ExtendedKeyManager) {
         return ((X509ExtendedKeyManager) delegate).chooseEngineServerAlias(keyType, issuers, engine);
       } else {

@@ -19,12 +19,16 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -39,7 +43,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,8 +59,61 @@ public class Http2Test extends HttpTest {
   }
 
   @Override
+  protected NetClientOptions createNetClientOptions() {
+    return new NetClientOptions();
+  }
+
+  @Override
+  protected NetServerOptions createNetServerOptions() {
+    return new NetServerOptions();
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    return new HAProxy(remoteAddress, header);
+  }
+
+  @Override
   protected HttpClientOptions createBaseClientOptions() {
     return Http2TestBase.createHttp2ClientOptions();
+  }
+
+  @Override
+  protected HttpVersion clientAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  @Override
+  protected HttpVersion serverAlpnProtocolVersion() {
+    return HttpVersion.HTTP_2;
+  }
+
+  protected void addMoreOptions(HttpServerOptions opts) {
+  }
+
+  protected HttpServerOptions setMaxConcurrentStreamsSettings(HttpServerOptions options, int maxConcurrentStreams) {
+    return options.setInitialSettings(new Http2Settings().setMaxConcurrentStreams(maxConcurrentStreams));
+  }
+
+  protected StreamPriority generateStreamPriority() {
+    return new StreamPriority()
+      .setDependency(TestUtils.randomPositiveInt())
+      .setWeight((short) TestUtils.randomPositiveInt(255))
+      .setExclusive(TestUtils.randomBoolean());
+  }
+
+  protected StreamPriority defaultStreamPriority() {
+    return new StreamPriority()
+      .setDependency(0)
+      .setWeight(Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT)
+      .setExclusive(false);
+  }
+
+  protected void assertEqualsStreamPriority(StreamPriority expectedStreamPriority,
+                                            StreamPriority actualStreamPriority) {
+    assertEquals(expectedStreamPriority.getWeight(), actualStreamPriority.getWeight());
+    assertEquals(expectedStreamPriority.getDependency(), actualStreamPriority.getDependency());
+    assertEquals(expectedStreamPriority.isExclusive(), actualStreamPriority.isExclusive());
   }
 
   @Test
@@ -193,7 +249,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testServerOpenSSL() throws Exception {
-    HttpServerOptions opts = new HttpServerOptions()
+    HttpServerOptions opts = createBaseServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setUseAlpn(true)
@@ -201,6 +257,7 @@ public class Http2Test extends HttpTest {
       .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
       .setKeyCertOptions(Cert.SERVER_PEM.get())
       .setSslEngineOptions(new OpenSSLEngineOptions());
+    addMoreOptions(opts);
     server.close();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions());
@@ -221,7 +278,7 @@ public class Http2Test extends HttpTest {
   @Test
   public void testResetClientRequestNotYetSent() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
+    server = vertx.createHttpServer(setMaxConcurrentStreamsSettings(createBaseServerOptions(), 1));
     server.requestHandler(req -> {
       fail();
     });
@@ -264,19 +321,20 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testClientDoesNotSupportAlpn() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     waitFor(2);
     server.requestHandler(req -> {
-      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertEquals(clientAlpnProtocolVersion(), req.version());
       req.response().end();
       complete();
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()).setUseAlpn(false));
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
-        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        assertEquals(clientAlpnProtocolVersion(), resp.version());
         complete();
       }));
     await();
@@ -284,11 +342,12 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testServerDoesNotSupportAlpn() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     waitFor(2);
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
     server.requestHandler(req -> {
-      assertEquals(HttpVersion.HTTP_1_1, req.version());
+      assertEquals(clientAlpnProtocolVersion(), req.version());
       req.response().end();
       complete();
     });
@@ -296,7 +355,7 @@ public class Http2Test extends HttpTest {
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
-        assertEquals(HttpVersion.HTTP_1_1, resp.version());
+        assertEquals(clientAlpnProtocolVersion(), resp.version());
         complete();
       }));
     await();
@@ -337,6 +396,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     waitFor(2);
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
@@ -368,6 +428,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testMaxHaderListSize() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
     server.requestHandler(req -> {
@@ -407,19 +468,13 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependency() throws Exception {
-    int requestStreamDependency = 56;
-    short requestStreamWeight = 43;
-    int responseStreamDependency = 98;
-    short responseStreamWeight = 55;
+  public void testStreamPriority() throws Exception {
     waitFor(2);
+    StreamPriority requestStreamPriority = generateStreamPriority();
+    StreamPriority responseStreamPriority = generateStreamPriority();
     server.requestHandler(req -> {
-      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(responseStreamDependency)
-        .setWeight(responseStreamWeight)
-        .setExclusive(false));
+      assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
+      req.response().setStreamPriority(new StreamPriority(responseStreamPriority));
       req.response().end();
       complete();
     });
@@ -428,13 +483,9 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(new StreamPriority()
-          .setDependency(requestStreamDependency)
-          .setWeight(requestStreamWeight)
-          .setExclusive(false))
+        .setStreamPriority(new StreamPriority(requestStreamPriority))
         .send().onComplete(onSuccess(resp -> {
-          assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
-          assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
+          assertEqualsStreamPriority(responseStreamPriority, resp.request().getStreamPriority());
           complete();
         }));
     }));
@@ -442,36 +493,24 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyChange() throws Exception {
-    int requestStreamDependency = 56;
-    short requestStreamWeight = 43;
-    int requestStreamDependency2 = 157;
-    short requestStreamWeight2 = 143;
-    int responseStreamDependency = 98;
-    short responseStreamWeight = 55;
-    int responseStreamDependency2 = 198;
-    short responseStreamWeight2 = 155;
+  public void testStreamPriorityChange() throws Exception {
+    StreamPriority requestStreamPriority = generateStreamPriority();
+    StreamPriority requestStreamPriority2 = generateStreamPriority();
+    StreamPriority responseStreamPriority = generateStreamPriority();
+    StreamPriority responseStreamPriority2 = generateStreamPriority();
     waitFor(4);
     server.requestHandler(req -> {
-      req.streamPriorityHandler( sp -> {
-        assertEquals(requestStreamWeight2, sp.getWeight());
-        assertEquals(requestStreamDependency2, sp.getDependency());
-        assertEquals(requestStreamWeight2, req.streamPriority().getWeight());
-        assertEquals(requestStreamDependency2, req.streamPriority().getDependency());
+      req.streamPriorityHandler(sp -> {
+        assertEqualsStreamPriority(requestStreamPriority2, sp);
+        assertEqualsStreamPriority(requestStreamPriority2, req.streamPriority());
         complete();
       });
-      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(responseStreamDependency)
-        .setWeight(responseStreamWeight)
-        .setExclusive(false));
+      assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
+      req.response().setStreamPriority(new StreamPriority(responseStreamPriority));
       req.response().write("hello");
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(responseStreamDependency2)
-        .setWeight(responseStreamWeight2)
-        .setExclusive(false));
-      req.response().drainHandler(h -> {});
+      req.response().setStreamPriority(new StreamPriority(responseStreamPriority2));
+      req.response().drainHandler(h -> {
+      });
       req.response().end("world");
       complete();
     });
@@ -480,19 +519,13 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(new StreamPriority()
-          .setDependency(requestStreamDependency)
-          .setWeight(requestStreamWeight)
-          .setExclusive(false))
+        .setStreamPriority(new StreamPriority(requestStreamPriority))
         .response()
         .onComplete(onSuccess(resp -> {
-          assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
-          assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
+          assertEqualsStreamPriority(responseStreamPriority, resp.request().getStreamPriority());
           resp.streamPriorityHandler(sp -> {
-            assertEquals(responseStreamWeight2, sp.getWeight());
-            assertEquals(responseStreamDependency2, sp.getDependency());
-            assertEquals(responseStreamWeight2, resp.request().getStreamPriority().getWeight());
-            assertEquals(responseStreamDependency2, resp.request().getStreamPriority().getDependency());
+            assertEqualsStreamPriority(responseStreamPriority2, sp);
+            assertEqualsStreamPriority(responseStreamPriority2, resp.request().getStreamPriority());
             complete();
           });
           complete();
@@ -500,10 +533,7 @@ public class Http2Test extends HttpTest {
       req
         .writeHead()
         .onComplete(h -> {
-          req.setStreamPriority(new StreamPriority()
-            .setDependency(requestStreamDependency2)
-            .setWeight(requestStreamWeight2)
-            .setExclusive(false));
+          req.setStreamPriority(new StreamPriority(requestStreamPriority2));
           req.end();
         });
     }));
@@ -512,17 +542,13 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testServerStreamPriorityNoChange() throws Exception {
-    int dependency = 56;
-    short weight = 43;
-    boolean exclusive = true;
+    StreamPriority streamPriority = generateStreamPriority();
     waitFor(2);
     server.requestHandler(req -> {
       req.streamPriorityHandler(sp -> {
         fail("Stream priority handler should not be called " + sp);
       });
-      assertEquals(weight, req.streamPriority().getWeight());
-      assertEquals(dependency, req.streamPriority().getDependency());
-      assertEquals(exclusive, req.streamPriority().isExclusive());
+      assertEqualsStreamPriority(streamPriority, req.streamPriority());
       req.response().end();
       req.endHandler(v -> {
         complete();
@@ -538,39 +564,25 @@ public class Http2Test extends HttpTest {
             complete();
           });
         }));
-      req.setStreamPriority(new StreamPriority()
-        .setDependency(dependency)
-        .setWeight(weight)
-        .setExclusive(exclusive));
+      req.setStreamPriority(new StreamPriority(streamPriority));
       req
         .writeHead()
         .onComplete(h -> {
-        req.setStreamPriority(new StreamPriority()
-          .setDependency(dependency)
-          .setWeight(weight)
-          .setExclusive(exclusive));
-        req.end();
-      });
+          req.setStreamPriority(new StreamPriority(streamPriority));
+          req.end();
+        });
     }));
     await();
   }
 
   @Test
   public void testClientStreamPriorityNoChange() throws Exception {
-    int dependency = 98;
-    short weight = 55;
-    boolean exclusive = false;
+    StreamPriority streamPriority = generateStreamPriority();
     waitFor(2);
     server.requestHandler(req -> {
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(dependency)
-        .setWeight(weight)
-        .setExclusive(exclusive));
+      req.response().setStreamPriority(new StreamPriority(streamPriority));
       req.response().write("hello");
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(dependency)
-        .setWeight(weight)
-        .setExclusive(exclusive));
+      req.response().setStreamPriority(new StreamPriority(streamPriority));
       req.response().end("world");
       req.endHandler(v -> {
         complete();
@@ -583,9 +595,7 @@ public class Http2Test extends HttpTest {
       req
         .send()
         .onComplete(onSuccess(resp -> {
-          assertEquals(weight, resp.request().getStreamPriority().getWeight());
-          assertEquals(dependency, resp.request().getStreamPriority().getDependency());
-          assertEquals(exclusive, resp.request().getStreamPriority().isExclusive());
+          assertEqualsStreamPriority(streamPriority, resp.request().getStreamPriority());
           resp.streamPriorityHandler(sp -> {
             fail("Stream priority handler should not be called");
           });
@@ -598,13 +608,12 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyInheritance() throws Exception {
-    int requestStreamDependency = 86;
-    short requestStreamWeight = 53;
+  public void testStreamPriorityInheritance() throws Exception {
+    StreamPriority requestStreamPriority = generateStreamPriority();
+
     waitFor(2);
     server.requestHandler(req -> {
-      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
+      assertEqualsStreamPriority(requestStreamPriority, req.streamPriority());
       req.response().end();
       complete();
     });
@@ -613,14 +622,10 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
-        .setStreamPriority(new StreamPriority()
-          .setDependency(requestStreamDependency)
-          .setWeight(requestStreamWeight)
-          .setExclusive(false))
+        .setStreamPriority(new StreamPriority(requestStreamPriority))
         .send()
         .onComplete(onSuccess(resp -> {
-          assertEquals(requestStreamWeight, resp.request().getStreamPriority().getWeight());
-          assertEquals(requestStreamDependency, resp.request().getStreamPriority().getDependency());
+          assertEqualsStreamPriority(requestStreamPriority, resp.request().getStreamPriority());
           complete();
         }));
     }));
@@ -628,13 +633,11 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testDefaultStreamWeightAndDependency() throws Exception {
-    int defaultStreamDependency = 0;
-    short defaultStreamWeight = Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT;
+  public void testDefaultPriority() throws Exception {
+    StreamPriority defaultStreamPriority = defaultStreamPriority();
     waitFor(2);
     server.requestHandler(req -> {
-        assertEquals(defaultStreamWeight, req.streamPriority().getWeight());
-        assertEquals(defaultStreamDependency, req.streamPriority().getDependency());
+      assertEqualsStreamPriority(defaultStreamPriority, req.streamPriority());
       req.response().end();
       complete();
     });
@@ -643,8 +646,7 @@ public class Http2Test extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
-        assertEquals(defaultStreamWeight, req.getStreamPriority().getWeight());
-        assertEquals(defaultStreamDependency, req.getStreamPriority().getDependency());
+        assertEqualsStreamPriority(defaultStreamPriority, req.getStreamPriority());
         complete();
       }));
     }));
@@ -652,16 +654,12 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyPushPromise() throws Exception {
-    int pushStreamDependency = 456;
-    short pushStreamWeight = 14;
+  public void testStreamPriorityPushPromise() throws Exception {
+    StreamPriority pushStreamPriority = generateStreamPriority();
     waitFor(4);
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(pushedResp -> {
-        pushedResp.setStreamPriority(new StreamPriority()
-          .setDependency(pushStreamDependency)
-          .setWeight(pushStreamWeight)
-          .setExclusive(false));
+        pushedResp.setStreamPriority(new StreamPriority(pushStreamPriority));
         pushedResp.end();
       }));
       req.response().end();
@@ -673,13 +671,12 @@ public class Http2Test extends HttpTest {
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .pushHandler(pushReq -> {
-        complete();
-        pushReq.response().onComplete(onSuccess(pushResp -> {
-          assertEquals(pushStreamDependency, pushResp.request().getStreamPriority().getDependency());
-          assertEquals(pushStreamWeight, pushResp.request().getStreamPriority().getWeight());
           complete();
-        }));
-      })
+          pushReq.response().onComplete(onSuccess(pushResp -> {
+            assertEqualsStreamPriority(pushStreamPriority, pushResp.request().getStreamPriority());
+            complete();
+          }));
+        })
         .send().onComplete(onSuccess(resp -> {
           complete();
         }));
@@ -688,9 +685,8 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyInheritancePushPromise() throws Exception {
-    int reqStreamDependency = 556;
-    short reqStreamWeight = 84;
+  public void testStreamPriorityInheritancePushPromise() throws Exception {
+    StreamPriority reqStreamPriority = generateStreamPriority();
     waitFor(4);
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/pushpath").onComplete(onSuccess(HttpServerResponse::end));
@@ -705,15 +701,10 @@ public class Http2Test extends HttpTest {
         .pushHandler(pushReq -> {
           complete();
           pushReq.response().onComplete(onSuccess(pushResp -> {
-            assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
-            assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
+            assertEqualsStreamPriority(reqStreamPriority, pushResp.request().getStreamPriority());
             complete();
           }));
-        }).setStreamPriority(
-          new StreamPriority()
-            .setDependency(reqStreamDependency)
-            .setWeight(reqStreamWeight)
-            .setExclusive(false))
+        }).setStreamPriority(new StreamPriority(reqStreamPriority))
         .send()
         .onComplete(onSuccess(resp -> {
           complete();
@@ -724,15 +715,18 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testClearTextUpgradeWithBody() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     server.close();
     server = vertx.createHttpServer().requestHandler(req -> {
       req.bodyHandler(body -> req.response().end(body));
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(serverAlpnProtocolVersion()));
+//    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     client = vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2))
+      .with(new HttpClientOptions().setProtocolVersion(serverAlpnProtocolVersion()))
+//      .with(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2))
       .withConnectHandler(conn -> {
         conn.goAwayHandler(ga -> {
           assertEquals(0, ga.getErrorCode());
@@ -759,6 +753,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testClearTextUpgradeWithBodyTooLongFrameResponse() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     server.close();
     Buffer buffer = TestUtils.randomBuffer(1024);
     server = vertx.createHttpServer().requestHandler(req -> {
@@ -769,6 +764,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
+//    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(serverAlpnProtocolVersion()));
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     client.request(new RequestOptions(requestOptions).setSsl(false)).onComplete(onSuccess(req -> {
       req.response().onComplete(onFailure(err -> {}));
@@ -785,6 +781,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testSslHandshakeTimeout() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     waitFor(2);
     HttpServerOptions opts = createBaseServerOptions()
       .setSslHandshakeTimeout(1234)
@@ -805,7 +802,7 @@ public class Http2Test extends HttpTest {
     await();
   }
 
-  @Ignore
+  @Ignore("This test does not work on http/2")
   @Test
   public void testAppendToHttpChunks() throws Exception {
     List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
@@ -835,6 +832,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testNonUpgradedH2CConnectionIsEvictedFromThePool() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     server.close();
@@ -975,14 +973,14 @@ public class Http2Test extends HttpTest {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions()
       .setSslEngineOptions(engine)
-      .setAlpnVersions(Collections.singletonList(HttpVersion.HTTP_2))
+      .setAlpnVersions(Collections.singletonList(serverAlpnProtocolVersion()))
     );
     server.requestHandler(request -> {
       request.response().end();
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1));
+    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(clientAlpnProtocolVersion()));
     client.request(requestOptions).onComplete(ar -> {
       if (ar.succeeded()) {
         if (accept) {
@@ -1032,7 +1030,7 @@ public class Http2Test extends HttpTest {
       .onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          assertEquals(HttpVersion.HTTP_2, resp.version());
+          assertEquals(serverAlpnProtocolVersion(), resp.version());
           req.connection().close();
         }));
       }));
@@ -1100,6 +1098,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testClientKeepAliveTimeoutNoStreams() throws Exception {
+    // TODO: generalize this test case for use with both HTTP/2 and HTTP/3
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
     server.requestHandler(req -> {
@@ -1146,5 +1145,12 @@ public class Http2Test extends HttpTest {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .await();
+  }
+
+  @Override
+  @Ignore
+  @Test
+  public void testServerExceptionHandlerOnClose() {
+    super.testServerExceptionHandlerOnClose();
   }
 }

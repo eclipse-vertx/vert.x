@@ -18,6 +18,8 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.time.Duration;
+
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
@@ -31,6 +33,7 @@ public class ProxyOptionsTest extends VertxTestBase {
   int randPort;
   String randUsername;
   String randPassword;
+  long randConnectTimeout;
 
   @Override
   public void setUp() throws Exception {
@@ -40,6 +43,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     randPort = TestUtils.randomPortInt();
     randUsername = TestUtils.randomAlphaString(10);
     randPassword = TestUtils.randomAlphaString(10);
+    randConnectTimeout = TestUtils.randomPositiveLong();
   }
 
   @Test
@@ -55,6 +59,11 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(options, options.setHost(randHost));
     assertEquals(randHost, options.getHost());
     assertNullPointerException(() -> options.setHost(null));
+
+    assertEquals(ProxyOptions.DEFAULT_CONNECT_TIMEOUT, options.getConnectTimeout());
+    assertEquals(options, options.setConnectTimeout(Duration.ofMillis(randConnectTimeout)));
+    assertEquals(randConnectTimeout, options.getConnectTimeout());
+    assertIllegalArgumentException(() -> options.setConnectTimeout(Duration.ofMillis(-1)));
 
     assertEquals(ProxyOptions.DEFAULT_PORT, options.getPort());
     assertEquals(options, options.setPort(randPort));
@@ -79,6 +88,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     options.setPort(randPort);
     options.setUsername(randUsername);
     options.setPassword(randPassword);
+    options.setConnectTimeout(Duration.ofMillis(randConnectTimeout));
 
     ProxyOptions copy = new ProxyOptions(options);
     assertEquals(randType, copy.getType());
@@ -86,6 +96,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(randHost, copy.getHost());
     assertEquals(randUsername, copy.getUsername());
     assertEquals(randPassword, copy.getPassword());
+    assertEquals(randConnectTimeout, copy.getConnectTimeout());
   }
 
   @Test
@@ -97,6 +108,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(def.getHost(), options.getHost());
     assertEquals(def.getUsername(), options.getUsername());
     assertEquals(def.getPassword(), options.getPassword());
+    assertEquals(def.getConnectTimeout(), options.getConnectTimeout());
   }
 
   @Test
@@ -106,13 +118,15 @@ public class ProxyOptionsTest extends VertxTestBase {
         .put("host", randHost)
         .put("port", randPort)
         .put("username", randUsername)
-        .put("password", randPassword);
+        .put("password", randPassword)
+        .put("connectTimeout", randConnectTimeout)
+    ;
     ProxyOptions options = new ProxyOptions(json);
     assertEquals(randType, options.getType());
     assertEquals(randPort, options.getPort());
     assertEquals(randHost, options.getHost());
     assertEquals(randUsername, options.getUsername());
     assertEquals(randPassword, options.getPassword());
+    assertEquals(randConnectTimeout, options.getConnectTimeout());
   }
 }
-
