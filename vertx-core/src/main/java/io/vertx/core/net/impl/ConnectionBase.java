@@ -75,10 +75,6 @@ public abstract class ConnectionBase {
   private long remainingBytesRead;
   private long remainingBytesWritten;
 
-  // State accessed exclusively from the event loop thread
-  private ChannelPromise closeInitiated;
-  private boolean closeFinished;
-
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
 
     PromiseInternal<Void> f = context.promise();
@@ -120,97 +116,11 @@ public abstract class ConnectionBase {
   /**
    * Close the connection
    */
-  public final Future<Void> close() {
-    return close((Object) null);
-  }
-
-  static class CloseChannelPromise extends DefaultChannelPromise {
-    final Object reason;
-    final long timeout;
-    final TimeUnit unit;
-    public CloseChannelPromise(Channel channel, Object reason, long timeout, TimeUnit unit) {
-      super(channel);
-      this.reason = reason;
-      this.timeout = timeout;
-      this.unit = unit;
-    }
-  }
-
-  /**
-   * Close the connection
-   */
-  public final Future<Void> close(Object reason) {
-    return close(reason, 0L, TimeUnit.SECONDS);
-  }
-
-  /**
-   * Close the connection
-   */
-  public final Future<Void> close(Object reason, long timeout, TimeUnit unit) {
-    EventExecutor exec = chctx.executor();
-    CloseChannelPromise promise = new CloseChannelPromise(channel, reason, timeout, unit);
-    if (exec.inEventLoop()) {
-      close(promise);
-    } else {
-      exec.execute(() -> close(promise));
-    }
-    PromiseInternal<Void> p = context.promise();
-    promise.addListener(p);
-    return p.future();
-  }
-
-  private void close(CloseChannelPromise promise) {
-    channel.close(promise);
-  }
-
-  final void handleClose(ChannelPromise promise) {
-    if (closeInitiated != null) {
-      long timeout;
-      Object closeReason;
-      if (promise instanceof CloseChannelPromise) {
-        timeout = ((CloseChannelPromise)promise).timeout;
-        closeReason = ((CloseChannelPromise)promise).reason;
-      } else {
-        timeout = 0L;
-        closeReason = null;
-      }
-      if (timeout == 0L && !closeFinished) {
-        closeFinished = true;
-        closeInitiated = promise;
-        handleClose(closeReason, promise);
-      } else {
-        channel
-          .closeFuture()
-          .addListener(future -> {
-            if (future.isSuccess()) {
-              promise.setSuccess();
-            } else {
-              promise.setFailure(future.cause());
-            }
-          });
-      }
-    } else {
-      closeInitiated = promise;
-      if (promise instanceof CloseChannelPromise) {
-        CloseChannelPromise closeChannelPromise = (CloseChannelPromise) promise;
-        handleClose(closeChannelPromise.reason, closeChannelPromise.timeout, closeChannelPromise.unit, promise);
-      } else {
-        handleClose(null, 0L, TimeUnit.SECONDS, promise);
-      }
-    }
-  }
-
-  void handleClose(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    if (closeFinished) {
-      // Need to add too "promise" to closeInitiated promise to ensure proper report of the flow
-      return;
-    }
-    closeFinished = true;
-    handleClose(reason, promise);
-  }
-
-  protected void handleClose(Object reason, ChannelPromise promise) {
-    chctx.close(promise);
+  public Future<Void> close() {
+    PromiseInternal<Void> promise = context.promise();
+    ChannelFuture future = channel.close();
+    future.addListener(promise);
+    return promise.future();
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {

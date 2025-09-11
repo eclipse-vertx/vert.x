@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi.tls;
 
+import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
@@ -21,7 +22,6 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -30,30 +30,23 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The default implementation of {@link SslContextFactory} that creates and configures a Netty {@link SslContext} using a
- * {@link SslContextBuilder}.
+ * Implementation of {@link SslContextFactory} that creates and configures a Netty {@link io.netty.handler.codec.quic.QuicSslContext} using a
+ * {@link QuicSslContextBuilder}.
  *
- * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class DefaultSslContextFactory implements SslContextFactory {
+public class QuicSslContextFactory implements SslContextFactory {
 
-  private final SslProvider sslProvider;
-  private final boolean sslSessionCacheEnabled;
-
-  public DefaultSslContextFactory(SslProvider sslProvider,
-                                  boolean sslSessionCacheEnabled) {
-    this.sslProvider = sslProvider;
-    this.sslSessionCacheEnabled = sslSessionCacheEnabled;
+  public QuicSslContextFactory() {
   }
 
-  private boolean forClient;
   private boolean forServer;
-  private String serverName;
-  private String endpointIdentificationAlgorithm;
+  private boolean forClient;
   private Set<String> enabledProtocols;
   private Set<String> enabledCipherSuites;
   private List<String> applicationProtocols;
+  private String endpointIdentificationAlgorithm;
+  private String serverName;
   private boolean useAlpn;
   private ClientAuth clientAuth;
   private KeyManagerFactory kmf;
@@ -67,16 +60,16 @@ public class DefaultSslContextFactory implements SslContextFactory {
 
   @Override
   public SslContextFactory forServer(ClientAuth clientAuth) {
-    this.clientAuth = clientAuth;
     this.forServer = true;
+    this.clientAuth = clientAuth;
     return this;
   }
 
   @Override
   public SslContextFactory forClient(String serverName, String endpointIdentificationAlgorithm) {
     this.forClient = true;
-    this.serverName = serverName;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
+    this.serverName = serverName;
     return this;
   }
 
@@ -100,10 +93,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
 
   @Override
   public SslContext create() throws SSLException {
-    if (forClient == forServer) {
-      throw new IllegalStateException("Invalid configuration");
-    }
-    return createContext(useAlpn, forClient, kmf, tmf);
+    return createContext(forClient, kmf, tmf);
   }
 
   @Override
@@ -118,24 +108,20 @@ public class DefaultSslContextFactory implements SslContextFactory {
     return this;
   }
 
-  /*
-        If you don't specify a trust store, and you haven't set system properties, the system will try to use either a file
-        called jsssecacerts or cacerts in the JDK/JRE security directory.
-        You can override this by specifying the javax.echo.ssl.trustStore system property
-
-        If you don't specify a key store, and don't specify a system property no key store will be used
-        You can override this by specifying the javax.echo.ssl.keyStore system property
-         */
-  private SslContext createContext(boolean useAlpn, boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
-    SslContextBuilder builder;
+  private SslContext createContext(boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
+    QuicSslContextBuilder builder;
     if (client) {
-      builder = SslContextBuilder.forClient();
+      builder = QuicSslContextBuilder.forClient();
       if (kmf != null) {
-        builder.keyManager(kmf);
+        builder.keyManager(kmf, null);
       }
     } else {
-      builder = SslContextBuilder.forServer(kmf);
+      builder = QuicSslContextBuilder.forServer(kmf, null);
+      if (clientAuth != null) {
+        builder.clientAuth(clientAuth);
+      }
     }
+/*
     Collection<String> cipherSuites = enabledCipherSuites;
     switch (sslProvider) {
       case OPENSSL:
@@ -153,50 +139,16 @@ public class DefaultSslContextFactory implements SslContextFactory {
       default:
         throw new UnsupportedOperationException();
     }
+*/
     if (tmf != null) {
       builder.trustManager(tmf);
     }
+/*
     if (cipherSuites != null && cipherSuites.size() > 0) {
       builder.ciphers(cipherSuites);
     }
-    if (useAlpn && applicationProtocols != null && applicationProtocols.size() > 0) {
-      ApplicationProtocolConfig.SelectorFailureBehavior sfb;
-      ApplicationProtocolConfig.SelectedListenerFailureBehavior slfb;
-      if (sslProvider == SslProvider.JDK) {
-        sfb = ApplicationProtocolConfig.SelectorFailureBehavior.FATAL_ALERT;
-        slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.FATAL_ALERT;
-      } else {
-        // Fatal alert not supportd by OpenSSL
-        sfb = ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE;
-        slfb = ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT;
-      }
-      builder.applicationProtocolConfig(new ApplicationProtocolConfig(
-        ApplicationProtocolConfig.Protocol.ALPN,
-        sfb,
-        slfb,
-        applicationProtocols
-      ));
-    }
-    if (client) {
-      if (serverName != null) {
-        builder.serverName(new SNIHostName(serverName));
-      }
-      builder.endpointIdentificationAlgorithm(endpointIdentificationAlgorithm == null ? "" : endpointIdentificationAlgorithm);
-    } else {
-      if (clientAuth != null) {
-        builder.clientAuth(clientAuth);
-      }
-    }
-    if (enabledProtocols != null) {
-      builder.protocols(enabledProtocols);
-    }
-    SslContext ctx = builder.build();
-    if (ctx instanceof OpenSslServerContext){
-      SSLSessionContext sslSessionContext = ctx.sessionContext();
-      if (sslSessionContext instanceof OpenSslServerSessionContext){
-        ((OpenSslServerSessionContext)sslSessionContext).setSessionCacheEnabled(sslSessionCacheEnabled);
-      }
-    }
-    return ctx;
+*/
+    builder.applicationProtocols(applicationProtocols.toArray(new String[0]));
+    return builder.build();
   }
 }
