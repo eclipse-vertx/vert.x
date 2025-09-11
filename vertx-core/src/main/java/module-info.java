@@ -8,6 +8,8 @@ module io.vertx.core {
   requires io.netty.codec.dns;
   requires io.netty.codec.http;
   requires io.netty.codec.http2;
+  requires io.netty.codec.http3;
+  requires io.netty.codec.classes.quic;
   requires io.netty.common;
   requires io.netty.handler;
   requires io.netty.handler.proxy;
@@ -37,6 +39,7 @@ module io.vertx.core {
 
   requires static org.apache.logging.log4j;
   requires static org.slf4j;
+  requires static io.netty.codec.socks;
 
   // Uses
 

@@ -51,6 +51,17 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {
+        case HTTP_3:
+          alpnVersions = Arrays.asList(
+            HttpVersion.HTTP_3_27,
+            HttpVersion.HTTP_3_29,
+            HttpVersion.HTTP_3_30,
+            HttpVersion.HTTP_3_31,
+            HttpVersion.HTTP_3_32,
+            HttpVersion.HTTP_3,
+            HttpVersion.HTTP_2,
+            HttpVersion.HTTP_1_1);
+          break;
         case HTTP_2:
           alpnVersions = Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
           break;
@@ -61,10 +72,17 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     } else {
       alpnVersions = new ArrayList<>(alpnVersions);
     }
+
+    // Make a defensive copy
+    options = new HttpClientOptions(options);
+    if (HttpUtils.isHttp3(options.getProtocolVersion()) && options.getQuicOptions() == null) {
+      options.setQuicOptions(new QuicOptions());
+    }
+
     this.alpnVersions = alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toUnmodifiableList());
     this.vertx = vertx;
     this.metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(options) : null;
-    this.options = new HttpClientOptions(options);
+    this.options = options;
     this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(p1));
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null)).metrics(metrics).build();

@@ -76,6 +76,7 @@ public class NetServerOptions extends TCPSSLOptions {
   private TimeUnit proxyProtocolTimeoutUnit;
   private boolean registerWriteHandler;
   private TrafficShapingOptions trafficShapingOptions;
+  private QuicOptions quicOptions;
 
   /**
    * Default constructor
@@ -102,6 +103,7 @@ public class NetServerOptions extends TCPSSLOptions {
       DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = other.registerWriteHandler;
     this.trafficShapingOptions = other.getTrafficShapingOptions();
+    this.quicOptions = other.getQuicOptions() != null ? other.getQuicOptions().copy() : null;
   }
 
   /**
@@ -303,11 +305,17 @@ public class NetServerOptions extends TCPSSLOptions {
 
   @Override
   public NetServerOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    if (quicOptions != null) {
+      quicOptions.setSslHandshakeTimeout(sslHandshakeTimeout);
+    }
     return (NetServerOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }
 
   @Override
   public NetServerOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    if (quicOptions != null) {
+      quicOptions.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+    }
     return (NetServerOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
   }
 
@@ -495,6 +503,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.proxyProtocolTimeout = DEFAULT_PROXY_PROTOCOL_TIMEOUT;
     this.proxyProtocolTimeoutUnit = DEFAULT_PROXY_PROTOCOL_TIMEOUT_TIME_UNIT;
     this.registerWriteHandler = DEFAULT_REGISTER_WRITE_HANDLER;
+    this.quicOptions = null;
   }
 
   /**
@@ -524,5 +533,23 @@ public class NetServerOptions extends TCPSSLOptions {
   @GenIgnore
   public boolean isFileRegionEnabled() {
     return true;
+  }
+
+  /**
+   * @return  the value of quicOptions
+   */
+  public QuicOptions getQuicOptions() {
+    return quicOptions;
+  }
+
+  /**
+   * Set the value of quicOptions
+   *
+   * @param quicOptions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetServerOptions setQuicOptions(QuicOptions quicOptions) {
+    this.quicOptions = quicOptions;
+    return this;
   }
 }

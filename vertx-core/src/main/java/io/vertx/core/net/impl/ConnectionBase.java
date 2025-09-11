@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
+import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
@@ -161,6 +162,7 @@ public abstract class ConnectionBase {
 
   private void close(CloseChannelPromise promise) {
     channel.close(promise);
+    log.debug(String.format("%s was closed", channel.getClass().getSimpleName()));
   }
 
   final void handleClose(ChannelPromise promise) {
@@ -390,7 +392,7 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+    return chctx.pipeline().get(SslHandler.class) != null || (chctx.channel().parent() != null && chctx.channel().parent().pipeline().get(SslHandlerWrapper.class) != null);
   }
 
   public boolean isTrafficShaped() {
@@ -399,6 +401,11 @@ public abstract class ConnectionBase {
 
   public SSLSession sslSession() {
     ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
+    if (sslHandlerContext == null) {
+      if (chctx.channel().parent() != null) {
+        sslHandlerContext = chctx.channel().parent().pipeline().context(SslHandlerWrapper.class);
+      }
+    }
     if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession();
@@ -443,6 +450,11 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelRemoteAddress() {
     java.net.SocketAddress addr = channel.remoteAddress();
+
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel) channel).remoteSocketAddress();
+    }
+
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -484,6 +496,11 @@ public abstract class ConnectionBase {
 
   private SocketAddress channelLocalAddress() {
     java.net.SocketAddress addr = channel.localAddress();
+
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel) channel).remoteSocketAddress();
+    }
+
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 

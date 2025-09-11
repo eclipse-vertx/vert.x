@@ -14,6 +14,8 @@ import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http3.DefaultHttp3Headers;
+import io.netty.handler.codec.http3.Http3Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -264,7 +266,9 @@ public class Http2HeadersMultiMap implements MultiMap {
   @Override
   public boolean contains(String name, String value, boolean caseInsensitive) {
     if (headers instanceof Http2Headers) {
-      return ((Http2Headers)headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+      return ((Http2Headers) headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+    } else if (headers instanceof Http3Headers) {
+      return ((Http3Headers) headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
     } else {
       throw new UnsupportedOperationException("Implement me");
     }
@@ -452,7 +456,9 @@ public class Http2HeadersMultiMap implements MultiMap {
   @Override
   public boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
     if (headers instanceof Http2Headers) {
-      return ((Http2Headers)headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+      return ((Http2Headers) headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
+    } else if (headers instanceof Http3Headers) {
+      return ((Http3Headers) headers).contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
     } else {
       throw new UnsupportedOperationException("Implement me");
     }
@@ -539,6 +545,16 @@ public class Http2HeadersMultiMap implements MultiMap {
     if (!this.mutable && ! mutable) {
       return this;
     }
-    return new Http2HeadersMultiMap(mutable, new DefaultHttp2Headers().setAll(headers));
+
+    Headers<CharSequence, CharSequence, ?> httpHeaders;
+    if (headers instanceof Http2Headers) {
+      httpHeaders = new DefaultHttp2Headers();
+    } else if (headers instanceof Http3Headers) {
+      httpHeaders = new DefaultHttp3Headers();
+    } else {
+      throw new UnsupportedOperationException("Implement me");
+    }
+
+    return new Http2HeadersMultiMap(mutable, httpHeaders.setAll(headers));
   }
 }

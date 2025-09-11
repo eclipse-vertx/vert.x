@@ -162,6 +162,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
+  /**
+   * The default maximum number of concurrent streams per connection for HTTP/3 = -1
+   */
+  public static final int DEFAULT_HTTP3_MULTIPLEXING_LIMIT = -1;
+
   private boolean verifyHost = true;
   private boolean keepAlive;
   private int keepAliveTimeout;
@@ -176,11 +181,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
-  private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private Http2Settings initialSettings;
+  private Http3Settings initialHttp3Settings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean http2ClearTextUpgradeWithPreflightRequest;
@@ -188,10 +193,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean forceSni;
   private int decoderInitialBufferSize;
 
+  private HttpVersion protocolVersion;
+
   private TracingPolicy tracingPolicy;
 
   private boolean shared;
   private String name;
+
+  private int http3MultiplexingLimit;
 
   /**
    * Default constructor
@@ -231,11 +240,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
-    this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
+    this.initialHttp3Settings = other.initialHttp3Settings != null ? new Http3Settings(other.initialHttp3Settings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
@@ -245,6 +254,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
+    this.http3MultiplexingLimit = other.http3MultiplexingLimit;
+    this.protocolVersion = other.protocolVersion;
   }
 
   /**
@@ -283,11 +294,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
-    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings();
+    initialHttp3Settings = new Http3Settings();
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
@@ -297,6 +308,14 @@ public class HttpClientOptions extends ClientOptionsBase {
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+    http3MultiplexingLimit = DEFAULT_HTTP3_MULTIPLEXING_LIMIT;
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
+  }
+
+  @Override
+  public HttpClientOptions setQuicOptions(QuicOptions quicOptions) {
+    super.setQuicOptions(quicOptions);
+    return this;
   }
 
   @Override
@@ -769,7 +788,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.protocolVersion = protocolVersion;
     return this;
   }
-
   /**
    * Set the maximum HTTP chunk size
    * @param maxChunkSize the maximum chunk size
@@ -839,6 +857,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setInitialSettings(Http2Settings settings) {
     this.initialSettings = settings;
+    return this;
+  }
+
+  /**
+   * @return the initial HTTP/3 connection settings
+   */
+  public Http3Settings getInitialHttp3Settings() {
+    return initialHttp3Settings;
+  }
+
+  /**
+   * Set the HTTP/3 connection settings immediately sent by to the server when the client connects.
+   *
+   * @param settings the settings value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setInitialHttp3Settings(Http3Settings settings) {
+    this.initialHttp3Settings = settings;
     return this;
   }
 
