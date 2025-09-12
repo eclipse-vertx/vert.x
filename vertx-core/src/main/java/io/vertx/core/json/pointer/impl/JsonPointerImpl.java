@@ -11,6 +11,7 @@
 
 package io.vertx.core.json.pointer.impl;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.pointer.JsonPointer;
@@ -291,8 +292,7 @@ public class JsonPointerImpl implements JsonPointer {
         return new URI(oldURI.getScheme(), oldURI.getSchemeSpecificPart(), fragment);
       } else return new URI(null, null, fragment);
     } catch (URISyntaxException e) {
-      logger.error("Error creating URI: " + e.getMessage() + Arrays.toString(e.getStackTrace()));
-      return null;
+      throw new VertxException("Error creating URI: " + e.getMessage() + Arrays.toString(e.getStackTrace()));
     }
   }
 }
