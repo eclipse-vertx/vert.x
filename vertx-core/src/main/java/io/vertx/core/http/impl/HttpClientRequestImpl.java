@@ -504,8 +504,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
       }
     } else if (requiresContentLength(false)) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+      IllegalStateException e = new IllegalStateException("You must set the Content-Length header to be the total size of the message "
         + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      return Future.failedFuture(e);
     }
     return doWrite(buff, end, false);
   }
