@@ -21,7 +21,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
