@@ -445,13 +445,13 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
       conn.writeToChannel(msg, listener);
-      conn.responseComplete();
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
       if (!closed && endHandler != null) {
         endHandler.handle(null);
       }
+      conn.responseComplete();
       if (!keepAlive) {
         closed = true;
       }
