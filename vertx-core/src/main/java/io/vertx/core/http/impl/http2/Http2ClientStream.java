@@ -18,7 +18,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.HttpRequestHead;
@@ -134,17 +133,17 @@ public class Http2ClientStream extends Http2StreamBase {
       request.remoteAddress = ((HttpConnection) connection).remoteAddress();
       requestHead = request;
       try {
-        connection.createStream(Http2ClientStream.this);
+        connection.createStream(Http2ClientStream.this, (result, failure) -> {
+          if (buf != null) {
+            writeHeaders0(headers, false, false, null);
+            writeData0(buf, e, promise);
+          } else {
+            writeHeaders0(headers, e, true, promise);
+          }
+        });
       } catch (Exception ex) {
         promise.fail(ex);
         onException(ex);
-        return;
-      }
-      if (buf != null) {
-        writeHeaders0(headers, false, false, null);
-        writeData0(buf, e, promise);
-      } else {
-        writeHeaders0(headers, e, true, promise);
       }
     }
 
@@ -201,7 +200,7 @@ public class Http2ClientStream extends Http2StreamBase {
       return;
     }
     String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-    this.responseHead = new HttpResponseHead(HttpVersion.HTTP_2, headers.status(), statusMessage, headers);
+    this.responseHead = new HttpResponseHead(connection.version(), headers.status(), statusMessage, headers);
     super.onHeaders(headers);
   }
 

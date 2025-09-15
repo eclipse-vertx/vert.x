@@ -11,6 +11,7 @@
 
 package io.vertx.tests.http.headers;
 
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
@@ -32,13 +33,17 @@ import static org.junit.Assert.*;
  */
 public class Http2HeadersAdaptorsTest extends HeadersTest {
 
-  DefaultHttp2Headers headers;
+  Headers<CharSequence, CharSequence, ?> headers;
   MultiMap map;
 
   @Before
   public void setUp() {
-    headers = new DefaultHttp2Headers();
+    headers = createHeaders();
     map = new Http2HeadersMultiMap(headers);
+  }
+
+  protected Headers<CharSequence, CharSequence, ?> createHeaders(){
+    return new DefaultHttp2Headers();
   }
 
   @Override

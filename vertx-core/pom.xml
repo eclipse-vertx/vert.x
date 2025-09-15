@@ -98,6 +98,10 @@
       <artifactId>netty-transport-classes-kqueue</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-http3</artifactId>
+    </dependency>
 
     <!-- Jackson -->
     <dependency>

@@ -16,7 +16,9 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.handler.codec.quic.QuicChannel;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
@@ -144,7 +146,8 @@ public interface Transport {
   }
 
   default void configure(ClientOptionsBase options, int connectTimeout, boolean domainSocket, Bootstrap bootstrap) {
-    if (!domainSocket) {
+    // Should be instanceof TcpOptions
+    if (!domainSocket && options.getQuicOptions() == null) {
       bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
@@ -190,5 +193,28 @@ public interface Transport {
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
+  }
+
+  default void configure(NetServerOptions options, Bootstrap serverBootstrap) {
+    if (options.getAcceptBacklog() != -1) {
+      serverBootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    }
+  }
+
+  default void configure(ClientOptionsBase options, int connectTimeout, QuicChannel channel) {
+    if (options.getSendBufferSize() != -1) {
+      channel.config().setOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    }
+    if (options.getReceiveBufferSize() != -1) {
+      channel.config().setOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+      channel.config().setOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    }
+    if (options.getSoLinger() != -1) {
+      channel.config().setOption(ChannelOption.SO_LINGER, options.getSoLinger());
+    }
+    if (options.getTrafficClass() != -1) {
+      channel.config().setOption(ChannelOption.IP_TOS, options.getTrafficClass());
+    }
+    channel.config().setOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
   }
 }

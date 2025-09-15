@@ -11,15 +11,13 @@
 
 package io.vertx.test.proxy;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * SOCKS5 Proxy
@@ -57,17 +55,10 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
     return DEFAULT_PORT;
   }
 
-  /**
-   * Start the server.
-   *
-   * @param vertx
-   *          Vertx instance to use for creating the server and client
-   */
-  @Override
-  public SocksProxy start(Vertx vertx) throws Exception {
-    NetServerOptions options = new NetServerOptions();
-    options.setHost("localhost").setPort(port);
-    server = vertx.createNetServer(options);
+  protected Future<NetServer> start0(Vertx vertx) {
+    NetServerOptions serverOptions = createNetServerOptions();
+    serverOptions.setHost("localhost").setPort(port);
+    server = vertx.createNetServer(serverOptions);
     server.connectHandler(socket -> {
       socket.handler(buffer -> {
         String username = nextUserName();
@@ -115,7 +106,7 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
             port = Integer.valueOf(forceUri.substring(forceUri.indexOf(':') + 1));
           }
           log.debug("connecting to " + host + ":" + port);
-          NetClient netClient = vertx.createNetClient(new NetClientOptions());
+          NetClient netClient = vertx.createNetClient(createNetClientOptions());
           netClient.connect(port, host).onComplete(result -> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
@@ -174,17 +165,7 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
         }
       });
     });
-    CompletableFuture<Void> fut = new CompletableFuture<>();
-    server.listen().onComplete(ar -> {
-      if (ar.succeeded()) {
-        fut.complete(null);
-      } else {
-        fut.completeExceptionally(ar.cause());
-      }
-    });
-    fut.get(10, TimeUnit.SECONDS);
-    log.debug("socks5 server started");
-    return this;
+    return server.listen();
   }
 
   private String toHex(Buffer buffer) {

@@ -19,6 +19,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -27,10 +28,12 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ServerWebSocketHandshake;
-import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.NetSocket;
@@ -477,5 +480,25 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     DecoderResult result = obj.decoderResult();
     ReferenceCountUtil.release(obj);
     fail(result.cause());
+  }
+
+  @Override
+  public Http2Settings settings() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support settings");
+  }
+
+  @Override
+  public Future<Void> updateSettings(Http2Settings settings) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support settings");
+  }
+
+  @Override
+  public Http2Settings remoteSettings() {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support settings");
+  }
+
+  @Override
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support settings");
   }
 }
