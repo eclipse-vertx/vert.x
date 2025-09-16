@@ -11,7 +11,6 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.HttpHeaderValidationUtil;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -31,9 +30,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.tracing.TracingPolicy;
-
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -208,7 +204,7 @@ public class Http2ClientStreamImpl implements HttpClientStream, Http2ClientStrea
 
   @Override
   public HttpVersion version() {
-    return HttpVersion.HTTP_2;
+    return conn.version();
   }
 
 

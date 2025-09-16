@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.internal.ArrayComparisonFailure;
 import org.junit.rules.TestName;
 
+import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -38,7 +39,7 @@ import java.util.function.Supplier;
  */
 public class AsyncTestBase {
 
-  private static final Logger log = LoggerFactory.getLogger(AsyncTestBase.class);
+  protected final Logger log = LoggerFactory.getLogger(getClass());
 
   private CountDownLatch latch;
   private volatile Throwable throwable;
@@ -113,6 +114,15 @@ public class AsyncTestBase {
     }
     testCompleteCalled = true;
     latch.countDown();
+  }
+  public static boolean isDebug() {
+    String[] arguments = ManagementFactory.getRuntimeMXBean().getInputArguments().toArray(new String[0]);
+    for (String argument : arguments) {
+      if (argument.contains("jdwp")) {
+        return true;
+      }
+    }
+    return false;
   }
 
   protected void await() {
@@ -357,7 +367,7 @@ public class AsyncTestBase {
   protected void assertEquals(Object expected, Object actual) {
     checkThread();
     try {
-      Assert.assertEquals(expected, actual);
+      Assert. assertEquals(expected, actual);
     } catch (AssertionError e) {
       handleThrowable(e);
     }

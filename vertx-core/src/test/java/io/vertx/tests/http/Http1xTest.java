@@ -37,6 +37,7 @@ import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import org.junit.Assume;
 import org.junit.Ignore;
@@ -61,6 +62,29 @@ import static io.vertx.test.core.TestUtils.*;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class Http1xTest extends HttpTest {
+
+  @Override
+  protected HttpVersion clientAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  @Override
+  protected HttpVersion serverAlpnProtocolVersion() {
+    return HttpVersion.HTTP_1_1;
+  }
+
+  protected NetClientOptions createNetClientOptions() {
+    return new NetClientOptions();
+  }
+
+  protected NetServerOptions createNetServerOptions() {
+    return new NetServerOptions();
+  }
+
+  @Override
+  protected HAProxy createHAProxy(SocketAddress remoteAddress, Buffer header) {
+    return new HAProxy(remoteAddress, header);
+  }
 
   @Override
   protected VertxOptions getOptions() {
@@ -4013,7 +4037,7 @@ public class Http1xTest extends HttpTest {
         req.response().putHeader("keep-alive", "timeout=3").end();
       }
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 1);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 1);
   }
 
   @Test
@@ -4026,7 +4050,7 @@ public class Http1xTest extends HttpTest {
       }
       resp.end();
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
   }
 
   @Test
@@ -4043,7 +4067,7 @@ public class Http1xTest extends HttpTest {
       resp.putHeader("keep-alive", "timeout=" + timeout);
       resp.end();
     });
-    testKeepAliveTimeout(new HttpClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
+    testKeepAliveTimeout(createBaseClientOptions().setKeepAliveTimeout(30), new PoolOptions().setHttp1MaxSize(1), 2);
   }
 
   @Test

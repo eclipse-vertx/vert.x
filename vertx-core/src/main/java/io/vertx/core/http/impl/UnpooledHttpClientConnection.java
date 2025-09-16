@@ -125,24 +125,23 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
   }
 
   @Override
-  public Http2Settings settings() {
-    return actual.settings();
+  public Http3Settings http3Settings() {
+    return actual.http3Settings();
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
-    return actual.updateSettings(settings);
+  public Future<Void> updateHttp3Settings(Http3Settings settings) {
+    return actual.updateHttp3Settings(settings);
   }
 
   @Override
-  public Http2Settings remoteSettings() {
-    return actual.remoteSettings();
+  public Http3Settings remoteHttp3Settings() {
+    return actual.remoteHttp3Settings();
   }
 
   @Override
-  @Fluent
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
-    return actual.remoteSettingsHandler(handler);
+  public HttpConnection remoteHttp3SettingsHandler(Handler<Http3Settings> handler) {
+    return actual.remoteHttp3SettingsHandler(handler);
   }
 
   @Override
@@ -249,5 +248,25 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
   public Future<HttpClientRequest> request(RequestOptions options) {
     ContextInternal ctx = actual.context().owner().getOrCreateContext();
     return request(ctx, options);
+  }
+
+  @Override
+  public Http2Settings settings() {
+    return actual.settings();
+  }
+
+  @Override
+  public Future<Void> updateSettings(Http2Settings settings) {
+    return actual.updateSettings(settings);
+  }
+
+  @Override
+  public Http2Settings remoteSettings() {
+    return actual.remoteSettings();
+  }
+
+  @Override
+  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+    return actual.remoteSettingsHandler(handler);
   }
 }

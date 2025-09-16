@@ -47,7 +47,6 @@ public class VertxTestBase extends AsyncTestBase {
   public static final Transport TRANSPORT;
   public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
   public static final boolean USE_JAVA_MODULES = VertxTestBase.class.getModule().isNamed();
-  private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
 
   static {
 

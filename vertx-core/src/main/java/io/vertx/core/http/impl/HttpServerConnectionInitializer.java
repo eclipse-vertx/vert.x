@@ -18,12 +18,15 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
+import io.netty.handler.codec.quic.QuicChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.http2.Http2ServerChannelInitializer;
 import io.vertx.core.http.impl.http2.codec.Http2CodecServerChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitializer;
+import io.vertx.core.http.impl.http2.h3.Http3CodecServerChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
@@ -32,6 +35,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -54,6 +58,7 @@ public class HttpServerConnectionInitializer {
   private final CompressionManager compressionManager;
   private final int compressionContentSizeThreshold;
   private final Http2ServerChannelInitializer http2ChannelInitializer;
+  private final Http2ServerChannelInitializer http3ChannelInitializer;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
@@ -63,11 +68,12 @@ public class HttpServerConnectionInitializer {
                                   String serverOrigin,
                                   Handler<HttpServerConnection> connectionHandler,
                                   Handler<Throwable> exceptionHandler,
-                                  Object metric) {
+                                  Object metric,
+                                  GlobalTrafficShapingHandler trafficShapingHandler) {
 
     CompressionManager compressionManager;
+    CompressionOptions[] compressionOptions = null;
     if (options.isCompressionSupported()) {
-      CompressionOptions[] compressionOptions;
       List<CompressionOptions> compressors = options.getCompressors();
       if (compressors == null) {
         int compressionLevel = options.getCompressionLevel();
@@ -80,8 +86,22 @@ public class HttpServerConnectionInitializer {
       compressionManager = null;
     }
 
-    Http2ServerChannelInitializer http2ChannelInitalizer;
-    if (options.getHttp2MultiplexImplementation()) {
+    Http2ServerChannelInitializer http2ChannelInitalizer = null;
+    Http2ServerChannelInitializer http3ChannelInitalizer = null;
+    if (HttpUtils.supportsQuicVersion(options.getAlpnVersions())) {
+      http3ChannelInitalizer = new Http3CodecServerChannelInitializer(
+        this,
+        (HttpServerMetrics) server.getMetrics(),
+        options,
+        compressionManager,
+        streamContextSupplier,
+        connectionHandler,
+        serverOrigin,
+        metric,
+        options.getLogActivity(),
+        trafficShapingHandler
+      );
+    } else if (options.getHttp2MultiplexImplementation()) {
       http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
         context,
         compressionManager,
@@ -121,16 +141,25 @@ public class HttpServerConnectionInitializer {
     this.compressionManager = compressionManager;
     this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
     this.http2ChannelInitializer = http2ChannelInitalizer;
+    this.http3ChannelInitializer = http3ChannelInitalizer;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
-      SslHandler sslHandler = pipeline.get(SslHandler.class);
       if (options.isUseAlpn()) {
-        String protocol = sslHandler.applicationProtocol();
+        String protocol;
+        if (ch instanceof QuicChannel) {
+          protocol = Objects.requireNonNull(((QuicChannel) ch).sslEngine()).getApplicationProtocol();
+        } else {
+          protocol = pipeline.get(SslHandler.class).applicationProtocol();
+        }
+
         if (protocol != null) {
           switch (protocol) {
+            case "h3":
+              configureHttp3(ch.pipeline());
+              break;
             case "h2":
               configureHttp2(ch.pipeline(), true);
               break;
@@ -189,6 +218,19 @@ public class HttpServerConnectionInitializer {
         "Content-Length:0\r\n" +
         "\r\n", StandardCharsets.ISO_8859_1))
       .addListener(ChannelFutureListener.CLOSE);
+  }
+
+  private void configureHttp3(ChannelPipeline pipeline) {
+    http3ChannelInitializer.configureHttp2(context, pipeline, true);
+    configureHttp3Pipeline(pipeline);
+  }
+
+  void configureHttp3Pipeline(ChannelPipeline pipeline) {
+    if (!server.requestAccept()) {
+      // That should send an HTTP/3 go away
+      pipeline.channel().close();
+      return;
+    }
   }
 
   private void configureHttp2(ChannelPipeline pipeline, boolean ssl) {

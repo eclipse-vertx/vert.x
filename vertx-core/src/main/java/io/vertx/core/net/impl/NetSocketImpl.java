@@ -335,6 +335,8 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           sslOptions,
           clientSSLOptions.getHostnameVerificationAlgorithm(),
           null,
+          sslOptions.getApplicationLayerProtocols(),
+          null,
           null,
           context).map(p -> new SslChannelProvider(context.owner(), p, false));
       } else {
@@ -347,7 +349,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
           sslOptions,
           null,
           clientAuth,
-          null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
+          sslOptions.getApplicationLayerProtocols(), null, null, context).map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
       }
       return f.compose(provider -> {
         PromiseInternal<Void> p = context.promise();
@@ -359,8 +361,8 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
             chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
-              ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(),
+                sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
             } else {
               sslHandler = provider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(),
                 sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
@@ -465,4 +467,3 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     }
   }
 }
-

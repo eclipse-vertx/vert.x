@@ -92,6 +92,11 @@ public class HttpServerOptionsConverter {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
+        case "initialHttp3Settings":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setInitialHttp3Settings(new io.vertx.core.http.Http3Settings((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
         case "alpnVersions":
           if (member.getValue() instanceof JsonArray) {
             java.util.ArrayList<io.vertx.core.http.HttpVersion> list =  new java.util.ArrayList<>();
@@ -216,6 +221,9 @@ public class HttpServerOptionsConverter {
     json.put("maxFormBufferedBytes", obj.getMaxFormBufferedBytes());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
+    }
+    if (obj.getInitialHttp3Settings() != null) {
+      json.put("initialHttp3Settings", obj.getInitialHttp3Settings().toJson());
     }
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
