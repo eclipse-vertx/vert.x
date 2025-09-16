@@ -1255,7 +1255,13 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testVirtualThreadWorkerPoolMetrics() {
     Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
-    assertTrue(all.containsKey("vert.x-virtual-thread"));
-    assertNotNull(all.get("vert.x-virtual-thread"));
+    VertxInternal vertxInternal = (VertxInternal) vertx;
+    if (vertxInternal.isVirtualThreadAvailable()) {
+      assertTrue(all.containsKey("vert.x-virtual-thread"));
+      assertNotNull(all.get("vert.x-virtual-thread"));
+    } else {
+      assertFalse(all.containsKey("vert.x-virtual-thread"));
+      assertNull(all.get("vert.x-virtual-thread"));
+    }
   }
 }
