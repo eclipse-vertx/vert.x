@@ -689,11 +689,21 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeBuffer(buf, end, handler);
+        Handler<AsyncResult<Void>> continuation;
         if (end) {
-          ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
-          pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
+          continuation = ar -> {
+            if (ar.succeeded()) {
+              ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
+              pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
+            }
+            if (handler != null) {
+              handler.handle(ar);
+            }
+          };
+        } else {
+          continuation = handler;
         }
+        upgradingStream.writeBuffer(buf, end, continuation);
       } else {
         exec.execute(() -> writeBuffer(buf, end, handler));
       }
