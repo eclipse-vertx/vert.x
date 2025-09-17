@@ -27,7 +27,7 @@
 
   <properties>
     <apacheds-protocol-dns.version>2.0.0.AM27</apacheds-protocol-dns.version>
-    <org.bouncycastle.version>1.69</org.bouncycastle.version>
+    <org.bouncycastle.version>1.70</org.bouncycastle.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
     <jmh.version>1.37</jmh.version>
     <vertx.surefire.nettyTransport>jdk</vertx.surefire.nettyTransport>
@@ -191,6 +191,7 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
       <version>${org.bouncycastle.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
