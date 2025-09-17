@@ -13,7 +13,6 @@ package io.vertx.tests.deployment;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import junit.framework.AssertionFailedError;
@@ -72,7 +71,7 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
 
   @Test
   public void testExecuteBlocking() {
-    Assume.assumeTrue(isVirtualThreadAvailable() && !Utils.isWindows());
+    Assume.assumeTrue(isVirtualThreadAvailable());
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
