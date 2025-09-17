@@ -1378,17 +1378,16 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testTLSTrailingDotHost() throws Exception {
-    // We just need a vanilla cert for this test
-    SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
+    // Reuse SNI test certificate because it is convenient
     TLSTest test = new TLSTest()
-      .clientTrust(cert::trustOptions)
+      .clientTrust(Trust.SNI_JKS_HOST2)
       .connectAddress(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com."))
       .bindAddress(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, "host2.com"))
-      .serverCert(cert::keyCertOptions);
+      .serverCert(Cert.SNI_JKS).sni(true);
     test.run(true);
     await();
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
-    assertNull(test.indicatedServerName);
+    assertEquals("host2.com", test.indicatedServerName);
   }
 
   @Test
@@ -3369,55 +3368,6 @@ public class NetTest extends VertxTestBase {
       }));
     }));
     await();
-  }
-
-  @Test
-  public void testSelfSignedCertificate() throws Exception {
-    assumeTrue(PlatformDependent.javaVersion() < 9);
-
-    CountDownLatch latch = new CountDownLatch(2);
-
-    SelfSignedCertificate certificate = SelfSignedCertificate.create();
-
-    NetServerOptions serverOptions = new NetServerOptions()
-      .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions())
-      .setTrustOptions(certificate.trustOptions());
-
-    NetClientOptions clientOptions = new NetClientOptions()
-      .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions())
-      .setTrustOptions(certificate.trustOptions());
-
-    NetClientOptions clientTrustAllOptions = new NetClientOptions()
-      .setSsl(true)
-      .setTrustAll(true);
-
-    server = vertx.createNetServer(serverOptions)
-      .connectHandler(socket -> {
-        socket.end(Buffer.buffer("123"));
-      });
-     server.listen(testAddress).onComplete(onSuccess(s -> {
-
-        client = vertx.createNetClient(clientOptions);
-        client.connect(testAddress).onComplete(onSuccess(socket -> {
-          socket.handler(buffer -> {
-            assertEquals("123", buffer.toString());
-            latch.countDown();
-          });
-        }));
-
-        client = vertx.createNetClient(clientTrustAllOptions);
-        client.connect(testAddress).onComplete(onSuccess(socket -> {
-          socket.handler(buffer -> {
-            assertEquals("123", buffer.toString());
-            latch.countDown();
-          });
-        }));
-
-      }));
-
-    awaitLatch(latch);
   }
 
   @Test

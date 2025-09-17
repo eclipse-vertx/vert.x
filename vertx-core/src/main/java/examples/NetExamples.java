@@ -642,50 +642,10 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  public void example48(Vertx vertx) throws CertificateException {
-    SelfSignedCertificate certificate = SelfSignedCertificate.create();
-
-    NetServerOptions serverOptions = new NetServerOptions()
-      .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions())
-      .setTrustOptions(certificate.trustOptions());
-
-    vertx.createNetServer(serverOptions)
-      .connectHandler(socket -> socket.end(Buffer.buffer("Hello!")))
-      .listen(1234, "localhost");
-
-    NetClientOptions clientOptions = new NetClientOptions()
-      .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions())
-      .setTrustOptions(certificate.trustOptions());
-
-    NetClient client = vertx.createNetClient(clientOptions);
-    client
-      .connect(1234, "localhost")
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          ar.result().handler(buffer -> System.out.println(buffer));
-        } else {
-          System.err.println("Woops: " + ar.cause().getMessage());
-        }
-      });
-  }
-
   public void example49() {
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(true)
       .setTrustAll(true);
-  }
-
-  public void example50(Vertx vertx) throws CertificateException {
-    SelfSignedCertificate certificate = SelfSignedCertificate.create();
-
-    vertx.createHttpServer(new HttpServerOptions()
-      .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions())
-      .setTrustOptions(certificate.trustOptions()))
-      .requestHandler(req -> req.response().end("Hello!"))
-      .listen(8080);
   }
 
   public void example51(Vertx vertx) {
