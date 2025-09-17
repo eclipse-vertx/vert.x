@@ -696,18 +696,26 @@ public class Http2UpgradeClientConnection implements HttpClientConnectionInterna
 
     @Override
     public Future<Void> writeBuffer(ByteBuf buf, boolean end) {
-      Promise<Void> promise = upgradingStream.getContext().promise();
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.writeBuffer(buf, end);
+        Future<Void> future = upgradingStream.writeBuffer(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
-          pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
+          future = future.andThen(ar -> {
+            if (ar.succeeded()) {
+              pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
+            }
+          });
         }
+        return future;
       } else {
-        exec.execute(() -> writeBuffer(buf, end));
+        Promise<Void> promise = upgradingStream.getContext().promise();
+        exec.execute(() -> {
+          Future<Void> future = writeBuffer(buf, end);
+          future.onComplete(promise);
+        });
+        return promise.future();
       }
-      return promise.future();
     }
 
     @Override
