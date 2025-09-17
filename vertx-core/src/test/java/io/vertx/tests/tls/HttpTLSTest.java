@@ -322,11 +322,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  // Provide an host name with a trailing dot
+  // Provide a host name with a trailing dot
   public void testTLSTrailingDotHost() throws Exception {
-    // We just need a vanilla cert for this test
-    SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
-    TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
+    // Reuse SNI test certificate because it is convenient
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
+      .serverSni()
       .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com."))
       .pass();
     assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
