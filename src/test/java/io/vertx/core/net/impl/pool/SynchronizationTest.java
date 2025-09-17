@@ -10,8 +10,10 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.netty.util.concurrent.FastThreadLocal;
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.test.core.AsyncTestBase;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.management.ManagementFactory;
@@ -28,9 +30,10 @@ public class SynchronizationTest extends AsyncTestBase {
 
   static long iterationsForOneMilli;
 
-  static {
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    Assume.assumeFalse(PlatformDependent.isWindows());
     iterationsForOneMilli = Utils.calibrateBlackhole();
-
   }
 
   private static void burnCPU(long cpu) {
@@ -124,9 +127,9 @@ public class SynchronizationTest extends AsyncTestBase {
       return null;
     };
     Thread[] threads = new Thread[numThreads];
-    for (int i = 0;i < numThreads;i++) {
+    for (int i = 0; i < numThreads; i++) {
       threads[i] = new Thread(() -> {
-        for (int j = 0;j < numIter;j++) {
+        for (int j = 0; j < numIter; j++) {
           if (j % 1_000 == 0) {
             System.out.println("Thread " + Thread.currentThread() + " " + j / 1_000);
           }
@@ -154,9 +157,9 @@ public class SynchronizationTest extends AsyncTestBase {
      */
     public static void blackholeCpu(long iterations) {
       long result = 0;
-      for (int i=0; i < iterations; i++) {
+      for (int i = 0; i < iterations; i++) {
         int next = (ThreadLocalRandom.current().nextInt() % 1019) / 17;
-        result = result ^ (Math.round(Math.pow(next,3)) % 251);
+        result = result ^ (Math.round(Math.pow(next, 3)) % 251);
       }
       res += result;
     }
@@ -167,21 +170,21 @@ public class SynchronizationTest extends AsyncTestBase {
     public static long calibrateBlackhole() {
       ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
       // Make the blackholeCpu method hot, to force C2 optimization
-      for (int i=0; i < 50000; i++) {
+      for (int i = 0; i < 50000; i++) {
         Utils.blackholeCpu(100);
       }
       // find the number of iterations needed to spend more than 1 milli
       // of cpu time
-      final long[] iters = {1000,5000,10000,20000,50000,100000};
+      final long[] iters = {1000, 5000, 10000, 20000, 50000, 100000};
       long timing = 0;
-      int i=-1;
+      int i = -1;
       while (timing < ONE_MILLI_IN_NANO && ++i < iters.length) {
         long start_cpu = threadBean.getCurrentThreadCpuTime();
         Utils.blackholeCpu(iters[i]);
-        timing=threadBean.getCurrentThreadCpuTime()-start_cpu;
+        timing = threadBean.getCurrentThreadCpuTime() - start_cpu;
       }
       // estimate the number of iterations for 1 milli
-      return Math.round(Math.ceil((ONE_MILLI_IN_NANO*1.0/timing)*iters[i]));
+      return Math.round(Math.ceil((ONE_MILLI_IN_NANO * 1.0 / timing) * iters[i]));
     }
   }
 
@@ -217,7 +220,7 @@ public class SynchronizationTest extends AsyncTestBase {
     CombinerExecutor<Void> executor = new CombinerExecutor<>(null);
     int expected = io.netty.util.internal.InternalThreadLocalMap.lastVariableIndex();
     AtomicInteger counter = new AtomicInteger();
-    for (int i = 0;i < 1000;i++) {
+    for (int i = 0; i < 1000; i++) {
       executor = new CombinerExecutor<>(null);
       executor.submit(state -> new Task() {
         @Override
