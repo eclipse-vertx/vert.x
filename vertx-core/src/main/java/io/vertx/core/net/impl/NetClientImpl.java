@@ -245,22 +245,19 @@ class NetClientImpl implements NetClientInternal {
         ClientSSLOptions sslOptions = connectOptions.getSslOptions() != null ? connectOptions.getSslOptions().copy() : this.sslOptions;
         if (sslOptions == null) {
           connectHandler.fail("ClientSSLOptions must be provided when connecting to a TLS server");
-          return;
+        } else if (sslOptions.getHostnameVerificationAlgorithm() == null) {
+          connectHandler.fail("Missing hostname verification algorithm");
+        } else {
+          Future<SslContextProvider> fut;
+          fut = sslContextManager.resolveSslContextProvider(sslOptions, context);
+          fut.onComplete(ar -> {
+            if (ar.succeeded()) {
+              connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
+            } else {
+              connectHandler.fail(ar.cause());
+            }
+          });
         }
-        Future<SslContextProvider> fut;
-        fut = sslContextManager.resolveSslContextProvider(
-          sslOptions,
-          sslOptions.getHostnameVerificationAlgorithm(),
-          null,
-          sslOptions.getApplicationLayerProtocols(),
-          context);
-        fut.onComplete(ar -> {
-          if (ar.succeeded()) {
-            connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
-          } else {
-            connectHandler.fail(ar.cause());
-          }
-        });
       } else {
         connectInternal2(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts);
       }
@@ -275,7 +272,6 @@ class NetClientImpl implements NetClientInternal {
                                 ContextInternal context,
                                 int remainingAttempts) {
     EventLoop eventLoop = context.nettyEventLoop();
-
     if (eventLoop.inEventLoop()) {
       Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
       Bootstrap bootstrap = new Bootstrap();
@@ -298,7 +294,31 @@ class NetClientImpl implements NetClientInternal {
       if (connectTimeout < 0) {
         connectTimeout = options.getConnectTimeout();
       }
-      vertx.transport().configure(options, connectTimeout, remoteAddress.isDomainSocket(), bootstrap);
+      String localAddress = options.getLocalAddress();
+      boolean domainSocket = remoteAddress.isDomainSocket();
+
+      // Transport specific TCP configuration
+      vertx.transport().configure(options.getTransportOptions(), domainSocket, bootstrap);
+
+      if (localAddress != null) {
+        bootstrap.localAddress(localAddress, 0);
+      }
+
+      //
+      if (options.getSendBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+      }
+      if (!domainSocket) {
+        bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+      }
+      if (options.getTrafficClass() != -1) {
+        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
+      }
+      if (options.getReceiveBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+      }
+      bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
 
       ProxyOptions proxyOptions = connectOptions.getProxyOptions();
       if (proxyOptions == null) {

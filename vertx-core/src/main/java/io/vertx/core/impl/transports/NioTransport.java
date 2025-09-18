@@ -58,11 +58,6 @@ public class NioTransport implements Transport {
   }
 
   @Override
-  public DatagramChannel datagramChannel() {
-    return new NioDatagramChannel();
-  }
-
-  @Override
   public DatagramChannel datagramChannel(InternetProtocolFamily family) {
     switch (family) {
       case IPv4:
@@ -72,6 +67,11 @@ public class NioTransport implements Transport {
       default:
         throw new UnsupportedOperationException();
     }
+  }
+
+  @Override
+  public ChannelFactory<? extends DatagramChannel> datagramChannelFactory() {
+    return NioDatagramChannel::new;
   }
 
   @Override

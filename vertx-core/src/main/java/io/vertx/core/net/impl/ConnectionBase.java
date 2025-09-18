@@ -13,10 +13,10 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
@@ -29,6 +29,7 @@ import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -36,7 +37,6 @@ import java.net.InetSocketAddress;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Abstract base class for connections managed by a vertx instance. This base implementation does not handle
@@ -74,10 +74,6 @@ public abstract class ConnectionBase {
   private Future<Void> closeFuture;
   private long remainingBytesRead;
   private long remainingBytesWritten;
-
-  // State accessed exclusively from the event loop thread
-  private ChannelPromise closeInitiated;
-  private boolean closeFinished;
 
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
 
@@ -120,97 +116,11 @@ public abstract class ConnectionBase {
   /**
    * Close the connection
    */
-  public final Future<Void> close() {
-    return close((Object) null);
-  }
-
-  static class CloseChannelPromise extends DefaultChannelPromise {
-    final Object reason;
-    final long timeout;
-    final TimeUnit unit;
-    public CloseChannelPromise(Channel channel, Object reason, long timeout, TimeUnit unit) {
-      super(channel);
-      this.reason = reason;
-      this.timeout = timeout;
-      this.unit = unit;
-    }
-  }
-
-  /**
-   * Close the connection
-   */
-  public final Future<Void> close(Object reason) {
-    return close(reason, 0L, TimeUnit.SECONDS);
-  }
-
-  /**
-   * Close the connection
-   */
-  public final Future<Void> close(Object reason, long timeout, TimeUnit unit) {
-    EventExecutor exec = chctx.executor();
-    CloseChannelPromise promise = new CloseChannelPromise(channel, reason, timeout, unit);
-    if (exec.inEventLoop()) {
-      close(promise);
-    } else {
-      exec.execute(() -> close(promise));
-    }
-    PromiseInternal<Void> p = context.promise();
-    promise.addListener(p);
-    return p.future();
-  }
-
-  private void close(CloseChannelPromise promise) {
-    channel.close(promise);
-  }
-
-  final void handleClose(ChannelPromise promise) {
-    if (closeInitiated != null) {
-      long timeout;
-      Object closeReason;
-      if (promise instanceof CloseChannelPromise) {
-        timeout = ((CloseChannelPromise)promise).timeout;
-        closeReason = ((CloseChannelPromise)promise).reason;
-      } else {
-        timeout = 0L;
-        closeReason = null;
-      }
-      if (timeout == 0L && !closeFinished) {
-        closeFinished = true;
-        closeInitiated = promise;
-        handleClose(closeReason, promise);
-      } else {
-        channel
-          .closeFuture()
-          .addListener(future -> {
-            if (future.isSuccess()) {
-              promise.setSuccess();
-            } else {
-              promise.setFailure(future.cause());
-            }
-          });
-      }
-    } else {
-      closeInitiated = promise;
-      if (promise instanceof CloseChannelPromise) {
-        CloseChannelPromise closeChannelPromise = (CloseChannelPromise) promise;
-        handleClose(closeChannelPromise.reason, closeChannelPromise.timeout, closeChannelPromise.unit, promise);
-      } else {
-        handleClose(null, 0L, TimeUnit.SECONDS, promise);
-      }
-    }
-  }
-
-  void handleClose(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    if (closeFinished) {
-      // Need to add too "promise" to closeInitiated promise to ensure proper report of the flow
-      return;
-    }
-    closeFinished = true;
-    handleClose(reason, promise);
-  }
-
-  protected void handleClose(Object reason, ChannelPromise promise) {
-    chctx.close(promise);
+  public Future<Void> close() {
+    PromiseInternal<Void> promise = context.promise();
+    ChannelFuture future = channel.close();
+    future.addListener(promise);
+    return promise.future();
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
@@ -277,8 +187,8 @@ public abstract class ConnectionBase {
     if (metrics != null) {
       flushBytesRead();
       flushBytesWritten();
-      if (metrics instanceof TCPMetrics) {
-        ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+      if (metrics instanceof TransportMetrics<?>) {
+        ((TransportMetrics<Object>) metrics).disconnected(metric(), remoteAddress());
       }
     }
     context.execute(() -> {
@@ -442,7 +352,12 @@ public abstract class ConnectionBase {
   }
 
   private SocketAddress channelRemoteAddress() {
-    java.net.SocketAddress addr = channel.remoteAddress();
+    java.net.SocketAddress addr;
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel)channel).remoteSocketAddress();
+    } else {
+      addr = channel.remoteAddress();
+    }
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
@@ -483,7 +398,12 @@ public abstract class ConnectionBase {
   }
 
   private SocketAddress channelLocalAddress() {
-    java.net.SocketAddress addr = channel.localAddress();
+    java.net.SocketAddress addr;
+    if (channel instanceof QuicChannel) {
+      addr = ((QuicChannel)channel).localSocketAddress();
+    } else {
+      addr = channel.localAddress();
+    }
     return addr != null ? vertx.transport().convert(addr) : null;
   }
 
