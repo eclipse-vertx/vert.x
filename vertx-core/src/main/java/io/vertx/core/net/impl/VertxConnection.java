@@ -60,7 +60,6 @@ public class VertxConnection extends ConnectionBase {
 
   public final VoidChannelPromise voidPromise;
   private final OutboundWriteQueue outboundMessageQueue;
-  private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
   private Deque<Object> pending;
@@ -95,11 +94,6 @@ public class VertxConnection extends ConnectionBase {
     this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
     this.autoRead = true;
-  }
-
-  public synchronized ConnectionBase shutdownHandler(@Nullable Handler<Void> handler) {
-    shutdownHandler = handler;
-    return this;
   }
 
   public final Future<Void> shutdown(long timeout, TimeUnit unit) {
@@ -276,13 +270,6 @@ public class VertxConnection extends ConnectionBase {
           shutdownTimeout = null;
           terminateClose(reason, promise);
         }, timeout, unit);
-        Handler<Void> handler;
-        synchronized (this) {
-          handler = shutdownHandler;
-        }
-        if (handler != null) {
-          context.emit(handler);
-        }
         handleShutdown(reason, timeout, unit, promise);
       }
     }

@@ -48,6 +48,7 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
   private MessageHandler messageHandler;
   private Handler<Void> readCompletionHandler;
   private Handler<Object> eventHandler;
+  private Handler<Void> shutdownHandler;
 
   public SocketBase(ContextInternal context, ChannelHandlerContext channel) {
     super(context, channel);
@@ -244,8 +245,20 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     return close();
   }
 
+  public synchronized S shutdownHandler(@Nullable Handler<Void> handler) {
+    shutdownHandler = handler;
+    return (S) this;
+  }
+
   @Override
   protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = shutdownHandler;
+    }
+    if (handler != null) {
+      context.emit(handler);
+    }
   }
 
   protected void handleEnd() {
@@ -277,12 +290,6 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     } else {
       super.handleEvent(event);
     }
-  }
-
-  @Override
-  public S shutdownHandler(@Nullable Handler<Void> handler) {
-    super.shutdownHandler(handler);
-    return (S) this;
   }
 
   interface MessageHandler extends Handler<Object> {

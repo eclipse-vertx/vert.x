@@ -75,6 +75,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<Void> shutdownHandler;
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
@@ -591,6 +592,16 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
+  void handleShutdown() {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = shutdownHandler;
+    }
+    if (handler != null) {
+      context.emit(handler);
+    }
+  }
+
   void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
     synchronized (this) {
@@ -678,11 +689,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public S shutdownHandler(Handler<Void> handler) {
-    synchronized (this) {
-      checkClosed();
-    }
-    conn.shutdownHandler(handler);
+  public synchronized S shutdownHandler(Handler<Void> handler) {
+    checkClosed();
+    this.shutdownHandler = handler;
     return (S) this;
   }
 

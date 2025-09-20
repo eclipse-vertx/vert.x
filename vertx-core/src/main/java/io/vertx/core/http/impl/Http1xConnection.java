@@ -28,6 +28,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxConnection;
 
 import java.util.concurrent.TimeUnit;
@@ -44,12 +45,19 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   protected TimeUnit shutdownUnit;
   protected ChannelPromise closePromise;
 
+  private Handler<Void> shutdownHandler;
+
   Http1xConnection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
   }
 
   Http1xConnection(ContextInternal context, ChannelHandlerContext chctx, boolean strictMode) {
     super(context, chctx, strictMode);
+  }
+
+  public synchronized Http1xConnection shutdownHandler(@Nullable Handler<Void> handler) {
+    shutdownHandler = handler;
+    return this;
   }
 
   @Override
@@ -59,6 +67,13 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
     shutdownTimeout = timeout;
     shutdownUnit = unit;
     closePromise = promise;
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = shutdownHandler;
+    }
+    if (handler != null) {
+      context.emit(handler);
+    }
   }
 
   @Override
@@ -80,11 +95,6 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   @Override
   public Http1xConnection closeHandler(Handler<Void> handler) {
     return (Http1xConnection) super.closeHandler(handler);
-  }
-
-  @Override
-  public Http1xConnection shutdownHandler(Handler<Void> handler) {
-    return (Http1xConnection) super.shutdownHandler(handler);
   }
 
   @Override

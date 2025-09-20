@@ -79,7 +79,7 @@ final class WebSocketConnectionImpl extends VertxConnection {
 
   @Override
   protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    //
+    webSocket.handleShutdown();
   }
 
   @Override
