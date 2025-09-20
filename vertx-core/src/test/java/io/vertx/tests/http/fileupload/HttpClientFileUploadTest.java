@@ -201,7 +201,7 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
       assertEquals("vert.x", req.getFormAttribute("toolkit"));
       assertEquals("jvm", req.getFormAttribute("runtime"));
     });
-    assertEquals(1, uploads.size());
+    assertWaitUntil(() -> uploads.size() == 1);
     assertEquals("test", uploads.get(0).name);
     assertEquals("test.txt", uploads.get(0).filename);
     assertEquals(content, uploads.get(0).data);
