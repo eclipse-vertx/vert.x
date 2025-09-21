@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,6 +36,135 @@ import java.util.function.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FutureTest extends FutureTestBase {
+
+  @Test
+  public void testAllSucceededWithEightFutures() {
+    testAllSucceeded(Future::all);
+  }
+
+  private void testAllSucceeded(EightFunction<Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, CompositeFuture> all) {
+    Promise<String> p1 = Promise.promise();
+    Future<String> f1 = p1.future();
+    Promise<String> p2 = Promise.promise();
+    Future<String> f2 = p2.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Promise<String> p4 = Promise.promise();
+    Future<String> f4 = p4.future();
+    Promise<String> p5 = Promise.promise();
+    Future<String> f5 = p5.future();
+    Promise<String> p6 = Promise.promise();
+    Future<String> f6 = p6.future();
+    Promise<String> p7 = Promise.promise();
+    Future<String> f7 = p7.future();
+    Promise<String> p8 = Promise.promise();
+    Future<String> f8 = p8.future();
+    CompositeFuture composite = all.apply(f1, f2, f3, f4, f5, f6, f7, f8);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    p1.complete("f1");
+    p2.complete("f2");
+    p3.complete("f3");
+    p4.complete("f4");
+    p5.complete("f5");
+    p6.complete("f6");
+    p7.complete("f7");
+    p8.complete("f8");
+    checker.assertSucceeded(composite);
+    assertEquals("f1", composite.<String>resultAt(0));
+    assertEquals("f2", composite.<String>resultAt(1));
+    assertEquals("f3", composite.<String>resultAt(2));
+    assertEquals("f4", composite.<String>resultAt(3));
+    assertEquals("f5", composite.<String>resultAt(4));
+    assertEquals("f6", composite.<String>resultAt(5));
+    assertEquals("f7", composite.<String>resultAt(6));
+    assertEquals("f8", composite.<String>resultAt(7));
+  }
+
+  @Test
+  public void testAnySucceededWithEightFutures() {
+    testAnySucceeded(Future::any);
+  }
+
+  private void testAnySucceeded(EightFunction<Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, CompositeFuture> any) {
+    Promise<String> p1 = Promise.promise();
+    Future<String> f1 = p1.future();
+    Promise<String> p2 = Promise.promise();
+    Future<String> f2 = p2.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Promise<String> p4 = Promise.promise();
+    Future<String> f4 = p4.future();
+    Promise<String> p5 = Promise.promise();
+    Future<String> f5 = p5.future();
+    Promise<String> p6 = Promise.promise();
+    Future<String> f6 = p6.future();
+    Promise<String> p7 = Promise.promise();
+    Future<String> f7 = p7.future();
+    Promise<String> p8 = Promise.promise();
+    Future<String> f8 = p8.future();
+    CompositeFuture composite = any.apply(f1, f2, f3, f4, f5, f6, f7, f8);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    p1.complete("f1");
+    p2.complete("f2");
+    p3.complete("f3");
+    p4.complete("f4");
+    p5.complete("f5");
+    p6.complete("f6");
+    p7.complete("f7");
+    p8.complete("f8");
+    checker.assertSucceeded(composite);
+    assertEquals("f1", composite.<String>resultAt(0));
+    assertEquals("f2", composite.<String>resultAt(1));
+    assertEquals("f3", composite.<String>resultAt(2));
+    assertEquals("f4", composite.<String>resultAt(3));
+    assertEquals("f5", composite.<String>resultAt(4));
+    assertEquals("f6", composite.<String>resultAt(5));
+    assertEquals("f7", composite.<String>resultAt(6));
+    assertEquals("f8", composite.<String>resultAt(7));
+  }
+
+  @Test
+  public void testJoinSucceededWithEightFutures() {
+    testJoinSucceeded(Future::join);
+  }
+
+  private void testJoinSucceeded(EightFunction<Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, Future<String>, CompositeFuture> join) {
+    Promise<String> p1 = Promise.promise();
+    Future<String> f1 = p1.future();
+    Promise<String> p2 = Promise.promise();
+    Future<String> f2 = p2.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Promise<String> p4 = Promise.promise();
+    Future<String> f4 = p4.future();
+    Promise<String> p5 = Promise.promise();
+    Future<String> f5 = p5.future();
+    Promise<String> p6 = Promise.promise();
+    Future<String> f6 = p6.future();
+    Promise<String> p7 = Promise.promise();
+    Future<String> f7 = p7.future();
+    Promise<String> p8 = Promise.promise();
+    Future<String> f8 = p8.future();
+    CompositeFuture composite = join.apply(f1, f2, f3, f4, f5, f6, f7, f8);
+    Checker<CompositeFuture> checker = new Checker<>(composite);
+    p1.complete("f1");
+    p2.complete("f2");
+    p3.complete("f3");
+    p4.complete("f4");
+    p5.complete("f5");
+    p6.complete("f6");
+    p7.complete("f7");
+    p8.complete("f8");
+    checker.assertSucceeded(composite);
+    assertEquals("f1", composite.<String>resultAt(0));
+    assertEquals("f2", composite.<String>resultAt(1));
+    assertEquals("f3", composite.<String>resultAt(2));
+    assertEquals("f4", composite.<String>resultAt(3));
+    assertEquals("f5", composite.<String>resultAt(4));
+    assertEquals("f6", composite.<String>resultAt(5));
+    assertEquals("f7", composite.<String>resultAt(6));
+    assertEquals("f8", composite.<String>resultAt(7));
+  }
 
   @Test
   public void testCreateWithHandler() {
@@ -1926,5 +2056,17 @@ public class FutureTest extends FutureTestBase {
     fut.onComplete((res, err) -> {
       String cq = res;
     });
+  }
+
+  @FunctionalInterface
+  private interface EightFunction<A, B, C, D, E, F, G, H, R> {
+
+    R apply(A a, B b, C c, D d, E e, F f, G g, H h);
+
+    default <V> EightFunction<A, B, C, D, E, F, G, H, V> andThen(
+      Function<? super R, ? extends V> after) {
+      Objects.requireNonNull(after);
+      return (a, b, c, d, e, f, g, h) -> after.apply(apply(a, b, c, d, e, f, g, h));
+    }
   }
 }

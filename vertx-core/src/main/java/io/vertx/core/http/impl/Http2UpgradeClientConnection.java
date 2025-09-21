@@ -614,18 +614,26 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     @Override
     public Future<Void> write(ByteBuf buf, boolean end) {
-      Promise<Void> promise = upgradingStream.context().promise();
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        upgradingStream.write(buf, end);
+        Future<Void> future = upgradingStream.write(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
-          pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES_EVENT);
+          future = future.andThen(ar -> {
+            if (ar.succeeded()) {
+              pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES_EVENT);
+            }
+          });
         }
+        return future;
       } else {
-        exec.execute(() -> write(buf, end));
+        Promise<Void> promise = upgradingStream.context().promise();
+        exec.execute(() -> {
+          Future<Void> future = write(buf, end);
+          future.onComplete(promise);
+        });
+        return promise.future();
       }
-      return promise.future();
     }
 
     @Override
