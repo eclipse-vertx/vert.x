@@ -24,7 +24,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   private Handler<Void> evictionHandler;
 
   public WebSocketImpl(ContextInternal context,
-                       VertxConnection conn,
+                       WebSocketConnectionImpl conn,
                        boolean supportsContinuation,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize,

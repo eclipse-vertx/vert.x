@@ -251,7 +251,7 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
   }
 
   @Override
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
     Handler<Void> handler;
     synchronized (this) {
       handler = shutdownHandler;

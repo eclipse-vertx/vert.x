@@ -59,7 +59,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final VertxConnection conn;
+  private final WebSocketConnectionImpl conn;
   private ChannelHandlerContext chctx;
   protected final ContextInternal context;
   private final InboundMessageQueue<WebSocketFrameInternal> pending;
@@ -82,7 +82,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private MultiMap headers;
 
   WebSocketImplBase(ContextInternal context,
-                    VertxConnection conn,
+                    WebSocketConnectionImpl conn,
                     MultiMap headers,
                     boolean supportsContinuation,
                     int maxWebSocketFrameSize,

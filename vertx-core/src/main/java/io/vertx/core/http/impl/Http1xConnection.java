@@ -28,7 +28,6 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxConnection;
 
 import java.util.concurrent.TimeUnit;
@@ -40,7 +39,6 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
 
   protected boolean closeInitiated;
   protected boolean shutdownInitiated;
-  protected Object closeReason;
   protected long shutdownTimeout;
   protected TimeUnit shutdownUnit;
   protected ChannelPromise closePromise;
@@ -61,9 +59,8 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   }
 
   @Override
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
     shutdownInitiated = true;
-    closeReason = reason;
     shutdownTimeout = timeout;
     shutdownUnit = unit;
     closePromise = promise;
@@ -77,16 +74,16 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   }
 
   @Override
-  protected void writeClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(ChannelPromise promise) {
     closeInitiated = true;
-    super.writeClose(reason, promise);
+    super.writeClose(promise);
   }
 
   protected void closeInternal() {
     if (closeInitiated) {
       // Nothing to do
     } else if (shutdownInitiated) {
-      super.handleShutdown(closeReason, shutdownTimeout, shutdownUnit, closePromise);
+      super.handleShutdown(shutdownTimeout, shutdownUnit, closePromise);
     } else {
       chctx.channel().close();
     }

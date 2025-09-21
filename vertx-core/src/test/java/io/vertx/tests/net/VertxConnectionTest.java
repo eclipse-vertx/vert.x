@@ -559,11 +559,11 @@ public class VertxConnectionTest extends VertxTestBase {
         }
       }
       @Override
-      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
         shutdown.set(true);
       }
       @Override
-      protected void writeClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(ChannelPromise promise) {
         closed.set(true);
         promise.setSuccess();
       }
@@ -585,11 +585,11 @@ public class VertxConnectionTest extends VertxTestBase {
         }
       }
       @Override
-      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
         shutdown.set(true);
       }
       @Override
-      protected void writeClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(ChannelPromise promise) {
         closed.set(true);
       }
     });
@@ -611,13 +611,13 @@ public class VertxConnectionTest extends VertxTestBase {
         }
       }
       @Override
-      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
         shutdown.set(true);
-        close(reason);
+        close();
         assertTrue(closed.get());
       }
       @Override
-      protected void writeClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(ChannelPromise promise) {
         closed.set(true);
       }
     });
@@ -638,7 +638,7 @@ public class VertxConnectionTest extends VertxTestBase {
         }
       }
       @Override
-      protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
         shutdown.getAndIncrement();
         assertEquals(0L, closed.get());
         // Force run tasks at this stage since the task will be cancelled after by embedded channel close
@@ -648,7 +648,7 @@ public class VertxConnectionTest extends VertxTestBase {
         assertEquals(1L, closed.get());
       }
       @Override
-      protected void writeClose(Object reason, ChannelPromise promise) {
+      protected void writeClose(ChannelPromise promise) {
         closed.getAndIncrement();
       }
     });

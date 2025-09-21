@@ -16,6 +16,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.ScheduledFuture;
+import io.vertx.core.Future;
 import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -77,13 +78,24 @@ final class WebSocketConnectionImpl extends VertxConnection {
     return metrics;
   }
 
+  private Object reason;
+
+  public Future<Void> close(Object reason) {
+    return shutdown(reason, 0L, TimeUnit.SECONDS);
+  }
+
+  public Future<Void> shutdown(Object reason, long timeout, TimeUnit unit) {
+    this.reason = reason;
+    return shutdown(timeout, unit);
+  }
+
   @Override
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
     webSocket.handleShutdown();
   }
 
   @Override
-  protected void writeClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(ChannelPromise promise) {
     assert !closeSent;
     closeSent = true;
     closePromise = promise;
@@ -205,7 +217,7 @@ final class WebSocketConnectionImpl extends VertxConnection {
       closingTimeout = null;
       ChannelPromise p = closePromise;
       closePromise = null;
-      super.writeClose(closeReason, p);
+      super.writeClose(p);
     }
   }
 
