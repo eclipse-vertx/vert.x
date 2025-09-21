@@ -282,14 +282,13 @@ public class JsonPointerImpl implements JsonPointer {
     return replaceFragment(oldURI, null);
   }
 
-  private URI replaceFragment(URI oldURI, String fragment) {
+  private URI replaceFragment(URI oldURI, String fragment) throws VertxException {
     try {
       if (oldURI != null) {
         return new URI(oldURI.getScheme(), oldURI.getSchemeSpecificPart(), fragment);
       } else return new URI(null, null, fragment);
     } catch (URISyntaxException e) {
-      // throw new VertxException("Error creating URI: " + e.getMessage() + Arrays.toString(e.getStackTrace()));
-      return null;
+      throw new VertxException("Error creating URI: " + e.getMessage() + Arrays.toString(e.getStackTrace()));
     }
   }
 }
