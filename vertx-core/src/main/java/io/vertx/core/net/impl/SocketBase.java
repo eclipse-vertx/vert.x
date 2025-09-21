@@ -34,7 +34,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -251,13 +250,15 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
   }
 
   @Override
-  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
+  protected void handleShutdown(ChannelPromise promise) {
     Handler<Void> handler;
     synchronized (this) {
       handler = shutdownHandler;
     }
     if (handler != null) {
       context.emit(handler);
+    } else {
+      super.handleShutdown(promise);
     }
   }
 

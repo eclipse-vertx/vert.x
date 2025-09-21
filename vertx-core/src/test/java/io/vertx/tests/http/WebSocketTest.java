@@ -1109,7 +1109,7 @@ public class WebSocketTest extends VertxTestBase {
   public void testWSPermessageDeflateCompressionEnabled() throws InterruptedException {
     waitFor(2);
     HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebSocketClosingTimeout(0)).webSocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
       assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
       complete();
@@ -4027,6 +4027,34 @@ public class WebSocketTest extends VertxTestBase {
     awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
     client = vertx.createWebSocketClient();
     AtomicReference<WebSocket> wsRef = new AtomicReference<>();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .onComplete(onSuccess(ws -> {
+        ws.write(Buffer.buffer("ping"));
+        ws.closeHandler(v -> {
+          complete();
+        });
+      }));
+    await();
+  }
+
+  @Test
+  public void testServerShutdown() throws Exception {
+    waitFor(2);
+    long now = System.currentTimeMillis();
+    server = vertx
+      .createHttpServer()
+      .webSocketHandler(ws -> {
+        ws.closeHandler(v -> {
+          long d = System.currentTimeMillis() - now;
+          assertTrue(d <= 500);
+          complete();
+        });
+        ws.handler(buff -> {
+          ws.shutdown(10, TimeUnit.SECONDS);
+        });
+      });
+    awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+    client = vertx.createWebSocketClient();
     client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
       .onComplete(onSuccess(ws -> {
         ws.write(Buffer.buffer("ping"));

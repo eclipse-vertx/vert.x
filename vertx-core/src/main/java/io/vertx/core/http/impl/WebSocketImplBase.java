@@ -592,7 +592,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
-  void handleShutdown() {
+  boolean handleShutdown() {
     Handler<Void> handler;
     synchronized (this) {
       handler = shutdownHandler;
@@ -600,6 +600,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     if (handler != null) {
       context.emit(handler);
     }
+    return handler != null;
   }
 
   void handleWriteQueueDrained(Void v) {

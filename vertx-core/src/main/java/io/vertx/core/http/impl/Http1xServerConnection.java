@@ -42,7 +42,6 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -107,8 +106,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   @Override
-  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
-    super.handleShutdown(timeout, unit, promise);
+  protected void handleShutdown(ChannelPromise promise) {
+    super.handleShutdown(promise);
     if (responseInProgress != null) {
     } else {
       closeInternal();

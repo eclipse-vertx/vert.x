@@ -723,8 +723,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   @Override
-  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
-    super.handleShutdown(timeout, unit, promise);
+  protected void handleShutdown(ChannelPromise promise) {
+    super.handleShutdown(promise);
     checkLifecycle();
   }
 

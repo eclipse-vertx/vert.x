@@ -90,8 +90,10 @@ final class WebSocketConnectionImpl extends VertxConnection {
   }
 
   @Override
-  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
-    webSocket.handleShutdown();
+  protected void handleShutdown(ChannelPromise promise) {
+    if (!webSocket.handleShutdown()) {
+      super.handleShutdown(promise);
+    }
   }
 
   @Override

@@ -207,6 +207,8 @@ The default shut-down timeout is 30 seconds, you can override the amount of time
 {@link examples.NetExamples#serverShutdownWithAmountOfTime}
 ----
 
+NOTE: any socket without a shutdown handler is closed immediately
+
 === TCP close
 
 You can close a {@link io.vertx.core.net.NetServer#close() server} or {@link io.vertx.core.net.NetClient#close() client} to

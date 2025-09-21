@@ -3324,13 +3324,14 @@ public class NetTest extends VertxTestBase {
   public void testOverrideClientSSLOptions() {
     waitFor(4);
     server.close();
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions()
+      .setTrustOptions(Trust.CLIENT_JKS.get()));
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
     server.connectHandler(ns -> {
       complete();
     }).listen().onComplete(onSuccess(v -> {
-      NetClient client = vertx.createNetClient(new NetClientOptions()
-        .setTrustOptions(Trust.CLIENT_JKS.get()));
       client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns -> {
         ns.upgradeToSsl().onComplete(onFailure(err -> {
           ClientSSLOptions sslOptions = new ClientSSLOptions().setHostnameVerificationAlgorithm("").setTrustOptions(Trust.SERVER_JKS.get());
@@ -4419,16 +4420,21 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testClientShutdown() throws Exception {
-    testClientShutdown(false, now -> System.currentTimeMillis() - now >= 2000);
+  public void testClientShutdownHandlerTimeout() throws Exception {
+    testClientShutdown(false, true, now -> System.currentTimeMillis() - now >= 2000);
   }
 
   @Test
-  public void testClientShutdownOverride() throws Exception {
-    testClientShutdown(true, now -> System.currentTimeMillis() - now <= 2000);
+  public void testClientShutdownHandlerOverride() throws Exception {
+    testClientShutdown(true, true, now -> System.currentTimeMillis() - now <= 2000);
   }
 
-  private void testClientShutdown(boolean override, LongPredicate checker) throws Exception {
+  @Test
+  public void testClientShutdown() throws Exception {
+    testClientShutdown(true, false, now -> System.currentTimeMillis() - now <= 2000);
+  }
+
+  private void testClientShutdown(boolean override, boolean useHandler, LongPredicate checker) throws Exception {
     waitFor(2);
     server.connectHandler(so -> {
 
@@ -4440,15 +4446,16 @@ public class NetTest extends VertxTestBase {
     client.connect(testAddress)
       .onComplete(onSuccess(so -> {
         AtomicInteger eventCount = new AtomicInteger();
-        so.shutdownHandler(v -> {
-          eventCount.incrementAndGet();
-          if (override) {
-            so.close();
-          }
-        });
-        eventCount.incrementAndGet();
+        if (useHandler) {
+          so.shutdownHandler(v -> {
+            assertEquals(1, eventCount.incrementAndGet());
+            if (override) {
+              so.close();
+            }
+          });
+        }
         so.closeHandler(v -> {
-          assertEquals(2, eventCount.get());
+          assertEquals(useHandler ? 1 : 0, eventCount.get());
           assertTrue(checker.test(now));
           complete();
         });
@@ -4464,28 +4471,35 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testServerShutdown() throws Exception {
-    testServerShutdown(false, now -> System.currentTimeMillis() - now >= 2000);
+  public void testServerShutdownHandlerTimeout() throws Exception {
+    testServerShutdown(false, true, now -> System.currentTimeMillis() - now >= 2000);
   }
 
   @Test
-  public void testServerShutdownOverride() throws Exception {
-    testServerShutdown(true, now -> System.currentTimeMillis() - now <= 2000);
+  public void testServerShutdownHandlerOverride() throws Exception {
+    testServerShutdown(true, true, now -> System.currentTimeMillis() - now <= 2000);
   }
 
-  public void testServerShutdown(boolean override, LongPredicate checker) throws Exception {
+  @Test
+  public void testServerShutdown() throws Exception {
+    testServerShutdown(false, false, now -> System.currentTimeMillis() - now <= 2000);
+  }
+
+  public void testServerShutdown(boolean override, boolean useHandler, LongPredicate checker) throws Exception {
     waitFor(2);
     long now = System.currentTimeMillis();
     server.connectHandler(so -> {
       AtomicInteger eventCount = new AtomicInteger();
-      so.shutdownHandler(v -> {
-        eventCount.incrementAndGet();
-        if (override) {
-          so.close();
-        }
-      });
+      if (useHandler) {
+        so.shutdownHandler(v -> {
+          eventCount.incrementAndGet();
+          if (override) {
+            so.close();
+          }
+        });
+      }
       so.closeHandler(v -> {
-        assertEquals(1, eventCount.getAndIncrement());
+        assertEquals(useHandler ? 1 : 0, eventCount.getAndIncrement());
         assertTrue(checker.test(now));
         complete();
       });

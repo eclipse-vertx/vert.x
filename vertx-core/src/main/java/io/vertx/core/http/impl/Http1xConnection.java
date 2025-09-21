@@ -39,8 +39,6 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
 
   protected boolean closeInitiated;
   protected boolean shutdownInitiated;
-  protected long shutdownTimeout;
-  protected TimeUnit shutdownUnit;
   protected ChannelPromise closePromise;
 
   private Handler<Void> shutdownHandler;
@@ -59,10 +57,8 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   }
 
   @Override
-  protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
+  protected void handleShutdown(ChannelPromise promise) {
     shutdownInitiated = true;
-    shutdownTimeout = timeout;
-    shutdownUnit = unit;
     closePromise = promise;
     Handler<Void> handler;
     synchronized (this) {
@@ -83,7 +79,7 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
     if (closeInitiated) {
       // Nothing to do
     } else if (shutdownInitiated) {
-      super.handleShutdown(shutdownTimeout, shutdownUnit, closePromise);
+      super.handleShutdown(closePromise);
     } else {
       chctx.channel().close();
     }

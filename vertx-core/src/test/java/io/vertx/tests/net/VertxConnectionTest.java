@@ -26,13 +26,13 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -553,14 +553,9 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicBoolean closed = new AtomicBoolean();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleEvent(Object event) {
-        if ("test".equals(event)) {
-          close();
-        }
-      }
-      @Override
-      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
+      protected void handleShutdown(ChannelPromise promise) {
         shutdown.set(true);
+        super.handleShutdown(promise);
       }
       @Override
       protected void writeClose(ChannelPromise promise) {
@@ -568,7 +563,7 @@ public class VertxConnectionTest extends VertxTestBase {
         promise.setSuccess();
       }
     });
-    channel.pipeline().fireUserEventTriggered("test");
+    channel.pipeline().fireUserEventTriggered(new ShutdownEvent(0, TimeUnit.SECONDS));
     assertFalse(shutdown.get());
     assertTrue(closed.get());
   }
@@ -579,51 +574,39 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicBoolean closed = new AtomicBoolean();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleEvent(Object event) {
-        if ("test".equals(event)) {
-          shutdown(0L, TimeUnit.SECONDS);
-        }
-      }
-      @Override
-      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
+      protected void handleShutdown(ChannelPromise promise) {
         shutdown.set(true);
+        super.handleShutdown(promise);
       }
       @Override
       protected void writeClose(ChannelPromise promise) {
         closed.set(true);
       }
     });
-    channel.pipeline().fireUserEventTriggered("test");
+    channel.pipeline().fireUserEventTriggered(new ShutdownEvent(0, TimeUnit.MILLISECONDS));
     assertFalse(shutdown.get());
     assertTrue(closed.get());
   }
 
-  @Ignore
   @Test
   public void testShutdownReentrantClose() {
-    AtomicBoolean shutdown = new AtomicBoolean();
-    AtomicBoolean closed = new AtomicBoolean();
+    AtomicInteger shutdown = new AtomicInteger();
+    AtomicInteger closed = new AtomicInteger();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleEvent(Object event) {
-        if ("test".equals(event)) {
-          shutdown(10L, TimeUnit.SECONDS);
-        }
-      }
-      @Override
-      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
-        shutdown.set(true);
+      protected void handleShutdown(ChannelPromise promise) {
+        shutdown.incrementAndGet();
         close();
-        assertTrue(closed.get());
+        assertEquals(1, closed.get());
       }
       @Override
       protected void writeClose(ChannelPromise promise) {
-        closed.set(true);
+        closed.incrementAndGet();
       }
     });
-    channel.pipeline().fireUserEventTriggered("test");
-    assertTrue(shutdown.get());
-    assertTrue(closed.get());
+    channel.pipeline().fireUserEventTriggered(new ShutdownEvent(10L, TimeUnit.SECONDS));
+    assertEquals(1, shutdown.get());
+    assertEquals(1, closed.get());
   }
 
   @Test
@@ -632,27 +615,19 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicInteger closed = new AtomicInteger();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleEvent(Object event) {
-        if ("test".equals(event)) {
-          shutdown(100L, TimeUnit.MILLISECONDS);
-        }
-      }
-      @Override
-      protected void handleShutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
-        shutdown.getAndIncrement();
-        assertEquals(0L, closed.get());
-        // Force run tasks at this stage since the task will be cancelled after by embedded channel close
-        EmbeddedChannel a = (EmbeddedChannel) chctx.channel();
-        a.advanceTimeBy(100, TimeUnit.MILLISECONDS);
-        a.runPendingTasks();
-        assertEquals(1L, closed.get());
+      protected void handleShutdown(ChannelPromise promise) {
+        shutdown.incrementAndGet();
       }
       @Override
       protected void writeClose(ChannelPromise promise) {
         closed.getAndIncrement();
       }
     });
-    channel.pipeline().fireUserEventTriggered("test");
+    channel.pipeline().fireUserEventTriggered(new ShutdownEvent(100, TimeUnit.MILLISECONDS));
+    assertEquals(1L, shutdown.get());
+    assertEquals(0L, closed.get());
+    channel.advanceTimeBy(100, TimeUnit.MILLISECONDS);
+    assertEquals(-1, channel.runScheduledPendingTasks());
     assertEquals(1L, shutdown.get());
     assertEquals(1L, closed.get());
   }
