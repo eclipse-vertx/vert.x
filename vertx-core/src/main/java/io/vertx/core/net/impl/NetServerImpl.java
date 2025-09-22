@@ -20,9 +20,6 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.ChannelGroupFuture;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
@@ -38,7 +35,6 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
-import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -77,20 +73,17 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   private final VertxInternal vertx;
   private final NetServerOptions options;
-  private final CloseSequence closeSequence;
   private Handler<NetSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
   // Per server
   private EventLoop eventLoop;
   private NetSocketInitializer initializer;
-  private ChannelGroup channelGroup;
+  private ConnectionGroup channelGroup;
   private Handler<Channel> worker;
   private volatile boolean listening;
   private ContextInternal listenContext;
   private NetServerImpl actualServer;
-  private ShutdownEvent closeEvent;
-  private ChannelGroupFuture graceFuture;
 
   // Main
   private SslContextManager sslContextManager;
@@ -104,16 +97,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
 
-    //
-    // 3 steps close sequence
-    // 2: a {@link CloseEvent} event is broadcast to each channel, channels should react accordingly
-    // 1: grace period completed when all channels are inactive or the shutdown timeout is fired
-    // 0: sockets are closed
-    CloseSequence closeSequence = new CloseSequence(completion -> doClose(completion), completion1 -> doGrace(completion1), completion2 -> doShutdown(completion2));
 
     this.vertx = vertx;
     this.options = options;
-    this.closeSequence = closeSequence;
   }
 
   public SslContextProvider sslContextProvider() {
@@ -150,8 +136,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   @Override
   public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    closeEvent = new ShutdownEvent(timeout, unit);
-    return closeSequence.close();
+    ConnectionGroup group = channelGroup;
+    if (group == null) {
+      return vertx.getOrCreateContext().succeededFuture();
+    }
+    return group.shutdown(timeout, unit);
   }
 
   @Override
@@ -444,7 +433,16 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           bindAddress = localAddress;
         }
       }
-      DefaultChannelGroup group = new DefaultChannelGroup(listenContext.nettyEventLoop(), true);
+      ConnectionGroup group = new ConnectionGroup(listenContext.nettyEventLoop()) {
+        @Override
+        protected void handleClose(Completable<Void> completion) {
+          NetServerImpl.this.handleClose(completion);
+        }
+        @Override
+        protected void handleShutdown(Completable<Void> completion) {
+          NetServerImpl.this.handleShutdown(completion);
+        }
+      };
       channelGroup = group;
       PromiseInternal<Channel> promise = listenContext.promise();
       if (main == null) {
@@ -627,15 +625,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return actualServer != null ? actualServer.metrics : null;
   }
 
-  private void doShutdown(Completable<Void> completion) {
+  private void handleShutdown(Completable<Void> completion) {
     if (!listening) {
       completion.succeed();
       return;
     }
-    if (closeEvent == null) {
-      closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
-    }
-    graceFuture = channelGroup.newCloseFuture();
     listenContext.removeCloseHook(this);
     Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
     boolean hasHandlers;
@@ -647,51 +641,18 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     // THIS CAN BE RACY
     if (hasHandlers) {
       // The actual server still has handlers so we don't actually close it
-      broadcastShutdownEvent(completion);
+      completion.succeed();
     } else {
       Promise<Void> p2 = Promise.promise();
       actualServer.actualClose(p2);
       p2.future().onComplete(ar -> {
-        broadcastShutdownEvent(completion);
-      });
-    }
-  }
-
-  private void broadcastShutdownEvent(Completable<Void> completion) {
-    for (Channel ch : channelGroup) {
-      ch.pipeline().fireUserEventTriggered(closeEvent);
-    }
-    completion.succeed();
-  }
-
-  private void doGrace(Completable<Void> completion) {
-    if (!listening) {
-      completion.succeed();
-      return;
-    }
-    if (closeEvent.timeout() > 0L) {
-      long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
         completion.succeed();
       });
-      graceFuture.addListener(future -> {
-        if (vertx.cancelTimer(timerID)) {
-          completion.succeed();
-        }
-      });
-    } else {
-      completion.succeed();
     }
   }
 
-  private void doClose(Completable<Void> completion) {
-    if (!listening) {
-      completion.succeed();
-      return;
-    }
+  private void handleClose(Completable<Void> completion) {
     listening = false;
-    ChannelGroupFuture f = channelGroup.close();
-//    f.addListener(future -> {
-//    });
     completion.succeed();
   }
 

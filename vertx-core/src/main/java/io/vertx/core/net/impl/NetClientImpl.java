@@ -13,9 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.ChannelGroupFuture;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -24,9 +21,7 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -60,24 +55,19 @@ class NetClientImpl implements NetClientInternal {
   private final NetClientOptions options;
   private final SslContextManager sslContextManager;
   private volatile ClientSSLOptions sslOptions;
-  public final ChannelGroup channelGroup;
+  public final ConnectionGroup channelGroup;
   private final TCPMetrics metrics;
-  public ShutdownEvent closeEvent;
-  private ChannelGroupFuture graceFuture;
-  private final CloseSequence closeSequence;
   private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options) {
 
-    //
-    // 3 steps close sequence
-    // 2: a {@link CloseEvent} event is broadcast to each channel, channels should react accordingly
-    // 1: grace period completed when all channels are inactive or the shutdown timeout is fired
-    // 0: sockets are closed
-    CloseSequence closeSequence1 = new CloseSequence(completion -> doClose(completion), completion1 -> doGrace(completion1), p -> doShutdown(p));
-
     this.vertx = vertx;
-    this.channelGroup = new DefaultChannelGroup(vertx.acceptorEventLoopGroup().next(), true);
+    this.channelGroup = new ConnectionGroup(vertx.acceptorEventLoopGroup().next()) {
+      @Override
+      protected void handleClose(Completable<Void> completion) {
+        NetClientImpl.this.handleClose(completion);
+      }
+    };
     this.options = new NetClientOptions(options);
     this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
     this.metrics = metrics;
@@ -86,7 +76,6 @@ class NetClientImpl implements NetClientInternal {
     this.readIdleTimeout = options.getReadIdleTimeout();
     this.writeIdleTimeout = options.getWriteIdleTimeout();
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
-    this.closeSequence = closeSequence1;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.sslOptions = options.getSslOptions();
   }
@@ -157,60 +146,31 @@ class NetClientImpl implements NetClientInternal {
     connectInternal(connectOptions, false, connectHandler, context, 0);
   }
 
-  private void doShutdown(Completable<Void> p) {
-    if (closeEvent == null) {
-      closeEvent = new ShutdownEvent(0, TimeUnit.SECONDS);
-    }
-    graceFuture = channelGroup.newCloseFuture();
-    for (Channel ch : channelGroup) {
-      ch.pipeline().fireUserEventTriggered(closeEvent);
-    }
-    p.succeed();
-  }
-
-  private void doGrace(Completable<Void> completion) {
-    if (closeEvent.timeout() > 0L) {
-      long timerID = vertx.setTimer(closeEvent.timeUnit().toMillis(closeEvent.timeout()), v -> {
-        completion.succeed();
-      });
-      graceFuture.addListener(future -> {
-        if (vertx.cancelTimer(timerID)) {
-          completion.succeed();
-        }
-      });
-    } else {
-      completion.succeed();
-    }
-  }
-
-  private void doClose(Completable<Void> completion) {
-    ChannelGroupFuture fut = channelGroup.close();
-    if (metrics != null) {
-      PromiseInternal<Void> p = (PromiseInternal) Promise.promise();
-      fut.addListener(p);
-      p.future().<Void>compose(v -> {
+  private void handleClose(Completable<Void> completion) {
+    try {
+      if (metrics != null) {
         metrics.close();
-        return Future.succeededFuture();
-      }).onComplete(completion);
-    } else {
-      fut.addListener((PromiseInternal)completion);
+      }
+    } catch (Exception ignore) {
+      //
+    } finally {
+      completion.succeed();
     }
   }
 
   @Override
   public void close(Completable<Void> completion) {
-    closeSequence.close(completion);
+    channelGroup.shutdown(0, TimeUnit.SECONDS).onComplete(completion);
   }
 
   @Override
   public Future<Void> closeFuture() {
-    return closeSequence.future();
+    return channelGroup.closeFuture();
   }
 
   @Override
   public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
-    closeEvent = new ShutdownEvent(timeout, timeUnit);
-    return closeSequence.close();
+    return channelGroup.shutdown(timeout, timeUnit);
   }
 
   @Override
@@ -237,7 +197,7 @@ class NetClientImpl implements NetClientInternal {
                                Promise<NetSocket> connectHandler,
                                ContextInternal context,
                                int remainingAttempts) {
-    if (closeSequence.started()) {
+    if (channelGroup.isStarted()) {
       connectHandler.fail(new IllegalStateException("Client is closed"));
     } else {
       if (connectOptions.isSsl()) {

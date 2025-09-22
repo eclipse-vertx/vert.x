@@ -3232,17 +3232,15 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testTLSHostnameCertCheckCorrect() {
+    NetClientOptions options = new NetClientOptions()
+      .setHostnameVerificationAlgorithm("HTTPS")
+      .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
+    client.close();
+    client = vertx.createNetClient(options);
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT)
         .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()));
     server.connectHandler(netSocket -> netSocket.close()).listen().onComplete(onSuccess(v -> {
-
-      NetClientOptions options = new NetClientOptions()
-          .setHostnameVerificationAlgorithm("HTTPS")
-          .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
-
-      NetClient client = vertx.createNetClient(options);
-
       client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).onComplete(onSuccess(ns -> {
         ns.upgradeToSsl().onComplete(onSuccess(v2 -> {
           testComplete();
