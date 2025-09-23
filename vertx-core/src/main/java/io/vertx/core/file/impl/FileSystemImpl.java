@@ -12,11 +12,9 @@
 package io.vertx.core.file.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.buffer.impl.BufferImpl;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.CopyOptions;
 import io.vertx.core.file.FileProps;
@@ -26,6 +24,7 @@ import io.vertx.core.file.FileSystemProps;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -40,8 +39,10 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.channels.FileChannel;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.GroupPrincipal;
@@ -878,15 +879,48 @@ public class FileSystemImpl implements FileSystem {
       public Buffer perform() {
         try {
           Path target = resolveFile(path).toPath();
-          byte[] bytes = Files.readAllBytes(target);
-          ByteBuf bb = Unpooled.wrappedBuffer(bytes);
-          return new BufferImpl(bb);
+          try (FileChannel fc = FileChannel.open(target, StandardOpenOption.READ)) {
+            long initialSize = fc.size();
+            final long MAX = (long) Integer.MAX_VALUE - 8;
+            if (initialSize > MAX) {
+              throw new OutOfMemoryError("Required array size too large");
+            }
+
+            BufferInternal res = BufferInternal.buffer(initialSize > 0 ? (int) initialSize : 0);
+            final ByteBuf bb = res.getByteBuf();
+            if (initialSize > 0) {
+              bb.ensureWritable((int) initialSize);
+            }
+
+            long position = 0L;
+            for (;;) {
+              int writable = bb.writableBytes();
+              if (writable == 0) {
+                long soFar = bb.readableBytes();
+                long remaining = MAX - soFar;
+                if (remaining <= 0) {
+                  throw new OutOfMemoryError("Required array size too large");
+                }
+                int ensure = (int) Math.min(remaining, 1 << 20);
+                bb.ensureWritable(ensure);
+                writable = bb.writableBytes();
+              }
+              int read = bb.writeBytes(fc, position, writable);
+              if (read <= 0) {
+                break;
+              }
+              position += read;
+            }
+
+            return res;
+          }
         } catch (IOException e) {
           throw new FileSystemException(getFileAccessErrorMessage("read", path), e);
         }
       }
     };
   }
+
 
   private BlockingAction<Void> writeFileInternal(String path, Buffer data) {
     Objects.requireNonNull(path);
