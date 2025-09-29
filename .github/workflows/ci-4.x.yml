@@ -16,7 +16,7 @@ jobs:
             jdk: 8
             profile: '-PtestDomainSockets'
           - os: ubuntu-latest
-            jdk: 21
+            jdk: 25
           - os: windows-latest
             jdk: 8
     uses: ./.github/workflows/ci.yml
