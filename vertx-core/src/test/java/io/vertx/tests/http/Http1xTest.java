@@ -4085,49 +4085,41 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPoolLIFOPolicy() throws Exception {
-    List<HttpServerRequest> requests = new ArrayList<>();
-    server.requestHandler(req -> {
-      requests.add(req);
-      switch (requests.size()) {
-        case 2:
-          requests.forEach(r -> r.response().end());
-          break;
-        case 3:
-          req.response().end();
-          break;
-      }
-    });
+    List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(requests::add);
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(2));
     // Make two concurrent requests and finish one first
-    List<HttpConnection> connections = Collections.synchronizedList(new ArrayList<>());
-    CountDownLatch latch = new CountDownLatch(2);
+    List<Future<HttpConnection>> connections = Collections.synchronizedList(new ArrayList<>());
     // Use one event loop to be sure about response ordering
-    vertx.runOnContext(v0 -> {
-      for (int i = 0; i < 2; i++) {
-        client.request(requestOptions)
-          .onComplete(onSuccess(req -> {
-            req.send().onComplete(onSuccess(resp -> {
-              resp.endHandler(v1 -> {
-                // Use runOnContext to be sure the connections is put back in the pool
-                vertx.runOnContext(v2 -> {
-                  connections.add(resp.request().connection());
-                  latch.countDown();
-                });
-              });
-            }));
-          }));
-      }
-    });
-    awaitLatch(latch);
-    client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
-        assertSame(resp.request().connection(), connections.get(1));
-        testComplete();
-      }));
-    await();
+    for (int i = 0; i < 2; i++) {
+      Future<HttpConnection> future = client.request(requestOptions)
+        .compose(request -> request
+          .send()
+          .compose(response -> response
+            .end()
+            .map(b -> response.request().connection())));
+      connections.add(future);
+      int val = i;
+      assertWaitUntil(() -> requests.size() == val + 1);
+    }
+    for (int i = 0;i < 2;i++) {
+      requests.get(i).response().end();
+      connections.get(i).await();
+      // Make sure that connection lastResponseReceivedTimestamp are distinct
+      Thread.sleep(5);
+    }
+    Future<HttpConnection> future = client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .compose(response -> response
+          .end()
+          .map(b -> response.request().connection())));
+    assertWaitUntil(() -> requests.size() == 3);
+    requests.get(2).response().end();
+    HttpConnection connection = future.await();
+    assertSame(connection, connections.get(1).result());
   }
 
   @Test
