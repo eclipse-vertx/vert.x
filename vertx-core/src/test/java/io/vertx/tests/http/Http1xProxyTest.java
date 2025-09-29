@@ -455,8 +455,6 @@ public class Http1xProxyTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(2));
 
-    CompletableFuture<List<String>> ret = new CompletableFuture<>();
-
     try {
       List<HttpServerRequest> requests = new ArrayList<>();
       server.requestHandler(req -> {
@@ -482,6 +480,7 @@ public class Http1xProxyTest extends HttpTestBase {
         // Avoid races with the proxy username provider
         request.await();
       }
+      CompletableFuture<List<String>> ret = new CompletableFuture<>();
       List<String> responses = new ArrayList<>();
       for (int i = 0;i < 2;i++) {
         clientRequests.get(i)
@@ -490,9 +489,11 @@ public class Http1xProxyTest extends HttpTestBase {
             .expecting(HttpResponseExpectation.SC_OK)
             .compose(HttpClientResponse::body)
           ).onComplete(onSuccess(res2 -> {
-            responses.add(res2.toString());
-            if (responses.size() == 2) {
-              ret.complete(responses);
+            synchronized (responses) {
+              responses.add(res2.toString());
+              if (responses.size() == 2) {
+                ret.complete(responses);
+              }
             }
           }));
       }
