@@ -36,7 +36,7 @@ public class Http2TestBase extends HttpTestBase {
         .setSslEngineOptions(new JdkSSLEngineOptions())
         .setUseAlpn(true)
         .setSsl(true)
-        .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
+        .addEnabledCipherSuite("TLS_AES_256_GCM_SHA384") // Non Diffie-helman -> debuggable in wireshark
         .setKeyCertOptions(Cert.SERVER_JKS.get());
   };
 
