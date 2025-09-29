@@ -1300,4 +1300,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static long expirationTimestampOf(long timeout) {
     return timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : Long.MAX_VALUE;
   }
+
+  @Override
+  public String toString() {
+    return super.toString() + "[lastResponseReceivedTimestamp=" + lastResponseReceivedTimestamp + "]";
+  }
 }
