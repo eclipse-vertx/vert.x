@@ -22,7 +22,7 @@ jobs:
             jdk: 11
             profile: '-PNativeEpoll+DomainSockets'
           - os: ubuntu-latest
-            jdk: 21
+            jdk: 25
           - os: windows-2022
             jdk: 11
             stable: true
