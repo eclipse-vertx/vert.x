@@ -68,7 +68,12 @@ public class FileResolverImpl implements FileResolver {
     enableCPResolving = fileSystemOptions.isClassPathResolvingEnabled();
 
     if (enableCPResolving) {
-      cache = FileCache.setupCache(fileSystemOptions.getFileCacheDir());
+      String exactFileCacheDir = fileSystemOptions.getExactFileCacheDir();
+      if (exactFileCacheDir != null) {
+        cache = FileCache.setupCache(exactFileCacheDir, true);
+      } else {
+        cache = FileCache.setupCache(fileSystemOptions.getFileCacheDir(), false);
+      }
     } else {
       cache = null;
     }
