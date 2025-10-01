@@ -12,6 +12,7 @@
 package io.vertx.tests.json;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
@@ -19,6 +20,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 
@@ -31,10 +33,11 @@ import static org.junit.Assert.*;
  */
 public class JsonPOJOMapperTest {
 
+  @JsonPropertyOrder({"a", "b", "c", "d", "e"})
   public static class MyType {
     public int a;
     public String b;
-    public HashMap<String, Object> c = new HashMap<>();
+    public HashMap<String, Object> c = new LinkedHashMap<>();
     public List<MyType> d = new ArrayList<>();
     public List<Integer> e = new ArrayList<>();
   }
