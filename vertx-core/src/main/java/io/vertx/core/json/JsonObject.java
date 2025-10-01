@@ -396,6 +396,19 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Create a JsonObject from the given map entries.
+   * @param entries All the map entries to add the JSON object.
+   * @return a JsonObject containing the specified mappings.
+   */
+  public static JsonObject of(Map.Entry<String, Object>... entries) {
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(entries.length));
+    for (Map.Entry<String, Object> entry : entries) {
+      obj.put(entry.getKey(), entry.getValue());
+    }
+    return obj;
+  }
+
+  /**
    * Create a JsonObject from the fields of a Java object.
    * Faster than calling `new JsonObject(Json.encode(obj))`.
    * <p/

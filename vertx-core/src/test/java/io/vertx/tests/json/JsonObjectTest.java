@@ -1989,6 +1989,22 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testJsonObjectOfMapEntryArgs() {
+    Map.Entry<String, Object> e1 = Map.entry("key1", "value1");
+    Map.Entry<String, Object> e2 = Map.entry("key2", "value2");
+    Map.Entry<String, Object> e3 = Map.entry("key3", "value3");
+    Map.Entry<String, Object> e4 = Map.entry("key4", "value4");
+    Map.Entry<String, Object> e5 = Map.entry("key5", "value5");
+    JsonObject jobj = JsonObject.of(e1, e2, e3, e4, e5);
+
+    assertEquals("value1", jobj.getString("key1"));
+    assertEquals("value2", jobj.getString("key2"));
+    assertEquals("value3", jobj.getString("key3"));
+    assertEquals("value4", jobj.getString("key4"));
+    assertEquals("value5", jobj.getString("key5"));
+  }
+
+  @Test
   public void testJsonObjectOfEmpty() {
     assertEquals(new JsonObject(), JsonObject.of());
   }
