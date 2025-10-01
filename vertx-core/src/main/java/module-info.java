@@ -84,6 +84,7 @@ module io.vertx.core {
 
   exports io.vertx.core.internal;
   exports io.vertx.core.internal.http;
+  exports io.vertx.core.internal.digest;
   exports io.vertx.core.internal.buffer;
   exports io.vertx.core.internal.net;
   exports io.vertx.core.internal.net.endpoint;
