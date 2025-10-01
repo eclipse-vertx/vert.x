@@ -121,5 +121,6 @@ module io.vertx.core {
   exports io.vertx.core.impl.buffer to io.vertx.core.tests;
     exports io.vertx.core.http.impl.http2 to io.vertx.core.tests;
   exports io.vertx.core.http.impl.http2.codec to io.vertx.core.tests;
+  exports io.vertx.core.net.impl.tcp to io.vertx.core.tests;
 
 }

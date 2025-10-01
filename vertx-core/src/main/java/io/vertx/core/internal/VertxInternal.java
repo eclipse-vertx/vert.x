@@ -19,7 +19,7 @@ import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.NetServerInternal;
+import io.vertx.core.net.impl.tcp.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;

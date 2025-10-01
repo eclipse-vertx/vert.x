@@ -35,7 +35,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.MessageWrite;
-import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;

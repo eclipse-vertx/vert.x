@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl;
+package io.vertx.core.net.impl.tcp;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -18,7 +18,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.Message;
@@ -31,6 +30,7 @@ import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.impl.SocketBase;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.util.UUID;

@@ -28,6 +28,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.*;
+import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
@@ -206,7 +207,7 @@ public class HttpServerConnectionInitializer {
 
   /**
    * Compute the name of the logical end of pipeline when adding handlers to a preconfigured NetSocket pipeline.
-   * See {@link io.vertx.core.net.impl.NetServerImpl}
+   * See {@link NetServerImpl}
    * @param pipeline the channel pipeline
    * @return the name of the handler to use
    */

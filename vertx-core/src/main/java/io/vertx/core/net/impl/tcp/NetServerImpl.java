@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.net.impl.tcp;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -52,6 +52,11 @@ import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
+import io.vertx.core.net.impl.ConnectionGroup;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
