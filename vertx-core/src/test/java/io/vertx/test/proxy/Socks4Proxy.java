@@ -43,6 +43,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
   public static final int DEFAULT_PORT = 11080;
 
   private NetServer server;
+  private NetClient client;
 
   @Override
   public int defaultPort() {
@@ -59,6 +60,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
   public Socks4Proxy start(Vertx vertx) throws Exception {
     NetServerOptions options = new NetServerOptions();
     options.setHost("localhost").setPort(port);
+    client = vertx.createNetClient(new NetClientOptions());
     server = vertx.createNetServer(options);
     server.connectHandler(socket -> {
       socket.handler(buffer -> {
@@ -94,8 +96,7 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
             port = Integer.valueOf(forceUri.substring(forceUri.indexOf(':') + 1));
           }
           log.debug("connecting to " + host + ":" + port);
-          NetClient netClient = vertx.createNetClient(new NetClientOptions());
-          netClient.connect(port, host).onComplete(result -> {
+          client.connect(port, host).onComplete(result -> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
@@ -159,8 +160,12 @@ public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
   @Override
   public void stop() {
     if (server != null) {
-      server.close();
+      server.close().await();
       server = null;
+    }
+    if (client != null) {
+      client.close().await();
+      client = null;
     }
   }
 }
