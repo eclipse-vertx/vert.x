@@ -400,6 +400,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param entries All the map entries to add the JSON object.
    * @return a JsonObject containing the specified mappings.
    */
+  @SafeVarargs
   public static JsonObject of(Map.Entry<String, Object>... entries) {
     JsonObject obj = new JsonObject(new LinkedHashMap<>(entries.length));
     for (Map.Entry<String, Object> entry : entries) {
