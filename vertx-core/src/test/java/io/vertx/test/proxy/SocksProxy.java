@@ -51,6 +51,7 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
   public static final int DEFAULT_PORT = 11080;
 
   private NetServer server;
+  private NetClient client;
 
   @Override
   public int defaultPort() {
@@ -68,6 +69,7 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
     NetServerOptions options = new NetServerOptions();
     options.setHost("localhost").setPort(port);
     server = vertx.createNetServer(options);
+    client = vertx.createNetClient(new NetClientOptions());
     server.connectHandler(socket -> {
       socket.handler(buffer -> {
         String username = nextUserName();
@@ -115,8 +117,7 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
             port = Integer.valueOf(forceUri.substring(forceUri.indexOf(':') + 1));
           }
           log.debug("connecting to " + host + ":" + port);
-          NetClient netClient = vertx.createNetClient(new NetClientOptions());
-          netClient.connect(port, host).onComplete(result -> {
+          client.connect(port, host).onComplete(result -> {
             if (result.succeeded()) {
               localAddresses.add(result.result().localAddress().toString());
               log.debug("writing: " + toHex(connectResponse));
@@ -205,6 +206,10 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
     if (server != null) {
       server.close();
       server = null;
+    }
+    if (client != null) {
+      client.close().await();
+      client = null;
     }
   }
 }
