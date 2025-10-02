@@ -29,6 +29,7 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.Socks4Proxy;
@@ -456,49 +457,38 @@ public class Http1xProxyTest extends HttpTestBase {
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(2));
 
     try {
-      List<HttpServerRequest> requests = new ArrayList<>();
-      server.requestHandler(req -> {
-        requests.add(req);
-        if (requests.size() == 2) {
-          requests.forEach(request -> {
-            SocketAddress addr = request.connection().remoteAddress();
-            request.response().end("" + addr);
-          });
-        }
-      }).listen()
+      List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
+      server.requestHandler(requests::add)
+        .listen()
         .await();
 
       RequestOptions baseOptions = new RequestOptions()
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
         .setURI("/");
-      List<Future<HttpClientRequest>> clientRequests = new ArrayList<>();
+      List<String> responses = Collections.synchronizedList(new ArrayList<>());
       for (int i = 0;i < 2;i++) {
-        Future<HttpClientRequest> request = client
-          .request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2));
-        clientRequests.add(request);
-        // Avoid races with the proxy username provider
-        request.await();
-      }
-      CompletableFuture<List<String>> ret = new CompletableFuture<>();
-      List<String> responses = new ArrayList<>();
-      for (int i = 0;i < 2;i++) {
-        clientRequests.get(i)
-          .compose(req -> req
-            .send()
-            .expecting(HttpResponseExpectation.SC_OK)
-            .compose(HttpClientResponse::body)
-          ).onComplete(onSuccess(res2 -> {
+        HttpClientRequest request = client
+          .request(new RequestOptions(baseOptions).setProxyOptions(i == 0 ? request1 : request2)).await();
+        request.end().await();
+        request
+          .response()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body).onComplete(onSuccess(res -> {
             synchronized (responses) {
-              responses.add(res2.toString());
-              if (responses.size() == 2) {
-                ret.complete(responses);
-              }
+              responses.add(res.toString());
             }
           }));
       }
 
-      return ret.get(40, TimeUnit.SECONDS);
+      assertWaitUntil(() -> requests.size() == 2);
+      for (HttpServerRequest request : requests) {
+        int size = responses.size();
+        SocketAddress addr = request.connection().remoteAddress();
+        request.response().end("" + addr);
+        assertWaitUntil(() -> responses.size() == size + 1);
+      }
+      return responses;
     } finally {
       for (TestProxyBase proxy : proxies) {
         proxy.stop();
