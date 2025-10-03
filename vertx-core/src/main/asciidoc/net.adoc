@@ -131,17 +131,6 @@ You can set an {@link io.vertx.core.net.NetServer#exceptionHandler(io.vertx.core
 exceptions that happens before the connection is passed to the {@link io.vertx.core.net.NetServer#connectHandler(io.vertx.core.Handler)}
 , e.g during the TLS handshake.
 
-=== Event bus write handler
-
-Every socket can register a handler on the event bus, and when any buffers are received in this handler,
-it writes them to itself. Those are local subscriptions, not reachable from other clustered nodes.
-
-This enables you to write data to a socket which is potentially in a completely different verticle by sending the buffer to the address of that handler.
-
-This feature is disabled by default, however you can enable it using {@link io.vertx.core.net.NetServerOptions#setRegisterWriteHandler} or {@link io.vertx.core.net.NetClientOptions#setRegisterWriteHandler}.
-
-The address of the handler is given by {@link io.vertx.core.net.NetSocket#writeHandlerID()}.
-
 === Local and remote addresses
 
 The local address of a {@link io.vertx.core.net.NetSocket} can be retrieved using {@link io.vertx.core.net.NetSocket#localAddress()}.
