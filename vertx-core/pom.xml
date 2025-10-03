@@ -72,6 +72,10 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
+      <artifactId>netty-codec-classes-quic</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
       <artifactId>netty-codec-http3</artifactId>
       <exclusions>
         <exclusion>
@@ -106,11 +110,6 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-classes-kqueue</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-codec-classes-quic</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
