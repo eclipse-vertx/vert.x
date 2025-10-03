@@ -15,7 +15,7 @@ jobs:
     name: Run tests
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-2022]
+        os: [ubuntu-latest, windows-2025]
         profile: [""]
         jdk: [8]
         include:
