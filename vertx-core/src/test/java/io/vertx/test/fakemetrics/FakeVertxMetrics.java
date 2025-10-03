@@ -19,6 +19,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.QuicEndpointOptions;
 import io.vertx.core.spi.metrics.*;
 
 /**
@@ -68,6 +69,11 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
     return new FakeTCPMetrics();
+  }
+
+  @Override
+  public QuicEndpointMetrics<?, ?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
+    return new FakeQuicEndpointMetrics();
   }
 
   public DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {

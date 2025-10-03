@@ -22,7 +22,6 @@ import io.netty.handler.logging.ByteBufFormat;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject
-@JsonGen(publicConverter = false)
 public abstract class NetworkOptions {
 
   /**
@@ -66,7 +65,6 @@ public abstract class NetworkOptions {
   private boolean reuseAddress;
   private boolean logActivity;
   private ByteBufFormat activityLogDataFormat;
-  private boolean reusePort;
 
   /**
    * Default constructor
@@ -78,7 +76,6 @@ public abstract class NetworkOptions {
     trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
     activityLogDataFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
-    reusePort = DEFAULT_REUSE_PORT;
   }
 
   /**
@@ -90,7 +87,6 @@ public abstract class NetworkOptions {
     this.sendBufferSize = other.getSendBufferSize();
     this.receiveBufferSize = other.getReceiveBufferSize();
     this.reuseAddress = other.isReuseAddress();
-    this.reusePort = other.isReusePort();
     this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
     this.activityLogDataFormat = other.activityLogDataFormat;
@@ -103,7 +99,6 @@ public abstract class NetworkOptions {
    */
   public NetworkOptions(JsonObject json) {
     this();
-    NetworkOptionsConverter.fromJson(json, this);
   }
 
   /**
@@ -111,11 +106,7 @@ public abstract class NetworkOptions {
    *
    * @return the JSON
    */
-  public JsonObject toJson() {
-    JsonObject json = new JsonObject();
-    NetworkOptionsConverter.toJson(this, json);
-    return json;
-  }
+  public abstract JsonObject toJson();
 
   /**
    * Return the TCP send buffer size, in bytes.
@@ -234,9 +225,7 @@ public abstract class NetworkOptions {
   /**
    * @return  the value of reuse address - only supported by native transports
    */
-  public boolean isReusePort() {
-    return reusePort;
-  }
+  public abstract boolean isReusePort();
 
   /**
    * Set the value of reuse port.
@@ -246,8 +235,6 @@ public abstract class NetworkOptions {
    * @param reusePort  the value of reuse port
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setReusePort(boolean reusePort) {
-    this.reusePort = reusePort;
-    return this;
-  }
+  public abstract NetworkOptions setReusePort(boolean reusePort);
+
 }

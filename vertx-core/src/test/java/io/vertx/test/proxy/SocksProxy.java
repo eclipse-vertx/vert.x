@@ -66,10 +66,11 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
    */
   @Override
   public SocksProxy start(Vertx vertx) throws Exception {
-    NetServerOptions options = new NetServerOptions();
-    options.setHost("localhost").setPort(port);
-    server = vertx.createNetServer(options);
-    client = vertx.createNetClient(new NetClientOptions());
+    client = vertx.createNetClient();
+    server = vertx.createNetServer(new NetServerOptions()
+      .setHost("localhost")
+      .setPort(port)
+    );
     server.connectHandler(socket -> {
       socket.handler(buffer -> {
         String username = nextUserName();
@@ -203,13 +204,13 @@ public class SocksProxy extends TestProxyBase<SocksProxy> {
    */
   @Override
   public void stop() {
-    if (server != null) {
-      server.close();
-      server = null;
-    }
     if (client != null) {
       client.close().await();
       client = null;
+    }
+    if (server != null) {
+      server.close().await();
+      server = null;
     }
   }
 }

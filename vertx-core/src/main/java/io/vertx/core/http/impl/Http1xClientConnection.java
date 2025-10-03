@@ -46,7 +46,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.MessageWrite;
-import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -723,8 +723,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   @Override
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    super.handleShutdown(reason, timeout, unit, promise);
+  protected void handleShutdown(ChannelPromise promise) {
+    super.handleShutdown(promise);
     checkLifecycle();
   }
 
@@ -739,7 +739,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
+  protected void writeClose(ChannelPromise promise) {
     // Maybe move to handleShutdown
     if (!evicted) {
       evicted = true;
@@ -747,7 +747,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         evictionHandler.handle(null);
       }
     }
-    super.handleClose(reason, promise);
+    super.writeClose(promise);
   }
 
   private Throwable validateMessage(Object msg) {

@@ -20,7 +20,9 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.*;
+import io.vertx.core.net.impl.tcp.NetServerImpl;
+import io.vertx.core.net.impl.tcp.NetServerInternal;
+import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 

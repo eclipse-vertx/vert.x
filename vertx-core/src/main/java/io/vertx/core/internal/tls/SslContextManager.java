@@ -113,11 +113,27 @@ public class SslContextManager {
     this(sslEngineOptions, 256);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
-    return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, applicationProtocols, false, ctx);
+  public Future<SslContextProvider> resolveSslContextProvider(ServerSSLOptions options, ContextInternal ctx) {
+    ClientAuth clientAuth = options.getClientAuth();
+    if (clientAuth == null) {
+      clientAuth = ClientAuth.NONE;
+    }
+    return resolveSslContextProvider(options, null, clientAuth, false, ctx);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, boolean force, ContextInternal ctx) {
+  public Future<SslContextProvider> resolveSslContextProvider(ClientSSLOptions options, ContextInternal ctx) {
+    String hostnameVerificationAlgorithm = options.getHostnameVerificationAlgorithm();
+    if (hostnameVerificationAlgorithm == null) {
+      hostnameVerificationAlgorithm = "";
+    }
+    return resolveSslContextProvider(options, hostnameVerificationAlgorithm, null, false, ctx);
+  }
+
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, ContextInternal ctx) {
+    return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, false, ctx);
+  }
+
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, boolean force, ContextInternal ctx) {
     Promise<SslContextProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
@@ -132,7 +148,7 @@ public class SslContextManager {
       promise = Promise.promise();
       sslContextProviderMap.put(k, promise.future());
     }
-    buildSslContextProvider(options, hostnameVerificationAlgorithm, clientAuth, applicationProtocols, force, ctx)
+    buildSslContextProvider(options, hostnameVerificationAlgorithm, clientAuth, force, ctx)
       .onComplete(promise);
     return promise.future();
   }
@@ -146,23 +162,19 @@ public class SslContextManager {
   public Future<SslContextProvider> buildSslContextProvider(SSLOptions sslOptions,
                                                      String hostnameVerificationAlgorithm,
                                                      ClientAuth clientAuth,
-                                                     List<String> applicationProtocols,
-                                                     boolean force,
+                                                            boolean force,
                                                      ContextInternal ctx) {
     return buildConfig(sslOptions, force, ctx)
-      .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, applicationProtocols, config));
+      .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, config));
   }
 
-  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm, Supplier<SslContextFactory> supplier, ClientAuth clientAuth, List<String> applicationProtocols, Config config) {
-    if (clientAuth == null && hostnameVerificationAlgorithm == null) {
-      throw new VertxException("Missing hostname verification algorithm: you must set TCP client options host name" +
-        " verification algorithm");
-    }
+  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm,
+                                                     Supplier<SslContextFactory> supplier, ClientAuth clientAuth, Config config) {
     return new SslContextProvider(
       useWorkerPool,
       clientAuth,
       hostnameVerificationAlgorithm,
-      applicationProtocols,
+      sslOptions.getApplicationLayerProtocols(),
       sslOptions.getEnabledCipherSuites(),
       sslOptions.getEnabledSecureTransportProtocols(),
       config.keyManagerFactory,

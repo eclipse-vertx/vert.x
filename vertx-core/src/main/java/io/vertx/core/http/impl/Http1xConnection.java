@@ -39,10 +39,9 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
 
   protected boolean closeInitiated;
   protected boolean shutdownInitiated;
-  protected Object closeReason;
-  protected long shutdownTimeout;
-  protected TimeUnit shutdownUnit;
   protected ChannelPromise closePromise;
+
+  private Handler<Void> shutdownHandler;
 
   Http1xConnection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
@@ -52,26 +51,35 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
     super(context, chctx, strictMode);
   }
 
-  @Override
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    shutdownInitiated = true;
-    closeReason = reason;
-    shutdownTimeout = timeout;
-    shutdownUnit = unit;
-    closePromise = promise;
+  public synchronized Http1xConnection shutdownHandler(@Nullable Handler<Void> handler) {
+    shutdownHandler = handler;
+    return this;
   }
 
   @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
+  protected void handleShutdown(ChannelPromise promise) {
+    shutdownInitiated = true;
+    closePromise = promise;
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = shutdownHandler;
+    }
+    if (handler != null) {
+      context.emit(handler);
+    }
+  }
+
+  @Override
+  protected void writeClose(ChannelPromise promise) {
     closeInitiated = true;
-    super.handleClose(reason, promise);
+    super.writeClose(promise);
   }
 
   protected void closeInternal() {
     if (closeInitiated) {
       // Nothing to do
     } else if (shutdownInitiated) {
-      super.handleShutdown(closeReason, shutdownTimeout, shutdownUnit, closePromise);
+      super.handleShutdown(closePromise);
     } else {
       chctx.channel().close();
     }
@@ -80,11 +88,6 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   @Override
   public Http1xConnection closeHandler(Handler<Void> handler) {
     return (Http1xConnection) super.closeHandler(handler);
-  }
-
-  @Override
-  public Http1xConnection shutdownHandler(Handler<Void> handler) {
-    return (Http1xConnection) super.shutdownHandler(handler);
   }
 
   @Override

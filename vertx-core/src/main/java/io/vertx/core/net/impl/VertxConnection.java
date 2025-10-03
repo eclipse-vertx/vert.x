@@ -12,26 +12,24 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import io.netty.handler.stream.ChunkedNioFile;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -61,7 +59,6 @@ public class VertxConnection extends ConnectionBase {
 
   public final VoidChannelPromise voidPromise;
   private final OutboundWriteQueue outboundMessageQueue;
-  private Handler<Void> shutdownHandler;
 
   // State accessed exclusively from the event loop thread
   private Deque<Object> pending;
@@ -72,7 +69,11 @@ public class VertxConnection extends ConnectionBase {
   private boolean channelWritable;
   private boolean paused;
   private boolean autoRead;
+
+  // State accessed exclusively from the event loop thread
   private ScheduledFuture<?> shutdownTimeout;
+  private ChannelPromise shutdown;
+  private boolean closeSent;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
@@ -92,30 +93,6 @@ public class VertxConnection extends ConnectionBase {
     this.outboundMessageQueue = strictThreadMode ? new DirectOutboundMessageQueue() : new InternalMessageChannel(executor);
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
     this.autoRead = true;
-  }
-
-  public synchronized ConnectionBase shutdownHandler(@Nullable Handler<Void> handler) {
-    shutdownHandler = handler;
-    return this;
-  }
-
-  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
-    return shutdown(null, timeout, unit);
-  }
-
-  public final Future<Void> shutdown(Object reason, long timeout, TimeUnit unit) {
-    Promise<Void> promise = vertx.promise();
-    EventExecutor eventLoop = chctx.executor();
-    if (eventLoop.inEventLoop()) {
-      shutdown(reason, timeout, unit, promise);
-    } else {
-      eventLoop.execute(() -> shutdown(reason, timeout, unit, promise));
-    }
-    return promise.future();
-  }
-
-  private void shutdown(Object reason, long timeout, TimeUnit unit, Promise<Void> promise) {
-    close(reason, timeout, unit).onComplete(promise); // Perhaps optimized this with internal stuff
   }
 
   /**
@@ -151,6 +128,7 @@ public class VertxConnection extends ConnectionBase {
    */
   protected void handleIdle(IdleStateEvent event) {
     log.debug("The connection will be closed due to timeout");
+    // Should be channel close ...
     chctx.close();
   }
 
@@ -158,34 +136,97 @@ public class VertxConnection extends ConnectionBase {
     return vertx.transport().supportFileRegion() && !isSsl() &&!isTrafficShaped();
   }
 
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
+  /**
+   * Implement the shutdown default's behavior that cancels the shutdown timeout and close the channel with the
+   * channel {@code promise} argument.
+   *
+   * @param promise the channel promise to be used for closing the channel
+   */
+  protected void handleShutdown(ChannelPromise promise) {
     // Assert from event-loop
     ScheduledFuture<?> t = shutdownTimeout;
-    if (t != null) {
-      shutdownTimeout = null;
-      t.cancel(false);
-      super.handleClose(reason, 0L, TimeUnit.SECONDS, promise);
+    if (t != null && t.cancel(false)) {
+      channel.close(shutdown);
     }
   }
 
-  @Override
-  final void handleClose(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    if (timeout == 0L) {
-      super.handleClose(reason, timeout, unit, promise);
+  /**
+   * Override the {@link ConnectionBase#close()} behavior to cooperate with the shutdown sequence.
+   */
+  public final Future<Void> close() {
+    return shutdown(0L, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Initiate the connection shutdown sequence.
+   *
+   * @param timeout the shutdown timeout
+   * @param unit the shutdown timeout unit
+   * @return the future completed after the channel's closure
+   */
+  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
+    ChannelPromise promise = channel.newPromise();
+    EventExecutor exec = chctx.executor();
+    if (exec.inEventLoop()) {
+      shutdown(timeout, unit, promise);
     } else {
-      EventExecutor el = chctx.executor();
-      shutdownTimeout = el.schedule(() -> {
-        shutdownTimeout = null;
-        super.handleClose(reason, 0L, TimeUnit.SECONDS, promise);
-      }, timeout, unit);
-      Handler<Void> handler;
-      synchronized (this) {
-        handler = shutdownHandler;
+      exec.execute(() -> shutdown(timeout, unit, promise));
+    }
+    PromiseInternal<Void> p = context.promise();
+    promise.addListener(p);
+    return p.future();
+  }
+
+  private void shutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
+    if (shutdown != null) {
+      ScheduledFuture<?> t = shutdownTimeout;
+      if (timeout == 0L && (t == null || t.cancel(false))) {
+        shutdown = promise;
+        channel.close(promise);
+      } else {
+        channel
+          .closeFuture()
+          .addListener(future -> {
+            if (future.isSuccess()) {
+              promise.setSuccess();
+            } else {
+              promise.setFailure(future.cause());
+            }
+          });
       }
-      if (handler != null) {
-        context.emit(handler);
+    } else {
+      shutdown = promise;
+      if (timeout == 0L) {
+        channel.close(promise);
+      } else {
+        EventExecutor el = chctx.executor();
+        shutdownTimeout = el.schedule(() -> {
+          channel.close(promise);
+        }, timeout, unit);
+        handleShutdown(promise);
       }
-      handleShutdown(reason, timeout, unit, promise);
+    }
+  }
+
+  // Exclusively called by the owning handler close signal
+  void handleClose(ChannelPromise promise) {
+    terminateClose(promise);
+  }
+
+  private void terminateClose(ChannelPromise promise) {
+    if (!closeSent) {
+      closeSent = true;
+      writeClose(promise);
+    } else {
+      channel
+        .closeFuture()
+        .addListener(future -> {
+          if (future.isSuccess()) {
+            promise.setSuccess();
+          } else {
+            promise.setFailure(future.cause());
+          }
+        });
     }
   }
 
@@ -198,15 +239,19 @@ public class VertxConnection extends ConnectionBase {
    * <p/>
    * This method is exclusively called on the event-loop thread and relays a channel user event.
    */
-  @Override
-  protected void handleClose(Object reason, ChannelPromise promise) {
-    writeClose(promise);
+  protected void writeClose(ChannelPromise promise) {
+    // Make sure everything is flushed out on close
+    ChannelPromise channelPromise = chctx
+      .newPromise()
+      .addListener((ChannelFutureListener) f -> {
+        chctx.close(promise);
+      });
+    writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
   }
 
   protected void handleClosed() {
     ScheduledFuture<?> timeout = shutdownTimeout;
     if (timeout != null) {
-      shutdownTimeout = null;
       timeout.cancel(false);
     }
     outboundMessageQueue.close();
@@ -377,21 +422,6 @@ public class VertxConnection extends ConnectionBase {
       chctx.write(msg, promise);
     }
     return promise;
-  }
-
-  /**
-   * This method is exclusively called on the event-loop thread
-   *
-   * @param promise the promise receiving the completion event
-   */
-  private void writeClose(ChannelPromise promise) {
-    // Make sure everything is flushed out on close
-    ChannelPromise channelPromise = chctx
-      .newPromise()
-      .addListener((ChannelFutureListener) f -> {
-        chctx.close(promise);
-      });
-    writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
   }
 
   public final boolean writeToChannel(Object obj) {

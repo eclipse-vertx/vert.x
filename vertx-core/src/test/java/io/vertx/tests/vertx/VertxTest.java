@@ -19,7 +19,7 @@ import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.CleanableNetClient;
+import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;

@@ -28,7 +28,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final String query;
 
   ServerWebSocketImpl(ContextInternal context,
-                      VertxConnection conn,
+                      WebSocketConnectionImpl conn,
                       boolean supportsContinuation,
                       Http1xServerRequest request,
                       int maxWebSocketFrameSize,

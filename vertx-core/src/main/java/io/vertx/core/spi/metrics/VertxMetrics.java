@@ -20,6 +20,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.*;
+import io.vertx.core.net.QuicEndpointOptions;
 
 /**
  * The main Vert.x metrics SPI which Vert.x will use internally. This interface serves two purposes, one
@@ -115,6 +116,20 @@ public interface VertxMetrics extends Metrics, Measured {
    * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
   default TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
+    return null;
+  }
+
+  /**
+   * <p>Provides the quic endpoint metrics SPI when a quic endpoint is created.</p>
+   * <p><Note: this method can be called more than one time for the same {@code localAddress} when a server is
+   * scaled, it is the responsibility of the metrics implementation to eventually merge metrics. In this case
+   * the provided {@code server} argument can be used to distinguish the different metrics instances.</p>
+   *
+   * @param options      the options used to create the {@link NetServer}
+   * @param localAddress localAddress the local address the net socket is listening on
+   * @return the net server metrics SPI or {@code null} when metrics are disabled
+   */
+  default QuicEndpointMetrics<?, ?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
     return null;
   }
 

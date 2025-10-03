@@ -59,7 +59,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final VertxConnection conn;
+  private final WebSocketConnectionImpl conn;
   private ChannelHandlerContext chctx;
   protected final ContextInternal context;
   private final InboundMessageQueue<WebSocketFrameInternal> pending;
@@ -75,13 +75,14 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<Void> shutdownHandler;
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
   private MultiMap headers;
 
   WebSocketImplBase(ContextInternal context,
-                    VertxConnection conn,
+                    WebSocketConnectionImpl conn,
                     MultiMap headers,
                     boolean supportsContinuation,
                     int maxWebSocketFrameSize,
@@ -591,6 +592,17 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
+  boolean handleShutdown() {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = shutdownHandler;
+    }
+    if (handler != null) {
+      context.emit(handler);
+    }
+    return handler != null;
+  }
+
   void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
     synchronized (this) {
@@ -678,11 +690,9 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public S shutdownHandler(Handler<Void> handler) {
-    synchronized (this) {
-      checkClosed();
-    }
-    conn.shutdownHandler(handler);
+  public synchronized S shutdownHandler(Handler<Void> handler) {
+    checkClosed();
+    this.shutdownHandler = handler;
     return (S) this;
   }
 

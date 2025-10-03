@@ -23,7 +23,6 @@ import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;
@@ -45,7 +44,7 @@ public class SslContextManagerTest extends VertxTestBase {
     String[] expected = engine.getEnabledCipherSuites();
     SslContextManager helper = new SslContextManager(SslContextManager.resolveEngineOptions(null, false));
     helper
-      .buildSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), null, ClientAuth.NONE, null, false, (ContextInternal) vertx.getOrCreateContext())
+      .buildSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
         SslContext ctx = provider.createContext(false, false);
         assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
@@ -58,7 +57,7 @@ public class SslContextManagerTest extends VertxTestBase {
   public void testUseOpenSSLCiphersWhenNotSpecified() throws Exception {
     Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
     SslContextManager helper = new SslContextManager(new OpenSSLEngineOptions());
-    helper.buildSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), null, ClientAuth.NONE, null, false, (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
+    helper.buildSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
       SslContext ctx = provider.createContext(false, false);
       assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
       testComplete();
@@ -91,7 +90,7 @@ public class SslContextManagerTest extends VertxTestBase {
     sslOptions.setKeyCertOptions(Cert.SERVER_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get());
 
     defaultHelper
-      .buildSslContextProvider(sslOptions, null, ClientAuth.NONE, null, false, (ContextInternal) vertx.getOrCreateContext())
+      .buildSslContextProvider(sslOptions, null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
         SslContext ctx = provider.createContext(true, false);
 
@@ -121,7 +120,7 @@ public class SslContextManagerTest extends VertxTestBase {
     assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
     SslContextManager helper = new SslContextManager(SslContextManager.resolveEngineOptions(null, false));
     helper
-      .buildSslContextProvider(options, null, ClientAuth.NONE, null, false, (ContextInternal) vertx.getOrCreateContext())
+      .buildSslContextProvider(options, null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
         assertEquals(new HashSet<>(Arrays.asList(createEngine(sslContextProvider).getEnabledCipherSuites())), new HashSet<>(Arrays.asList(engine.getEnabledCipherSuites())));
         testComplete();
@@ -150,14 +149,14 @@ public class SslContextManagerTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     SslContextManager helper = new SslContextManager(new JdkSSLEngineOptions(), 4);
     SSLOptions options = new SSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
-    SslContextProvider f1 = awaitFuture(helper.resolveSslContextProvider(options, "", ClientAuth.NONE, null, ctx));
-    SslContextProvider f2 = awaitFuture(helper.resolveSslContextProvider(options, "", ClientAuth.NONE, null, ctx));
+    SslContextProvider f1 = awaitFuture(helper.resolveSslContextProvider(options, "", ClientAuth.NONE, ctx));
+    SslContextProvider f2 = awaitFuture(helper.resolveSslContextProvider(options, "", ClientAuth.NONE, ctx));
     assertSame(f1, f2);
-    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get()), "", ClientAuth.NONE, null, ctx));
-    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.SERVER_PEM.get()), "", ClientAuth.NONE, null, ctx));
-    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()), "", ClientAuth.NONE, null, ctx));
-    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()), "", ClientAuth.NONE, null, ctx));
-    f2 = awaitFuture(helper.resolveSslContextProvider(options, "", ClientAuth.NONE, null, ctx));
+    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get()), "", ClientAuth.NONE, ctx));
+    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.SERVER_PEM.get()), "", ClientAuth.NONE, ctx));
+    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()), "", ClientAuth.NONE, ctx));
+    awaitFuture(helper.resolveSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()), "", ClientAuth.NONE, ctx));
+    f2 = awaitFuture(helper.resolveSslContextProvider(options, "", ClientAuth.NONE, ctx));
     assertNotSame(f1, f2);
   }
 
@@ -193,7 +192,7 @@ public class SslContextManagerTest extends VertxTestBase {
   private void testTLSVersions(SSLOptions options, Consumer<SSLEngine> check) {
     SslContextManager helper = new SslContextManager(SslContextManager.resolveEngineOptions(null, false));
     helper
-      .buildSslContextProvider(options, null, ClientAuth.NONE, null, false, (ContextInternal) vertx.getOrCreateContext())
+      .buildSslContextProvider(options, null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
         SSLEngine engine = createEngine(sslContextProvider);
         check.accept(engine);

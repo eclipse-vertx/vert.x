@@ -42,7 +42,7 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
+public interface NetSocket extends Socket {
 
   @Override
   NetSocket exceptionHandler(Handler<Throwable> handler);

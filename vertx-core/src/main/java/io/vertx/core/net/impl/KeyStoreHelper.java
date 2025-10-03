@@ -306,9 +306,9 @@ public class KeyStoreHelper {
             // so we can use the corresponding key factory once we know the algorithm name
             String algorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(content);
             if (rsaKeyFactory.getAlgorithm().equals(algorithm)) {
-                return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+              return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
             } else if (ecKeyFactory != null && ecKeyFactory.getAlgorithm().equals(algorithm)) {
-                return Collections.singletonList(ecKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+              return Collections.singletonList(ecKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
             }
             // fall through if ECC is not supported by JVM
           default:

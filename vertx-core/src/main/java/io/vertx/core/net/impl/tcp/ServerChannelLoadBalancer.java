@@ -8,15 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.net.impl.tcp;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Handler;
+import io.vertx.core.net.impl.VertxEventLoopGroup;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
