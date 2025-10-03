@@ -16,7 +16,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.NetClientBuilder;
+import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.spi.metrics.HttpClientMetrics;

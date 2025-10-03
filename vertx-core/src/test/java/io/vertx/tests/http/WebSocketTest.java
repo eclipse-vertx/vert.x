@@ -12,7 +12,10 @@
 package io.vertx.tests.http;
 
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -46,7 +49,6 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.CheckingSender;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
@@ -1109,7 +1111,7 @@ public class WebSocketTest extends VertxTestBase {
   public void testWSPermessageDeflateCompressionEnabled() throws InterruptedException {
     waitFor(2);
     HttpClient client = vertx.createHttpClient(new PoolOptions().setHttp1MaxSize(1));
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setWebSocketClosingTimeout(0)).webSocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
       assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
       complete();
@@ -3566,20 +3568,22 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testWriteHandlerFailure() throws InterruptedException {
-    server = vertx.createHttpServer()
+    server = vertx.createHttpServer(new HttpServerOptions().setWebSocketClosingTimeout(0))
       .webSocketHandler(ServerWebSocket::pause);
     awaitFuture(server.listen(DEFAULT_HTTP_PORT));
     Buffer buffer = TestUtils.randomBuffer(1024);
     client = vertx.createWebSocketClient();
-    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
-      while (!ws.writeQueueFull()) {
-        ws.write(buffer);
-      }
-      ws.write(buffer).onComplete(onFailure(err -> {
-        testComplete();
+    vertx.runOnContext(v -> {
+      client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri").onComplete(onSuccess(ws -> {
+        while (!ws.writeQueueFull()) {
+          ws.write(buffer);
+        }
+        ws.write(buffer).onComplete(onFailure(err -> {
+          testComplete();
+        }));
+        ((WebSocketInternal)ws).channelHandlerContext().close();
       }));
-      ((WebSocketInternal)ws).channelHandlerContext().close();
-    }));
+    });
     await();
   }
 
@@ -3951,9 +3955,21 @@ public class WebSocketTest extends VertxTestBase {
     long now = System.currentTimeMillis();
     AtomicInteger shutdown = new AtomicInteger();
     AtomicInteger closure = new AtomicInteger();
+    CountDownLatch latch1 = new CountDownLatch(1);
     server = vertx
       .createHttpServer()
       .webSocketHandler(ws -> {
+        WebSocketInternal impl = (WebSocketInternal) ws;
+        ChannelHandlerContext chctx = impl.channelHandlerContext();
+        chctx.pipeline().addBefore("handler", "test",  new ChannelOutboundHandlerAdapter() {
+          @Override
+          public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            if (msg instanceof CloseWebSocketFrame) {
+              latch1.countDown();
+            }
+            super.write(ctx, msg, promise);
+          }
+        });
         ws.handler(buff -> {
           ws.write(Buffer.buffer("pong"));
           ws.shutdownHandler(v -> {
@@ -3968,7 +3984,6 @@ public class WebSocketTest extends VertxTestBase {
       });
     awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
     client = vertx.createWebSocketClient();
-    CountDownLatch latch1 = new CountDownLatch(1);
     CountDownLatch latch2 = new CountDownLatch(1);
     AtomicReference<WebSocket> wsRef = new AtomicReference<>();
     vertx.deployVerticle(new AbstractVerticle() {
@@ -3997,7 +4012,6 @@ public class WebSocketTest extends VertxTestBase {
     long elapsed = System.currentTimeMillis() - now;
     assertTrue(elapsed >= 2000);
     assertTrue(elapsed < 4000);
-    latch1.countDown();
     assertWaitUntil(() -> shutdown.get() == 1);
     assertWaitUntil(() -> closure.get() == 1);
   }
@@ -4027,6 +4041,34 @@ public class WebSocketTest extends VertxTestBase {
     awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
     client = vertx.createWebSocketClient();
     AtomicReference<WebSocket> wsRef = new AtomicReference<>();
+    client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .onComplete(onSuccess(ws -> {
+        ws.write(Buffer.buffer("ping"));
+        ws.closeHandler(v -> {
+          complete();
+        });
+      }));
+    await();
+  }
+
+  @Test
+  public void testServerShutdown() throws Exception {
+    waitFor(2);
+    long now = System.currentTimeMillis();
+    server = vertx
+      .createHttpServer()
+      .webSocketHandler(ws -> {
+        ws.closeHandler(v -> {
+          long d = System.currentTimeMillis() - now;
+          assertTrue(d <= 500);
+          complete();
+        });
+        ws.handler(buff -> {
+          ws.shutdown(10, TimeUnit.SECONDS);
+        });
+      });
+    awaitFuture(server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+    client = vertx.createWebSocketClient();
     client.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
       .onComplete(onSuccess(ws -> {
         ws.write(Buffer.buffer("ping"));
