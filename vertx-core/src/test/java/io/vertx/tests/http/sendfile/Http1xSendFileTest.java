@@ -10,17 +10,22 @@
  */
 package io.vertx.tests.http.sendfile;
 
+import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.PoolOptions;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetSocket;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
 public class Http1xSendFileTest extends HttpSendFileTest {
@@ -36,8 +41,10 @@ public class Http1xSendFileTest extends HttpSendFileTest {
   public void testSendFileFailsWhenClientClosesConnection() throws Exception {
     // 10 megs
     final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(10 * 1024 * 1024));
+    CyclicBarrier barrier = new CyclicBarrier(1);
     server.requestHandler(req -> {
       try {
+        barrier.await(10, TimeUnit.SECONDS);
         req.response().sendFile(f.getAbsolutePath()).onComplete(onFailure(err -> {
           // Broken pipe
           testComplete();
@@ -48,14 +55,19 @@ public class Http1xSendFileTest extends HttpSendFileTest {
       }
     });
     startServer(testAddress);
-    vertx.createNetClient(new NetClientOptions()
+    NetClient client = vertx.createNetClient(new NetClientOptions()
       .setSsl(createBaseClientOptions().isSsl())
       .setHostnameVerificationAlgorithm("")
       .setTrustAll(true)
-    ).connect(testAddress).onComplete(onSuccess(socket -> {
+    );
+    try {
+      NetSocket socket = client.connect(testAddress).await();
       socket.write("GET / HTTP/1.1\r\n\r\n");
+      barrier.await();
       socket.close();
-    }));
+    } finally {
+      client.close();
+    }
     await();
   }
 
