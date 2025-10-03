@@ -37,8 +37,8 @@ open module io.vertx.core.tests {
   requires io.netty.codec.http;
   requires static io.netty.codec.haproxy;
   requires io.netty.codec.http2;
-  requires io.netty.codec.classes.quic;
-  requires io.netty.codec.quic;
+  requires static io.netty.codec.classes.quic;
+  requires static io.netty.codec.quic;
   requires io.netty.resolver.dns;
   requires io.netty.handler.proxy;
   requires io.netty.codec.http3;
