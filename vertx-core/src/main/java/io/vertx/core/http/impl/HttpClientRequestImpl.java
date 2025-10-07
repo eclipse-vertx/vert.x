@@ -482,18 +482,31 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return write(BufferInternal.buffer(chunk, enc).getByteBuf(), false);
   }
 
-  private boolean requiresContentLength() {
+  private boolean requiresContentLength(boolean writeHead) {
+    if (writeHead) {
+      return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH)) && !isConnect;
+    }
+    if (version() == HttpVersion.HTTP_2) {
+      return false;
+    }
     return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH)) && !isConnect;
   }
 
   private Future<Void> write(ByteBuf buff, boolean end) {
     if (end) {
-      if (buff != null && requiresContentLength()) {
-        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
+      if (buff != null && requiresContentLength(true)) {
+        boolean headWritten;
+        synchronized (this) {
+          headWritten = this.headWritten;
+        }
+        if (!headWritten) {
+          headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
+        }
       }
-    } else if (requiresContentLength()) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+    } else if (requiresContentLength(false)) {
+      IllegalStateException e = new IllegalStateException("You must set the Content-Length header to be the total size of the message "
         + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      return Future.failedFuture(e);
     }
     return doWrite(buff, end, false);
   }
