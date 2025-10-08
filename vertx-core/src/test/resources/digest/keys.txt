@@ -1,0 +1,11 @@
+This file describes the sequence of commands to create the various files necessary for digest tests.
+
+keytool -genseckey -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg HmacSHA256 -keysize 2048 -alias HmacSHA256 -keypass secret
+keytool -genseckey -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg HmacSHA384 -keysize 2048 -alias HmacSHA384 -keypass secret
+keytool -genseckey -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg HmacSHA512 -keysize 2048 -alias HmacSHA512 -keypass secret
+keytool -genkey -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg RSA -keysize 2048 -alias SHA256withRSA -keypass secret -sigalg SHA256withRSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360
+keytool -genkey -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg RSA -keysize 2048 -alias SHA384withRSA -keypass secret -sigalg SHA384withRSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360
+keytool -genkey -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg RSA -keysize 2048 -alias SHA512withRSA -keypass secret -sigalg SHA512withRSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360
+keytool -genkeypair -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg EC -keysize 256 -alias SHA256withECDSA -keypass secret -sigalg SHA256withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360
+keytool -genkeypair -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg EC -keysize 384 -alias SHA384withECDSA -keypass secret -sigalg SHA384withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360
+keytool -genkeypair -keystore keystore.p12 -storetype pkcs12 -storepass secret -keyalg EC -keysize 521 -alias SHA512withECDSA -keypass secret -sigalg SHA512withECDSA -dname "CN=,OU=,O=,L=,ST=,C=" -validity 360

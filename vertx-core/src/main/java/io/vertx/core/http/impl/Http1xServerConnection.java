@@ -35,14 +35,13 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.MessageWrite;
-import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -107,8 +106,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   @Override
-  protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
-    super.handleShutdown(reason, timeout, unit, promise);
+  protected void handleShutdown(ChannelPromise promise) {
+    super.handleShutdown(promise);
     if (responseInProgress != null) {
     } else {
       closeInternal();
