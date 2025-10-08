@@ -27,6 +27,11 @@ public class FileSystemOptionsConverter {
             obj.setFileCacheDir((String)member.getValue());
           }
           break;
+        case "exactFileCacheDir":
+          if (member.getValue() instanceof String) {
+            obj.setExactFileCacheDir((String)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -40,6 +45,9 @@ public class FileSystemOptionsConverter {
     json.put("fileCachingEnabled", obj.isFileCachingEnabled());
     if (obj.getFileCacheDir() != null) {
       json.put("fileCacheDir", obj.getFileCacheDir());
+    }
+    if (obj.getExactFileCacheDir() != null) {
+      json.put("exactFileCacheDir", obj.getExactFileCacheDir());
     }
   }
 }
