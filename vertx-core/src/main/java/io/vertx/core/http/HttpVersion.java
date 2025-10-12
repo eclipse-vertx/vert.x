@@ -34,4 +34,18 @@ public enum HttpVersion {
   public String alpnName() {
     return alpnName;
   }
+
+  public static HttpVersion fromAlpnName(String alpnName) {
+    switch (alpnName) {
+      case "http/1.0":
+        return HTTP_1_0;
+      case "http/1.1":
+        return HTTP_1_1;
+      case "h2":
+        return HTTP_2;
+      default:
+        return null;
+    }
+  }
+
 }

@@ -31,8 +31,6 @@ import java.util.concurrent.TimeUnit;
 @JsonGen(publicConverter = false)
 public class EventBusOptions extends TCPSSLOptions {
 
-
-
   /**
    * The default cluster host = null which means use the same as the cluster manager, if possible.
    */

@@ -51,6 +51,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
@@ -995,5 +996,19 @@ public final class HttpUtils {
       SMALL_POSITIVE_LONGS[index] = str;
     }
     return str;
+  }
+
+  public static List<String> fromHttpAlpnVersions(List<io.vertx.core.http.HttpVersion> alpnVersions) {
+    return alpnVersions
+      .stream()
+      .map(io.vertx.core.http.HttpVersion::alpnName)
+      .collect(Collectors.toList());
+  }
+
+  public static List<io.vertx.core.http.HttpVersion> toHttpAlpnVersions(List<String> alpnVersions) {
+    return alpnVersions
+      .stream()
+      .map(io.vertx.core.http.HttpVersion::fromAlpnName)
+      .collect(Collectors.toList());
   }
 }

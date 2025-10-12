@@ -19,13 +19,10 @@ import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.TrafficShapingOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.ArrayList;
@@ -35,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -226,7 +224,6 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxFormFields;
   private int maxFormBufferedBytes;
   private Http2Settings initialSettings;
-  private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextEnabled;
   private int http2ConnectionWindowSize;
   private boolean decompressionSupported;
@@ -277,7 +274,6 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxFormFields = other.getMaxFormFields();
     this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
-    this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextEnabled = other.http2ClearTextEnabled;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.decompressionSupported = other.isDecompressionSupported();
@@ -336,7 +332,6 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
-    alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
@@ -363,6 +358,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions copy() {
     return new HttpServerOptions(this);
+  }
+
+  @Override
+  protected ServerSSLOptions createSSLOptions() {
+    return super.createSSLOptions().setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(DEFAULT_ALPN_VERSIONS));
   }
 
   @Override
@@ -896,20 +896,26 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiatiation
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiation
    */
   public List<HttpVersion> getAlpnVersions() {
-    return alpnVersions;
+    List<String> applicationLayerProtocols = getOrCreateSSLOptions().getApplicationLayerProtocols();
+    return applicationLayerProtocols != null ? HttpUtils.toHttpAlpnVersions(applicationLayerProtocols ) : null;
   }
 
   /**
-   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
    *
    * @param alpnVersions the versions
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
-    this.alpnVersions = alpnVersions;
+    ServerSSLOptions sslOptions = getOrCreateSSLOptions();
+    if (alpnVersions != null) {
+      sslOptions.setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(alpnVersions));
+    } else {
+      sslOptions.setApplicationLayerProtocols(null);
+    }
     return this;
   }
 

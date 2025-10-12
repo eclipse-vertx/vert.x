@@ -227,7 +227,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   protected SSLOptions getOrCreateSSLOptions() {
     if (sslOptions == null) {
-      sslOptions = this instanceof ClientOptionsBase ? new ClientSSLOptions() : new ServerSSLOptions();
+      sslOptions = createSSLOptions();
       // Necessary hacks because we return lazy created collections so we need to care about that
       if (enabledCipherSuites != null) {
         sslOptions.enabledCipherSuites = enabledCipherSuites;
@@ -246,6 +246,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       }
     }
     return sslOptions;
+  }
+
+  protected SSLOptions createSSLOptions() {
+    return new SSLOptions();
   }
 
   @GenIgnore
