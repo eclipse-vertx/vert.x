@@ -13,8 +13,10 @@ package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -181,7 +183,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxInitialLineLength;
   private int maxHeaderSize;
   private Http2Settings initialSettings;
-  private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextUpgrade;
   private boolean http2ClearTextUpgradeWithPreflightRequest;
   private int maxRedirects;
@@ -236,7 +237,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
-    this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
     this.maxRedirects = other.maxRedirects;
@@ -288,7 +288,6 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
     initialSettings = new Http2Settings();
-    alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
     http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
@@ -297,6 +296,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+  }
+
+  @Override
+  protected ClientSSLOptions createSSLOptions() {
+    return super.createSSLOptions().setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(DEFAULT_ALPN_VERSIONS));
   }
 
   @Override
@@ -857,12 +861,13 @@ public class HttpClientOptions extends ClientOptionsBase {
    * the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}
    */
   public List<HttpVersion> getAlpnVersions() {
-    return alpnVersions;
+    List<String> applicationLayerProtocols = getOrCreateSSLOptions().getApplicationLayerProtocols();
+    return applicationLayerProtocols != null ? HttpUtils.toHttpAlpnVersions(applicationLayerProtocols ) : null;
   }
 
   /**
    * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
-   * When the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}:
+   * When the list is empty, the client makes a best effort list according to {@link #setProtocolVersion}:
    *
    * <ul>
    *   <li>{@link HttpVersion#HTTP_2}: [ "h2", "http/1.1" ]</li>
@@ -873,7 +878,12 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
-    this.alpnVersions = alpnVersions;
+    ClientSSLOptions sslOptions = getOrCreateSSLOptions();
+    if (alpnVersions != null) {
+      sslOptions.setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(alpnVersions));
+    } else {
+      sslOptions.setApplicationLayerProtocols(null);
+    }
     return this;
   }
 

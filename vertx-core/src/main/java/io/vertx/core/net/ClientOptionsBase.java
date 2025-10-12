@@ -109,6 +109,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientSSLOptions) super.getOrCreateSSLOptions();
   }
 
+  @Override
+  protected ClientSSLOptions createSSLOptions() {
+    return new ClientSSLOptions();
+  }
+
   /**
    *
    * @return true if all server certificates should be trusted

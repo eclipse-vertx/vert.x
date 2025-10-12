@@ -26,10 +26,8 @@ import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -70,7 +68,6 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       throw new IllegalStateException("Not listening");
     }
     options = options.copy();
-    configureApplicationLayerProtocols(options);
     return s.updateSSLOptions(options, force);
   }
 
@@ -180,9 +177,6 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     }
     HttpServerOptions options = this.options;
     HttpServerOptions tcpOptions = new HttpServerOptions(options);
-    if (tcpOptions.getSslOptions() != null) {
-      configureApplicationLayerProtocols(tcpOptions.getSslOptions());
-    }
     ContextInternal context = vertx.getOrCreateContext();
     ContextInternal listenContext;
     // Not sure of this
@@ -269,18 +263,6 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       seq.close().onComplete(p);
       return p.future();
     }
-  }
-
-  /**
-   * Configure the {@code options} to match the server configured HTTP versions.
-   */
-  private void configureApplicationLayerProtocols(ServerSSLOptions options) {
-    List<String> applicationProtocols = this.options
-      .getAlpnVersions()
-      .stream()
-      .map(HttpVersion::alpnName)
-      .collect(Collectors.toList());
-    options.setApplicationLayerProtocols(applicationProtocols);
   }
 
   private boolean isListening() {

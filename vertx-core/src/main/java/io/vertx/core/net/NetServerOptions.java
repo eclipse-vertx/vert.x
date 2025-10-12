@@ -147,6 +147,11 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  protected ServerSSLOptions createSSLOptions() {
+    return new ServerSSLOptions();
+  }
+
+  @Override
   public NetServerOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;

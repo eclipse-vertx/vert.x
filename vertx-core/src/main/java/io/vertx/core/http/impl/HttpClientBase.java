@@ -26,7 +26,6 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -36,7 +35,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   protected final VertxInternal vertx;
   public final HttpClientOptions options;
   protected final NetClientInternal netClient;
-  protected final List<String> alpnVersions;
   protected final HttpClientMetrics metrics;
   protected final CloseSequence closeSequence;
   private volatile ClientSSLOptions defaultSslOptions;
@@ -48,23 +46,18 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (!options.isKeepAlive() && options.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
+    options = new HttpClientOptions(options);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
-      switch (options.getProtocolVersion()) {
-        case HTTP_2:
-          alpnVersions = Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
-          break;
-        default:
-          alpnVersions = Collections.singletonList(options.getProtocolVersion());
-          break;
+      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+        options.setAlpnVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
+      } else {
+        options.setAlpnVersions(List.of(options.getProtocolVersion()));
       }
-    } else {
-      alpnVersions = new ArrayList<>(alpnVersions);
     }
-    this.alpnVersions = alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toUnmodifiableList());
     this.vertx = vertx;
     this.metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(options) : null;
-    this.options = new HttpClientOptions(options);
+    this.options = options;
     this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(p1));
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null)).metrics(metrics).build();
@@ -79,9 +72,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   private void configureSSLOptions(ClientSSLOptions sslOptions) {
     if (sslOptions.getHostnameVerificationAlgorithm() == null) {
       sslOptions.setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS" : "");
-    }
-    if (sslOptions.getApplicationLayerProtocols() == null) {
-      sslOptions.setApplicationLayerProtocols(alpnVersions);
     }
   }
 
