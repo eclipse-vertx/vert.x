@@ -227,7 +227,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
       return;
     }
     String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-    this.responseHead = new HttpResponseHead(HttpVersion.HTTP_2, headers.status(), statusMessage, headers);
+    this.responseHead = new HttpResponseHead(headers.status(), statusMessage, headers);
     super.onHeaders(headers);
   }
 
@@ -251,7 +251,6 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
       int status = map.status();
       String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
       HttpResponseHead response = new HttpResponseHead(
-        HttpVersion.HTTP_2,
         status,
         statusMessage,
         map);

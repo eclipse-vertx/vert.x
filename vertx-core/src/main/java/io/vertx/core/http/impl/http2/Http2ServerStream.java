@@ -96,7 +96,7 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
 
   private HttpResponse observableResponse() {
     if (observableResponse == null) {
-      observableResponse = new HttpResponseHead(HttpVersion.HTTP_2, responseHeaders.status(), null, responseHeaders);
+      observableResponse = new HttpResponseHead(responseHeaders.status(), null, responseHeaders);
     }
     return observableResponse;
   }

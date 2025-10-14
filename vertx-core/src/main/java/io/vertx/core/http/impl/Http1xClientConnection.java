@@ -378,6 +378,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     protected final ContextInternal context;
     protected final int id;
 
+    private HttpVersion version;
     private Object trace;
     private Object metric;
     private HttpRequestHead request;
@@ -793,8 +794,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       } else {
         version = io.vertx.core.http.HttpVersion.HTTP_1_1;
       }
-      handleResponseBegin(stream, new HttpResponseHead(
-        version,
+      handleResponseBegin(stream, version, new HttpResponseHead(
         response.status().code(),
         response.status().reasonPhrase(),
         new HeadersAdaptor(response.headers())));
@@ -822,7 +822,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
   }
 
-  private void handleResponseBegin(Stream stream, HttpResponseHead response) {
+  private void handleResponseBegin(Stream stream, HttpVersion version, HttpResponseHead response) {
     // How can we handle future undefined 1xx informational response codes?
     if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
       stream.handleContinue();
@@ -832,6 +832,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       HttpRequestHead request;
       synchronized (this) {
         request = stream.request;
+        stream.version = version;
         stream.response = response;
         if (metrics != null) {
           metrics.responseBegin(stream.metric, response);
@@ -885,9 +886,11 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
     boolean check;
-    HttpResponseHead response ;
+    HttpResponseHead response;
+    HttpVersion version;
     synchronized (this) {
       response = stream.response;
+      version = stream.version;
       if (response == null) {
         // 100-continue
         return;
@@ -903,7 +906,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
           // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
           close = true;
-        } else if (response.version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
+        } else if (version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
           // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
           // currently Vertx forces the Connection header if keepalive is enabled for 1.0
           close = true;
