@@ -47,7 +47,6 @@ import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientStream;
-import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -142,11 +141,8 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
     Http2FrameStream s = channel.stream();
     Http2ClientStream sb = new Http2ClientStream(s.id(), (Http2ClientConnection) connection, context, null, false, clientMetrics, channel.isWritable());
     connection.registerChannel(sb, s, chctx);
-    Http2ClientStreamImpl ret = new Http2ClientStreamImpl((Http2ClientConnection) connection, context, null, false, clientMetrics);
-    ret.stream = sb;
-    sb.handler(ret);
     sb.upgrade(metric, trace);
-    return ret;
+    return sb;
   }
 
   @Override

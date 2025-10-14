@@ -259,7 +259,7 @@ public class HttpChannelConnector {
           conn2.createStream(conn.context()).onComplete(ar -> {
             if (ar.succeeded()) {
               HttpClientStream stream = ar.result();
-              stream.headHandler(resp -> {
+              stream.headersHandler(resp -> {
                 Http2UpgradeClientConnection connection = (Http2UpgradeClientConnection) stream.connection();
                 HttpClientConnection unwrap = connection.unwrap();
                 future.tryComplete(unwrap);

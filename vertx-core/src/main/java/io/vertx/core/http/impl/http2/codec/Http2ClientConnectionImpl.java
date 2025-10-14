@@ -22,7 +22,6 @@ import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientStream;
-import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -156,21 +155,18 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
-    Http2ClientStreamImpl vertxStream = createStream2(context);
     Http2Stream nettyStream = handler.connection().stream(1);
     Http2ClientStream s = new Http2ClientStream(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
     s.upgrade(metric, trace);
-    vertxStream.stream = s;
-    s.handler(vertxStream);
     nettyStream.setProperty(streamKey, s);
-    return vertxStream;
+    return s;
   }
 
   @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
     synchronized (this) {
       try {
-        Http2ClientStreamImpl stream = createStream2(context);
+        Http2ClientStream stream = createStream0(context);
         return context.succeededFuture(stream);
       } catch (Exception e) {
         return context.failedFuture(e);
@@ -178,8 +174,13 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  private Http2ClientStreamImpl createStream2(ContextInternal context) {
-    return new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+  private Http2ClientStream createStream0(ContextInternal context) {
+    return new Http2ClientStream(
+      this,
+      context,
+      client.options.getTracingPolicy(),
+      client.options.isDecompressionSupported(),
+      clientMetrics());
   }
 
   private void recycle() {
@@ -231,15 +232,15 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+//      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
       Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      s.handler(pushStream);
-      pushStream.stream = s;
+//      pushStream.init(s);
+//      pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
       Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
       headersMap.validate(true);
       headersMap.sanitize();
-      stream.onPush(pushStream, promisedStreamId, headersMap, isWritable(promisedStreamId));
+      stream.onPush(s, promisedStreamId, headersMap, isWritable(promisedStreamId));
     } else {
       Http2ClientConnectionImpl.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
     }

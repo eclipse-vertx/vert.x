@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.http2;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
@@ -31,7 +32,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-public class Http2ServerStream extends Http2StreamBase {
+public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
 
   private final Http2ServerConnection connection;
   private Http2HeadersMultiMap requestHeaders;
@@ -39,7 +40,6 @@ public class Http2ServerStream extends Http2StreamBase {
   private String scheme;
   private HttpMethod method;
   private String uri;
-  private Http2ServerStreamHandler handler;
 
   // Observability
   private final HttpServerMetrics serverMetrics;
@@ -49,6 +49,9 @@ public class Http2ServerStream extends Http2StreamBase {
   private Object trace;
   private HttpRequest observableRequest;
   private HttpResponse observableResponse;
+
+  // Client handlers
+  private Handler<HttpRequestHead> headersHandler;
 
   public Http2ServerStream(Http2ServerConnection connection,
                            HttpServerMetrics serverMetrics,
@@ -98,16 +101,6 @@ public class Http2ServerStream extends Http2StreamBase {
     return observableResponse;
   }
 
-  public Http2ServerStream handler(Http2ServerStreamHandler handler) {
-    this.handler = handler;
-    return this;
-  }
-
-  @Override
-  public Http2ServerStreamHandler handler() {
-    return handler;
-  }
-
   public Http2HeadersMultiMap headers() {
     return requestHeaders;
   }
@@ -149,6 +142,26 @@ public class Http2ServerStream extends Http2StreamBase {
     this.requestHeaders = headers;
 
     super.onHeaders(headers);
+  }
+
+  public Http2ServerStream headersHandler(Handler<HttpRequestHead> handler) {
+    headersHandler = handler;
+    return this;
+  }
+
+  void handleHeader(Http2HeadersMultiMap map) {
+    Handler<HttpRequestHead> handler = headersHandler;
+    if (handler != null) {
+      HttpRequestHead head = new HttpRequestHead(
+        map.method(),
+        map.path(),
+        map,
+        map.authority(),
+        null,
+        null
+      );
+      context.emit(head, handler);
+    }
   }
 
   @Override
@@ -219,7 +232,7 @@ public class Http2ServerStream extends Http2StreamBase {
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, handler, method().name(), headers, HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers, HttpUtils.HTTP_2_SERVER_STREAM_TAG_EXTRACTOR);
     }
   }
 

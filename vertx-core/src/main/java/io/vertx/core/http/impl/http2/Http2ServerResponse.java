@@ -27,6 +27,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CookieJar;
 import io.vertx.core.http.impl.HttpNetSocket;
+import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.internal.ContextInternal;
@@ -101,11 +102,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       handler = exceptionHandler;
     }
     if (handler != null) {
-      context.dispatch(cause, handler);
+      handler.handle(cause);
     }
   }
 
-  void handleClose() {
+  void handleClose(Void v) {
     Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
@@ -115,10 +116,10 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       closeHandler = this.closeHandler;
     }
     if (endHandler != null) {
-      context.dispatch(null, endHandler);
+      endHandler.handle(null);
     }
     if (closeHandler != null) {
-      context.dispatch(null, closeHandler);
+      closeHandler.handle(null);
     }
   }
 
@@ -497,7 +498,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleWriteQueueDrained() {
+  void handleWriteQueueDrained(Void v) {
     Handler<Void> handler;
     synchronized (conn) {
       handler = drainHandler;
@@ -505,7 +506,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
         return;
       }
     }
-    context.dispatch(null, handler);
+    handler.handle(null);
   }
 
   @Override
@@ -751,13 +752,13 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     Future<Http2ServerStream> fut = stream.sendPush(authority, method, headers, path);
     return fut.map((pushStream) -> {
       PushStreamHandler push = new PushStreamHandler(pushStream, context);
-      pushStream.handler(push);
+      push.init();
       push.stream.priority(stream.priority());
       return push.response;
     });
   }
 
-  private static class PushStreamHandler implements Http2ServerStreamHandler {
+  private static class PushStreamHandler {
 
     protected final ContextInternal context;
     protected final Http2ServerStream stream;
@@ -769,47 +770,42 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       this.response = new Http2ServerResponse(stream, context, true);
     }
 
-    @Override
-    public void handleHeaders(Http2HeadersMultiMap headers) {
+    void init() {
+      stream.headersHandler(this::handleHeaders);
+      stream.resetHandler(this::handleReset);
+      stream.exceptionHandler(this::handleException);
+      stream.closeHandler(response::handleClose);
+      stream.dataHandler(this::handleData);
+      stream.trailersHandler(this::handleTrailers);
+      stream.customFrameHandler(this::handleCustomFrame);
+      stream.priorityChangeHandler(this::handlePriorityChange);
+      stream.drainHandler(response::handleWriteQueueDrained);
+    }
+
+    public void handleHeaders(HttpRequestHead headers) {
       // Do nothing ???
     }
 
-    @Override
     public void handleReset(long errorCode) {
       response.handleReset(errorCode);
     }
 
-    @Override
     public  void handleException(Throwable cause) {
       response.handleException(cause);
     }
 
-    @Override
-    public  void handleClose() {
-      response.handleClose();
-    }
-
-    @Override
-    public void handleDrained() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void handleData(Buffer data) {
       throw new UnsupportedOperationException();
     }
 
-    @Override
     public void handleTrailers(MultiMap trailers) {
       throw new UnsupportedOperationException();
     }
 
-    @Override
     public void handleCustomFrame(HttpFrame frame) {
       throw new UnsupportedOperationException();
     }
 
-    @Override
     public void handlePriorityChange(StreamPriority streamPriority) {
       throw new UnsupportedOperationException();
     }

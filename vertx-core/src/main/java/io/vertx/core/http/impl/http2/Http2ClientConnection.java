@@ -10,7 +10,9 @@
  */
 package io.vertx.core.http.impl.http2;
 
-public interface Http2ClientConnection extends Http2Connection {
+import io.vertx.core.http.impl.HttpClientConnection;
+
+public interface Http2ClientConnection extends Http2Connection, HttpClientConnection {
 
   void createStream(Http2ClientStream vertxStream) throws Exception;
 

@@ -180,20 +180,20 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
-      delegate.unknownFrameHandler(handler);
+    public HttpClientStream customFrameHandler(Handler<HttpFrame> handler) {
+      delegate.customFrameHandler(handler);
       return this;
     }
 
     @Override
-    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
-      delegate.headHandler(handler);
+    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+      delegate.headersHandler(handler);
       return this;
     }
 
     @Override
-    public HttpClientStream handler(Handler<Buffer> handler) {
-      delegate.handler(handler);
+    public HttpClientStream dataHandler(Handler<Buffer> handler) {
+      delegate.dataHandler(handler);
       return this;
     }
 
@@ -204,14 +204,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream endHandler(Handler<Void> handler) {
-      delegate.endHandler(handler);
-      return this;
-    }
-
-    @Override
-    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
-      delegate.priorityHandler(handler);
+    public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
+      delegate.priorityChangeHandler(handler);
       return this;
     }
 
@@ -234,14 +228,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream resume() {
-      delegate.resume();
-      return this;
-    }
-
-    @Override
-    public Future<Void> reset(Throwable cause) {
-      return delegate.reset(cause);
+    public Future<Void> writeReset(long code) {
+      return delegate.writeReset(code);
     }
 
     @Override
@@ -252,6 +240,12 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     @Override
     public HttpClientStream updatePriority(StreamPriority streamPriority) {
       delegate.updatePriority(streamPriority);
+      return this;
+    }
+
+    @Override
+    public HttpClientStream resetHandler(Handler<Long> handler) {
+      delegate.resetHandler(handler);
       return this;
     }
 
@@ -268,8 +262,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public boolean writeQueueFull() {
-      return delegate.writeQueueFull();
+    public boolean isWritable() {
+      return delegate.isWritable();
     }
 
     @Override
@@ -287,36 +281,35 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     void handleUpgrade(HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
-      upgradedStream.headHandler(headHandler);
-      upgradedStream.handler(chunkHandler);
-      upgradedStream.endHandler(endHandler);
+      upgradedStream.headersHandler(headHandler);
+      upgradedStream.dataHandler(chunkHandler);
       upgradedStream.trailersHandler(trailersHandler);
-      upgradedStream.priorityHandler(priorityHandler);
+      upgradedStream.priorityChangeHandler(priorityHandler);
       upgradedStream.exceptionHandler(exceptionHandler);
+      upgradedStream.resetHandler(resetHandler);
       upgradedStream.drainHandler(drainHandler);
       upgradedStream.continueHandler(continueHandler);
       upgradedStream.earlyHintsHandler(earlyHintsHandler);
       upgradedStream.pushHandler(pushHandler);
-      upgradedStream.unknownFrameHandler(unknownFrameHandler);
+      upgradedStream.customFrameHandler(unknownFrameHandler);
       upgradedStream.closeHandler(closeHandler);
-      upgradingStream.headHandler(null);
-      upgradingStream.handler(null);
-      upgradingStream.endHandler(null);
+      upgradingStream.headersHandler(null);
+      upgradingStream.dataHandler(null);
       upgradingStream.trailersHandler(null);
-      upgradingStream.priorityHandler(null);
+      upgradingStream.priorityChangeHandler(null);
       upgradingStream.exceptionHandler(null);
       upgradingStream.drainHandler(null);
       upgradingStream.continueHandler(null);
       upgradingStream.earlyHintsHandler(null);
       upgradingStream.pushHandler(null);
-      upgradingStream.unknownFrameHandler(null);
+      upgradingStream.customFrameHandler(null);
       upgradingStream.closeHandler(null);
       headHandler = null;
       chunkHandler = null;
-      endHandler = null;
       trailersHandler = null;
       priorityHandler = null;
       exceptionHandler = null;
+      resetHandler = null;
       drainHandler = null;
       continueHandler = null;
       earlyHintsHandler = null;
@@ -353,9 +346,9 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailersHandler;
-    private Handler<Void> endHandler;
     private Handler<StreamPriority> priorityHandler;
     private Handler<Throwable> exceptionHandler;
+    private Handler<Long> resetHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
     private Handler<MultiMap> earlyHintsHandler;
@@ -517,6 +510,17 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
+    public HttpClientStream resetHandler(Handler<Long> handler) {
+      if (upgradedStream != null) {
+        upgradedStream.resetHandler(handler);
+      } else {
+        upgradingStream.resetHandler(handler);
+        resetHandler = handler;
+      }
+      return this;
+    }
+
+    @Override
     public UpgradingStream exceptionHandler(Handler<Throwable> handler) {
       if (upgradedStream != null) {
         upgradedStream.exceptionHandler(handler);
@@ -528,22 +532,22 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
       if (upgradedStream != null) {
-        upgradedStream.headHandler(handler);
+        upgradedStream.headersHandler(handler);
       } else {
-        upgradingStream.headHandler(handler);
+        upgradingStream.headersHandler(handler);
         headHandler = handler;
       }
       return this;
     }
 
     @Override
-    public HttpClientStream handler(Handler<Buffer> handler) {
+    public HttpClientStream dataHandler(Handler<Buffer> handler) {
       if (upgradedStream != null) {
-        upgradedStream.handler(handler);
+        upgradedStream.dataHandler(handler);
       } else {
-        upgradingStream.handler(handler);
+        upgradingStream.dataHandler(handler);
         chunkHandler = handler;
       }
       return this;
@@ -561,33 +565,22 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream endHandler(Handler<Void> handler) {
+    public HttpClientStream customFrameHandler(Handler<HttpFrame> handler) {
       if (upgradedStream != null) {
-        upgradedStream.endHandler(handler);
+        upgradedStream.customFrameHandler(handler);
       } else {
-        upgradingStream.endHandler(handler);
-        endHandler = handler;
-      }
-      return this;
-    }
-
-    @Override
-    public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
-      if (upgradedStream != null) {
-        upgradedStream.unknownFrameHandler(handler);
-      } else {
-        upgradingStream.unknownFrameHandler(handler);
+        upgradingStream.customFrameHandler(handler);
         unknownFrameHandler = handler;
       }
       return this;
     }
 
     @Override
-    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
+    public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
       if (upgradedStream != null) {
-        upgradedStream.priorityHandler(handler);
+        upgradedStream.priorityChangeHandler(handler);
       } else {
-        upgradingStream.priorityHandler(handler);
+        upgradingStream.priorityChangeHandler(handler);
         priorityHandler = handler;
       }
       return this;
@@ -604,11 +597,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public boolean writeQueueFull() {
+    public boolean isWritable() {
       if (upgradedStream != null) {
-        return upgradedStream.writeQueueFull();
+        return upgradedStream.isWritable();
       } else {
-        return upgradingStream.writeQueueFull();
+        return upgradingStream.isWritable();
       }
     }
 
@@ -656,16 +649,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream resume() {
-      if (upgradedStream != null) {
-        upgradedStream.resume();
-      } else {
-        upgradingStream.resume();
-      }
-      return this;
-    }
-
-    @Override
     public HttpClientStream fetch(long amount) {
       if (upgradedStream != null) {
         upgradedStream.fetch(amount);
@@ -676,11 +659,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> reset(Throwable cause) {
+    public Future<Void> writeReset(long code) {
       if (upgradedStream != null) {
-        return upgradedStream.reset(cause);
+        return upgradedStream.writeReset(code);
       } else {
-        return upgradingStream.reset(cause);
+        return upgradingStream.writeReset(code);
       }
     }
 
