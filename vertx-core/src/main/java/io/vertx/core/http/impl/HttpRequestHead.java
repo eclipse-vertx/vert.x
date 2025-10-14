@@ -30,9 +30,6 @@ public class HttpRequestHead implements HttpRequest {
   public final String traceOperation;
 
   public HttpRequestHead(HttpMethod method, String uri, MultiMap headers, HostAndPort authority, String absoluteURI, String traceOperation) {
-    if (uri == null || uri.isEmpty()) {
-      throw new IllegalArgumentException("Invalid request URI");
-    }
     this.method = method;
     this.uri = uri;
     this.headers = headers;

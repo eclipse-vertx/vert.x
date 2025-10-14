@@ -22,6 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpEventHandler;
+import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.NettyFileUpload;
 import io.vertx.core.http.impl.NettyFileUploadDataFactory;
@@ -44,7 +45,7 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequest extends HttpServerRequestInternal implements Http2ServerStreamHandler {
+public class Http2ServerRequest extends HttpServerRequestInternal {
 
   protected final ContextInternal context;
   protected final Http2ServerStream stream;
@@ -70,8 +71,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   private Handler<HttpServerFileUpload> uploadHandler;
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
-  private Handler<HttpFrame> customFrameHandler;
-  private Handler<StreamPriority> streamPriorityHandler;
 
   public Http2ServerRequest(Http2ServerStream stream,
                      ContextInternal context,
@@ -91,6 +90,16 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     this.maxFormBufferedBytes = maxFormBufferedBytes;
   }
 
+  public void init() {
+    stream.headersHandler(this::handleHeaders);
+    stream.resetHandler(this::handleReset);
+    stream.exceptionHandler(this::handleException);
+    stream.closeHandler(response::handleClose);
+    stream.dataHandler(this::handleData);
+    stream.trailersHandler(this::handleTrailers);
+    stream.drainHandler(response::handleWriteQueueDrained);
+  }
+
   private HttpEventHandler eventHandler(boolean create) {
     if (eventHandler == null && create) {
       eventHandler = new HttpEventHandler(context);
@@ -98,22 +107,20 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     return eventHandler;
   }
 
-  @Override
-  public void handleHeaders(Http2HeadersMultiMap headers) {
-    this.headersMap = headers;
+  public void handleHeaders(HttpRequestHead headers) {
+    this.headersMap = headers.headers;
 
     // Check expect header and implement 100 continue automatically
-    CharSequence value = headers.get(HttpHeaderNames.EXPECT);
+    CharSequence value = headersMap.get(HttpHeaderNames.EXPECT);
     if (handle100ContinueAutomatically &&
       ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE, true))) {
+        headersMap.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE, true))) {
       response.writeContinue();
     }
 
-    context.dispatch(this, handler);
+    handler.handle(this);
   }
 
-  @Override
   public void handleException(Throwable cause) {
     boolean notify;
     synchronized (connection) {
@@ -139,23 +146,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     }
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload)upload).handleException(failure);
-    }
-  }
-
-  @Override
-  public void handleDrained() {
-    response.handleWriteQueueDrained();
-  }
-
-  @Override
-  public void handleClose() {
-    response.handleClose();
-  }
-
-  @Override
-  public void handleCustomFrame(HttpFrame frame) {
-    if (customFrameHandler != null) {
-      context.dispatch(frame, customFrameHandler);
     }
   }
 
@@ -214,7 +204,6 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
     }
   }
 
-  @Override
   public void handleReset(long errorCode) {
     boolean notify;
     synchronized (connection) {
@@ -503,9 +492,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
-    synchronized (connection) {
-      customFrameHandler = handler;
-    }
+    stream.customFrameHandler(handler);
     return this;
   }
 
@@ -532,26 +519,13 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
 
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
-    synchronized (connection) {
-      streamPriorityHandler = handler;
-    }
+    stream.priorityChangeHandler(handler);
     return this;
   }
 
   @Override
   public DecoderResult decoderResult() {
     return DecoderResult.SUCCESS;
-  }
-
-  @Override
-  public void handlePriorityChange(StreamPriority streamPriority) {
-    Handler<StreamPriority> handler;
-    synchronized (connection) {
-      handler = streamPriorityHandler;
-    }
-    if (handler != null) {
-      handler.handle(streamPriority);
-    }
   }
 
   @Override

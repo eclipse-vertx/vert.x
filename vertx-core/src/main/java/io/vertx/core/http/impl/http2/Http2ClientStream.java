@@ -13,6 +13,9 @@ package io.vertx.core.http.impl.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.util.AsciiString;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
@@ -20,12 +23,10 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.Http1xClientConnection;
-import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.http.impl.HttpResponseHead;
-import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -36,10 +37,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ClientStream extends Http2StreamBase {
+public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implements HttpClientStream {
 
   // Temporary id assignments
   private static final AtomicInteger id_seq = new AtomicInteger(-1);
@@ -48,11 +51,16 @@ public class Http2ClientStream extends Http2StreamBase {
   private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
-  private Http2ClientStreamHandler handler;
   private HttpResponseHead responseHead;
   private HttpRequestHead requestHead;
   private Object metric;
   private Object trace;
+
+  // Handlers
+  private Handler<HttpResponseHead> headersHandler;
+  private Handler<Void> continueHandler;
+  private Handler<Http2ClientPush> pushHandler;
+  private Handler<MultiMap> earlyHintsHandler;
 
   public Http2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
                            boolean decompressionSupported, ClientMetrics clientMetrics) {
@@ -69,19 +77,29 @@ public class Http2ClientStream extends Http2StreamBase {
     this.clientMetrics = clientMetrics;
   }
 
-  @Override
-  public Http2ClientStreamHandler handler() {
-    return handler;
-  }
-
-  public Http2ClientStream handler(Http2ClientStreamHandler handler) {
-    this.handler = handler;
-    return this;
-  }
-
   public void upgrade(Object metric, Object trace) {
     this.metric = metric;
     this.trace = trace;
+  }
+
+  @Override
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    PromiseInternal<Void> promise = context.promise();
+    priority(priority);
+    write(new HeadersWrite(request, buf, end, promise));
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> write(ByteBuf buf, boolean end) {
+    Promise<Void> promise = context.promise();
+    writeData(buf, end, promise);
+    return promise.future();
+  }
+
+  @Override
+  public HttpClientStream setWriteQueueMaxSize(int maxSize) {
+    return this;
   }
 
   void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<Void> promise) {
@@ -123,9 +141,12 @@ public class Http2ClientStream extends Http2StreamBase {
         }
         e = end;
       }
-      if (request.headers != null && request.headers.size() > 0) {
+      if (request.headers != null && !request.headers.isEmpty()) {
         for (Map.Entry<String, String> header : request.headers) {
-          headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
+          CharSequence headerName = HttpUtils.toLowerCase(header.getKey());
+          if (!AsciiString.contentEquals(TRANSFER_ENCODING, headerName)) {
+            headers.add(headerName, header.getValue());
+          }
         }
       }
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
@@ -154,6 +175,11 @@ public class Http2ClientStream extends Http2StreamBase {
     }
   }
 
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_2;
+  }
+
   public Object metric() {
     return metric;
   }
@@ -167,12 +193,12 @@ public class Http2ClientStream extends Http2StreamBase {
     return connection;
   }
 
-  public void onPush(Http2ClientStreamImpl pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
+  public void onPush(Http2ClientStream pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
     Http2ClientPush push = new Http2ClientPush(headers, pushStream);
-    pushStream.stream.init(promisedStreamId, writable);
+    pushStream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
-      pushStream.stream.metric = metric;
+      pushStream.metric = metric;
       clientMetrics.requestEnd(metric, 0L);
     }
     context.dispatch(push, this::handlePush);
@@ -214,24 +240,58 @@ public class Http2ClientStream extends Http2StreamBase {
     super.onClose();
   }
 
-  void handleContinue() {
-    Http2ClientStreamHandler i = handler;
-    if (i != null) {
-      i.handleContinue();
+  public Http2ClientStream headersHandler(Handler<HttpResponseHead> handler) {
+    headersHandler = handler;
+    return this;
+  }
+
+  void handleHeader(Http2HeadersMultiMap map) {
+    Handler<HttpResponseHead> handler = headersHandler;
+    if (handler != null) {
+      int status = map.status();
+      String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
+      HttpResponseHead response = new HttpResponseHead(
+        HttpVersion.HTTP_2,
+        status,
+        statusMessage,
+        map);
+      context.emit(response, handler);
     }
+  }
+
+  public Http2ClientStream continueHandler(Handler<Void> handler) {
+    continueHandler = handler;
+    return this;
+  }
+
+  void handleContinue() {
+    Handler<Void> handler = continueHandler;
+    if (handler != null) {
+      context.emit(null, handler);
+    }
+  }
+
+  public Http2ClientStream pushHandler(Handler<Http2ClientPush> handler) {
+    pushHandler = handler;
+    return this;
   }
 
   void handlePush(Http2ClientPush push) {
-    Http2ClientStreamHandler i = handler;
-    if (i != null) {
-      i.handlePush(push);
+    Handler<Http2ClientPush> handler = pushHandler;
+    if (handler != null) {
+      context.emit(push, handler);
     }
   }
 
+  public Http2ClientStream earlyHintsHandler(Handler<MultiMap> handler) {
+    earlyHintsHandler = handler;
+    return this;
+  }
+
   void handleEarlyHints(MultiMap headers) {
-    Http2ClientStreamHandler i = handler;
-    if (i != null) {
-      i.handleEarlyHints(headers);
+    Handler<MultiMap> handler = earlyHintsHandler;
+    if (handler != null) {
+      context.emit(headers, handler);
     }
   }
 

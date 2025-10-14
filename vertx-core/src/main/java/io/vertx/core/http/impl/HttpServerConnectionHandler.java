@@ -103,7 +103,7 @@ class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
         Http2ServerRequest request = new Http2ServerRequest(stream, stream.context(), options.isHandle100ContinueAutomatically(),
           options.getMaxFormAttributeSize(), options.getMaxFormFields(), options.getMaxFormBufferedBytes(), serverOrigin);
         request.handler = requestHandler;
-        stream.handler(request);
+        request.init();
       });
     }
 

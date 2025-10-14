@@ -27,7 +27,6 @@ import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientStream;
-import io.vertx.core.http.impl.http2.Http2ClientStreamImpl;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
@@ -175,7 +174,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
-    Http2ClientStreamImpl stream = new Http2ClientStreamImpl(this, context, null, decompressionSupported, (ClientMetrics) clientMetrics);
+    Http2ClientStream stream = new Http2ClientStream(this, context, null, decompressionSupported, clientMetrics);
     return context.succeededFuture(stream);
   }
 

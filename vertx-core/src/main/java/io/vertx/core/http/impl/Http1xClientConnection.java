@@ -426,7 +426,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailerHandler;
-    private Handler<Void> endHandler;
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
 
@@ -450,13 +449,9 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         @Override
         protected void handleMessage(Object item) {
           if (item instanceof MultiMap) {
-            Handler<MultiMap> handler1 = trailerHandler;
-            if (handler1 != null) {
-              context.dispatch((MultiMap) item, handler1);
-            }
-            Handler<Void> handler2 = endHandler;
-            if (handler2 != null) {
-              context.dispatch(null, handler2);
+            Handler<MultiMap> handler = trailerHandler;
+            if (handler != null) {
+              context.dispatch((MultiMap) item, handler);
             }
           } else {
             Buffer buffer = (Buffer) item;
@@ -500,13 +495,18 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public boolean writeQueueFull() {
-      return conn.writeQueueFull();
+    public boolean isWritable() {
+      return !conn.writeQueueFull();
     }
 
     @Override
-    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
       this.headHandler = handler;
+      return this;
+    }
+
+    @Override
+    public HttpClientStream resetHandler(Handler<Long> handler) {
       return this;
     }
 
@@ -517,7 +517,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
+    public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
       // No op
       return this;
     }
@@ -529,7 +529,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
+    public HttpClientStream customFrameHandler(Handler<HttpFrame> handler) {
       // No op
       return this;
     }
@@ -594,34 +594,29 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream resume() {
-      queue.fetch(Long.MAX_VALUE);
-      return this;
-    }
-
-    @Override
     public HttpClientStream fetch(long amount) {
       queue.fetch(amount);
       return this;
     }
 
     @Override
-    public Future<Void> reset(Throwable cause) {
+    public Future<Void> writeReset(long code) {
       Promise<Void> promise = context.promise();
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        reset(cause, promise);
+        reset(code, promise);
       } else {
-        eventLoop.execute(() -> reset(cause, promise));
+        eventLoop.execute(() -> reset(code, promise));
       }
       return promise.future();
     }
 
-    private void reset(Throwable cause, Promise<Void> promise) {
+    private void reset(long code, Promise<Void> promise) {
       Boolean removed = conn.reset(this);
       if (removed == null) {
         promise.fail("Stream already reset");
       } else {
+        Throwable cause = new StreamResetException(code);
         if (removed) {
           context.execute(cause, this::handleClosed);
         } else {
@@ -674,7 +669,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream handler(Handler<Buffer> handler) {
+    public HttpClientStream dataHandler(Handler<Buffer> handler) {
       chunkHandler = handler;
       return this;
     }
@@ -682,12 +677,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     @Override
     public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
       trailerHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream endHandler(Handler<Void> handler) {
-      endHandler = handler;
       return this;
     }
 

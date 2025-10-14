@@ -17,6 +17,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
@@ -29,6 +30,7 @@ import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.RFC3986;
@@ -70,6 +72,60 @@ public final class HttpUtils {
   public static final HttpClosedException STREAM_CLOSED_EXCEPTION = new HttpClosedException("Stream was closed");
   public static final int SC_SWITCHING_PROTOCOLS = 101;
   public static final int SC_BAD_GATEWAY = 502;
+
+  public static final TagExtractor<Http2ServerStream> HTTP_2_SERVER_STREAM_TAG_EXTRACTOR = new TagExtractor<>() {
+    @Override
+    public int len(Http2ServerStream req) {
+      return req.headers().path().indexOf('?') == -1 ? 4 : 5;
+    }
+
+    @Override
+    public String name(Http2ServerStream req, int index) {
+      switch (index) {
+        case 0:
+          return "http.url";
+        case 1:
+          return "http.request.method";
+        case 2:
+          return "url.scheme";
+        case 3:
+          return "url.path";
+        case 4:
+          return "url.query";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+
+    @Override
+    public String value(Http2ServerStream req, int index) {
+      int idx;
+      switch (index) {
+        case 0:
+          String sb = req.scheme() +
+            "://" +
+            req.authority() +
+            req.headers().path();
+          return sb;
+        case 1:
+          return req.method().name();
+        case 2:
+          return req.scheme();
+        case 3:
+          String path = req.headers().path();
+          idx = path.indexOf('?');
+          if (idx > 0) {
+            path = path.substring(0, idx);
+          }
+          return path;
+        case 4:
+          String query = req.headers().path();
+          idx = query.indexOf('?');
+          query = query.substring(idx + 1);
+          return query;
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
 
   public static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override

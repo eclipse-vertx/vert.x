@@ -57,13 +57,12 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
     //
     stream.pushHandler(this::handlePush);
-    stream.headHandler(resp -> {
+    stream.headersHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.handler(response::handleChunk);
+      stream.dataHandler(response::handleChunk);
       stream.trailersHandler(response::handleTrailers);
-      stream.endHandler(response::handleEnd);
-      stream.priorityHandler(response::handlePriorityChange);
-      stream.unknownFrameHandler(response::handleUnknownFrame);
+      stream.priorityChangeHandler(response::handlePriorityChange);
+      stream.customFrameHandler(response::handleUnknownFrame);
       handleResponse(response);
     });
   }
@@ -142,7 +141,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   protected Throwable mapException(Throwable t) {
-    if (t instanceof HttpClosedException && reset != null) {
+    if ((t instanceof HttpClosedException || t instanceof StreamResetException) && reset != null) {
       t = reset;
     }
     return t;
@@ -236,7 +235,15 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       }
       reset = cause;
     }
-    Future<Void> ret = stream.reset(cause);
+    long code;
+    if (cause instanceof StreamResetException) {
+      code = ((StreamResetException) cause).getCode();
+    } else if (cause instanceof java.util.concurrent.TimeoutException) {
+      code = 0x08L; // CANCEL
+    } else {
+      code = 0L;
+    }
+    Future<Void> ret = stream.writeReset(code);
     if (ret == null) {
       // Not yet sent
       handleException(cause);

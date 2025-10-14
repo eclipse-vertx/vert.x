@@ -110,52 +110,46 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream unknownFrameHandler(Handler<HttpFrame> handler) {
-    delegate.unknownFrameHandler(handler);
+  public HttpClientStream customFrameHandler(Handler<HttpFrame> handler) {
+    delegate.customFrameHandler(handler);
     return this;
   }
 
   @Override
-  public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+  public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
-      delegate.headHandler(multimap -> {
+      delegate.headersHandler(multimap -> {
         endpointRequest.reportResponseBegin();
         handler.handle(multimap);
       });
     } else {
-      delegate.headHandler(null);
+      delegate.headersHandler(null);
     }
     return this;
   }
 
   @Override
-  public HttpClientStream handler(Handler<Buffer> handler) {
-    delegate.handler(handler);
+  public HttpClientStream dataHandler(Handler<Buffer> handler) {
+    delegate.dataHandler(handler);
     return this;
   }
 
   @Override
   public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
-    delegate.trailersHandler(handler);
-    return this;
-  }
-
-  @Override
-  public HttpClientStream endHandler(Handler<Void> handler) {
     if (handler != null) {
-      delegate.endHandler(multimap -> {
+      delegate.trailersHandler(multimap -> {
         endpointRequest.reportResponseEnd();
         handler.handle(multimap);
       });
     } else {
-      delegate.endHandler(null);
+      delegate.trailersHandler(null);
     }
     return this;
   }
 
   @Override
-  public HttpClientStream priorityHandler(Handler<StreamPriority> handler) {
-    delegate.priorityHandler(handler);
+  public HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler) {
+    delegate.priorityChangeHandler(handler);
     return this;
   }
 
@@ -178,14 +172,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream resume() {
-    delegate.resume();
-    return this;
-  }
-
-  @Override
-  public Future<Void> reset(Throwable cause) {
-    return delegate.reset(cause);
+  public Future<Void> writeReset(long code) {
+    return delegate.writeReset(code);
   }
 
   @Override
@@ -196,6 +184,12 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   @Override
   public HttpClientStream updatePriority(StreamPriority streamPriority) {
     delegate.updatePriority(streamPriority);
+    return this;
+  }
+
+  @Override
+  public HttpClientStream resetHandler(Handler<Long> handler) {
+    delegate.resetHandler(handler);
     return this;
   }
 
@@ -219,8 +213,8 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public boolean writeQueueFull() {
-    return delegate.writeQueueFull();
+  public boolean isWritable() {
+    return delegate.isWritable();
   }
 
   @Override

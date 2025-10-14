@@ -15,8 +15,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -33,7 +35,7 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http2StreamBase {
+public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
 
   private static final Http2HeadersMultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
 
@@ -58,6 +60,16 @@ public abstract class Http2StreamBase {
   private Throwable failure;
   private long reset = -1L;
   private boolean first_ = true;
+
+  // Handlers
+  private Handler<Long> resetHandler;
+  private Handler<Throwable> exceptionHandler;
+  private Handler<Void> closeHandler;
+  private Handler<Buffer> dataHandler;
+  private Handler<MultiMap> trailersHandler;
+  private Handler<HttpFrame> customFrameHandler;
+  private Handler<StreamPriority> priorityChangeHandler;
+  private Handler<Void> drainHandler;
 
   Http2StreamBase(Http2Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
@@ -148,9 +160,6 @@ public abstract class Http2StreamBase {
   public StreamPriority priority() {
     return priority;
   }
-
-  // Should use generic for Http2StreamHandler
-  public abstract Http2StreamHandler handler();
 
   public void init(int streamId, boolean writable) {
     assert id < 0;
@@ -245,12 +254,14 @@ public abstract class Http2StreamBase {
     outboundQueue.write(write);
   }
 
-  public final void pause() {
+  public final S pause() {
     inboundQueue.pause();
+    return (S)this;
   }
 
-  public final void fetch(long amount) {
+  public final S fetch(long amount) {
     inboundQueue.fetch(amount);
+    return (S)this;
   }
 
   public final Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
@@ -371,6 +382,10 @@ public abstract class Http2StreamBase {
     if (code < 0L) {
       throw new IllegalArgumentException("Invalid reset code value");
     }
+    if (id < 0) {
+      // Not yet sent hack : todo improve this
+      return null;
+    }
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = connection.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
@@ -400,76 +415,112 @@ public abstract class Http2StreamBase {
     }
   }
 
+  public S drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
+    return (S)this;
+  }
+
   private void handleWriteQueueDrained() {
-    Http2StreamHandler i = handler();
+    Handler<Void> i = drainHandler;
     if (i != null) {
-      i.handleDrained();
+      context.dispatch(null, i);
     }
+  }
+
+  public S dataHandler(Handler<Buffer> handler) {
+    dataHandler = handler;
+    return (S)this;
   }
 
   private void handleData(Buffer buf) {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handleData(buf);
+    Handler<Buffer> handler = dataHandler;
+    if (handler != null) {
+      context.emit(buf, handler);
     }
+  }
+
+  public S customFrameHandler(Handler<HttpFrame> handler) {
+    customFrameHandler = handler;
+    return (S)this;
   }
 
   private void handleCustomFrame(HttpFrame frame) {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handleCustomFrame(frame);
+    Handler<HttpFrame> handler = customFrameHandler;
+    if (handler != null) {
+      context.emit(frame, handler);
     }
+  }
+
+  public S trailersHandler(Handler<MultiMap> handler) {
+    trailersHandler = handler;
+    return (S)this;
   }
 
   private void handleTrailers(MultiMap trailers) {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handleTrailers(trailers);
+    Handler<MultiMap> handler = trailersHandler;
+    if (handler != null) {
+      context.emit(trailers, handler);
     }
+  }
+
+  public S resetHandler(Handler<Long> handler) {
+    resetHandler = handler;
+    return (S)this;
   }
 
   private void handleReset(long errorCode) {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handleReset(errorCode);
+    Handler<Long> handler = resetHandler;
+    if (handler != null) {
+      context.emit(errorCode, handler);
     }
+  }
+
+  public S exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return (S)this;
   }
 
   public final void handleException(Throwable cause) {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handleException(cause);
+    Handler<Throwable> handler = exceptionHandler;
+    if (handler != null) {
+      context.emit(cause, handler);
     }
   }
 
-  private void handleHeader(Http2HeadersMultiMap map) {
-    Http2StreamHandler handler = handler();
-    if (handler != null) {
-      handler.handleHeaders(map);
-    }
+  abstract void handleHeader(Http2HeadersMultiMap map);
+
+  public S closeHandler(Handler<Void> handler) {
+    closeHandler = handler;
+    return (S)this;
   }
 
   private void handleClose() {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handleClose();
+    Handler<Void> handler = closeHandler;
+    if (handler != null) {
+      context.emit(null, handler);
     }
+  }
+
+  public S priorityChangeHandler(Handler<StreamPriority> handler) {
+    priorityChangeHandler = handler;
+    return (S)this;
   }
 
   private void handlePriorityChange(StreamPriority newPriority) {
-    Http2StreamHandler i = handler();
-    if (i != null) {
-      i.handlePriorityChange(newPriority);
+    Handler<StreamPriority> handler = priorityChangeHandler;
+    if (handler != null) {
+      context.emit(newPriority, handler);
     }
   }
 
-  public void updatePriority(StreamPriority priority) {
+  public final S updatePriority(StreamPriority priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
       if (id >= 0) {
         connection.writePriorityFrame(id, priority);
       }
     }
+    return (S)this;
   }
 
   protected void observeReset() {

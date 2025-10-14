@@ -74,6 +74,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     stream.earlyHintsHandler(this::handleEarlyHints);
     stream.drainHandler(this::handleDrained);
     stream.exceptionHandler(this::handleException);
+    stream.resetHandler(this::handleReset);
   }
 
   public void init(RequestOptions options) {
@@ -109,6 +110,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // Maybe later ?
       idleTimeout(idleTimeout);
     }
+  }
+
+  void handleReset(long code) {
+    handleException(new StreamResetException(code));
   }
 
   @Override
@@ -211,7 +216,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       checkEnded();
     }
-    return stream.writeQueueFull();
+    return !stream.isWritable();
   }
 
   @Override
