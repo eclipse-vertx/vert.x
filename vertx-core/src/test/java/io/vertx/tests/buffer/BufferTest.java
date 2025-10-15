@@ -1140,6 +1140,7 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     BufferInternal buffer = BufferInternal.buffer(bytes);
     assertEquals(100, BufferInternal.buffer(buffer.getByteBuf()).length());
+    assertEquals(100, TestUtils.leftPad(1, BufferInternal.buffer(buffer.getByteBuf())).length());
   }
 
   @Test
