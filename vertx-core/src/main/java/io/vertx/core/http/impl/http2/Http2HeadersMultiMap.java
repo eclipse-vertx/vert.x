@@ -57,8 +57,7 @@ public class Http2HeadersMultiMap implements MultiMap {
 
   private Integer status;
   private HttpMethod method;
-  private HostAndPort computedAuthority;
-  private HostAndPort realAuthority;
+  private HostAndPort authority;
   private String uri;
   private String scheme;
 
@@ -76,25 +75,25 @@ public class Http2HeadersMultiMap implements MultiMap {
       CharSequence pathHeader = headers.get(HttpHeaders.PSEUDO_PATH);
       String uri = pathHeader != null ? pathHeader.toString() : null;
 
-      HostAndPort currentAuthority = null;
-      String authorityHeaderAsString;
+      HostAndPort authority;
       CharSequence authorityHeader = headers.get(HttpHeaders.PSEUDO_AUTHORITY);
       if (authorityHeader != null) {
-        authorityHeaderAsString = authorityHeader.toString();
-        this.realAuthority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
-        currentAuthority = this.realAuthority;
+        String authorityHeaderAsString = authorityHeader.toString();
+        authority = HostAndPort.parseAuthority(authorityHeaderAsString, -1);
+      } else {
+        authority = null;
       }
 
+      HostAndPort authorityPresence;
       CharSequence hostHeader = headers.get(HttpHeaders.HOST);
-      if (currentAuthority == null) {
-        headers.remove(HttpHeaders.HOST);
-        if (hostHeader != null) {
-          currentAuthority = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-        }
+      if (authority == null && hostHeader != null) {
+        authorityPresence = HostAndPort.parseAuthority(hostHeader.toString(), -1);
+      } else {
+        authorityPresence = authority;
       }
 
       if (method == HttpMethod.CONNECT) {
-        if (scheme != null || uri != null || currentAuthority == null) {
+        if (scheme != null || uri != null || authorityPresence == null) {
           return false;
         }
       } else {
@@ -105,12 +104,13 @@ public class Http2HeadersMultiMap implements MultiMap {
 
       boolean hasAuthority = authorityHeader != null || hostHeader != null;
       if (hasAuthority) {
-        if (currentAuthority == null) {
+        if (authorityPresence == null) {
+          // Malformed authority
           return false;
         }
         if (hostHeader != null) {
           HostAndPort host = HostAndPort.parseAuthority(hostHeader.toString(), -1);
-          if (host == null || (!currentAuthority.host().equals(host.host()) || currentAuthority.port() != host.port())) {
+          if (host == null || (!authorityPresence.host().equals(host.host()) || authorityPresence.port() != host.port())) {
             return false;
           }
         }
@@ -118,7 +118,7 @@ public class Http2HeadersMultiMap implements MultiMap {
 
       this.method = method;
       this.uri = uri;
-      this.computedAuthority = currentAuthority;
+      this.authority = authority;
       this.scheme = scheme;
 
       return true;
@@ -158,8 +158,8 @@ public class Http2HeadersMultiMap implements MultiMap {
     if (scheme != null) {
       headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
     }
-    if (computedAuthority != null) {
-      headers.set(HttpHeaders.PSEUDO_AUTHORITY, computedAuthority.toString(ssl));
+    if (authority != null) {
+      headers.set(HttpHeaders.PSEUDO_AUTHORITY, authority.toString(ssl));
     }
     if (scheme != null) {
       headers.set(HttpHeaders.PSEUDO_SCHEME, scheme);
@@ -207,16 +207,12 @@ public class Http2HeadersMultiMap implements MultiMap {
   }
 
   public Http2HeadersMultiMap authority(HostAndPort authority) {
-    this.computedAuthority = authority;
+    this.authority = authority;
     return this;
   }
 
   public HostAndPort authority() {
-    return computedAuthority;
-  }
-
-  public HostAndPort authority(boolean real) {
-    return real ? realAuthority : computedAuthority;
+    return authority;
   }
 
   public String scheme() {

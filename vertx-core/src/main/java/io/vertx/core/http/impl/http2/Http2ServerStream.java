@@ -118,11 +118,11 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
   }
 
   public HostAndPort authority() {
-    return requestHeaders.authority(false);
+    return requestHeaders.authority();
   }
 
   public HostAndPort authority(boolean real) {
-    return requestHeaders.authority(real);
+    return requestHeaders.authority();
   }
 
   public Object metric() {

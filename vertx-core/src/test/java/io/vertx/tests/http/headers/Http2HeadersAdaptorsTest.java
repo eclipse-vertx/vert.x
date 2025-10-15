@@ -13,6 +13,7 @@ package io.vertx.tests.http.headers;
 
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,7 +43,7 @@ public class Http2HeadersAdaptorsTest extends HeadersTest {
   }
 
   @Override
-  protected MultiMap newMultiMap() {
+  protected Http2HeadersMultiMap newMultiMap() {
     return new Http2HeadersMultiMap(new DefaultHttp2Headers());
   }
 
@@ -110,5 +111,39 @@ public class Http2HeadersAdaptorsTest extends HeadersTest {
 
   private void assertHeaderNames(String... expected) {
     assertEquals(new HashSet<>(Arrays.asList(expected)), headers.names().stream().map(CharSequence::toString).collect(Collectors.toSet()));
+  }
+
+  private Http2HeadersMultiMap headers(HttpMethod method, String authority, String host) {
+    DefaultHttp2Headers s = new DefaultHttp2Headers();
+    s.set(":method", method.name());
+    if (method != HttpMethod.CONNECT) {
+      s.set(":path", "/");
+      s.set(":scheme", "http");
+    }
+    if (authority != null) {
+      s.set(":authority", authority);
+    }
+    if (host != null) {
+      s.set("host", host);
+    }
+    return new Http2HeadersMultiMap(s);
+  }
+
+  @Test
+  public void testAuthorityValidation() {
+    assertTrue(headers(HttpMethod.GET, null, null).validate(true));
+    assertTrue(headers(HttpMethod.GET, "localhost:8080", null).validate(true));
+    assertTrue(headers(HttpMethod.GET, null, "localhost:8080").validate(true));
+    assertTrue(headers(HttpMethod.GET, "localhost:8080", "localhost:8080").validate(true));
+    assertFalse(headers(HttpMethod.GET, "localhost:8080", "localhost:8081").validate(true));
+    assertFalse(headers(HttpMethod.GET, "localhost:a", null).validate(true));
+    assertFalse(headers(HttpMethod.GET, null, "localhost:a").validate(true));
+    assertFalse(headers(HttpMethod.CONNECT, null, null).validate(true));
+    assertTrue(headers(HttpMethod.CONNECT, "localhost:8080", null).validate(true));
+    assertTrue(headers(HttpMethod.CONNECT, null, "localhost:8080").validate(true));
+    assertTrue(headers(HttpMethod.CONNECT, "localhost:8080", "localhost:8080").validate(true));
+    assertFalse(headers(HttpMethod.CONNECT, "localhost:8080", "localhost:8081").validate(true));
+    assertFalse(headers(HttpMethod.CONNECT, "localhost:a", null).validate(true));
+    assertFalse(headers(HttpMethod.CONNECT, null, "localhost:a").validate(true));
   }
 }

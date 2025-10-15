@@ -16,11 +16,13 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpEventHandler;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpUtils;
@@ -61,6 +63,8 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
 
   // Accessed on context thread
   private MultiMap headersMap;
+  private HostAndPort authority;
+  private HostAndPort realAuthority;
   private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
   private boolean semicolonIsNormalCharInParams;
@@ -108,7 +112,21 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   }
 
   public void handleHeaders(HttpRequestHead headers) {
-    this.headersMap = headers.headers;
+    Http2HeadersMultiMap map = (Http2HeadersMultiMap)headers.headers;
+
+    realAuthority = headers.authority;
+    authority = headers.authority;
+    if (authority == null) {
+      String hostHeader = headers.headers.get(HttpHeaders.HOST);
+      if (hostHeader != null) {
+        headers.headers.remove(HttpHeaders.HOST);
+        authority = HostAndPort.parseAuthority(hostHeader, -1);
+      }
+    }
+
+    map.sanitize();
+
+    this.headersMap = map;
 
     // Check expect header and implement 100 continue automatically
     CharSequence value = headersMap.get(HttpHeaderNames.EXPECT);
@@ -334,12 +352,12 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
 
   @Override
   public @Nullable HostAndPort authority() {
-    return stream.authority();
+    return authority;
   }
 
   @Override
   public @Nullable HostAndPort authority(boolean real) {
-    return stream.authority(real);
+    return real ? realAuthority : authority;
   }
 
   @Override

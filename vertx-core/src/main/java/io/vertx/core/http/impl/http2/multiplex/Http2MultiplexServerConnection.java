@@ -79,7 +79,6 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
         if (handler == null) {
           chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.REFUSED_STREAM.code()));
         } else {
-          headersMap.sanitize();
           Http2ServerStream stream = new Http2ServerStream(this, serverMetrics, metric(),
                   streamContextSupplier.get(), null);;
           stream.init(streamId, chctx.channel().isWritable());
