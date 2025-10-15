@@ -1,8 +1,8 @@
 package io.vertx.core.net.impl;
 
-import java.util.Arrays;
-
 import io.vertx.core.net.HostAndPort;
+
+import java.util.Arrays;
 
 public class HostAndPortImpl implements HostAndPort {
 
@@ -126,7 +126,10 @@ public class HostAndPortImpl implements HostAndPort {
   }
 
   private static boolean isDIGIT(char ch) {
-    return DIGITS[ch] != -1;
+    if (ch < 128) {
+      return DIGITS[ch] != -1;
+    }
+    return false;
   }
 
   private static boolean isSubDelims(char ch) {

@@ -88,6 +88,8 @@ public class HostAndPortTest {
     assertFalse(HostAndPortImpl.isValidAuthority("http://localhost:8080"));
     assertNull(HostAndPortImpl.parseAuthority("^", -1));
     assertFalse(HostAndPortImpl.isValidAuthority("^"));
+    assertNull(HostAndPortImpl.parseAuthority("bücher.de", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("bücher.de"));
   }
 
   private void assertHostAndPort(String expectedHost, int expectedPort, String actual) {
