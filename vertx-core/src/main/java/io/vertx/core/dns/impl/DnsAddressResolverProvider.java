@@ -16,7 +16,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.internal.ContextInternal;
@@ -57,9 +59,9 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
 
   private DnsAddressResolverProvider(VertxInternal vertx, AddressResolverOptions options) {
     List<String> dnsServers = options.getServers();
-    if (dnsServers != null && dnsServers.size() > 0) {
+    if (dnsServers != null && !dnsServers.isEmpty()) {
       for (String dnsServer : dnsServers) {
-        int sep = dnsServer.indexOf(':');
+        int sep = dnsServer.lastIndexOf(':');
         String ipAddress;
         int port;
         if (sep != -1) {

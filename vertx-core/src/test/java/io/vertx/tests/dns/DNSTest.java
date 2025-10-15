@@ -11,7 +11,21 @@
 
 package io.vertx.tests.dns;
 
-import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import io.netty.resolver.dns.DnsNameResolverTimeoutException;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.dns.DnsClient;
+import io.vertx.core.dns.DnsClientOptions;
+import io.vertx.core.dns.MxRecord;
+import io.vertx.core.dns.SrvRecord;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakedns.FakeDNSServer;
+import io.vertx.test.netty.TestLoggerFactory;
+import org.apache.directory.server.dns.messages.DnsMessage;
+import org.apache.directory.server.dns.store.RecordStore;
+import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
@@ -20,23 +34,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
-import io.netty.resolver.dns.DnsNameResolverTimeoutException;
-import io.vertx.core.dns.DnsClient;
-import io.vertx.core.dns.DnsClientOptions;
-import io.vertx.core.dns.MxRecord;
-import io.vertx.core.dns.SrvRecord;
-import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
-import org.apache.directory.server.dns.messages.DnsMessage;
-import org.apache.directory.server.dns.store.RecordStore;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.VertxOptions;
-import io.vertx.test.fakedns.FakeDNSServer;
-import io.vertx.test.netty.TestLoggerFactory;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -563,6 +561,12 @@ public class DNSTest extends VertxTestBase {
       complete();
     }));
     await();
+  }
+
+  @Test
+  public void testIpv6NameServer() {
+    // We just want to verify that we can create a client with an IPv6 address as DNS server
+    vertx.createDnsClient(new DnsClientOptions().setPort(53).setHost("::1"));
   }
 
   private DnsClient prepareDns() throws Exception {
