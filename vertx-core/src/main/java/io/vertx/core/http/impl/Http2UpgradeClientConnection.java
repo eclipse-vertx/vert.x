@@ -151,8 +151,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> write(Buffer buf, boolean end) {
-      return delegate.write(buf, end);
+    public Future<Void> writeChunk(Buffer buf, boolean end) {
+      return delegate.writeChunk(buf, end);
     }
 
     @Override
@@ -185,8 +185,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
-      delegate.headersHandler(handler);
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+      delegate.headHandler(handler);
       return this;
     }
 
@@ -280,7 +280,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     void handleUpgrade(HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
-      upgradedStream.headersHandler(headHandler);
+      upgradedStream.headHandler(headHandler);
       upgradedStream.dataHandler(chunkHandler);
       upgradedStream.trailersHandler(trailersHandler);
       upgradedStream.priorityChangeHandler(priorityHandler);
@@ -292,7 +292,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       upgradedStream.pushHandler(pushHandler);
       upgradedStream.customFrameHandler(unknownFrameHandler);
       upgradedStream.closeHandler(closeHandler);
-      upgradingStream.headersHandler(null);
+      upgradingStream.headHandler(null);
       upgradingStream.dataHandler(null);
       upgradingStream.trailersHandler(null);
       upgradingStream.priorityChangeHandler(null);
@@ -531,11 +531,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       if (upgradedStream != null) {
-        upgradedStream.headersHandler(handler);
+        upgradedStream.headHandler(handler);
       } else {
-        upgradingStream.headersHandler(handler);
+        upgradingStream.headHandler(handler);
         headHandler = handler;
       }
       return this;
@@ -605,10 +605,10 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> write(Buffer buf, boolean end) {
+    public Future<Void> writeChunk(Buffer buf, boolean end) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        Future<Void> future = upgradingStream.write(buf, end);
+        Future<Void> future = upgradingStream.writeChunk(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           future = future.andThen(ar -> {
@@ -621,7 +621,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       } else {
         Promise<Void> promise = upgradingStream.context().promise();
         exec.execute(() -> {
-          Future<Void> future = write(buf, end);
+          Future<Void> future = writeChunk(buf, end);
           future.onComplete(promise);
         });
         return promise.future();

@@ -93,13 +93,6 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   }
 
   @Override
-  public Future<Void> write(Buffer buf, boolean end) {
-    Promise<Void> promise = context.promise();
-    writeData(buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
-    return promise.future();
-  }
-
-  @Override
   public HttpClientStream setWriteQueueMaxSize(int maxSize) {
     return this;
   }
@@ -177,11 +170,6 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     }
   }
 
-  @Override
-  public HttpVersion version() {
-    return HttpVersion.HTTP_2;
-  }
-
   public Object metric() {
     return metric;
   }
@@ -203,7 +191,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
       pushStream.metric = metric;
       clientMetrics.requestEnd(metric, 0L);
     }
-    context.dispatch(push, this::handlePush);
+    context.execute(push, this::handlePush);
   }
 
   void onContinue() {
@@ -242,7 +230,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     super.onClose();
   }
 
-  public Http2ClientStream headersHandler(Handler<HttpResponseHead> handler) {
+  public Http2ClientStream headHandler(Handler<HttpResponseHead> handler) {
     headersHandler = handler;
     return this;
   }
@@ -256,7 +244,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
         status,
         statusMessage,
         map);
-      context.emit(response, handler);
+      context.dispatch(response, handler);
     }
   }
 
@@ -268,7 +256,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   void handleContinue() {
     Handler<Void> handler = continueHandler;
     if (handler != null) {
-      context.emit(null, handler);
+      context.dispatch(null, handler);
     }
   }
 
@@ -280,7 +268,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   void handlePush(Http2ClientPush push) {
     Handler<Http2ClientPush> handler = pushHandler;
     if (handler != null) {
-      context.emit(push, handler);
+      context.dispatch(push, handler);
     }
   }
 
@@ -292,7 +280,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   void handleEarlyHints(MultiMap headers) {
     Handler<MultiMap> handler = earlyHintsHandler;
     if (handler != null) {
-      context.emit(headers, handler);
+      context.dispatch(headers, handler);
     }
   }
 

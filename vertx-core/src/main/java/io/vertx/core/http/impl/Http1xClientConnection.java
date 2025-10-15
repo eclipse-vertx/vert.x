@@ -501,7 +501,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       this.headHandler = handler;
       return this;
     }
@@ -573,7 +573,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> write(Buffer buff, boolean end) {
+    public Future<Void> writeChunk(Buffer buff, boolean end) {
       if (buff != null || end) {
         Promise<Void> listener = context.promise();
         conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);

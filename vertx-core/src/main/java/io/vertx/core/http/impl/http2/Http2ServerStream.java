@@ -15,12 +15,15 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
+import io.vertx.core.http.impl.HttpServerStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -32,7 +35,7 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
+public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implements HttpServerStream {
 
   private final Http2ServerConnection connection;
   private Http2HeadersMultiMap requestHeaders;
@@ -144,24 +147,39 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
     super.onHeaders(headers);
   }
 
-  public Http2ServerStream headersHandler(Handler<HttpRequestHead> handler) {
+  public Http2ServerStream headHandler(Handler<HttpRequestHead> handler) {
     headersHandler = handler;
     return this;
   }
 
   void handleHeader(Http2HeadersMultiMap map) {
     Handler<HttpRequestHead> handler = headersHandler;
+    HttpRequestHead head = new HttpRequestHead(
+      map.method(),
+      map.path(),
+      map,
+      map.authority(),
+      null,
+      null
+    );
+    head.scheme = map.scheme();
+    map.sanitize();
     if (handler != null) {
-      HttpRequestHead head = new HttpRequestHead(
-        map.method(),
-        map.path(),
-        map,
-        map.authority(),
-        null,
-        null
-      );
-      context.emit(head, handler);
+      context.dispatch(head, handler);
     }
+  }
+
+  public final Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
+    Promise<Void> promise = context.promise();
+    Http2HeadersMultiMap headers = (Http2HeadersMultiMap)head.headers();
+    headers.status(head.statusCode);
+    if (chunk != null) {
+      writeHeaders(headers, false, false, null);
+      writeData(((BufferInternal)chunk).getByteBuf(), end, promise);
+    } else {
+      writeHeaders(headers, end, true, promise);
+    }
+    return promise.future();
   }
 
   @Override
@@ -182,21 +200,19 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
     }
   }
 
-  public Future<Http2ServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path) {
+  public Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority) {
     Promise<Http2ServerStream> promise = context.promise();
     connection.sendPush(id(), authority, method, headers, path, priority(), promise);
-    return promise.future().andThen(ar -> {
-      if (ar.succeeded()) {
-        Http2ServerStream pushStream = ar.result();
-        pushStream.priority(priority()); // Necessary ???
-        Http2HeadersMultiMap mmap = connection.newHeaders();
-        if (headers != null) {
-          mmap.addAll(headers);
-        }
-        mmap.status(200);
-        pushStream.responseHeaders = mmap;
-        pushStream.observablePush();
+    return promise.future().map(pushStream -> {
+      pushStream.priority(priority()); // Necessary ???
+      Http2HeadersMultiMap mmap = connection.newHeaders();
+      if (headers != null) {
+        mmap.addAll(headers);
       }
+      mmap.status(200);
+      pushStream.responseHeaders = mmap;
+      pushStream.observablePush();
+      return pushStream;
     });
   }
 
@@ -265,5 +281,11 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> {
     if (serverMetrics != null) {
       metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse());
     }
+  }
+
+  @Override
+  public HttpServerStream setWriteQueueMaxSize(int maxSize) {
+    // ????
+    return this;
   }
 }

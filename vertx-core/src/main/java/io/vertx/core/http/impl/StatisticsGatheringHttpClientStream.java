@@ -78,11 +78,11 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> write(Buffer buf, boolean end) {
+  public Future<Void> writeChunk(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }
-    return delegate.write(buf, end);
+    return delegate.writeChunk(buf, end);
   }
 
   @Override
@@ -115,14 +115,14 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+  public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
-      delegate.headersHandler(multimap -> {
+      delegate.headHandler(multimap -> {
         endpointRequest.reportResponseBegin();
         handler.handle(multimap);
       });
     } else {
-      delegate.headersHandler(null);
+      delegate.headHandler(null);
     }
     return this;
   }

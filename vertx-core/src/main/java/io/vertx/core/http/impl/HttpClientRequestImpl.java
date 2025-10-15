@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
 import io.vertx.codegen.annotations.Nullable;
@@ -543,7 +542,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      future = stream.write(buff, writeEnd);
+      future = stream.writeChunk(buff, writeEnd);
     }
     if (end) {
       tryComplete();

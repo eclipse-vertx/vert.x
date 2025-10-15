@@ -16,18 +16,14 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.impl.HttpEventHandler;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.NettyFileUpload;
-import io.vertx.core.http.impl.NettyFileUploadDataFactory;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
@@ -50,8 +46,8 @@ import java.util.Set;
 public class Http2ServerRequest extends HttpServerRequestInternal {
 
   protected final ContextInternal context;
-  protected final Http2ServerStream stream;
-  protected final Http2ServerConnection connection;
+  protected final HttpServerStream stream;
+  protected final HttpServerConnection connection;
   protected final Http2ServerResponse response;
   private final boolean handle100ContinueAutomatically;
   private final String serverOrigin;
@@ -62,6 +58,9 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   public Handler<HttpServerRequest> handler;
 
   // Accessed on context thread
+  private HttpMethod method;
+  private String scheme;
+  private String uri;
   private MultiMap headersMap;
   private HostAndPort authority;
   private HostAndPort realAuthority;
@@ -76,7 +75,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
 
-  public Http2ServerRequest(Http2ServerStream stream,
+  public Http2ServerRequest(HttpServerStream stream,
                      ContextInternal context,
                      boolean handle100ContinueAutomatically,
                      int maxFormAttributeSize,
@@ -95,7 +94,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   }
 
   public void init() {
-    stream.headersHandler(this::handleHeaders);
+    stream.headHandler(this::handleHeaders);
     stream.resetHandler(this::handleReset);
     stream.exceptionHandler(this::handleException);
     stream.closeHandler(response::handleClose);
@@ -112,8 +111,10 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   }
 
   public void handleHeaders(HttpRequestHead headers) {
-    Http2HeadersMultiMap map = (Http2HeadersMultiMap)headers.headers;
 
+    uri = headers.uri();
+    scheme = headers.scheme; // TODO make this better
+    method = headers.method();
     realAuthority = headers.authority;
     authority = headers.authority;
     if (authority == null) {
@@ -124,9 +125,9 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
       }
     }
 
-    map.sanitize();
+    this.headersMap = headers.headers();
 
-    this.headersMap = map;
+    response.init(headers);
 
     // Check expect header and implement 100 continue automatically
     CharSequence value = headersMap.get(HttpHeaderNames.EXPECT);
@@ -242,7 +243,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
 
   @Override
   public HttpMethod method() {
-    return stream.method();
+    return method;
   }
 
   @Override
@@ -324,30 +325,30 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
 
   @Override
   public String uri() {
-    return stream.uri();
+    return uri;
   }
 
   @Override
   public String path() {
     synchronized (connection) {
-      return stream.uri() != null ? HttpUtils.parsePath(stream.uri()) : null;
+      return uri != null ? HttpUtils.parsePath(uri) : null;
     }
   }
 
   @Override
   public String query() {
     synchronized (connection) {
-      if (stream.uri() == null) {
+      if (uri == null) {
         return null;
       } else {
-        return HttpUtils.parseQuery(stream.uri());
+        return HttpUtils.parseQuery(uri);
       }
     }
   }
 
   @Override
   public String scheme() {
-    return stream.scheme();
+    return scheme;
   }
 
   @Override
@@ -408,7 +409,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
 
   @Override
   public String absoluteURI() {
-    if (stream.method() == HttpMethod.CONNECT) {
+    if (method == HttpMethod.CONNECT) {
       return null;
     }
     synchronized (connection) {
@@ -438,13 +439,13 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
           if (!HttpUtils.isValidMultipartContentType(contentType)) {
             throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
           }
-          if (!HttpUtils.isValidMultipartMethod(stream.method().toNetty())) {
+          if (!HttpUtils.isValidMultipartMethod(method.toNetty())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
           HttpRequest req = new DefaultHttpRequest(
             io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-            stream.method().toNetty(),
-            stream.uri());
+            method.toNetty(),
+            uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
           factory.setMaxLimit(maxFormAttributeSize);

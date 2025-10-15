@@ -15,9 +15,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.net.HostAndPort;
 
-public interface Http2ServerConnection extends Http2Connection {
+public interface Http2ServerConnection extends HttpServerConnection, Http2Connection {
 
   // Toto use interface for Http2ServerStream ????
   Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler);
