@@ -528,7 +528,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   public int length() {
-    return buffer.writerIndex();
+    return buffer.readableBytes();
   }
 
   public BufferImpl copy() {
