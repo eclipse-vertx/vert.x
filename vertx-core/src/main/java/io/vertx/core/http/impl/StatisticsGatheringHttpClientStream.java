@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -70,7 +69,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
     endpointRequest.reportRequestBegin();
     if (end) {
       endpointRequest.reportRequestEnd();
@@ -79,7 +78,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> write(ByteBuf buf, boolean end) {
+  public Future<Void> write(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }
@@ -87,7 +86,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+  public Future<Void> writeFrame(int type, int flags, Buffer payload) {
     return delegate.writeFrame(type, flags, payload);
   }
 

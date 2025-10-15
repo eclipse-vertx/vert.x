@@ -87,15 +87,15 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         }
         @Override
         public Future<Void> write(Buffer data) {
-          return stream.write(((BufferInternal)data).getByteBuf(), false);
+          return stream.write(data, false);
         }
         @Override
         public Future<Void> end(Buffer data) {
-          return stream.write(((BufferInternal)data).getByteBuf(), true);
+          return stream.write(data, true);
         }
         @Override
         public Future<Void> end() {
-          return stream.write(Unpooled.EMPTY_BUFFER, true);
+          return stream.write(BufferInternal.buffer(Unpooled.EMPTY_BUFFER), true);
         }
         @Override
         public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {

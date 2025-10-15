@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -43,9 +42,9 @@ public interface HttpClientStream {
   HttpClientConnection connection();
   ContextInternal context();
 
-  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
-  Future<Void> write(ByteBuf buf, boolean end);
-  Future<Void> writeFrame(int type, int flags, ByteBuf payload);
+  Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect);
+  Future<Void> write(Buffer buf, boolean end);
+  Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);
 
   HttpClientStream resetHandler(Handler<Long> handler);

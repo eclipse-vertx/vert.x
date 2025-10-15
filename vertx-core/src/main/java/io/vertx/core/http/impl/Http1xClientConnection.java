@@ -566,17 +566,17 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, chunked, buf, end, connect, promise);
+      conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, connect, promise);
       return promise.future();
     }
 
     @Override
-    public Future<Void> write(ByteBuf buff, boolean end) {
+    public Future<Void> write(Buffer buff, boolean end) {
       if (buff != null || end) {
         Promise<Void> listener = context.promise();
-        conn.writeBuffer(this, buff, end, listener);
+        conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);
         return listener.future();
       } else {
         throw new IllegalStateException("???");
@@ -584,7 +584,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
       throw new IllegalStateException("Cannot write an HTTP/2 frame over an HTTP/1.x connection");
     }
 

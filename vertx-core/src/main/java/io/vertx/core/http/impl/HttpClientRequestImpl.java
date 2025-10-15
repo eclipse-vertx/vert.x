@@ -365,7 +365,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       checkEnded();
     }
-    return stream.writeFrame(type, flags, ((BufferInternal)payload).getByteBuf());
+    return stream.writeFrame(type, flags, payload);
   }
 
   private void handleDrained(Void v) {
@@ -451,18 +451,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(String chunk) {
-    return write(BufferInternal.buffer(chunk).getByteBuf(), true);
+    return write(BufferInternal.buffer(chunk), true);
   }
 
   @Override
   public Future<Void> end(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), true);
+    return write(BufferInternal.buffer(chunk, enc), true);
   }
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    return write(((BufferInternal)chunk).getByteBuf(), true);
+    if (chunk == null) {
+      throw new NullPointerException("no null chunk accepted");
+    }
+    return write(chunk, true);
   }
 
   @Override
@@ -472,29 +475,31 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    ByteBuf buf = ((BufferInternal)chunk).getByteBuf();
-    return write(buf, false);
+    if (chunk == null) {
+      throw new NullPointerException("no null chunk accepted");
+    }
+    return write(chunk, false);
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    return write(BufferInternal.buffer(chunk).getByteBuf(), false);
+    return write(BufferInternal.buffer(chunk), false);
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(BufferInternal.buffer(chunk, enc).getByteBuf(), false);
+    return write(BufferInternal.buffer(chunk, enc), false);
   }
 
   private boolean requiresContentLength() {
     return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH)) && !isConnect;
   }
 
-  private Future<Void> write(ByteBuf buff, boolean end) {
+  private Future<Void> write(Buffer buff, boolean end) {
     if (end) {
       if (buff != null && requiresContentLength()) {
-        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.readableBytes()));
+        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
       }
     } else if (requiresContentLength()) {
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
@@ -503,7 +508,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return doWrite(buff, end, false);
   }
 
-  private Future<Void> doWrite(ByteBuf buff, boolean end, boolean connect) {
+  private Future<Void> doWrite(Buffer buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
     synchronized (this) {

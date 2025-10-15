@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -28,6 +27,7 @@ import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
@@ -264,13 +264,14 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
     return (S)this;
   }
 
-  public final Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+  public final Future<Void> writeFrame(int type, int flags, Buffer payload) {
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = connection.context().nettyEventLoop();
+    ByteBuf byteBuf = ((BufferInternal) payload).getByteBuf();
     if (eventLoop.inEventLoop()) {
-      connection.writeFrame(id, type, flags, payload, promise);
+      connection.writeFrame(id, type, flags, byteBuf, promise);
     } else {
-      eventLoop.execute(() -> connection.writeFrame(id, type, flags, payload, promise));
+      eventLoop.execute(() -> connection.writeFrame(id, type, flags, byteBuf, promise));
     }
     return promise.future();
   }

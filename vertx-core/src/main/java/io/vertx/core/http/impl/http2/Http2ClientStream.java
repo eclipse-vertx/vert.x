@@ -18,6 +18,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -27,6 +28,7 @@ import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -83,17 +85,17 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
     priority(priority);
-    write(new HeadersWrite(request, buf, end, promise));
+    write(new HeadersWrite(request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
     return promise.future();
   }
 
   @Override
-  public Future<Void> write(ByteBuf buf, boolean end) {
+  public Future<Void> write(Buffer buf, boolean end) {
     Promise<Void> promise = context.promise();
-    writeData(buf, end, promise);
+    writeData(buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise);
     return promise.future();
   }
 

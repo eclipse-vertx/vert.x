@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -147,17 +146,17 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       return delegate.writeHead(request, chunked, buf, end, priority, connect);
     }
 
     @Override
-    public Future<Void> write(ByteBuf buf, boolean end) {
+    public Future<Void> write(Buffer buf, boolean end) {
       return delegate.write(buf, end);
     }
 
     @Override
-    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
       return delegate.writeFrame(type, flags, payload);
     }
 
@@ -373,11 +372,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
      */
     @Override
     public Future<Void> writeHead(HttpRequestHead request,
-                          boolean chunked,
-                          ByteBuf buf,
-                          boolean end,
-                          StreamPriority priority,
-                          boolean connect) {
+                                  boolean chunked,
+                                  Buffer buf,
+                                  boolean end,
+                                  StreamPriority priority,
+                                  boolean connect) {
       UpgradeResult blah = new UpgradeResult() {
         @Override
         public void upgradeAccepted(HttpClientConnection connection, HttpClientStream upgradedStream) {
@@ -408,7 +407,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     private void writeHead(HttpRequestHead head,
                            boolean chunked,
-                           ByteBuf buf,
+                           Buffer buf,
                            boolean end,
                            StreamPriority priority,
                            boolean connect,
@@ -606,7 +605,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> write(ByteBuf buf, boolean end) {
+    public Future<Void> write(Buffer buf, boolean end) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
         Future<Void> future = upgradingStream.write(buf, end);
@@ -630,7 +629,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
       if (upgradedStream != null) {
         return upgradedStream.writeFrame(type, flags, payload);
       } else {
@@ -903,7 +902,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     void upgrade(HttpClientStream upgradingStream,
                  HttpRequestHead request,
-                 ByteBuf content,
+                 Buffer content,
                  boolean end,
                  Channel channel,
                  boolean pooled,

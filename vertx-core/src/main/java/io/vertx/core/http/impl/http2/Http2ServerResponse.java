@@ -489,7 +489,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       checkValid();
       checkSendHeaders(false);
     }
-    return stream.writeFrame(type, flags, ((BufferInternal)payload).getByteBuf());
+    return stream.writeFrame(type, flags, payload);
   }
 
   private void checkValid() {
