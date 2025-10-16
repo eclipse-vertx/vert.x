@@ -11,8 +11,8 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.channel.Channel;
-import io.vertx.core.http.impl.Http1xClientConnection;
-import io.vertx.core.http.impl.Http2UpgradeClientConnection;
+import io.vertx.core.http.impl.http1x.Http1xClientConnection;
+import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;

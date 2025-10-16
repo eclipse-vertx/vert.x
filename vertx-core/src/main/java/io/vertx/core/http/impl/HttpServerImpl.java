@@ -278,9 +278,4 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     // Might be useful later
     return true;
   }
-
-  boolean wsAccept() {
-    // Might be useful later
-    return true;
-  }
 }

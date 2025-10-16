@@ -550,7 +550,7 @@ public final class HttpUtils {
     ch.writeAndFlush(resp);
   }
 
-  static String getWebSocketLocation(HttpServerRequest req, boolean ssl) throws Exception {
+  public static String getWebSocketLocation(HttpServerRequest req, boolean ssl) throws Exception {
     String prefix;
     if (ssl) {
       prefix = "wss://";
@@ -589,7 +589,7 @@ public final class HttpUtils {
     }
   }
 
-  static HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
+  public static HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
     switch (version) {
       case HTTP_1_0: {
         return HttpVersion.HTTP_1_0;
@@ -967,7 +967,7 @@ public final class HttpUtils {
     }
   }
 
-  static boolean isConnectOrUpgrade(io.vertx.core.http.HttpMethod method, MultiMap headers) {
+  public static boolean isConnectOrUpgrade(io.vertx.core.http.HttpMethod method, MultiMap headers) {
     if (method == io.vertx.core.http.HttpMethod.CONNECT) {
       return true;
     }
@@ -983,7 +983,7 @@ public final class HttpUtils {
     return false;
   }
 
-  static boolean isKeepAlive(HttpRequest request) {
+  public static boolean isKeepAlive(HttpRequest request) {
     HttpVersion version = request.protocolVersion();
     return (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.KEEP_ALIVE, true));

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http1x;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -28,6 +28,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.impl.CookieJar;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
@@ -43,8 +46,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -423,7 +424,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void completeHandshake() {
+  public void completeHandshake() {
     if (conn.metrics != null) {
       conn.metrics.responseBegin(requestMetric, this);
     }

@@ -22,16 +22,14 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.*;
-import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.ssl.*;
 import io.netty.util.AsciiString;
 import io.vertx.core.*;
-import io.vertx.core.Timer;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.impl.Http2UpgradeClientConnection;
+import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -57,8 +55,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.zip.GZIPOutputStream;
-
-import static io.vertx.test.core.AssertExpectations.that;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

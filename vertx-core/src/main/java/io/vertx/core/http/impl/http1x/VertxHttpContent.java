@@ -9,11 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http1x;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.LastHttpContent;
 
 /**
@@ -22,26 +22,15 @@ import io.netty.handler.codec.http.LastHttpContent;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class VertxLastHttpContent extends VertxHttpObject implements LastHttpContent {
+class VertxHttpContent extends VertxHttpObject implements HttpContent {
 
-  private final HttpHeaders trailingHeaders;
   private DecoderResult result;
-  private ByteBuf content;
+  private final ByteBuf content;
 
-  VertxLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders) {
-    this(content, trailingHeaders, DecoderResult.SUCCESS);
-  }
-
-  VertxLastHttpContent(ByteBuf content, HttpHeaders trailingHeaders, DecoderResult result) {
-    super(true);
-    this.trailingHeaders = trailingHeaders;
-    this.result = result;
+  VertxHttpContent(ByteBuf content) {
+    super(false);
+    this.result = DecoderResult.SUCCESS;
     this.content = content;
-  }
-
-  @Override
-  public HttpHeaders trailingHeaders() {
-    return trailingHeaders;
   }
 
   @Override
@@ -50,13 +39,13 @@ class VertxLastHttpContent extends VertxHttpObject implements LastHttpContent {
   }
 
   @Override
-  public LastHttpContent retain(int increment) {
+  public HttpContent retain(int increment) {
     content.retain(increment);
     return this;
   }
 
   @Override
-  public LastHttpContent retain() {
+  public HttpContent retain() {
     content.retain();
     return this;
   }
@@ -112,13 +101,13 @@ class VertxLastHttpContent extends VertxHttpObject implements LastHttpContent {
   }
 
   @Override
-  public VertxLastHttpContent touch() {
+  public VertxHttpContent touch() {
     content.touch();
     return this;
   }
 
   @Override
-  public VertxLastHttpContent touch(Object hint) {
+  public VertxHttpContent touch(Object hint) {
     content.touch(hint);
     return this;
   }

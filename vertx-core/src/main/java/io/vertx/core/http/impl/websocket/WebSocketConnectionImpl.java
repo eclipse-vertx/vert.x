@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,8 +18,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.Future;
 import io.vertx.core.http.WebSocketFrameType;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -37,7 +36,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class WebSocketConnectionImpl extends VertxConnection {
+public final class WebSocketConnectionImpl extends VertxConnection {
 
   private final long closingTimeoutMS;
   private ScheduledFuture<?> closingTimeout;
@@ -49,18 +48,18 @@ final class WebSocketConnectionImpl extends VertxConnection {
   private Object closeReason;
   private boolean closeReceived;
 
-  WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TCPMetrics metrics) {
+  public WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TCPMetrics metrics) {
     super(context, chctx);
     this.closingTimeoutMS = closingTimeoutMS;
     this.metrics = metrics;
     this.server = server;
   }
 
-  WebSocketImplBase<?> webSocket() {
+  public WebSocketImplBase<?> webSocket() {
     return webSocket;
   }
 
-  WebSocketConnectionImpl webSocket(WebSocketImplBase<?> webSocket) {
+  public WebSocketConnectionImpl webSocket(WebSocketImplBase<?> webSocket) {
     this.webSocket = webSocket;
     return this;
   }
@@ -187,11 +186,11 @@ final class WebSocketConnectionImpl extends VertxConnection {
   protected void handleMessage(Object msg) {
     if (msg instanceof WebSocketFrame) {
       WebSocketFrame frame = (WebSocketFrame) msg;
-      handleWsFrame(frame);
+      handleWebSocketFrame(frame);
     }
   }
 
-  void handleWsFrame(WebSocketFrame msg) {
+  public void handleWebSocketFrame(WebSocketFrame msg) {
     WebSocketFrameInternal frame = decodeFrame(msg);
     WebSocketImplBase<?> w;
     synchronized (this) {
