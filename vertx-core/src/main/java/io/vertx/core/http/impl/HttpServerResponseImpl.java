@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -24,9 +24,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -47,7 +44,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
+public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse {
 
   private final HttpServerStream stream;
   private final HttpServerConnection conn;
@@ -73,9 +70,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private HostAndPort requestAuthority;
   private CharSequence requestCookie;
 
-  public Http2ServerResponse(HttpServerStream stream,
-                             ContextInternal context,
-                             boolean push) {
+  public HttpServerResponseImpl(HttpServerStream stream,
+                                ContextInternal context,
+                                boolean push) {
     this.stream = stream;
     this.context = context;
     this.conn = stream.connection();
@@ -741,7 +738,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     HostAndPort h = authority;
     Future<HttpServerStream> fut = stream.sendPush(authority, method, headers, path, stream.priority());
     return fut.map(pushStream -> {
-      Http2ServerResponse response = new Http2ServerResponse(pushStream, context, true);
+      HttpServerResponseImpl response = new HttpServerResponseImpl(pushStream, context, true);
       response.requestMethod = method;
       response.requestAuthority = h;
       PushStreamHandler push = new PushStreamHandler(pushStream, response, context);
@@ -754,9 +751,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
     protected final ContextInternal context;
     protected final HttpServerStream stream;
-    protected final Http2ServerResponse response;
+    protected final HttpServerResponseImpl response;
 
-    public PushStreamHandler(HttpServerStream stream, Http2ServerResponse response, ContextInternal context) {
+    public PushStreamHandler(HttpServerStream stream, HttpServerResponseImpl response, ContextInternal context) {
       this.context = context;
       this.stream = stream;
       this.response = response;

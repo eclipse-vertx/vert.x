@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpServerResponseImpl;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -41,7 +42,7 @@ import java.util.Set;
  * serving files from the server since buffers do not have to be read one by one
  * from the file and written to the outgoing socket. If the developer wants to use directly a
  * {@link java.nio.channels.FileChannel} and manage its lifecycle use {@link #sendFile(FileChannel)}.
- * This is not yet supported in HTTP/2 for {@link io.vertx.core.http.impl.Http2ServerResponse}.
+ * This is not yet supported in HTTP/2 for {@link HttpServerResponseImpl}.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.

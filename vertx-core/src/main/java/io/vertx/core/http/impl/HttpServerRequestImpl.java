@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
@@ -22,8 +22,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
@@ -43,12 +41,12 @@ import java.util.Set;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequest extends HttpServerRequestInternal {
+public class HttpServerRequestImpl extends HttpServerRequestInternal {
 
   protected final ContextInternal context;
   protected final HttpServerStream stream;
   protected final HttpServerConnection connection;
-  protected final Http2ServerResponse response;
+  protected final HttpServerResponseImpl response;
   private final boolean handle100ContinueAutomatically;
   private final String serverOrigin;
   private final int maxFormAttributeSize;
@@ -75,17 +73,17 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
 
-  public Http2ServerRequest(HttpServerStream stream,
-                     ContextInternal context,
-                     boolean handle100ContinueAutomatically,
-                     int maxFormAttributeSize,
-                     int maxFormFields,
-                     int maxFormBufferedBytes,
-                     String serverOrigin) {
+  public HttpServerRequestImpl(HttpServerStream stream,
+                               ContextInternal context,
+                               boolean handle100ContinueAutomatically,
+                               int maxFormAttributeSize,
+                               int maxFormFields,
+                               int maxFormBufferedBytes,
+                               String serverOrigin) {
     this.context = context;
     this.stream = stream;
     this.connection = stream.connection();
-    this.response = new Http2ServerResponse(stream, context,false);
+    this.response = new HttpServerResponseImpl(stream, context,false);
     this.serverOrigin = serverOrigin;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.maxFormAttributeSize = maxFormAttributeSize;
@@ -367,7 +365,7 @@ public class Http2ServerRequest extends HttpServerRequestInternal {
   }
 
   @Override
-  public Http2ServerResponse response() {
+  public HttpServerResponseImpl response() {
     return response;
   }
 
