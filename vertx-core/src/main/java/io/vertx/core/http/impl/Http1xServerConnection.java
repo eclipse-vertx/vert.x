@@ -28,6 +28,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -112,6 +113,16 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     } else {
       closeInternal();
     }
+  }
+
+  @Override
+  public MultiMap newHeaders() {
+    return io.vertx.core.http.HttpHeaders.headers();
+  }
+
+  @Override
+  public boolean supportsSendFile() {
+    return true;
   }
 
   TracingPolicy tracingPolicy() {

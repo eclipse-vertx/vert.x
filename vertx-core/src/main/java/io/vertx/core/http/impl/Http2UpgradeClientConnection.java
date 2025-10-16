@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -23,7 +22,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -147,17 +145,17 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       return delegate.writeHead(request, chunked, buf, end, priority, connect);
     }
 
     @Override
-    public Future<Void> write(ByteBuf buf, boolean end) {
-      return delegate.write(buf, end);
+    public Future<Void> writeChunk(Buffer buf, boolean end) {
+      return delegate.writeChunk(buf, end);
     }
 
     @Override
-    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
       return delegate.writeFrame(type, flags, payload);
     }
 
@@ -174,7 +172,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
       delegate.pushHandler(handler);
       return this;
     }
@@ -186,8 +184,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
-      delegate.headersHandler(handler);
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+      delegate.headHandler(handler);
       return this;
     }
 
@@ -281,7 +279,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     void handleUpgrade(HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
-      upgradedStream.headersHandler(headHandler);
+      upgradedStream.headHandler(headHandler);
       upgradedStream.dataHandler(chunkHandler);
       upgradedStream.trailersHandler(trailersHandler);
       upgradedStream.priorityChangeHandler(priorityHandler);
@@ -293,7 +291,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       upgradedStream.pushHandler(pushHandler);
       upgradedStream.customFrameHandler(unknownFrameHandler);
       upgradedStream.closeHandler(closeHandler);
-      upgradingStream.headersHandler(null);
+      upgradingStream.headHandler(null);
       upgradingStream.dataHandler(null);
       upgradingStream.trailersHandler(null);
       upgradingStream.priorityChangeHandler(null);
@@ -352,7 +350,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
     private Handler<MultiMap> earlyHintsHandler;
-    private Handler<Http2ClientPush> pushHandler;
+    private Handler<HttpClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
 
@@ -373,11 +371,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
      */
     @Override
     public Future<Void> writeHead(HttpRequestHead request,
-                          boolean chunked,
-                          ByteBuf buf,
-                          boolean end,
-                          StreamPriority priority,
-                          boolean connect) {
+                                  boolean chunked,
+                                  Buffer buf,
+                                  boolean end,
+                                  StreamPriority priority,
+                                  boolean connect) {
       UpgradeResult blah = new UpgradeResult() {
         @Override
         public void upgradeAccepted(HttpClientConnection connection, HttpClientStream upgradedStream) {
@@ -408,7 +406,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     private void writeHead(HttpRequestHead head,
                            boolean chunked,
-                           ByteBuf buf,
+                           Buffer buf,
                            boolean end,
                            StreamPriority priority,
                            boolean connect,
@@ -477,7 +475,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
       if (upgradedStream != null) {
         upgradedStream.pushHandler(handler);
       } else {
@@ -532,11 +530,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       if (upgradedStream != null) {
-        upgradedStream.headersHandler(handler);
+        upgradedStream.headHandler(handler);
       } else {
-        upgradingStream.headersHandler(handler);
+        upgradingStream.headHandler(handler);
         headHandler = handler;
       }
       return this;
@@ -606,10 +604,10 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> write(ByteBuf buf, boolean end) {
+    public Future<Void> writeChunk(Buffer buf, boolean end) {
       EventExecutor exec = upgradingConnection.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        Future<Void> future = upgradingStream.write(buf, end);
+        Future<Void> future = upgradingStream.writeChunk(buf, end);
         if (end) {
           ChannelPipeline pipeline = upgradingConnection.channelHandlerContext().pipeline();
           future = future.andThen(ar -> {
@@ -622,7 +620,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       } else {
         Promise<Void> promise = upgradingStream.context().promise();
         exec.execute(() -> {
-          Future<Void> future = write(buf, end);
+          Future<Void> future = writeChunk(buf, end);
           future.onComplete(promise);
         });
         return promise.future();
@@ -630,7 +628,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
       if (upgradedStream != null) {
         return upgradedStream.writeFrame(type, flags, payload);
       } else {
@@ -903,7 +901,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
     void upgrade(HttpClientStream upgradingStream,
                  HttpRequestHead request,
-                 ByteBuf content,
+                 Buffer content,
                  boolean end,
                  Channel channel,
                  boolean pooled,

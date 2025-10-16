@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientBase;
@@ -106,7 +107,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
     }
 
     public void upgrade(HttpClientStream upgradingStream, HttpRequestHead request,
-                        ByteBuf content,
+                        Buffer content,
                         boolean end,
                         Channel channel,
                         boolean pooled,

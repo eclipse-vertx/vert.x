@@ -382,6 +382,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testNoAuthority() throws Exception {
     server.requestHandler(req -> {
+      assertNotNull("fromHost", req.authority());
       assertEquals("fromHost", req.authority().host());
       assertEquals(1234, req.authority().port());
       assertNull(req.authority(true));

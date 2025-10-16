@@ -37,7 +37,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -378,6 +377,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     protected final ContextInternal context;
     protected final int id;
 
+    private HttpVersion version;
     private Object trace;
     private Object metric;
     private HttpRequestHead request;
@@ -500,7 +500,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
       this.headHandler = handler;
       return this;
     }
@@ -523,7 +523,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
+    public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
       // No op
       return this;
     }
@@ -565,17 +565,17 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       PromiseInternal<Void> promise = context.promise();
-      conn.writeHead(this, request, chunked, buf, end, connect, promise);
+      conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, connect, promise);
       return promise.future();
     }
 
     @Override
-    public Future<Void> write(ByteBuf buff, boolean end) {
+    public Future<Void> writeChunk(Buffer buff, boolean end) {
       if (buff != null || end) {
         Promise<Void> listener = context.promise();
-        conn.writeBuffer(this, buff, end, listener);
+        conn.writeBuffer(this, buff != null ? ((BufferInternal)buff).getByteBuf() : null, end, listener);
         return listener.future();
       } else {
         throw new IllegalStateException("???");
@@ -583,7 +583,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+    public Future<Void> writeFrame(int type, int flags, Buffer payload) {
       throw new IllegalStateException("Cannot write an HTTP/2 frame over an HTTP/1.x connection");
     }
 
@@ -793,8 +793,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       } else {
         version = io.vertx.core.http.HttpVersion.HTTP_1_1;
       }
-      handleResponseBegin(stream, new HttpResponseHead(
-        version,
+      handleResponseBegin(stream, version, new HttpResponseHead(
         response.status().code(),
         response.status().reasonPhrase(),
         new HeadersAdaptor(response.headers())));
@@ -822,7 +821,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
   }
 
-  private void handleResponseBegin(Stream stream, HttpResponseHead response) {
+  private void handleResponseBegin(Stream stream, HttpVersion version, HttpResponseHead response) {
     // How can we handle future undefined 1xx informational response codes?
     if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
       stream.handleContinue();
@@ -832,6 +831,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       HttpRequestHead request;
       synchronized (this) {
         request = stream.request;
+        stream.version = version;
         stream.response = response;
         if (metrics != null) {
           metrics.responseBegin(stream.metric, response);
@@ -885,9 +885,11 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
     boolean check;
-    HttpResponseHead response ;
+    HttpResponseHead response;
+    HttpVersion version;
     synchronized (this) {
       response = stream.response;
+      version = stream.version;
       if (response == null) {
         // 100-continue
         return;
@@ -903,7 +905,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
           // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
           close = true;
-        } else if (response.version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
+        } else if (version == HttpVersion.HTTP_1_0 && !HttpHeaderValues.KEEP_ALIVE.contentEqualsIgnoreCase(responseConnectionHeader)) {
           // In the HTTP/1.0 case both request/response need a keep-alive connection header the connection to be persistent
           // currently Vertx forces the Connection header if keepalive is enabled for 1.0
           close = true;

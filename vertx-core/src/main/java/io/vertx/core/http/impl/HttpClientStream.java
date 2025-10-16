@@ -11,50 +11,30 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.http.*;
-import io.vertx.core.internal.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpClientStream {
-
-  /**
-   * @return the stream id, {@code 1} denotes the first stream, HTTP/1 is a simple sequence, HTTP/2
-   * is the actual stream identifier.
-   */
-  int id();
-
-  Object metric();
+public interface HttpClientStream extends HttpStream {
 
   Object trace();
 
-  /**
-   * @return the stream version or null if it's not yet determined
-   */
-  HttpVersion version();
-
   HttpClientConnection connection();
-  ContextInternal context();
 
-  Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect);
-  Future<Void> write(ByteBuf buf, boolean end);
-  Future<Void> writeFrame(int type, int flags, ByteBuf payload);
-  Future<Void> writeReset(long code);
+  Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect);
 
+  HttpClientStream headHandler(Handler<HttpResponseHead> handler);
   HttpClientStream resetHandler(Handler<Long> handler);
   HttpClientStream exceptionHandler(Handler<Throwable> handler);
   HttpClientStream continueHandler(Handler<Void> handler);
   HttpClientStream earlyHintsHandler(Handler<MultiMap> handler);
-  HttpClientStream pushHandler(Handler<Http2ClientPush> handler);
+  HttpClientStream pushHandler(Handler<HttpClientPush> handler);
   HttpClientStream customFrameHandler(Handler<HttpFrame> handler);
-  HttpClientStream headersHandler(Handler<HttpResponseHead> handler);
   HttpClientStream dataHandler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);
   HttpClientStream priorityChangeHandler(Handler<StreamPriority> handler);
@@ -62,12 +42,9 @@ public interface HttpClientStream {
   HttpClientStream drainHandler(Handler<Void> handler);
 
   HttpClientStream setWriteQueueMaxSize(int maxSize);
-  boolean isWritable();
-
   HttpClientStream pause();
   HttpClientStream fetch(long amount);
 
-  StreamPriority priority();
   HttpClientStream updatePriority(StreamPriority streamPriority);
 
 }

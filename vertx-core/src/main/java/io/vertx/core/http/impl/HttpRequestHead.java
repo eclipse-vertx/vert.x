@@ -21,6 +21,7 @@ import io.vertx.core.spi.observability.HttpRequest;
  */
 public class HttpRequestHead implements HttpRequest {
 
+  public String scheme;
   public SocketAddress remoteAddress;
   public final HttpMethod method;
   public final String uri;

@@ -125,7 +125,6 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
         return;
       }
-      headersMap.sanitize();
       if (streamId == 1 && handler.upgraded) {
         stream = createStream(headers, true);
       } else {

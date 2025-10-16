@@ -16,7 +16,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.PromiseInternal;
@@ -57,7 +56,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
     //
     stream.pushHandler(this::handlePush);
-    stream.headersHandler(resp -> {
+    stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
       stream.dataHandler(response::handleChunk);
       stream.trailersHandler(response::handleTrailers);
@@ -160,7 +159,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     }
   }
 
-  void handlePush(Http2ClientPush push) {
+  void handlePush(HttpClientPush push) {
     HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(connection, push.stream(), push.method(), push.uri(), push.headers());
     if (pushHandler != null) {
       pushHandler.handle(pushReq);

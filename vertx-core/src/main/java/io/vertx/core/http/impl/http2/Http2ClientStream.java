@@ -18,15 +18,16 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -59,7 +60,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   // Handlers
   private Handler<HttpResponseHead> headersHandler;
   private Handler<Void> continueHandler;
-  private Handler<Http2ClientPush> pushHandler;
+  private Handler<HttpClientPush> pushHandler;
   private Handler<MultiMap> earlyHintsHandler;
 
   public Http2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
@@ -83,17 +84,10 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
     priority(priority);
-    write(new HeadersWrite(request, buf, end, promise));
-    return promise.future();
-  }
-
-  @Override
-  public Future<Void> write(ByteBuf buf, boolean end) {
-    Promise<Void> promise = context.promise();
-    writeData(buf, end, promise);
+    write(new HeadersWrite(request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
     return promise.future();
   }
 
@@ -175,11 +169,6 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     }
   }
 
-  @Override
-  public HttpVersion version() {
-    return HttpVersion.HTTP_2;
-  }
-
   public Object metric() {
     return metric;
   }
@@ -194,14 +183,14 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   }
 
   public void onPush(Http2ClientStream pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
-    Http2ClientPush push = new Http2ClientPush(headers, pushStream);
+    HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
     pushStream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
       pushStream.metric = metric;
       clientMetrics.requestEnd(metric, 0L);
     }
-    context.dispatch(push, this::handlePush);
+    context.execute(push, this::handlePush);
   }
 
   void onContinue() {
@@ -227,7 +216,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
       return;
     }
     String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-    this.responseHead = new HttpResponseHead(HttpVersion.HTTP_2, headers.status(), statusMessage, headers);
+    this.responseHead = new HttpResponseHead(headers.status(), statusMessage, headers);
     super.onHeaders(headers);
   }
 
@@ -240,7 +229,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     super.onClose();
   }
 
-  public Http2ClientStream headersHandler(Handler<HttpResponseHead> handler) {
+  public Http2ClientStream headHandler(Handler<HttpResponseHead> handler) {
     headersHandler = handler;
     return this;
   }
@@ -251,11 +240,10 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
       int status = map.status();
       String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
       HttpResponseHead response = new HttpResponseHead(
-        HttpVersion.HTTP_2,
         status,
         statusMessage,
         map);
-      context.emit(response, handler);
+      context.dispatch(response, handler);
     }
   }
 
@@ -267,19 +255,19 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   void handleContinue() {
     Handler<Void> handler = continueHandler;
     if (handler != null) {
-      context.emit(null, handler);
+      context.dispatch(null, handler);
     }
   }
 
-  public Http2ClientStream pushHandler(Handler<Http2ClientPush> handler) {
+  public Http2ClientStream pushHandler(Handler<HttpClientPush> handler) {
     pushHandler = handler;
     return this;
   }
 
-  void handlePush(Http2ClientPush push) {
-    Handler<Http2ClientPush> handler = pushHandler;
+  void handlePush(HttpClientPush push) {
+    Handler<HttpClientPush> handler = pushHandler;
     if (handler != null) {
-      context.emit(push, handler);
+      context.dispatch(push, handler);
     }
   }
 
@@ -291,7 +279,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   void handleEarlyHints(MultiMap headers) {
     Handler<MultiMap> handler = earlyHintsHandler;
     if (handler != null) {
-      context.emit(headers, handler);
+      context.dispatch(headers, handler);
     }
   }
 

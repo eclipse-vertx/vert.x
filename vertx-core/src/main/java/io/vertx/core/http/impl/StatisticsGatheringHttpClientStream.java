@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -20,7 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.endpoint.ServerInteraction;
 
@@ -70,7 +68,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect) {
+  public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
     endpointRequest.reportRequestBegin();
     if (end) {
       endpointRequest.reportRequestEnd();
@@ -79,15 +77,15 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public Future<Void> write(ByteBuf buf, boolean end) {
+  public Future<Void> writeChunk(Buffer buf, boolean end) {
     if (end) {
       endpointRequest.reportRequestEnd();
     }
-    return delegate.write(buf, end);
+    return delegate.writeChunk(buf, end);
   }
 
   @Override
-  public Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+  public Future<Void> writeFrame(int type, int flags, Buffer payload) {
     return delegate.writeFrame(type, flags, payload);
   }
 
@@ -104,7 +102,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream pushHandler(Handler<Http2ClientPush> handler) {
+  public HttpClientStream pushHandler(Handler<HttpClientPush> handler) {
     delegate.pushHandler(handler);
     return this;
   }
@@ -116,14 +114,14 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public HttpClientStream headersHandler(Handler<HttpResponseHead> handler) {
+  public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
     if (handler != null) {
-      delegate.headersHandler(multimap -> {
+      delegate.headHandler(multimap -> {
         endpointRequest.reportResponseBegin();
         handler.handle(multimap);
       });
     } else {
-      delegate.headersHandler(null);
+      delegate.headHandler(null);
     }
     return this;
   }

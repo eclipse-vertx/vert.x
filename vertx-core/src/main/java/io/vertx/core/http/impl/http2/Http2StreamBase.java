@@ -15,19 +15,22 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.handler.stream.ChunkedInput;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpFrame;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpFrameImpl;
+import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;
 import io.vertx.core.net.impl.MessageWrite;
@@ -35,7 +38,7 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
+public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements HttpStream {
 
   private static final Http2HeadersMultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
 
@@ -131,7 +134,11 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
     }
   }
 
-  public abstract Http2Connection connection();
+  public final HttpVersion version() {
+    return HttpVersion.HTTP_2;
+  }
+
+  public abstract HttpConnection connection();
 
   public final boolean isHeadersReceived() {
     return headersReceived;
@@ -172,7 +179,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
       observeReset();
     }
     connection.flushBytesWritten();
-    context.execute(ex -> handleClose());
+    context.execute(v -> handleClose());
     outboundQueue.close();
   }
 
@@ -264,18 +271,25 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
     return (S)this;
   }
 
-  public final Future<Void> writeFrame(int type, int flags, ByteBuf payload) {
+  public final Future<Void> writeFrame(int type, int flags, Buffer payload) {
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = connection.context().nettyEventLoop();
+    ByteBuf byteBuf = ((BufferInternal) payload).getByteBuf();
     if (eventLoop.inEventLoop()) {
-      connection.writeFrame(id, type, flags, payload, promise);
+      connection.writeFrame(id, type, flags, byteBuf, promise);
     } else {
-      eventLoop.execute(() -> connection.writeFrame(id, type, flags, payload, promise));
+      eventLoop.execute(() -> connection.writeFrame(id, type, flags, byteBuf, promise));
     }
     return promise.future();
   }
 
-  public final void writeHeaders(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public final Future<Void> writeHeaders(MultiMap headers, boolean end) {
+    Promise<Void> promise = context.promise();
+    writeHeaders((Http2HeadersMultiMap) headers, end, true, promise);
+    return promise.future();
+  }
+
+  void writeHeaders(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first_) {
       first_ = false;
       EventLoop eventLoop = connection.context().nettyEventLoop();
@@ -340,11 +354,17 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
     connection.sendFile(id, file, promise);
   }
 
+  public final Future<Void> writeChunk(Buffer chunk, boolean end) {
+    Promise<Void> promise = context.promise();
+    writeData(chunk == null ? null : ((BufferInternal)chunk).getByteBuf(), end, promise);
+    return promise.future();
+  }
+
   public final void writeData(ByteBuf chunk, boolean end, Promise<Void> promise) {
     write(new MessageWrite() {
       @Override
       public void write() {
-        writeData0(chunk, end, promise);
+        writeData0(chunk == null ? Unpooled.EMPTY_BUFFER : chunk, end, promise);
       }
       @Override
       public void cancel(Throwable cause) {
@@ -435,7 +455,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   private void handleData(Buffer buf) {
     Handler<Buffer> handler = dataHandler;
     if (handler != null) {
-      context.emit(buf, handler);
+      context.dispatch(buf, handler);
     }
   }
 
@@ -447,7 +467,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   private void handleCustomFrame(HttpFrame frame) {
     Handler<HttpFrame> handler = customFrameHandler;
     if (handler != null) {
-      context.emit(frame, handler);
+      context.dispatch(frame, handler);
     }
   }
 
@@ -459,7 +479,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   private void handleTrailers(MultiMap trailers) {
     Handler<MultiMap> handler = trailersHandler;
     if (handler != null) {
-      context.emit(trailers, handler);
+      context.dispatch(trailers, handler);
     }
   }
 
@@ -471,7 +491,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   private void handleReset(long errorCode) {
     Handler<Long> handler = resetHandler;
     if (handler != null) {
-      context.emit(errorCode, handler);
+      context.dispatch(errorCode, handler);
     }
   }
 
@@ -483,7 +503,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   public final void handleException(Throwable cause) {
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
-      context.emit(cause, handler);
+      context.dispatch(cause, handler);
     }
   }
 
@@ -497,7 +517,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   private void handleClose() {
     Handler<Void> handler = closeHandler;
     if (handler != null) {
-      context.emit(null, handler);
+      context.dispatch(null, handler);
     }
   }
 
@@ -509,7 +529,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> {
   private void handlePriorityChange(StreamPriority newPriority) {
     Handler<StreamPriority> handler = priorityChangeHandler;
     if (handler != null) {
-      context.emit(newPriority, handler);
+      context.dispatch(newPriority, handler);
     }
   }
 
