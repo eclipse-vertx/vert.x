@@ -15,7 +15,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.http2.Http2ClientPush;
 import io.vertx.core.http.*;
 
 /**
@@ -34,7 +33,7 @@ public interface HttpClientStream extends HttpStream {
   HttpClientStream exceptionHandler(Handler<Throwable> handler);
   HttpClientStream continueHandler(Handler<Void> handler);
   HttpClientStream earlyHintsHandler(Handler<MultiMap> handler);
-  HttpClientStream pushHandler(Handler<Http2ClientPush> handler);
+  HttpClientStream pushHandler(Handler<HttpClientPush> handler);
   HttpClientStream customFrameHandler(Handler<HttpFrame> handler);
   HttpClientStream dataHandler(Handler<Buffer> handler);
   HttpClientStream trailersHandler(Handler<MultiMap> handler);

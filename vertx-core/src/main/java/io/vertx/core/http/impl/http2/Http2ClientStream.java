@@ -22,7 +22,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
@@ -61,7 +60,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   // Handlers
   private Handler<HttpResponseHead> headersHandler;
   private Handler<Void> continueHandler;
-  private Handler<Http2ClientPush> pushHandler;
+  private Handler<HttpClientPush> pushHandler;
   private Handler<MultiMap> earlyHintsHandler;
 
   public Http2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
@@ -184,7 +183,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   }
 
   public void onPush(Http2ClientStream pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
-    Http2ClientPush push = new Http2ClientPush(headers, pushStream);
+    HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
     pushStream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
       Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
@@ -260,13 +259,13 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     }
   }
 
-  public Http2ClientStream pushHandler(Handler<Http2ClientPush> handler) {
+  public Http2ClientStream pushHandler(Handler<HttpClientPush> handler) {
     pushHandler = handler;
     return this;
   }
 
-  void handlePush(Http2ClientPush push) {
-    Handler<Http2ClientPush> handler = pushHandler;
+  void handlePush(HttpClientPush push) {
+    Handler<HttpClientPush> handler = pushHandler;
     if (handler != null) {
       context.dispatch(push, handler);
     }

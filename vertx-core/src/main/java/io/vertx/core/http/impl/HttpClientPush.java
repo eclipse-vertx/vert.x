@@ -8,11 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -20,7 +19,7 @@ import io.vertx.core.spi.observability.HttpRequest;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ClientPush implements HttpRequest {
+public class HttpClientPush implements HttpRequest {
 
   private final String uri;
   private final HttpMethod method;
@@ -28,10 +27,10 @@ public class Http2ClientPush implements HttpRequest {
   private final HttpClientStream stream;
   private final MultiMap headers;
 
-  Http2ClientPush(Http2HeadersMultiMap headers, HttpClientStream stream) {
+  public HttpClientPush(HttpRequestHead head, HttpClientStream stream) {
 
-    String rawMethod = headers.method().toString();
-    String authority = headers.authority() != null ? headers.authority().toString() : null;
+    String rawMethod = head.method().toString();
+    String authority = head.authority != null ? head.authority.toString() : null;
     int pos = authority == null ? -1 : authority.indexOf(':');
     if (pos == -1) {
       this.authority = HostAndPort.create(authority, 80);
@@ -39,9 +38,9 @@ public class Http2ClientPush implements HttpRequest {
       this.authority = HostAndPort.create(authority.substring(0, pos), Integer.parseInt(authority.substring(pos + 1)));
     }
     this.method = HttpMethod.valueOf(rawMethod);
-    this.uri = headers.path().toString();
+    this.uri = head.uri;
     this.stream = stream;
-    this.headers = headers;
+    this.headers = head.headers;
   }
 
   public HttpClientStream stream() {
@@ -77,4 +76,5 @@ public class Http2ClientPush implements HttpRequest {
   public HttpMethod method() {
     return method;
   }
+
 }
