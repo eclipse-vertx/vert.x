@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http1x;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -36,7 +36,11 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketVersion;
+import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.http.impl.websocket.WebSocketConnectionImpl;
+import io.vertx.core.http.impl.websocket.WebSocketImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -64,7 +68,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xClientConnection extends Http1xConnection implements HttpClientConnection {
+public class Http1xClientConnection extends Http1xConnection implements io.vertx.core.http.impl.HttpClientConnection {
 
   private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
@@ -94,7 +98,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   private long lastResponseReceivedTimestamp;
 
-  Http1xClientConnection(HttpVersion version,
+  public Http1xClientConnection(HttpVersion version,
                          HttpClientBase client,
                          ChannelHandlerContext chctx,
                          boolean ssl,
@@ -124,19 +128,19 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+  public io.vertx.core.http.impl.HttpClientConnection evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
+  public io.vertx.core.http.impl.HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
     invalidMessageHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+  public io.vertx.core.http.impl.HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     // Never changes
     return this;
   }
@@ -240,7 +244,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private static boolean isZstdAvailable() {
     return Zstd.isAvailable();
   }
-  private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
+  private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
     request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
@@ -335,7 +339,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     return false;
   }
 
-  private void writeHead(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> listener) {
+  private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> listener) {
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
@@ -380,8 +384,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private HttpVersion version;
     private Object trace;
     private Object metric;
-    private HttpRequestHead request;
-    private HttpResponseHead response;
+    private io.vertx.core.http.impl.HttpRequestHead request;
+    private io.vertx.core.http.impl.HttpResponseHead response;
     private boolean requestEnded;
     private boolean responseEnded;
     private long bytesRead;
@@ -405,7 +409,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
     abstract void handleContinue();
     abstract void handleEarlyHints(MultiMap headers);
-    abstract void handleHead(HttpResponseHead response);
+    abstract void handleHead(io.vertx.core.http.impl.HttpResponseHead response);
     abstract void handleChunk(Buffer buff);
     abstract void handleEnd(LastHttpContent trailer);
     abstract void handleWriteQueueDrained(Void v);
@@ -423,7 +427,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     private final Http1xClientConnection conn;
     private final InboundMessageQueue<Object> queue;
     private boolean closed;
-    private Handler<HttpResponseHead> headHandler;
+    private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailerHandler;
     private Handler<Void> drainHandler;
@@ -500,7 +504,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<io.vertx.core.http.impl.HttpResponseHead> handler) {
       this.headHandler = handler;
       return this;
     }
@@ -555,7 +559,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public io.vertx.core.http.impl.HttpClientConnection connection() {
       return conn;
     }
 
@@ -565,7 +569,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       PromiseInternal<Void> promise = context.promise();
       conn.writeHead(this, request, chunked, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, connect, promise);
       return promise.future();
@@ -661,8 +665,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
 
     @Override
-    void handleHead(HttpResponseHead response) {
-      Handler<HttpResponseHead> handler = headHandler;
+    void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
+      Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
       if (handler != null) {
         context.emit(response, handler);
       }
@@ -793,7 +797,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
       } else {
         version = io.vertx.core.http.HttpVersion.HTTP_1_1;
       }
-      handleResponseBegin(stream, version, new HttpResponseHead(
+      handleResponseBegin(stream, version, new io.vertx.core.http.impl.HttpResponseHead(
         response.status().code(),
         response.status().reasonPhrase(),
         new HeadersAdaptor(response.headers())));
@@ -821,14 +825,14 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     }
   }
 
-  private void handleResponseBegin(Stream stream, HttpVersion version, HttpResponseHead response) {
+  private void handleResponseBegin(Stream stream, HttpVersion version, io.vertx.core.http.impl.HttpResponseHead response) {
     // How can we handle future undefined 1xx informational response codes?
     if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
       stream.handleContinue();
     } else if (response.statusCode == HttpResponseStatus.EARLY_HINTS.code()) {
       stream.handleEarlyHints(response.headers);
     } else {
-      HttpRequestHead request;
+      io.vertx.core.http.impl.HttpRequestHead request;
       synchronized (this) {
         request = stream.request;
         stream.version = version;
@@ -885,7 +889,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
     boolean check;
-    HttpResponseHead response;
+    io.vertx.core.http.impl.HttpResponseHead response;
     HttpVersion version;
     synchronized (this) {
       response = stream.response;
@@ -949,7 +953,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   /**
    * @return a future of a paused WebSocket
    */
-  synchronized void toWebSocket(
+  public synchronized void toWebSocket(
     ContextInternal context,
     String requestURI,
     MultiMap headers,
@@ -1049,7 +1053,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
             pendingFrames = null;
             WebSocketFrame frame;
             while ((frame = toResubmit.poll()) != null) {
-              handler.getConnection().handleWsFrame(frame);
+              handler.getConnection().handleWebSocketFrame(frame);
             }
           }
           promise.complete(ws);
