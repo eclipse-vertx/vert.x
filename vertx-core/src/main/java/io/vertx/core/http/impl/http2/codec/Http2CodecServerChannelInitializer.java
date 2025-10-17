@@ -34,7 +34,6 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
   private final CompressionManager compressionManager;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
-  private final String serverOrigin;
   private final boolean logEnabled;
 
   public Http2CodecServerChannelInitializer(HttpServerConnectionInitializer initializer,
@@ -43,7 +42,6 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
                                             CompressionManager compressionManager,
                                             Supplier<ContextInternal> streamContextSupplier,
                                             Handler<HttpServerConnection> connectionHandler,
-                                            String serverOrigin,
                                             Object metric,
                                             boolean logEnabled) {
     this.initializer = initializer;
@@ -52,7 +50,6 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
     this.compressionManager = compressionManager;
     this.streamContextSupplier = streamContextSupplier;
     this.connectionHandler = connectionHandler;
-    this.serverOrigin = serverOrigin;
     this.metric = metric;
     this.logEnabled = logEnabled;
   }
@@ -62,6 +59,7 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
     VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = buildHttp2ConnectionHandler(context);
     pipeline.replace(VertxHandler.class, "handler", handler);
   }
+
   @Override
   public void configureHttp1OrH2CUpgradeHandler(ContextInternal context, ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(initializer, context, this, sslChannelProvider, sslContextManager, options.isCompressionSupported(), options.isDecompressionSupported()));

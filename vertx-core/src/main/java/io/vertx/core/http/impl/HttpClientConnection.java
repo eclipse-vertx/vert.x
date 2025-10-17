@@ -74,11 +74,6 @@ public interface HttpClientConnection extends HttpConnection {
   HttpClientConnection concurrencyChangeHandler(Handler<Long> handler);
 
   /**
-   * @return whether the connection is pooled
-   */
-  boolean pooled();
-
-  /**
    * @return the {@link ChannelHandlerContext} of the handler managing the connection
    */
   ChannelHandlerContext channelHandlerContext();

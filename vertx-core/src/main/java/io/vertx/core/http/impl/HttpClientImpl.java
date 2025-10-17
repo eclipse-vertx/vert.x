@@ -137,7 +137,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         key = new EndpointKey(key.ssl, key.sslOptions, proxyOptions, server, key.authority);
         proxyOptions = null;
       }
-      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, true, maxLifetime);
+      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, maxLifetime);
       return new SharedHttpClientConnectionGroup(
         vertx,
         HttpClientImpl.this,
@@ -244,7 +244,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       useAlpn,
       authority,
       server,
-      false,
       0);
     return (Future) connector.httpConnect(vertx.getOrCreateContext()).map(conn -> new UnpooledHttpClientConnection(conn).init());
   }

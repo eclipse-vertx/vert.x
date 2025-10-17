@@ -39,13 +39,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http2.Http2StreamBase;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.HttpStreamState;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -59,7 +56,7 @@ import java.util.Deque;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public abstract class Http2MultiplexConnection<S extends Http2StreamBase> extends ConnectionBase implements HttpConnection {
+public abstract class Http2MultiplexConnection<S extends HttpStreamState> extends ConnectionBase implements HttpConnection {
 
   protected final Http2MultiplexHandler handler;
   private final IntObjectMap<StreamChannel> channels;
@@ -114,7 +111,7 @@ public abstract class Http2MultiplexConnection<S extends Http2StreamBase> extend
     if (channel.bytesConsumed > initialWindowSize) {
       chctx.channel().config().setAutoRead(false);
     }
-    Http2StreamBase stream = channel.stream;
+    S stream = channel.stream;
     stream.onData(buff);
     if (ended) {
       stream.onTrailers();
@@ -201,6 +198,10 @@ public abstract class Http2MultiplexConnection<S extends Http2StreamBase> extend
     if (listener != null) {
       p.addListener(listener);
     }
+  }
+
+  public void writePriorityFrame(int streamId, StreamPriority priority, Promise<Void> promise) {
+    promise.fail("Unsupported");
   }
 
   public final Http2HeadersMultiMap newHeaders() {
@@ -357,7 +358,7 @@ public abstract class Http2MultiplexConnection<S extends Http2StreamBase> extend
     StreamChannel streamChannel = channels.remove(streamId);
     GoAway goAway = handler.goAwayStatus();
     if (streamChannel != null) {
-      Http2StreamBase stream = streamChannel.stream;
+      S stream = streamChannel.stream;
       if (goAway != null) {
         stream.onException(new HttpClosedException(goAway));
       }

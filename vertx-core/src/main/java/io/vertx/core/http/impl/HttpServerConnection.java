@@ -14,14 +14,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
 import io.vertx.core.internal.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface HttpServerConnection extends HttpConnection {
+
+  HttpServerConnection streamHandler(Handler<HttpServerStream> handler);
 
   MultiMap newHeaders();
 

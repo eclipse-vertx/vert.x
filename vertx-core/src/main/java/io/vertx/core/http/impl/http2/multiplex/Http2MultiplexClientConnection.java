@@ -25,16 +25,16 @@ import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
-import io.vertx.core.http.impl.http2.Http2ClientConnection;
-import io.vertx.core.http.impl.http2.Http2ClientStream;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.HttpClientConnectionProvider;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.HttpClientStreamState;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
+public class Http2MultiplexClientConnection extends Http2MultiplexConnection<HttpClientStreamState> implements HttpClientConnection, HttpClientConnectionProvider {
 
   private final boolean decompressionSupported;
   private final ClientMetrics<?, ?, ?> clientMetrics;
@@ -117,7 +117,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   @Override
   void receiveHeaders(ChannelHandlerContext chctx, Http2FrameStream frameStream, Http2Headers headers, boolean ended) {
     int streamId = frameStream.id();
-    Http2ClientStream stream = stream(streamId);
+    HttpClientStreamState stream = stream(streamId);
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
     if (!stream.isHeadersReceived()) {
       if (!headersMap.validate(false)) {
@@ -168,14 +168,9 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public boolean pooled() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
-    Http2ClientStream stream = new Http2ClientStream(this, context, null, decompressionSupported, clientMetrics);
-    return context.succeededFuture(stream);
+    HttpClientStreamState stream = HttpClientStreamState.create(this, context, null, decompressionSupported, clientMetrics);
+    return context.succeededFuture(stream.unwrap());
   }
 
   @Override
@@ -190,8 +185,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void createStream(Http2ClientStream vertxStream) throws Exception {
-    handler.createClientStream(vertxStream);
+  public void createStream(HttpClientStreamState stream) throws Exception {
+    handler.createClientStream(stream);
   }
 
   @Override
@@ -200,7 +195,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writePriorityFrame(int streamId, StreamPriority priority) {
+  public void writePriorityFrame(int streamId, StreamPriority priority, Promise<Void> promise) {
     throw new UnsupportedOperationException();
   }
 

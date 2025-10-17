@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl.spi;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -43,12 +43,12 @@ import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implements HttpClientStream {
+class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpClientStreamState> implements HttpClientStream, HttpClientStreamState {
 
   // Temporary id assignments
   private static final AtomicInteger id_seq = new AtomicInteger(-1);
 
-  private final Http2ClientConnection connection;
+  private final HttpClientConnectionProvider connection;
   private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
@@ -63,13 +63,13 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   private Handler<HttpClientPush> pushHandler;
   private Handler<MultiMap> earlyHintsHandler;
 
-  public Http2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
-                           boolean decompressionSupported, ClientMetrics clientMetrics) {
+  DefaultHttpClientStreamState(HttpClientConnectionProvider connection, ContextInternal context, TracingPolicy tracingPolicy,
+                               boolean decompressionSupported, ClientMetrics clientMetrics) {
     this(id_seq.getAndDecrement(), connection, context, tracingPolicy, decompressionSupported, clientMetrics, true);
   }
 
-  public Http2ClientStream(int id, Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
-                           boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
+  DefaultHttpClientStreamState(int id, HttpClientConnectionProvider connection, ContextInternal context, TracingPolicy tracingPolicy,
+                               boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
     super(id, connection, context, writable);
 
     this.connection = connection;
@@ -149,7 +149,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
       request.remoteAddress = ((HttpConnection) connection).remoteAddress();
       requestHead = request;
       try {
-        connection.createStream(Http2ClientStream.this);
+        connection.createStream(DefaultHttpClientStreamState.this);
       } catch (Exception ex) {
         promise.fail(ex);
         onException(ex);
@@ -178,11 +178,16 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
   }
 
   @Override
-  public Http2ClientConnection connection() {
+  public HttpClientConnectionProvider connection() {
     return connection;
   }
 
-  public void onPush(Http2ClientStream pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
+  @Override
+  public void onPush(HttpClientStreamState pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
+    onPush((DefaultHttpClientStreamState)  pushStream, promisedStreamId, headers, writable);
+  }
+
+  public void onPush(DefaultHttpClientStreamState pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
     HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
     pushStream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
@@ -229,7 +234,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     super.onClose();
   }
 
-  public Http2ClientStream headHandler(Handler<HttpResponseHead> handler) {
+  public DefaultHttpClientStreamState headHandler(Handler<HttpResponseHead> handler) {
     headersHandler = handler;
     return this;
   }
@@ -247,7 +252,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     }
   }
 
-  public Http2ClientStream continueHandler(Handler<Void> handler) {
+  public DefaultHttpClientStreamState continueHandler(Handler<Void> handler) {
     continueHandler = handler;
     return this;
   }
@@ -259,7 +264,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     }
   }
 
-  public Http2ClientStream pushHandler(Handler<HttpClientPush> handler) {
+  public DefaultHttpClientStreamState pushHandler(Handler<HttpClientPush> handler) {
     pushHandler = handler;
     return this;
   }
@@ -271,7 +276,7 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     }
   }
 
-  public Http2ClientStream earlyHintsHandler(Handler<MultiMap> handler) {
+  public DefaultHttpClientStreamState earlyHintsHandler(Handler<MultiMap> handler) {
     earlyHintsHandler = handler;
     return this;
   }
@@ -333,5 +338,10 @@ public class Http2ClientStream extends Http2StreamBase<Http2ClientStream> implem
     if (clientMetrics != null) {
       clientMetrics.requestEnd(metric, bytesWritten());
     }
+  }
+
+  @Override
+  public HttpClientStream unwrap() {
+    return this;
   }
 }

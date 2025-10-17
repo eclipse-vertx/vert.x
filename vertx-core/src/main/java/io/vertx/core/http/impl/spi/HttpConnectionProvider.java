@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl.spi;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.stream.ChunkedInput;
@@ -16,7 +16,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 
-public interface Http2Connection {
+public interface HttpConnectionProvider {
 
   Http2HeadersMultiMap newHeaders();
 
@@ -40,12 +40,10 @@ public interface Http2Connection {
 
   void writeReset(int streamId, long code, Promise<Void> promise);
 
-  void writePriorityFrame(int streamId, StreamPriority priority);
-
-  void consumeCredits(int streamId, int amountOfBytes);
-
-  boolean supportsSendFile();
+  void writePriorityFrame(int streamId, StreamPriority priority, Promise<Void> promise);
 
   void sendFile(int streamId, ChunkedInput<ByteBuf> file, Promise<Void> promise);
+
+  void consumeCredits(int streamId, int amountOfBytes);
 
 }

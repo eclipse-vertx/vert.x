@@ -25,9 +25,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http2.Http2ServerConnection;
-import io.vertx.core.http.impl.http2.Http2ServerStream;
+import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.HttpServerConnectionProvider;
+import io.vertx.core.http.impl.spi.HttpServerStreamState;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -41,7 +42,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
+public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, HttpServerConnectionProvider {
 
   private final HttpServerOptions options;
   private final HttpServerMetrics metrics;
@@ -49,7 +50,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp2ConnectionHandler handler;
 
-  private Handler<Http2ServerStream> streamHandler;
+  private Handler<HttpServerStream> streamHandler;
   private int concurrentStreams;
   private final LinkedHashMap<Integer, Pending> pendingPushes = new LinkedHashMap<>();
 
@@ -70,7 +71,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler) {
+  public HttpServerConnectionProvider streamHandler(Handler<HttpServerStream> handler) {
     this.streamHandler = handler;
     return this;
   }
@@ -99,8 +100,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     return null;
   }
 
-  private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
-    return new Http2ServerStream(
+  private HttpServerStreamState createStream(Http2Headers headers, boolean streamEnded) {
+    return HttpServerStreamState.create(
       this,
       metrics,
       metric(),
@@ -109,7 +110,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     );
   }
 
-  private void initStream(int streamId, Http2ServerStream vertxStream) {
+  private void initStream(int streamId, HttpServerStreamState vertxStream) {
     Http2Stream stream = handler.connection().stream(streamId);
     vertxStream.init(stream.id(), isWritable(streamId));
     stream.setProperty(streamKey, vertxStream);
@@ -118,7 +119,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2Stream nettyStream = handler.connection().stream(streamId);
-    Http2ServerStream stream;
+    HttpServerStreamState stream;
     if (nettyStream.getProperty(streamKey) == null) {
       Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
       if (!headersMap.validate(true)) {
@@ -135,7 +136,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         stream.priority(streamPriority);
       }
 
-      stream.context().execute(stream, streamHandler);
+      stream.context().execute(stream.unwrap(), streamHandler);
       stream.onHeaders(headersMap);
     } else {
       // Http server request trailer - not implemented yet (in api)
@@ -165,7 +166,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       it.remove();
       concurrentStreams++;
       Pending pending = next.getValue();
-      Http2ServerStream stream = pending.stream;
+      HttpServerStreamState stream = pending.stream;
       if (!isWritable(stream.id())) {
         stream.onWritabilityChanged();
       }
@@ -184,7 +185,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerStreamState> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -194,15 +195,15 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   static class Pending {
-    final Http2ServerStream stream;
-    final Promise<Http2ServerStream> promise;
-    Pending(Http2ServerStream stream, Promise<Http2ServerStream> promise) {
+    final HttpServerStreamState stream;
+    final Promise<HttpServerStreamState> promise;
+    Pending(HttpServerStreamState stream, Promise<HttpServerStreamState> promise) {
       this.stream = stream;
       this.promise = promise;
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerStreamState> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());
@@ -221,7 +222,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          Http2ServerStream vertxStream = new Http2ServerStream(
+          HttpServerStreamState vertxStream = HttpServerStreamState.create(
             this,
             metrics,
             metric(),
@@ -252,5 +253,10 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   protected io.vertx.core.Future<Void> updateSettings(Http2Settings settingsUpdate) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     return super.updateSettings(settingsUpdate);
+  }
+
+  @Override
+  public boolean supportsSendFile() {
+    return false;
   }
 }

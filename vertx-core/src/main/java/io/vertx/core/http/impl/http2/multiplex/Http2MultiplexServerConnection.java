@@ -23,22 +23,23 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http2.Http2ServerConnection;
-import io.vertx.core.http.impl.http2.Http2ServerStream;
+import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.HttpServerConnectionProvider;
+import io.vertx.core.http.impl.spi.HttpServerStreamState;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.util.function.Supplier;
 
-public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Http2ServerStream> implements Http2ServerConnection, HttpServerConnection {
+public class Http2MultiplexServerConnection extends Http2MultiplexConnection<HttpServerStreamState> implements HttpServerConnectionProvider, HttpServerConnection {
 
   private final CompressionManager compressionManager;
   private final HttpServerMetrics<?, ?, ?> serverMetrics;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
-  private Handler<Http2ServerStream> streamHandler;
+  private Handler<HttpServerStream> streamHandler;
 
   public Http2MultiplexServerConnection(Http2MultiplexHandler handler,
                                         CompressionManager compressionManager,
@@ -56,7 +57,7 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public Http2ServerConnection streamHandler(Handler<Http2ServerStream> handler) {
+  public HttpServerConnectionProvider streamHandler(Handler<HttpServerStream> handler) {
     this.streamHandler = handler;
     return this;
   }
@@ -69,22 +70,22 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   // SHOULD UNIFY
   void receiveHeaders(ChannelHandlerContext chctx, Http2FrameStream frameStream, Http2Headers headers, boolean ended) {
     int streamId = frameStream.id();
-    Http2ServerStream channel = stream(streamId);
+    HttpServerStreamState channel = stream(streamId);
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
     if (channel == null) {
       if (!headersMap.validate(true)) {
         chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.PROTOCOL_ERROR.code()));
       } else {
-        Handler<Http2ServerStream> handler = streamHandler;
+        Handler<HttpServerStream> handler = streamHandler;
         if (handler == null) {
           chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.REFUSED_STREAM.code()));
         } else {
-          Http2ServerStream stream = new Http2ServerStream(this, serverMetrics, metric(),
+          HttpServerStreamState stream = HttpServerStreamState.create(this, serverMetrics, metric(),
                   streamContextSupplier.get(), null);;
           stream.init(streamId, chctx.channel().isWritable());
           registerChannel(stream, frameStream, chctx);
           ContextInternal streamContext = stream.context();
-          streamContext.execute(stream, handler);
+          streamContext.execute(stream.unwrap(), handler);
           stream.onHeaders(headersMap);
           if (ended) {
             stream.onTrailers();
@@ -105,19 +106,15 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2HeadersMultiMap prepare = headers.prepare();
     if (headers.status() != null && compressionManager != null) {
-      Http2ServerStream stream = stream(streamId);
+      HttpServerStreamState stream = stream(streamId);
       compressionManager.setContentEncoding(stream.headers().unwrap(), headers.unwrap());
     }
     writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) prepare.unwrap(), end), promise);
   }
 
-  @Override
-  public void writePriorityFrame(int streamId, StreamPriority priority) {
-    throw new UnsupportedOperationException();
-  }
 
   @Override
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerStreamState> promise) {
     promise.fail("Push not supported");
   }
 }

@@ -14,7 +14,7 @@ package io.vertx.tests.http.headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;

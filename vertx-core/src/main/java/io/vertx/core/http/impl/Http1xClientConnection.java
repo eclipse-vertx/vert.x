@@ -75,7 +75,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private final HostAndPort authority;
   public final ClientMetrics metrics;
   private final HttpVersion version;
-  private final boolean pooled;
   private final long lifetimeEvictionTimestamp;
 
   private final Deque<Stream> requests = new ArrayDeque<>();
@@ -102,7 +101,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
                          HostAndPort authority,
                          ContextInternal context,
                          ClientMetrics metrics,
-                         boolean pooled,
                          long maxLifetime) {
     super(context, chctx);
     this.client = client;
@@ -115,7 +113,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
-    this.pooled = pooled;
   }
 
   @Override
@@ -149,11 +146,6 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   @Override
   public synchronized long activeStreams() {
     return requests.isEmpty() && responses.isEmpty() ? 0 : 1;
-  }
-
-  @Override
-  public boolean pooled() {
-    return pooled;
   }
 
   /**

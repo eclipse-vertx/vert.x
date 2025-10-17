@@ -39,14 +39,12 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
 
   private HttpClientBase client;
   private ClientMetrics metrics;
-  private boolean pooled;
   private long maxLifetime;
   private HostAndPort authority;
 
-  public Http2CodecClientChannelInitializer(HttpClientBase client, ClientMetrics metrics, boolean pooled, long maxLifetime, HostAndPort authority) {
+  public Http2CodecClientChannelInitializer(HttpClientBase client, ClientMetrics metrics, long maxLifetime, HostAndPort authority) {
     this.client = client;
     this.metrics = metrics;
-    this.pooled = pooled;
     this.maxLifetime = maxLifetime;
     this.authority = authority;
   }
@@ -63,7 +61,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
   public void http2Connected(ContextInternal context, Object metric, Channel ch, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, pooled, maxLifetime);
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, maxLifetime);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
@@ -110,7 +108,6 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
                         Buffer content,
                         boolean end,
                         Channel channel,
-                        boolean pooled,
                         Http2UpgradeClientConnection.UpgradeResult result) {
       ChannelPipeline pipeline = channel.pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
@@ -162,7 +159,6 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
             true,
             connectionMetric,
             request.authority,
-            pooled,
             maxLifetime);
           channel.pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {

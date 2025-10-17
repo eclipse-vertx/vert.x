@@ -129,6 +129,12 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     return tracingPolicy;
   }
 
+  @Override
+  public HttpServerConnection streamHandler(Handler<HttpServerStream> handler) {
+    // This feature is not available for HTTP/1.1
+    return this;
+  }
+
   public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
     requestHandler = handler;
     return this;

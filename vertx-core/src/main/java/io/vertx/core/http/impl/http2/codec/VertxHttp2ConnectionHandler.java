@@ -454,18 +454,8 @@ public class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends 
     throw new UnsupportedOperationException();
   }
 
-  private void _writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
-      encoder().writePriority(chctx, stream.id(), streamDependency, weight, exclusive, chctx.newPromise());
-  }
-
-  void writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive) {
-    EventExecutor executor = chctx.executor();
-    if (executor.inEventLoop()) {
-      _writePriority(stream, streamDependency, weight, exclusive);
-    } else {
-      executor.execute(() -> {
-        _writePriority(stream, streamDependency, weight, exclusive);
-      });
-    }
+  void writePriority(Http2Stream stream, int streamDependency, short weight, boolean exclusive, FutureListener<Void> listener) {
+    ChannelPromise promise = listener == null ? chctx.voidPromise() : chctx.newPromise().addListener(listener);
+    encoder().writePriority(chctx, stream.id(), streamDependency, weight, exclusive, promise);
   }
 }

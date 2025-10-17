@@ -80,11 +80,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public boolean pooled() {
-    return current.pooled();
-  }
-
-  @Override
   public long activeStreams() {
     return current.concurrency();
   }
@@ -397,7 +392,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       };
       upgrade.upgrade(upgradingStream, request, buf, end,
         upgradingConnection.channelHandlerContext().channel(),
-        upgradingConnection.pooled(), blah
+        blah
       );
       PromiseInternal<Void> promise = upgradingStream.context().promise();
       writeHead(request, chunked, buf, end, priority, connect, promise);
@@ -904,7 +899,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                  Buffer content,
                  boolean end,
                  Channel channel,
-                 boolean pooled,
                  UpgradeResult result);
   }
 }
