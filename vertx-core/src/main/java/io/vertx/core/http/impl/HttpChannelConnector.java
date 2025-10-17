@@ -62,7 +62,6 @@ public class HttpChannelConnector {
   private final HttpVersion version;
   private final HostAndPort authority;
   private final SocketAddress server;
-  private final boolean pooled;
   private final long maxLifetime;
   private final Http2ClientChannelInitializer http2ChannelInitializer;
 
@@ -76,7 +75,6 @@ public class HttpChannelConnector {
                               boolean useAlpn,
                               HostAndPort authority,
                               SocketAddress server,
-                              boolean pooled,
                               long maxLifetimeMillis) {
 
     Http2ClientChannelInitializer http2ChannelInitializer;
@@ -92,7 +90,7 @@ public class HttpChannelConnector {
         client.options.isDecompressionSupported(),
         client.options.getLogActivity());
     } else {
-      http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, pooled, maxLifetimeMillis, authority);
+      http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, maxLifetimeMillis, authority);
     }
 
     this.client = client;
@@ -106,7 +104,6 @@ public class HttpChannelConnector {
     this.version = version;
     this.authority = authority;
     this.server = server;
-    this.pooled = pooled;
     this.maxLifetime = maxLifetimeMillis;
     this.http2ChannelInitializer = http2ChannelInitializer;
   }
@@ -239,7 +236,7 @@ public class HttpChannelConnector {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
       HttpClientMetrics met = client.metrics();
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, metrics, pooled, maxLifetime);
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, metrics, maxLifetime);
       if (met != null) {
         conn.metric(socketMetric);
         met.endpointConnected(metrics);

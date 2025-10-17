@@ -43,10 +43,9 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.Future;
 import io.vertx.core.http.GoAway;
-import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.http2.Http2ClientConnection;
-import io.vertx.core.http.impl.http2.Http2ClientStream;
+import io.vertx.core.http.impl.spi.HttpClientConnectionProvider;
+import io.vertx.core.http.impl.spi.HttpClientStreamState;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -120,7 +119,7 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
     codec.decoder().flowController().incrementWindowSize(stream, windowSizeIncrement);
   }
 
-  void createClientStream(Http2ClientStream stream) throws Exception {
+  void createClientStream(HttpClientStreamState stream) throws Exception {
     Http2StreamChannelBootstrap bootstrap = new Http2StreamChannelBootstrap(channel);
     bootstrap.handler(this);
     Future<Http2StreamChannel> fut;
@@ -134,12 +133,12 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
     connection.registerChannel(stream, streamChannel.stream(), chctx);
   }
 
-  HttpClientStream upgradeClientStream(Http2StreamChannel channel, Object metric, Object trace,
-                                       ContextInternal context) {
+  HttpClientStreamState upgradeClientStream(Http2StreamChannel channel, Object metric, Object trace,
+                                            ContextInternal context) {
     ChannelHandlerContext chctx = pendingChannels.remove(channel);
     ClientMetrics<?, ?, ?> clientMetrics = ((Http2MultiplexClientConnection) connection).clientMetrics();
     Http2FrameStream s = channel.stream();
-    Http2ClientStream sb = new Http2ClientStream(s.id(), (Http2ClientConnection) connection, context, null, false, clientMetrics, channel.isWritable());
+    HttpClientStreamState sb = HttpClientStreamState.create(s.id(), (HttpClientConnectionProvider) connection, context, null, false, clientMetrics, channel.isWritable());
     connection.registerChannel(sb, s, chctx);
     sb.upgrade(metric, trace);
     return sb;

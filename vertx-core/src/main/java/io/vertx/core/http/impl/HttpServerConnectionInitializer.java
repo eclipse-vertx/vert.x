@@ -103,7 +103,6 @@ public class HttpServerConnectionInitializer {
         compressionManager,
         streamContextSupplier,
         connectionHandler,
-        serverOrigin,
         metric,
         options.getLogActivity()
       );

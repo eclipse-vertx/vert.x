@@ -19,9 +19,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBase;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.http2.Http2ClientConnection;
-import io.vertx.core.http.impl.http2.Http2ClientStream;
+import io.vertx.core.http.impl.spi.HttpClientConnectionProvider;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.HttpClientStreamState;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -30,12 +30,11 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
+public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, HttpClientConnectionProvider {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
   private final HostAndPort authority;
-  private final boolean pooled;
   private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
@@ -48,13 +47,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                             HostAndPort authority,
                             VertxHttp2ConnectionHandler connHandler,
                             ClientMetrics metrics,
-                            boolean pooled,
                             long maxLifetime) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
     this.authority = authority;
-    this.pooled = pooled;
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.handler = connHandler;
   }
@@ -66,11 +63,6 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   public HostAndPort authority() {
     return authority;
-  }
-
-  @Override
-  public boolean pooled() {
-    return pooled;
   }
 
   @Override
@@ -156,26 +148,26 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2Stream nettyStream = handler.connection().stream(1);
-    Http2ClientStream s = new Http2ClientStream(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
+    HttpClientStreamState s = HttpClientStreamState.create(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
     s.upgrade(metric, trace);
     nettyStream.setProperty(streamKey, s);
-    return s;
+    return s.unwrap();
   }
 
   @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
     synchronized (this) {
       try {
-        Http2ClientStream stream = createStream0(context);
-        return context.succeededFuture(stream);
+        HttpClientStreamState stream = createStream0(context);
+        return context.succeededFuture(stream.unwrap());
       } catch (Exception e) {
         return context.failedFuture(e);
       }
     }
   }
 
-  private Http2ClientStream createStream0(ContextInternal context) {
-    return new Http2ClientStream(
+  private HttpClientStreamState createStream0(ContextInternal context) {
+    return HttpClientStreamState.create(
       this,
       context,
       client.options.getTracingPolicy(),
@@ -206,7 +198,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    Http2ClientStream stream = (Http2ClientStream) stream(streamId);
+    HttpClientStreamState stream = (HttpClientStreamState) stream(streamId);
     Http2Stream s = handler.connection().stream(streamId);
     Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
     if (!s.isTrailersReceived()) {
@@ -229,11 +221,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   public synchronized void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-    Http2ClientStream stream = (Http2ClientStream) stream(streamId);
+    HttpClientStreamState stream = (HttpClientStreamState) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
 //      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      Http2ClientStream s = new Http2ClientStream(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+      HttpClientStreamState s = HttpClientStreamState.create(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
 //      pushStream.init(s);
 //      pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
@@ -260,7 +252,6 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     boolean upgrade,
     Object socketMetric,
     HostAndPort authority,
-    boolean pooled,
     long maxLifetime) {
     HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
@@ -270,7 +261,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(client, context, authority, connHandler, metrics, pooled, maxLifetime);
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(client, context, authority, connHandler, metrics, maxLifetime);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);
@@ -296,7 +287,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public void createStream(Http2ClientStream vertxStream) throws Exception {
+  public void createStream(HttpClientStreamState stream) throws Exception {
     int id = handler.encoder().connection().local().lastStreamCreated();
     if (id == 0) {
       id = 1;
@@ -304,8 +295,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       id += 2;
     }
     Http2Stream nettyStream = handler.encoder().connection().local().createStream(id, false);
-    nettyStream.setProperty(streamKey, vertxStream);
+    nettyStream.setProperty(streamKey, stream);
     int nettyStreamId = nettyStream.id();
-    vertxStream.init(nettyStreamId, isWritable(nettyStream.id()));
+    stream.init(nettyStreamId, isWritable(nettyStream.id()));
   }
 }

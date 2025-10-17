@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl.spi;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -38,13 +38,13 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements HttpStream {
+abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> implements HttpStream, HttpStreamState {
 
   private static final Http2HeadersMultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
-  private final Http2Connection connection;
+  private final HttpConnectionProvider connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
   private int id;
@@ -74,11 +74,11 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements H
   private Handler<StreamPriority> priorityChangeHandler;
   private Handler<Void> drainHandler;
 
-  Http2StreamBase(Http2Connection connection, ContextInternal context) {
+  DefaultHttpStreamState(HttpConnectionProvider connection, ContextInternal context) {
     this(-1, connection, context, true);
   }
 
-  Http2StreamBase(int id_, Http2Connection connection, ContextInternal context, boolean writable) {
+  DefaultHttpStreamState(int id_, HttpConnectionProvider connection, ContextInternal context, boolean writable) {
     this.connection = connection;
     this.vertx = context.owner();
     this.context = context;
@@ -91,7 +91,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements H
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          connection.context().execute(len, v -> connection.consumeCredits(Http2StreamBase.this.id, v));
+          connection.context().execute(len, v -> connection.consumeCredits(DefaultHttpStreamState.this.id, v));
           handleData(data);
         }
       }
@@ -102,7 +102,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements H
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {
-        if (Http2StreamBase.this.writable) {
+        if (DefaultHttpStreamState.this.writable) {
           msg.write();
           return true;
         } else {
@@ -119,12 +119,12 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements H
       }
       @Override
       protected void handleDrained() {
-        context.execute(Http2StreamBase.this, Http2StreamBase::handleWriteQueueDrained);
+        context.execute(DefaultHttpStreamState.this, DefaultHttpStreamState::handleWriteQueueDrained);
       }
     };
     if (id >= 0) {
       // Not great but well
-      if (this instanceof Http2ClientStream) {
+      if (this instanceof DefaultHttpClientStreamState) {
         this.headersSent = true;
         this.trailersSent = true;
       } else {
@@ -168,9 +168,9 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements H
     return priority;
   }
 
-  public void init(int streamId, boolean writable) {
-    assert id < 0;
-    this.id = streamId;
+  public void init(int id, boolean writable) {
+    assert this.id < 0;
+    this.id = id;
     this.writable = writable;
   }
 
@@ -537,7 +537,7 @@ public abstract class Http2StreamBase<S extends Http2StreamBase<S>> implements H
     if (!this.priority.equals(priority)) {
       this.priority = priority;
       if (id >= 0) {
-        connection.writePriorityFrame(id, priority);
+        connection.writePriorityFrame(id, priority, null);
       }
     }
     return (S)this;

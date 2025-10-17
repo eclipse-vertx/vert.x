@@ -17,7 +17,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.http.impl.http2.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
 import org.junit.Test;
 
 import java.util.ArrayList;

@@ -71,7 +71,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, false, 0);
+      HttpChannelConnector connector = new HttpChannelConnector(WebSocketClientImpl.this, netClient, sslOptions, key_.proxyOptions, clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, 0);
       return new WebSocketGroup(null, queueMetrics, options, maxPoolSize, connector);
     };
     webSocketCM

@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.http2;
+package io.vertx.core.http.impl.spi;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.Future;
@@ -30,14 +30,15 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.SpanKind;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implements HttpServerStream {
+class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpServerStreamState> implements HttpServerStream, HttpServerStreamState {
 
-  private final Http2ServerConnection connection;
+  private final HttpServerConnectionProvider connection;
   private Http2HeadersMultiMap requestHeaders;
   private Http2HeadersMultiMap responseHeaders;
   private String scheme;
@@ -56,15 +57,15 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
   // Client handlers
   private Handler<HttpRequestHead> headersHandler;
 
-  public Http2ServerStream(Http2ServerConnection connection,
-                           HttpServerMetrics serverMetrics,
-                           Object socketMetric,
-                           ContextInternal context,
-                           Http2HeadersMultiMap requestHeaders,
-                           HttpMethod method,
-                           String uri,
-                           TracingPolicy tracingPolicy,
-                           int promisedId) {
+  DefaultHttpServerStreamState(HttpServerConnectionProvider connection,
+                               HttpServerMetrics serverMetrics,
+                               Object socketMetric,
+                               ContextInternal context,
+                               Http2HeadersMultiMap requestHeaders,
+                               HttpMethod method,
+                               String uri,
+                               TracingPolicy tracingPolicy,
+                               int promisedId) {
     super(promisedId, connection, context, true);
 
     this.connection = connection;
@@ -77,11 +78,11 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
     this.socketMetric = socketMetric;
   }
 
-  public Http2ServerStream(Http2ServerConnection connection,
-                           HttpServerMetrics serverMetrics,
-                           Object socketMetric,
-                           ContextInternal context,
-                           TracingPolicy tracingPolicy) {
+  DefaultHttpServerStreamState(HttpServerConnectionProvider connection,
+                               HttpServerMetrics serverMetrics,
+                               Object socketMetric,
+                               ContextInternal context,
+                               TracingPolicy tracingPolicy) {
     super(connection, context);
 
     this.connection = connection;
@@ -133,7 +134,7 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
   }
 
   @Override
-  public Http2ServerConnection connection() {
+  public HttpServerConnectionProvider connection() {
     return connection;
   }
 
@@ -147,7 +148,7 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
     super.onHeaders(headers);
   }
 
-  public Http2ServerStream headHandler(Handler<HttpRequestHead> handler) {
+  public DefaultHttpServerStreamState headHandler(Handler<HttpRequestHead> handler) {
     headersHandler = handler;
     return this;
   }
@@ -201,7 +202,7 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
   }
 
   public Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority) {
-    Promise<Http2ServerStream> promise = context.promise();
+    Promise<HttpServerStreamState> promise = context.promise();
     connection.sendPush(id(), authority, method, headers, path, priority(), promise);
     return promise.future().map(pushStream -> {
       pushStream.priority(priority()); // Necessary ???
@@ -210,9 +211,10 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
         mmap.addAll(headers);
       }
       mmap.status(200);
-      pushStream.responseHeaders = mmap;
-      pushStream.observablePush();
-      return pushStream;
+      DefaultHttpServerStreamState s = (DefaultHttpServerStreamState)pushStream;
+      s.responseHeaders = mmap;
+      s.observablePush();
+      return pushStream.unwrap();
     });
   }
 
@@ -248,7 +250,7 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers, HttpUtils.HTTP_2_SERVER_STREAM_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers, HTTP_2_SERVER_STREAM_TAG_EXTRACTOR);
     }
   }
 
@@ -288,4 +290,63 @@ public class Http2ServerStream extends Http2StreamBase<Http2ServerStream> implem
     // ????
     return this;
   }
+
+  @Override
+  public HttpServerStream unwrap() {
+    return this;
+  }
+
+  public static final TagExtractor<DefaultHttpServerStreamState> HTTP_2_SERVER_STREAM_TAG_EXTRACTOR = new TagExtractor<>() {
+    @Override
+    public int len(DefaultHttpServerStreamState req) {
+      return req.headers().path().indexOf('?') == -1 ? 4 : 5;
+    }
+
+    @Override
+    public String name(DefaultHttpServerStreamState req, int index) {
+      switch (index) {
+        case 0:
+          return "http.url";
+        case 1:
+          return "http.request.method";
+        case 2:
+          return "url.scheme";
+        case 3:
+          return "url.path";
+        case 4:
+          return "url.query";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+
+    @Override
+    public String value(DefaultHttpServerStreamState req, int index) {
+      int idx;
+      switch (index) {
+        case 0:
+          String sb = req.scheme() +
+            "://" +
+            req.authority() +
+            req.headers().path();
+          return sb;
+        case 1:
+          return req.method().name();
+        case 2:
+          return req.scheme();
+        case 3:
+          String path = req.headers().path();
+          idx = path.indexOf('?');
+          if (idx > 0) {
+            path = path.substring(0, idx);
+          }
+          return path;
+        case 4:
+          String query = req.headers().path();
+          idx = query.indexOf('?');
+          query = query.substring(idx + 1);
+          return query;
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
 }

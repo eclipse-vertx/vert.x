@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl.http2.multiplex;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -113,7 +112,6 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
                         Buffer content,
                         boolean end,
                         Channel channel,
-                        boolean pooled,
                         Http2UpgradeClientConnection.UpgradeResult result) {
       ChannelPipeline pipeline = channel.pipeline();
       HttpClientCodec clientCodec = pipeline.get(HttpClientCodec.class);
@@ -138,7 +136,7 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
           pipeline.replace("handler", "handler", handler);
           Http2MultiplexClientConnection connection = (Http2MultiplexClientConnection) handler.connection();
           ctx.pipeline().addLast(handler);
-          HttpClientStream upgradedStream = handler.upgradeClientStream((Http2StreamChannel) ctx.channel(), upgradingStream.metric(), upgradingStream.trace(), upgradingStream.context());
+          HttpClientStream upgradedStream = handler.upgradeClientStream((Http2StreamChannel) ctx.channel(), upgradingStream.metric(), upgradingStream.trace(), upgradingStream.context()).unwrap();
           ctx.pipeline().remove(this);
           p.onSuccess(ar -> {
             result.upgradeAccepted(connection, upgradedStream);
