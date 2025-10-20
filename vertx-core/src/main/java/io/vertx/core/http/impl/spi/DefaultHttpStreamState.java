@@ -333,7 +333,8 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
       trailersSent = true;
       observeOutboundTrailers();
     }
-    connection.writeHeaders(id, headers, priority, end, checkFlush, promise);
+    headers.prepare();
+    connection.writeHeaders(id, headers.unwrap(), priority, end, checkFlush, promise);
   }
 
   public final void sendFile(ChunkedInput<ByteBuf> file, Promise<Void> promise) {

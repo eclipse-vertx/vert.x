@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2.multiplex;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
@@ -103,13 +104,13 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    Http2HeadersMultiMap prepare = headers.prepare();
-    if (headers.status() != null && compressionManager != null) {
+  public void writeHeaders(int streamId, Headers<CharSequence, CharSequence, ?> headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    Http2Headers prepare = (Http2Headers)headers;
+    if (prepare.status() != null && compressionManager != null) {
       HttpServerStreamState stream = stream(streamId);
-      compressionManager.setContentEncoding(stream.headers().unwrap(), headers.unwrap());
+      compressionManager.setContentEncoding(stream.headers().unwrap(), prepare);
     }
-    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) prepare.unwrap(), end), promise);
+    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) prepare, end), promise);
   }
 
 

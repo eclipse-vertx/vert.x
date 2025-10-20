@@ -14,6 +14,7 @@ package io.vertx.core.http.impl.http2.codec;
 import io.netty.buffer.*;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -517,9 +518,9 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+  public void writeHeaders(int streamId, Headers<CharSequence, CharSequence, ?> headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
     Http2Stream s = handler.connection().stream(streamId);
-    handler.writeHeaders(s, (Http2Headers) headers.prepare().unwrap(), end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
+    handler.writeHeaders(s, (Http2Headers) headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), checkFlush, (FutureListener<Void>) promise);
   }
 
   @Override

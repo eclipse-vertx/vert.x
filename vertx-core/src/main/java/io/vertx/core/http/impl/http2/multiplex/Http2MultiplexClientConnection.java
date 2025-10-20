@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2.multiplex;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.Http2Error;
@@ -190,8 +191,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void writeHeaders(int streamId, Http2HeadersMultiMap headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
-    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) headers.prepare().unwrap(), end), promise);
+  public void writeHeaders(int streamId, Headers<CharSequence, CharSequence, ?> headers, StreamPriority priority, boolean end, boolean checkFlush, Promise<Void> promise) {
+    writeStreamFrame(streamId, new DefaultHttp2HeadersFrame((Http2Headers) headers, end), promise);
   }
 
   @Override

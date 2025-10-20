@@ -147,7 +147,7 @@ public class Http2HeadersMultiMap implements MultiMap {
     return this;
   }
 
-  public Http2HeadersMultiMap prepare() {
+  void prepare() {
     boolean ssl = "ssl".equals(scheme);
     if (method != null) {
       headers.set(HttpHeaders.PSEUDO_METHOD, method.toString());
@@ -167,7 +167,6 @@ public class Http2HeadersMultiMap implements MultiMap {
     if (status != null) {
       headers.set(HttpHeaders.PSEUDO_STATUS, status.toString());
     }
-    return this;
   }
 
   public Http2HeadersMultiMap status(CharSequence status) {
