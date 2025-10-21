@@ -373,53 +373,45 @@ public class VertxConnectionTest extends VertxTestBase {
 
   @Test
   public void testConsolidateFlushInDrainWhenResume() throws Exception {
-    connectHandler = conn -> {
-      ChannelHandlerContext ctx = conn.channelHandlerContext();
-      ChannelPipeline pipeline = ctx.pipeline();
-      pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
-        @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-          switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
-            case "outbound-1":
-              conn.resume();
-              break;
-          }
-          ctx.write(msg);
+    MessageFactory factory = new MessageFactory();
+    EmbeddedChannel ch = new EmbeddedChannel();
+    ChannelPipeline pipeline = ch.pipeline();
+    pipeline.addLast("handler", VertxHandler.create(chctx -> new TestConnection(chctx)));
+    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
+    Message inbound1 = factory.next();
+    Message inbound2 = factory.next();
+    Message outbound1 = factory.next();
+    Message outbound2 = factory.next();
+    Message flush = factory.next();
+    pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
+      @Override
+      public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+        if (msg == outbound1) {
+          connection.doResume();
         }
-        @Override
-        public void flush(ChannelHandlerContext ctx) {
-          ctx.write(Unpooled.copiedBuffer("flush", StandardCharsets.UTF_8))
-            .addListener((ChannelFutureListener) future -> conn.channelHandlerContext().close());
-          ctx.flush();
-        }
-      });
-      conn.messageHandler(msg -> {
-        switch (((ByteBuf)msg).toString(StandardCharsets.UTF_8)) {
-          case "inbound-1":
-            conn.pause();
-            vertx.runOnContext(v -> {
-              pipeline.fireChannelRead(Unpooled.copiedBuffer("inbound-2", StandardCharsets.UTF_8));
-              pipeline.fireChannelReadComplete();
-              new Thread(() -> {
-                conn.writeMessage(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8));
-              }).start();
-            });
-            break;
-          case "inbound-2":
-            conn.writeMessage(Unpooled.copiedBuffer("outbound-2", StandardCharsets.UTF_8));
-            break;
-        }
-      });
-    };
-    NetSocket so = awaitFuture(client.connect(1234, "localhost"));
-    Buffer received = Buffer.buffer();
-    so.handler(received::appendBuffer);
-    so.closeHandler(v -> {
-      assertEquals("outbound-1outbound-2flush", received.toString());
-      testComplete();
+        ctx.write(msg);
+      }
+      @Override
+      public void flush(ChannelHandlerContext ctx) {
+        ctx.write(flush);
+        ctx.flush();
+      }
     });
-    so.write("inbound-1").await();
-    await();
+    connection.handler = event -> {
+      if (event == inbound1) {
+        connection.pause();
+        pipeline.fireChannelRead(inbound2);
+        connection.write(outbound1, false);
+        pipeline.fireChannelReadComplete();
+      } else if (event == inbound2) {
+        connection.write(outbound2, false);
+      }
+    };
+    pipeline.fireChannelRead(inbound1);
+    assertSame(outbound1, ch.readOutbound());
+    assertSame(outbound2, ch.readOutbound());
+    assertSame(flush, ch.readOutbound());
+    assertNull(ch.readOutbound());
   }
 
   @Test

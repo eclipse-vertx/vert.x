@@ -69,10 +69,8 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
             context.dispatch(handler);
           }
         } else {
-          Handler<Buffer> handler = handler();
-          if (handler != null) {
-            context.dispatch((Buffer) msg, handler);
-          }
+          MessageHandler handler = messageHandler();
+          handler.handle(msg);
         }
       }
     };
@@ -110,7 +108,7 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     return (S) this;
   }
 
-  private synchronized Handler<Object> messageHandler() {
+  private synchronized MessageHandler messageHandler() {
     return messageHandler;
   }
 
@@ -121,15 +119,12 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     } else {
       messageHandler = new MessageHandler() {
         @Override
-        public void pause() {
-          doPause();
+        public boolean accept(Object msg) {
+          return true;
         }
         @Override
-        public void fetch(long amount) {
-          if (amount != Long.MAX_VALUE) {
-            throw new IllegalArgumentException("Only accepts resume");
-          }
-          doResume();
+        public Object transform(Object msg) {
+          return msg;
         }
         @Override
         public void handle(Object msg) {
@@ -158,13 +153,13 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
 
   @Override
   public synchronized S pause() {
-    messageHandler.pause();
+    pending.pause();
     return (S) this;
   }
 
   @Override
   public S fetch(long amount) {
-    messageHandler.fetch(amount);
+    pending.fetch(amount);
     return (S) this;
   }
 
@@ -268,8 +263,15 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
 
   @Override
   protected void handleMessage(Object msg) {
-    Handler<Object> handler = messageHandler();
-    handler.handle(msg);
+    MessageHandler handler = messageHandler();
+    if (handler.accept(msg)) {
+      pending.write(handler.transform(msg));
+    } else {
+      if (msg instanceof ReferenceCounted) {
+        ReferenceCounted refCounter = (ReferenceCounted) msg;
+        refCounter.release();
+      }
+    }
   }
 
   @Override
@@ -293,38 +295,32 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     }
   }
 
-  interface MessageHandler extends Handler<Object> {
-    void pause();
-    void fetch(long amount);
+  interface MessageHandler {
+
+    boolean accept(Object msg);
+
+    Object transform(Object msg);
+
+    void handle(Object msg);
   }
 
   private class DataMessageHandler implements MessageHandler {
 
     @Override
+    public boolean accept(Object msg) {
+      return msg instanceof ByteBuf;
+    }
+
+    @Override
+    public Object transform(Object msg) {
+      return BufferInternal.safeBuffer((ByteBuf) msg);
+    }
+
+    @Override
     public void handle(Object msg) {
-      if (msg instanceof ByteBuf) {
-        Buffer buffer = BufferInternal.safeBuffer((ByteBuf) msg);
-        pending.write(buffer);
-      } else {
-        handleInvalid(msg);
-      }
-    }
-
-    @Override
-    public void pause() {
-      pending.pause();
-    }
-
-    @Override
-    public void fetch(long amount) {
-      pending.fetch(amount);
-    }
-
-    private void handleInvalid(Object msg) {
-      // ByteBuf are eagerly released when the message is processed
-      if (msg instanceof ReferenceCounted && (!(msg instanceof ByteBuf))) {
-        ReferenceCounted refCounter = (ReferenceCounted) msg;
-        refCounter.release();
+      Handler<Buffer> handler = handler();
+      if (handler != null) {
+        context.dispatch((Buffer)msg, handler);
       }
     }
   }

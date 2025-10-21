@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.impl.quic;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
@@ -23,6 +24,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.SocketBase;
 import io.vertx.core.net.QuicConnection;
 import io.vertx.core.net.QuicStream;
@@ -91,8 +93,10 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   @Override
   public Future<Void> end() {
     PromiseInternal<Void> promise = context.promise();
-    ChannelFuture shutdownPromise = channel.shutdownOutput();
-    shutdownPromise.addListener(promise);
+    writeToChannel(() -> {
+      ChannelFuture shutdownPromise = channel.shutdownOutput();
+      shutdownPromise.addListener(promise);
+    });
     return promise.future();
   }
 
