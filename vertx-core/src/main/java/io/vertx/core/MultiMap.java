@@ -12,7 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.*;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return the multi-map
    */
   static MultiMap caseInsensitiveMultiMap() {
-    return HeadersMultiMap.caseInsensitive();
+    return Http1xHeaders.caseInsensitive();
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

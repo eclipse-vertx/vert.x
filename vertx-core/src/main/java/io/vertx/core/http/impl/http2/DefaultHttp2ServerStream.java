@@ -8,9 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -22,6 +23,9 @@ import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpServerStream;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.headers.HttpRequestHeaders;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
@@ -36,11 +40,11 @@ import io.vertx.core.tracing.TracingPolicy;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
-class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpServerStreamState> implements HttpServerStream, HttpServerStreamState {
+class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStream> implements HttpServerStream, Http2ServerStream {
 
-  private final HttpServerConnectionProvider connection;
-  private Http2HeadersMultiMap requestHeaders;
-  private Http2HeadersMultiMap responseHeaders;
+  private final Http2ServerConnection connection;
+  private HttpRequestHeaders requestHeaders;
+  private HttpResponseHeaders responseHeaders;
   private String scheme;
   private HttpMethod method;
   private String uri;
@@ -57,15 +61,15 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
   // Client handlers
   private Handler<HttpRequestHead> headersHandler;
 
-  DefaultHttpServerStreamState(HttpServerConnectionProvider connection,
-                               HttpServerMetrics serverMetrics,
-                               Object socketMetric,
-                               ContextInternal context,
-                               Http2HeadersMultiMap requestHeaders,
-                               HttpMethod method,
-                               String uri,
-                               TracingPolicy tracingPolicy,
-                               int promisedId) {
+  DefaultHttp2ServerStream(Http2ServerConnection connection,
+                           HttpServerMetrics serverMetrics,
+                           Object socketMetric,
+                           ContextInternal context,
+                           HttpRequestHeaders requestHeaders,
+                           HttpMethod method,
+                           String uri,
+                           TracingPolicy tracingPolicy,
+                           int promisedId) {
     super(promisedId, connection, context, true);
 
     this.connection = connection;
@@ -78,11 +82,11 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
     this.socketMetric = socketMetric;
   }
 
-  DefaultHttpServerStreamState(HttpServerConnectionProvider connection,
-                               HttpServerMetrics serverMetrics,
-                               Object socketMetric,
-                               ContextInternal context,
-                               TracingPolicy tracingPolicy) {
+  DefaultHttp2ServerStream(Http2ServerConnection connection,
+                           HttpServerMetrics serverMetrics,
+                           Object socketMetric,
+                           ContextInternal context,
+                           TracingPolicy tracingPolicy) {
     super(connection, context);
 
     this.connection = connection;
@@ -105,7 +109,7 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
     return observableResponse;
   }
 
-  public Http2HeadersMultiMap headers() {
+  public HttpHeaders headers() {
     return requestHeaders;
   }
 
@@ -134,36 +138,41 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
   }
 
   @Override
-  public HttpServerConnectionProvider connection() {
+  public Http2ServerConnection connection() {
     return connection;
   }
 
-  public void onHeaders(Http2HeadersMultiMap headers) {
+  public void onHeaders(HttpHeaders headers) {
 
-    this.method = headers.method();
-    this.uri = headers.path();
-    this.scheme = headers.scheme();
-    this.requestHeaders = headers;
+    HttpRequestHeaders requestHeaders = (HttpRequestHeaders)headers;
+
+    this.method = requestHeaders.method();
+    this.uri = requestHeaders.path();
+    this.scheme = requestHeaders.scheme();
+    this.requestHeaders = (HttpRequestHeaders) headers;
 
     super.onHeaders(headers);
   }
 
-  public DefaultHttpServerStreamState headHandler(Handler<HttpRequestHead> handler) {
+  public DefaultHttp2ServerStream headHandler(Handler<HttpRequestHead> handler) {
     headersHandler = handler;
     return this;
   }
 
-  void handleHeader(Http2HeadersMultiMap map) {
+  void handleHeader(HttpHeaders map) {
     Handler<HttpRequestHead> handler = headersHandler;
+
+    HttpRequestHeaders requestHeaders = (HttpRequestHeaders)map;
+
     HttpRequestHead head = new HttpRequestHead(
-      map.method(),
-      map.path(),
+      requestHeaders.method(),
+      requestHeaders.path(),
       map,
-      map.authority(),
+      requestHeaders.authority(),
       null,
       null
     );
-    head.scheme = map.scheme();
+    head.scheme = requestHeaders.scheme();
     map.sanitize();
     if (handler != null) {
       context.dispatch(head, handler);
@@ -172,7 +181,7 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
 
   public final Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
     Promise<Void> promise = context.promise();
-    Http2HeadersMultiMap headers = (Http2HeadersMultiMap)head.headers();
+    HttpResponseHeaders headers = (HttpResponseHeaders)head.headers();
     headers.status(head.statusCode);
     if (chunk != null) {
       writeHeaders(headers, false, false, null);
@@ -184,9 +193,11 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
   }
 
   @Override
-  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(HttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     // Work around
-    responseHeaders = headers;
+    if (headers instanceof HttpResponseHeaders) {
+      responseHeaders = (HttpResponseHeaders) headers;
+    }
     super.writeHeaders0(headers, end, checkFlush, promise);
   }
 
@@ -202,16 +213,16 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
   }
 
   public Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority) {
-    Promise<HttpServerStreamState> promise = context.promise();
+    Promise<Http2ServerStream> promise = context.promise();
     connection.sendPush(id(), authority, method, headers, path, priority(), promise);
     return promise.future().map(pushStream -> {
       pushStream.priority(priority()); // Necessary ???
-      Http2HeadersMultiMap mmap = connection.newHeaders();
+      HttpResponseHeaders mmap = new HttpResponseHeaders(new DefaultHttp2Headers());
       if (headers != null) {
         mmap.addAll(headers);
       }
       mmap.status(200);
-      DefaultHttpServerStreamState s = (DefaultHttpServerStreamState)pushStream;
+      DefaultHttp2ServerStream s = (DefaultHttp2ServerStream)pushStream;
       s.responseHeaders = mmap;
       s.observablePush();
       return pushStream.unwrap();
@@ -219,7 +230,7 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
   }
 
   @Override
-  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
+  protected void observeOutboundHeaders(HttpHeaders headers) {
     if (Metrics.METRICS_ENABLED) {
       if (serverMetrics != null) {
         serverMetrics.responseBegin(metric, observableResponse());
@@ -242,7 +253,7 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
   }
 
   @Override
-  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
+  protected void observeInboundHeaders(HttpHeaders headers) {
     if (METRICS_ENABLED) {
       if (serverMetrics != null) {
         metric = serverMetrics.requestBegin(socketMetric, observableRequest());
@@ -296,14 +307,14 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
     return this;
   }
 
-  public static final TagExtractor<DefaultHttpServerStreamState> HTTP_2_SERVER_STREAM_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<DefaultHttp2ServerStream> HTTP_2_SERVER_STREAM_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
-    public int len(DefaultHttpServerStreamState req) {
-      return req.headers().path().indexOf('?') == -1 ? 4 : 5;
+    public int len(DefaultHttp2ServerStream req) {
+      return ((HttpRequestHeaders)req.headers()).path().indexOf('?') == -1 ? 4 : 5;
     }
 
     @Override
-    public String name(DefaultHttpServerStreamState req, int index) {
+    public String name(DefaultHttp2ServerStream req, int index) {
       switch (index) {
         case 0:
           return "http.url";
@@ -320,28 +331,28 @@ class DefaultHttpServerStreamState extends DefaultHttpStreamState<DefaultHttpSer
     }
 
     @Override
-    public String value(DefaultHttpServerStreamState req, int index) {
+    public String value(DefaultHttp2ServerStream req, int index) {
       int idx;
       switch (index) {
         case 0:
           String sb = req.scheme() +
             "://" +
             req.authority() +
-            req.headers().path();
+            ((HttpRequestHeaders)req.headers()).path();
           return sb;
         case 1:
           return req.method().name();
         case 2:
           return req.scheme();
         case 3:
-          String path = req.headers().path();
+          String path = ((HttpRequestHeaders)req.headers()).path();
           idx = path.indexOf('?');
           if (idx > 0) {
             path = path.substring(0, idx);
           }
           return path;
         case 4:
-          String query = req.headers().path();
+          String query = ((HttpRequestHeaders)req.headers()).path();
           idx = query.indexOf('?');
           query = query.substring(idx + 1);
           return query;

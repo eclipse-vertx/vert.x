@@ -8,10 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.HttpServerStream;
+import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.tracing.TracingPolicy;
@@ -19,18 +21,18 @@ import io.vertx.core.tracing.TracingPolicy;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpServerStreamState extends HttpStreamState {
+public interface Http2ServerStream extends Http2Stream {
 
-  static HttpServerStreamState create(HttpServerConnectionProvider connection,
-                                      HttpServerMetrics serverMetrics,
-                                      Object socketMetric,
-                                      ContextInternal context,
-                                      Http2HeadersMultiMap requestHeaders,
-                                      HttpMethod method,
-                                      String uri,
-                                      TracingPolicy tracingPolicy,
-                                      int promisedId) {
-    return new DefaultHttpServerStreamState(
+  static Http2ServerStream create(Http2ServerConnection connection,
+                                  HttpServerMetrics serverMetrics,
+                                  Object socketMetric,
+                                  ContextInternal context,
+                                  HttpRequestHeaders requestHeaders,
+                                  HttpMethod method,
+                                  String uri,
+                                  TracingPolicy tracingPolicy,
+                                  int promisedId) {
+    return new DefaultHttp2ServerStream(
       connection,
       serverMetrics,
       socketMetric,
@@ -42,16 +44,16 @@ public interface HttpServerStreamState extends HttpStreamState {
       promisedId);
   }
 
-  static HttpServerStreamState create(
-    HttpServerConnectionProvider connection,
+  static Http2ServerStream create(
+    Http2ServerConnection connection,
     HttpServerMetrics serverMetrics,
     Object socketMetric,
     ContextInternal context,
     TracingPolicy tracingPolicy) {
-    return new DefaultHttpServerStreamState(connection, serverMetrics, socketMetric, context, tracingPolicy);
+    return new DefaultHttp2ServerStream(connection, serverMetrics, socketMetric, context, tracingPolicy);
   }
 
-  Http2HeadersMultiMap headers();
+  HttpHeaders headers();
 
   HttpServerStream unwrap();
 

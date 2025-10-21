@@ -14,7 +14,7 @@ package io.vertx.benchmarks;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Measurement;
@@ -47,12 +47,12 @@ public class HeadersSetBenchmark extends BenchmarkBase {
   }
 
   private HttpHeaders nettySmallHeaders;
-  private HeadersMultiMap vertxSmallHeaders;
+  private Http1xHeaders vertxSmallHeaders;
 
   @Setup
   public void setup() {
     nettySmallHeaders = new DefaultHttpHeaders(validate);
-    vertxSmallHeaders = HeadersMultiMap.httpHeaders(validate? HttpUtils::validateHeader : null);
+    vertxSmallHeaders = Http1xHeaders.httpHeaders(validate? HttpUtils::validateHeader : null);
   }
 
   @Benchmark

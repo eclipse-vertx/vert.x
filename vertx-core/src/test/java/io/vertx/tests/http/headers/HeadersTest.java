@@ -14,10 +14,9 @@ package io.vertx.tests.http.headers;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -546,9 +545,9 @@ public abstract class HeadersTest {
   public void testContainsValueCharSequence() {
     MultiMap mmap = newMultiMap();
     mmap.add("headeR", "vAlue");
-    CharSequence name = HttpHeaders.createOptimized("heaDer");
-    CharSequence vAlue = HttpHeaders.createOptimized("vAlue");
-    CharSequence Value = HttpHeaders.createOptimized("Value");
+    CharSequence name = io.vertx.core.http.HttpHeaders.createOptimized("heaDer");
+    CharSequence vAlue = io.vertx.core.http.HttpHeaders.createOptimized("vAlue");
+    CharSequence Value = io.vertx.core.http.HttpHeaders.createOptimized("Value");
     assertTrue(mmap.contains(name, vAlue, false));
     assertFalse(mmap.contains(name, Value, false));
   }
@@ -557,9 +556,9 @@ public abstract class HeadersTest {
   public void testContainsValueCharSequenceIgnoreCase() {
     MultiMap mmap = newMultiMap();
     mmap.add("headeR", "vAlue");
-    CharSequence name = HttpHeaders.createOptimized("heaDer");
-    CharSequence vAlue = HttpHeaders.createOptimized("vAlue");
-    CharSequence Value = HttpHeaders.createOptimized("Value");
+    CharSequence name = io.vertx.core.http.HttpHeaders.createOptimized("heaDer");
+    CharSequence vAlue = io.vertx.core.http.HttpHeaders.createOptimized("vAlue");
+    CharSequence Value = io.vertx.core.http.HttpHeaders.createOptimized("Value");
     assertTrue(mmap.contains(name, vAlue, true));
     assertTrue(mmap.contains(name, Value, true));
   }
@@ -588,19 +587,19 @@ public abstract class HeadersTest {
     mmap.add("header", Arrays.<String>asList("value1", "value2"));
     assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
     mmap = newMultiMap();
-    mmap.add("header", Arrays.asList(HttpHeaders.createOptimized("value1"), HttpHeaders.createOptimized("value2")));
+    mmap.add("header", Arrays.asList(io.vertx.core.http.HttpHeaders.createOptimized("value1"), io.vertx.core.http.HttpHeaders.createOptimized("value2")));
     assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
     mmap = newMultiMap();
     mmap.set("header", Arrays.<CharSequence>asList("value1", "value2"));
     assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
     mmap = newMultiMap();
-    mmap.set("header", Arrays.asList(HttpHeaders.createOptimized("value1"), HttpHeaders.createOptimized("value2")));
+    mmap.set("header", Arrays.asList(io.vertx.core.http.HttpHeaders.createOptimized("value1"), io.vertx.core.http.HttpHeaders.createOptimized("value2")));
     assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
   }
 
   @Test
   public void testSetAllOnExistingMapUsingMultiMapHttp1() {
-    MultiMap mainMap = new HeadersAdaptor(HeadersMultiMap.httpHeaders());
+    MultiMap mainMap = new HeadersAdaptor(Http1xHeaders.httpHeaders());
     mainMap.add("originalKey", "originalValue");
 
     MultiMap setAllMap = newMultiMap();
@@ -618,7 +617,7 @@ public abstract class HeadersTest {
 
   @Test
   public void testSetAllOnExistingMapUsingHashMapHttp1() {
-    MultiMap mainMap = new HeadersAdaptor(HeadersMultiMap.httpHeaders());
+    MultiMap mainMap = new HeadersAdaptor(Http1xHeaders.httpHeaders());
     mainMap.add("originalKey", "originalValue");
 
     Map<String,String> setAllMap = new HashMap<>();
@@ -636,7 +635,7 @@ public abstract class HeadersTest {
 
   @Test
   public void testSetAllOnExistingMapUsingMultiMapHttp2() {
-    MultiMap mainMap = new Http2HeadersMultiMap(new DefaultHttp2Headers());
+    MultiMap mainMap = new HttpHeaders(new DefaultHttp2Headers());
     mainMap.add("originalKey", "originalValue");
 
     MultiMap setAllMap = newMultiMap();
@@ -654,7 +653,7 @@ public abstract class HeadersTest {
 
   @Test
   public void testSetAllOnExistingMapUsingHashMapHttp2() {
-    MultiMap mainMap = new Http2HeadersMultiMap(new DefaultHttp2Headers());
+    MultiMap mainMap = new HttpHeaders(new DefaultHttp2Headers());
     mainMap.add("originalKey", "originalValue");
 
     Map<String,String> setAllMap = new HashMap<>();
@@ -674,8 +673,8 @@ public abstract class HeadersTest {
   public void testForEach() {
     MultiMap map = newMultiMap();
 
-    map.add(HttpHeaders.ACCEPT, HttpHeaders.TEXT_HTML);
-    map.add(HttpHeaders.CONTENT_TYPE, HttpHeaderValues.APPLICATION_XML);
+    map.add(io.vertx.core.http.HttpHeaders.ACCEPT, io.vertx.core.http.HttpHeaders.TEXT_HTML);
+    map.add(io.vertx.core.http.HttpHeaders.CONTENT_TYPE, HttpHeaderValues.APPLICATION_XML);
 
     Map<String, String> consumed = new HashMap<>();
     map.forEach(consumed::put);

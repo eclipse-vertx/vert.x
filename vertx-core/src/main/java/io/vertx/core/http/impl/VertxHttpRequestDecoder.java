@@ -13,14 +13,14 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.*;
 import io.netty.util.AsciiString;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
 import java.nio.charset.StandardCharsets;
 
 /**
- * A request decoder using {@link HeadersMultiMap} which is faster than {@code DefaultHttpHeaders} used by the super class.
+ * A request decoder using {@link Http1xHeaders} which is faster than {@code DefaultHttpHeaders} used by the super class.
  */
 public class VertxHttpRequestDecoder extends HttpRequestDecoder {
 
@@ -174,7 +174,7 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
       HttpVersion.valueOf(initialLine[2]),
       HttpMethod.valueOf(initialLine[0]),
       initialLine[1],
-      HeadersMultiMap.httpHeaders());
+      Http1xHeaders.httpHeaders());
   }
 
   @Override

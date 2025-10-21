@@ -19,8 +19,7 @@ import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 
 /**
  * Contains a bunch of useful HTTP headers stuff:
@@ -494,7 +493,7 @@ public interface HttpHeaders {
    * @return a {@link MultiMap} backing an HTTP headers structure optimized for {@code HTTP/1.x}
    */
   static MultiMap headers() {
-    return HeadersMultiMap.httpHeaders();
+    return Http1xHeaders.httpHeaders();
   }
 
   /**
@@ -505,20 +504,20 @@ public interface HttpHeaders {
     switch (version) {
       case HTTP_1_0:
       case HTTP_1_1:
-        return HeadersMultiMap.httpHeaders();
+        return Http1xHeaders.httpHeaders();
       case HTTP_2:
-        return new Http2HeadersMultiMap(new DefaultHttp2Headers());
+        return new io.vertx.core.http.impl.headers.HttpHeaders(new DefaultHttp2Headers());
       default:
         throw new AssertionError();
     }
   }
 
   static MultiMap set(String name, String value) {
-    return HeadersMultiMap.httpHeaders().set(name, value);
+    return Http1xHeaders.httpHeaders().set(name, value);
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MultiMap set(CharSequence name, CharSequence value) {
-    return HeadersMultiMap.httpHeaders().set(name, value);
+    return Http1xHeaders.httpHeaders().set(name, value);
   }
 }

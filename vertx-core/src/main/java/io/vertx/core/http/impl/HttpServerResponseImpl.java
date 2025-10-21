@@ -24,6 +24,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
@@ -50,7 +52,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
   private final HttpServerConnection conn;
   private final ContextInternal context;
   private final boolean push;
-  private final MultiMap headersMap;
+  private final HttpResponseHeaders headersMap;
   private MultiMap trailedMap;
   private boolean chunked;
   private boolean headWritten;
@@ -77,7 +79,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
     this.context = context;
     this.conn = stream.connection();
     this.push = push;
-    this.headersMap = conn.newHeaders();
+    this.headersMap = new HttpResponseHeaders(conn.newHeaders());
   }
 
   void init(HttpRequestHead head) {
@@ -245,7 +247,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
   public MultiMap trailers() {
     MultiMap ret = trailedMap;
     if (ret == null) {
-      ret = conn.newHeaders();
+      ret = new HttpHeaders(conn.newHeaders());
       trailedMap = ret;
     }
     return ret;
@@ -314,7 +316,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
     synchronized (conn) {
       checkHeadWritten();
     }
-    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), conn.newHeaders()), null, false);
+    return stream.writeHead(new HttpResponseHead(HttpResponseStatus.CONTINUE.code(), HttpResponseStatus.CONTINUE.reasonPhrase(), new HttpResponseHeaders(conn.newHeaders())), null, false);
   }
 
   @Override
@@ -327,7 +329,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
 
   @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
-    MultiMap http2Headers = conn.newHeaders();
+    HttpResponseHeaders http2Headers = new HttpResponseHeaders(conn.newHeaders());
     for (Entry<String, String> header : headers) {
       http2Headers.add(header.getKey(), header.getValue());
     }
@@ -446,13 +448,13 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
       }
       // Sanitize
       if (requestMethod == HttpMethod.HEAD || status == HttpResponseStatus.NOT_MODIFIED) {
-        headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
+        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
       } else if (status == HttpResponseStatus.RESET_CONTENT) {
-        headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
-        headersMap.set(HttpHeaders.CONTENT_LENGTH, "0");
+        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
+        headersMap.set(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH, "0");
       } else if (status.codeClass() == HttpStatusClass.INFORMATIONAL || status == HttpResponseStatus.NO_CONTENT) {
-        headersMap.remove(HttpHeaders.TRANSFER_ENCODING);
-        headersMap.remove(HttpHeaders.CONTENT_LENGTH);
+        headersMap.remove(io.vertx.core.http.HttpHeaders.TRANSFER_ENCODING);
+        headersMap.remove(io.vertx.core.http.HttpHeaders.CONTENT_LENGTH);
       }
       headWritten = true;
       return true;
@@ -543,7 +545,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
 
   @Override
   public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
-    if (!headersMap.contains(HttpHeaders.CONTENT_TYPE)) {
+    if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
     long size;
@@ -557,7 +559,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
 
   @Override
   public Future<Void> sendFile(FileChannel channel, long offset, long length) {
-    if (!headersMap.contains(HttpHeaders.CONTENT_TYPE)) {
+    if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
     long size;
@@ -602,7 +604,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
     } catch (Exception e) {
       return context.failedFuture(e);
     }
-    if (!headersMap.contains(HttpHeaders.CONTENT_TYPE)) {
+    if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       CharSequence mimeType = MimeMapping.mimeTypeForFilename(filename);
       if (mimeType == null) {
         mimeType = APPLICATION_OCTET_STREAM;

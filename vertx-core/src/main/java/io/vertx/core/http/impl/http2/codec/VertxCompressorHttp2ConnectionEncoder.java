@@ -26,7 +26,7 @@ import io.netty.handler.codec.http2.Http2LifecycleManager;
 import io.netty.handler.codec.http2.Http2RemoteFlowController;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2SettingsReceivedConsumer;
-import io.vertx.core.http.impl.spi.HttpServerStreamState;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
 
 import java.util.function.Function;
 
@@ -61,7 +61,7 @@ public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, 
     }
     return ifType(ctx.handler(), VertxHttp2ConnectionHandler.class, connectionHandler ->
       ifType(connectionHandler.connectFuture().getNow(), Http2ServerConnectionImpl.class, connection ->
-        ifType(connection.stream(streamId), HttpServerStreamState.class, stream ->
+        ifType(connection.stream(streamId), Http2ServerStream.class, stream ->
           stream.headers() == null ? null : connection.determineContentEncoding(stream.headers()))));
   }
 

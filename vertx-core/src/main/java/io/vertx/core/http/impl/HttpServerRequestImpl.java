@@ -43,17 +43,16 @@ import java.util.Set;
  */
 public class HttpServerRequestImpl extends HttpServerRequestInternal {
 
-  protected final ContextInternal context;
-  protected final HttpServerStream stream;
-  protected final HttpServerConnection connection;
-  protected final HttpServerResponseImpl response;
+  private final ContextInternal context;
+  private final HttpServerStream stream;
+  private final HttpServerConnection connection;
+  private final HttpServerResponseImpl response;
   private final boolean handle100ContinueAutomatically;
   private final String serverOrigin;
   private final int maxFormAttributeSize;
   private final int maxFormFields;
   private final int maxFormBufferedBytes;
-
-  public Handler<HttpServerRequest> handler;
+  private final Handler<HttpServerRequest> handler;
 
   // Accessed on context thread
   private HttpMethod method;
@@ -73,13 +72,15 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   private boolean expectMultipart;
   private HttpPostRequestDecoder postRequestDecoder;
 
-  public HttpServerRequestImpl(HttpServerStream stream,
+  public HttpServerRequestImpl(Handler<HttpServerRequest> handler,
+                               HttpServerStream stream,
                                ContextInternal context,
                                boolean handle100ContinueAutomatically,
                                int maxFormAttributeSize,
                                int maxFormFields,
                                int maxFormBufferedBytes,
                                String serverOrigin) {
+    this.handler = handler;
     this.context = context;
     this.stream = stream;
     this.connection = stream.connection();

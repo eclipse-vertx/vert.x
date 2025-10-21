@@ -29,7 +29,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -43,8 +43,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -75,7 +73,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
   private boolean closed;
-  private final HeadersMultiMap headers;
+  private final Http1xHeaders headers;
   private CookieJar cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
@@ -93,7 +91,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.conn = conn;
     this.context = context;
     this.version = request.protocolVersion();
-    this.headers = HeadersMultiMap.httpHeaders();
+    this.headers = Http1xHeaders.httpHeaders();
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
@@ -115,7 +113,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   @Override
   public MultiMap trailers() {
     if (trailers == null) {
-      HeadersMultiMap v = HeadersMultiMap.httpHeaders();
+      Http1xHeaders v = Http1xHeaders.httpHeaders();
       trailers = v;
       trailingHeaders = v;
     }
@@ -361,11 +359,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public Future<Void> writeEarlyHints(MultiMap headers) {
     checkThread();
     PromiseInternal<Void> promise = context.promise();
-    HeadersMultiMap headersMultiMap;
-    if (headers instanceof HeadersMultiMap) {
-      headersMultiMap = (HeadersMultiMap) headers;
+    Http1xHeaders headersMultiMap;
+    if (headers instanceof Http1xHeaders) {
+      headersMultiMap = (Http1xHeaders) headers;
     } else {
-      headersMultiMap = HeadersMultiMap.httpHeaders();
+      headersMultiMap = Http1xHeaders.httpHeaders();
       headersMultiMap.addAll(headers);
     }
     synchronized (conn) {

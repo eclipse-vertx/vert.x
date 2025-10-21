@@ -19,7 +19,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -54,7 +54,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean followRedirects;
   private int maxRedirects;
   private int numberOfRedirections;
-  private HeadersMultiMap headers;
+  private MultiMap headers;
   private StreamPriority priority;
   private boolean headWritten;
   private boolean isConnect;
@@ -184,7 +184,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized MultiMap headers() {
     if (headers == null) {
-      headers = HeadersMultiMap.httpHeaders();
+      headers = Http1xHeaders.httpHeaders();
     }
     return headers;
   }

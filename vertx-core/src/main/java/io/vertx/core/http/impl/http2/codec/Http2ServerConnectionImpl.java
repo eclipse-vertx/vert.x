@@ -13,6 +13,7 @@ package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -26,9 +27,10 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.spi.HttpServerConnectionProvider;
-import io.vertx.core.http.impl.spi.HttpServerStreamState;
+import io.vertx.core.http.impl.headers.HttpRequestHeaders;
+import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.http2.Http2ServerConnection;
+import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -42,7 +44,7 @@ import java.util.function.Supplier;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, HttpServerConnectionProvider {
+public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
   private final HttpServerOptions options;
   private final HttpServerMetrics metrics;
@@ -71,7 +73,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public HttpServerConnectionProvider streamHandler(Handler<HttpServerStream> handler) {
+  public Http2ServerConnection streamHandler(Handler<HttpServerStream> handler) {
     this.streamHandler = handler;
     return this;
   }
@@ -92,7 +94,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  public String determineContentEncoding(Http2HeadersMultiMap headers) {
+  public String determineContentEncoding(HttpHeaders headers) {
     String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
     if (acceptEncoding != null && encodingDetector != null) {
       return encodingDetector.apply(acceptEncoding);
@@ -100,8 +102,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     return null;
   }
 
-  private HttpServerStreamState createStream(Http2Headers headers, boolean streamEnded) {
-    return HttpServerStreamState.create(
+  private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
+    return Http2ServerStream.create(
       this,
       metrics,
       metric(),
@@ -110,7 +112,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     );
   }
 
-  private void initStream(int streamId, HttpServerStreamState vertxStream) {
+  private void initStream(int streamId, Http2ServerStream vertxStream) {
     Http2Stream stream = handler.connection().stream(streamId);
     vertxStream.init(stream.id(), isWritable(streamId));
     stream.setProperty(streamKey, vertxStream);
@@ -119,10 +121,10 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Http2Stream nettyStream = handler.connection().stream(streamId);
-    HttpServerStreamState stream;
+    Http2ServerStream stream;
     if (nettyStream.getProperty(streamKey) == null) {
-      Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
-      if (!headersMap.validate(true)) {
+      HttpRequestHeaders headersMap = new HttpRequestHeaders(headers);
+      if (!headersMap.validate()) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
         return;
       }
@@ -166,7 +168,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       it.remove();
       concurrentStreams++;
       Pending pending = next.getValue();
-      HttpServerStreamState stream = pending.stream;
+      Http2ServerStream stream = pending.stream;
       if (!isWritable(stream.id())) {
         stream.onWritabilityChanged();
       }
@@ -185,7 +187,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerStreamState> promise) {
+  public void sendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doSendPush(streamId, authority, method, headers, path, streamPriority, promise);
@@ -195,15 +197,15 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   static class Pending {
-    final HttpServerStreamState stream;
-    final Promise<HttpServerStreamState> promise;
-    Pending(HttpServerStreamState stream, Promise<HttpServerStreamState> promise) {
+    final Http2ServerStream stream;
+    final Promise<Http2ServerStream> promise;
+    Pending(Http2ServerStream stream, Promise<Http2ServerStream> promise) {
       this.stream = stream;
       this.promise = promise;
     }
   }
 
-  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerStreamState> promise) {
+  private synchronized void doSendPush(int streamId, HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<Http2ServerStream> promise) {
     boolean ssl = isSsl();
     Http2Headers headers_ = new DefaultHttp2Headers();
     headers_.method(method.name());
@@ -222,12 +224,12 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
         synchronized (Http2ServerConnectionImpl.this) {
           int promisedStreamId = future.getNow();
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-          HttpServerStreamState vertxStream = HttpServerStreamState.create(
+          Http2ServerStream vertxStream = Http2ServerStream.create(
             this,
             metrics,
             metric(),
             context,
-            new Http2HeadersMultiMap(headers_),
+            new HttpRequestHeaders(headers_),
             method,
             path,
             options.getTracingPolicy(),
@@ -253,6 +255,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   protected io.vertx.core.Future<Void> updateSettings(Http2Settings settingsUpdate) {
     settingsUpdate.remove(Http2CodecUtil.SETTINGS_ENABLE_PUSH);
     return super.updateSettings(settingsUpdate);
+  }
+
+  @Override
+  public Headers<CharSequence, CharSequence, ?> newHeaders() {
+    return new DefaultHttp2Headers();
   }
 
   @Override

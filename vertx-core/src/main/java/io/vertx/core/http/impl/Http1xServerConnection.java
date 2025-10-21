@@ -18,6 +18,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
@@ -28,7 +29,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ServerWebSocketHandshake;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -116,8 +116,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   @Override
-  public MultiMap newHeaders() {
-    return io.vertx.core.http.HttpHeaders.headers();
+  public Headers<CharSequence, CharSequence, ?> newHeaders() {
+    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -12,7 +12,7 @@
 package io.vertx.tests.http.headers;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -28,8 +28,8 @@ public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
   }
 
   @Override
-  protected HeadersMultiMap newMultiMap() {
-    return (HeadersMultiMap) MultiMap.caseInsensitiveMultiMap();
+  protected Http1xHeaders newMultiMap() {
+    return (Http1xHeaders) MultiMap.caseInsensitiveMultiMap();
   }
 
   @Test
