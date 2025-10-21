@@ -33,7 +33,7 @@ import static io.netty.handler.codec.http.HttpConstants.*;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
+public final class Http1xHeaders extends HttpHeaders implements MultiMap {
 
   private static final int COLON_AND_SPACE_SHORT = (COLON << 8) | SP;
   private static final int CRLF_SHORT = (CR << 8) | LF;
@@ -50,34 +50,34 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   /**
    * @return a case-insensitive multimap suited for HTTP header validation
    */
-  public static HeadersMultiMap httpHeaders() {
-    return new HeadersMultiMap(false, HTTP_VALIDATOR);
+  public static Http1xHeaders httpHeaders() {
+    return new Http1xHeaders(false, HTTP_VALIDATOR);
   }
 
   /**
    * @return a case-insensitive multimap suited for HTTP header validation
    */
-  public static HeadersMultiMap httpHeaders(BiConsumer<CharSequence, CharSequence> validator) {
-    return new HeadersMultiMap(false, validator);
+  public static Http1xHeaders httpHeaders(BiConsumer<CharSequence, CharSequence> validator) {
+    return new Http1xHeaders(false, validator);
   }
 
   /**
    * @return a all-purpose case-insensitive multimap that does not perform validation
    */
-  public static HeadersMultiMap caseInsensitive() {
-    return new HeadersMultiMap(false, (BiConsumer<CharSequence, CharSequence>) null);
+  public static Http1xHeaders caseInsensitive() {
+    return new Http1xHeaders(false, (BiConsumer<CharSequence, CharSequence>) null);
   }
 
   private final BiConsumer<CharSequence, CharSequence> validator;
   private final boolean readOnly;
-  private HeadersMultiMap ref;
-  private HeadersMultiMap.MapEntry[] entries;
-  private HeadersMultiMap.MapEntry head;
-  private HeadersMultiMap.MapEntry tail;
+  private Http1xHeaders ref;
+  private Http1xHeaders.MapEntry[] entries;
+  private Http1xHeaders.MapEntry head;
+  private Http1xHeaders.MapEntry tail;
   private int modCount = 0;
   private Reference<byte[]> renderedBytesRef;
 
-  private HeadersMultiMap(boolean readOnly, BiConsumer<CharSequence, CharSequence> validator) {
+  private Http1xHeaders(boolean readOnly, BiConsumer<CharSequence, CharSequence> validator) {
     this.head = null;
     this.entries = null;
     this.readOnly = readOnly;
@@ -85,7 +85,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     this.ref = null;
   }
 
-  private HeadersMultiMap(boolean readOnly, HeadersMultiMap that) {
+  private Http1xHeaders(boolean readOnly, Http1xHeaders that) {
     this.head = null;
     this.entries = null;
     this.validator = that.validator;
@@ -96,7 +96,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     this.ref = null;
   }
 
-  private HeadersMultiMap(boolean readOnly, MapEntry[] entries, MapEntry head, BiConsumer<CharSequence, CharSequence> validator, HeadersMultiMap ref) {
+  private Http1xHeaders(boolean readOnly, MapEntry[] entries, MapEntry head, BiConsumer<CharSequence, CharSequence> validator, Http1xHeaders ref) {
     this.readOnly = readOnly;
     this.head = head;
     this.entries = entries;
@@ -105,9 +105,9 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap setAll(MultiMap multimap) {
-    if (multimap instanceof HeadersMultiMap) {
-      HeadersMultiMap headers = (HeadersMultiMap) multimap;
+  public Http1xHeaders setAll(MultiMap multimap) {
+    if (multimap instanceof Http1xHeaders) {
+      Http1xHeaders headers = (Http1xHeaders) multimap;
       if (headers.readOnly) {
         ref = headers;
         head = headers.head;
@@ -125,7 +125,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap setAll(Map<String, String> headers) {
+  public Http1xHeaders setAll(Map<String, String> headers) {
     setAll(headers.entrySet());
     modCount++;
     return this;
@@ -137,7 +137,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap add(CharSequence name, CharSequence value) {
+  public Http1xHeaders add(CharSequence name, CharSequence value) {
     Objects.requireNonNull(value);
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
@@ -147,7 +147,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap add(CharSequence name, Object value) {
+  public Http1xHeaders add(CharSequence name, Object value) {
     return add(name, toValidCharSequence(value));
   }
 
@@ -157,12 +157,12 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap add(String name, String strVal) {
+  public Http1xHeaders add(String name, String strVal) {
     return add((CharSequence) name, strVal);
   }
 
   @Override
-  public HeadersMultiMap add(CharSequence name, Iterable values) {
+  public Http1xHeaders add(CharSequence name, Iterable values) {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     for (Object vstr: values) {
@@ -173,21 +173,21 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap add(String name, Iterable values) {
+  public Http1xHeaders add(String name, Iterable values) {
     return add((CharSequence) name, values);
   }
 
   @Override
-  public HeadersMultiMap addAll(MultiMap headers) {
+  public Http1xHeaders addAll(MultiMap headers) {
     return addAll(headers.entries());
   }
 
   @Override
-  public HeadersMultiMap addAll(Map<String, String> map) {
+  public Http1xHeaders addAll(Map<String, String> map) {
     return addAll(map.entrySet());
   }
 
-  public HeadersMultiMap addAll(Iterable<Map.Entry<String, String>> headers) {
+  public Http1xHeaders addAll(Iterable<Map.Entry<String, String>> headers) {
     for (Map.Entry<String, String> entry: headers) {
       add(entry.getKey(), entry.getValue());
     }
@@ -196,7 +196,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap remove(CharSequence name) {
+  public Http1xHeaders remove(CharSequence name) {
     Objects.requireNonNull(name, "name");
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
@@ -206,12 +206,12 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap remove(final String name) {
+  public Http1xHeaders remove(final String name) {
     return remove((CharSequence) name);
   }
 
   @Override
-  public HeadersMultiMap set(CharSequence name, CharSequence value) {
+  public Http1xHeaders set(CharSequence name, CharSequence value) {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     remove0(h, i, name);
@@ -223,22 +223,22 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap set(String name, String value) {
+  public Http1xHeaders set(String name, String value) {
     return set((CharSequence)name, value);
   }
 
   @Override
-  public HeadersMultiMap set(String name, Object value) {
+  public Http1xHeaders set(String name, Object value) {
     return set((CharSequence)name, toValidCharSequence(value));
   }
 
   @Override
-  public HeadersMultiMap set(CharSequence name, Object value) {
+  public Http1xHeaders set(CharSequence name, Object value) {
     return set(name, toValidCharSequence(value));
   }
 
   @Override
-  public HeadersMultiMap set(CharSequence name, Iterable values) {
+  public Http1xHeaders set(CharSequence name, Iterable values) {
     Objects.requireNonNull(values, "values");
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
@@ -254,7 +254,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap set(String name, Iterable values) {
+  public Http1xHeaders set(String name, Iterable values) {
     return set((CharSequence) name, values);
   }
 
@@ -303,7 +303,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     int i = h & 0x0000000F;
     MapEntry[] etr = entries;
     if (etr != null) {
-      HeadersMultiMap.MapEntry e = etr[i];
+      Http1xHeaders.MapEntry e = etr[i];
       while (e != null) {
         CharSequence key = e.key;
         if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
@@ -449,7 +449,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap clear() {
+  public Http1xHeaders clear() {
     clear0();
     modCount++;
     return this;
@@ -517,7 +517,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   @Override
   public Iterator<Map.Entry<CharSequence, CharSequence>> iteratorCharSequence() {
     return new Iterator<>() {
-      HeadersMultiMap.MapEntry current = head;
+      Http1xHeaders.MapEntry current = head;
       @Override
       public boolean hasNext() {
         return current != null;
@@ -557,18 +557,18 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap copy(boolean mutable) {
+  public Http1xHeaders copy(boolean mutable) {
     if (readOnly) {
       if (mutable) {
-        return new HeadersMultiMap(false, entries, head, validator, this);
+        return new Http1xHeaders(false, entries, head, validator, this);
       } else {
         return this;
       }
     } else if (ref == null) {
-      return new HeadersMultiMap(!mutable, this);
+      return new Http1xHeaders(!mutable, this);
     } else {
       if (mutable) {
-        return new HeadersMultiMap(false, ref.entries, ref.head, ref.validator, ref);
+        return new Http1xHeaders(false, ref.entries, ref.head, ref.validator, ref);
       } else {
         return ref;
       }
@@ -576,8 +576,8 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
-  public HeadersMultiMap copy() {
-    return (HeadersMultiMap) MultiMap.super.copy();
+  public Http1xHeaders copy() {
+    return (Http1xHeaders) MultiMap.super.copy();
   }
 
   public void encode(ByteBuf buf, boolean cache) {
@@ -595,7 +595,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
         buf.writeBytes(bytes);
       }
     } else {
-      HeadersMultiMap r = ref;
+      Http1xHeaders r = ref;
       if (r != null) {
         r.encode(buf, cache);
       } else {
@@ -615,8 +615,8 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     private final int hash;
     private final CharSequence key;
     private CharSequence value;
-    private HeadersMultiMap.MapEntry next;
-    private HeadersMultiMap.MapEntry before, after;
+    private Http1xHeaders.MapEntry next;
+    private Http1xHeaders.MapEntry before, after;
 
     MapEntry(int hash, CharSequence key, CharSequence value) {
       this.hash = hash;
@@ -661,7 +661,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     }
   }
 
-  private void addAll(HeadersMultiMap headers) {
+  private void addAll(Http1xHeaders headers) {
     for (MapEntry c = headers.head;c != null;c = c.after) {
       int h = AsciiString.hashCode(c.key);
       int i = h & 0x0000000F;
@@ -688,7 +688,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   private void copyOnWrite() {
-    HeadersMultiMap state = ref;
+    Http1xHeaders state = ref;
     assert state != null;
     head = null;
     entries = new MapEntry[16];
@@ -701,7 +701,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     if (etr != null) {
       int h = AsciiString.hashCode(name);
       int i = h & 0x0000000F;
-      HeadersMultiMap.MapEntry e = etr[i];
+      Http1xHeaders.MapEntry e = etr[i];
       while (e != null) {
         CharSequence key = e.key;
         if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
@@ -756,7 +756,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     if (etr == null) {
       return;
     }
-    HeadersMultiMap.MapEntry e = etr[i];
+    Http1xHeaders.MapEntry e = etr[i];
     MapEntry prev = null;
     while (e != null) {
       MapEntry next = e.next;
@@ -796,9 +796,9 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     }
 
     // Update the hash table.
-    HeadersMultiMap.MapEntry e = entries[i];
-    HeadersMultiMap.MapEntry newEntry;
-    entries[i] = newEntry = new HeadersMultiMap.MapEntry(h, name, value);
+    Http1xHeaders.MapEntry e = entries[i];
+    Http1xHeaders.MapEntry newEntry;
+    entries[i] = newEntry = new Http1xHeaders.MapEntry(h, name, value);
     newEntry.next = e;
 
     // Update the linked list.
@@ -817,7 +817,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     CharSequence value = null;
     MapEntry[] etr = entries;
     if (etr != null) {
-      HeadersMultiMap.MapEntry e = etr[i];
+      Http1xHeaders.MapEntry e = etr[i];
       while (e != null) {
         CharSequence key = e.key;
         if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {

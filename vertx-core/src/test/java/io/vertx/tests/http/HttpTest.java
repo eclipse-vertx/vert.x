@@ -26,14 +26,13 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.ServerCookie;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.FakeDNSServer;
@@ -45,14 +44,11 @@ import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Assume;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -2162,7 +2158,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       req.pause();
-      resp.writeEarlyHints(HeadersMultiMap.httpHeaders().add("wibble", "wibble-103-value"))
+      resp.writeEarlyHints(Http1xHeaders.httpHeaders().add("wibble", "wibble-103-value"))
         .onComplete(onSuccess(result -> {
           req.resume();
           resp.putHeader("wibble", "wibble-200-value");

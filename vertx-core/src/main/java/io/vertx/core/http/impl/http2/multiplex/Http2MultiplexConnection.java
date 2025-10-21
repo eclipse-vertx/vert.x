@@ -16,7 +16,6 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.DefaultHttp2PingFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.DefaultHttp2UnknownFrame;
@@ -41,8 +40,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.spi.HttpStreamState;
+import io.vertx.core.http.impl.http2.Http2Stream;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -56,7 +54,7 @@ import java.util.Deque;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public abstract class Http2MultiplexConnection<S extends HttpStreamState> extends ConnectionBase implements HttpConnection {
+public abstract class Http2MultiplexConnection<S extends Http2Stream> extends ConnectionBase implements HttpConnection {
 
   protected final Http2MultiplexHandler handler;
   private final IntObjectMap<StreamChannel> channels;
@@ -202,10 +200,6 @@ public abstract class Http2MultiplexConnection<S extends HttpStreamState> extend
 
   public void writePriorityFrame(int streamId, StreamPriority priority, Promise<Void> promise) {
     promise.fail("Unsupported");
-  }
-
-  public final Http2HeadersMultiMap newHeaders() {
-    return new Http2HeadersMultiMap(new DefaultHttp2Headers());
   }
 
   @Override

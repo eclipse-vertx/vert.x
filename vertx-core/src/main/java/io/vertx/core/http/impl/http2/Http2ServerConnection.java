@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -17,7 +17,7 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.net.HostAndPort;
 
-public interface HttpServerConnectionProvider extends HttpServerConnection, HttpConnectionProvider {
+public interface Http2ServerConnection extends HttpServerConnection, Http2Connection {
 
   void sendPush(int streamId,
                 HostAndPort authority,
@@ -25,5 +25,5 @@ public interface HttpServerConnectionProvider extends HttpServerConnection, Http
                 MultiMap headers,
                 String path,
                 StreamPriority streamPriority,
-                Promise<HttpServerStreamState> promise);
+                Promise<Http2ServerStream> promise);
 }

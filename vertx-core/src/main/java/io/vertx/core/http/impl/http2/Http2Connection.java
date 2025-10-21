@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.Headers;
@@ -17,9 +17,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 
-public interface HttpConnectionProvider {
-
-  Http2HeadersMultiMap newHeaders();
+public interface Http2Connection {
 
   ContextInternal context();
 

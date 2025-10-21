@@ -12,30 +12,26 @@ package io.vertx.core.http.impl.http2.multiplex;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.Headers;
-import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
-import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
-import io.netty.handler.codec.http2.Http2Error;
-import io.netty.handler.codec.http2.Http2FrameCodec;
-import io.netty.handler.codec.http2.Http2FrameStream;
-import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.*;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
-import io.vertx.core.http.impl.spi.HttpClientConnectionProvider;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.spi.HttpClientStreamState;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
+import io.vertx.core.http.impl.http2.Http2ClientConnection;
+import io.vertx.core.http.impl.http2.Http2ClientStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-public class Http2MultiplexClientConnection extends Http2MultiplexConnection<HttpClientStreamState> implements HttpClientConnection, HttpClientConnectionProvider {
+public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
   private final boolean decompressionSupported;
   private final ClientMetrics<?, ?, ?> clientMetrics;
@@ -72,6 +68,11 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     this.lifetimeEvictionTimestampMillis = maxLifetimeMillis > 0 ? System.currentTimeMillis() + maxLifetimeMillis : Long.MAX_VALUE;
     this.evicted = false;
     this.decompressionSupported = decompressionSupported;
+  }
+
+  @Override
+  public MultiMap newHttpRequestHeaders() {
+    return new HttpResponseHeaders(new DefaultHttp2Headers());
   }
 
   @Override
@@ -118,10 +119,10 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   @Override
   void receiveHeaders(ChannelHandlerContext chctx, Http2FrameStream frameStream, Http2Headers headers, boolean ended) {
     int streamId = frameStream.id();
-    HttpClientStreamState stream = stream(streamId);
-    Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+    Http2ClientStream stream = stream(streamId);
+    HttpResponseHeaders headersMap = new HttpResponseHeaders(headers);
     if (!stream.isHeadersReceived()) {
-      if (!headersMap.validate(false)) {
+      if (!headersMap.validate()) {
         chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.PROTOCOL_ERROR.code()));
       } else {
         headersMap.sanitize();
@@ -170,7 +171,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
-    HttpClientStreamState stream = HttpClientStreamState.create(this, context, null, decompressionSupported, clientMetrics);
+    Http2ClientStream stream = Http2ClientStream.create(this, context, null, decompressionSupported, clientMetrics);
     return context.succeededFuture(stream.unwrap());
   }
 
@@ -186,7 +187,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public void createStream(HttpClientStreamState stream) throws Exception {
+  public void createStream(Http2ClientStream stream) throws Exception {
     handler.createClientStream(stream);
   }
 

@@ -12,8 +12,10 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.Headers;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -32,6 +34,8 @@ public interface HttpClientConnection extends HttpConnection {
   };
 
   Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
+
+  MultiMap newHttpRequestHeaders();
 
   /**
    * @return the number of active request/response (streams)

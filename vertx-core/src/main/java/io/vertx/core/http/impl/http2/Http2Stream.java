@@ -8,18 +8,17 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 
 /**
- * The stream from the provider perspective.
- *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpStreamState {
+public interface Http2Stream {
 
   int id();
 
@@ -32,11 +31,11 @@ public interface HttpStreamState {
   void priority(StreamPriority streamPriority);
 
   void onPriorityChange(StreamPriority streamPriority);
-  void onHeaders(Http2HeadersMultiMap headers);
+  void onHeaders(HttpHeaders headers);
   void onData(Buffer buffer);
   void onCustomFrame(int type, int flags, Buffer payload);
   void onTrailers();
-  void onTrailers(Http2HeadersMultiMap trailers);
+  void onTrailers(HttpHeaders trailers);
   void onReset(long code);
   void onWritabilityChanged();
   void onException(Throwable err);

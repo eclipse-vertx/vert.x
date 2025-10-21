@@ -8,11 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.util.AsciiString;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -20,11 +21,13 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
+import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.headers.HttpRequestHeaders;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -43,12 +46,12 @@ import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpClientStreamState> implements HttpClientStream, HttpClientStreamState {
+class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStream> implements HttpClientStream, Http2ClientStream {
 
   // Temporary id assignments
   private static final AtomicInteger id_seq = new AtomicInteger(-1);
 
-  private final HttpClientConnectionProvider connection;
+  private final Http2ClientConnection connection;
   private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
   private final ClientMetrics clientMetrics;
@@ -63,13 +66,13 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
   private Handler<HttpClientPush> pushHandler;
   private Handler<MultiMap> earlyHintsHandler;
 
-  DefaultHttpClientStreamState(HttpClientConnectionProvider connection, ContextInternal context, TracingPolicy tracingPolicy,
-                               boolean decompressionSupported, ClientMetrics clientMetrics) {
+  DefaultHttp2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
+                           boolean decompressionSupported, ClientMetrics clientMetrics) {
     this(id_seq.getAndDecrement(), connection, context, tracingPolicy, decompressionSupported, clientMetrics, true);
   }
 
-  DefaultHttpClientStreamState(int id, HttpClientConnectionProvider connection, ContextInternal context, TracingPolicy tracingPolicy,
-                               boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
+  DefaultHttp2ClientStream(int id, Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
+                           boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
     super(id, connection, context, writable);
 
     this.connection = connection;
@@ -117,7 +120,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
 
     @Override
     public void write() {
-      Http2HeadersMultiMap headers = connection.newHeaders();
+      HttpRequestHeaders headers = new HttpRequestHeaders(new DefaultHttp2Headers());
       headers.method(request.method);
       boolean e;
       if (request.method == HttpMethod.CONNECT) {
@@ -149,7 +152,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
       request.remoteAddress = ((HttpConnection) connection).remoteAddress();
       requestHead = request;
       try {
-        connection.createStream(DefaultHttpClientStreamState.this);
+        connection.createStream(DefaultHttp2ClientStream.this);
       } catch (Exception ex) {
         promise.fail(ex);
         onException(ex);
@@ -178,16 +181,16 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
   }
 
   @Override
-  public HttpClientConnectionProvider connection() {
+  public Http2ClientConnection connection() {
     return connection;
   }
 
   @Override
-  public void onPush(HttpClientStreamState pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
-    onPush((DefaultHttpClientStreamState)  pushStream, promisedStreamId, headers, writable);
+  public void onPush(Http2ClientStream pushStream, int promisedStreamId, HttpHeaders headers, boolean writable) {
+    onPush((DefaultHttp2ClientStream)  pushStream, promisedStreamId, (HttpRequestHeaders)headers, writable);
   }
 
-  public void onPush(DefaultHttpClientStreamState pushStream, int promisedStreamId, Http2HeadersMultiMap headers, boolean writable) {
+  public void onPush(DefaultHttp2ClientStream pushStream, int promisedStreamId, HttpRequestHeaders headers, boolean writable) {
     HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
     pushStream.init(promisedStreamId, writable);
     if (clientMetrics != null) {
@@ -206,14 +209,15 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
     context.execute(null, v -> handleEarlyHints(headers));
   }
 
-  public void onHeaders(Http2HeadersMultiMap headers) {
-    int status = headers.status();
+  public void onHeaders(HttpHeaders headers) {
+    HttpResponseHeaders responseHeaders = (HttpResponseHeaders)headers;
+    int status = responseHeaders.status();
     if (status == 100) {
       onContinue();
       return;
     } else if (status == 103) {
-      MultiMap headersMultiMap = HeadersMultiMap.httpHeaders();
-      headers.remove(HttpHeaders.PSEUDO_STATUS);
+      MultiMap headersMultiMap = Http1xHeaders.httpHeaders();
+      headers.remove(io.vertx.core.http.HttpHeaders.PSEUDO_STATUS);
       for (Map.Entry<String, String> header : headers) {
         headersMultiMap.add(header.getKey(), header.getValue());
       }
@@ -221,7 +225,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
       return;
     }
     String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-    this.responseHead = new HttpResponseHead(headers.status(), statusMessage, headers);
+    this.responseHead = new HttpResponseHead(responseHeaders.status(), statusMessage, headers);
     super.onHeaders(headers);
   }
 
@@ -234,15 +238,16 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
     super.onClose();
   }
 
-  public DefaultHttpClientStreamState headHandler(Handler<HttpResponseHead> handler) {
+  public DefaultHttp2ClientStream headHandler(Handler<HttpResponseHead> handler) {
     headersHandler = handler;
     return this;
   }
 
-  void handleHeader(Http2HeadersMultiMap map) {
+  void handleHeader(HttpHeaders map) {
     Handler<HttpResponseHead> handler = headersHandler;
     if (handler != null) {
-      int status = map.status();
+      HttpResponseHeaders responseHeaders = (HttpResponseHeaders)map;
+      int status = responseHeaders.status();
       String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
       HttpResponseHead response = new HttpResponseHead(
         status,
@@ -252,7 +257,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
     }
   }
 
-  public DefaultHttpClientStreamState continueHandler(Handler<Void> handler) {
+  public DefaultHttp2ClientStream continueHandler(Handler<Void> handler) {
     continueHandler = handler;
     return this;
   }
@@ -264,7 +269,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
     }
   }
 
-  public DefaultHttpClientStreamState pushHandler(Handler<HttpClientPush> handler) {
+  public DefaultHttp2ClientStream pushHandler(Handler<HttpClientPush> handler) {
     pushHandler = handler;
     return this;
   }
@@ -276,7 +281,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
     }
   }
 
-  public DefaultHttpClientStreamState earlyHintsHandler(Handler<MultiMap> handler) {
+  public DefaultHttp2ClientStream earlyHintsHandler(Handler<MultiMap> handler) {
     earlyHintsHandler = handler;
     return this;
   }
@@ -289,7 +294,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
   }
 
   @Override
-  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
+  protected void observeOutboundHeaders(HttpHeaders headers) {
     if (clientMetrics != null) {
       metric = clientMetrics.requestBegin(requestHead.uri, requestHead);
     }
@@ -327,7 +332,7 @@ class DefaultHttpClientStreamState extends DefaultHttpStreamState<DefaultHttpCli
   }
 
   @Override
-  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
+  protected void observeInboundHeaders(HttpHeaders headers) {
     if (clientMetrics != null) {
       clientMetrics.responseBegin(metric, responseHead);
     }

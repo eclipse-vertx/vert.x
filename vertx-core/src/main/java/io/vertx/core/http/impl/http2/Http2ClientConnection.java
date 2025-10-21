@@ -8,12 +8,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.http.impl.HttpClientConnection;
 
-public interface HttpClientConnectionProvider extends HttpConnectionProvider, HttpClientConnection {
+public interface Http2ClientConnection extends Http2Connection, HttpClientConnection {
 
-  void createStream(HttpClientStreamState stream) throws Exception;
+  void createStream(Http2ClientStream stream) throws Exception;
 
 }

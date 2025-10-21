@@ -12,15 +12,14 @@ package io.vertx.core.internal.http;
 
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.impl.SysProps;
 
 /**
  * HTTP multimap implementations.
  */
-public interface HttpHeadersInternal extends HttpHeaders {
+public interface HttpHeadersInternal extends io.vertx.core.http.HttpHeaders {
 
   /** JVM system property that disables HTTP headers validation, don't use this in production. */
   @Deprecated
@@ -41,6 +40,6 @@ public interface HttpHeadersInternal extends HttpHeaders {
    * @return a multimap wrapping Netty HTTP/2 {code header} instance
    */
   static MultiMap headers(Http2Headers headers) {
-    return new Http2HeadersMultiMap(headers);
+    return new HttpHeaders(headers);
   }
 }

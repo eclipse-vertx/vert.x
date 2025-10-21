@@ -37,6 +37,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -113,6 +114,11 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
+  }
+
+  @Override
+  public MultiMap newHttpRequestHeaders() {
+    return Http1xHeaders.httpHeaders();
   }
 
   @Override

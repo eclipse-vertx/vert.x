@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.spi;
+package io.vertx.core.http.impl.http2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -28,6 +28,7 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -38,13 +39,13 @@ import io.vertx.core.net.impl.MessageWrite;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> implements HttpStream, HttpStreamState {
+abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements HttpStream, Http2Stream {
 
-  private static final Http2HeadersMultiMap EMPTY = new Http2HeadersMultiMap(EmptyHttp2Headers.INSTANCE);
+  private static final HttpHeaders EMPTY = new HttpHeaders(EmptyHttp2Headers.INSTANCE);
 
   private final OutboundMessageQueue<MessageWrite> outboundQueue;
   private final InboundMessageQueue<Object> inboundQueue;
-  private final HttpConnectionProvider connection;
+  private final Http2Connection connection;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
   private int id;
@@ -74,11 +75,11 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
   private Handler<StreamPriority> priorityChangeHandler;
   private Handler<Void> drainHandler;
 
-  DefaultHttpStreamState(HttpConnectionProvider connection, ContextInternal context) {
+  DefaultHttp2Stream(Http2Connection connection, ContextInternal context) {
     this(-1, connection, context, true);
   }
 
-  DefaultHttpStreamState(int id_, HttpConnectionProvider connection, ContextInternal context, boolean writable) {
+  DefaultHttp2Stream(int id_, Http2Connection connection, ContextInternal context, boolean writable) {
     this.connection = connection;
     this.vertx = context.owner();
     this.context = context;
@@ -91,7 +92,7 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
         } else {
           Buffer data = (Buffer) item;
           int len = data.length();
-          connection.context().execute(len, v -> connection.consumeCredits(DefaultHttpStreamState.this.id, v));
+          connection.context().execute(len, v -> connection.consumeCredits(DefaultHttp2Stream.this.id, v));
           handleData(data);
         }
       }
@@ -102,7 +103,7 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
       // TODO implement stop drain to optimize flushes ?
       @Override
       public boolean test(MessageWrite msg) {
-        if (DefaultHttpStreamState.this.writable) {
+        if (DefaultHttp2Stream.this.writable) {
           msg.write();
           return true;
         } else {
@@ -119,12 +120,12 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
       }
       @Override
       protected void handleDrained() {
-        context.execute(DefaultHttpStreamState.this, DefaultHttpStreamState::handleWriteQueueDrained);
+        context.execute(DefaultHttp2Stream.this, DefaultHttp2Stream::handleWriteQueueDrained);
       }
     };
     if (id >= 0) {
       // Not great but well
-      if (this instanceof DefaultHttpClientStreamState) {
+      if (this instanceof DefaultHttp2ClientStream) {
         this.headersSent = true;
         this.trailersSent = true;
       } else {
@@ -189,7 +190,7 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
     context.execute(code, this::handleReset);
   }
 
-  public void onHeaders(Http2HeadersMultiMap headers) {
+  public void onHeaders(HttpHeaders headers) {
     if (headersReceived) {
       throw new IllegalStateException();
     }
@@ -231,7 +232,7 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
     onTrailers(EMPTY);
   }
 
-  public final void onTrailers(Http2HeadersMultiMap trailers) {
+  public final void onTrailers(HttpHeaders trailers) {
     if (trailersReceived) {
       throw new IllegalStateException();
     }
@@ -285,11 +286,11 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
 
   public final Future<Void> writeHeaders(MultiMap headers, boolean end) {
     Promise<Void> promise = context.promise();
-    writeHeaders((Http2HeadersMultiMap) headers, end, true, promise);
+    writeHeaders((HttpHeaders) headers, end, true, promise);
     return promise.future();
   }
 
-  void writeHeaders(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders(HttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (first_) {
       first_ = false;
       EventLoop eventLoop = connection.context().nettyEventLoop();
@@ -312,7 +313,7 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
     }
   }
 
-  void writeHeaders0(Http2HeadersMultiMap headers, boolean end, boolean checkFlush, Promise<Void> promise) {
+  void writeHeaders0(HttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
     if (reset != -1L) {
       if (promise != null) {
         promise.fail("Stream reset");
@@ -508,7 +509,7 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
     }
   }
 
-  abstract void handleHeader(Http2HeadersMultiMap map);
+  abstract void handleHeader(HttpHeaders map);
 
   public S closeHandler(Handler<Void> handler) {
     closeHandler = handler;
@@ -547,13 +548,13 @@ abstract class DefaultHttpStreamState<S extends DefaultHttpStreamState<S>> imple
   protected void observeReset() {
   }
 
-  protected void observeInboundHeaders(Http2HeadersMultiMap headers) {
+  protected void observeInboundHeaders(HttpHeaders headers) {
   }
 
   protected void observeOutboundTrailers() {
   }
 
-  protected void observeOutboundHeaders(Http2HeadersMultiMap headers) {
+  protected void observeOutboundHeaders(HttpHeaders headers) {
   }
 
   protected void observeInboundTrailers() {

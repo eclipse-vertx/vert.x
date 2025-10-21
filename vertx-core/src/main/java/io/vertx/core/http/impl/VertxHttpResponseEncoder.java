@@ -22,7 +22,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.impl.SysProps;
 
 /**
@@ -36,8 +36,8 @@ public final class VertxHttpResponseEncoder extends HttpResponseEncoder {
 
   @Override
   protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
-    if (headers instanceof HeadersMultiMap) {
-      HeadersMultiMap vertxHeaders = (HeadersMultiMap) headers;
+    if (headers instanceof Http1xHeaders) {
+      Http1xHeaders vertxHeaders = (Http1xHeaders) headers;
       vertxHeaders.encode(buf, cacheImmutableResponseHeaders);
     } else {
       super.encodeHeaders(headers, buf);

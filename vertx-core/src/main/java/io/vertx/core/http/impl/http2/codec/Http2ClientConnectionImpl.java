@@ -19,9 +19,10 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBase;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
-import io.vertx.core.http.impl.spi.HttpClientConnectionProvider;
-import io.vertx.core.http.impl.spi.Http2HeadersMultiMap;
-import io.vertx.core.http.impl.spi.HttpClientStreamState;
+import io.vertx.core.http.impl.headers.HttpRequestHeaders;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
+import io.vertx.core.http.impl.http2.Http2ClientConnection;
+import io.vertx.core.http.impl.http2.Http2ClientStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -30,7 +31,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, HttpClientConnectionProvider {
+public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
   private final HttpClientBase client;
   private final ClientMetrics metrics;
@@ -58,6 +59,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   HttpClientBase client() {
     return client;
+  }
+
+  @Override
+  public MultiMap newHttpRequestHeaders() {
+    return new HttpResponseHeaders(new DefaultHttp2Headers());
   }
 
   @Override
@@ -148,7 +154,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2Stream nettyStream = handler.connection().stream(1);
-    HttpClientStreamState s = HttpClientStreamState.create(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
+    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
     s.upgrade(metric, trace);
     nettyStream.setProperty(streamKey, s);
     return s.unwrap();
@@ -158,7 +164,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   public Future<HttpClientStream> createStream(ContextInternal context) {
     synchronized (this) {
       try {
-        HttpClientStreamState stream = createStream0(context);
+        Http2ClientStream stream = createStream0(context);
         return context.succeededFuture(stream.unwrap());
       } catch (Exception e) {
         return context.failedFuture(e);
@@ -166,8 +172,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     }
   }
 
-  private HttpClientStreamState createStream0(ContextInternal context) {
-    return HttpClientStreamState.create(
+  private Http2ClientStream createStream0(ContextInternal context) {
+    return Http2ClientStream.create(
       this,
       context,
       client.options.getTracingPolicy(),
@@ -198,11 +204,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
-    HttpClientStreamState stream = (HttpClientStreamState) stream(streamId);
+    Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     Http2Stream s = handler.connection().stream(streamId);
-    Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
+    HttpResponseHeaders headersMap = new HttpResponseHeaders(headers);
     if (!s.isTrailersReceived()) {
-      if (!headersMap.validate(false)) {
+      if (!headersMap.validate()) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
       } else {
         headersMap.sanitize();
@@ -221,16 +227,16 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   public synchronized void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-    HttpClientStreamState stream = (HttpClientStreamState) stream(streamId);
+    Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
 //      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      HttpClientStreamState s = HttpClientStreamState.create(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+      Http2ClientStream s = Http2ClientStream.create(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
 //      pushStream.init(s);
 //      pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
-      Http2HeadersMultiMap headersMap = new Http2HeadersMultiMap(headers);
-      headersMap.validate(true);
+      HttpRequestHeaders headersMap = new HttpRequestHeaders(headers);
+      headersMap.validate();
       headersMap.sanitize();
       stream.onPush(s, promisedStreamId, headersMap, isWritable(promisedStreamId));
     } else {
@@ -287,7 +293,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public void createStream(HttpClientStreamState stream) throws Exception {
+  public void createStream(Http2ClientStream stream) throws Exception {
     int id = handler.encoder().connection().local().lastStreamCreated();
     if (id == 0) {
       id = 1;

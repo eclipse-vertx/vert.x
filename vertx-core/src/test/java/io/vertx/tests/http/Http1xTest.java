@@ -22,7 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.http2.codec.Http1xUpgradeToH2CHandler;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
@@ -5840,7 +5840,7 @@ public class Http1xTest extends HttpTest {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::end)
       ).await();
-    assertSame(((HeadersMultiMap) headersRef.get()).iteratorCharSequence().next(), ((HeadersMultiMap) headers).iteratorCharSequence().next());
+    assertSame(((Http1xHeaders) headersRef.get()).iteratorCharSequence().next(), ((Http1xHeaders) headers).iteratorCharSequence().next());
   }
 
   @Test

@@ -11,8 +11,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.Headers;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
 
@@ -23,7 +23,7 @@ public interface HttpServerConnection extends HttpConnection {
 
   HttpServerConnection streamHandler(Handler<HttpServerStream> handler);
 
-  MultiMap newHeaders();
+  Headers<CharSequence, CharSequence, ?> newHeaders();
 
   boolean supportsSendFile();
 

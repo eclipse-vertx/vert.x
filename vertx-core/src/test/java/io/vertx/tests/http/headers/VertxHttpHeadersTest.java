@@ -13,8 +13,7 @@ package io.vertx.tests.http.headers;
 
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import org.junit.Test;
 
 import java.util.*;
@@ -45,8 +44,8 @@ public class VertxHttpHeadersTest extends HeadersTest {
   }
 
   @Override
-  protected HeadersMultiMap newMultiMap() {
-    return HeadersMultiMap.httpHeaders();
+  protected Http1xHeaders newMultiMap() {
+    return Http1xHeaders.httpHeaders();
   }
 
   @Test
@@ -224,7 +223,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testNonCharSequenceValue() {
-    HeadersMultiMap mmap = newMultiMap();
+    Http1xHeaders mmap = newMultiMap();
     mmap.set("key1", 0);
     assertEquals("0", mmap.get("key1"));
     mmap.set((CharSequence) "key2", 1);
@@ -245,7 +244,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testContainsValue1() {
-    HeadersMultiMap mmap = newMultiMap();
+    Http1xHeaders mmap = newMultiMap();
     mmap.add("foo", "val1,val2,val3");
     assertTrue(mmap.containsValue("foo", "val1", true));
     assertTrue(mmap.containsValue("foo", "val2", true));
@@ -259,7 +258,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testContainsValue2() {
-    HeadersMultiMap mmap = newMultiMap();
+    Http1xHeaders mmap = newMultiMap();
     mmap.add("foo", "val1 , val2 , val3");
     assertTrue(mmap.containsValue("foo", "val1", true));
     assertTrue(mmap.containsValue("foo", "val2", true));
@@ -270,7 +269,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testContainsValue3() {
-    HeadersMultiMap mmap = newMultiMap();
+    Http1xHeaders mmap = newMultiMap();
     mmap.add("foo", "val1,,val3");
     assertTrue(mmap.containsValue("foo", "val1", true));
     assertFalse(mmap.containsValue("foo", "val2", true));
@@ -281,7 +280,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testContainsValue4() {
-    HeadersMultiMap mmap = newMultiMap();
+    Http1xHeaders mmap = newMultiMap();
     mmap.add("foo", "val1, ,val3");
     assertTrue(mmap.containsValue("foo", "val1", true));
     assertFalse(mmap.containsValue("foo", "val2", true));
@@ -292,7 +291,7 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testInvalidChars() {
-    HeadersMultiMap mmap = HeadersMultiMap.httpHeaders();
+    Http1xHeaders mmap = Http1xHeaders.httpHeaders();
     testInvalidChars(cs -> mmap.set(cs, "header_value"), AsciiString::new);
     testInvalidChars(cs -> mmap.set(cs, "header_value"), Object::toString);
   }
@@ -371,11 +370,11 @@ public class VertxHttpHeadersTest extends HeadersTest {
 
   @Test
   public void testMakeCOW() {
-    HeadersMultiMap immutable = newMultiMap()
+    Http1xHeaders immutable = newMultiMap()
       .set("foo", "foo1")
       .set("bar", "bar1")
       .copy(false);
-    HeadersMultiMap mutable = newMultiMap();
+    Http1xHeaders mutable = newMultiMap();
     mutable.setAll((MultiMap) immutable);
     assertEquals(immutable.toString(), mutable.toString());
     assertSame(immutable.iteratorCharSequence().next(), mutable.iteratorCharSequence().next());

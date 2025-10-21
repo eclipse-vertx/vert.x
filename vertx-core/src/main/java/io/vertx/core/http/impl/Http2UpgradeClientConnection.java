@@ -22,6 +22,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -67,6 +68,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
   public HttpClientConnection unwrap() {
     return current;
+  }
+
+  @Override
+  public MultiMap newHttpRequestHeaders() {
+    return Http1xHeaders.httpHeaders();
   }
 
   @Override
