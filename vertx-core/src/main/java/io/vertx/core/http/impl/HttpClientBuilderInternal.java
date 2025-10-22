@@ -93,42 +93,64 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return null;
   }
 
-  private HttpClientImpl createHttpClientImpl(EndpointResolver resolver, HttpClientOptions co, PoolOptions po) {
+  private HttpClientImpl createHttpClientImpl(EndpointResolver resolver,
+                                              Handler<HttpConnection> connectionHandler,
+                                              Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
+                                              HttpClientOptions co,
+                                              PoolOptions po) {
     HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
     NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
-    HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, metrics);
-    return new HttpClientImpl(vertx, channelConnector, metrics, resolver, co, po);
+    HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, co, metrics);
+    HttpClientImpl.Config config = new HttpClientImpl.Config();
+    config.nonProxyHosts = co.getNonProxyHosts();
+    config.verifyHost = co.isVerifyHost();
+    config.defaultSsl = co.isSsl();
+    config.defaultHost = co.getDefaultHost();
+    config.defaultPort = co.getDefaultPort();
+    config.maxRedirects = co.getMaxRedirects();
+    config.initialPoolKind = co.getProtocolVersion() == HttpVersion.HTTP_2 ? 1 : 0;
+    return new HttpClientImpl(vertx, connectionHandler, redirectHandler, channelConnector, metrics, resolver, po, co.getProxyOptions(), co.getSslOptions(), config);
+  }
+
+  private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {
+    int windowSize = options.getHttp2ConnectionWindowSize();
+    Handler<HttpConnection> handler = connectHandler;
+    if (windowSize > 0) {
+      return connection -> {
+        connection.setWindowSize(windowSize);
+        if (handler != null) {
+          handler.handle(connection);
+        }
+      };
+    }
+    return handler;
   }
 
   @Override
   public HttpClientAgent build() {
+    // Copy options here ????
     HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
     PoolOptions po = poolOptions != null ? poolOptions : new PoolOptions();
     CloseFuture cf = resolveCloseFuture();
     HttpClientAgent client;
     Closeable closeable;
     EndpointResolver resolver = endpointResolver(co);
+    Handler<HttpConnection> connectHandler = connectionHandler(co);
     if (co.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(resolver, co, po);
+        HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, redirectHandler, co, po);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = createHttpClientImpl(resolver, co, po);
+      HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, redirectHandler, co, po);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }
     cf.add(closeable);
-    if (redirectHandler != null) {
-      ((HttpClientImpl)((CleanableHttpClient)client).delegate).redirectHandler(redirectHandler);
-    }
-    if (connectHandler != null) {
-      ((HttpClientImpl)((CleanableHttpClient)client).delegate).connectionHandler = connectHandler;
-    }
     return client;
   }
 }

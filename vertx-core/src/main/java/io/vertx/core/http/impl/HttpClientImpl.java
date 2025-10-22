@@ -32,6 +32,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -44,35 +45,49 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider {
 
+  static class Config {
+    List<String> nonProxyHosts;
+    boolean verifyHost;
+    boolean defaultSsl;
+    String defaultHost;
+    int defaultPort;
+    int maxRedirects;
+    int initialPoolKind;
+  }
+
   // Pattern to check we are not dealing with an absoluate URI
   static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
 
   private final PoolOptions poolOptions;
   private final ResourceManager<EndpointKey, SharedHttpClientConnectionGroup> httpCM;
   private final EndpointResolverInternal endpointResolver;
-  private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_REDIRECT_HANDLER;
+  private final Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private long timerID;
-  volatile Handler<HttpConnection> connectionHandler;
+  private final Handler<HttpConnection> connectHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
+  private final int initialPoolKind;
 
   public HttpClientImpl(VertxInternal vertx,
+                        Handler<HttpConnection> connectHandler,
+                        Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
                         HttpChannelConnector connector,
                         HttpClientMetrics<?, ?, ?> metrics,
                         EndpointResolver endpointResolver,
-                        HttpClientOptions options,
-                        PoolOptions poolOptions) {
-    super(vertx, options, connector, metrics);
+                        PoolOptions poolOptions,
+                        ProxyOptions defaultProxyOptions,
+                        ClientSSLOptions defaultSslOptions,
+                        Config config) {
+    super(vertx, connector, metrics, defaultProxyOptions, defaultSslOptions,
+      config.nonProxyHosts, config.verifyHost, config.defaultSsl, config.defaultHost, config.defaultPort, config.maxRedirects);
 
     this.endpointResolver = (EndpointResolverImpl) endpointResolver;
+    this.connectHandler = connectHandler;
     this.poolOptions = poolOptions;
     this.httpCM = new ResourceManager<>();
-    if (poolCheckerIsNeeded(options, poolOptions)) {
-      PoolChecker checker = new PoolChecker(this);
-      ContextInternal timerContext = vertx.createEventLoopContext();
-      timerID = timerContext.setTimer(poolOptions.getCleanerPeriod(), checker);
-    }
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
+    this.initialPoolKind = config.initialPoolKind;
+    this.redirectHandler = redirectHandler != null ? redirectHandler : DEFAULT_REDIRECT_HANDLER;
     int eventLoopSize = poolOptions.getEventLoopSize();
     if (eventLoopSize > 0) {
       ContextInternal[] eventLoops = new ContextInternal[eventLoopSize];
@@ -87,14 +102,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
     }
-  }
 
-  private static boolean poolCheckerIsNeeded(HttpClientOptions options, PoolOptions poolOptions) {
-    return poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L || poolOptions.getMaxLifetime() > 0L);
-  }
-
-  Function<ContextInternal, ContextInternal> contextProvider() {
-    return contextProvider;
+    // Init time
+    if (poolOptions.getCleanerPeriod() > 0) {
+      PoolChecker checker = new PoolChecker(this);
+      ContextInternal timerContext = vertx.createEventLoopContext();
+      timerID = timerContext.setTimer(poolOptions.getCleanerPeriod(), checker);
+    }
   }
 
   /**
@@ -141,20 +155,18 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         proxyOptions = null;
       }
       HttpConnectParams params = new HttpConnectParams();
-      params.options = options;
       params.sslOptions = key.sslOptions;
       params.proxyOptions = proxyOptions;
-      params.version = options.getProtocolVersion();
       params.ssl = key.ssl;
-      params.useAlpn = options.isUseAlpn();
       return new SharedHttpClientConnectionGroup(
-        vertx,
-        HttpClientImpl.this,
         clientMetrics,
+        connectHandler,
+        contextProvider,
         poolMetrics,
         poolOptions.getMaxWaitQueueSize(),
         poolOptions.getHttp1MaxSize(),
         poolOptions.getHttp2MaxSize(),
+        initialPoolKind,
         connector,
         params,
         key.authority,
@@ -181,27 +193,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     super.doClose(p);
   }
 
-  public void redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
-    if (handler == null) {
-      handler = DEFAULT_REDIRECT_HANDLER;
-    }
-    redirectHandler = handler;
-  }
-
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
     return redirectHandler;
-  }
-
-  Handler<HttpConnection> connectionHandler() {
-    Handler<HttpConnection> handler = connectionHandler;
-    return conn -> {
-      if (options.getHttp2ConnectionWindowSize() > 0) {
-        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-      }
-      if (handler != null) {
-        handler.handle(conn);
-      }
-    };
   }
 
   @Override
@@ -212,10 +205,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     SocketAddress server;
     if (addr == null) {
       if (port == null) {
-        port = options.getDefaultPort();
+        port = defaultPort;
       }
       if (host == null) {
-        host = options.getDefaultHost();
+        host = defaultHost;
       }
       server = SocketAddress.inetSocketAddress(port, host);
     } else if (addr instanceof SocketAddress) {
@@ -240,19 +233,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ProxyOptions proxyOptions = computeProxyOptions(connect.getProxyOptions(), server);
     ClientMetrics clientMetrics = metrics != null ? metrics.createEndpointMetrics(server, 1) : null;
     Boolean ssl = connect.isSsl();
-    boolean useSSL = ssl != null ? ssl : this.options.isSsl();
-    boolean useAlpn = options.isUseAlpn();
-    if (!useAlpn && useSSL && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
-    }
+    boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
     HttpConnectParams params = new HttpConnectParams();
-    params.options = options;
     params.sslOptions = sslOptions;
     params.proxyOptions = proxyOptions;
-    params.version = options.getProtocolVersion();
     params.ssl = useSSL;
-    params.useAlpn = useAlpn;
     return (Future) connector.httpConnect(vertx.getOrCreateContext(), server, authority, params, 0L, clientMetrics).map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 
@@ -263,10 +249,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String host = request.getHost();
     if (addr == null) {
       if (port == null) {
-        port = options.getDefaultPort();
+        port = defaultPort;
       }
       if (host == null) {
-        host = options.getDefaultHost();
+        host = defaultHost;
       }
       addr = SocketAddress.inetSocketAddress(port, host);
     } else if (addr instanceof SocketAddress) {
@@ -310,11 +296,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Boolean followRedirects = request.getFollowRedirects();
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(requestURI, "no null requestURI accepted");
-    boolean useAlpn = this.options.isUseAlpn();
-    boolean useSSL = ssl != null ? ssl : this.options.isSsl();
-    if (!useAlpn && useSSL && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
-    }
+    boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
     HostAndPort authority;
     // should we do that here ? it might create issues with address resolver that resolves this later
@@ -431,7 +413,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     request.init(options);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
     if (rHandler != null) {
-      request.setMaxRedirects(this.options.getMaxRedirects());
+      request.setMaxRedirects(maxRedirects);
       request.redirectHandler(resp -> {
         Future<RequestOptions> fut_ = rHandler.apply(resp);
         if (fut_ != null) {
@@ -446,5 +428,4 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     return request;
   }
-
 }

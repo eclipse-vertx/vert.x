@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 public class HttpClientBase implements MetricsProvider, Closeable {
 
   protected final VertxInternal vertx;
-  public final HttpClientOptions options;
+  protected final ProxyOptions defaultProxyOptions;
   protected final HttpChannelConnector connector;
   protected final HttpClientMetrics<?, ?, ?> metrics;
   protected final CloseSequence closeSequence;
@@ -42,43 +42,50 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   private long closeTimeout = 0L;
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private Predicate<SocketAddress> proxyFilter;
+  private final boolean verifyHost;
+  protected final boolean defaultSsl;
+  protected final String defaultHost;
+  protected final int defaultPort;
+  protected final int maxRedirects;
 
-  public HttpClientBase(VertxInternal vertx, HttpClientOptions options, HttpChannelConnector connector, HttpClientMetrics<?, ?, ?> metrics) {
-    if (!options.isKeepAlive() && options.isPipelining()) {
-      throw new IllegalStateException("Cannot have pipelining with no keep alive");
+  public HttpClientBase(VertxInternal vertx,
+                        HttpChannelConnector connector,
+                        HttpClientMetrics<?, ?, ?> metrics,
+                        ProxyOptions defaultProxyOptions,
+                        ClientSSLOptions defaultSslOptions,
+                        List<String> nonProxyHosts,
+                        boolean verifyHost,
+                        boolean defaultSsl,
+                        String defaultHost,
+                        int defaultPort,
+                        int maxRedirects) {
+
+    if (defaultSslOptions != null) {
+      configureSSLOptions(verifyHost, defaultSslOptions);
     }
-    options = new HttpClientOptions(options);
-    List<HttpVersion> alpnVersions = options.getAlpnVersions();
-    if (alpnVersions == null || alpnVersions.isEmpty()) {
-      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-        options.setAlpnVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
-      } else {
-        options.setAlpnVersions(List.of(options.getProtocolVersion()));
-      }
-    }
+
     this.vertx = vertx;
-    this.metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(options) : null;
-    this.options = options;
+    this.metrics = metrics;
+    this.defaultProxyOptions = defaultProxyOptions;
     this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(p1));
-    this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
+    this.proxyFilter = nonProxyHosts != null ? ProxyFilter.nonProxyHosts(nonProxyHosts) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.connector = connector;
-//    this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null)).metrics(metrics).build();
-    this.defaultSslOptions = options.getSslOptions();
-
-    ClientSSLOptions sslOptions = options.getSslOptions();
-    if (sslOptions != null) {
-      configureSSLOptions(sslOptions);
-    }
+    this.defaultSslOptions = defaultSslOptions;
+    this.verifyHost = verifyHost;
+    this.defaultSsl = defaultSsl;
+    this.defaultHost = defaultHost;
+    this.defaultPort = defaultPort;
+    this.maxRedirects = maxRedirects;
   }
 
-  private void configureSSLOptions(ClientSSLOptions sslOptions) {
+  void configureSSLOptions(boolean verifyHost, ClientSSLOptions sslOptions) {
     if (sslOptions.getHostnameVerificationAlgorithm() == null) {
-      sslOptions.setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS" : "");
+      sslOptions.setHostnameVerificationAlgorithm(verifyHost ? "HTTPS" : "");
     }
   }
 
-  public NetClientInternal netClient() {
-    return null;
+  public HttpChannelConnector channelConnector() {
+    return connector;
   }
 
   public Future<Void> closeFuture() {
@@ -98,12 +105,12 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (server != null && server.isInetSocket()) {
       return server.port();
     }
-    return options.getDefaultPort();
+    return defaultPort;
   }
 
   private ProxyOptions getProxyOptions(ProxyOptions proxyOptions) {
     if (proxyOptions == null) {
-      proxyOptions = options.getProxyOptions();
+      proxyOptions = defaultProxyOptions;
     }
     return proxyOptions;
   }
@@ -117,7 +124,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     if (server != null && server.isInetSocket()) {
       return server.host();
     }
-    return options.getDefaultHost();
+    return defaultHost;
   }
 
   protected ProxyOptions computeProxyOptions(ProxyOptions proxyOptions, SocketAddress addr) {
@@ -134,7 +141,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions != null) {
       sslOptions = sslOptions.copy();
-      configureSSLOptions(sslOptions);
+      configureSSLOptions(verifyHost, sslOptions);
     } else {
       sslOptions = defaultSslOptions;
     }
@@ -171,7 +178,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
 
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
     options = options.copy();
-    configureSSLOptions(options);
+    configureSSLOptions(verifyHost, options);
     defaultSslOptions = options;
     return Future.succeededFuture(true);
   }
@@ -179,10 +186,6 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   public HttpClientBase proxyFilter(Predicate<SocketAddress> filter) {
     proxyFilter = filter;
     return this;
-  }
-
-  public HttpClientOptions options() {
-    return options;
   }
 
   public VertxInternal vertx() {

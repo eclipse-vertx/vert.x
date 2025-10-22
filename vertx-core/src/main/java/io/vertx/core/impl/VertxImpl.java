@@ -405,7 +405,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     o.setDefaultPort(options.getDefaultPort());
     o.setVerifyHost(options.isVerifyHost());
     o.setShared(options.isShared());
-    o.setName(options.getName());    CloseFuture cf = resolveCloseFuture();
+    o.setName(options.getName());
+    o.setUseAlpn(false);
+    o.setProtocolVersion(HttpVersion.HTTP_1_1);
+    CloseFuture cf = resolveCloseFuture();
     WebSocketClient client;
     Closeable closeable;
     if (options.isShared()) {
@@ -429,7 +432,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
     HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(o) : null;
     NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
-    Http1xOrH2ChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, metrics);
+    Http1xOrH2ChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, o, metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
 

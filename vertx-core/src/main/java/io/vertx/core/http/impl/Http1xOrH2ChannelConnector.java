@@ -52,16 +52,36 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  */
 public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
 
+  private final HttpClientOptions options;
   private final HttpClientMetrics clientMetrics;
   private final NetClientInternal netClient;
 
   public Http1xOrH2ChannelConnector(NetClientInternal netClient,
+                                    HttpClientOptions options,
                                     HttpClientMetrics clientMetrics) {
+
+    if (!options.isKeepAlive() && options.isPipelining()) {
+      throw new IllegalStateException("Cannot have pipelining with no keep alive");
+    }
+    List<HttpVersion> alpnVersions = options.getAlpnVersions();
+    if (alpnVersions == null || alpnVersions.isEmpty()) {
+      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+        options.setAlpnVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
+      } else {
+        options.setAlpnVersions(List.of(options.getProtocolVersion()));
+      }
+    }
+
     this.clientMetrics = clientMetrics;
+    this.options = options;
     this.netClient = netClient;
   }
 
-  private Http2ClientChannelInitializer http2Initializer(HttpClientOptions options) {
+  public NetClientInternal netClient() {
+    return netClient;
+  }
+
+  private Http2ClientChannelInitializer http2Initializer() {
     if (options.getHttp2MultiplexImplementation()) {
       return new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(options.getInitialSettings()),
@@ -81,14 +101,14 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     if (authority != null) {
       connectOptions.setHost(authority.host());
       connectOptions.setPort(authority.port());
-      if (params.ssl && params.options.isForceSni()) {
+      if (params.ssl && options.isForceSni()) {
         connectOptions.setSniServerName(authority.host());
       }
     }
     connectOptions.setSsl(params.ssl);
     if (params.ssl) {
       if (params.sslOptions != null) {
-        connectOptions.setSslOptions(params.sslOptions.copy().setUseAlpn(params.useAlpn));
+        connectOptions.setSslOptions(params.sslOptions.copy().setUseAlpn(options.isUseAlpn()));
       } else {
         connectOptions.setSslOptions(new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS"));
       }
@@ -117,40 +137,45 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     Channel ch = so.channelHandlerContext().channel();
     if (params.ssl) {
       String protocol = so.applicationLayerProtocol();
-      if (params.useAlpn) {
+      if (options.isUseAlpn()) {
         if ("h2".equals(protocol)) {
-          applyHttp2ConnectionOptions(ch.pipeline(), params.options);
-          Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer(params.options);
+          applyHttp2ConnectionOptions(ch.pipeline());
+          Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
           http2ChannelInitializer.http2Connected(context, authority, metric, maxLifetimeMillis, ch, metrics, promise);
         } else {
-          applyHttp1xConnectionOptions(ch.pipeline(), params.options);
+          applyHttp1xConnectionOptions(ch.pipeline());
           HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
             HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-          http1xConnected(params.options, fallbackProtocol, server, authority, true, context, metric, maxLifetimeMillis, ch, metrics, promise);
+          http1xConnected(fallbackProtocol, server, authority, true, context, metric, maxLifetimeMillis, ch, metrics, promise);
         }
       } else {
-        applyHttp1xConnectionOptions(ch.pipeline(), params.options);
-        http1xConnected(params.options, params.version, server, authority, true, context, metric, maxLifetimeMillis, ch, metrics, promise);
+        applyHttp1xConnectionOptions(ch.pipeline());
+        http1xConnected(options.getProtocolVersion(), server, authority, true, context, metric, maxLifetimeMillis, ch, metrics, promise);
       }
     } else {
-      if (params.version == HttpVersion.HTTP_2) {
-        if (params.options.isHttp2ClearTextUpgrade()) {
-          applyHttp1xConnectionOptions(pipeline, params.options);
-          http1xConnected(params.options, params.version, server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
+      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+        if (options.isHttp2ClearTextUpgrade()) {
+          applyHttp1xConnectionOptions(pipeline);
+          http1xConnected(options.getProtocolVersion(), server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
         } else {
-          applyHttp2ConnectionOptions(pipeline, params.options);
-          Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer(params.options);
+          applyHttp2ConnectionOptions(pipeline);
+          Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
           http2ChannelInitializer.http2Connected(context, authority, metric, maxLifetimeMillis, ch, metrics, promise);
         }
       } else {
-        applyHttp1xConnectionOptions(pipeline, params.options);
-        http1xConnected(params.options, params.version, server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
+        applyHttp1xConnectionOptions(pipeline);
+        http1xConnected(options.getProtocolVersion(), server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
       }
     }
     return promise.future();
   }
 
   public Future<HttpClientConnection> httpConnect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics) {
+
+    if (!options.isUseAlpn() && params.ssl && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
+      return context.failedFuture("Must enable ALPN when using H2");
+    }
+
     Promise<NetSocket> promise = context.promise();
     Future<NetSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens
@@ -160,7 +185,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     return ret;
   }
 
-  private void applyHttp2ConnectionOptions(ChannelPipeline pipeline, HttpClientOptions options) {
+  private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
     int idleTimeout = options.getIdleTimeout();
     int readIdleTimeout = options.getReadIdleTimeout();
     int writeIdleTimeout = options.getWriteIdleTimeout();
@@ -169,7 +194,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     }
   }
 
-  private void applyHttp1xConnectionOptions(ChannelPipeline pipeline, HttpClientOptions options) {
+  private void applyHttp1xConnectionOptions(ChannelPipeline pipeline) {
     int idleTimeout = options.getIdleTimeout();
     int readIdleTimeout = options.getReadIdleTimeout();
     int writeIdleTimeout = options.getWriteIdleTimeout();
@@ -191,8 +216,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     }
   }
 
-  private void http1xConnected(HttpClientOptions options,
-                               HttpVersion version,
+  private void http1xConnected(HttpVersion version,
                                SocketAddress server,
                                HostAndPort authority,
                                boolean ssl,
@@ -212,7 +236,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     });
     clientHandler.addHandler(conn -> {
       if (upgrade) {
-        Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer(options);
+        Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
         Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade= http2ChannelInitializer.channelUpgrade(conn, maxLifetimeMillis, metrics);
         boolean preflightRequest = options.isHttp2ClearTextUpgradeWithPreflightRequest();
         if (preflightRequest) {

@@ -11,12 +11,8 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 class HttpConnectParams {
 
-  HttpClientOptions options;
   ClientSSLOptions sslOptions;
   ProxyOptions proxyOptions;
-
-  HttpVersion version;
   boolean ssl;
-  boolean useAlpn;
 
 }

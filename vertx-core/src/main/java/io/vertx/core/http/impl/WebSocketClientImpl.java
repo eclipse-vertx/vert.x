@@ -37,9 +37,13 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   private final WebSocketClientOptions options;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
 
-  public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions, HttpChannelConnector connector, HttpClientMetrics<?, ?, ?> metrics) {
-    super(vertx, options, connector, metrics);
-
+  public WebSocketClientImpl(VertxInternal vertx,
+                             HttpClientOptions options,
+                             WebSocketClientOptions wsOptions,
+                             HttpChannelConnector connector,
+                             HttpClientMetrics<?, ?, ?> metrics) {
+    super(vertx, connector, metrics, options.getProxyOptions(), options.getSslOptions(), options.getNonProxyHosts(),
+      options.isVerifyHost(), options.isSsl(), options.getDefaultHost(), options.getDefaultPort(), options.getMaxRedirects());
     this.options = wsOptions;
     this.webSocketCM = new ResourceManager<>();
   }
@@ -73,12 +77,9 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
       HttpConnectParams params = new HttpConnectParams();
-      params.options = super.options;
       params.sslOptions = sslOptions;
       params.proxyOptions = key_.proxyOptions;
-      params.version = HttpVersion.HTTP_1_1;
       params.ssl = key_.ssl;
-      params.useAlpn = false;
       return new WebSocketGroup(key_.server, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM
