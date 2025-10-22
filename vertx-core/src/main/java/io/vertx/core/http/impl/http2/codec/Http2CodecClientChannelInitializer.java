@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientBase;
@@ -29,6 +30,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -37,13 +39,16 @@ import static io.vertx.core.http.impl.Http2UpgradeClientConnection.SEND_BUFFERED
 
 public class Http2CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
+  private final HttpClientMetrics clientMetrics;
+  private final HttpClientOptions options;
   private HttpClientBase client;
   private ClientMetrics metrics;
   private long maxLifetime;
   private HostAndPort authority;
 
-  public Http2CodecClientChannelInitializer(HttpClientBase client, ClientMetrics metrics, long maxLifetime, HostAndPort authority) {
-    this.client = client;
+  public Http2CodecClientChannelInitializer(HttpClientOptions options, HttpClientMetrics clientMetrics, ClientMetrics metrics, long maxLifetime, HostAndPort authority) {
+    this.options = options;
+    this.clientMetrics = clientMetrics;
     this.metrics = metrics;
     this.maxLifetime = maxLifetime;
     this.authority = authority;
@@ -51,17 +56,14 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
 
   @Override
   public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn) {
-    return new CodecChannelUpgrade(client, metrics,
-      conn.metric(),
-      client.options.getInitialSettings(),
-      client.options().getHttp2UpgradeMaxContentLength(), maxLifetime);
+    return new CodecChannelUpgrade(client.metrics(), metrics, conn.metric(), client.options(), maxLifetime);
   }
 
   @Override
   public void http2Connected(ContextInternal context, Object metric, Channel ch, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client, metrics, context, false, metric, authority, maxLifetime);
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(client.options(), client.metrics(), metrics, context, false, metric, authority, maxLifetime);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
@@ -83,22 +85,19 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
 
   public static class CodecChannelUpgrade implements Http2UpgradeClientConnection.Http2ChannelUpgrade {
 
-    private final HttpClientBase client;
-    private final ClientMetrics clientMetrics;
+    private final HttpClientMetrics clientMetrics;
+    private final HttpClientOptions options;
+    private final ClientMetrics metrics;
     private final Object connectionMetric;
-    private final int maxContentLength;
-    private final io.vertx.core.http.Http2Settings initialSettings;
     private final long maxLifetime;
 
-    public CodecChannelUpgrade(HttpClientBase client,
-                               ClientMetrics clientMetrics,
+    public CodecChannelUpgrade(HttpClientMetrics clientMetrics,
+                               ClientMetrics metrics,
                                Object connectionMetric,
-                               io.vertx.core.http.Http2Settings initialSettings,
-                               int maxContentLength,
+                               HttpClientOptions options,
                                long maxLifetime) {
-      this.initialSettings = initialSettings;
-      this.maxContentLength = maxContentLength;
-      this.client = client;
+      this.metrics = metrics;
+      this.options = options;
       this.maxLifetime = maxLifetime;
       this.clientMetrics = clientMetrics;
       this.connectionMetric = connectionMetric;
@@ -147,14 +146,15 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
         }
       }
 
-      VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(initialSettings) {
+      VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(options.getInitialSettings()) {
         @Override
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
           VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(
-            client,
+            options,
             clientMetrics,
+            metrics,
             upgradingStream.context(),
             true,
             connectionMetric,
@@ -179,7 +179,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
           handler.clientUpgrade(ctx);
         }
       };
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, maxContentLength) {
+      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, options.getHttp2UpgradeMaxContentLength()) {
 
         private long bufferedSize = 0;
         private Deque<Object> buffered = new ArrayDeque<>();

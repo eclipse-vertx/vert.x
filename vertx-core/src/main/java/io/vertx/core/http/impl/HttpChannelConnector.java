@@ -51,7 +51,7 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  */
 public class HttpChannelConnector {
 
-  private final HttpClientBase client;
+  private final HttpClientMetrics clientMetrics;
   private final NetClientInternal netClient;
   private final HttpClientOptions options;
   private final ClientSSLOptions sslOptions;
@@ -65,10 +65,11 @@ public class HttpChannelConnector {
   private final long maxLifetime;
   private final Http2ClientChannelInitializer http2ChannelInitializer;
 
-  public HttpChannelConnector(HttpClientBase client,
-                              NetClientInternal netClient,
+  public HttpChannelConnector(NetClientInternal netClient,
+                              HttpClientOptions options,
                               ClientSSLOptions sslOptions,
                               ProxyOptions proxyOptions,
+                              HttpClientMetrics clientMetrics,
                               ClientMetrics metrics,
                               HttpVersion version,
                               boolean ssl,
@@ -78,25 +79,25 @@ public class HttpChannelConnector {
                               long maxLifetimeMillis) {
 
     Http2ClientChannelInitializer http2ChannelInitializer;
-    if (client.options.getHttp2MultiplexImplementation()) {
+    if (options.getHttp2MultiplexImplementation()) {
       http2ChannelInitializer = new Http2MultiplexClientChannelInitializer(
-        HttpUtils.fromVertxSettings(client.options.getInitialSettings()),
-        client.metrics,
+        HttpUtils.fromVertxSettings(options.getInitialSettings()),
+        clientMetrics,
         metrics,
-        TimeUnit.SECONDS.toMillis(client.options.getHttp2KeepAliveTimeout()),
+        TimeUnit.SECONDS.toMillis(options.getHttp2KeepAliveTimeout()),
         maxLifetimeMillis,
         authority,
-        client.options.getHttp2MultiplexingLimit(),
-        client.options.isDecompressionSupported(),
-        client.options.getLogActivity());
+        options.getHttp2MultiplexingLimit(),
+        options.isDecompressionSupported(),
+        options.getLogActivity());
     } else {
-      http2ChannelInitializer = new Http2CodecClientChannelInitializer(client, metrics, maxLifetimeMillis, authority);
+      http2ChannelInitializer = new Http2CodecClientChannelInitializer(options, clientMetrics, metrics, maxLifetimeMillis, authority);
     }
 
-    this.client = client;
+    this.clientMetrics = clientMetrics;
     this.netClient = netClient;
     this.metrics = metrics;
-    this.options = client.options();
+    this.options = options;
     this.proxyOptions = proxyOptions;
     this.sslOptions = sslOptions;
     this.ssl = ssl;
@@ -235,11 +236,10 @@ public class HttpChannelConnector {
                                Promise<HttpClientConnection> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
-      HttpClientMetrics met = client.metrics();
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, authority, context, metrics, maxLifetime);
-      if (met != null) {
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, clientMetrics, options, chctx, ssl, server, authority, context, metrics, maxLifetime);
+      if (clientMetrics != null) {
         conn.metric(socketMetric);
-        met.endpointConnected(metrics);
+        clientMetrics.endpointConnected(metrics);
       }
       return conn;
     });

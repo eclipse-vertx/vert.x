@@ -69,7 +69,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
 
   private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
-  private final HttpClientBase client;
+  private final HttpClientMetrics clientMetrics;
   private final HttpClientOptions options;
   private final boolean ssl;
   private final SocketAddress server;
@@ -95,7 +95,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   private long lastResponseReceivedTimestamp;
 
   Http1xClientConnection(HttpVersion version,
-                         HttpClientBase client,
+                         HttpClientMetrics clientMetrics,
+                         HttpClientOptions options,
                          ChannelHandlerContext chctx,
                          boolean ssl,
                          SocketAddress server,
@@ -104,8 +105,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
                          ClientMetrics metrics,
                          long maxLifetime) {
     super(context, chctx);
-    this.client = client;
-    this.options = client.options();
+    this.clientMetrics = clientMetrics;
+    this.options = options;
     this.ssl = ssl;
     this.server = server;
     this.authority = authority;
@@ -941,7 +942,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
   }
 
   public HttpClientMetrics metrics() {
-    return client.metrics();
+    return clientMetrics;
   }
 
   /**
@@ -1016,7 +1017,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
         if (future.isSuccess()) {
 
           VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
-            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), client.metrics());
+            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), clientMetrics);
             WebSocketImpl webSocket = new WebSocketImpl(
               context,
               conn,
@@ -1037,9 +1038,8 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
           ws.subProtocol(handshaker.actualSubprotocol());
           ws.registerHandler(vertx.eventBus());
 
-          HttpClientMetrics metrics = client.metrics();
-          if (metrics != null) {
-            ws.setMetric(metrics.connected(ws));
+          if (clientMetrics != null) {
+            ws.setMetric(clientMetrics.connected(ws));
           }
           ws.pause();
           Deque<WebSocketFrame> toResubmit = pendingFrames;
@@ -1176,8 +1176,7 @@ public class Http1xClientConnection extends Http1xConnection implements HttpClie
     super.handleClosed();
     closed = true;
     if (metrics != null) {
-      HttpClientMetrics met = client.metrics();
-      met.endpointDisconnected(metrics);
+      clientMetrics.endpointDisconnected(metrics);
     }
     if (!evicted) {
       evicted = true;
