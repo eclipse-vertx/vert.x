@@ -94,7 +94,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, promise::tryComplete);
-          ch.pipeline().addLast(handler);
+          ch.pipeline().addLast("handler", handler);
         }
       })
       .remoteAddress(new InetSocketAddress(address.host(), address.port()));
