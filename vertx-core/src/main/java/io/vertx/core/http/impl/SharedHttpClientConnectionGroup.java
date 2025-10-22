@@ -24,6 +24,8 @@ import io.vertx.core.internal.pool.PoolConnector;
 import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.internal.pool.PoolWaiter;
 import io.vertx.core.internal.resource.ManagedResource;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
@@ -63,7 +65,11 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   private final HttpClientImpl client;
   private final ClientMetrics clientMetrics;
   private final HttpChannelConnector connector;
+  private final HttpConnectParams connectParams;
+  private final HostAndPort authority;
+  private final long maxLifetimeMillis;
   private final ConnectionPool<HttpClientConnection> pool;
+  private final SocketAddress server;
 
   public SharedHttpClientConnectionGroup(VertxInternal vertx,
                                          HttpClientImpl client,
@@ -72,7 +78,11 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
                                          int queueMaxSize,
                                          int http1MaxSize,
                                          int http2MaxSize,
-                                         HttpChannelConnector connector) {
+                                         HttpChannelConnector connector,
+                                         HttpConnectParams connectParams,
+                                         HostAndPort authority,
+                                         long maxLifetimeMillis,
+                                         SocketAddress server) {
     ConnectionPool<HttpClientConnection> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
       .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
 
@@ -81,13 +91,17 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     this.poolMetrics = poolMetrics;
     this.clientMetrics = clientMetrics;
     this.connector = connector;
+    this.authority = authority;
     this.pool = pool;
+    this.maxLifetimeMillis = maxLifetimeMillis;
+    this.server = server;
+    this.connectParams = connectParams;
   }
 
   @Override
   public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
     return connector
-      .httpConnect(context)
+      .httpConnect(context, server, authority, connectParams, maxLifetimeMillis, clientMetrics)
       .map(connection -> {
         incRefCount();
         connection.evictionHandler(v -> {
@@ -151,7 +165,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
         timerID = context.setTimer(timeout, id -> {
           pool.cancel(waiter, (res, err) -> {
             if (err == null & res)
-              promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server()));
+              promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + server));
             });
         });
       }

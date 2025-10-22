@@ -317,15 +317,6 @@ public abstract class ConnectionBase {
     }
   }
 
-  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
-    SSLSession session = sslSession();
-    if (session != null) {
-      return Arrays.asList(session.getPeerCertificates());
-    } else {
-      return null;
-    }
-  }
-
   public String indicatedServerName() {
     if (channel.hasAttr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR)) {
       return channel.attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).get();

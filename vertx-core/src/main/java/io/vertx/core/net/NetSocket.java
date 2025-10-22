@@ -26,6 +26,7 @@ import io.vertx.core.streams.WriteStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -293,7 +294,14 @@ public interface NetSocket extends Socket {
    * @see #sslSession()
    */
   @GenIgnore()
-  List<Certificate> peerCertificates() throws SSLPeerUnverifiedException;
+  default List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
+    SSLSession session = sslSession();
+    if (session != null) {
+      return Arrays.asList(session.getPeerCertificates());
+    } else {
+      return null;
+    }
+  }
 
   /**
    * Returns the SNI server name presented during the SSL handshake by the client.

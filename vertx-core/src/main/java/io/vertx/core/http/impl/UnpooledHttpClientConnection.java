@@ -196,12 +196,6 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
   }
 
   @Override
-  @GenIgnore
-  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
-    return actual.peerCertificates();
-  }
-
-  @Override
   public String indicatedServerName() {
     return actual.indicatedServerName();
   }

@@ -49,6 +49,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final PoolOptions poolOptions;
   private final ResourceManager<EndpointKey, SharedHttpClientConnectionGroup> httpCM;
   private final EndpointResolverInternal endpointResolver;
+  private final HttpChannelConnector connector;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_REDIRECT_HANDLER;
   private long timerID;
   volatile Handler<HttpConnection> connectionHandler;
@@ -63,7 +64,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
     this.endpointResolver = (EndpointResolverImpl) endpointResolver;
     this.poolOptions = poolOptions;
-    httpCM = new ResourceManager<>();
+    this.connector = new Http1xOrH2ChannelConnector(netClient, metrics);
+    this.httpCM = new ResourceManager<>();
     if (poolCheckerIsNeeded(options, poolOptions)) {
       PoolChecker checker = new PoolChecker(this);
       ContextInternal timerContext = vertx.createEventLoopContext();
@@ -137,7 +139,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         key = new EndpointKey(key.ssl, key.sslOptions, proxyOptions, server, key.authority);
         proxyOptions = null;
       }
-      HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, key.sslOptions, proxyOptions, clientMetrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.authority, key.server, maxLifetime);
+      HttpConnectParams params = new HttpConnectParams();
+      params.options = options;
+      params.sslOptions = key.sslOptions;
+      params.proxyOptions = proxyOptions;
+      params.version = options.getProtocolVersion();
+      params.ssl = key.ssl;
+      params.useAlpn = options.isUseAlpn();
       return new SharedHttpClientConnectionGroup(
         vertx,
         HttpClientImpl.this,
@@ -146,7 +154,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         poolOptions.getMaxWaitQueueSize(),
         poolOptions.getHttp1MaxSize(),
         poolOptions.getHttp2MaxSize(),
-        connector);
+        connector,
+        params,
+        key.authority,
+        maxLifetime,
+        key.server);
     };
   }
 
@@ -233,19 +245,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       return vertx.getOrCreateContext().failedFuture("Must enable ALPN when using H2");
     }
     checkClosed();
-    HttpChannelConnector connector = new HttpChannelConnector(
-      this,
-      netClient,
-      sslOptions,
-      proxyOptions,
-      clientMetrics,
-      options.getProtocolVersion(),
-      useSSL,
-      useAlpn,
-      authority,
-      server,
-      0);
-    return (Future) connector.httpConnect(vertx.getOrCreateContext()).map(conn -> new UnpooledHttpClientConnection(conn).init());
+    HttpConnectParams params = new HttpConnectParams();
+    params.options = options;
+    params.sslOptions = sslOptions;
+    params.proxyOptions = proxyOptions;
+    params.version = options.getProtocolVersion();
+    params.ssl = useSSL;
+    params.useAlpn = useAlpn;
+    return (Future) connector.httpConnect(vertx.getOrCreateContext(), server, authority, params, 0L, clientMetrics).map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 
   @Override

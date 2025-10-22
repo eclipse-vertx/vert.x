@@ -16,14 +16,16 @@ import io.vertx.core.http.impl.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.spi.metrics.ClientMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface Http2ClientChannelInitializer {
 
-  void http2Connected(ContextInternal context, Object metric, Channel ch, PromiseInternal<HttpClientConnection> promise);
+  void http2Connected(ContextInternal context, HostAndPort authority, Object metric, long maxLifetimeMillis, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise);
 
-  Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn);
+  Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, long maxLifetimeMillis, ClientMetrics<?, ?, ?> clientMetrics);
 
 }

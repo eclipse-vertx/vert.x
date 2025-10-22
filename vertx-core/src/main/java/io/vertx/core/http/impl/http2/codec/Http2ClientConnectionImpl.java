@@ -33,7 +33,8 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
-  private final HttpClientBase client;
+  private final HttpClientMetrics clientMetrics;
+  private final HttpClientOptions options;
   private final ClientMetrics metrics;
   private final HostAndPort authority;
   private final long lifetimeEvictionTimestamp;
@@ -43,22 +44,20 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   private boolean evicted;
   private final VertxHttp2ConnectionHandler handler;
 
-  Http2ClientConnectionImpl(HttpClientBase client,
-                            ContextInternal context,
+  Http2ClientConnectionImpl(ContextInternal context,
                             HostAndPort authority,
                             VertxHttp2ConnectionHandler connHandler,
+                            HttpClientMetrics clientMetrics,
                             ClientMetrics metrics,
+                            HttpClientOptions options,
                             long maxLifetime) {
     super(context, connHandler);
     this.metrics = metrics;
-    this.client = client;
+    this.clientMetrics = clientMetrics;
+    this.options = options;
     this.authority = authority;
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.handler = connHandler;
-  }
-
-  HttpClientBase client() {
-    return client;
   }
 
   @Override
@@ -90,7 +89,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public long concurrency() {
     long concurrency = remoteSettings().getMaxConcurrentStreams();
-    long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options().getHttp2MultiplexingLimit();
+    long http2MaxConcurrency = options.getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : options.getHttp2MultiplexingLimit();
     if (http2MaxConcurrency > 0) {
       concurrency = Math.min(concurrency, http2MaxConcurrency);
     }
@@ -136,7 +135,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    int limit = client.options().getHttp2MultiplexingLimit();
+    int limit = options.getHttp2MultiplexingLimit();
     if (limit > 0) {
       concurrency = Math.min(concurrency, limit);
     }
@@ -145,7 +144,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   public HttpClientMetrics metrics() {
-    return client.metrics();
+    return clientMetrics;
   }
 
   ClientMetrics clientMetrics() {
@@ -154,7 +153,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2Stream nettyStream = handler.connection().stream(1);
-    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics(), isWritable(1));
+    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, options.getTracingPolicy(), options.isDecompressionSupported(), clientMetrics(), isWritable(1));
     s.upgrade(metric, trace);
     nettyStream.setProperty(streamKey, s);
     return s.unwrap();
@@ -176,13 +175,13 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     return Http2ClientStream.create(
       this,
       context,
-      client.options.getTracingPolicy(),
-      client.options.isDecompressionSupported(),
+      options.getTracingPolicy(),
+      options.isDecompressionSupported(),
       clientMetrics());
   }
 
   private void recycle() {
-    int timeout = client.options().getHttp2KeepAliveTimeout();
+    int timeout = options.getHttp2KeepAliveTimeout();
     expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : Long.MAX_VALUE;
   }
 
@@ -231,7 +230,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
 //      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      Http2ClientStream s = Http2ClientStream.create(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
+      Http2ClientStream s = Http2ClientStream.create(this, context, options.getTracingPolicy(), options.isDecompressionSupported(), clientMetrics());
 //      pushStream.init(s);
 //      pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
@@ -252,22 +251,21 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public static VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> createHttp2ConnectionHandler(
-    HttpClientBase client,
+    HttpClientOptions options,
+    HttpClientMetrics clientMetrics,
     ClientMetrics metrics,
     ContextInternal context,
     boolean upgrade,
     Object socketMetric,
     HostAndPort authority,
     long maxLifetime) {
-    HttpClientOptions options = client.options();
-    HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnectionImpl>()
       .server(false)
-      .useDecompression(client.options().isDecompressionSupported())
+      .useDecompression(options.isDecompressionSupported())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
-      .initialSettings(client.options().getInitialSettings())
+      .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(client, context, authority, connHandler, metrics, maxLifetime);
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, clientMetrics, metrics, options, maxLifetime);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);
@@ -279,13 +277,13 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     handler.addHandler(conn -> {
       if (metrics != null) {
         if (!upgrade)  {
-          met.endpointConnected(metrics);
+          clientMetrics.endpointConnected(metrics);
         }
       }
     });
     handler.removeHandler(conn -> {
       if (metrics != null) {
-        met.endpointDisconnected(metrics);
+        clientMetrics.endpointDisconnected(metrics);
       }
       conn.tryEvict();
     });

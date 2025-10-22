@@ -264,11 +264,6 @@ public class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
-    return conn.peerCertificates();
-  }
-
-  @Override
   public String indicatedServerName() {
     return conn.indicatedServerName();
   }
