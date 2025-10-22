@@ -34,6 +34,7 @@ import java.util.function.Function;
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
   private final WebSocketClientOptions options;
+  private final HttpChannelConnector connector;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
 
   public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions) {
@@ -41,6 +42,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
     this.options = wsOptions;
     this.webSocketCM = new ResourceManager<>();
+    this.connector = new Http1xOrH2ChannelConnector(netClient, metrics);
   }
 
   protected void doShutdown(Completable<Void> p) {
@@ -71,9 +73,14 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(netClient, super.options, sslOptions, key_.proxyOptions, metrics,
-        clientMetrics, HttpVersion.HTTP_1_1, key_.ssl, false, key_.authority, key_.server, 0);
-      return new WebSocketGroup(null, queueMetrics, options, maxPoolSize, connector);
+      HttpConnectParams params = new HttpConnectParams();
+      params.options = super.options;
+      params.sslOptions = sslOptions;
+      params.proxyOptions = key_.proxyOptions;
+      params.version = HttpVersion.HTTP_1_1;
+      params.ssl = key_.ssl;
+      params.useAlpn = false;
+      return new WebSocketGroup(key_.server, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM
       .withResourceAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, connectOptions, 0L))

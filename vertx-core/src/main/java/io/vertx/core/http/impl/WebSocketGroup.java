@@ -16,7 +16,10 @@ import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.resource.ManagedResource;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
@@ -43,22 +46,31 @@ class WebSocketGroup extends ManagedResource {
     }
   }
 
+  private final SocketAddress server;
   private final WebSocketClientOptions options;
+  private final HttpConnectParams connectParams;
   private final int maxPoolSize;
   private final HttpChannelConnector connector;
+  private final HostAndPort authority;
+  private final long maxLifetimeMillis;
   private final Deque<Waiter> waiters;
   private int inflightConnections;
   private final ClientMetrics clientMetrics;
   private final PoolMetrics poolMetrics;
 
-  WebSocketGroup(ClientMetrics clientMetrics, PoolMetrics poolMetrics, WebSocketClientOptions options, int maxPoolSize, HttpChannelConnector connector) {
+  WebSocketGroup(SocketAddress server, ClientMetrics clientMetrics, PoolMetrics poolMetrics, WebSocketClientOptions options, int maxPoolSize,
+                 HttpChannelConnector connector, HttpConnectParams connectParams, HostAndPort authority, long maxLifetimeMillis) {
     super();
+    this.server = server;
     this.options = options;
     this.maxPoolSize = maxPoolSize;
     this.connector = connector;
     this.waiters = new ArrayDeque<>();
     this.clientMetrics = clientMetrics;
     this.poolMetrics = poolMetrics;
+    this.authority = authority;
+    this.maxLifetimeMillis = maxLifetimeMillis;
+    this.connectParams = connectParams;
   }
 
   public Future<WebSocket> requestConnection(ContextInternal ctx, WebSocketConnectOptions connectOptions, long timeout) {
@@ -79,7 +91,7 @@ class WebSocketGroup extends ManagedResource {
     } else {
       eventLoopContext = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     }
-    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext);
+    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext, server, authority, connectParams, maxLifetimeMillis, clientMetrics);
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
         HttpClientConnection c = ar.result();

@@ -29,11 +29,9 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.ClientMetrics;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import java.security.cert.Certificate;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,7 +45,9 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
+  private final long maxLifetimeMillis;
   private final Http2ChannelUpgrade upgrade;
+  private final ClientMetrics<?, ?, ?> metrics;
   private HttpClientConnection current;
   private boolean upgradeProcessed;
 
@@ -61,9 +61,11 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
-  Http2UpgradeClientConnection(Http1xClientConnection connection, Http2ChannelUpgrade upgrade) {
+  Http2UpgradeClientConnection(Http1xClientConnection connection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
     this.current = connection;
+    this.maxLifetimeMillis = maxLifetimeMillis;
     this.upgrade = upgrade;
+    this.metrics = metrics;
   }
 
   public HttpClientConnection unwrap() {
@@ -341,6 +343,8 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private final Http2ChannelUpgrade upgrade;
     private final HttpClientStream upgradingStream;
     private final Http2UpgradeClientConnection upgradedConnection;
+    private final long maxLifetimeMillis;
+    private final ClientMetrics<?, ?, ?> metrics;
     private HttpClientStream upgradedStream;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -355,11 +359,13 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
 
-    UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, Http2ChannelUpgrade upgrade, Http1xClientConnection upgradingConnection) {
+    UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade, Http1xClientConnection upgradingConnection) {
+      this.maxLifetimeMillis = maxLifetimeMillis;
       this.upgradedConnection = upgradedConnection;
       this.upgradingConnection = upgradingConnection;
       this.upgradingStream = stream;
       this.upgrade = upgrade;
+      this.metrics = metrics;
     }
 
     @Override
@@ -397,9 +403,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
         }
       };
       upgrade.upgrade(upgradingStream, request, buf, end,
-        upgradingConnection.channelHandlerContext().channel(),
-        blah
-      );
+        upgradingConnection.channelHandlerContext().channel(), maxLifetimeMillis, metrics, blah);
       PromiseInternal<Void> promise = upgradingStream.context().promise();
       writeHead(request, chunked, buf, end, priority, connect, promise);
       return promise.future();
@@ -691,7 +695,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     if (current instanceof Http1xClientConnection && !upgradeProcessed) {
       return current
         .createStream(context)
-        .map(stream -> new UpgradingStream(stream, this, upgrade, (Http1xClientConnection) current));
+        .map(stream -> new UpgradingStream(stream, this, maxLifetimeMillis, metrics, upgrade, (Http1xClientConnection) current));
     } else {
       return current
         .createStream(context)
@@ -900,6 +904,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                  Buffer content,
                  boolean end,
                  Channel channel,
-                 UpgradeResult result);
+                 long maxLifetimeMillis,
+                 ClientMetrics<?, ?, ?> clientMetrics, UpgradeResult result);
   }
 }
