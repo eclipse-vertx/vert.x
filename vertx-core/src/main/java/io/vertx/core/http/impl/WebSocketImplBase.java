@@ -169,11 +169,6 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
-    return conn.peerCertificates();
-  }
-
-  @Override
   public SocketAddress localAddress() {
     return conn.localAddress();
   }

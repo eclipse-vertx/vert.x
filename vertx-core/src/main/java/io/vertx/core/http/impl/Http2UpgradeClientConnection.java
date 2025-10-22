@@ -850,11 +850,6 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
-    return current.peerCertificates();
-  }
-
-  @Override
   public boolean isValid() {
     return current.isValid();
   }
