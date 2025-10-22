@@ -60,13 +60,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean isConnect;
   private String traceOperation;
 
-  HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
+  public HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
     super(connection, stream, stream.context().promise(), HttpMethod.GET, "/");
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.numberOfRedirections = 0;
+    this.headers = stream.connection().newHttpRequestHeaders();
 
     //
     stream.continueHandler(this::handleContinue);
@@ -182,10 +183,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized MultiMap headers() {
-    if (headers == null) {
-      headers = Http1xHeaders.httpHeaders();
-    }
+  public MultiMap headers() {
     return headers;
   }
 
@@ -492,7 +490,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private boolean requiresContentLength() {
-    return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH)) && !isConnect;
+    return !chunked && !headers.contains(CONTENT_LENGTH) && !isConnect;
   }
 
   private Future<Void> write(Buffer buff, boolean end) {
