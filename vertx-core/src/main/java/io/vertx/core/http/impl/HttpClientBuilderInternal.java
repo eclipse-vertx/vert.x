@@ -9,10 +9,14 @@ import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
+import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.net.endpoint.EndpointResolver;
+import io.vertx.core.net.impl.tcp.NetClientBuilder;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.function.Function;
 
@@ -89,6 +93,13 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return null;
   }
 
+  private HttpClientImpl createHttpClientImpl(EndpointResolver resolver, HttpClientOptions co, PoolOptions po) {
+    HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
+    NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
+    HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, metrics);
+    return new HttpClientImpl(vertx, channelConnector, metrics, resolver, co, po);
+  }
+
   @Override
   public HttpClientAgent build() {
     HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
@@ -100,15 +111,14 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     if (co.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-
-        HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
+        HttpClientImpl impl = createHttpClientImpl(resolver, co, po);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = new HttpClientImpl(vertx, resolver, co, po);
+      HttpClientImpl impl = createHttpClientImpl(resolver, co, po);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

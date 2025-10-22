@@ -411,19 +411,26 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (options.isShared()) {
       CloseFuture closeFuture = new CloseFuture();
       client = createSharedResource("__vertx.shared.webSocketClients", options.getName(), closeFuture, cf_ -> {
-        WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
+        WebSocketClientImpl impl = createWebSocketClientImpl(o, options);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableWebSocketClient(client, cleaner, (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      WebSocketClientImpl impl = new WebSocketClientImpl(this, o, options);
+      WebSocketClientImpl impl = createWebSocketClientImpl(o, options);
       closeable = impl;
       client = new CleanableWebSocketClient(impl, cleaner, impl::shutdown);
     }
     cf.add(closeable);
     return client;
+  }
+
+  private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
+    HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(o) : null;
+    NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
+    Http1xOrH2ChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, metrics);
+    return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
 
   @Override

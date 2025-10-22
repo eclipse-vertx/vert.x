@@ -37,6 +37,7 @@ import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -243,5 +244,15 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
       }
     });
     ch.pipeline().addLast("handler", clientHandler);
+  }
+
+  @Override
+  public Future<Void> shutdown(Duration timeout) {
+    return netClient.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+  }
+
+  @Override
+  public Future<Void> close() {
+    return netClient.close();
   }
 }

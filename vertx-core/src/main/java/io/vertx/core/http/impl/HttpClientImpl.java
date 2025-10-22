@@ -27,6 +27,7 @@ import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
@@ -49,7 +50,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final PoolOptions poolOptions;
   private final ResourceManager<EndpointKey, SharedHttpClientConnectionGroup> httpCM;
   private final EndpointResolverInternal endpointResolver;
-  private final HttpChannelConnector connector;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_REDIRECT_HANDLER;
   private long timerID;
   volatile Handler<HttpConnection> connectionHandler;
@@ -57,14 +57,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final long maxLifetime;
 
   public HttpClientImpl(VertxInternal vertx,
+                        HttpChannelConnector connector,
+                        HttpClientMetrics<?, ?, ?> metrics,
                         EndpointResolver endpointResolver,
                         HttpClientOptions options,
                         PoolOptions poolOptions) {
-    super(vertx, options);
+    super(vertx, options, connector, metrics);
 
     this.endpointResolver = (EndpointResolverImpl) endpointResolver;
     this.poolOptions = poolOptions;
-    this.connector = new Http1xOrH2ChannelConnector(netClient, metrics);
     this.httpCM = new ResourceManager<>();
     if (poolCheckerIsNeeded(options, poolOptions)) {
       PoolChecker checker = new PoolChecker(this);

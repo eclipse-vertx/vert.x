@@ -23,6 +23,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -34,15 +35,15 @@ public class HttpClientBase implements MetricsProvider, Closeable {
 
   protected final VertxInternal vertx;
   public final HttpClientOptions options;
-  protected final NetClientInternal netClient;
-  protected final HttpClientMetrics metrics;
+  protected final HttpChannelConnector connector;
+  protected final HttpClientMetrics<?, ?, ?> metrics;
   protected final CloseSequence closeSequence;
   private volatile ClientSSLOptions defaultSslOptions;
   private long closeTimeout = 0L;
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private Predicate<SocketAddress> proxyFilter;
 
-  public HttpClientBase(VertxInternal vertx, HttpClientOptions options) {
+  public HttpClientBase(VertxInternal vertx, HttpClientOptions options, HttpChannelConnector connector, HttpClientMetrics<?, ?, ?> metrics) {
     if (!options.isKeepAlive() && options.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
@@ -60,7 +61,8 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     this.options = options;
     this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(p1));
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null)).metrics(metrics).build();
+    this.connector = connector;
+//    this.netClient = new NetClientBuilder(vertx, new NetClientOptions(options).setProxyOptions(null)).metrics(metrics).build();
     this.defaultSslOptions = options.getSslOptions();
 
     ClientSSLOptions sslOptions = options.getSslOptions();
@@ -76,7 +78,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   }
 
   public NetClientInternal netClient() {
-    return netClient;
+    return null;
   }
 
   public Future<Void> closeFuture() {
@@ -144,11 +146,11 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   }
 
   protected void doShutdown(Completable<Void> p) {
-    netClient.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
+    connector.shutdown(Duration.ofMillis(closeTimeoutUnit.toMillis(closeTimeout))).onComplete(p);
   }
 
   protected void doClose(Completable<Void> p) {
-    netClient.close().onComplete(p);
+    connector.close().onComplete(p);
   }
 
   public Future<Void> shutdown(long timeout, TimeUnit unit) {

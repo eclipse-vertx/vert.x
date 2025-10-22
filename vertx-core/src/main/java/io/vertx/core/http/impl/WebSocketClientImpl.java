@@ -24,6 +24,7 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.net.URI;
@@ -34,15 +35,13 @@ import java.util.function.Function;
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
   private final WebSocketClientOptions options;
-  private final HttpChannelConnector connector;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
 
-  public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions) {
-    super(vertx, options);
+  public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions, HttpChannelConnector connector, HttpClientMetrics<?, ?, ?> metrics) {
+    super(vertx, options, connector, metrics);
 
     this.options = wsOptions;
     this.webSocketCM = new ResourceManager<>();
-    this.connector = new Http1xOrH2ChannelConnector(netClient, metrics);
   }
 
   protected void doShutdown(Completable<Void> p) {
