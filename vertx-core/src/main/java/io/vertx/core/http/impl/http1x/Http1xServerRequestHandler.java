@@ -15,7 +15,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.http.impl.HttpServerConnectionHandler;
-import io.vertx.core.http.impl.ServerWebSocketHandshaker;
+import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;

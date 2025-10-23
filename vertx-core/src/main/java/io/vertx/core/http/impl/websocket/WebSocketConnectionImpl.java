@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,8 +18,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.Future;
 import io.vertx.core.http.WebSocketFrameType;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.spi.metrics.HttpClientMetrics;

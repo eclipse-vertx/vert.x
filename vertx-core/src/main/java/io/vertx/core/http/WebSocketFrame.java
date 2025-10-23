@@ -13,9 +13,8 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.impl.websocket.WebSocketFrameImpl;
 
 /**
  * A WebSocket frame that represents either text or binary data.

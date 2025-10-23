@@ -8,13 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.websocket;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.WebSocketClientImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.ClientWebSocketInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
@@ -46,7 +47,7 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   private Handler<Buffer> binaryMessageHandler;
   private Handler<Buffer> pongHandler;
 
-  ClientWebSocketImpl(WebSocketClientImpl client) {
+  public ClientWebSocketImpl(WebSocketClientImpl client) {
     this.client = client;
   }
 

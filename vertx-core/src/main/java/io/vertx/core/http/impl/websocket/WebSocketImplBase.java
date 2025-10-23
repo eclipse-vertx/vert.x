@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -25,24 +25,19 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.net.impl.VertxConnection;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.Certificate;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 

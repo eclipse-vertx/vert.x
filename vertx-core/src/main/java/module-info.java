@@ -114,7 +114,7 @@ module io.vertx.core {
   exports io.vertx.core.file.impl to io.vertx.core.tests;
   exports io.vertx.core.http.impl to io.vertx.core.tests;
   exports io.vertx.core.http.impl.headers to io.vertx.core.tests;
-  exports io.vertx.core.http.impl.ws to io.vertx.core.tests;
+  exports io.vertx.core.http.impl.websocket to io.vertx.core.tests;
   exports io.vertx.core.json.pointer.impl to io.vertx.core.tests;
   exports io.vertx.core.impl.transports to io.vertx.core.tests;
   exports io.vertx.core.net.impl.pkcs1 to io.vertx.core.tests;
