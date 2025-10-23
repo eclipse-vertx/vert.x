@@ -8,12 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http1x;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.http.impl.HttpServerConnectionHandler;
+import io.vertx.core.http.impl.ServerWebSocketHandshaker;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
@@ -42,7 +44,7 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
     Handler<ServerWebSocketHandshake> wsHandshakeHandler = handlers.webSocketHandshakeHandler;
     Handler<HttpServerRequest> reqHandler = handlers.requestHandler;
     if (wsHandler != null || wsHandshakeHandler != null) {
-      if (req.headers().contains(UPGRADE, WEBSOCKET, true) && handlers.server.wsAccept()) {
+      if (req.headers().contains(UPGRADE, WEBSOCKET, true)) {
         // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
         ((Http1xServerRequest)req).webSocketHandshake().onComplete(ar -> {
           if (ar.succeeded()) {

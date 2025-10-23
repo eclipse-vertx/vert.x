@@ -23,6 +23,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.http.impl.http1x.Http1xServerConnection;
+import io.vertx.core.http.impl.http1x.Http1xServerRequestHandler;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.internal.ContextInternal;
 
@@ -33,19 +35,19 @@ import java.util.ArrayList;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
+public class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
 
-  final HttpServerImpl server;
-  final String serverOrigin;
-  final Handler<HttpServerRequest> requestHandler;
-  final Handler<HttpServerRequest> invalidRequestHandler;
-  final Handler<ServerWebSocket> webSocketHandler;
-  final Handler<ServerWebSocketHandshake> webSocketHandshakeHandler;
-  final Handler<HttpConnection> connectionHandler;
-  final Handler<Throwable> exceptionHandler;
-  final int connectionWindowSize;
+  public final HttpServerImpl server;
+  public final String serverOrigin;
+  public final Handler<HttpServerRequest> requestHandler;
+  public final Handler<HttpServerRequest> invalidRequestHandler;
+  public final Handler<ServerWebSocket> webSocketHandler;
+  public final Handler<ServerWebSocketHandshake> webSocketHandshakeHandler;
+  public final Handler<HttpConnection> connectionHandler;
+  public final Handler<Throwable> exceptionHandler;
+  public final int connectionWindowSize;
 
-  HttpServerConnectionHandler(
+  public HttpServerConnectionHandler(
     HttpServerImpl server,
     String serverOrigin,
     Handler<HttpServerRequest> requestHandler,

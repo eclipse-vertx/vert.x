@@ -32,6 +32,7 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
+import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;

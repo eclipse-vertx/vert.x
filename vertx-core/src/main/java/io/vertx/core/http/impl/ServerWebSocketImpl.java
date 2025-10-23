@@ -12,9 +12,9 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.impl.http1x.Http1xServerRequest;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.VertxConnection;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http1x;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,6 +22,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.HttpClientPush;
+import io.vertx.core.http.impl.HttpClientStream;
+import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -38,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * A connection that attempts to perform a protocol upgrade to H2C. The connection might use HTTP/1 or H2C
  * depending on the initial server response.
  */
-public class Http2UpgradeClientConnection implements HttpClientConnection {
+public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.HttpClientConnection {
 
   // Try to remove that
   public static final Object SEND_BUFFERED_MESSAGES_EVENT = new Object();
@@ -48,7 +51,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private final long maxLifetimeMillis;
   private final Http2ChannelUpgrade upgrade;
   private final ClientMetrics<?, ?, ?> metrics;
-  private HttpClientConnection current;
+  private io.vertx.core.http.impl.HttpClientConnection current;
   private boolean upgradeProcessed;
 
   private Handler<Void> closeHandler;
@@ -61,14 +64,14 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
-  Http2UpgradeClientConnection(Http1xClientConnection connection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
+  public Http2UpgradeClientConnection(Http1xClientConnection connection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
     this.current = connection;
     this.maxLifetimeMillis = maxLifetimeMillis;
     this.upgrade = upgrade;
     this.metrics = metrics;
   }
 
-  public HttpClientConnection unwrap() {
+  public io.vertx.core.http.impl.HttpClientConnection unwrap() {
     return current;
   }
 
@@ -138,7 +141,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public io.vertx.core.http.impl.HttpClientConnection connection() {
       return connection;
     }
 
@@ -148,7 +151,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
       return delegate.writeHead(request, chunked, buf, end, priority, connect);
     }
 
@@ -187,7 +190,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<io.vertx.core.http.impl.HttpResponseHead> handler) {
       delegate.headHandler(handler);
       return this;
     }
@@ -280,7 +283,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
    */
   private static class UpgradingStream implements HttpClientStream {
 
-    void handleUpgrade(HttpClientConnection conn, HttpClientStream stream) {
+    void handleUpgrade(io.vertx.core.http.impl.HttpClientConnection conn, HttpClientStream stream) {
       upgradedStream = stream;
       upgradedStream.headHandler(headHandler);
       upgradedStream.dataHandler(chunkHandler);
@@ -346,7 +349,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     private final long maxLifetimeMillis;
     private final ClientMetrics<?, ?, ?> metrics;
     private HttpClientStream upgradedStream;
-    private Handler<HttpResponseHead> headHandler;
+    private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
     private Handler<MultiMap> trailersHandler;
     private Handler<StreamPriority> priorityHandler;
@@ -369,7 +372,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientConnection connection() {
+    public io.vertx.core.http.impl.HttpClientConnection connection() {
       return upgradedConnection;
     }
 
@@ -377,7 +380,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
      * HTTP/2 clear text upgrade here.
      */
     @Override
-    public Future<Void> writeHead(HttpRequestHead request,
+    public Future<Void> writeHead(io.vertx.core.http.impl.HttpRequestHead request,
                                   boolean chunked,
                                   Buffer buf,
                                   boolean end,
@@ -385,7 +388,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
                                   boolean connect) {
       UpgradeResult blah = new UpgradeResult() {
         @Override
-        public void upgradeAccepted(HttpClientConnection connection, HttpClientStream upgradedStream) {
+        public void upgradeAccepted(io.vertx.core.http.impl.HttpClientConnection connection, HttpClientStream upgradedStream) {
           UpgradingStream.this.handleUpgrade(connection, upgradedStream);
         }
         @Override
@@ -409,7 +412,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
       return promise.future();
     }
 
-    private void writeHead(HttpRequestHead head,
+    private void writeHead(io.vertx.core.http.impl.HttpRequestHead head,
                            boolean chunked,
                            Buffer buf,
                            boolean end,
@@ -535,7 +538,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public HttpClientStream headHandler(Handler<HttpResponseHead> handler) {
+    public HttpClientStream headHandler(Handler<io.vertx.core.http.impl.HttpResponseHead> handler) {
       if (upgradedStream != null) {
         upgradedStream.headHandler(handler);
       } else {
@@ -767,7 +770,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+  public io.vertx.core.http.impl.HttpClientConnection evictionHandler(Handler<Void> handler) {
     if (current instanceof Http1xClientConnection) {
       evictionHandler = handler;
     }
@@ -776,7 +779,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
+  public io.vertx.core.http.impl.HttpClientConnection invalidMessageHandler(Handler<Object> handler) {
     if (current instanceof Http1xClientConnection) {
       invalidMessageHandler = handler;
     }
@@ -785,7 +788,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+  public io.vertx.core.http.impl.HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     if (current instanceof Http1xClientConnection) {
       concurrencyChangeHandler = handler;
     }
@@ -879,7 +882,7 @@ public class Http2UpgradeClientConnection implements HttpClientConnection {
      * @param connection the upgraded HTTP/2 connection
      * @param upgradedStream the upgraded HTTP/2 stream
      */
-    void upgradeAccepted(HttpClientConnection connection, HttpClientStream upgradedStream);
+    void upgradeAccepted(io.vertx.core.http.impl.HttpClientConnection connection, HttpClientStream upgradedStream);
 
     /**
      * Signals the server rejected the HTTP upgrade.

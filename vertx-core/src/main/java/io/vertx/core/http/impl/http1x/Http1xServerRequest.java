@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.http1x;
 
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -21,6 +21,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpEventHandler;
+import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.NettyFileUpload;
+import io.vertx.core.http.impl.NettyFileUploadDataFactory;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
@@ -136,7 +140,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
     return eventHandler;
   }
 
-  HttpRequest nettyRequest() {
+  public HttpRequest nettyRequest() {
     synchronized (conn) {
       return request;
     }

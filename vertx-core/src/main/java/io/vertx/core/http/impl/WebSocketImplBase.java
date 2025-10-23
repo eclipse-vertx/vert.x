@@ -117,7 +117,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.headers = headers;
   }
 
-  void registerHandler(EventBus eventBus) {
+  public void registerHandler(EventBus eventBus) {
     if (binaryHandlerID != null) {
       Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
       Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
@@ -195,7 +195,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
-  void subProtocol(String subProtocol) {
+  public void subProtocol(String subProtocol) {
     synchronized (this) {
       this.subProtocol = subProtocol;
     }
@@ -226,7 +226,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
-  void headers(MultiMap headers) {
+  public void headers(MultiMap headers) {
     synchronized (this) {
       this.headers = headers;
     }
@@ -622,7 +622,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     handleClose();
   }
 
-  synchronized void setMetric(Object metric) {
+  public synchronized void setMetric(Object metric) {
     this.metric = metric;
   }
 

@@ -22,8 +22,11 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.http1x.Http1xServerConnection;
+import io.vertx.core.http.impl.http1x.Http1xServerRequest;
+import io.vertx.core.http.impl.http1x.Http1xServerResponse;
+import io.vertx.core.http.impl.http1x.HttpChunkContentCompressor;
 import io.vertx.core.impl.future.FutureImpl;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.VertxHandler;
@@ -53,7 +56,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
   private boolean done;
 
   public ServerWebSocketHandshaker(Http1xServerRequest request, WebSocketServerHandshaker handshaker, HttpServerOptions options) {
-    super(request.context);
+    super(request.context());
     this.request = request;
     this.handshaker = handshaker;
     this.options = options;
@@ -99,7 +102,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       return rejectHandshake(BAD_REQUEST.code())
         .transform(ar -> {
           if (ar.succeeded()) {
-            return request.context.failedFuture(e);
+            return request.context().failedFuture(e);
           } else {
             // result is null
             return (Future) ar;
@@ -164,7 +167,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     ChannelHandlerContext chctx = httpConn.channelHandlerContext();
     Channel channel = chctx.channel();
     Http1xServerResponse response = request.response();
-    Object requestMetric = request.metric;
+    Object requestMetric = request.metric();
     handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), channel.newPromise());
     response.completeHandshake();
     // remove compressor as it's not needed anymore once connection was upgraded to websockets
@@ -175,7 +178,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     }
     VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
       long closingTimeoutMS = options.getWebSocketClosingTimeout() >= 0 ? options.getWebSocketClosingTimeout() * 1000L : 0L;
-      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context, ctx, true, closingTimeoutMS,httpConn.metrics);
+      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context(), ctx, true, closingTimeoutMS,httpConn.metrics());
       ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
         request.context(),
         webSocketConn,
@@ -203,8 +206,8 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       throw new RuntimeException(e);
     }
     ServerWebSocketImpl webSocket = (ServerWebSocketImpl) handler.getConnection().webSocket();
-    if (METRICS_ENABLED && httpConn.metrics != null) {
-      webSocket.setMetric(httpConn.metrics.connected(httpConn.metric(), requestMetric, this));
+    if (METRICS_ENABLED && httpConn.metrics() != null) {
+      webSocket.setMetric(httpConn.metrics().connected(httpConn.metric(), requestMetric, this));
     }
     webSocket.registerHandler(httpConn.context().owner().eventBus());
     return webSocket;
