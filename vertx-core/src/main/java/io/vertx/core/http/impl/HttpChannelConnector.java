@@ -17,6 +17,8 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
+import java.time.Duration;
+
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
  *
@@ -30,5 +32,9 @@ public interface HttpChannelConnector {
                                            HttpConnectParams params,
                                            long maxLifetimeMillis,
                                            ClientMetrics<?, ?, ?> metrics);
+
+  Future<Void> shutdown(Duration timeout);
+
+  Future<Void> close();
 
 }

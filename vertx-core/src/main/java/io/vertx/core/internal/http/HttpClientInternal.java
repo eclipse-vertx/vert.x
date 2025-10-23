@@ -14,6 +14,7 @@ package io.vertx.core.internal.http;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpChannelConnector;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -32,9 +33,7 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
 
   Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
-  HttpClientOptions options();
-
-  NetClientInternal netClient();
+  HttpChannelConnector channelConnector();
 
   Future<Void> closeFuture();
 

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -25,24 +25,19 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.net.impl.VertxConnection;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.Certificate;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -117,7 +112,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     this.headers = headers;
   }
 
-  void registerHandler(EventBus eventBus) {
+  public void registerHandler(EventBus eventBus) {
     if (binaryHandlerID != null) {
       Handler<Message<Buffer>> binaryHandler = msg -> writeBinaryFrameInternal(msg.body());
       Handler<Message<String>> textHandler = msg -> writeTextFrameInternal(msg.body());
@@ -195,7 +190,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
-  void subProtocol(String subProtocol) {
+  public void subProtocol(String subProtocol) {
     synchronized (this) {
       this.subProtocol = subProtocol;
     }
@@ -226,7 +221,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     }
   }
 
-  void headers(MultiMap headers) {
+  public void headers(MultiMap headers) {
     synchronized (this) {
       this.headers = headers;
     }
@@ -622,7 +617,7 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
     handleClose();
   }
 
-  synchronized void setMetric(Object metric) {
+  public synchronized void setMetric(Object metric) {
     this.metric = metric;
   }
 

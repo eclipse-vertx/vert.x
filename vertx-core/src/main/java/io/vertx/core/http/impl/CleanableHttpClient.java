@@ -92,11 +92,6 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public HttpClientOptions options() {
-    return delegate.options();
-  }
-
-  @Override
   public boolean isMetricsEnabled() {
     return delegate.isMetricsEnabled();
   }
@@ -112,8 +107,8 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public NetClientInternal netClient() {
-    return delegate.netClient();
+  public HttpChannelConnector channelConnector() {
+    return delegate.channelConnector();
   }
 
   @Override

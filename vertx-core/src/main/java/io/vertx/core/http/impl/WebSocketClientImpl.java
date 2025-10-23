@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.websocket.ClientWebSocketImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -24,6 +25,7 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.net.URI;
@@ -34,15 +36,17 @@ import java.util.function.Function;
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
   private final WebSocketClientOptions options;
-  private final HttpChannelConnector connector;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
 
-  public WebSocketClientImpl(VertxInternal vertx, HttpClientOptions options, WebSocketClientOptions wsOptions) {
-    super(vertx, options);
-
+  public WebSocketClientImpl(VertxInternal vertx,
+                             HttpClientOptions options,
+                             WebSocketClientOptions wsOptions,
+                             HttpChannelConnector connector,
+                             HttpClientMetrics<?, ?, ?> metrics) {
+    super(vertx, connector, metrics, options.getProxyOptions(), options.getSslOptions(), options.getNonProxyHosts(),
+      options.isVerifyHost(), options.isSsl(), options.getDefaultHost(), options.getDefaultPort(), options.getMaxRedirects());
     this.options = wsOptions;
     this.webSocketCM = new ResourceManager<>();
-    this.connector = new Http1xOrH2ChannelConnector(netClient, metrics);
   }
 
   protected void doShutdown(Completable<Void> p) {
@@ -60,7 +64,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     return webSocket(options);
   }
 
-  void webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions, Promise<WebSocket> promise) {
+  public void webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions, Promise<WebSocket> promise) {
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
@@ -74,12 +78,9 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
       HttpConnectParams params = new HttpConnectParams();
-      params.options = super.options;
       params.sslOptions = sslOptions;
       params.proxyOptions = key_.proxyOptions;
-      params.version = HttpVersion.HTTP_1_1;
       params.ssl = key_.ssl;
-      params.useAlpn = false;
       return new WebSocketGroup(key_.server, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM

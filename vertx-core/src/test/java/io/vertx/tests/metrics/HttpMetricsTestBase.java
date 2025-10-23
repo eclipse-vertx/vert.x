@@ -14,11 +14,11 @@ package io.vertx.tests.metrics;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.NetClient;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
@@ -137,8 +137,8 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     AtomicReference<SocketMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-    NetClient netClient = ((HttpClientInternal) client).netClient();
-    FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(netClient);
+    Http1xOrH2ChannelConnector connector = (Http1xOrH2ChannelConnector)((HttpClientInternal) client).channelConnector();
+    FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(connector.netClient());
     assertSame(metrics, tcpMetrics);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {

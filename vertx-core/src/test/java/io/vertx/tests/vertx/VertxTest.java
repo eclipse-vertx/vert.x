@@ -16,8 +16,10 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
+import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetSocketInternal;
@@ -164,7 +166,9 @@ public class VertxTest extends AsyncTestBase {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onSuccess(req -> {
         req.send();
       });
-      (((CleanableHttpClient)client).delegate).netClient().closeFuture().onComplete(ar -> {
+      Http1xOrH2ChannelConnector channelConnector = (Http1xOrH2ChannelConnector)(((CleanableHttpClient) client).delegate).channelConnector();
+      NetClientInternal netClient = channelConnector.netClient();
+      netClient.closeFuture().onComplete(ar -> {
         closed2.set(true);
       });
       WeakReference<HttpClient> ref = new WeakReference<>(client);

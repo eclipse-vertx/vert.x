@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -32,7 +32,7 @@ import io.vertx.core.http.impl.headers.HeadersAdaptor;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
+public class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
 
   private final WebSocketClientHandshaker handshaker;
   private final Promise<HttpHeaders> upgrade;
@@ -40,7 +40,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
   private FullHttpResponse response;
   private ChannelFuture fut;
 
-  WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Promise<HttpHeaders> upgrade) {
+  public WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Promise<HttpHeaders> upgrade) {
     this.handshaker = handshaker;
     this.upgrade = upgrade;
   }
