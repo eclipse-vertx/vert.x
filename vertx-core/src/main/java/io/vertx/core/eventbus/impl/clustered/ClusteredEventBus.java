@@ -348,11 +348,11 @@ public final class ClusteredEventBus extends EventBusImpl {
   }
 
   private void sendRemote(String remoteNodeId, MessageImpl<?, ?> message, Promise<Void> writePromise) {
-    OutboundConnection outboundConnection = getOutboundConnection(remoteNodeId);
+    OutboundConnection outboundConnection = getOutboundConnection(remoteNodeId, writePromise);
     outboundConnection.writeMessage(message, writePromise);
   }
 
-  private OutboundConnection getOutboundConnection(String remoteNodeId) {
+  private OutboundConnection getOutboundConnection(String remoteNodeId, Promise<Void> writePromise) {
     OutboundConnection conn = outboundConnections.get(remoteNodeId);
     if (conn == null) {
       conn = new OutboundConnection(this, remoteNodeId);
@@ -360,35 +360,36 @@ public final class ClusteredEventBus extends EventBusImpl {
       if (prev != null) {
         conn = prev;
       } else {
-        connect(conn);
+        connect(conn).onFailure(writePromise::tryFail);
       }
     }
     return conn;
   }
 
-  private void connect(OutboundConnection conn) {
+  private Future<Void> connect(OutboundConnection conn) {
     Promise<NodeInfo> promise = Promise.promise();
     clusterManager.getNodeInfo(conn.remoteNodeId(), promise);
-    promise.future()
+    return promise.future()
       .flatMap(info -> client.connect(info.port(), info.host()))
       .onComplete(ar -> {
         if (ar.succeeded()) {
           NetSocket connection = ar.result();
           connection.handler(conn);
-          connection.closeHandler(v -> {
-            if (outboundConnections.remove(conn.remoteNodeId(), conn)) {
-              if (log.isDebugEnabled()) {
-                log.debug("Cluster connection closed for server " + conn.remoteNodeId());
-              }
-            }
-            conn.handleClose(NetSocketInternal.CLOSED_EXCEPTION);
-          });
+          connection.closeHandler(v -> handleClose(NetSocketInternal.CLOSED_EXCEPTION, conn));
           conn.connected(connection);
         } else {
           log.warn("Connecting to server " + conn.remoteNodeId() + " failed", ar.cause());
-          conn.handleClose(ar.cause());
+          handleClose(ar.cause(), conn);
         }
-      });
+      }).mapEmpty();
+  }
+
+  private void handleClose(Throwable cause, OutboundConnection conn) {
+    if (outboundConnections.remove(conn.remoteNodeId(), conn)) {
+      if (log.isDebugEnabled()) {
+        log.debug("Cluster connection closed for server " + conn.remoteNodeId());
+      }
+    }
+    conn.handleClose(cause);
   }
 }
-

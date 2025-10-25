@@ -752,4 +752,32 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     Future.future(eventBus::close).await();
     assertWaitUntil(() -> numberOfOutboundConnections.get() == 0 && numberOfInboundConnections.get() == 0);
   }
+
+  @Test
+  public void testHandleCloseRemovesStaleOutboundConnectionOnConnectFailure() {
+    AtomicInteger idx = new AtomicInteger();
+    startNodes(2, () -> new WrappedClusterManager(getClusterManager()) {
+      @Override
+      public void getNodeInfo(String nodeId, Completable<io.vertx.core.spi.cluster.NodeInfo> promise) {
+        if (idx.getAndIncrement() == 0) {
+          promise.fail("induced failure");
+        } else {
+          super.getNodeInfo(nodeId, promise);
+        }
+      }
+    });
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> {
+      testComplete();
+    }).completion().onComplete(onSuccess(v -> {
+        vertices[0].eventBus().sender(ADDRESS1).write("will fail").onComplete(ar -> {
+          if (ar.failed()) {
+            vertices[0].eventBus().request(ADDRESS1, "will succeed");
+          } else {
+            fail("Should have failed");
+          }
+        });
+      }
+    ));
+    await();
+  }
 }
