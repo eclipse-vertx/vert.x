@@ -153,7 +153,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     codecBuilder.initialMaxStreamDataUnidirectional(transportOptions.getInitialMaxStreamDataUnidirectional());
     codecBuilder.activeMigration(transportOptions.getActiveMigration());
     if (transportOptions.getMaxIdleTimeout() != null) {
-      codecBuilder.maxIdleTimeout(transportOptions.getMaxIdleTimeout().get(ChronoUnit.MILLIS), TimeUnit.MILLISECONDS);
+      codecBuilder.maxIdleTimeout(transportOptions.getMaxIdleTimeout().toMillis(), TimeUnit.MILLISECONDS);
     }
     if (transportOptions.isEnableDatagrams()) {
       codecBuilder.datagram(transportOptions.getDatagramReceiveQueueLength(), transportOptions.getDatagramSendQueueLength());
