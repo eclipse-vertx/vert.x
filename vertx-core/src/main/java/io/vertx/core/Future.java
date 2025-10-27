@@ -87,7 +87,7 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static <T> CompositeFuture all(List<? extends Future<?>> futures) {
+  static CompositeFuture all(List<? extends Future<?>> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[0]));
   }
 
@@ -137,7 +137,7 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static <T> CompositeFuture any(Future<?> ... futures) {
+  static CompositeFuture any(Future<?> ... futures) {
     return CompositeFutureImpl.any(futures);
   }
 
@@ -196,7 +196,7 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static <T> CompositeFuture join(Future<?> ... futures) {
+  static CompositeFuture join(Future<?> ... futures) {
     return CompositeFutureImpl.join(futures);
   }
 
