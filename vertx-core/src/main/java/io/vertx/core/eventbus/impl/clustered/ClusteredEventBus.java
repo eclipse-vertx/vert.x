@@ -385,7 +385,10 @@ public final class ClusteredEventBus extends EventBusImpl {
           });
           conn.connected(connection);
         } else {
-          log.warn("Connecting to server " + conn.remoteNodeId() + " failed", ar.cause());
+          if (log.isWarnEnabled()) {
+            log.warn("Connecting to server " + conn.remoteNodeId() + " failed", ar.cause());
+          }
+          outboundConnections.remove(conn.remoteNodeId(), conn);
           conn.handleClose(ar.cause());
         }
       });

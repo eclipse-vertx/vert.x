@@ -21,6 +21,7 @@ import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
@@ -49,6 +50,7 @@ final class OutboundConnection implements Handler<Buffer> {
   private boolean connected;
   private long pingReplyTimeoutID = -1;
   private long pingTimeoutID = -1;
+  private boolean closed;
 
   OutboundConnection(ClusteredEventBus eventBus, String remoteNodeId) {
     this.eventBus = eventBus;
@@ -62,17 +64,28 @@ final class OutboundConnection implements Handler<Buffer> {
   }
 
   synchronized void writeMessage(MessageImpl<?, ?> message, Promise<Void> writePromise) {
-    if (connected) {
+    Throwable failure;
+    synchronized (this) {
+      if (closed) {
+        failure = NetSocketInternal.CLOSED_EXCEPTION;
+      } else if (connected) {
+        failure = null;
+      } else {
+        if (pendingWrites == null) {
+          if (log.isDebugEnabled()) {
+            log.debug("Not connected to server " + remoteNodeId + " - starting queuing");
+          }
+          pendingWrites = new ArrayDeque<>();
+        }
+        pendingWrites.add(new MessageWrite(message, writePromise));
+        return;
+      }
+    }
+    if (failure == null) {
       writeMessage(message)
         .onComplete(writePromise);
     } else {
-      if (pendingWrites == null) {
-        if (log.isDebugEnabled()) {
-          log.debug("Not connected to server " + remoteNodeId + " - starting queuing");
-        }
-        pendingWrites = new ArrayDeque<>();
-      }
-      pendingWrites.add(new MessageWrite(message, writePromise));
+      writePromise.tryFail(failure);
     }
   }
 
@@ -91,6 +104,7 @@ final class OutboundConnection implements Handler<Buffer> {
       vertx.cancelTimer(pingTimeoutID);
     }
     synchronized (this) {
+      closed = true;
       MessageWrite msg;
       if (pendingWrites != null) {
         while ((msg = pendingWrites.poll()) != null) {
