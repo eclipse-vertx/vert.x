@@ -32,6 +32,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,7 +55,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private long timerID;
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
-  private final Transport transport;
+  private final Transport tcpTransport;
+  private final Transport quicTransport;
   private final EndpointResolverInternal resolver;
   private final OriginResolver<Object> originEndpoints;
   private final EndpointResolverInternal originResolver;
@@ -67,16 +69,18 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  PoolOptions poolOptions,
                  ProxyOptions defaultProxyOptions,
                  List<String> nonProxyHosts,
-                 Transport transport,
                  LoadBalancer loadBalancer,
                  boolean followAlternativeServices,
-                 Duration resolverKeepAlive) {
+                 Duration resolverKeepAlive,
+                 Transport tcpTransport,
+                 Transport quicTransport) {
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
     boolean resolveAll = loadBalancer != null;
 
+    this.tcpTransport = tcpTransport;
+    this.quicTransport = quicTransport;
     this.originEndpoints = new OriginResolver<>(vertx, resolveAll);
-    this.transport = transport;
     this.resolver = (EndpointResolverInternal) resolver;
     this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, resolverKeepAlive.toMillis());
     this.poolOptions = poolOptions;
@@ -195,12 +199,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public HttpChannelConnector channelConnector() {
-    return transport.connector;
+    return tcpTransport.connector;
   }
 
   protected void setDefaultSslOptions(ClientSSLOptions options) {
-    configureSSLOptions(transport.verifyHost, options);
-    transport.sslOptions = options;
+    configureSSLOptions(tcpTransport.verifyHost, options);
+    tcpTransport.sslOptions = options;
   }
 
   @Override
@@ -212,13 +216,27 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       }
     }
     resourceManager.shutdown();
-    transport.connector.shutdown(timeout).onComplete(p);
+    List<Future<Void>> list = new ArrayList<>();
+    if (tcpTransport != null) {
+      list.add(tcpTransport.connector.shutdown(timeout));
+    }
+    if (quicTransport != null) {
+      list.add(quicTransport.connector.shutdown(timeout));
+    }
+    Future.join(list).<Void>mapEmpty().onComplete(p);
   }
 
   @Override
   protected void doClose(Completable<Void> p) {
     resourceManager.close();
-    transport.connector.close().onComplete(p);
+    List<Future<Void>> list = new ArrayList<>();
+    if (tcpTransport != null) {
+      list.add(tcpTransport.connector.close());
+    }
+    if (quicTransport != null) {
+      list.add(quicTransport.connector.close());
+    }
+    Future.join(list).<Void>mapEmpty().onComplete(p);
   }
 
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
@@ -227,6 +245,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<io.vertx.core.http.HttpClientConnection> connect(HttpConnectOptions connect) {
+    Transport transport = tcpTransport;
+    if (transport == null) {
+      transport = quicTransport;
+    }
+    return connect(transport, connect);
+  }
+
+  private Future<io.vertx.core.http.HttpClientConnection> connect(Transport transport,  HttpConnectOptions connect) {
     Address addr = connect.getServer();
     Integer port = connect.getPort();
     String host = connect.getHost();
@@ -274,6 +300,33 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
+    HttpVersion version = request.getProtocolVersion();
+    Transport transport;
+    if (version == null) {
+      if (tcpTransport != null) {
+        transport = tcpTransport;
+        version = tcpTransport.defaultProtocol;
+      } else {
+        transport = quicTransport;
+        version = quicTransport.defaultProtocol;
+      }
+    } else {
+      switch (version) {
+        case HTTP_1_0:
+        case HTTP_1_1:
+        case HTTP_2:
+          transport = tcpTransport;
+          break;
+        case HTTP_3:
+          transport = quicTransport;
+          break;
+        default:
+          throw new AssertionError();
+      }
+      if (transport == null) {
+        return vertx.getOrCreateContext().failedFuture("Handle me");
+      }
+    }
     Address addr = request.getServer();
     Integer port = request.getPort();
     String host = request.getHost();
@@ -348,7 +401,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
       if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
-        return doRequestDirectly(protocolVersion, method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
+        return doRequestDirectly(transport, protocolVersion, method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
           sslOptions, authority, connectTimeout);
       }
     }
@@ -363,6 +416,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       case HTTP_2:
         protocol = useSSL ? HttpProtocol.H2 : HttpProtocol.H2C;
         break;
+      case HTTP_3:
+        if (!useSSL) {
+          throw new UnsupportedOperationException();
+        }
+        protocol = HttpProtocol.H3;
+        break;
       default:
         throw new AssertionError();
     }
@@ -370,6 +429,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   private Future<HttpClientRequest> doRequestDirectly(
+    Transport transport,
     HttpVersion protocol,
     HttpMethod httpMethod,
     String requestURI,
@@ -393,7 +453,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         });
       });
     });
-    return wrap(httpMethod, requestURI, headers, traceOperation, idleTimeout, followRedirects, proxyOptions, fut2);
+    return wrap(transport, httpMethod, requestURI, headers, traceOperation, idleTimeout, followRedirects, proxyOptions, fut2);
   }
 
   private Future<HttpClientRequest> doRequest(
@@ -523,11 +583,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       // I think this is not possible - so remove it
       return streamCtx.failedFuture("Cannot resolve address " + server);
     } else {
-      return wrap(method, requestURI, headers, traceOperation, idleTimeout, followRedirects, null, future);
+      return wrap(transport, method, requestURI, headers, traceOperation, idleTimeout, followRedirects, null, future);
     }
   }
 
-  private Future<HttpClientRequest> wrap(HttpMethod method,
+  private Future<HttpClientRequest> wrap(Transport transport,
+                                         HttpMethod method,
                                          String requestURI,
                                          MultiMap headers,
                                          String traceOperation,
@@ -545,7 +606,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       options.setFollowRedirects(followRedirects);
       options.setTraceOperation(traceOperation);
       HttpClientStream stream = res.stream;
-      HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
+      HttpClientRequestImpl request = createRequest(transport, stream.connection(), stream, options);
       if (res.alternative != null) {
         String altUsedValue;
         int defaultPort = stream.connection().isSsl() ? 443 : 80;
@@ -576,7 +637,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  HttpClientRequestImpl createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
+  HttpClientRequestImpl createRequest(Transport transport,  HttpConnection connection, HttpClientStream stream, RequestOptions options) {
     HttpClientRequestImpl request = new HttpClientRequestImpl(connection, stream);
     request.init(options);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;

@@ -36,7 +36,12 @@ public enum HttpProtocol {
   /**
    * HTTP/2 over TCP
    */
-  H2C("h2c");
+  H2C("h2c"),
+
+  /**
+   * HTTP/3
+   */
+  H3("h3");
 
   private final String id;
 
@@ -74,6 +79,8 @@ public enum HttpProtocol {
         return H2;
       case "h2c":
         return H2C;
+      case "h3":
+        return H3;
       default:
         return null;
     }

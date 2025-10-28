@@ -27,6 +27,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -1050,5 +1051,29 @@ public final class HttpUtils {
     return null;
   }
 
-
+  /**
+   * Write an alt-svc advertisement for the given request and its authority, according to the underlying protocol.
+   *
+   * @param request the request
+   * @param advertisement the advertisement
+   */
+  public static HttpServerResponse writeAltSvc(HttpServerRequest request, String advertisement) {
+    HttpServerResponse response = request.response();
+    switch (request.version()) {
+      case HTTP_1_0:
+      case HTTP_1_1:
+        response.putHeader(io.vertx.core.http.HttpHeaders.ALT_SVC, advertisement);
+        break;
+      case HTTP_2:
+        Buffer value = Buffer.buffer();
+        value.appendShort((short)0);
+        value.appendString(advertisement);
+        response.writeCustomFrame(0xA, 0, value);
+        break;
+      case HTTP_3:
+        // Not supported for now
+        break;
+    }
+    return response;
+  }
 }
