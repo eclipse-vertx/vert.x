@@ -22,7 +22,7 @@ import io.vertx.core.net.HostAndPort;
  */
 public interface Http2Stream {
 
-  int id();
+  long id();
   String scheme();
   HostAndPort authority();
 

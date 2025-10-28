@@ -615,7 +615,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     }
 
     @Override
-    public int id() {
+    public long id() {
       return id;
     }
 
@@ -1388,8 +1388,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     }
 
     @Override
-    public int id() {
-      return 1;
+    public long id() {
+      return 1L;
     }
     @Override
     public String uri() {

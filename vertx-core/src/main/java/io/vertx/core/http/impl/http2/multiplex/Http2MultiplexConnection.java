@@ -96,7 +96,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   final void registerChannel(S stream, Http2FrameStream frameStream, ChannelHandlerContext chctx) {
     StreamChannel channel = new StreamChannel(stream, frameStream, chctx);
-    channels.put(stream.id(), channel);
+    channels.put((int)stream.id(), channel);
   }
 
   abstract boolean isServer();

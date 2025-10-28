@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.config;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.Unstable;
+import io.vertx.core.http.Http3ClientOptions;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.*;
@@ -30,6 +31,7 @@ import java.util.Objects;
 public class HttpClientConfig {
 
   private TcpOptions tcpOptions;
+  private QuicOptions quicOptions;
   private ClientSSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
   private Duration connectTimeout;
@@ -46,6 +48,7 @@ public class HttpClientConfig {
   private HttpVersion defaultProtocolVersion;
   private Http1ClientConfig http1Config;
   private Http2ClientConfig http2Config;
+  private Http3ClientConfig http3Config;
   private boolean verifyHost;
   private boolean decompressionSupported;
   private String defaultHost;
@@ -59,6 +62,7 @@ public class HttpClientConfig {
 
   public HttpClientConfig() {
     this.tcpOptions = new TcpOptions();
+    this.quicOptions = new QuicOptions();
     this.sslOptions = null;
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
@@ -74,6 +78,7 @@ public class HttpClientConfig {
     this.defaultProtocolVersion = null;
     this.http1Config = null;
     this.http2Config = null;
+    this.http3Config = null;
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
     this.decompressionSupported = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
@@ -88,6 +93,7 @@ public class HttpClientConfig {
 
   public HttpClientConfig(HttpClientConfig other) {
     this.tcpOptions = other.tcpOptions != null ? new TcpOptions(other.tcpOptions) : null;
+    this.quicOptions = other.quicOptions != null ? new QuicOptions(other.quicOptions) : null;
     this.sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.connectTimeout = other.connectTimeout;
@@ -103,6 +109,7 @@ public class HttpClientConfig {
     this.defaultProtocolVersion = other.defaultProtocolVersion;
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ClientConfig(other.http2Config) : null;
+    this.http3Config = other.http3Config != null ? new Http3ClientConfig(other.http3Config) : null;
     this.verifyHost = other.isVerifyHost();
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
@@ -144,6 +151,29 @@ public class HttpClientConfig {
     this.followAlternativeServices = other.getFollowAlternativeServices();
   }
 
+  public HttpClientConfig(Http3ClientOptions other) {
+
+    Http3ClientConfig config = new Http3ClientConfig();
+    config.setKeepAliveTimeout(other.getKeepAliveTimeout());
+    config.setInitialSettings(other.getInitialSettings());
+
+    this.quicOptions = new QuicOptions(other.getTransportOptions());
+    this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
+    this.connectTimeout = other.getConnectTimeout();
+    this.metricsName = other.getMetricsName();
+    this.idleTimeout = other.getStreamIdleTimeout();
+    this.readIdleTimeout = other.getStreamReadIdleTimeout();
+    this.writeIdleTimeout = other.getStreamWriteIdleTimeout();
+    this.verifyHost = other.isVerifyHost();
+    this.defaultHost = other.getDefaultHost();
+    this.defaultPort = other.getDefaultPort();
+    this.maxRedirects = other.getMaxRedirects();
+    this.defaultProtocolVersion = HttpVersion.HTTP_3;
+    this.http1Config = null;
+    this.http2Config = null;
+    this.http3Config = config;
+  }
+
   /**
    * @return the client TCP transport options
    */
@@ -159,6 +189,24 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setTcpOptions(TcpOptions tcpOptions) {
     this.tcpOptions = tcpOptions;
+    return this;
+  }
+
+  /**
+   * @return the client QUIC transport options
+   */
+  public QuicOptions getQuicOptions() {
+    return quicOptions;
+  }
+
+  /**
+   * Set the client QUIC transport options.
+   *
+   * @param quicOptions the transport options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setQuicOptions(QuicOptions quicOptions) {
+    this.quicOptions = quicOptions;
     return this;
   }
 
@@ -466,6 +514,24 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setHttp2Config(Http2ClientConfig config) {
     this.http2Config = config;
+    return this;
+  }
+
+  /**
+   * @return the configuration specific to the HTTP/3 protocol.
+   */
+  public Http3ClientConfig getHttp3Config() {
+    return http3Config;
+  }
+
+  /**
+   * Set the HTTP/2 configuration to use
+   *
+   * @param config the config
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setHttp3Config(Http3ClientConfig config) {
+    this.http3Config = config;
     return this;
   }
 

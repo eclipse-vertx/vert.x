@@ -29,7 +29,7 @@ public interface HttpStream {
    * @return the stream id, {@code 1} denotes the first stream, HTTP/1 is a simple sequence, HTTP/2
    * is the actual stream identifier.
    */
-  int id();
+  long id();
 
   /**
    * @return the stream version or null if it's not yet determined

@@ -26,7 +26,7 @@ public interface HttpRequest {
    * @deprecated the id cannot be guaranteed to be a stable value, it cannot be used for correlation purpose
    */
   @Deprecated(forRemoval = true)
-  int id();
+  long id();
 
   /**
    * @return the request URI

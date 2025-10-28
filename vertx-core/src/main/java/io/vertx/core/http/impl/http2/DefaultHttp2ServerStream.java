@@ -183,7 +183,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
 
   public Future<HttpServerStream> sendPush(HostAndPort authority, HttpMethod method, MultiMap headers, String path, StreamPriority priority) {
     Promise<Http2ServerStream> promise = context.promise();
-    connection.sendPush(id(), authority, method, headers, path, priority(), promise);
+    connection.sendPush((int)id(), authority, method, headers, path, priority(), promise);
     return promise.future().map(pushStream -> {
       pushStream.priority(priority()); // Necessary ???
       HttpResponseHeaders mmap = new HttpResponseHeaders(new DefaultHttp2Headers());

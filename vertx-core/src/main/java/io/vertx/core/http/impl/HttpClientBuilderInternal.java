@@ -5,13 +5,14 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
 import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
@@ -22,12 +23,13 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   private final VertxInternal vertx;
-  private HttpClientOptions clientOptions;
+  private HttpClientConfig clientOptions;
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
@@ -40,9 +42,20 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     this.resolverKeepAlive = Duration.ofSeconds(10);
   }
 
+  public HttpClientBuilder with(HttpClientConfig options) {
+    this.clientOptions = new HttpClientConfig(options);
+    return this;
+  }
+
   @Override
   public HttpClientBuilder with(HttpClientOptions options) {
-    this.clientOptions = options;
+    this.clientOptions = new HttpClientConfig(options);
+    return this;
+  }
+
+  @Override
+  public HttpClientBuilder with(Http3ClientOptions options) {
+    this.clientOptions = new HttpClientConfig(options);
     return this;
   }
 
@@ -89,44 +102,42 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return context != null ? context.closeFuture() : vertx.closeFuture();
   }
 
-  private EndpointResolver endpointResolver(HttpClientOptions co) {
+  private EndpointResolver endpointResolver(HttpClientConfig co) {
     LoadBalancer _loadBalancer = loadBalancer;
     AddressResolver<?> _addressResolver = addressResolver;
     if (_addressResolver != null) {
       if (_loadBalancer == null) {
         _loadBalancer = LoadBalancer.ROUND_ROBIN;
       }
-      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer, co.getKeepAliveTimeout() * 1000);
+      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer, co.getHttp1Config().getKeepAliveTimeout().toMillis());
     }
     return null;
   }
 
-  private HttpClientImpl createHttpClientImpl(EndpointResolver resolver,
-                                              Handler<HttpConnection> connectionHandler,
+  private HttpClientImpl createHttpClientImpl(HttpClientMetrics<?, ?, ?> metrics,
+                                              EndpointResolver resolver,
                                               Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
-                                              HttpClientOptions co2,
-                                              LoadBalancer loadBalancer,
-                                              PoolOptions po) {
-    HttpClientConfig config = new HttpClientConfig(co2);
-    HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co2) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig(config)).metrics(metrics).build();
-    HttpChannelConnector channelConnector = Http1xOrH2ChannelConnector.create(tcpClient, config, metrics);
-    HttpClientImpl.Transport transport = new HttpClientImpl.Transport(
-      connectionHandler,
-      channelConnector,
-      config.isVerifyHost(),
-      config.isSsl(),
-      config.getDefaultHost(),
-      config.getDefaultPort(),
-      config.getMaxRedirects(),
-      config.getDefaultProtocolVersion(),
-      config.getSslOptions()
-    );
+                                              HttpClientImpl.Transport config,
+                                              HttpClientImpl.Transport quicTransport) {
+    boolean followAlternativeServices;
+    ProxyOptions proxyOptions;
+    List<String> nonProxyHosts;
+    if (clientOptions != null) {
+      proxyOptions = clientOptions.getProxyOptions();
+      nonProxyHosts = clientOptions.getNonProxyHosts();
+      followAlternativeServices = clientOptions.getFollowAlternativeServices();
+    } else {
+      proxyOptions = null;
+      nonProxyHosts = null;
+      followAlternativeServices = false;
+    }
+    PoolOptions po;
+    po = poolOptions != null ? poolOptions : new PoolOptions();
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,
-      config.getProxyOptions(), config.getNonProxyHosts(), transport, loadBalancer, config.getFollowAlternativeServices(), resolverKeepAlive) {
+      proxyOptions, nonProxyHosts, loadBalancer, followAlternativeServices, resolverKeepAlive, config, quicTransport) {
       @Override
       public HttpClientOptions options() {
-        return co2;
+        return null;
       }
     };
   }
@@ -134,7 +145,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private static NetClientConfig netClientConfig(HttpClientConfig httpConfig) {
     NetClientConfig config = new NetClientConfig();
     config.setTransportOptions(httpConfig.getTcpOptions());
-    config.setSslOptions(httpConfig.getSslOptions() != null ? httpConfig.getSslOptions() : null);
+    config.setSslOptions(null);
     config.setSslEngineOptions(httpConfig.getSslEngineOptions() != null ? httpConfig.getSslEngineOptions().copy() : null);
     config.setConnectTimeout(httpConfig.getConnectTimeout());
     config.setMetricsName(httpConfig.getMetricsName());
@@ -145,12 +156,19 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     config.setWriteIdleTimeout(httpConfig.getWriteIdleTimeout());
     config.setLogActivity(httpConfig.getLogActivity());
     config.setActivityLogDataFormat(httpConfig.getActivityLogDataFormat());
-    config.setSsl(httpConfig.isSsl());
+    config.setSsl(false);
+    config.setSslOptions(null);
     return config;
   }
 
-  private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {
-    int windowSize = options.getHttp2ConnectionWindowSize();
+  private Handler<HttpConnection> connectionHandler(HttpClientConfig options) {
+    int windowSize;
+    if (options.getHttp2Config() != null) {
+      windowSize = options.getHttp2Config().getConnectionWindowSize();
+    } else {
+      windowSize = 0;
+    }
+
     Handler<HttpConnection> handler = connectHandler;
     if (windowSize > 0) {
       return connection -> {
@@ -165,25 +183,83 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   @Override
   public HttpClientAgent build() {
+
+    HttpClientConfig co = clientOptions;
+    if (co == null) {
+      // We assume default client configuration
+      co = new HttpClientConfig(new HttpClientOptions());
+    }
+
     // Copy options here ????
-    HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
-    PoolOptions po = poolOptions != null ? poolOptions : new PoolOptions();
+    HttpClientImpl.Transport quicTransport;
+    HttpClientMetrics<?, ?, ?> metrics;
+    if (co.getHttp3Config() != null) {
+      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(new HttpClientOptions()) : null;
+      quicTransport = new HttpClientImpl.Transport(
+        connectHandler,
+        new Http3ChannelConnector(vertx, metrics, co),
+        co.isVerifyHost(),
+        true,
+        co.getDefaultHost(),
+        co.getDefaultPort(),
+        co.getMaxRedirects(),
+        HttpVersion.HTTP_3,
+        co.getSslOptions()
+      );
+    } else {
+      quicTransport = null;
+      metrics = null;
+      if (co == null) {
+        co = new HttpClientConfig();
+      }
+    }
+
+    HttpClientImpl.Transport transport;
+    String shared;
+    EndpointResolver resolver;
+    if (co.getHttp1Config() != null && co.getHttp2Config() != null) {
+      resolver = endpointResolver(co);
+      shared = co.isShared() ? co.getName() : null;
+      if (metrics == null && vertx.metrics() != null) {
+        // Todo : change this (breaking)
+        metrics = vertx.metrics().createHttpClientMetrics(new HttpClientOptions().setMetricsName(co.getMetricsName()));
+      }
+      NetClientConfig netClientConfig = netClientConfig(co);
+      NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null)).metrics(metrics).build();
+      Handler<HttpConnection> connectHandler = connectionHandler(co);
+      transport = new HttpClientImpl.Transport(
+        connectHandler,
+        Http1xOrH2ChannelConnector.create(tcpClient, co, metrics),
+        co.isVerifyHost(),
+        co.isSsl(),
+        co.getDefaultHost(),
+        co.getDefaultPort(),
+        co.getMaxRedirects(),
+        co.getDefaultProtocolVersion(),
+        co.getSslOptions()
+      );
+    } else {
+      resolver = null;
+      transport = null;
+      shared = null;
+    }
+
+
     CloseFuture cf = resolveCloseFuture();
     HttpClientAgent client;
     Closeable closeable;
-    EndpointResolver resolver = endpointResolver(co);
-    Handler<HttpConnection> connectHandler = connectionHandler(co);
-    if (co.isShared()) {
+    if (shared != null) {
       CloseFuture closeFuture = new CloseFuture();
+      HttpClientMetrics<?, ?, ?> m = metrics;
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, redirectHandler, co, loadBalancer, po);
+        HttpClientImpl impl = createHttpClientImpl(m, resolver, redirectHandler, transport, quicTransport);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, redirectHandler, co, loadBalancer, po);
+      HttpClientImpl impl = createHttpClientImpl(metrics, resolver, redirectHandler, transport, quicTransport);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

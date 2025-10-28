@@ -38,7 +38,7 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
-  public int id() {
+  public long id() {
     return delegate.id();
   }
 

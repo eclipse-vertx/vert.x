@@ -14,10 +14,7 @@ package io.vertx.core.spi.metrics;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.*;
 import io.vertx.core.net.QuicEndpointOptions;
@@ -64,6 +61,13 @@ public interface VertxMetrics extends Metrics, Measured {
   }
 
   /**
+   * Version of {@link #createHttpServerMetrics(HttpServerOptions, SocketAddress)} for HTTP/3
+   */
+  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerOptions options, SocketAddress localAddress) {
+    return null;
+  }
+
+  /**
    * Provides the client metrics SPI when a client has been created.<p/>
    * <p>
    * No specific thread and context can be expected when this method is called.
@@ -90,6 +94,13 @@ public interface VertxMetrics extends Metrics, Measured {
   }
 
   /**
+   * Version of {@link #createHttpClientMetrics(HttpClientOptions)} for HTTP/3
+   */
+  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(Http3ClientOptions options) {
+    return null;
+  }
+
+  /**
    * Provides the net server metrics SPI when a net server is created.<p/>
    * <p>
    * No specific thread and context can be expected when this method is called.<p/>
@@ -103,7 +114,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+    default TransportMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
     return null;
   }
 
