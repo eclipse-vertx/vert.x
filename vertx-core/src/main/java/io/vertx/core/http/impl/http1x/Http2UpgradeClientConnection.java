@@ -125,7 +125,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public int id() {
+    public long id() {
       return delegate.id();
     }
 
@@ -439,8 +439,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
-    public int id() {
-      return 1;
+    public long id() {
+      return 1L;
     }
 
     @Override

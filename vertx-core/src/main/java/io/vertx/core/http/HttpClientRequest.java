@@ -535,8 +535,8 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return the id of the stream of this response, {@literal -1} when it is not yet determined, i.e
    *         the request has not been yet sent or it is not supported HTTP/1.x
    */
-  default int streamId() {
-    return -1;
+  default long streamId() {
+    return -1L;
   }
 
   /**

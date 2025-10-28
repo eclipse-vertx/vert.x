@@ -252,7 +252,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     inboundQueue.write(trailers);
   }
 
-  public final int id() {
+  public final long id() {
     return id;
   }
 

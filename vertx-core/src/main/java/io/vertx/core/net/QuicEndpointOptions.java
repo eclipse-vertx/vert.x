@@ -13,6 +13,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * Config operations of a Quic endpoint.
@@ -56,6 +57,11 @@ public abstract class QuicEndpointOptions {
     return transportOptions;
   }
 
+  public QuicEndpointOptions setTransportOptions(QuicOptions transportOptions) {
+    this.transportOptions = Objects.requireNonNull(transportOptions);
+    return this;
+  }
+
   /**
    * @return the endpoint SSL options
    */
@@ -66,6 +72,10 @@ public abstract class QuicEndpointOptions {
       sslOptions = opts;
     }
     return opts;
+  }
+
+  protected void setSslOptions(SSLOptions sslOptions)  {
+    this.sslOptions = sslOptions;
   }
 
   protected abstract SSLOptions getOrCreateSSLOptions();

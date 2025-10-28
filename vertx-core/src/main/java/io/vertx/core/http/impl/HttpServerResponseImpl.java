@@ -703,7 +703,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public int streamId() {
+  public long streamId() {
     return stream.id();
   }
 

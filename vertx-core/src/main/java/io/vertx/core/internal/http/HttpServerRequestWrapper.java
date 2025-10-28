@@ -192,7 +192,7 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
 
   @Override
   @CacheReturn
-  public int streamId() {
+  public long streamId() {
     return delegate.streamId();
   }
 

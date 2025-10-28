@@ -340,8 +340,8 @@ public interface HttpServerRequest extends ReadStream<Buffer>, HttpRequestHead {
    *         the request has not been yet sent or it is not supported HTTP/1.x
    */
   @CacheReturn
-  default int streamId() {
-    return -1;
+  default long streamId() {
+    return -1L;
   }
 
   /**
