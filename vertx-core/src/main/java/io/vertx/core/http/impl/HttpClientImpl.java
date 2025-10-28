@@ -33,6 +33,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.lang.ref.WeakReference;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,7 +56,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private long timerID;
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
-  private final Transport transport;
+  private final Transport tcpTransport;
+  private final Transport quicTransport;
   private final EndpointResolverInternal resolver;
 
   HttpClientImpl(VertxInternal vertx,
@@ -65,10 +67,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  PoolOptions poolOptions,
                  ProxyOptions defaultProxyOptions,
                  List<String> nonProxyHosts,
-                 Transport transport) {
+                 Transport tcpTransport,
+                 Transport quicTransport) {
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
-    this.transport = transport;
+    this.tcpTransport = tcpTransport;
+    this.quicTransport = quicTransport;
     this.resolver = (EndpointResolverInternal) resolver;
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
@@ -163,12 +167,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public HttpChannelConnector channelConnector() {
-    return transport.connector;
+    return tcpTransport.connector;
   }
 
   protected void setDefaultSslOptions(ClientSSLOptions options) {
-    configureSSLOptions(transport.verifyHost, options);
-    transport.sslOptions = options;
+    configureSSLOptions(tcpTransport.verifyHost, options);
+    tcpTransport.sslOptions = options;
   }
 
   @Override
@@ -180,13 +184,27 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       }
     }
     resourceManager.shutdown();
-    transport.connector.shutdown(timeout).onComplete(p);
+    List<Future<Void>> list = new ArrayList<>();
+    if (tcpTransport != null) {
+      list.add(tcpTransport.connector.shutdown(timeout));
+    }
+    if (quicTransport != null) {
+      list.add(quicTransport.connector.shutdown(timeout));
+    }
+    Future.join(list).<Void>mapEmpty().onComplete(p);
   }
 
   @Override
   protected void doClose(Completable<Void> p) {
     resourceManager.close();
-    transport.connector.close().onComplete(p);
+    List<Future<Void>> list = new ArrayList<>();
+    if (tcpTransport != null) {
+      list.add(tcpTransport.connector.close());
+    }
+    if (quicTransport != null) {
+      list.add(quicTransport.connector.close());
+    }
+    Future.join(list).<Void>mapEmpty().onComplete(p);
   }
 
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
@@ -195,6 +213,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<io.vertx.core.http.HttpClientConnection> connect(HttpConnectOptions connect) {
+    Transport transport = tcpTransport;
+    if (transport == null) {
+      transport = quicTransport;
+    }
+    return connect(transport, connect);
+  }
+
+  private Future<io.vertx.core.http.HttpClientConnection> connect(Transport transport,  HttpConnectOptions connect) {
     Address addr = connect.getServer();
     Integer port = connect.getPort();
     String host = connect.getHost();
@@ -241,6 +267,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
+    Transport transport = tcpTransport;
+    if (transport == null) {
+      transport = quicTransport;
+    }
+    return request(transport, request);
+  }
+
+  private Future<HttpClientRequest> request(Transport transport,  RequestOptions request) {
     Address addr = request.getServer();
     Integer port = request.getPort();
     String host = request.getHost();
@@ -392,7 +426,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         options.setFollowRedirects(followRedirects);
         options.setTraceOperation(traceOperation);
         HttpClientStream stream = res.stream;
-        HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
+        HttpClientRequestImpl request = createRequest(transport, stream.connection(), stream, options);
         stream.closeHandler(v -> {
           res.lease.recycle();
           request.handleClosed();
@@ -413,7 +447,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  HttpClientRequestImpl createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
+  HttpClientRequestImpl createRequest(Transport transport,  HttpConnection connection, HttpClientStream stream, RequestOptions options) {
     HttpClientRequestImpl request = new HttpClientRequestImpl(connection, stream);
     request.init(options);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
