@@ -128,7 +128,12 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
    Bootstrap bootstrap = new Bootstrap()
       .group(context.nettyEventLoop())
       .channelFactory(vertx.transport().datagramChannelFactory());
-    InetSocketAddress addr = new InetSocketAddress(bindAddr.hostName(), bindAddr.port());
+   InetSocketAddress addr;
+   if (bindAddr.hostAddress() != null) {
+     addr = new InetSocketAddress(bindAddr.hostAddress(), bindAddr.port());
+   } else {
+     addr = new InetSocketAddress(bindAddr.hostName(), bindAddr.port());
+   }
     ChannelHandler handler;
     try {
       handler = channelHandler(context, bindAddr, sslContextProvider, metrics);

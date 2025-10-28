@@ -146,7 +146,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
                 QuicChannel channel = (QuicChannel) ch;
                 QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
-                pipeline.addLast(handler);
+                pipeline.addLast("handler", handler);
               }
 
 /*

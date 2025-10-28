@@ -43,7 +43,7 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   private final boolean localCreated;
   private Handler<Integer> resetHandler;
 
-  QuicStreamImpl(QuicConnection connection, ContextInternal context, QuicStreamChannel channel, NetworkMetrics<?> streamMetrics, ChannelHandlerContext chctx) {
+  public QuicStreamImpl(QuicConnection connection, ContextInternal context, QuicStreamChannel channel, NetworkMetrics<?> streamMetrics, ChannelHandlerContext chctx) {
     super(context, chctx);
     this.connection = connection;
     this.context = context;
@@ -51,6 +51,11 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
     this.streamMetrics = streamMetrics;
     this.bidirectional = channel.type() == QuicStreamType.BIDIRECTIONAL;
     this.localCreated = channel.isLocalCreated();
+  }
+
+  @Override
+  public long id() {
+    return channel.streamId();
   }
 
   @Override

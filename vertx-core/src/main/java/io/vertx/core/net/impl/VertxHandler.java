@@ -39,6 +39,23 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
     this.connectionFactory = connectionFactory;
   }
 
+  public static ByteBuf copyBuffer(ByteBuf byteBuf) {
+    Class<?> allocClass;
+    if (byteBuf != Unpooled.EMPTY_BUFFER &&
+      ((allocClass = byteBuf.alloc().getClass()) == AdaptiveByteBufAllocator.class
+        || allocClass == PooledByteBufAllocator.class
+        || byteBuf instanceof CompositeByteBuf)) {
+      if (byteBuf.isReadable()) {
+        ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(byteBuf.readableBytes());
+        buffer.writeBytes(byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes());
+        return buffer;
+      } else {
+        return Unpooled.EMPTY_BUFFER;
+      }
+    }
+    return byteBuf;
+  }
+
   /**
    * Pooled {@code byteBuf} are copied and released, otherwise it is returned as is.
    *

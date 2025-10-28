@@ -11,13 +11,27 @@
 package io.vertx.core.internal.quic;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.vertx.core.Future;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.QuicConnection;
+import io.vertx.core.net.QuicStream;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface QuicConnectionInternal extends QuicConnection {
 
+  ContextInternal context();
+
+  Future<QuicStream> createStream(boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> blah);
+
   ChannelHandlerContext channelHandlerContext();
+
+  Future<Void> closeFuture();
 
 }

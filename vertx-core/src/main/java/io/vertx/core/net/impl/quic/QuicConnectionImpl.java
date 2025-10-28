@@ -12,10 +12,7 @@ package io.vertx.core.net.impl.quic;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamType;
@@ -42,6 +39,9 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import javax.net.ssl.SSLEngine;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -93,7 +93,10 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   void handleStream(QuicStreamChannel streamChannel) {
-    streamGroup.add(streamChannel);
+    if (streamChannel.type() == QuicStreamType.BIDIRECTIONAL || streamChannel.isLocalCreated()) {
+      // Only consider stream we can end for shutdown, e.g. this excludes remote opened HTTP/3 control stream
+      streamGroup.add(streamChannel);
+    }
     VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, streamChannel, streamMetrics, chctx));
     handler.addHandler(stream -> {
       Handler<QuicStream> h = QuicConnectionImpl.this.handler;
@@ -163,6 +166,34 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
 
   @Override
   public Future<QuicStream> createStream(boolean bidirectional) {
+    Function<Supplier<ChannelHandler>, ChannelInitializer<QuicStreamChannel>> blah = new Function<Supplier<ChannelHandler>, ChannelInitializer<QuicStreamChannel>>() {
+      @Override
+      public ChannelInitializer<QuicStreamChannel> apply(Supplier<ChannelHandler> channelHandlerSupplier) {
+        return new ChannelInitializer<>() {
+          @Override
+          protected void initChannel(QuicStreamChannel ch) throws Exception {
+            ChannelHandler abc = channelHandlerSupplier.get();
+            ch.pipeline().addLast("handler", abc);
+          }
+        };
+      }
+    };
+    Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> blah2 = new Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>>() {
+      @Override
+      public ChannelInitializer<QuicStreamChannel> apply(Consumer<QuicStreamChannel> quicStreamChannelConsumer) {
+        return new ChannelInitializer<>() {
+          @Override
+          protected void initChannel(QuicStreamChannel ch) throws Exception {
+            quicStreamChannelConsumer.accept(ch);
+          }
+        };
+      }
+    };
+    return createStream(bidirectional, blah2);
+  }
+
+  @Override
+  public Future<QuicStream> createStream(boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> blah) {
     // TODO : should use get or create context and test it ....
     Promise<QuicStream> promise = context.promise();
     VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, (QuicStreamChannel) chctx.channel(), streamMetrics, chctx));
@@ -170,15 +201,12 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       promise.tryComplete(stream);
     });
     QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;
-    io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(type, new ChannelInitializer<>() {
-      @Override
-      protected void initChannel(Channel ch) {
-        ch.pipeline().addLast("handler", handler);
-      }
+    ChannelInitializer<QuicStreamChannel> initializer = blah.apply(ch -> {
+      ch.pipeline().addLast("handler", handler);
     });
+    io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(type, initializer);
     future.addListener(future1 -> {
       if (!future1.isSuccess()) {
-        future1.cause().printStackTrace(System.out);
         promise.tryFail(future1.cause());
       }
     });
