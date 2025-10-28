@@ -502,8 +502,8 @@ public abstract class HttpTest extends HttpTestBase {
     }
     String resource = absolute && path.isEmpty() ? "/" + path : path;
     server.requestHandler(req -> {
-      String expectedPath = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : resource;
-      String expectedQuery = req.method() == HttpMethod.CONNECT && req.version() == HttpVersion.HTTP_2 ? null : query;
+      String expectedPath = req.method() == HttpMethod.CONNECT && req.version() != HttpVersion.HTTP_1_1 ? null : resource;
+      String expectedQuery = req.method() == HttpMethod.CONNECT && req.version() != HttpVersion.HTTP_1_1 ? null : query;
       assertEquals(expectedPath, req.path());
       assertEquals(method, req.method());
       assertEquals(expectedQuery, req.query());
@@ -1786,7 +1786,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       try {
         req.response().setStatusMessage("hello\nworld");
-        assertEquals(HttpVersion.HTTP_2, req.version());
+        assertNotEquals(HttpVersion.HTTP_1_1, req.version());
       } catch (IllegalArgumentException ignore) {
         assertEquals(HttpVersion.HTTP_1_1, req.version());
       }
@@ -4372,7 +4372,9 @@ public abstract class HttpTest extends HttpTestBase {
     client = httpClientBuilder()
       .withConnectHandler(clientConn::set)
       .build();
-    client.request(requestOptions).compose(HttpClientRequest::send).onComplete(onFailure(err -> {
+    Future<HttpClientRequest> request = client.request(requestOptions);
+    request.await();
+    request.compose(HttpClientRequest::send).onComplete(onFailure(err -> {
     }));
     await();
   }
@@ -5874,7 +5876,7 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     server.requestHandler(req -> {
       assertEquals(chunked ? null : contentLength, req.getHeader(HttpHeaders.CONTENT_LENGTH));
-      assertEquals(chunked & req.version() != HttpVersion.HTTP_2 ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
+      assertEquals(chunked & req.version() == HttpVersion.HTTP_1_1 ? HttpHeaders.CHUNKED.toString() : null, req.getHeader(HttpHeaders.TRANSFER_ENCODING));
       req.bodyHandler(body -> {
         assertEquals(HttpMethod.PUT, req.method());
         assertEquals(Buffer.buffer(expected), body);
@@ -6343,7 +6345,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp.writeHead().onComplete(onSuccess(v -> {
           complete();
         }));
-        assertEquals(HttpVersion.HTTP_2, req.version());
+        assertNotEquals(HttpVersion.HTTP_1_1, req.version());
       } catch (IllegalStateException ignore) {
         resp
           .setChunked(true)
