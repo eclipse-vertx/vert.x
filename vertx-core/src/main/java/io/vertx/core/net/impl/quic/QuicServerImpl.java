@@ -120,17 +120,20 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {
-      if (options.getValidateClientAddress()) {
-        KeyCertOptions tokenValidationKey = options.getClientAddressValidationKey();
-        if (tokenValidationKey == null) {
-          throw new IllegalArgumentException("The server must be configured with a token validation key to operate address validation");
-        }
-        Duration timeWindow = options.getClientAddressValidationTimeWindow();
-        TokenManager tokenManager = new TokenManager(vertx, timeWindow);
-        tokenManager.init(tokenValidationKey);
-        qtc = tokenManager;
-      } else {
-        qtc = InsecureQuicTokenHandler.INSTANCE;
+      switch (options.getClientAddressValidation()) {
+        case BASIC:
+          qtc = InsecureQuicTokenHandler.INSTANCE;
+          break;
+        case CRYPTO:
+          KeyCertOptions tokenValidationKey = options.getClientAddressValidationKey();
+          if (tokenValidationKey == null) {
+            throw new IllegalArgumentException("The server must be configured with a token validation key to operate address validation");
+          }
+          Duration timeWindow = options.getClientAddressValidationTimeWindow();
+          TokenManager tokenManager = new TokenManager(vertx, timeWindow);
+          tokenManager.init(tokenValidationKey);
+          qtc = tokenManager;
+          break;
       }
     }
     QuicServerCodecBuilder builder = new QuicServerCodecBuilder().sslContext(sslContext)

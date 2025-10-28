@@ -14,6 +14,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
+import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.FlushStrategy;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
 import io.vertx.core.Completable;
@@ -37,7 +38,12 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tls.QuicSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
@@ -65,6 +71,36 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private FlushStrategy flushStrategy;
 
   public QuicEndpointImpl(VertxInternal vertx, QuicEndpointOptions options) {
+
+    String keyLogFilePath = options.getKeyLogFile();
+    File keylogFile;
+    if (keyLogFilePath != null) {
+      keylogFile = new File(keyLogFilePath);
+      File parent;
+      if (keylogFile.exists() && keylogFile.isFile()) {
+        if (!keylogFile.isFile()) {
+          keylogFile = null;
+        }
+      } else if ((parent = keylogFile.getParentFile()).exists() && parent.isDirectory()) {
+        try {
+          if (!keylogFile.createNewFile()) {
+            keylogFile = null;
+          }
+        } catch (IOException ignore) {
+          keylogFile = null;
+        }
+      }
+    } else {
+      keylogFile = null;
+    }
+
+    BoringSSLKeylog keylog;
+    if (keylogFile != null) {
+      keylog = new KeyLogFile(keylogFile);
+    } else {
+      keylog = null;
+    }
+
     this.options = options;
     this.vertx = vertx;
     this.manager = new SslContextManager(new SSLEngineOptions() {
@@ -74,7 +110,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       }
       @Override
       public SslContextFactory sslContextFactory() {
-        return new QuicSslContextFactory();
+        return new QuicSslContextFactory(keylog);
       }
     });
   }

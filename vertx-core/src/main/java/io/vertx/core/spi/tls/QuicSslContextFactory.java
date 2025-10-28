@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi.tls;
 
+import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ClientAuth;
@@ -21,10 +22,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSessionContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.*;
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -37,9 +36,6 @@ import java.util.Set;
  */
 public class QuicSslContextFactory implements SslContextFactory {
 
-  public QuicSslContextFactory() {
-  }
-
   private boolean forServer;
   private boolean forClient;
   private Set<String> enabledProtocols;
@@ -51,6 +47,11 @@ public class QuicSslContextFactory implements SslContextFactory {
   private ClientAuth clientAuth;
   private KeyManagerFactory kmf;
   private TrustManagerFactory tmf;
+  private final BoringSSLKeylog keylog;
+
+  public QuicSslContextFactory(BoringSSLKeylog keylog) {
+    this.keylog = keylog;
+  }
 
   @Override
   public SslContextFactory useAlpn(boolean useAlpn) {
@@ -121,6 +122,7 @@ public class QuicSslContextFactory implements SslContextFactory {
         builder.clientAuth(clientAuth);
       }
     }
+    builder.keylog(keylog);
 /*
     Collection<String> cipherSuites = enabledCipherSuites;
     switch (sslProvider) {
