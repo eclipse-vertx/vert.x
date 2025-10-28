@@ -33,6 +33,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
+import io.vertx.core.http.impl.http3.Http3Server;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;
@@ -397,6 +398,32 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
     return new HttpServerImpl(this, serverOptions);
+  }
+
+  @Override
+  public HttpClientAgent createHttpClient(Http3ClientOptions options) {
+
+    Http3ChannelConnector connector = new Http3ChannelConnector(this, options);
+
+    HttpClientImpl.Config config = new HttpClientImpl.Config();
+
+    config.nonProxyHosts = null;
+    config.verifyHost = false;
+    config.defaultSsl = true;
+    config.defaultHost = "localhost";
+    config.defaultPort = 8443;
+    config.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
+    config.initialPoolKind = 1; // Multiplexed
+
+    HttpClientImpl client = new HttpClientImpl(this, null, null, connector, null, null,
+      new PoolOptions(), null, options.getSslOptions(), config);
+
+    return client;
+  }
+
+  @Override
+  public HttpServer createHttpServer(Http3ServerOptions options) {
+    return new Http3Server(this, options);
   }
 
   @Override
