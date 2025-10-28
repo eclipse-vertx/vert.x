@@ -33,6 +33,11 @@ public class QuicClientOptions extends QuicEndpointOptions {
   }
 
   @Override
+  public QuicClientOptions setKeyLogFile(String keyLogFile) {
+    return (QuicClientOptions) super.setKeyLogFile(keyLogFile);
+  }
+
+  @Override
   public ClientSSLOptions getSslOptions() {
     return (ClientSSLOptions) super.getSslOptions();
   }

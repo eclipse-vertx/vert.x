@@ -17,12 +17,7 @@ import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QuicConnectionClose;
-import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicServerOptions;
+import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -33,23 +28,26 @@ import org.junit.runner.RunWith;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.net.ssl.KeyManagerFactory;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RunWith(LinuxOrOsx.class)
 public class QuicServerTest extends VertxTestBase {
@@ -501,7 +499,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testInvalidPrivateKey() {
     QuicServerOptions options = serverOptions()
-      .setValidateClientAddress(true)
+      .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey.copy().setPassword("incorrect"))
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
     QuicServer server = QuicServer.create(vertx, options);
@@ -518,7 +516,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testInvalidKeyConf() {
     QuicServerOptions options = serverOptions()
-      .setValidateClientAddress(true)
+      .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(new KeyCertOptions() {
       @Override
       public KeyCertOptions copy() {
@@ -600,7 +598,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testTokenExpiration() throws Exception {
     QuicServerOptions options = serverOptions()
-      .setValidateClientAddress(true)
+      .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey)
       .setClientAddressValidationTimeWindow(Duration.ofMillis(10));
     QuicServer server = QuicServer.create(vertx, options);
@@ -634,7 +632,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testInvalidToken() throws Exception {
     QuicServerOptions options = serverOptions()
-      .setValidateClientAddress(true)
+      .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey)
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
     QuicServer server = QuicServer.create(vertx, options);
@@ -650,6 +648,51 @@ public class QuicServerTest extends VertxTestBase {
       fail();
     } catch (QuicClosedChannelException ignore) {
       assertEquals(0, connections.get());
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
+  @Test
+  public void testKeyLogFile1() throws Exception {
+    File tmp = Files.createTempDirectory("vertx").toFile();
+    File keyLogFile = new File(tmp, "keylogfile.txt");
+    testKeyLogFile(keyLogFile);
+  }
+
+  @Test
+  public void testKeyLogFile2() throws Exception {
+    File keyLogFile = Files.createTempFile("vertx", ".txt").toFile();
+    assertTrue(keyLogFile.exists());
+    Files.writeString(keyLogFile.toPath(), "TEST LINE" + System.lineSeparator(), StandardOpenOption.APPEND);
+    List<String> entries = testKeyLogFile(keyLogFile);
+    assertTrue(entries.contains("TEST"));
+  }
+
+  private List<String> testKeyLogFile(File keyLogFile) throws Exception {
+    QuicServer server = QuicServer.create(vertx, serverOptions().setKeyLogFile(keyLogFile.getAbsolutePath()));
+    server.handler(conn -> {
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      connection.close();
+      Pattern pattern = Pattern.compile("([^ ]+).*");
+      List<String> entries = new ArrayList<>();
+      Files.readAllLines(keyLogFile.toPath()).forEach(line -> {
+        Matcher matcher = pattern.matcher(line);
+        assertTrue(matcher.matches());
+        entries.add(matcher.group(1));
+      });
+      assertTrue(entries.contains("CLIENT_HANDSHAKE_TRAFFIC_SECRET"));
+      assertTrue(entries.contains("SERVER_HANDSHAKE_TRAFFIC_SECRET"));
+      assertTrue(entries.contains("CLIENT_TRAFFIC_SECRET_0"));
+      assertTrue(entries.contains("SERVER_TRAFFIC_SECRET_0"));
+      assertTrue(entries.contains("EXPORTER_SECRET"));
+      return entries;
     } finally {
       client.close();
       server.close().await();

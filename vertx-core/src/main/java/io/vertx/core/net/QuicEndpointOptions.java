@@ -24,6 +24,7 @@ public abstract class QuicEndpointOptions {
   private QuicOptions transportOptions;
   private SSLOptions sslOptions;
   private QLogConfig qLogConfig;
+  private String keyLogFile;
 
   public QuicEndpointOptions() {
     this.transportOptions = new QuicOptions();
@@ -36,6 +37,7 @@ public abstract class QuicEndpointOptions {
     this.transportOptions = other.transportOptions.copy();
     this.sslOptions = other.sslOptions.copy();
     this.qLogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
+    this.keyLogFile = other.keyLogFile;
   }
 
   public QuicEndpointOptions(JsonObject json) {
@@ -80,6 +82,31 @@ public abstract class QuicEndpointOptions {
    */
   public QuicEndpointOptions setQLogConfig(QLogConfig qLogConfig) {
     this.qLogConfig = qLogConfig;
+    return this;
+  }
+
+  /**
+   * @return the path of the configured key log file or {@code null} (default).
+   */
+  public String getKeyLogFile() {
+    return keyLogFile;
+  }
+
+  /**
+   * <p>Configures the endpoint to dump the cryptographic secrets using in TLS in the
+   * <a href="https://www.ietf.org/archive/id/draft-thomson-tls-keylogfile-00.html">{@code SSLKEYLOGFILE}</a> format.</p>
+   *
+   * <p>The file might exist or will be created (in which case the parent file must exist), content will be appended
+   * to the file.</p>
+   *
+   * <p>This should be used only for debugging purpose and must not be used in production. This feature is disabled
+   * by default.</p>
+   *
+   * @param keyLogFile the path to the key log file
+   * @return this exact object instance
+   */
+  public QuicEndpointOptions setKeyLogFile(String keyLogFile) {
+    this.keyLogFile = keyLogFile;
     return this;
   }
 

@@ -13,6 +13,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * Config operations of a Quic server.
@@ -23,18 +24,18 @@ import java.time.Duration;
 public class QuicServerOptions extends QuicEndpointOptions {
 
   public static final boolean DEFAULT_LOAD_BALANCED = false;
-  public static final boolean DEFAULT_VALIDATE_CLIENT_ADDRESS = false;
+  public static final QuicClientAddressValidation DEFAULT_CLIENT_ADDRESS_VALIDATION = QuicClientAddressValidation.BASIC;
   public static final KeyCertOptions DEFAULT_CLIENT_ADDRESS_VALIDATION_KEY = null;
   public static final Duration DEFAULT_CLIENT_ADDRESS_VALIDATION_TIME_WINDOW = Duration.ofSeconds(30);
 
   private boolean loadBalanced;
-  private boolean validateClientAddress;
+  private QuicClientAddressValidation clientAddressValidation;
   private Duration clientAddressValidationTimeWindow;
   private KeyCertOptions clientAddressValidationKey;
 
   public QuicServerOptions() {
     loadBalanced = DEFAULT_LOAD_BALANCED;
-    validateClientAddress = DEFAULT_VALIDATE_CLIENT_ADDRESS;
+    clientAddressValidation = DEFAULT_CLIENT_ADDRESS_VALIDATION;
     clientAddressValidationKey = DEFAULT_CLIENT_ADDRESS_VALIDATION_KEY;
     clientAddressValidationTimeWindow = DEFAULT_CLIENT_ADDRESS_VALIDATION_TIME_WINDOW;
   }
@@ -45,7 +46,7 @@ public class QuicServerOptions extends QuicEndpointOptions {
     KeyCertOptions tokenValidationKey = other.clientAddressValidationKey;
 
     this.loadBalanced = other.loadBalanced;
-    this.validateClientAddress = other.validateClientAddress;
+    this.clientAddressValidation = other.clientAddressValidation;
     this.clientAddressValidationTimeWindow = other.clientAddressValidationTimeWindow;
     this.clientAddressValidationKey = tokenValidationKey != null ? tokenValidationKey.copy() : null;
   }
@@ -53,6 +54,11 @@ public class QuicServerOptions extends QuicEndpointOptions {
   @Override
   public QuicServerOptions setQLogConfig(QLogConfig qLogConfig) {
     return (QuicServerOptions) super.setQLogConfig(qLogConfig);
+  }
+
+  @Override
+  public QuicServerOptions setKeyLogFile(String keyLogFile) {
+    return (QuicServerOptions) super.setKeyLogFile(keyLogFile);
   }
 
   @Override
@@ -87,8 +93,8 @@ public class QuicServerOptions extends QuicEndpointOptions {
   /**
    * @return whether the server performs address validation
    */
-  public boolean getValidateClientAddress() {
-    return validateClientAddress;
+  public QuicClientAddressValidation getClientAddressValidation() {
+    return clientAddressValidation;
   }
 
   /**
@@ -97,11 +103,11 @@ public class QuicServerOptions extends QuicEndpointOptions {
    *
    * <p>Client address validation requires you to also {@link #setClientAddressValidationKey(KeyCertOptions) set} a key for token signing/verification.</p>
    *
-   * @param validateClientAddress whether to perform address validation
+   * @param clientAddressValidation whether to perform address validation
    * @return this exact object instance
    */
-  public QuicServerOptions setValidateClientAddress(boolean validateClientAddress) {
-    this.validateClientAddress = validateClientAddress;
+  public QuicServerOptions setClientAddressValidation(QuicClientAddressValidation clientAddressValidation) {
+    this.clientAddressValidation = Objects.requireNonNull(clientAddressValidation);
     return this;
   }
 
