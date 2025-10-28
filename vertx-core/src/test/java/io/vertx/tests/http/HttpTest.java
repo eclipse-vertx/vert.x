@@ -4372,7 +4372,9 @@ public abstract class HttpTest extends HttpTestBase {
     client = httpClientBuilder(createBaseClientOptions())
       .withConnectHandler(clientConn::set)
       .build();
-    client.request(requestOptions).compose(HttpClientRequest::send).onComplete(onFailure(err -> {
+    Future<HttpClientRequest> request = client.request(requestOptions);
+    request.await();
+    request.compose(HttpClientRequest::send).onComplete(onFailure(err -> {
     }));
     await();
   }

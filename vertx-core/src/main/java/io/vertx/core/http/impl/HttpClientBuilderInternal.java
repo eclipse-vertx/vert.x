@@ -11,7 +11,9 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
@@ -25,6 +27,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   private final VertxInternal vertx;
   private HttpClientOptions clientOptions;
+  private Http3ClientOptions http3ClientOptions;
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
@@ -38,6 +41,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   @Override
   public HttpClientBuilder with(HttpClientOptions options) {
     this.clientOptions = options;
+    return this;
+  }
+
+  @Override
+  public HttpClientBuilder with(Http3ClientOptions options) {
+    this.http3ClientOptions = options;
     return this;
   }
 
@@ -95,22 +104,15 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   private HttpClientImpl createHttpClientImpl(EndpointResolver resolver,
-                                              Handler<HttpConnection> connectionHandler,
+                                              Handler<HttpConnection> connectHandler,
+                                              HttpClientMetrics<?, ?, ?> metrics,
                                               Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
-                                              HttpClientOptions co,
-                                              PoolOptions po) {
-    HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
-    HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, co, metrics);
-    HttpClientImpl.Config config = new HttpClientImpl.Config();
-    config.nonProxyHosts = co.getNonProxyHosts();
-    config.verifyHost = co.isVerifyHost();
-    config.defaultSsl = co.isSsl();
-    config.defaultHost = co.getDefaultHost();
-    config.defaultPort = co.getDefaultPort();
-    config.maxRedirects = co.getMaxRedirects();
-    config.initialPoolKind = co.getProtocolVersion() == HttpVersion.HTTP_2 ? 1 : 0;
-    return new HttpClientImpl(vertx, connectionHandler, redirectHandler, channelConnector, metrics, resolver, po, co.getProxyOptions(), co.getSslOptions(), config);
+                                              HttpChannelConnector connector,
+                                              HttpClientImpl.Config config,
+                                              ProxyOptions proxyOptions,
+                                              ClientSSLOptions sslOptions,
+                                              PoolOptions poolOptions) {
+    return new HttpClientImpl(vertx, connectHandler, redirectHandler, connector, metrics, resolver, poolOptions, proxyOptions, sslOptions, config);
   }
 
   private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {
@@ -130,24 +132,65 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   @Override
   public HttpClientAgent build() {
     // Copy options here ????
-    HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
-    PoolOptions po = poolOptions != null ? poolOptions : new PoolOptions();
+    EndpointResolver resolver;
+    String shared;
+    HttpChannelConnector channelConnector;
+    HttpClientImpl.Config config = new HttpClientImpl.Config();
+    Handler<HttpConnection> connectHandler;
+    HttpClientMetrics<?, ?, ?> metrics;
+    ProxyOptions proxyOptions;
+    ClientSSLOptions sslOptions;
+    PoolOptions po;
+    if (http3ClientOptions != null) {
+      Http3ClientOptions co = new Http3ClientOptions(http3ClientOptions);
+      config.nonProxyHosts = null;
+      config.verifyHost = false;
+      config.defaultSsl = true;
+      config.defaultHost = "localhost";
+      config.defaultPort = 8443;
+      config.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
+      config.initialPoolKind = 1; // Multiplexed
+      shared = null;
+      connectHandler = this.connectHandler;
+      resolver = null;
+      metrics = null;
+      sslOptions = co.getSslOptions();
+      po = new PoolOptions();
+      proxyOptions = null;
+      channelConnector = new Http3ChannelConnector(vertx, co);
+    } else {
+      HttpClientOptions co = clientOptions != null ? clientOptions : new HttpClientOptions();
+      resolver = endpointResolver(co);
+      shared = co.isShared() ? co.getName() : null;
+      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
+      NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
+      channelConnector = new Http1xOrH2ChannelConnector(tcpClient, co, metrics);
+      config.nonProxyHosts = co.getNonProxyHosts();
+      config.verifyHost = co.isVerifyHost();
+      config.defaultSsl = co.isSsl();
+      config.defaultHost = co.getDefaultHost();
+      config.defaultPort = co.getDefaultPort();
+      config.maxRedirects = co.getMaxRedirects();
+      config.initialPoolKind = co.getProtocolVersion() == HttpVersion.HTTP_2 ? 1 : 0;
+      connectHandler = connectionHandler(co);
+      sslOptions = co.getSslOptions();
+      proxyOptions = co.getProxyOptions();
+      po = poolOptions != null ? poolOptions : new PoolOptions();
+    }
     CloseFuture cf = resolveCloseFuture();
     HttpClientAgent client;
     Closeable closeable;
-    EndpointResolver resolver = endpointResolver(co);
-    Handler<HttpConnection> connectHandler = connectionHandler(co);
-    if (co.isShared()) {
+    if (shared != null) {
       CloseFuture closeFuture = new CloseFuture();
-      client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, redirectHandler, co, po);
+      client = vertx.createSharedResource("__vertx.shared.httpClients", shared, closeFuture, cf_ -> {
+        HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, metrics, redirectHandler, channelConnector, config, proxyOptions, sslOptions, po);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, redirectHandler, co, po);
+      HttpClientImpl impl = createHttpClientImpl(resolver, connectHandler, metrics, redirectHandler, channelConnector, config, proxyOptions, sslOptions, po);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

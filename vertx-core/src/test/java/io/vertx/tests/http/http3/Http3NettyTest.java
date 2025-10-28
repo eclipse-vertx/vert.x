@@ -1,37 +1,30 @@
 package io.vertx.tests.http.http3;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.codec.http3.DefaultHttp3DataFrame;
-import io.netty.handler.codec.http3.DefaultHttp3HeadersFrame;
-import io.netty.handler.codec.http3.Http3;
-import io.netty.handler.codec.http3.Http3ClientConnectionHandler;
-import io.netty.handler.codec.http3.Http3DataFrame;
-import io.netty.handler.codec.http3.Http3HeadersFrame;
-import io.netty.handler.codec.http3.Http3RequestStreamInboundHandler;
-import io.netty.handler.codec.http3.Http3ServerConnectionHandler;
-import io.netty.handler.codec.quic.InsecureQuicTokenHandler;
-import io.netty.handler.codec.quic.QuicChannel;
-import io.netty.handler.codec.quic.QuicSslContext;
-import io.netty.handler.codec.quic.QuicSslContextBuilder;
-import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http3.*;
+import io.netty.handler.codec.quic.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.CharsetUtil;
-import io.netty.util.NetUtil;
 import io.netty.util.ReferenceCountUtil;
-import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.LongConsumer;
+
+import static org.junit.Assert.assertTrue;
 
 public class Http3NettyTest {
 
@@ -42,12 +35,12 @@ public class Http3NettyTest {
     EventLoopGroup group = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
 
 
-    try {
-      Channel channel = server(group, PORT);
-      client(group, PORT);
-    } finally {
-      group.shutdownGracefully();
-    }
+//    try {
+//      Channel channel = server(group, PORT);
+//      client(group, PORT);
+//    } finally {
+//      group.shutdownGracefully();
+//    }
 
   }
 
@@ -113,64 +106,359 @@ public class Http3NettyTest {
     return channel;
   }
 
-  public static void client(EventLoopGroup group, int port) throws Exception {
-
-    QuicSslContext context = QuicSslContextBuilder.forClient()
-      .trustManager(InsecureTrustManagerFactory.INSTANCE)
-      .applicationProtocols(Http3.supportedApplicationProtocols()).build();
-    ChannelHandler codec = Http3.newQuicClientCodecBuilder()
-      .sslContext(context)
-      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-      .initialMaxData(10000000)
-      .initialMaxStreamDataBidirectionalLocal(1000000)
-      .build();
-
-    Bootstrap bs = new Bootstrap();
-    Channel channel = bs.group(group)
-      .channel(NioDatagramChannel.class)
-      .handler(codec)
-      .bind(0).sync().channel();
-
-    QuicChannel quicChannel = QuicChannel.newBootstrap(channel)
-      .handler(new Http3ClientConnectionHandler())
-      .remoteAddress(new InetSocketAddress(NetUtil.LOCALHOST4, port))
-      .connect()
-      .get();
-
-    QuicStreamChannel streamChannel = Http3.newRequestStream(quicChannel,
-      new Http3RequestStreamInboundHandler() {
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
-          ReferenceCountUtil.release(frame);
-        }
-
-        @Override
-        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
-          System.out.print(frame.content().toString(CharsetUtil.US_ASCII));
-          ReferenceCountUtil.release(frame);
-        }
-
-        @Override
-        protected void channelInputClosed(ChannelHandlerContext ctx) {
-          ctx.close();
-        }
-      }).sync().getNow();
-
-    // Write the Header frame and send the FIN to mark the end of the request.
-    // After this its not possible anymore to write any more data.
-    Http3HeadersFrame frame = new DefaultHttp3HeadersFrame();
-    frame.headers().method("GET").path("/")
-      .authority(NetUtil.LOCALHOST4.getHostAddress() + ":" + port)
-      .scheme("https");
-    streamChannel.writeAndFlush(frame)
-      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).sync();
-
-    // Wait for the stream channel and quic channel to be closed (this will happen after we received the FIN).
-    // After this is done we will close the underlying datagram channel.
-    streamChannel.closeFuture().sync();
-
-    // After we received the response lets also close the underlying QUIC channel and datagram channel.
-    quicChannel.close().sync();
-    channel.close().sync();
+  public static Client client(EventLoopGroup group) throws Exception {
+    Client client = new Client(group);
+    client.bind(0);
+    return client;
   }
+
+  public static class Client {
+
+
+    private final EventLoopGroup group;
+    private Channel channel;
+
+    public Client(EventLoopGroup group) {
+      this.group = group;
+    }
+
+    public Client bind(int port) throws Exception {
+      QuicSslContext context = QuicSslContextBuilder.forClient()
+        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+        .applicationProtocols(Http3.supportedApplicationProtocols()).build();
+      ChannelHandler codec = Http3.newQuicClientCodecBuilder()
+        .sslContext(context)
+        .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+        .initialMaxData(10000000)
+        .initialMaxStreamDataBidirectionalLocal(1000000)
+        .build();
+
+      Bootstrap bs = new Bootstrap();
+      channel = bs.group(group)
+        .channel(NioDatagramChannel.class)
+        .handler(codec)
+        .bind(0).sync().channel();
+
+      return this;
+    }
+
+    public void close() throws Exception {
+      if (channel != null) {
+        channel.close().sync();
+      }
+    }
+
+    public Connection connect(InetSocketAddress server) throws Exception {
+
+      Channel ch = channel;
+
+      if (ch == null) {
+        throw new IllegalStateException("Not bound");
+      }
+
+      AtomicReference<LongConsumer> goAwayHandlerRef = new AtomicReference<>();
+
+      QuicChannel quicChannel = QuicChannel.newBootstrap(channel)
+        .handler(new Http3ClientConnectionHandler(new ChannelInboundHandlerAdapter() {
+          @Override
+          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (msg instanceof Http3ControlStreamFrame) {
+              Http3ControlStreamFrame controlStreamFrame = (Http3ControlStreamFrame)msg;
+              switch ((int)controlStreamFrame.type()) {
+                case 7:
+                  // Go away
+                  LongConsumer runnable = goAwayHandlerRef.get();
+                  if (runnable != null) {
+                    Http3GoAwayFrame goAwayFrame = (Http3GoAwayFrame)controlStreamFrame;
+                    runnable.accept(goAwayFrame.id());
+                  }
+                  break;
+              }
+            } else {
+              super.channelRead(ctx, msg);
+            }
+          }
+        }, null, null, null, true))
+        .remoteAddress(server)
+        .connect()
+        .get();
+
+      return new Connection(quicChannel, goAwayHandlerRef, server);
+    }
+
+    public class Connection {
+
+      private final QuicChannel channel;
+      private final InetSocketAddress address;
+      private final AtomicReference<LongConsumer> goAwayHandlerRef;
+
+      private Connection(QuicChannel quicChannel, AtomicReference<LongConsumer> goAwayHandlerRef, InetSocketAddress address) {
+        this.channel = quicChannel;
+        this.address = address;
+        this.goAwayHandlerRef = goAwayHandlerRef;
+      }
+
+      public Connection goAwayHandler(LongConsumer handler) {
+        goAwayHandlerRef.set(handler);
+        return this;
+      }
+
+      public Stream stream() throws Exception {
+        Stream stream = new Stream(this);
+        stream.streamChannel = Http3.newRequestStream(channel, stream).sync().getNow();
+        return stream;
+      }
+
+      public void close() throws Exception {
+        channel.close().sync();
+      }
+
+      public Connection goAway(long streamId) throws Exception {
+        QuicStreamChannel localControlStream = Http3.getLocalControlStream(channel);
+        localControlStream.write(new DefaultHttp3GoAwayFrame(streamId)).sync();
+        return this;
+      }
+    }
+
+    public class Stream extends Http3RequestStreamInboundHandler {
+
+      private final Connection connection;
+      private QuicStreamChannel streamChannel;
+      private Consumer<Http3Headers> headersHandler;
+      private Consumer<byte[]> chunkHandler;
+      private Consumer<Void> endHandler;
+      private Consumer<Void> resetHandler;
+      private boolean headersSent;
+      private Http3Headers responseHeaders;
+      private ByteArrayOutputStream responseCumulation = new ByteArrayOutputStream();
+      private CompletableFuture<byte[]> responseBody = new CompletableFuture<>();
+
+      public Stream(Connection connection) {
+        this.connection = connection;
+      }
+
+      public QuicStreamChannel channel() {
+        return streamChannel;
+      }
+
+      public long id() {
+        return streamChannel.streamId();
+      }
+
+      @Override
+      public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        if (cause instanceof QuicException && "STREAM_RESET".equals(cause.getMessage())) {
+          Consumer<Void> handler = resetHandler;
+          if (handler != null) {
+            handler.accept(null);
+          }
+        }
+        responseBody.completeExceptionally(cause);
+        super.exceptionCaught(ctx, cause);
+      }
+
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
+        ReferenceCountUtil.release(frame);
+        Consumer<Http3Headers> handler = headersHandler;
+        Http3Headers headers = frame.headers();
+        responseHeaders = headers;
+        if (handler != null) {
+          handler.accept(headers);
+        }
+      }
+
+      @Override
+      protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
+        byte[] chunk = ByteBufUtil.getBytes(frame.content());
+        ReferenceCountUtil.release(frame);
+        responseCumulation.writeBytes(chunk);
+        Consumer<byte[]> handler = chunkHandler;
+        if (handler != null) {
+          handler.accept(chunk);
+        }
+      }
+
+      @Override
+      protected void channelInputClosed(ChannelHandlerContext ctx) {
+        try {
+          responseCumulation.close();
+        } catch (IOException ignore) {
+        }
+        responseBody.complete(responseCumulation.toByteArray());
+        Consumer<Void> handler = endHandler;
+        if (handler != null) {
+          handler.accept(null);
+        }
+        ctx.close(); // ???
+      }
+
+      public Stream headersHandler(Consumer<Http3Headers> headersHandler) {
+        this.headersHandler = headersHandler;
+        return this;
+      }
+
+      public Stream endHandler(Consumer<Void> endHandler) {
+        this.endHandler = endHandler;
+        return this;
+      }
+
+      public Stream chunkHandler(Consumer<byte[]> chunkHandler) {
+        this.chunkHandler = chunkHandler;
+        return this;
+      }
+
+      public Stream resetHandler(Consumer<Void> resetHandler) {
+        this.resetHandler = resetHandler;
+        return this;
+      }
+
+      public void GET(String path) throws Exception{
+        Http3Headers headers = new DefaultHttp3Headers();
+        headers.method("GET");
+        headers.path(path);
+        end(headers);
+      }
+
+      public void POST(String path, byte[] body) throws Exception{
+        Http3Headers headers = new DefaultHttp3Headers();
+        headers.method("POST");
+        headers.path(path);
+        headers.set(HttpHeaderNames.CONTENT_LENGTH, "" + body.length);
+        write(headers, false);
+        end(body);
+      }
+
+      public void writeRaw(byte[] buff) {
+        ChannelFuture fut = streamChannel.writeAndFlush(Unpooled.wrappedBuffer(buff));
+      }
+
+      public void writeUnknownFrame(int type, byte[] payload) throws Exception {
+        DefaultHttp3UnknownFrame frame = new DefaultHttp3UnknownFrame(type, Unpooled.wrappedBuffer(payload));
+        ChannelFuture fut = streamChannel.writeAndFlush(frame);
+        fut.sync();
+      }
+
+      public void write(Http3Headers headers) throws Exception {
+        write(headers, false);
+      }
+
+      public void end(Http3Headers headers) throws Exception {
+        write(headers, true);
+      }
+
+      private void write(Http3Headers headers, boolean end) throws Exception {
+        if (!headersSent) {
+          headersSent = true;
+          if (headers.authority() == null) {
+            headers.authority( connection.address.getHostName()+ ":" + connection.address.getPort());
+          }
+          if (headers.scheme() == null) {
+            headers.scheme("https");
+          }
+          if (headers.method() == null) {
+            headers.method("GET");
+          }
+          if (headers.path() == null) {
+            headers.path("/");
+          }
+        }
+        Http3HeadersFrame frame = new DefaultHttp3HeadersFrame(headers);
+        ChannelFuture fut = streamChannel.writeAndFlush(frame);
+        if (end) {
+          fut.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+        }
+        fut.sync();
+      }
+
+      public void write(byte[] chunk) throws Exception {
+        write(chunk, false);
+      }
+
+      public void end() throws Exception {
+        write(new byte[0], true);
+      }
+
+      public void end(byte[] chunk) throws Exception {
+        write(chunk, true);
+      }
+
+      public void write(byte[] chunk, boolean end) throws Exception {
+        if (!headersSent) {
+          throw new IllegalStateException();
+        }
+        Http3DataFrame frame = new DefaultHttp3DataFrame(Unpooled.wrappedBuffer(chunk));
+        ChannelFuture fut = streamChannel.writeAndFlush(frame);
+        if (end) {
+          fut.addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
+        }
+        fut.sync();
+      }
+
+      public Http3Headers responseHeaders() {
+        return responseHeaders;
+      }
+
+      public byte[] responseBody() throws Exception {
+        try {
+          return responseBody.get(10, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+          throw (Exception)e.getCause();
+        }
+      }
+
+      public void reset(int errorCode) throws Exception {
+        if (streamChannel == null) {
+          throw new IllegalStateException();
+        }
+        streamChannel.shutdownOutput(errorCode).sync();
+      }
+    }
+  }
+
+//  public static void client(EventLoopGroup group, int port) throws Exception {
+//
+//
+//    QuicChannel quicChannel = QuicChannel.newBootstrap(channel)
+//      .handler(new Http3ClientConnectionHandler())
+//      .remoteAddress(new InetSocketAddress(NetUtil.LOCALHOST4, port))
+//      .connect()
+//      .get();
+//
+//    QuicStreamChannel streamChannel = Http3.newRequestStream(quicChannel,
+//      new Http3RequestStreamInboundHandler() {
+//        @Override
+//        protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
+//          ReferenceCountUtil.release(frame);
+//        }
+//
+//        @Override
+//        protected void channelRead(ChannelHandlerContext ctx, Http3DataFrame frame) {
+//          System.out.print(frame.content().toString(CharsetUtil.US_ASCII));
+//          ReferenceCountUtil.release(frame);
+//        }
+//
+//        @Override
+//        protected void channelInputClosed(ChannelHandlerContext ctx) {
+//          ctx.close();
+//        }
+//      }).sync().getNow();
+//
+//    // Write the Header frame and send the FIN to mark the end of the request.
+//    // After this its not possible anymore to write any more data.
+//    Http3HeadersFrame frame = new DefaultHttp3HeadersFrame();
+//    frame.headers().method("GET").path("/")
+//      .authority(NetUtil.LOCALHOST4.getHostAddress() + ":" + port)
+//      .scheme("https");
+//    streamChannel.writeAndFlush(frame)
+//      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT).sync();
+//
+//    // Wait for the stream channel and quic channel to be closed (this will happen after we received the FIN).
+//    // After this is done we will close the underlying datagram channel.
+//    streamChannel.closeFuture().sync();
+//
+//    // After we received the response lets also close the underlying QUIC channel and datagram channel.
+//    quicChannel.close().sync();
+//    channel.close().sync();
+//  }
 }
