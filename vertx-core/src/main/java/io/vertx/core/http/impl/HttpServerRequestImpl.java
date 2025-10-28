@@ -322,7 +322,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
 
   @Override
   public HttpVersion version() {
-    return HttpVersion.HTTP_2;
+    return stream.version();
   }
 
   @Override
