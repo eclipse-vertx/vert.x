@@ -24,6 +24,8 @@ import io.vertx.core.buffer.Buffer;
 @VertxGen
 public interface QuicStream extends Socket {
 
+  long id();
+
   /**
    * @return whether the stream is unidirectional or bidirectional
    */

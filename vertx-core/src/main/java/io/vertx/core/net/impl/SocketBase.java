@@ -16,13 +16,16 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoop;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.EventLoopExecutor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -51,8 +54,16 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
 
   public SocketBase(ContextInternal context, ChannelHandlerContext channel) {
     super(context, channel);
+
+    EventLoopExecutor executor;
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == chctx.executor()) {
+      executor = (EventLoopExecutor) context.executor();
+    } else {
+      executor = new EventLoopExecutor((EventLoop)chctx.executor());
+    }
+
     this.messageHandler = new DataMessageHandler();
-    this.pending = new InboundMessageQueue<>(context.eventLoop(), context.executor()) {
+    this.pending = new InboundMessageQueue<>(executor, context.executor()) {
       @Override
       protected void handleResume() {
         SocketBase.this.doResume();

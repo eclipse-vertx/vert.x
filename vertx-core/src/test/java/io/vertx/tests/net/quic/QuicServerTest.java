@@ -469,17 +469,17 @@ public class QuicServerTest extends VertxTestBase {
     }
   }
 
-  @Ignore("Needs to add channel handler that drop packets")
   @Test
   public void testMaxIdleTimeout() throws Exception {
     QuicServerOptions options = serverOptions();
-    options.getTransportOptions().setMaxIdleTimeout(Duration.ofMillis(100));
+    options.getTransportOptions().setMaxIdleTimeout(Duration.ofMillis(1000));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
-      System.out.println("connected");
       long now = System.currentTimeMillis();
       conn.closeHandler(v -> {
-        System.out.println("closed " + (System.currentTimeMillis() - now));
+        assertTrue(System.currentTimeMillis() - now >= 1000);
+        assertTrue(System.currentTimeMillis() - now < 2000);
+        testComplete();
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
@@ -487,8 +487,6 @@ public class QuicServerTest extends VertxTestBase {
     try {
       client = new QuicTestClient(new NioEventLoopGroup(1));
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
-      QuicTestClient.Stream stream = connection.newStream();
-      stream.create();
       await();
     } finally {
       client.close();

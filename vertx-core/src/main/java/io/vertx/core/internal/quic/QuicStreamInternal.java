@@ -13,6 +13,7 @@ package io.vertx.core.internal.quic;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.SocketInternal;
 import io.vertx.core.net.QuicStream;
 
@@ -20,6 +21,8 @@ import io.vertx.core.net.QuicStream;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface QuicStreamInternal extends QuicStream, SocketInternal {
+
+  ContextInternal context();
 
   @Override
   QuicStreamInternal messageHandler(Handler<Object> handler);
