@@ -40,6 +40,8 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
+import io.vertx.test.proxy.ProxyKind;
+import io.vertx.test.proxy.WithProxy;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.DnsAttribute;
@@ -3634,55 +3636,6 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testFollowRedirectPutOn308() throws Exception {
     testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 308, 308, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
-  }
-
-
-  @Test
-  public void testFollowRedirectsWithProxy() throws Exception {
-    Assume.assumeThat("Proxy is only supported with HTTP/1", this, instanceOf(Http1xTest.class));
-    waitFor(2);
-    String location = "http://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + "/ok";
-    server.requestHandler(req -> {
-      if (!req.headers().contains("foo", "bar", true)) {
-        fail("Missing expected header");
-        return;
-      }
-      assertEquals(Collections.singletonList("bar"), req.headers().getAll("foo"));
-      if (req.path().equals("/redirect")) {
-        req.response().setStatusCode(301).putHeader("Location", location).end();
-      } else {
-        req.response().end(req.path());
-        complete();
-      }
-    });
-
-    startServer();
-    startProxy(null, ProxyType.HTTP);
-    client.request(
-        new RequestOptions(requestOptions)
-          .setServer(null)
-          .setMethod(GET)
-          .setURI("/redirect")
-          .setProxyOptions(new ProxyOptions().setPort(proxy.port()))
-      )
-      .compose(req -> req
-        .putHeader("foo", "bar")
-        .setFollowRedirects(true)
-        .send()
-        .compose(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals(location, proxy.getLastUri());
-          return resp.body().compose(body -> {
-            if (resp.statusCode() == 200) {
-              assertEquals(Buffer.buffer("/ok"), body);
-            } else {
-              assertEquals(Buffer.buffer(), body);
-            }
-            return Future.succeededFuture();
-          });
-        })
-      ).onSuccess(v -> testComplete());
-    await();
   }
 
   private void testFollowRedirect(

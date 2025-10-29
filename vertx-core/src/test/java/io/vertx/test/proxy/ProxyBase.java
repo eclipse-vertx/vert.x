@@ -22,7 +22,7 @@ import java.util.function.Supplier;
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  *
  */
-public abstract class TestProxyBase<P extends TestProxyBase<P>> {
+public abstract class ProxyBase<P extends ProxyBase<P>> {
 
   private Supplier<String> username;
   protected int port;
@@ -31,7 +31,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
   protected List<String> localAddresses = Collections.synchronizedList(new ArrayList<>());
   protected long successDelayMillis = 0;
 
-  public TestProxyBase() {
+  public ProxyBase() {
     port = defaultPort();
   }
 
@@ -105,7 +105,7 @@ public abstract class TestProxyBase<P extends TestProxyBase<P>> {
     throw new UnsupportedOperationException();
   }
 
-  public abstract TestProxyBase start(Vertx vertx) throws Exception;
+  public abstract ProxyBase start(Vertx vertx) throws Exception;
   public abstract void stop();
 
   public void successDelayMillis(long delayMillis) {

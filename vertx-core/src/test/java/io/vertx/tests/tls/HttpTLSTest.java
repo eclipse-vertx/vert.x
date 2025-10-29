@@ -42,11 +42,11 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
-import io.vertx.core.transport.Transport;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.proxy.Proxy;
+import io.vertx.test.proxy.ProxyKind;
+import io.vertx.test.proxy.WithProxy;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -67,6 +67,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
+  @Rule
+  public Proxy proxy = new Proxy();
+
   @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
@@ -81,14 +84,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
         "127.0.0.1 www.host5.com\n" +
         "127.0.0.1 unknown.com"));
     return options;
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    if (proxy != null) {
-      proxy.stop();
-    }
-    super.tearDown();
   }
 
   @Test
@@ -1544,107 +1539,109 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   // Proxy tests
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   // Access https server via connect proxy
   public void testHttpsProxy() throws Exception {
     testProxy(ProxyType.HTTP);
-    assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
+    assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   private void testProxy(ProxyType proxyType) throws Exception {
-    startProxy(null, proxyType);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(proxyType).pass();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
   }
 
+  @WithProxy(kind = ProxyKind.HTTP, localhosts = "host2.com")
   @Test
   // Access https server via connect proxy
   public void testHttpsProxyWithSNI() throws Exception {
     testProxyWithSNI(ProxyType.HTTP);
-    assertEquals("Host header doesn't contain target host", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.getLastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
+    assertEquals("Host header doesn't contain target host", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.lastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   private void testProxyWithSNI(ProxyType proxyType) throws Exception {
-    startProxy(null, proxyType);
     Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .useProxy(proxyType)
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    assertEquals("hostname resolved but it shouldn't be", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
     assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
+  @WithProxy(username = "username", kind = ProxyKind.HTTP)
   @Test
   // Check that proxy auth fails if it is missing
   public void testHttpsProxyAuthFail() throws Exception {
-    startProxy("username", ProxyType.HTTP);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).fail();
   }
 
+  @WithProxy(username = "username", kind = ProxyKind.HTTP)
   @Test
   // Access https server via connect proxy with proxy auth required
   public void testHttpsProxyAuth() throws Exception {
-    startProxy("username", ProxyType.HTTP);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).useProxyAuth().pass();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastUri());
-    assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
+    assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
+    assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   // Access https server via connect proxy with a hostname that doesn't resolve
   // the hostname may resolve at the proxy if that is accessing another DNS
   // we simulate this by mapping the hostname to localhost:xxx in the test proxy code
   public void testHttpsProxyUnknownHost() throws Exception {
-    startProxy(null, ProxyType.HTTP);
-    proxy.setForceUri(DEFAULT_HTTPS_HOST_AND_PORT);
+    proxy.forceUri(DEFAULT_HTTPS_HOST_AND_PORT);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP)
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.getLastUri());
-    assertEquals("Host header doesn't contain target host", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.getLastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.getLastMethod());
+    assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
+    assertEquals("Host header doesn't contain target host", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastRequestHeaders().get("Host"));
+    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   // Access https server via socks5 proxy
   public void testHttpsSocks() throws Exception {
     testProxy(ProxyType.SOCKS5);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5, localhosts = "host2.com")
   @Test
   // Access https server via socks5 proxy
   public void testHttpsSocksWithSNI() throws Exception {
     testProxyWithSNI(ProxyType.SOCKS5);
   }
 
+  @WithProxy(username = "username", kind = ProxyKind.SOCKS5)
   @Test
   // Access https server via socks5 proxy with authentication
   public void testHttpsSocksAuth() throws Exception {
-    startProxy("username", ProxyType.SOCKS5);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.SOCKS5).useProxyAuth().pass();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   // Access https server via socks proxy with a hostname that doesn't resolve
   // the hostname may resolve at the proxy if that is accessing another DNS
   // we simulate this by mapping the hostname to localhost:xxx in the test proxy code
   public void testSocksProxyUnknownHost() throws Exception {
-    startProxy(null, ProxyType.SOCKS5);
-    proxy.setForceUri(DEFAULT_HTTPS_HOST_AND_PORT);
+    proxy.forceUri(DEFAULT_HTTPS_HOST_AND_PORT);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.SOCKS5)
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
-    assertNotNull("connection didn't access the proxy", proxy.getLastUri());
-    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.getLastUri());
+    assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
   }
 
   @Test

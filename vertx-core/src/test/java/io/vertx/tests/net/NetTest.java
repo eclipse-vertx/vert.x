@@ -88,7 +88,7 @@ public class NetTest extends VertxTestBase {
   private SocketAddress testAddress;
   private NetServer server;
   private NetClient client;
-  private TestProxyBase proxy;
+  private ProxyBase proxy;
   private File tmp;
 
   @Rule

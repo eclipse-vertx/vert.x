@@ -29,13 +29,11 @@ import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.http.HttpTestBase;
-import io.vertx.test.proxy.HttpProxy;
-import io.vertx.test.proxy.Socks4Proxy;
-import io.vertx.test.proxy.SocksProxy;
-import io.vertx.test.proxy.TestProxyBase;
+import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
+import org.junit.Assume;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -45,13 +43,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import static io.vertx.core.http.HttpMethod.GET;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class Http1xProxyTest extends HttpTestBase {
+
+  @Rule
+  public Proxy proxy = new Proxy();
 
   @Override
   protected VertxOptions getOptions() {
@@ -66,9 +66,9 @@ public class Http1xProxyTest extends HttpTestBase {
     return options;
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testHttpProxyRequest() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
@@ -83,9 +83,9 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testHttpProxyRequest2() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     testHttpProxyRequest(() -> client.request(new RequestOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port()))
       .setHost(DEFAULT_HTTP_HOST)
@@ -98,18 +98,19 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testAcceptFilter() throws Exception {
     testFilter(true);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testRejectFilter() throws Exception {
     testFilter(false);
   }
 
   private void testFilter(boolean accept) throws Exception {
-    startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
@@ -132,28 +133,31 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNonProxyHosts1() throws Exception {
     testNonProxyHosts(Collections.singletonList("www1.example1.com"), "www1.example1.com", false);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP, localhosts = "www2.example1.com")
   @Test
   public void testNonProxyHosts2() throws Exception {
     testNonProxyHosts(Collections.singletonList("www1.example1.com"), "www2.example1.com", true);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNonProxyHosts3() throws Exception {
     testNonProxyHosts(Collections.singletonList("*.example2.com"), "www1.example2.com", false);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNonProxyHosts4() throws Exception {
     testNonProxyHosts(Collections.singletonList("*.example2.com"), "www2.example2.com", false);
   }
 
   private void testNonProxyHosts(List<String> nonProxyHosts, String host, boolean proxied) throws Exception {
-    startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setNonProxyHosts(nonProxyHosts)
@@ -171,9 +175,9 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testHttpProxyRequestOverrideClientSsl() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
@@ -187,31 +191,23 @@ public class Http1xProxyTest extends HttpTestBase {
   }
 
   private void assertProxiedRequest(String host) {
-    assertNotNull("request did not go through proxy", proxy.getLastUri());
-    assertEquals("Host header doesn't contain target host", host + ":" + DEFAULT_HTTP_PORT, proxy.getLastRequestHeaders().get("Host"));
+    assertNotNull("request did not go through proxy", proxy.lastUri());
+    assertEquals("Host header doesn't contain target host", host + ":" + DEFAULT_HTTP_PORT, proxy.lastRequestHeaders().get("Host"));
   }
 
-  private Future<Void> testHttpProxyRequest(Supplier<Future<HttpClientResponse>> reqFact) throws Exception {
+  private Future<?> testHttpProxyRequest(Supplier<Future<HttpClientResponse>> reqFact) throws Exception {
     server.requestHandler(req -> {
       req.response().end();
     });
-
-    return server.listen().compose(s -> {
-      return reqFact.get().compose(resp -> {
-        int sc = resp.statusCode();
-        if (sc == 200) {
-          return Future.succeededFuture();
-        } else {
-          return Future.failedFuture("Was expected 200 response instead of " + sc);
-        }
-      });
-    });
+    return server.listen()
+      .compose(s -> reqFact
+        .get()
+        .expecting(HttpResponseExpectation.SC_OK));
   }
 
+  @WithProxy(username = "user", kind = ProxyKind.HTTP)
   @Test
   public void testHttpProxyRequestAuth() throws Exception {
-    startProxy("user", ProxyType.HTTP);
-
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())
@@ -229,8 +225,8 @@ public class Http1xProxyTest extends HttpTestBase {
       ).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          assertNotNull("request did not go through proxy", proxy.getLastUri());
-          assertEquals("Host header doesn't contain target host", DEFAULT_HTTP_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
+          assertNotNull("request did not go through proxy", proxy.lastUri());
+          assertEquals("Host header doesn't contain target host", DEFAULT_HTTP_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
           testComplete();
         }));
       }));
@@ -238,14 +234,14 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testHttpProxyFtpRequest() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost(DEFAULT_HTTP_HOST).setPort(proxy.port())));
     final String url = "ftp://ftp.gnu.org/gnu/";
-    proxy.setForceUri("http://" + DEFAULT_HTTP_HOST_AND_PORT+ "/");
+    proxy.forceUri("http://" + DEFAULT_HTTP_HOST_AND_PORT+ "/");
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -255,7 +251,7 @@ public class Http1xProxyTest extends HttpTestBase {
         .onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          assertEquals("request did sent the expected url", url, proxy.getLastUri());
+          assertEquals("request did sent the expected url", url, proxy.lastUri());
           testComplete();
         }));
       }));
@@ -263,10 +259,9 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   public void testHttpSocksProxyRequest() throws Exception {
-    startProxy(null, ProxyType.SOCKS5);
-
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.port())));
@@ -281,17 +276,16 @@ public class Http1xProxyTest extends HttpTestBase {
       .setURI("/")).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
-        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        assertNotNull("request did not go through proxy", proxy.lastUri());
         testComplete();
       }));
     }));
     await();
   }
 
+  @WithProxy(username = "user", kind = ProxyKind.SOCKS5)
   @Test
   public void testHttpSocksProxyRequestAuth() throws Exception {
-    startProxy("user", ProxyType.SOCKS5);
-
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.port())
@@ -309,7 +303,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .setURI("/")).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
-        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        assertNotNull("request did not go through proxy", proxy.lastUri());
         testComplete();
       }));
     }));
@@ -448,8 +442,8 @@ public class Http1xProxyTest extends HttpTestBase {
     assertEquals(new HashSet<>(proxy.localAddresses()), new HashSet<>(res));
   }
 
-  public List<String> testPooling(ProxyOptions request1, ProxyOptions request2, TestProxyBase... proxies) throws Exception {
-    for (TestProxyBase proxy : proxies) {
+  public List<String> testPooling(ProxyOptions request1, ProxyOptions request2, ProxyBase... proxies) throws Exception {
+    for (ProxyBase proxy : proxies) {
       proxy.start(vertx);
     }
 
@@ -490,15 +484,15 @@ public class Http1xProxyTest extends HttpTestBase {
       }
       return responses;
     } finally {
-      for (TestProxyBase proxy : proxies) {
+      for (ProxyBase proxy : proxies) {
         proxy.stop();
       }
     }
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testWssHttpProxy() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     testWebSocket(createBaseServerOptions().setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()), new WebSocketClientOptions()
       .setSsl(true)
@@ -509,9 +503,9 @@ public class Http1xProxyTest extends HttpTestBase {
         .setPort(proxy.port())), true);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testWsHttpProxy() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     testWebSocket(createBaseServerOptions(), new WebSocketClientOptions()
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.HTTP)
@@ -519,9 +513,9 @@ public class Http1xProxyTest extends HttpTestBase {
         .setPort(proxy.port())), true);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   public void testWssSocks5Proxy() throws Exception {
-    startProxy(null, ProxyType.SOCKS5);
     testWebSocket(createBaseServerOptions().setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()), new WebSocketClientOptions()
       .setSsl(true)
@@ -532,9 +526,9 @@ public class Http1xProxyTest extends HttpTestBase {
         .setPort(proxy.port())), true);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   public void testWsSocks5Proxy() throws Exception {
-    startProxy(null, ProxyType.SOCKS5);
     testWebSocket(createBaseServerOptions(), new WebSocketClientOptions()
       .setProxyOptions(new ProxyOptions()
         .setType(ProxyType.SOCKS5)
@@ -542,9 +536,9 @@ public class Http1xProxyTest extends HttpTestBase {
         .setPort(proxy.port())), true);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testWsNonProxyHosts() throws Exception {
-    startProxy(null, ProxyType.HTTP);
     testWebSocket(createBaseServerOptions(), new WebSocketClientOptions()
       .addNonProxyHost("localhost")
       .setProxyOptions(new ProxyOptions()
@@ -569,12 +563,12 @@ public class Http1xProxyTest extends HttpTestBase {
         ws.handler(buff -> {
           ws.close().onComplete(onSuccess(v2 -> {
             if (proxied) {
-              assertNotNull("request did not go through proxy", proxy.getLastUri());
+              assertNotNull("request did not go through proxy", proxy.lastUri());
               if (clientOptions.getProxyOptions().getType() == ProxyType.HTTP) {
-                assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.getLastRequestHeaders().get("Host"));
+                assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
               }
             } else {
-              assertNull("request did go through proxy", proxy.getLastUri());
+              assertNull("request did go through proxy", proxy.lastUri());
             }
             testComplete();
           }));
@@ -585,37 +579,43 @@ public class Http1xProxyTest extends HttpTestBase {
     await();
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNoConnectTimeoutHttpProxy() throws Exception {
-    testConnectTimeout(ProxyType.HTTP, false);
+    testConnectTimeout(false);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS4)
   @Test
   public void testNoConnectTimeoutSocksProxy() throws Exception {
-    testConnectTimeout(ProxyType.SOCKS4, false);
+    testConnectTimeout(false);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   public void testNoConnectTimeoutSocks5Proxy() throws Exception {
-    testConnectTimeout(ProxyType.SOCKS5, false);
+    testConnectTimeout(false);
   }
 
+  @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testConnectTimeoutHttpProxy() throws Exception {
-    testConnectTimeout(ProxyType.HTTP, true);
+    testConnectTimeout(true);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS4)
   @Test
   public void testConnectTimeoutSocksProxy() throws Exception {
-    testConnectTimeout(ProxyType.SOCKS4, true);
+    testConnectTimeout(true);
   }
 
+  @WithProxy(kind = ProxyKind.SOCKS5)
   @Test
   public void testConnectTimeoutSocks5Proxy() throws Exception {
-    testConnectTimeout(ProxyType.SOCKS5, true);
+    testConnectTimeout(true);
   }
 
-  private void testConnectTimeout(ProxyType proxyType, boolean shouldTimeout) throws Exception {
+  private void testConnectTimeout(boolean shouldTimeout) throws Exception {
     server.close();
     HttpServerOptions serverOptions = createBaseServerOptions()
       .setSsl(true)
@@ -623,19 +623,11 @@ public class Http1xProxyTest extends HttpTestBase {
     server = vertx.createHttpServer(serverOptions).requestHandler(request -> request.response().end());
     startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
 
-    if (proxyType == ProxyType.HTTP) {
-      proxy = new HttpProxy();
-    } else if (proxyType == ProxyType.SOCKS4) {
-      proxy = new Socks4Proxy();
-    } else {
-      proxy = new SocksProxy();
-    }
     Duration delay = Duration.ofSeconds(1);
-    proxy.username((String) null).successDelayMillis(delay.toMillis());
-    proxy.start(vertx);
+    proxy.successDelayMillis(delay);
 
     ProxyOptions proxyOptions = new ProxyOptions()
-      .setType(proxyType)
+      .setType(proxy.type())
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(proxy.port())
       .setConnectTimeout(shouldTimeout ? delay.dividedBy(2) : delay.multipliedBy(2));
@@ -659,6 +651,53 @@ public class Http1xProxyTest extends HttpTestBase {
         testComplete();
       });
 
+    await();
+  }
+
+  @WithProxy(kind = ProxyKind.HTTP)
+  @Test
+  public void testFollowRedirectsWithProxy() throws Exception {
+    waitFor(2);
+    String location = "http://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + "/ok";
+    server.requestHandler(req -> {
+      if (!req.headers().contains("foo", "bar", true)) {
+        fail("Missing expected header");
+        return;
+      }
+      assertEquals(Collections.singletonList("bar"), req.headers().getAll("foo"));
+      if (req.path().equals("/redirect")) {
+        req.response().setStatusCode(301).putHeader("Location", location).end();
+      } else {
+        req.response().end(req.path());
+        complete();
+      }
+    });
+
+    startServer();
+    client.request(
+        new RequestOptions(requestOptions)
+          .setServer(null)
+          .setMethod(GET)
+          .setURI("/redirect")
+          .setProxyOptions(new ProxyOptions().setPort(proxy.port()))
+      )
+      .compose(req -> req
+        .putHeader("foo", "bar")
+        .setFollowRedirects(true)
+        .send()
+        .compose(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertEquals(location, proxy.lastUri());
+          return resp.body().compose(body -> {
+            if (resp.statusCode() == 200) {
+              assertEquals(Buffer.buffer("/ok"), body);
+            } else {
+              assertEquals(Buffer.buffer(), body);
+            }
+            return Future.succeededFuture();
+          });
+        })
+      ).onSuccess(v -> testComplete());
     await();
   }
 }
