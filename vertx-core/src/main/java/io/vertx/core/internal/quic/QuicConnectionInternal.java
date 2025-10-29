@@ -28,7 +28,13 @@ public interface QuicConnectionInternal extends QuicConnection {
 
   ContextInternal context();
 
-  Future<QuicStream> createStream(boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> blah);
+  QuicConnectionInternal streamContextProvider(Function<ContextInternal, ContextInternal> provider);
+
+  Future<QuicStream> createStream(ContextInternal context);
+
+  Future<QuicStream> createStream(ContextInternal context, boolean bidirectional);
+
+  Future<QuicStream> createStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider);
 
   ChannelHandlerContext channelHandlerContext();
 

@@ -10,12 +10,9 @@
  */
 package io.vertx.core.net.impl.quic;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.channel.nio.AbstractNioChannel;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.unix.UnixChannelOption;
 import io.netty.handler.codec.quic.InsecureQuicTokenHandler;

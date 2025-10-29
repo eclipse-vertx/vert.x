@@ -52,6 +52,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final QuicChannel channel;
   private final TransportMetrics<?> metrics;
   private final ConnectionGroup streamGroup;
+  private Function<ContextInternal, ContextInternal> streamContextProvider;
   private Handler<QuicStream> handler;
   private Handler<Buffer> datagramHandler;
   private QuicConnectionClose closePayload;
@@ -97,7 +98,14 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       // Only consider stream we can end for shutdown, e.g. this excludes remote opened HTTP/3 control stream
       streamGroup.add(streamChannel);
     }
-    VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, streamChannel, streamMetrics, chctx));
+    Function<ContextInternal, ContextInternal> provider = streamContextProvider;
+    ContextInternal streamContext;
+    if (provider != null) {
+      streamContext = provider.apply(context);
+    } else {
+      streamContext = context;
+    }
+    VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, streamContext, streamChannel, streamMetrics, chctx));
     handler.addHandler(stream -> {
       Handler<QuicStream> h = QuicConnectionImpl.this.handler;
       if (h != null) {
@@ -165,7 +173,17 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
+  public Future<QuicStream> createStream(ContextInternal context) {
+    return createStream(context, true);
+  }
+
+  @Override
   public Future<QuicStream> createStream(boolean bidirectional) {
+    return createStream(vertx.getOrCreateContext(), bidirectional);
+  }
+
+  @Override
+  public Future<QuicStream> createStream(ContextInternal context, boolean bidirectional) {
     Function<Supplier<ChannelHandler>, ChannelInitializer<QuicStreamChannel>> blah = new Function<Supplier<ChannelHandler>, ChannelInitializer<QuicStreamChannel>>() {
       @Override
       public ChannelInitializer<QuicStreamChannel> apply(Supplier<ChannelHandler> channelHandlerSupplier) {
@@ -178,30 +196,25 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
         };
       }
     };
-    Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> blah2 = new Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>>() {
+    Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider =
+      quicStreamChannelConsumer -> new ChannelInitializer<>() {
       @Override
-      public ChannelInitializer<QuicStreamChannel> apply(Consumer<QuicStreamChannel> quicStreamChannelConsumer) {
-        return new ChannelInitializer<>() {
-          @Override
-          protected void initChannel(QuicStreamChannel ch) throws Exception {
-            quicStreamChannelConsumer.accept(ch);
-          }
-        };
+      protected void initChannel(QuicStreamChannel ch) throws Exception {
+        quicStreamChannelConsumer.accept(ch);
       }
     };
-    return createStream(bidirectional, blah2);
+    return createStream(context, bidirectional, initializerProvider);
   }
 
   @Override
-  public Future<QuicStream> createStream(boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> blah) {
-    // TODO : should use get or create context and test it ....
+  public Future<QuicStream> createStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider) {
     Promise<QuicStream> promise = context.promise();
     VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, (QuicStreamChannel) chctx.channel(), streamMetrics, chctx));
     handler.addHandler(stream -> {
       promise.tryComplete(stream);
     });
     QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;
-    ChannelInitializer<QuicStreamChannel> initializer = blah.apply(ch -> {
+    ChannelInitializer<QuicStreamChannel> initializer = initializerProvider.apply(ch -> {
       ch.pipeline().addLast("handler", handler);
     });
     io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(type, initializer);
@@ -211,6 +224,12 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       }
     });
     return promise.future();
+  }
+
+  @Override
+  public QuicConnectionInternal streamContextProvider(Function<ContextInternal, ContextInternal> provider) {
+    streamContextProvider = provider;
+    return this;
   }
 
   @Override

@@ -83,10 +83,10 @@ public class VertxConnection extends ConnectionBase {
     super(context, chctx);
 
     EventLoopExecutor executor;
-    if (context.threadingModel() == ThreadingModel.EVENT_LOOP) {
+    if (context.threadingModel() == ThreadingModel.EVENT_LOOP && context.nettyEventLoop() == chctx.executor()) {
       executor = (EventLoopExecutor) context.executor();
     } else {
-      executor = new EventLoopExecutor(context.nettyEventLoop());
+      executor = new EventLoopExecutor((EventLoop)chctx.executor());
     }
 
     this.channelWritable = chctx.channel().isWritable();
