@@ -15,13 +15,9 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.proxy.HttpProxy;
-import io.vertx.test.proxy.SocksProxy;
-import io.vertx.test.proxy.TestProxyBase;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -50,7 +46,6 @@ public class HttpTestBase extends VertxTestBase {
 
   protected HttpServer server;
   protected HttpClientAgent client;
-  protected TestProxyBase proxy;
   protected SocketAddress testAddress;
   protected RequestOptions requestOptions;
   private File tmp;
@@ -85,13 +80,6 @@ public class HttpTestBase extends VertxTestBase {
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
       requestOptions.setServer(testAddress);
     }
-  }
-
-  protected void tearDown() throws Exception {
-    if (proxy != null) {
-      proxy.stop();
-    }
-    super.tearDown();
   }
 
   @SuppressWarnings("unchecked")
@@ -157,16 +145,6 @@ public class HttpTestBase extends VertxTestBase {
         throw e;
       }
     }
-  }
-
-  protected void startProxy(String username, ProxyType proxyType) throws Exception {
-    if (proxyType == ProxyType.HTTP) {
-      proxy = new HttpProxy();
-    } else {
-      proxy = new SocksProxy();
-    }
-    proxy.username(username);
-    proxy.start(vertx);
   }
 
   protected File setupFile(String fileName, String content) throws Exception {

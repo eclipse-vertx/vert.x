@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class Socks4Proxy extends TestProxyBase<Socks4Proxy> {
+public class Socks4Proxy extends ProxyBase<Socks4Proxy> {
 
   private static final Logger log = LoggerFactory.getLogger(Socks4Proxy.class);
 

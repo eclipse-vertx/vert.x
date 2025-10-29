@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
  */
-public class HttpProxy extends TestProxyBase<HttpProxy> {
+public class HttpProxy extends ProxyBase<HttpProxy> {
 
   public static final int DEFAULT_PORT = 13128;
 
