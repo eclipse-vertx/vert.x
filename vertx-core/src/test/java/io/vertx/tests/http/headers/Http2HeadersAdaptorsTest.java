@@ -11,20 +11,15 @@
 
 package io.vertx.tests.http.headers;
 
+import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -34,15 +29,6 @@ import static org.junit.Assert.*;
  */
 public class Http2HeadersAdaptorsTest extends HeadersTest {
 
-  DefaultHttp2Headers headers;
-  MultiMap map;
-
-  @Before
-  public void setUp() {
-    headers = new DefaultHttp2Headers();
-    map = new HttpHeaders(headers);
-  }
-
   @Override
   protected HttpHeaders newMultiMap() {
     return new HttpHeaders(new DefaultHttp2Headers());
@@ -50,68 +36,75 @@ public class Http2HeadersAdaptorsTest extends HeadersTest {
 
   @Test
   public void testGetConvertUpperCase() {
-    map.set("foo", "foo_value");
-    assertEquals("foo_value", map.get("Foo"));
-    assertEquals("foo_value", map.get((CharSequence) "Foo"));
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", "foo_value");
+    assertEquals("foo_value", headers.get("Foo"));
+    assertEquals("foo_value", headers.get((CharSequence) "Foo"));
   }
 
   @Test
   public void testGetAllConvertUpperCase() {
-    map.set("foo", "foo_value");
-    assertEquals(Collections.singletonList("foo_value"), map.getAll("Foo"));
-    assertEquals(Collections.singletonList("foo_value"), map.getAll((CharSequence) "Foo"));
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", "foo_value");
+    assertEquals(Collections.singletonList("foo_value"), headers.getAll("Foo"));
+    assertEquals(Collections.singletonList("foo_value"), headers.getAll((CharSequence) "Foo"));
   }
 
   @Test
   public void testContainsConvertUpperCase() {
-    map.set("foo", "foo_value");
-    assertTrue(map.contains("Foo"));
-    assertTrue(map.contains((CharSequence) "Foo"));
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", "foo_value");
+    assertTrue(headers.contains("Foo"));
+    assertTrue(headers.contains((CharSequence) "Foo"));
   }
 
   @Test
   public void testSetConvertUpperCase() {
-    map.set("Foo", "foo_value");
-    map.set((CharSequence) "Bar", "bar_value");
-    map.set("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
-    map.set("Daa", Collections.singletonList((CharSequence)"daa_value"));
-    assertHeaderNames("foo","bar", "juu", "daa");
+    HttpHeaders headers = newMultiMap();
+    headers.set("Foo", "foo_value");
+    headers.set((CharSequence) "Bar", "bar_value");
+    headers.set("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
+    headers.set("Daa", Collections.singletonList((CharSequence)"daa_value"));
+    assertHeaderNames(headers, "foo","bar", "juu", "daa");
   }
 
   @Test
   public void testAddConvertUpperCase() {
-    map.add("Foo", "foo_value");
-    map.add((CharSequence) "Bar", "bar_value");
-    map.add("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
-    map.add("Daa", Collections.singletonList((CharSequence)"daa_value"));
-    assertHeaderNames("foo","bar", "juu", "daa");
+    HttpHeaders headers = newMultiMap();
+    headers.add("Foo", "foo_value");
+    headers.add((CharSequence) "Bar", "bar_value");
+    headers.add("Juu", (Iterable<String>)Collections.singletonList("juu_value"));
+    headers.add("Daa", Collections.singletonList((CharSequence)"daa_value"));
+    assertHeaderNames(headers, "foo","bar", "juu", "daa");
   }
 
   @Test
   public void testRemoveConvertUpperCase() {
-    map.set("foo", "foo_value");
-    map.remove("Foo");
-    map.set("bar", "bar_value");
-    map.remove((CharSequence) "Bar");
-    assertHeaderNames();
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", "foo_value");
+    headers.remove("Foo");
+    headers.set("bar", "bar_value");
+    headers.remove((CharSequence) "Bar");
+    assertHeaderNames(headers);
   }
 
   @Ignore
   @Test
   public void testEntries() {
-    map.set("foo", Arrays.<String>asList("foo_value_1", "foo_value_2"));
-    List<Map.Entry<String, String>> entries = map.entries();
-    assertEquals(entries.size(), 1);
+    HttpHeaders headers = newMultiMap();
+    headers.set("foo", Arrays.<String>asList("foo_value_1", "foo_value_2"));
+    List<Map.Entry<String, String>> entries = headers.entries();
+    assertEquals(1, entries.size());
     assertEquals("foo", entries.get(0).getKey());
     assertEquals("foo_value_1", entries.get(0).getValue());
-    map.set("bar", "bar_value");
-    Map<String, String> collected = map.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    headers.set("bar", "bar_value");
+    Map<String, String> collected = headers.entries().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     assertEquals("foo_value_1", collected.get("foo"));
     assertEquals("bar_value", collected.get("bar"));
   }
 
-  private void assertHeaderNames(String... expected) {
-    assertEquals(new HashSet<>(Arrays.asList(expected)), headers.names().stream().map(CharSequence::toString).collect(Collectors.toSet()));
+  private void assertHeaderNames(HttpHeaders headers,  String... expected) {
+    assertEquals(new HashSet<>(Arrays.asList(expected)), headers.unwrap().names().stream().map(CharSequence::toString).collect(Collectors.toSet()));
   }
 
   private HttpHeaders headers(HttpMethod method, String authority, String host) {
@@ -146,5 +139,19 @@ public class Http2HeadersAdaptorsTest extends HeadersTest {
     assertFalse(headers(HttpMethod.CONNECT, "localhost:8080", "localhost:8081").validate());
     assertFalse(headers(HttpMethod.CONNECT, "localhost:a", null).validate());
     assertFalse(headers(HttpMethod.CONNECT, null, "localhost:a").validate());
+  }
+
+  @Test
+  public void testFilterPseudoHeaders() {
+    HttpHeaders headers = headers(HttpMethod.PUT, "localhost:8080", "another:4443");
+    List<String> names = new ArrayList<>();
+    headers.forEach(entry -> {
+      names.add(entry.getKey());
+    });
+    assertEquals(List.of("host"), names);
+    assertEquals(1, headers.size());
+    HttpHeaders other = newMultiMap();
+    other.setAll(headers);
+    assertEquals(1, other.unwrap().size());
   }
 }
