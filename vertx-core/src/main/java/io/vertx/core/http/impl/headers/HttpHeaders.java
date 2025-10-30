@@ -18,7 +18,12 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -212,72 +217,45 @@ public class HttpHeaders implements MultiMap {
 
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return new EntryIterator(headers.iterator());
-  }
-
-  private class EntryIterator implements Iterator<Map.Entry<String, String>> {
-
-    private Map.Entry<String, String> nextEntry(Iterator<Map.Entry<CharSequence, CharSequence>> i) {
-      while (i.hasNext()) {
-        Map.Entry<CharSequence, CharSequence> next = i.next();
-        CharSequence name = next.getKey();
-        if (name.length() == 0 || name.charAt(0) != ':') {
-          return new Map.Entry<>() {
-            @Override
-            public String getKey() {
-              return next.getKey().toString();
-            }
-            @Override
-            public String getValue() {
-              return next.getValue().toString();
-            }
-            @Override
-            public String setValue(String value) {
-              if (!mutable) {
-                throw new IllegalStateException("Read only");
-              }
-              String old = next.getValue().toString();
-              next.setValue(value);
-              return old;
-            }
-            @Override
-            public String toString() {
-              return next.toString();
-            }
-          };
-        }
+    Iterator<Map.Entry<CharSequence, CharSequence>> i = headers.iterator();
+    return new Iterator<Map.Entry<String, String>>() {
+      @Override
+      public boolean hasNext() {
+        return i.hasNext();
       }
-      return null;
-    }
-
-    private final Iterator<Map.Entry<CharSequence, CharSequence>> iterator;
-    private Map.Entry<String, String> next;
-
-    public EntryIterator(Iterator<Map.Entry<CharSequence, CharSequence>> iterator) {
-      this.iterator = iterator;
-      this.next = nextEntry(iterator);
-    }
-
-    @Override
-    public boolean hasNext() {
-      return next != null;
-    }
-
-    @Override
-    public Map.Entry<String, String> next() {
-      Map.Entry<String, String> ret = next;
-      next = nextEntry(iterator);
-      return ret;
-    }
+      @Override
+      public Map.Entry<String, String> next() {
+        Map.Entry<CharSequence, CharSequence> next = i.next();
+        return new Map.Entry<String, String>() {
+          @Override
+          public String getKey() {
+            return next.getKey().toString();
+          }
+          @Override
+          public String getValue() {
+            return next.getValue().toString();
+          }
+          @Override
+          public String setValue(String value) {
+            if (!mutable) {
+              throw new IllegalStateException("Read only");
+            }
+            String old = next.getValue().toString();
+            next.setValue(value);
+            return old;
+          }
+          @Override
+          public String toString() {
+            return next.toString();
+          }
+        };
+      }
+    };
   }
 
   @Override
   public int size() {
-    int size = 0;
-    for (CharSequence name : headers.names()) {
-      size += isPseudoHeader(name) ? 0 : 1;
-    }
-    return size;
+    return names().size();
   }
 
   @Override
@@ -401,9 +379,5 @@ public class HttpHeaders implements MultiMap {
 
   HttpHeaders copy(boolean mutable, Headers<CharSequence, CharSequence, ?> headers) {
     return new HttpHeaders(mutable, new DefaultHttp2Headers().setAll(headers));
-  }
-
-  private static boolean isPseudoHeader(CharSequence cs) {
-    return cs.length() > 0 && cs.charAt(0) == ':';
   }
 }
