@@ -131,8 +131,8 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
-  protected void handleException(Throwable t) {
-    super.handleException(t);
+  protected boolean handleException(Throwable t) {
+    return super.handleException(t);
   }
 
   void handleClosed(QuicConnectionClose payload) {

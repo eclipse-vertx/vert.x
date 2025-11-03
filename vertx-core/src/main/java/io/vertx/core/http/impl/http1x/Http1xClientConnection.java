@@ -1222,8 +1222,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   }
 
   @Override
-  public void handleException(Throwable e) {
-    super.handleException(e);
+  public boolean handleException(Throwable e) {
+    boolean ret = super.handleException(e);
     LinkedHashSet<Stream> allStreams = new LinkedHashSet<>();
     synchronized (this) {
       allStreams.addAll(requests);
@@ -1232,6 +1232,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     for (Stream stream : allStreams) {
       stream.handleException(e);
     }
+    return ret;
   }
 
   @Override

@@ -348,7 +348,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     }
 
     @Override
-    protected void handleException(Throwable t) {
+    protected boolean handleException(Throwable t) {
       super.handleException(t);
       Handler<Throwable> handler;
       synchronized (DatagramSocketImpl.this) {
@@ -357,6 +357,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
       if (handler != null) {
         handler.handle(t);
       }
+      return true;
     }
 
     @Override

@@ -144,10 +144,15 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) {
     C connection = getConnection();
+    boolean close;
     if (connection != null) {
-      connection.handleException(t);
+      close = connection.handleException(t);
+    } else {
+      close = true;
     }
-    chctx.close();
+    if (close) {
+      chctx.close();
+    }
   }
 
   @Override

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
@@ -98,5 +99,112 @@ public class QuicClientTest extends VertxTestBase {
     stream.end(Buffer.buffer("ping"));
     awaitLatch(latch);
     assertEquals(List.of(Buffer.buffer("ping")), received);
+  }
+
+  @Test
+  public void testServerReset() {
+
+    waitFor(4);
+    server = QuicServer.create(vertx, serverOptions());
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.handler(buff -> {
+          stream.reset(0).onComplete(onSuccess2(v -> complete()));
+        });
+        stream.endHandler(v -> {
+          complete();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicStream stream = connection.createStream().await();
+
+    stream.exceptionHandler(t -> complete());
+    stream.closeHandler(v -> complete());
+
+    stream.write("ping");
+
+    await();
+  }
+
+  @Test
+  public void testClientReset() {
+
+    waitFor(2);
+    server = QuicServer.create(vertx, serverOptions());
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.resetHandler(code -> {
+          vertx.setTimer(20, id -> {
+            stream.end(Buffer.buffer("done"));
+          });
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicStream stream = connection.createStream().await();
+
+    AtomicBoolean isReset = new AtomicBoolean();
+    Buffer buffer = Buffer.buffer();
+    stream.handler(buff -> {
+      if (isReset.compareAndSet(false, true)) {
+        stream.reset(0).onComplete(onSuccess2(v -> complete()));
+      } else {
+        buffer.appendBuffer(buff);
+      }
+    });
+    stream.endHandler(v -> {
+      complete();
+    });
+
+    stream.write("ping").await();
+    stream.reset(10);
+
+    await();
+  }
+
+  @Test
+  public void testClientResetHandler() {
+
+    waitFor(2);
+    server = QuicServer.create(vertx, serverOptions());
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        AtomicBoolean isReset = new AtomicBoolean();
+        Buffer buffer = Buffer.buffer();
+        stream.handler(buff -> {
+          if (isReset.compareAndSet(false, true)) {
+            stream.reset(0).onComplete(onSuccess2(v -> complete()));
+          } else {
+            buffer.appendBuffer(buff);
+          }
+        });
+        stream.endHandler(v -> {
+          complete();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicStream stream = connection.createStream().await();
+
+    stream.exceptionHandler(t -> fail());
+    stream.resetHandler(code -> {
+      vertx.setTimer(20, id -> {
+        stream.end(Buffer.buffer("done"));
+      });
+    });
+
+    stream.write("ping");
+
+    await();
   }
 }

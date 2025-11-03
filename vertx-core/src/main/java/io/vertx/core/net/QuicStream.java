@@ -42,7 +42,13 @@ public interface QuicStream extends Socket {
   QuicConnection connection();
 
   /**
-   * Set a handler called upon stream reset.
+   * <p>Set a handler called upon stream reset: when a stream receives a reset frame from its peer,
+   * this handler is called.</p>
+   *
+   * <p>When no such handler is set, the stream exception handler is called and then the stream is automatically
+   * closed. Setting this handler changes this behavior: the handler processes the reset event and the handler
+   * has the full responsibility of managing the stream. That means the sending part of this stream is left
+   * untouched and the application can continue sending data.</p>
    *
    * @param handler the handler
    * @return this instance of a stream
