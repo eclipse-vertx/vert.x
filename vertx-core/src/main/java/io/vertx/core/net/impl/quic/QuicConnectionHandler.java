@@ -104,8 +104,9 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
 
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) {
-    connection.handleException(t);
-    chctx.close();
+    if (connection.handleException(t)) {
+      chctx.close();
+    }
   }
 
   @Override

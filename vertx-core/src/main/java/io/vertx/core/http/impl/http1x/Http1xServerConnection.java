@@ -472,8 +472,8 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   @Override
-  public void handleException(Throwable t) {
-    super.handleException(t);
+  public boolean handleException(Throwable t) {
+    boolean ret = super.handleException(t);
     Http1xServerRequest responseInProgress = this.responseInProgress;
     Http1xServerRequest requestInProgress = this.requestInProgress;
     if (requestInProgress != null) {
@@ -484,6 +484,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       responseInProgress.reportMetricsFailed = true;
       responseInProgress.handleException(t);
     }
+    return ret;
   }
 
   @Override

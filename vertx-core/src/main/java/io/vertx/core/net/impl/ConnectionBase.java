@@ -160,7 +160,7 @@ public abstract class ConnectionBase {
     return null;
   }
 
-  protected void handleException(Throwable t) {
+  protected boolean handleException(Throwable t) {
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
@@ -180,6 +180,7 @@ public abstract class ConnectionBase {
         }
       }
     });
+    return true;
   }
 
   protected void handleClosed() {

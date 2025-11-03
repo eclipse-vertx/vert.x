@@ -115,18 +115,18 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   }
 
   @Override
-  protected void handleException(Throwable t) {
+  protected boolean handleException(Throwable t) {
     if (t instanceof QuicException) {
       QuicException quicException = (QuicException) t;
       if (quicException.error() == null && "STREAM_RESET".equals(quicException.getMessage())) {
         Handler<Integer> handler = resetHandler;
         if (handler != null) {
           context.emit(0, handler);
+          return false;
         }
-        return;
       }
     }
-    super.handleException(t);
+    return super.handleException(t);
   }
 
   @Override

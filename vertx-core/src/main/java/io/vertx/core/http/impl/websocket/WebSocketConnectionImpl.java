@@ -136,11 +136,12 @@ public final class WebSocketConnectionImpl extends VertxConnection {
   }
 
   @Override
-  public void handleException(Throwable t) {
+  public boolean handleException(Throwable t) {
     WebSocketImplBase<?> ws = webSocket;
     if (ws != null) {
       ws.context().execute(t, ws::handleException);
     }
+    return true;
   }
 
   @Override

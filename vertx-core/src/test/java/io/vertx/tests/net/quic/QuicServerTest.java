@@ -363,6 +363,41 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   @Test
+  public void testClientReset() throws Exception {
+    waitFor(3);
+    disableThreadChecks();
+    QuicServer server = QuicServer.create(vertx, serverOptions());
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.exceptionHandler(reset -> {
+          complete();
+        });
+        stream.closeHandler(v -> {
+          complete();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream();
+      stream.create();
+      stream.write("ping");
+      Thread.sleep(100);
+      stream.closeHandler(() -> {
+        complete();
+      });
+      stream.reset(4);
+      await();
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
+  @Test
   public void testServerReset() throws Exception {
     disableThreadChecks();
     waitFor(2);
@@ -391,13 +426,19 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   @Test
-  public void testClientReset() throws Exception {
+  public void testServerResetHandler() throws Exception {
+    disableThreadChecks();
     QuicServer server = QuicServer.create(vertx, serverOptions());
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
+          stream.exceptionHandler(err -> {
+            fail();
+          });
           stream.resetHandler(reset -> {
-            testComplete();
+            vertx.setTimer(20, id -> {
+              stream.end(Buffer.buffer("done"));
+            });
           });
         });
       });
@@ -409,7 +450,14 @@ public class QuicServerTest extends VertxTestBase {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.create();
+      Buffer out = Buffer.buffer();
+      stream.handler(out::appendBytes);
+      stream.closeHandler(() -> {
+        assertEquals("done", out.toString());
+        testComplete();
+      });
       stream.write("ping");
+      Thread.sleep(100);
       stream.reset(4);
       await();
     } finally {
