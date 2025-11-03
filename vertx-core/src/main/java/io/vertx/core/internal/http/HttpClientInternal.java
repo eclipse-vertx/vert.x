@@ -14,6 +14,7 @@ package io.vertx.core.internal.http;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.http.impl.HttpChannelConnector;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
@@ -34,6 +35,18 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
   Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
   HttpChannelConnector channelConnector();
+
+  // Should not be here but currently necessary for WebClient
+  @Deprecated(forRemoval = true)
+  default HttpClientOptions options() {
+    HttpChannelConnector connector = channelConnector();
+    if (connector instanceof Http1xOrH2ChannelConnector) {
+      Http1xOrH2ChannelConnector http1xOrH2ChannelConnector = (Http1xOrH2ChannelConnector)connector;
+      return http1xOrH2ChannelConnector.options();
+    } else {
+      return null;
+    }
+  }
 
   Future<Void> closeFuture();
 

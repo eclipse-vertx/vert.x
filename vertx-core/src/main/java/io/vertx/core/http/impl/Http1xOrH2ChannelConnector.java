@@ -83,6 +83,10 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     return netClient;
   }
 
+  public HttpClientOptions options() {
+    return options;
+  }
+
   private Http2ClientChannelInitializer http2Initializer() {
     if (options.getHttp2MultiplexImplementation()) {
       return new Http2MultiplexClientChannelInitializer(
