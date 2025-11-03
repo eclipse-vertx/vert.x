@@ -11,16 +11,12 @@
 package io.vertx.tests.http.fileupload;
 
 import io.netty.handler.codec.DecoderException;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.*;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Rule;
@@ -114,6 +110,51 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
   }
 
   @Test
+  public void testFormUploadVeryLargeFileStreamToDisk() {
+    long one_kb = 1024L;
+    long one_mb = one_kb * 1024L;
+    long one_gb = one_mb * 1024L;
+//    long length = one_gb * 10L;
+    long length = one_mb + 128; // 128MB
+    Content content = new Content() {
+      @Override
+      public long length() {
+        return length;
+      }
+      Buffer chunk_1k = TestUtils.randomBuffer(1024);
+      long chunkLength = chunk_1k.length();
+      private void pump(long remaining, WriteStream<Buffer> out, Promise<Void> done) {
+        while (!out.writeQueueFull()) {
+          if (remaining > chunkLength) {
+            out.write(chunk_1k);
+            remaining -= chunkLength;
+          } else {
+            Buffer last = chunk_1k.slice(0, (int)remaining);
+            out.write(last).onComplete(done);
+            return;
+          }
+        }
+        long propagated = remaining;
+        // System.out.println("Full - remaining is " + propagated + "M");
+        out.drainHandler(v -> {
+          pump(propagated, out, done);
+        });
+      }
+      @Override
+      public Future<Void> write(WriteStream<Buffer> out) {
+        Promise<Void> done = ((ContextInternal)vertx.getOrCreateContext()).promise();
+        pump(length, out, done);
+        return done.future();
+      }
+      @Override
+      public boolean verify(Buffer expected) {
+        return true;
+      }
+    };
+    testFormUploadFile("tmp-0.txt", "tmp-0.txt", content, false, true, false, false);
+  }
+
+  @Test
   public void testFormUploadWithExtFilename() {
     testFormUploadFile(null, "%c2%a3%20and%20%e2%82%ac%20rates", "the-content", false, true, false, false);
   }
@@ -182,9 +223,54 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
     testFormUploadFile("tmp-0.txt", "tmp-0.txt", contentStr, includeLength, streamToDisk, abortClient, cancelStream);
   }
 
+  interface Content {
+
+    long length();
+
+    Future<Void> write(WriteStream<Buffer> out);
+
+    boolean verify(Buffer expected);
+  }
+
   private void testFormUploadFile(String filename,
                                   String extFilename,
                                   String contentStr,
+                                  boolean includeLength,
+                                  boolean streamToDisk,
+                                  boolean abortClient,
+                                  boolean cancelStream) {
+    testFormUploadFile(filename, extFilename, Buffer.buffer(contentStr, "UTF-8"), includeLength,
+      streamToDisk, abortClient, cancelStream);
+  }
+
+  private void testFormUploadFile(String filename,
+                                  String extFilename,
+                                  Buffer contentBytes,
+                                  boolean includeLength,
+                                  boolean streamToDisk,
+                                  boolean abortClient,
+                                  boolean cancelStream) {
+    Content content = new Content() {
+      @Override
+      public long length() {
+        return contentBytes.length();
+      }
+      @Override
+      public Future<Void> write(WriteStream<Buffer> out) {
+        return out.write(contentBytes);
+      }
+      @Override
+      public boolean verify(Buffer expected) {
+        return contentBytes.equals(expected);
+      }
+    };
+    testFormUploadFile(filename, extFilename, content, includeLength, streamToDisk, abortClient, cancelStream);
+
+  }
+
+  private void testFormUploadFile(String filename,
+                                  String extFilename,
+                                  Content content,
                                   boolean includeLength,
                                   boolean streamToDisk,
                                   boolean abortClient,
@@ -203,8 +289,6 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
 
     waitFor(2);
 
-    Buffer content = Buffer.buffer(contentStr);
-
     AtomicInteger attributeCount = new AtomicInteger();
 
     AtomicReference<HttpConnection> clientConn = new AtomicReference<>();
@@ -216,6 +300,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
     };
 
     server.requestHandler(req -> {
+
       Context requestContext = vertx.getOrCreateContext();
       if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
@@ -249,7 +334,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             });
             upload.endHandler(v -> {
               assertFalse(abortClient);
-              assertEquals(content, tot);
+              assertTrue(content.verify(tot));
               assertTrue(upload.isSizeAvailable());
               assertEquals(content.length(), upload.size());
               assertNull(upload.file());
@@ -259,9 +344,15 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
             upload.streamToFileSystem(uploadedFileName).onComplete(ar -> {
               if (ar.succeeded()) {
-                Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
-                assertEquals(content.length(), uploaded.length());
-                assertEquals(content, uploaded);
+                File f = new File(uploadedFileName);
+                if (f.length() < 10 * 1024 * 1024) {
+                  Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
+                  assertEquals(content.length(), uploaded.length());
+                  assertTrue(content.verify(uploaded));
+                } else {
+                  // We check the size only
+                  assertEquals(f.length(), content.length());
+                }
                 AsyncFile file = upload.file();
                 assertNotNull(file);
                 try {
@@ -278,7 +369,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             if (cancelStream) {
               BooleanSupplier test = () -> {
                 File f = new File(uploadedFileName);
-                if (f.length() == contentStr.length() / 2) {
+                if (f.length() == content.length() / 2) {
                   assertTrue(upload.cancelStreamToFileSystem());
                   long now = System.currentTimeMillis();
                   vertx.setPeriodic(10, id -> {
@@ -314,42 +405,47 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       }
     });
 
-    server.listen(testAddress).onComplete(onSuccess(s -> {
-      client.request(new RequestOptions(requestOptions)
-        .setMethod(HttpMethod.POST)
-        .setURI("/form"))
-        .onComplete(onSuccess(req -> {
-          String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
-          String epi = "\r\n" +
-            "--" + boundary + "--\r\n";
-          String pro = "--" + boundary + "\r\n" +
-            "Content-Disposition: form-data; name=\"file\"" + (filename == null ? "" : "; filename=\"" + filename + "\"" ) + (extFilename == null ? "" : "; filename*=\"UTF-8''" + extFilename) + "\"\r\n" +
-            "Content-Type: image/gif\r\n" +
-            (includeLength ? "Content-Length: " + contentStr.length() + "\r\n" : "") +
-            "\r\n";
-          req.headers().set("content-length", "" + (pro + contentStr + epi).length());
-          req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-          Future<Void> fut = req.end(pro + contentStr + epi);
-          if (abortClient) {
-            fut.onComplete(onSuccess(v -> {
-              clientConn.set(req.connection());
-              checkClose.run();
-            }));
-          }
-          if (abortClient) {
-            req.response().onComplete(ar -> complete());
-          } else {
-            req.response().onComplete(onSuccess(resp -> {
-              assertEquals(200, resp.statusCode());
-              resp.bodyHandler(body -> {
-                assertEquals(0, body.length());
-              });
-              assertEquals(0, attributeCount.get());
-              complete();
-            }));
-          }
+    server.listen(testAddress).await();
+
+    HttpClientRequest request = client.request(new RequestOptions(requestOptions)
+      .setMethod(HttpMethod.POST)
+      .setURI("/form")).await();
+    String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
+    String epi = "\r\n" +
+      "--" + boundary + "--\r\n";
+    String pro = "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"file\"" + (filename == null ? "" : "; filename=\"" + filename + "\"" ) + (extFilename == null ? "" : "; filename*=\"UTF-8''" + extFilename) + "\"\r\n" +
+      "Content-Type: image/gif\r\n" +
+      (includeLength ? "Content-Length: " + Long.toUnsignedString(content.length()) + "\r\n" : "") +
+      "\r\n";
+
+    request.headers().set(HttpHeaders.CONTENT_LENGTH, Long.toUnsignedString((((long) pro.length() + content.length() + (long) epi.length()))));
+//    request.setChunked(true);
+    request.headers().set(HttpHeaders.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary);
+
+    vertx.runOnContext(v1 -> {
+      request.write(pro);
+      Future<Void> fut = content.write(request).compose(v -> request.end(epi));
+      if (abortClient) {
+        fut.onComplete(onSuccess(v -> {
+          clientConn.set(request.connection());
+          checkClose.run();
         }));
-    }));
+      }
+      if (abortClient) {
+        request.response().onComplete(ar -> complete());
+      } else {
+        request.response().onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          resp.bodyHandler(body -> {
+            assertEquals(0, body.length());
+          });
+          assertEquals(0, attributeCount.get());
+          complete();
+        }));
+      }
+    });
+
     await();
   }
 
