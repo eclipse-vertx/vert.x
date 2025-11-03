@@ -19,6 +19,7 @@ import io.vertx.core.http.impl.websocket.ClientWebSocketImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;

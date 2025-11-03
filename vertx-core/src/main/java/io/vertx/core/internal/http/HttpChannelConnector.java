@@ -9,9 +9,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl;
+package io.vertx.core.internal.http;
 
 import io.vertx.core.Future;
+import io.vertx.core.http.impl.HttpClientConnection;
+import io.vertx.core.http.impl.HttpConnectParams;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;

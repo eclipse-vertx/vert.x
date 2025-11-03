@@ -16,6 +16,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.internal.pool.ConnectionPool;

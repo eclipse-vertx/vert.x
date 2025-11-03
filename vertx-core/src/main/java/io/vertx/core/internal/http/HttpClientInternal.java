@@ -15,9 +15,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
-import io.vertx.core.http.impl.HttpChannelConnector;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.util.function.Function;

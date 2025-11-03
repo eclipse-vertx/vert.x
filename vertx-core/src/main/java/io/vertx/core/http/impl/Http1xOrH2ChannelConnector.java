@@ -31,6 +31,7 @@ import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;

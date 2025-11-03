@@ -14,15 +14,14 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientConnection;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnectOptions;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;

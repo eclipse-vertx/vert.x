@@ -8,6 +8,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.NetClientOptions;
