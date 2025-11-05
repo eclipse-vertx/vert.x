@@ -21,29 +21,25 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import java.security.cert.Certificate;
-import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class HttpNetSocket implements NetSocket {
 
-  public static HttpNetSocket netSocket(ConnectionBase conn, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
-    HttpNetSocket sock = new HttpNetSocket(conn, context, readStream, writeStream);
+  public static HttpNetSocket netSocket(HttpStream stream, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
+    HttpNetSocket sock = new HttpNetSocket(stream, context, readStream, writeStream);
     readStream.handler(sock::handleData);
     readStream.endHandler(sock::handleEnd);
     readStream.exceptionHandler(sock::handleException);
     return sock;
   }
 
-  private final ConnectionBase conn;
+  private final HttpStream stream;
   private final ContextInternal context;
   private final ReadStream<Buffer> readStream;
   private final WriteStream<Buffer> writeStream;
@@ -52,8 +48,8 @@ public class HttpNetSocket implements NetSocket {
   private Handler<Void> endHandler;
   private Handler<Buffer> dataHandler;
 
-  private HttpNetSocket(ConnectionBase conn, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
-    this.conn = conn;
+  private HttpNetSocket(HttpStream stream, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
+    this.stream = stream;
     this.context = context;
     this.readStream = readStream;
     this.writeStream = writeStream;
@@ -194,7 +190,7 @@ public class HttpNetSocket implements NetSocket {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
-    return HttpUtils.resolveFile(conn.context(), filename, offset, length)
+    return HttpUtils.resolveFile(stream.context(), filename, offset, length)
       .compose(file -> file
         .pipe()
         .endOnComplete(false)
@@ -205,22 +201,22 @@ public class HttpNetSocket implements NetSocket {
 
   @Override
   public SocketAddress remoteAddress() {
-    return conn.remoteAddress();
+    return stream.connection().remoteAddress();
   }
 
   @Override
   public SocketAddress remoteAddress(boolean real) {
-    return conn.remoteAddress(real);
+    return stream.connection().remoteAddress(real);
   }
 
   @Override
   public SocketAddress localAddress() {
-    return conn.localAddress();
+    return stream.connection().localAddress();
   }
 
   @Override
   public SocketAddress localAddress(boolean real) {
-    return conn.localAddress(real);
+    return stream.connection().localAddress(real);
   }
 
   @Override
@@ -230,7 +226,7 @@ public class HttpNetSocket implements NetSocket {
 
   @Override
   public NetSocket closeHandler(@Nullable Handler<Void> handler) {
-    synchronized (conn) {
+    synchronized (stream) {
       closeHandler = handler;
     }
     return this;
@@ -243,7 +239,7 @@ public class HttpNetSocket implements NetSocket {
   }
 
   Handler<Void> closeHandler() {
-    synchronized (conn) {
+    synchronized (stream) {
       return closeHandler;
     }
   }
@@ -255,17 +251,17 @@ public class HttpNetSocket implements NetSocket {
 
   @Override
   public boolean isSsl() {
-    return conn.isSsl();
+    return stream.connection().isSsl();
   }
 
   @Override
   public SSLSession sslSession() {
-    return conn.sslSession();
+    return stream.connection().sslSession();
   }
 
   @Override
   public String indicatedServerName() {
-    return conn.indicatedServerName();
+    return stream.connection().indicatedServerName();
   }
 
   @Override

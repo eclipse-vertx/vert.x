@@ -79,7 +79,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public NetSocket netSocket() {
     if (netSocket == null) {
-      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, new WriteStream<>() {
+      netSocket = HttpNetSocket.netSocket(stream, request.context, this, new WriteStream<>() {
         @Override
         public WriteStream<Buffer> exceptionHandler(@Nullable Handler<Throwable> handler) {
           stream.exceptionHandler(handler);
