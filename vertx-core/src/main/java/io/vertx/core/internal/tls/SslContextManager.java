@@ -113,6 +113,14 @@ public class SslContextManager {
     this(sslEngineOptions, 256);
   }
 
+  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, ContextInternal ctx) {
+    if (options instanceof ClientSSLOptions) {
+      return resolveSslContextProvider((ClientSSLOptions) options, ctx);
+    } else {
+      return resolveSslContextProvider((ServerSSLOptions) options, ctx);
+    }
+  }
+
   public Future<SslContextProvider> resolveSslContextProvider(ServerSSLOptions options, ContextInternal ctx) {
     ClientAuth clientAuth = options.getClientAuth();
     if (clientAuth == null) {
