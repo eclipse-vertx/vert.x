@@ -12,7 +12,6 @@ package io.vertx.core.net.impl.quic;
 
 import io.netty.channel.*;
 import io.netty.channel.nio.AbstractNioChannel;
-import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.unix.UnixChannelOption;
 import io.netty.handler.codec.quic.InsecureQuicTokenHandler;
@@ -28,12 +27,12 @@ import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.codec.quic.QuicTokenHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Mapping;
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicServerInternal;
-import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.SocketAddress;
@@ -86,32 +85,47 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  protected ChannelHandler channelHandler(ContextInternal context, SocketAddress bindAddr, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, QuicEndpointMetrics<?, ?> metrics) throws Exception {
     if (options.isLoadBalanced()) {
       ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
-      QuicDispatcher dispatcher;
-      synchronized (map) {
-        QuicDispatcher attempt = map.get(serverID.toString());
-        if (attempt == null) {
-          attempt = new QuicDispatcher(serverID, sslContextProvider);
-          map.put(serverID.toString(), attempt);
+      Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
+      return f.map(sslContextProvider -> {
+        QuicDispatcher dispatcher;
+        synchronized (map) {
+          QuicDispatcher attempt = map.get(serverID.toString());
+          if (attempt == null) {
+            attempt = new QuicDispatcher(serverID, sslContextProvider);
+            map.put(serverID.toString(), attempt);
+          }
+          dispatcher = attempt;
         }
-        dispatcher = attempt;
-      }
-      return new ChannelInitializer<>() {
-        @Override
-        protected void initChannel(Channel ch) {
-          dispatcher.register(ch, context, QuicServerImpl.this, metrics);
-          ch.pipeline().addLast(dispatcher);
-        }
-      };
+        return new ChannelInitializer<>() {
+          @Override
+          protected void initChannel(Channel ch) {
+            dispatcher.register(ch, context, QuicServerImpl.this, metrics);
+            ch.pipeline().addLast(dispatcher);
+          }
+        };
+      });
     } else {
-      return super.channelHandler(context, bindAddr, sslContextProvider, metrics);
+      return super.channelHandler(context, bindAddr, metrics);
     }
   }
 
   @Override
+  protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+    Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
+    return f.map(sslContextProvider -> {
+      try {
+        return codecBuilder(context, sslContextProvider, metrics);
+      } catch (Exception e) {
+        PlatformDependent.throwException(e);
+        throw new AssertionError();
+      }
+    });
+  }
+
   protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) throws Exception {
     Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(true);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
@@ -180,11 +194,6 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     return builder;
   }
 
-  @Override
-  protected Future<SslContextProvider> createSslContextProvider(SslContextManager manager, ContextInternal context) {
-    return manager.resolveSslContextProvider(options.getSslOptions(), context);
-  }
-
   private class QuicDispatcher extends QuicCodecDispatcher implements Shareable {
 
     private final ServerID serverID;
@@ -243,8 +252,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       for (Map.Entry<Channel, ServerRegistration> entry : registrations.entrySet()) {
         if (entry.getKey() == channel) {
           ServerRegistration registration = entry.getValue();
-          QuicCodecBuilder<?> builder = registration.server.initQuicCodecBuilder(registration.context, sslContextProvider, registration.metrics);
-          channel.pipeline().addLast(builder.build());
+          QuicCodecBuilder<?> codecBuilder = registration.server.codecBuilder(registration.context, sslContextProvider, registration.metrics);
+          registration.server.initQuicCodecBuilder(codecBuilder, registration.metrics);
+          channel.pipeline().addLast(codecBuilder.build());
           return;
         }
       }
