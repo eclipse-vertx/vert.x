@@ -381,7 +381,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
         if (checkSendHeaders() == null) {
           netSocket = context.failedFuture("Response for CONNECT already sent");
         } else {
-          HttpNetSocket ns = HttpNetSocket.netSocket((ConnectionBase) conn, context, inbound, this);
+          HttpNetSocket ns = HttpNetSocket.netSocket(stream, context, inbound, this);
           netSocket = Future.succeededFuture(ns);
         }
       }
