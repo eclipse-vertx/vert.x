@@ -11,18 +11,15 @@
 package io.vertx.tests.net.quic;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicClientOptions;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicStream;
+import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -73,6 +70,35 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    assertWaitUntil(() -> inflight.get() == 1);
+    connection.close().await();
+    assertWaitUntil(() -> inflight.get() == 0);
+  }
+
+  @Test
+  public void testClientSSLOverride() {
+    QuicServerOptions serverOptions = serverOptions();
+    serverOptions.getSslOptions().setKeyCertOptions(Cert.CLIENT_JKS.get());
+    // server.close();
+    server = QuicServer.create(vertx, serverOptions);
+    AtomicInteger inflight = new AtomicInteger();
+    server.handler(conn -> {
+      inflight.getAndIncrement();
+      conn.closeHandler(v -> {
+        inflight.getAndDecrement();
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    try {
+      client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+      fail();
+    } catch (Exception e) {
+      assertSame(SSLHandshakeException.class, e.getClass());
+    }
+    QuicClientOptions clientOptions = clientOptions();
+    clientOptions.getSslOptions().setTrustOptions(Trust.CLIENT_JKS.get());
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), clientOptions.getSslOptions()).await();
     assertWaitUntil(() -> inflight.get() == 1);
     connection.close().await();
     assertWaitUntil(() -> inflight.get() == 0);

@@ -19,17 +19,14 @@ import io.netty.handler.codec.quic.QuicChannelOption;
 import io.netty.handler.codec.quic.QuicClientCodecBuilder;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QLogConfig;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicClientOptions;
-import io.vertx.core.net.QuicConnection;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.QuicEndpointMetrics;
 
@@ -40,6 +37,8 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
+
+  private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
 
   public static QuicClientImpl create(VertxInternal vertx, QuicClientOptions options) {
     return new QuicClientImpl(vertx, new QuicClientOptions(options));
@@ -62,16 +61,15 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   }
 
   @Override
-  protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) {
-    QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, true);
-    return new QuicClientCodecBuilder()
-      .sslContext(sslContext)
-      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS);
-  }
-
-  @Override
-  protected Future<SslContextProvider> createSslContextProvider(SslContextManager manager, ContextInternal context) {
-    return manager.resolveSslContextProvider(options.getSslOptions(), context);
+  protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+    return context.succeededFuture(new QuicClientCodecBuilder()
+      .sslEngineProvider(q -> {
+        Attribute<SslContextProvider> attr = q.attr(SSL_CONTEXT_PROVIDER_KEY);
+        SslContextProvider sslContextProvider = attr.get();
+        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, true);
+        return sslContext.newEngine(q.alloc());
+      })
+      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS));
   }
 
   @Override
@@ -80,8 +78,23 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   }
 
   @Override
+  public Future<QuicConnection> connect(SocketAddress address, ClientSSLOptions sslOptions) {
+    return connect(address, options.getQLogConfig(), sslOptions);
+  }
+
+  @Override
   public Future<QuicConnection> connect(SocketAddress address, QLogConfig qLogConfig) {
+    return connect(address, qLogConfig, options.getSslOptions());
+  }
+
+  @Override
+  public Future<QuicConnection> connect(SocketAddress address, QLogConfig qLogConfig, ClientSSLOptions sslOptions) {
     ContextInternal context = vertx.getOrCreateContext();
+    Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
+    return fut.compose(sslContextProvider -> connect(address, qLogConfig, context, sslContextProvider));
+  }
+
+  private Future<QuicConnection> connect(SocketAddress address, QLogConfig qLogConfig, ContextInternal context,  SslContextProvider sslContextProvider) {
     Channel ch = channel;
     if (ch == null) {
       return context.failedFuture("Client must be bound");
@@ -89,6 +102,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     QuicEndpointMetrics<?, ?> metrics = this.metrics;
     PromiseInternal<QuicConnection> promise = context.promise();
     QuicChannelBootstrap bootstrap = QuicChannel.newBootstrap(ch)
+      .attr(SSL_CONTEXT_PROVIDER_KEY, sslContextProvider)
       .handler(new ChannelInitializer<>() {
         @Override
         protected void initChannel(Channel ch) {

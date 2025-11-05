@@ -17,6 +17,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.FlushStrategy;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
@@ -25,12 +26,8 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicEndpointInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;
-import io.vertx.core.net.QuicCongestionControlAlgorithm;
-import io.vertx.core.net.QuicEndpointOptions;
-import io.vertx.core.net.QuicOptions;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.QuicEndpointMetrics;
@@ -39,13 +36,9 @@ import io.vertx.core.spi.tls.QuicSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +56,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   private final QuicEndpointOptions options;
-  private final SslContextManager manager;
+  protected final SslContextManager manager;
   protected final VertxInternal vertx;
   private QuicEndpointMetrics<?, ?> metrics;
   private Channel channel;
@@ -115,16 +108,22 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     });
   }
 
-  protected abstract QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) throws Exception;
+  protected abstract Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, QuicEndpointMetrics<?, ?> metrics) throws Exception;
 
-  protected abstract Future<SslContextProvider> createSslContextProvider(SslContextManager manager, ContextInternal context);
-
-  protected ChannelHandler channelHandler(ContextInternal context, SocketAddress bindAddr, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) throws Exception {
-    QuicCodecBuilder<?> codecBuilder = initQuicCodecBuilder(context, sslContextProvider, metrics);
-    return codecBuilder.build();
+  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+    return codecBuilder(context, metrics).map(codecBuilder -> {
+      try {
+        initQuicCodecBuilder(codecBuilder, metrics);
+        return codecBuilder.build();
+      } catch (Exception e) {
+        // Improve this
+        PlatformDependent.throwException(e);
+        throw new AssertionError();
+      }
+    });
   }
 
-  private Future<Channel> bind(ContextInternal context, SocketAddress bindAddr, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) {
+  private Future<Channel> bind(ContextInternal context, SocketAddress bindAddr, QuicEndpointMetrics<?, ?> metrics) {
    Bootstrap bootstrap = new Bootstrap()
       .group(context.nettyEventLoop())
       .channelFactory(vertx.transport().datagramChannelFactory());
@@ -134,21 +133,22 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
    } else {
      addr = new InetSocketAddress(bindAddr.hostName(), bindAddr.port());
    }
-    ChannelHandler handler;
+    Future<ChannelHandler> f;
     try {
-      handler = channelHandler(context, bindAddr, sslContextProvider, metrics);
+      f = channelHandler(context, bindAddr, metrics);
     } catch (Exception e) {
       return context.failedFuture(e);
     }
-    bootstrap.handler(handler);
-    ChannelFuture channelFuture = bootstrap.bind(addr);
-    PromiseInternal<Void> p = context.promise();
-    channelFuture.addListener(p);
-    return p.future().map(v -> channelFuture.channel());
+    return f.compose(handler -> {
+      bootstrap.handler(handler);
+      ChannelFuture channelFuture = bootstrap.bind(addr);
+      PromiseInternal<Void> p = context.promise();
+      channelFuture.addListener(p);
+      return p.future().map(v -> channelFuture.channel());
+    });
   }
 
-  protected QuicCodecBuilder<?> initQuicCodecBuilder(ContextInternal context, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) throws Exception {
-    QuicCodecBuilder<?> codecBuilder = codecBuilder(context, sslContextProvider, metrics);
+  void initQuicCodecBuilder(QuicCodecBuilder<?> codecBuilder, QuicEndpointMetrics<?, ?> metrics) throws Exception {
     QuicOptions transportOptions = options.getTransportOptions();
     codecBuilder.initialMaxData(transportOptions.getInitialMaxData());
     codecBuilder.initialMaxStreamDataBidirectionalLocal(transportOptions.getInitialMaxStreamDataBidirectionalLocal());
@@ -173,7 +173,6 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     codecBuilder.grease(transportOptions.getGrease());
     codecBuilder.hystart(transportOptions.getHystart());
     codecBuilder.initialCongestionWindowPackets(transportOptions.getInitialCongestionWindowPackets());
-    return codecBuilder;
   }
 
   protected void handleBind(Channel channel, QuicEndpointMetrics<?, ?> metrics) {
@@ -192,7 +191,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   @Override
   public Future<Void> bind(SocketAddress address) {
     ContextInternal context = vertx.getOrCreateContext();
-    Future<SslContextProvider> f1 = createSslContextProvider(manager, context);
+    Future<SslContextProvider> f1 = manager.resolveSslContextProvider(options.getSslOptions(), context);
     return f1.compose(sslContextProvider -> {
       VertxMetrics metricsFactory = vertx.metrics();
       QuicEndpointMetrics<?, ?> metrics;
@@ -201,7 +200,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       } else {
         metrics = null;
       }
-      return bind(context, address, sslContextProvider, metrics)
+      return bind(context, address, metrics)
         .map(ch -> {
           handleBind(ch, metrics);
           return null;
