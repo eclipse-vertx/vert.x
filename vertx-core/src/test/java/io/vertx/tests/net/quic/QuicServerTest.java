@@ -23,7 +23,6 @@ import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -36,7 +35,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
@@ -164,9 +162,11 @@ public class QuicServerTest extends VertxTestBase {
     server.handler(conn -> {
       Context ctx = vertx.getOrCreateContext();
       ctx.exceptionHandler(caught::add);
-      ((QuicConnectionInternal)conn).beforeCloseHandler(details -> {
+      AtomicInteger streamClosed = new AtomicInteger();
+      ((QuicConnectionInternal)conn).graceHandler(v -> {
         assertSame(ctx, Vertx.currentContext());
         beforeClose.incrementAndGet();
+        assertEquals(0, streamClosed.get());
         throw thrown;
       });
       conn.streamHandler(stream -> {
@@ -175,6 +175,7 @@ public class QuicServerTest extends VertxTestBase {
             conn.close(new QuicConnectionClose().setError(3).setReason(Buffer.buffer("done")));
           });
         });
+        stream.closeHandler(v -> streamClosed.incrementAndGet());
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();

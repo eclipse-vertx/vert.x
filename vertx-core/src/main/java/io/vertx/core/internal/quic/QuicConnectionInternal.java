@@ -33,12 +33,13 @@ public interface QuicConnectionInternal extends QuicConnection {
   QuicConnectionInternal streamContextProvider(Function<ContextInternal, ContextInternal> provider);
 
   /**
-   * Set a handler called before closing the underlying channel, this can be used to operate on connection streamd individually.
+   * Set a handler called when the connection grace period ends, this can be used to operate on connection stream individually before they
+   * are closed.
    *
-   * @param handler the handler invoked with the {@link QuicConnectionClose} details
+   * @param handler the handler invoked
    * @return literally this
    */
-  QuicConnectionInternal beforeCloseHandler(Handler<QuicConnectionClose> handler);
+  QuicConnectionInternal graceHandler(Handler<Void> handler);
 
   Future<QuicStream> createStream(ContextInternal context);
 
