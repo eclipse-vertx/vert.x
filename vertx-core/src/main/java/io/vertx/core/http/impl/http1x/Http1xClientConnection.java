@@ -60,6 +60,7 @@ import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -716,13 +717,13 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   }
 
   @Override
-  protected void handleShutdown(ChannelPromise promise) {
-    super.handleShutdown(promise);
+  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
+    super.handleShutdown(timeout, promise);
     checkLifecycle();
   }
 
   private boolean checkLifecycle() {
-    if (wantClose || (shutdownInitiated && requests.isEmpty() && responses.isEmpty())) {
+    if (wantClose || (shutdownInitiated != null && requests.isEmpty() && responses.isEmpty())) {
       closeInternal();
       return true;
     } else if (!isConnect) {

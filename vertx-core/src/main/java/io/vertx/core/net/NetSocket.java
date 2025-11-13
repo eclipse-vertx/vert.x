@@ -26,6 +26,7 @@ import io.vertx.core.streams.WriteStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -199,7 +200,7 @@ public interface NetSocket extends Socket {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetSocket shutdownHandler(@Nullable Handler<Void> handler);
+  NetSocket shutdownHandler(@Nullable Handler<Duration> handler);
 
   /**
    * Like {@link #upgradeToSsl(SSLOptions, String, Buffer)} with the default SSL options, without indicating a server name,

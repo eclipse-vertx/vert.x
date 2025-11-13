@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
+import java.time.Duration;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -50,7 +51,7 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
   private MessageHandler messageHandler;
   private Handler<Void> readCompletionHandler;
   private Handler<Object> eventHandler;
-  private Handler<Void> shutdownHandler;
+  private Handler<Duration> shutdownHandler;
 
   public SocketBase(ContextInternal context, ChannelHandlerContext channel) {
     super(context, channel);
@@ -250,21 +251,21 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     return close();
   }
 
-  public synchronized S shutdownHandler(@Nullable Handler<Void> handler) {
+  public synchronized S shutdownHandler(@Nullable Handler<Duration> handler) {
     shutdownHandler = handler;
     return (S) this;
   }
 
   @Override
-  protected void handleShutdown(ChannelPromise promise) {
-    Handler<Void> handler;
+  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
+    Handler<Duration> handler;
     synchronized (this) {
       handler = shutdownHandler;
     }
     if (handler != null) {
-      context.emit(handler);
+      context.emit(timeout, handler);
     } else {
-      super.handleShutdown(promise);
+      super.handleShutdown(timeout, promise);
     }
   }
 

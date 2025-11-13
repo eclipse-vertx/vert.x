@@ -16,6 +16,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 
+import java.time.Duration;
+
 /**
  * A Quic stream.
  *
@@ -79,7 +81,7 @@ public interface QuicStream extends Socket {
    * @return this instance of a stream
    */
   @Override
-  QuicStream shutdownHandler(@Nullable Handler<Void> handler);
+  QuicStream shutdownHandler(@Nullable Handler<Duration> handler);
 
   /**
    * Set an exception handling, catching stream exceptions.

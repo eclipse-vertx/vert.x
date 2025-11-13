@@ -19,6 +19,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.time.Duration;
+
 /**
  * Represents a socket-like interface on either the client or the server side.
  * <p>
@@ -144,6 +146,6 @@ public interface Socket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  Socket shutdownHandler(@Nullable Handler<Void> handler);
+  Socket shutdownHandler(@Nullable Handler<Duration> handler);
 
 }

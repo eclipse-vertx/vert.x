@@ -30,13 +30,15 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
+import java.time.Duration;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 abstract class Http1xConnection extends VertxConnection implements io.vertx.core.http.HttpConnection {
 
   protected boolean closeInitiated;
-  protected boolean shutdownInitiated;
+  protected Duration shutdownInitiated;
   protected ChannelPromise closePromise;
 
   private Handler<Void> shutdownHandler;
@@ -55,8 +57,8 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   }
 
   @Override
-  protected void handleShutdown(ChannelPromise promise) {
-    shutdownInitiated = true;
+  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
+    shutdownInitiated = timeout;
     closePromise = promise;
     Handler<Void> handler;
     synchronized (this) {
@@ -76,8 +78,8 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   protected void closeInternal() {
     if (closeInitiated) {
       // Nothing to do
-    } else if (shutdownInitiated) {
-      super.handleShutdown(closePromise);
+    } else if (shutdownInitiated != null) {
+      super.handleShutdown(shutdownInitiated, closePromise);
     } else {
       chctx.channel().close();
     }
