@@ -81,7 +81,7 @@ public class ConnectionGroup extends DefaultChannelGroup {
       ScheduledFuture<?> timeout = executor.schedule(() -> handleGrace(completion), shutdown.timeout(), shutdown.timeUnit());
       graceFuture.addListener(future -> {
         if (timeout.cancel(true)) {
-          completion.succeed();
+          handleGrace(completion);
         }
       });
     } else {
