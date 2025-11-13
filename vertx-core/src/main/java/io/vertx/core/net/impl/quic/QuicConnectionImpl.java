@@ -55,6 +55,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private Function<ContextInternal, ContextInternal> streamContextProvider;
   private Handler<QuicStream> handler;
   private Handler<Buffer> datagramHandler;
+  private Handler<QuicConnectionClose> beforeCloseHandler;
   private QuicConnectionClose closePayload;
   private final NetworkMetrics<?> streamMetrics;
 
@@ -67,6 +68,10 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       @Override
       protected void handleClose(Completable<Void> completion) {
         BufferInternal reason = (BufferInternal) closePayload.getReason();
+        Handler<QuicConnectionClose> handler = beforeCloseHandler;
+        if (handler != null) {
+          context.dispatch(closePayload, handler);
+        }
         ChannelFuture future = channel.close(false, closePayload.getError(), reason != null ? reason.getByteBuf() : Unpooled.EMPTY_BUFFER);
         PromiseInternal<Void> promise = (PromiseInternal<Void>) completion;
         future.addListener(promise);
@@ -224,6 +229,12 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       }
     });
     return promise.future();
+  }
+
+  @Override
+  public QuicConnectionInternal beforeCloseHandler(Handler<QuicConnectionClose> handler) {
+    beforeCloseHandler = handler;
+    return this;
   }
 
   @Override
