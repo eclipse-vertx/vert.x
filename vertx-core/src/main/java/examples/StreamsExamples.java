@@ -29,56 +29,55 @@ import java.util.stream.Collectors;
  */
 public class StreamsExamples {
 
-  public void pipe1(Vertx vertx) {
+  public void pipe1(Vertx vertx, AsyncFile asyncFile) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
     server.connectHandler(sock -> {
       sock.handler(buffer -> {
-        // Write the data straight back
-        sock.write(buffer);
+        // Write the data straight to the AsyncFile
+        asyncFile.write(buffer);
       });
     }).listen();
   }
 
-  public void pipe2(Vertx vertx) {
+  public void pipe2(Vertx vertx, AsyncFile asyncFile) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
     server.connectHandler(sock -> {
       sock.handler(buffer -> {
-        if (!sock.writeQueueFull()) {
-          sock.write(buffer);
+        if (!asyncFile.writeQueueFull()) {
+          asyncFile.write(buffer);
         }
       });
-
     }).listen();
   }
 
-  public void pipe3(Vertx vertx) {
+  public void pipe3(Vertx vertx, AsyncFile asyncFile) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
     server.connectHandler(sock -> {
       sock.handler(buffer -> {
-        sock.write(buffer);
-        if (sock.writeQueueFull()) {
+        asyncFile.write(buffer);
+        if (asyncFile.writeQueueFull()) {
           sock.pause();
         }
       });
     }).listen();
   }
 
-  public void pipe4(Vertx vertx) {
+  public void pipe4(Vertx vertx, AsyncFile asyncFile) {
     NetServer server = vertx.createNetServer(
         new NetServerOptions().setPort(1234).setHost("localhost")
     );
     server.connectHandler(sock -> {
       sock.handler(buffer -> {
-        sock.write(buffer);
-        if (sock.writeQueueFull()) {
+        asyncFile.write(buffer);
+        if (asyncFile.writeQueueFull()) {
           sock.pause();
-          sock.drainHandler(done -> {
+          asyncFile.drainHandler(done -> {
             sock.resume();
           });
         }
@@ -86,21 +85,20 @@ public class StreamsExamples {
     }).listen();
   }
 
-  public void pipe5(Vertx vertx) {
+  public void pipe5(Vertx vertx, AsyncFile asyncFile) {
     NetServer server = vertx.createNetServer(
       new NetServerOptions().setPort(1234).setHost("localhost")
     );
     server.connectHandler(sock -> {
-      sock.pipeTo(sock);
+      sock.pipeTo(asyncFile);
     }).listen();
   }
 
-  public void pipe6(NetServer server) {
+  public void pipe6(NetServer server, AsyncFile asyncFile) {
     server.connectHandler(sock -> {
 
-      // Pipe the socket providing an handler to be notified of the result
-      sock
-        .pipeTo(sock)
+      // Pipe the socket providing a handler to be notified of the result
+      sock.pipeTo(asyncFile)
         .onComplete(ar -> {
           if (ar.succeeded()) {
             System.out.println("Pipe succeeded");
