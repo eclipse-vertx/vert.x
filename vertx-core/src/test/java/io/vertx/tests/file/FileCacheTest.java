@@ -11,7 +11,9 @@
 package io.vertx.tests.file;
 
 import io.vertx.core.VertxException;
+import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.file.impl.FileCache;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -39,5 +41,21 @@ public class FileCacheTest extends VertxTestBase {
     } catch (VertxException ignore) {
       assertEquals("protected", new String(Files.readAllBytes(other.toPath())));
     }
+  }
+
+  @Test
+  public void testGetTheExactCacheDirWithoutHacks() throws IOException {
+    String cacheBaseDir;
+    try {
+      cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getCanonicalPath();
+    } catch (IOException e) {
+      throw new IllegalStateException("Cannot resolve the canonical path to the cache dir", e);
+    }
+
+    String cacheDir = FileCache.setupCache(cacheBaseDir + "-exact", true).getCacheDir().getCanonicalPath();
+    assertTrue(cacheDir.startsWith(cacheBaseDir + "-"));
+    // strip the remaining
+    String remaining = cacheDir.substring(cacheBaseDir.length() + 1);
+    assertEquals(remaining, "exact");
   }
 }
