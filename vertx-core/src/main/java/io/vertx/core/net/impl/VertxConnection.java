@@ -109,8 +109,18 @@ public class VertxConnection extends ConnectionBase {
    */
   protected void handleEvent(Object event) {
     if (event instanceof ShutdownEvent) {
-      ShutdownEvent shutdown = (ShutdownEvent) event;
-      shutdown(shutdown.timeout(), shutdown.timeUnit());
+      ShutdownEvent shutdownEvent = (ShutdownEvent)event;
+      if (shutdown == null) {
+        ChannelPromise promise = chctx.newPromise();
+        shutdown = promise;
+        if (shutdownEvent.timeout() > 0L) {
+          handleShutdown(promise);
+        } else {
+          channel.close(promise);
+        }
+      } else {
+        throw new UnsupportedOperationException();
+      }
     } else {
       // Will release the event if needed
       ReferenceCountUtil.release(event);
@@ -145,7 +155,7 @@ public class VertxConnection extends ConnectionBase {
   protected void handleShutdown(ChannelPromise promise) {
     // Assert from event-loop
     ScheduledFuture<?> t = shutdownTimeout;
-    if (t != null && t.cancel(false)) {
+    if (t == null || t.cancel(false)) {
       channel.close(shutdown);
     }
   }

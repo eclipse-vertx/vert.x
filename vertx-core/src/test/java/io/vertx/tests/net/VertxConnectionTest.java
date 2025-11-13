@@ -621,7 +621,8 @@ public class VertxConnectionTest extends VertxTestBase {
     channel.advanceTimeBy(100, TimeUnit.MILLISECONDS);
     assertEquals(-1, channel.runScheduledPendingTasks());
     assertEquals(1L, shutdown.get());
-    assertEquals(1L, closed.get());
+    // The broadcaster of the event controls the channel close
+    assertEquals(0L, closed.get());
   }
 
   private <C extends VertxConnection> EmbeddedChannel channel(BiFunction<ContextInternal, ChannelHandlerContext, C> connectionFactory) {
