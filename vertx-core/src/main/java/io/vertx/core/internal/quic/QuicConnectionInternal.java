@@ -14,8 +14,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.QuicConnection;
+import io.vertx.core.net.QuicConnectionClose;
 import io.vertx.core.net.QuicStream;
 
 import java.util.function.Consumer;
@@ -29,6 +31,14 @@ public interface QuicConnectionInternal extends QuicConnection {
   ContextInternal context();
 
   QuicConnectionInternal streamContextProvider(Function<ContextInternal, ContextInternal> provider);
+
+  /**
+   * Set a handler called before closing the underlying channel, this can be used to operate on connection streamd individually.
+   *
+   * @param handler the handler invoked with the {@link QuicConnectionClose} details
+   * @return literally this
+   */
+  QuicConnectionInternal beforeCloseHandler(Handler<QuicConnectionClose> handler);
 
   Future<QuicStream> createStream(ContextInternal context);
 

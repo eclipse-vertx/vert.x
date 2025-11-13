@@ -14,9 +14,11 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.quic.QuicClosedChannelException;
 import io.netty.util.NetUtil;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
@@ -156,7 +158,17 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testServerConnectionClose() throws Exception {
     QuicServer server = QuicServer.create(vertx, serverOptions());
+    AtomicInteger beforeClose = new AtomicInteger();
+    RuntimeException thrown = new RuntimeException();
+    List<Throwable> caught = Collections.synchronizedList(new ArrayList<>());
     server.handler(conn -> {
+      Context ctx = vertx.getOrCreateContext();
+      ctx.exceptionHandler(caught::add);
+      ((QuicConnectionInternal)conn).beforeCloseHandler(details -> {
+        assertSame(ctx, Vertx.currentContext());
+        beforeClose.incrementAndGet();
+        throw thrown;
+      });
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
           vertx.setTimer(1, id -> {
@@ -182,6 +194,8 @@ public class QuicServerTest extends VertxTestBase {
       assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
       assertEquals(3, connection.closeError());
       assertEquals("done", new String(connection.closeReason()));
+      assertEquals(1, beforeClose.get());
+      assertEquals(List.of(thrown), caught);
     } finally {
       client.close();
       server.close().await();
