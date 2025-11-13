@@ -16,69 +16,61 @@ while any flow control object that can be _read-from_ is said to implement {@lin
 
 Let's take an example where we want to read from a `ReadStream` then write the data to a `WriteStream`.
 
-A very simple example would be reading from a {@link io.vertx.core.net.NetSocket} then writing back to the
-same `NetSocket` - since `NetSocket` implements both `ReadStream` and `WriteStream`. Note that this works
-between any `ReadStream` and `WriteStream` compliant object, including HTTP requests, HTTP responses,
-async files I/O, WebSockets, etc.
+A very simple example would be reading data from a {@link io.vertx.core.net.NetSocket} then writing it to an {@link io.vertx.core.file.AsyncFile}.
 
-A naive way to do this would be to directly take the data that has been read and immediately write it
-to the `NetSocket`:
+NOTE: This works between any `ReadStream` and `WriteStream` compliant object, including HTTP requests, HTTP responses, async files I/O, WebSockets, etc.
+
+A naive way to do this would be to directly take the data that has been read and immediately write it:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pipe1(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe1(io.vertx.core.Vertx,io.vertx.core.file.AsyncFile)}
 ----
 
-There is a problem with the example above: if data is read from the socket faster than it can be
-written back to the socket, it will build up in the write queue of the `NetSocket`, eventually
-running out of RAM. This might happen, for example if the client at the other end of the socket
-wasn't reading fast enough, effectively putting back-pressure on the connection.
+There is a problem with the example above: if data is read from the socket faster than it can be written to the file, it will build up in the write queue of the `AsyncFile`, eventually running out of RAM.
+This might happen, for example, if the actual file is stored on a slow network file system, effectively putting back-pressure on the connection.
 
-Since `NetSocket` implements `WriteStream`, we can check if the `WriteStream` is full before
-writing to it:
+Since `AsyncFile` implements `WriteStream`, we can check if the `WriteStream` is full before writing to it:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pipe2(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe2(io.vertx.core.Vertx,io.vertx.core.file.AsyncFile)}
 ----
 
-This example won't run out of RAM but we'll end up losing data if the write queue gets full. What we
-really want to do is pause the `NetSocket` when the write queue is full:
+This example won't run out of RAM, but we'll end up losing data if the write queue gets full.
+What we really want to do is pause the `NetSocket` when the write queue is full:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pipe3(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe3(io.vertx.core.Vertx,io.vertx.core.file.AsyncFile)}
 ----
 
-We're almost there, but not quite. The `NetSocket` now gets paused when the file is full, but we also need to unpause
-it when the write queue has processed its backlog:
+We're almost there, but not quite.
+The `NetSocket` now gets paused when the file is full, but we also need to unpause it when the write queue has processed its backlog:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pipe4(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe4(io.vertx.core.Vertx,io.vertx.core.file.AsyncFile)}
 ----
 
-And there we have it. The {@link io.vertx.core.streams.WriteStream#drainHandler} event handler will
-get called when the write queue is ready to accept more data, this resumes the `NetSocket` that
-allows more data to be read.
+And there we have it.
+The {@link io.vertx.core.streams.WriteStream#drainHandler} event handler will get called when the write queue is ready to accept more data, this resumes the `NetSocket` that allows more data to be read.
 
-Wanting to do this is quite common while writing Vert.x applications, so we added the
-{@link io.vertx.core.streams.ReadStream#pipeTo} method that does all of this hard work for you.
+This use case is quite common while writing Vert.x applications, so we added the {@link io.vertx.core.streams.ReadStream#pipeTo} method that does all of this hard work for you.
 You just feed it the `WriteStream` and use it:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pipe5(io.vertx.core.Vertx)}
+{@link examples.StreamsExamples#pipe5(io.vertx.core.Vertx,io.vertx.core.file.AsyncFile)}
 ----
 
-This does exactly the same thing as the more verbose example, plus it handles stream failures and termination: the
-destination `WriteStream` is ended when the pipe completes with success or a failure.
+This does exactly the same thing as the more verbose example, plus it handles stream failures and termination: the destination `WriteStream` is ended when the pipe completes with success or a failure.
 
 You can be notified when the operation completes:
 
 [source,$lang]
 ----
-{@link examples.StreamsExamples#pipe6(io.vertx.core.net.NetServer)}
+{@link examples.StreamsExamples#pipe6(io.vertx.core.net.NetServer,io.vertx.core.file.AsyncFile)}
 ----
 
 When you deal with an asynchronous destination, you can create a {@link io.vertx.core.streams.Pipe} instance that
