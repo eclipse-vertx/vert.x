@@ -36,6 +36,17 @@ public interface QuicConnection {
   QuicConnection streamHandler(Handler<QuicStream> handler);
 
   /**
+   * Set a {@code handler} notified when the connection is shutdown: the client or server will close the connection
+   * within a certain amount of time. This gives the opportunity to the {@code handler} to close the connection gracefully before
+   * the socket is closed.
+   *
+   * @param handler  the handler notified
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  QuicConnection shutdownHandler(Handler<Duration> handler);
+
+  /**
    * Set a handler called when the connection is closed.
    *
    * @param handler the handler signaled with the connection close

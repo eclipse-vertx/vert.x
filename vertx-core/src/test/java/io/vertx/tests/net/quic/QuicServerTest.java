@@ -346,13 +346,15 @@ public class QuicServerTest extends VertxTestBase {
     int numConnections = 2;
     waitFor(numConnections * numStreams);
     QuicServer server = QuicServer.create(vertx, serverOptions());
-    AtomicInteger shutdown = new AtomicInteger();
+    AtomicInteger connectionShutdown = new AtomicInteger();
+    AtomicInteger streamShutdown = new AtomicInteger();
     AtomicInteger count = new AtomicInteger();
     server.handler(conn -> {
+      conn.shutdownHandler(timeout -> connectionShutdown.incrementAndGet());
       conn.streamHandler(stream -> {
         count.incrementAndGet();
         stream.shutdownHandler(v -> {
-          shutdown.incrementAndGet();
+          streamShutdown.incrementAndGet();
           if (!grace.isZero()) {
             vertx.setTimer(100, id -> {
               stream.close();
@@ -381,7 +383,8 @@ public class QuicServerTest extends VertxTestBase {
       }
       assertWaitUntil(() -> count.get() == numConnections * numStreams);
       server.shutdown(grace).await();
-      assertEquals(numConnections * numStreams, shutdown.get());
+      assertEquals(numConnections, connectionShutdown.get());
+      assertEquals(numConnections * numStreams, streamShutdown.get());
       await();
     } finally {
       client.close();

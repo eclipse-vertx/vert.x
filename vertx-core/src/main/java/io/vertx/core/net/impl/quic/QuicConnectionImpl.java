@@ -54,6 +54,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final ConnectionGroup streamGroup;
   private Function<ContextInternal, ContextInternal> streamContextProvider;
   private Handler<QuicStream> handler;
+  private Handler<Duration> shutdownHandler;
   private Handler<Buffer> datagramHandler;
   private Handler<Void> graceHandler;
   private QuicConnectionClose closePayload;
@@ -65,6 +66,14 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.metrics = metrics;
     this.context = context;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
+      @Override
+      protected void handleShutdown(Duration timeout, Completable<Void> completion) {
+        Handler<Duration> handler = shutdownHandler;
+        if (handler != null) {
+          context.dispatch(timeout, handler);
+        }
+        super.handleShutdown(timeout, completion);
+      }
       @Override
       protected void handleClose(Completable<Void> completion) {
         BufferInternal reason = (BufferInternal) closePayload.getReason();
@@ -178,6 +187,12 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   @Override
   public QuicConnection streamHandler(Handler<QuicStream> handler) {
     this.handler = handler;
+    return this;
+  }
+
+  @Override
+  public QuicConnection shutdownHandler(Handler<Duration> handler) {
+    this.shutdownHandler = handler;
     return this;
   }
 
