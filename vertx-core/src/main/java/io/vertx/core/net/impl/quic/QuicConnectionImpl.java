@@ -202,7 +202,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
-  public Future<QuicStream> createStream(boolean bidirectional) {
+  public Future<QuicStream> openStream(boolean bidirectional) {
     return createStream(vertx.getOrCreateContext(), bidirectional);
   }
 

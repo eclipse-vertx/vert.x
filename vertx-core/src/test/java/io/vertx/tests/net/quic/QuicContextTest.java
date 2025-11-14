@@ -77,7 +77,7 @@ public class QuicContextTest extends VertxTestBase {
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStream stream = connection
-      .createStream().await();
+      .openStream().await();
     stream.end(Buffer.buffer("ping")).await();
     await();
   }
@@ -104,7 +104,7 @@ public class QuicContextTest extends VertxTestBase {
     Future.future(p -> workerContext.runOnContext(v -> server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).onComplete(p))).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStream stream = connection.createStream().await();
+    QuicStream stream = connection.openStream().await();
     stream.end(Buffer.buffer("ping")).await();
     await();
   }
@@ -145,7 +145,7 @@ public class QuicContextTest extends VertxTestBase {
 
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
-    QuicStream stream = Future.<QuicStream>future(p -> workerContext.runOnContext(v -> connection.createStream().onComplete(p))).await();
+    QuicStream stream = Future.<QuicStream>future(p -> workerContext.runOnContext(v -> connection.openStream().onComplete(p))).await();
 
     AtomicInteger cnt = new AtomicInteger();
     stream.handler(buff -> {
@@ -187,7 +187,7 @@ public class QuicContextTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStream stream = connection.createStream().await();
+    QuicStream stream = connection.openStream().await();
     stream.end(Buffer.buffer("ping")).await();
     await();
   }

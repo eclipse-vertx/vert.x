@@ -10,8 +10,6 @@
  */
 package io.vertx.tests.net.quic;
 
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
@@ -23,7 +21,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,7 +117,7 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStream stream = connection.createStream().await();
+    QuicStream stream = connection.openStream().await();
     List<Buffer> received = Collections.synchronizedList(new ArrayList<>());
     stream.handler(buff -> received.add(buff));
     CountDownLatch latch = new CountDownLatch(1);
@@ -151,7 +148,7 @@ public class QuicClientTest extends VertxTestBase {
 
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStream stream = connection.createStream().await();
+    QuicStream stream = connection.openStream().await();
 
     stream.exceptionHandler(t -> complete());
     stream.closeHandler(v -> complete());
@@ -179,7 +176,7 @@ public class QuicClientTest extends VertxTestBase {
 
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStream stream = connection.createStream().await();
+    QuicStream stream = connection.openStream().await();
 
     AtomicBoolean isReset = new AtomicBoolean();
     Buffer buffer = Buffer.buffer();
@@ -225,7 +222,7 @@ public class QuicClientTest extends VertxTestBase {
 
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStream stream = connection.createStream().await();
+    QuicStream stream = connection.openStream().await();
 
     stream.exceptionHandler(t -> fail());
     stream.resetHandler(code -> {
@@ -275,7 +272,7 @@ public class QuicClientTest extends VertxTestBase {
 
     AtomicInteger shutdownCount = new AtomicInteger();
     for (int i = 0;i < numStreams;i++) {
-      QuicStream stream = connection.createStream().await();
+      QuicStream stream = connection.openStream().await();
       stream.shutdownHandler(v -> {
         shutdownCount.incrementAndGet();
         vertx.setTimer(100, id -> {

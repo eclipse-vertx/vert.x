@@ -11,8 +11,6 @@
 package io.vertx.tests.net.quic;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http3.*;
 import io.vertx.core.Completable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -75,7 +73,7 @@ public class QuicFlowControlTest extends VertxTestBase {
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     connection
-      .createStream()
+      .openStream()
       .onComplete(onSuccess2(stream -> {
         stream.pause();
         QuicStreamInternal streamInternal = (QuicStreamInternal) stream;

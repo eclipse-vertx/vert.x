@@ -89,7 +89,7 @@ public class QuicMetricsTest extends VertxTestBase {
     FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.getMetrics(client);
     assertEquals(1, clientMetrics.connectionCount());
     SocketMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
-    QuicStream clientStream = clientConnection.createStream().await();
+    QuicStream clientStream = clientConnection.openStream().await();
     List<Buffer> received = Collections.synchronizedList(new ArrayList<>());
     clientStream.handler(buff -> received.add(buff));
     CountDownLatch latch = new CountDownLatch(1);
