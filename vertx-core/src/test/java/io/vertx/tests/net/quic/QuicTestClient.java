@@ -219,6 +219,13 @@ public class QuicTestClient {
       streamChannel.shutdownOutput(errorCode).sync();
     }
 
+    public void abort(int errorCode) throws Exception {
+      if (streamChannel == null) {
+        throw new IllegalStateException();
+      }
+      streamChannel.shutdownInput(errorCode).sync();
+    }
+
     public Stream handler(Consumer<byte[]> handler) {
       this.handler = handler;
       return this;

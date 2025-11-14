@@ -58,12 +58,22 @@ public interface QuicStream extends Socket {
   QuicStream resetHandler(@Nullable Handler<Integer> handler);
 
   /**
-   * Send a stream reset frame to the remote stream.
+   * Abruptly terminate the sending part of the stream with the specified application protocol {@code error} code
+   * argument, a {@code RESET} frame is sent to the remote peer.
    *
-   * @param error the error code
+   * @param error the application protocol error code
    * @return a future completed when the reset frame has been sent
    */
   Future<Void> reset(int error);
+
+  /**
+   * Instruct the remote peer that this part of the stream is no longer interested in received data and
+   * wants it to cease transmission, a {@code STOP_SENDING} frame is sent to the remote peer.
+   *
+   * @param error the error code
+   * @return a future completed when the {@code STOP_SENDING} frame has been sent
+   */
+  Future<Void> abort(int error);
 
   /**
    * Set a handler called when the stream is closed.
