@@ -10,6 +10,7 @@
  */
 package io.vertx.core.net.impl;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,25 +18,20 @@ import java.util.concurrent.TimeUnit;
  */
 public class ShutdownEvent {
 
-  private final long timeout;
-  private final TimeUnit timeoutUnit;
+  private final Duration timeout;
 
   public ShutdownEvent(long timeout, TimeUnit timeUnit) {
-    if (timeout < 0L) {
+    this(Duration.ofMillis(timeUnit.toMillis(timeout)));
+  }
+
+  public ShutdownEvent(Duration timeout) {
+    if (timeout.isNegative()) {
       throw new IllegalArgumentException("Timeout " + timeout + " must be >= 0");
     }
-    if (timeUnit == null) {
-      throw new IllegalArgumentException("No null time unit");
-    }
     this.timeout = timeout;
-    this.timeoutUnit = timeUnit;
   }
 
-  public long timeout() {
+  public Duration timeout() {
     return timeout;
-  }
-
-  public TimeUnit timeUnit() {
-    return timeoutUnit;
   }
 }

@@ -16,6 +16,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 
+import java.time.Duration;
+
 /**
  * A Quic stream.
  *
@@ -73,13 +75,13 @@ public interface QuicStream extends Socket {
   QuicStream closeHandler(@Nullable Handler<Void> handler);
 
   /**
-   * Set a handler called when the stream is shutdown.
+   * Set a handler called when the stream is shutdown or closed
    *
    * @param handler the handler signaled with the stream shutdown
    * @return this instance of a stream
    */
   @Override
-  QuicStream shutdownHandler(@Nullable Handler<Void> handler);
+  QuicStream shutdownHandler(@Nullable Handler<Duration> handler);
 
   /**
    * Set an exception handling, catching stream exceptions.

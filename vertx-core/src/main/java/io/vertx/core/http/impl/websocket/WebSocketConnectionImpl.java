@@ -26,6 +26,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
@@ -89,9 +90,9 @@ public final class WebSocketConnectionImpl extends VertxConnection {
   }
 
   @Override
-  protected void handleShutdown(ChannelPromise promise) {
+  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
     if (!webSocket.handleShutdown()) {
-      super.handleShutdown(promise);
+      super.handleShutdown(timeout, promise);
     }
   }
 

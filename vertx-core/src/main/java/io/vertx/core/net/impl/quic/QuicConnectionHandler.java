@@ -96,7 +96,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
       ShutdownEvent shutdown = (ShutdownEvent) evt;
       QuicConnectionImpl c = connection;
       if (c != null) {
-        c.shutdown(Duration.ofMillis(shutdown.timeUnit().toMillis(shutdown.timeout())));
+        c.shutdown(shutdown.timeout());
       }
     }
     super.userEventTriggered(ctx, evt);

@@ -57,6 +57,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static io.netty.handler.codec.http2.Http2CodecUtil.SETTINGS_ENABLE_PUSH;
 
@@ -238,7 +239,7 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
       connection.onIdle();
     } else if (evt instanceof ShutdownEvent) {
       ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-      connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
+      connection.shutdown(shutdownEvt.timeout().toMillis(), TimeUnit.MILLISECONDS);
     }
     super.userEventTriggered(ctx, evt);
   }

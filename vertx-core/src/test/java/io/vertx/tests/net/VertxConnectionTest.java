@@ -36,6 +36,7 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -545,9 +546,9 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicBoolean closed = new AtomicBoolean();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleShutdown(ChannelPromise promise) {
+      protected void handleShutdown(Duration timeout, ChannelPromise promise) {
         shutdown.set(true);
-        super.handleShutdown(promise);
+        super.handleShutdown(timeout, promise);
       }
       @Override
       protected void writeClose(ChannelPromise promise) {
@@ -556,7 +557,7 @@ public class VertxConnectionTest extends VertxTestBase {
       }
     });
     channel.pipeline().fireUserEventTriggered(new ShutdownEvent(0, TimeUnit.SECONDS));
-    assertFalse(shutdown.get());
+    assertTrue(shutdown.get());
     assertTrue(closed.get());
   }
 
@@ -566,9 +567,9 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicBoolean closed = new AtomicBoolean();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleShutdown(ChannelPromise promise) {
+      protected void handleShutdown(Duration timeout, ChannelPromise promise) {
         shutdown.set(true);
-        super.handleShutdown(promise);
+        super.handleShutdown(timeout, promise);
       }
       @Override
       protected void writeClose(ChannelPromise promise) {
@@ -576,7 +577,7 @@ public class VertxConnectionTest extends VertxTestBase {
       }
     });
     channel.pipeline().fireUserEventTriggered(new ShutdownEvent(0, TimeUnit.MILLISECONDS));
-    assertFalse(shutdown.get());
+    assertTrue(shutdown.get());
     assertTrue(closed.get());
   }
 
@@ -586,7 +587,7 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicInteger closed = new AtomicInteger();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleShutdown(ChannelPromise promise) {
+      protected void handleShutdown(Duration timeout, ChannelPromise promise) {
         shutdown.incrementAndGet();
         close();
         assertEquals(1, closed.get());
@@ -607,7 +608,7 @@ public class VertxConnectionTest extends VertxTestBase {
     AtomicInteger closed = new AtomicInteger();
     EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
       @Override
-      protected void handleShutdown(ChannelPromise promise) {
+      protected void handleShutdown(Duration timeout, ChannelPromise promise) {
         shutdown.incrementAndGet();
       }
       @Override

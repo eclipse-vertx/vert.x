@@ -332,6 +332,15 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testShutdownServer() throws Exception {
+    testShutdownServer(Duration.ofSeconds(10));
+  }
+
+  @Test
+  public void testCloseServer() throws Exception {
+    testShutdownServer(Duration.ofSeconds(0));
+  }
+
+  private void testShutdownServer(Duration grace) throws Exception {
     disableThreadChecks();
     int numStreams = 5;
     int numConnections = 2;
@@ -344,9 +353,11 @@ public class QuicServerTest extends VertxTestBase {
         count.incrementAndGet();
         stream.shutdownHandler(v -> {
           shutdown.incrementAndGet();
-          vertx.setTimer(10, id -> {
-            stream.close();
-          });
+          if (!grace.isZero()) {
+            vertx.setTimer(100, id -> {
+              stream.close();
+            });
+          }
         });
       });
     });
@@ -369,7 +380,8 @@ public class QuicServerTest extends VertxTestBase {
         }
       }
       assertWaitUntil(() -> count.get() == numConnections * numStreams);
-      server.shutdown(Duration.ofSeconds(10)).await();
+      server.shutdown(grace).await();
+      assertEquals(numConnections * numStreams, shutdown.get());
       await();
     } finally {
       client.close();

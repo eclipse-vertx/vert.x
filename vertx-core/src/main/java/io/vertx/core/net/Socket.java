@@ -11,6 +11,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
@@ -18,6 +19,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+
+import java.time.Duration;
 
 /**
  * Represents a socket-like interface on either the client or the server side.
@@ -143,7 +146,8 @@ public interface Socket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param handler  the handler notified
    * @return a reference to this, so the API can be used fluently
    */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
-  Socket shutdownHandler(@Nullable Handler<Void> handler);
+  Socket shutdownHandler(@Nullable Handler<Duration> handler);
 
 }

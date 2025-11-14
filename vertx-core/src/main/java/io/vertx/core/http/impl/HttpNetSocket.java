@@ -25,6 +25,7 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLSession;
+import java.time.Duration;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -233,7 +234,7 @@ public class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public NetSocket shutdownHandler(@Nullable Handler<Void> handler) {
+  public NetSocket shutdownHandler(@Nullable Handler<Duration> handler) {
     // Not sure, we can do something here
     return this;
   }

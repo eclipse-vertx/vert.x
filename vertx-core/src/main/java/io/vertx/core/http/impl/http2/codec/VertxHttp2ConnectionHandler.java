@@ -28,6 +28,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -180,7 +181,7 @@ public class VertxHttp2ConnectionHandler<C extends Http2ConnectionImpl> extends 
         connection.handleIdle((IdleStateEvent) evt);
       } else if (evt instanceof ShutdownEvent) {
         ShutdownEvent shutdownEvt = (ShutdownEvent) evt;
-        connection.shutdown(shutdownEvt.timeout(), shutdownEvt.timeUnit());
+        connection.shutdown(shutdownEvt.timeout().toMillis(), TimeUnit.MILLISECONDS);
       }
     }
   }

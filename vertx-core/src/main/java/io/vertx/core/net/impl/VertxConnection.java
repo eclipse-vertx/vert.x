@@ -17,7 +17,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -31,6 +30,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.TimeUnit;
@@ -113,11 +113,7 @@ public class VertxConnection extends ConnectionBase {
       if (shutdown == null) {
         ChannelPromise promise = chctx.newPromise();
         shutdown = promise;
-        if (shutdownEvent.timeout() > 0L) {
-          handleShutdown(promise);
-        } else {
-          channel.close(promise);
-        }
+        handleShutdown(shutdownEvent.timeout(), promise);
       } else {
         throw new UnsupportedOperationException();
       }
@@ -150,9 +146,10 @@ public class VertxConnection extends ConnectionBase {
    * Implement the shutdown default's behavior that cancels the shutdown timeout and close the channel with the
    * channel {@code promise} argument.
    *
+   * @param timeout the shutdown timeout
    * @param promise the channel promise to be used for closing the channel
    */
-  protected void handleShutdown(ChannelPromise promise) {
+  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
     // Assert from event-loop
     ScheduledFuture<?> t = shutdownTimeout;
     if (t == null || t.cancel(false)) {
@@ -175,22 +172,25 @@ public class VertxConnection extends ConnectionBase {
    * @return the future completed after the channel's closure
    */
   public final Future<Void> shutdown(long timeout, TimeUnit unit) {
+    if (timeout < 0L) {
+      throw new IllegalArgumentException("Timeout must be >= 0");
+    }
     ChannelPromise promise = channel.newPromise();
     EventExecutor exec = chctx.executor();
     if (exec.inEventLoop()) {
-      shutdown(timeout, unit, promise);
+      shutdown(Duration.ofMillis(unit.toMillis(timeout)), promise);
     } else {
-      exec.execute(() -> shutdown(timeout, unit, promise));
+      exec.execute(() -> shutdown(Duration.ofMillis(unit.toMillis(timeout)), promise));
     }
     PromiseInternal<Void> p = context.promise();
     promise.addListener(p);
     return p.future();
   }
 
-  private void shutdown(long timeout, TimeUnit unit, ChannelPromise promise) {
+  private void shutdown(Duration timeout, ChannelPromise promise) {
     if (shutdown != null) {
       ScheduledFuture<?> t = shutdownTimeout;
-      if (timeout == 0L && (t == null || t.cancel(false))) {
+      if (timeout.isZero() && (t == null || t.cancel(false))) {
         shutdown = promise;
         channel.close(promise);
       } else {
@@ -206,15 +206,13 @@ public class VertxConnection extends ConnectionBase {
       }
     } else {
       shutdown = promise;
-      if (timeout == 0L) {
-        channel.close(promise);
-      } else {
+      if (!timeout.isZero()) {
         EventExecutor el = chctx.executor();
         shutdownTimeout = el.schedule(() -> {
           channel.close(promise);
-        }, timeout, unit);
-        handleShutdown(promise);
+        }, timeout.toMillis(), TimeUnit.MILLISECONDS);
       }
+      handleShutdown(timeout, promise);
     }
   }
 

@@ -45,6 +45,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.time.Duration;
 import java.util.function.Supplier;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
@@ -109,10 +110,9 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   }
 
   @Override
-  protected void handleShutdown(ChannelPromise promise) {
-    super.handleShutdown(promise);
-    if (responseInProgress != null) {
-    } else {
+  protected void handleShutdown(Duration timeout, ChannelPromise promise) {
+    super.handleShutdown(timeout, promise);
+    if (!timeout.isZero() && responseInProgress == null) {
       closeInternal();
     }
   }
@@ -154,7 +154,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   public void handleMessage(Object msg) {
     assert msg != null;
-    if (requestInProgress == null && (shutdownInitiated || wantClose)) {
+    if (requestInProgress == null && (shutdownInitiated != null || wantClose)) {
       ReferenceCountUtil.release(msg);
       return;
     }
@@ -211,7 +211,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     boolean tryClose;
     Http1xServerRequest request = requestInProgress;
     requestInProgress = null;
-    tryClose = (wantClose || shutdownInitiated) && responseInProgress == null;
+    tryClose = (wantClose || shutdownInitiated != null) && responseInProgress == null;
     request.handleEnd();
     if (tryClose) {
       closeInternal();
@@ -251,7 +251,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
           if (next != null) {
             // Handle pipelined request
             handleNext(next);
-          } else if (wantClose || shutdownInitiated) {
+          } else if (wantClose || shutdownInitiated != null) {
             closeInternal();
           }
         }
