@@ -200,7 +200,7 @@ public class QuicApplicationTest extends VertxTestBase {
     QuicClient client = QuicClient.create(vertx, clientOptions);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnectionInternal connection = (QuicConnectionInternal) client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicStreamInternal stream = (QuicStreamInternal) connection.createStream().await();
+    QuicStreamInternal stream = (QuicStreamInternal) connection.openStream().await();
     ChannelPipeline pipeline = stream.channelHandlerContext().pipeline();
     pipeline.addBefore("handler", "http", new HttpClientCodec());
     pipeline.addBefore("handler", "aggregator", new HttpObjectAggregator(1014));

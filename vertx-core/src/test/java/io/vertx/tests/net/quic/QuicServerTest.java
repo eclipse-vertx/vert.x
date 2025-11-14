@@ -207,7 +207,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerCreatesStream() throws Exception {
     QuicServer server = QuicServer.create(vertx, serverOptions());
     server.handler(conn -> {
-      conn.createStream().onComplete(onSuccess2(stream -> {
+      conn.openStream().onComplete(onSuccess2(stream -> {
         stream.write("ping");
         stream.handler(buff -> {
           assertEquals("pong", buff.toString());
@@ -235,7 +235,7 @@ public class QuicServerTest extends VertxTestBase {
     disableThreadChecks();
     QuicServer server = QuicServer.create(vertx, serverOptions());
     server.handler(conn -> {
-      conn.createStream(false).onComplete(onSuccess2(stream -> {
+      conn.openStream(false).onComplete(onSuccess2(stream -> {
         assertFalse(stream.isBidirectional());
         assertTrue(stream.isLocalCreated());
         stream.write("ping");

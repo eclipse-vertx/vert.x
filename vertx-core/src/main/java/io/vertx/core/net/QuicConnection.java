@@ -55,21 +55,21 @@ public interface QuicConnection {
   QuicConnection closeHandler(Handler<Void> handler);
 
   /**
-   * Create a bidirectional stream to the remote endpoint.
+   * Open a bidirectional stream to the remote endpoint.
    *
    * @return a Quic stream as a future
    */
-  default Future<QuicStream> createStream() {
-    return createStream(true);
+  default Future<QuicStream> openStream() {
+    return openStream(true);
   }
 
   /**
-   * Create a stream to the remote endpoint.
+   * Open a stream to the remote endpoint with {@code bidirectional parameter} specifying its directionality.
    *
    * @param bidirectional whether the stream is unidirectional or bidirectional
    * @return A Quic stream as a future
    */
-  Future<QuicStream> createStream(boolean bidirectional);
+  Future<QuicStream> openStream(boolean bidirectional);
 
   /**
    * Set a handler called with the datagram addressed to this connection.
