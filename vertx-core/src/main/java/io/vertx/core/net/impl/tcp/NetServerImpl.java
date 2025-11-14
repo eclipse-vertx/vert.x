@@ -63,6 +63,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -444,7 +445,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           NetServerImpl.this.handleClose(completion);
         }
         @Override
-        protected void handleShutdown(Completable<Void> completion) {
+        protected void handleShutdown(Duration timeout, Completable<Void> completion) {
           NetServerImpl.this.handleShutdown(completion);
         }
       };

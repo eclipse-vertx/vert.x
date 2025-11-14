@@ -19,6 +19,7 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.CloseSequence;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -60,13 +61,13 @@ public class ConnectionGroup extends DefaultChannelGroup {
 
   private void shutdown(Completable<Void> completion) {
     graceFuture = newCloseFuture();
-    handleShutdown((result, failure) -> {
+    handleShutdown(shutdown.timeout(), (result, failure) -> {
       broadcastShutdownEvent();
       completion.succeed();
     });
   }
 
-  protected void handleShutdown(Completable<Void> completion) {
+  protected void handleShutdown(Duration timeout, Completable<Void> completion) {
     completion.succeed();
   }
 
