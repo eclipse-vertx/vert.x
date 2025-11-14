@@ -17,7 +17,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicConnectionClose;
 import io.vertx.core.net.QuicStream;
 
 import java.util.function.Consumer;
@@ -41,11 +40,11 @@ public interface QuicConnectionInternal extends QuicConnection {
    */
   QuicConnectionInternal graceHandler(Handler<Void> handler);
 
-  Future<QuicStream> createStream(ContextInternal context);
+  Future<QuicStream> openStream(ContextInternal context);
 
-  Future<QuicStream> createStream(ContextInternal context, boolean bidirectional);
+  Future<QuicStream> openStream(ContextInternal context, boolean bidirectional);
 
-  Future<QuicStream> createStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider);
+  Future<QuicStream> openStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider);
 
   ChannelHandlerContext channelHandlerContext();
 
