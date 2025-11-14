@@ -41,7 +41,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -197,17 +196,17 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
-  public Future<QuicStream> createStream(ContextInternal context) {
-    return createStream(context, true);
+  public Future<QuicStream> openStream(ContextInternal context) {
+    return openStream(context, true);
   }
 
   @Override
   public Future<QuicStream> openStream(boolean bidirectional) {
-    return createStream(vertx.getOrCreateContext(), bidirectional);
+    return openStream(vertx.getOrCreateContext(), bidirectional);
   }
 
   @Override
-  public Future<QuicStream> createStream(ContextInternal context, boolean bidirectional) {
+  public Future<QuicStream> openStream(ContextInternal context, boolean bidirectional) {
     Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider =
       quicStreamChannelConsumer -> new ChannelInitializer<>() {
       @Override
@@ -215,11 +214,11 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
         quicStreamChannelConsumer.accept(ch);
       }
     };
-    return createStream(context, bidirectional, initializerProvider);
+    return openStream(context, bidirectional, initializerProvider);
   }
 
   @Override
-  public Future<QuicStream> createStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider) {
+  public Future<QuicStream> openStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider) {
     Promise<QuicStream> promise = context.promise();
     VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, (QuicStreamChannel) chctx.channel(), streamMetrics, chctx));
     handler.addHandler(stream -> {

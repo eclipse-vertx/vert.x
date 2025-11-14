@@ -207,7 +207,7 @@ public class QuicContextTest extends VertxTestBase {
 
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
-    QuicStream stream = ((QuicConnectionInternal)connection).createStream(workerContext).await();
+    QuicStream stream = ((QuicConnectionInternal)connection).openStream(workerContext).await();
 
     AtomicInteger cnt = new AtomicInteger();
     stream.handler(buff -> {
