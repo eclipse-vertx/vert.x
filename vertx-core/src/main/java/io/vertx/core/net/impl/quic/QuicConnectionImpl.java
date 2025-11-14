@@ -208,18 +208,6 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
 
   @Override
   public Future<QuicStream> createStream(ContextInternal context, boolean bidirectional) {
-    Function<Supplier<ChannelHandler>, ChannelInitializer<QuicStreamChannel>> blah = new Function<Supplier<ChannelHandler>, ChannelInitializer<QuicStreamChannel>>() {
-      @Override
-      public ChannelInitializer<QuicStreamChannel> apply(Supplier<ChannelHandler> channelHandlerSupplier) {
-        return new ChannelInitializer<>() {
-          @Override
-          protected void initChannel(QuicStreamChannel ch) throws Exception {
-            ChannelHandler abc = channelHandlerSupplier.get();
-            ch.pipeline().addLast("handler", abc);
-          }
-        };
-      }
-    };
     Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider =
       quicStreamChannelConsumer -> new ChannelInitializer<>() {
       @Override
@@ -240,6 +228,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;
     ChannelInitializer<QuicStreamChannel> initializer = initializerProvider.apply(ch -> {
       ch.pipeline().addLast("handler", handler);
+      streamGroup.add(ch);
     });
     io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(type, initializer);
     future.addListener(future1 -> {

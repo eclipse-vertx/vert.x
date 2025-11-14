@@ -10,6 +10,9 @@
  */
 package io.vertx.tests.net.quic;
 
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.NetUtil;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
@@ -20,6 +23,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -232,5 +237,65 @@ public class QuicClientTest extends VertxTestBase {
     stream.write("ping");
 
     await();
+  }
+
+  @Test
+  public void testShutdownConnection() throws Exception {
+    testShutdown(true);
+  }
+
+  @Test
+  public void testShutdownServer() throws Exception {
+    testShutdown(false);
+  }
+
+  public void testShutdown(boolean shutdownConnection) throws Exception {
+
+    disableThreadChecks();
+    int numStreams = 5;
+
+    AtomicInteger clientEndCount = new AtomicInteger();
+    AtomicInteger serverEndCount = new AtomicInteger();
+
+    server = QuicServer.create(vertx, serverOptions());
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.endHandler(v -> {
+          vertx.setTimer(100, id -> {
+            serverEndCount.incrementAndGet();
+            stream.end();
+          });
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    AtomicInteger shutdownCount = new AtomicInteger();
+    for (int i = 0;i < numStreams;i++) {
+      QuicStream stream = connection.createStream().await();
+      stream.shutdownHandler(v -> {
+        shutdownCount.incrementAndGet();
+        vertx.setTimer(100, id -> {
+          assertEquals(0, serverEndCount.get());
+          clientEndCount.incrementAndGet();
+          stream.end();
+        });
+      });
+      stream.write("ping").await();
+    }
+
+    Future<Void> res;
+    if (shutdownConnection) {
+      res = connection.shutdown(Duration.ofSeconds(10));
+    } else {
+      res = client.shutdown(Duration.ofSeconds(10));
+    }
+    res.await();
+    assertEquals(numStreams, shutdownCount.get());
+    assertEquals(numStreams, clientEndCount.get());
+    assertEquals(numStreams, serverEndCount.get());
   }
 }
