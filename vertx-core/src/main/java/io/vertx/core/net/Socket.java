@@ -11,6 +11,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.Fluent;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
@@ -145,6 +146,7 @@ public interface Socket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param handler  the handler notified
    * @return a reference to this, so the API can be used fluently
    */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   Socket shutdownHandler(@Nullable Handler<Duration> handler);
 

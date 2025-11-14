@@ -58,14 +58,18 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
 
   @Override
   protected void handleShutdown(Duration timeout, ChannelPromise promise) {
-    shutdownInitiated = timeout;
-    closePromise = promise;
-    Handler<Void> handler;
-    synchronized (this) {
-      handler = shutdownHandler;
-    }
-    if (handler != null) {
-      context.emit(handler);
+    if (timeout.isZero()) {
+      super.handleShutdown(timeout, promise);
+    } else {
+      shutdownInitiated = timeout;
+      closePromise = promise;
+      Handler<Void> handler;
+      synchronized (this) {
+        handler = shutdownHandler;
+      }
+      if (handler != null) {
+        context.emit(handler);
+      }
     }
   }
 

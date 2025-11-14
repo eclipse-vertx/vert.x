@@ -113,11 +113,7 @@ public class VertxConnection extends ConnectionBase {
       if (shutdown == null) {
         ChannelPromise promise = chctx.newPromise();
         shutdown = promise;
-        if (!shutdownEvent.timeout().isZero()) {
-          handleShutdown(shutdownEvent.timeout(), promise);
-        } else {
-          channel.close(promise);
-        }
+        handleShutdown(shutdownEvent.timeout(), promise);
       } else {
         throw new UnsupportedOperationException();
       }
@@ -150,7 +146,7 @@ public class VertxConnection extends ConnectionBase {
    * Implement the shutdown default's behavior that cancels the shutdown timeout and close the channel with the
    * channel {@code promise} argument.
    *
-   * @param timeout
+   * @param timeout the shutdown timeout
    * @param promise the channel promise to be used for closing the channel
    */
   protected void handleShutdown(Duration timeout, ChannelPromise promise) {
@@ -210,15 +206,13 @@ public class VertxConnection extends ConnectionBase {
       }
     } else {
       shutdown = promise;
-      if (timeout.isZero()) {
-        channel.close(promise);
-      } else {
+      if (!timeout.isZero()) {
         EventExecutor el = chctx.executor();
         shutdownTimeout = el.schedule(() -> {
           channel.close(promise);
         }, timeout.toMillis(), TimeUnit.MILLISECONDS);
-        handleShutdown(timeout, promise);
       }
+      handleShutdown(timeout, promise);
     }
   }
 

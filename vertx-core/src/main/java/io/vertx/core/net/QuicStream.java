@@ -75,7 +75,7 @@ public interface QuicStream extends Socket {
   QuicStream closeHandler(@Nullable Handler<Void> handler);
 
   /**
-   * Set a handler called when the stream is shutdown.
+   * Set a handler called when the stream is shutdown or closed
    *
    * @param handler the handler signaled with the stream shutdown
    * @return this instance of a stream

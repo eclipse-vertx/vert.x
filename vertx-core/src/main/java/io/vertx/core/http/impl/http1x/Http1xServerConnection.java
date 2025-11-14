@@ -112,8 +112,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   @Override
   protected void handleShutdown(Duration timeout, ChannelPromise promise) {
     super.handleShutdown(timeout, promise);
-    if (responseInProgress != null) {
-    } else {
+    if (!timeout.isZero() && responseInProgress == null) {
       closeInternal();
     }
   }

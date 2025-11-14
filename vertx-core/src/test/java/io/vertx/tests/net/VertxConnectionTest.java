@@ -557,7 +557,7 @@ public class VertxConnectionTest extends VertxTestBase {
       }
     });
     channel.pipeline().fireUserEventTriggered(new ShutdownEvent(0, TimeUnit.SECONDS));
-    assertFalse(shutdown.get());
+    assertTrue(shutdown.get());
     assertTrue(closed.get());
   }
 
@@ -577,7 +577,7 @@ public class VertxConnectionTest extends VertxTestBase {
       }
     });
     channel.pipeline().fireUserEventTriggered(new ShutdownEvent(0, TimeUnit.MILLISECONDS));
-    assertFalse(shutdown.get());
+    assertTrue(shutdown.get());
     assertTrue(closed.get());
   }
 

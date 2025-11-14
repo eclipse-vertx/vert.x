@@ -719,7 +719,9 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   @Override
   protected void handleShutdown(Duration timeout, ChannelPromise promise) {
     super.handleShutdown(timeout, promise);
-    checkLifecycle();
+    if (!timeout.isZero()) {
+      checkLifecycle();
+    }
   }
 
   private boolean checkLifecycle() {
