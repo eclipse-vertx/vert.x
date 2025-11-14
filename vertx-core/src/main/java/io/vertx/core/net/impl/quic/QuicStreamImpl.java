@@ -73,6 +73,14 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   }
 
   @Override
+  public Future<Void> abort(int error) {
+    PromiseInternal<Void> promise = context.promise();
+    ChannelFuture shutdownPromise = channel.shutdownInput(error);
+    shutdownPromise.addListener(promise);
+    return promise.future();
+  }
+
+  @Override
   public NetworkMetrics<?> metrics() {
     return streamMetrics;
   }

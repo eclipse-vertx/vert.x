@@ -11,11 +11,14 @@
 package io.vertx.tests.net.quic;
 
 import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ChannelOutputShutdownException;
 import io.netty.handler.codec.quic.QuicClosedChannelException;
 import io.netty.util.NetUtil;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
@@ -40,6 +43,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,6 +69,10 @@ public class QuicServerTest extends VertxTestBase {
     options.getTransportOptions().setInitialMaxStreamsBidirectional(100L);
     options.getTransportOptions().setInitialMaxStreamsUnidirectional(100L);
     options.getTransportOptions().setActiveMigration(true);
+
+//    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
+//    options.setKeyLogFile("/Users/julien/keylogfile.txt");
+
     return options;
   }
 
@@ -375,6 +383,82 @@ public class QuicServerTest extends VertxTestBase {
       });
       stream.reset(4);
       await();
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
+  @Test
+  public void testClientAbortReading() throws Exception {
+    waitFor(3);
+    disableThreadChecks();
+    QuicServer server = QuicServer.create(vertx, serverOptions());
+    AtomicReference<QuicStream> streamRef = new AtomicReference<>();
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        streamRef.set(stream);
+        stream.handler(buff -> {
+          stream.write(buff);
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream();
+      stream.create();
+      AtomicInteger received = new AtomicInteger();
+      stream.handler(buff -> received.addAndGet(buff.length));
+      stream.write("ping");
+      assertWaitUntil(() -> received.get() > 0);
+      stream.abort(10);
+      try {
+        streamRef.get().write("test").await();
+        fail();
+      } catch (Exception e) {
+        assertEquals(ChannelOutputShutdownException.class, e.getClass());
+        assertEquals("STOP_SENDING frame received", e.getMessage());
+      }
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
+  @Test
+  public void testServerAbortReading() throws Exception {
+    waitFor(3);
+    disableThreadChecks();
+    QuicServer server = QuicServer.create(vertx, serverOptions());
+    Promise<Void> writeLatch = Promise.promise();
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.handler(buff -> {
+          stream
+            .abort(10)
+            .onComplete(writeLatch);
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream();
+      stream.create();
+      stream.write("ping");
+      writeLatch.future().await();
+      try {
+        stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
+        fail();
+      } catch (Exception e) {
+        assertSame(ChannelOutputShutdownException.class, e.getClass());
+        assertEquals("STOP_SENDING frame received", e.getMessage());
+      }
     } finally {
       client.close();
       server.close().await();
