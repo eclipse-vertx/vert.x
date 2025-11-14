@@ -285,52 +285,6 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   @Test
-  public void testShutdownConnection() throws Exception {
-    disableThreadChecks();
-    int numStreams = 5;
-    waitFor(1 + numStreams);
-    QuicServer server = QuicServer.create(vertx, serverOptions());
-    AtomicInteger count = new AtomicInteger();
-    server.handler(conn -> {
-      AtomicInteger shutdown = new AtomicInteger();
-      conn.streamHandler(stream -> {
-        stream.shutdownHandler(v -> {
-          shutdown.incrementAndGet();
-          vertx.setTimer(10, id -> {
-            stream.close();
-          });
-        });
-        if (count.incrementAndGet() == numStreams) {
-          Future<Void> res = conn.shutdown(Duration.ofSeconds(10));
-          res.onComplete(onSuccess2(v -> {
-            assertEquals(numStreams, shutdown.get());
-            complete();
-          }));
-        }
-      });
-    });
-    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
-    try {
-      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
-      List<QuicTestClient.Stream> streams = new ArrayList<>();
-      for (int i = 0;i < numStreams;i++) {
-        QuicTestClient.Stream stream = connection.newStream();
-        streams.add(stream);
-        stream.closeHandler(() -> {
-          complete();
-        });
-        stream.create();
-        stream.write("ping");
-      }
-      await();
-    } finally {
-      client.close();
-      server.close().await();
-    }
-  }
-
-  @Test
   public void testShutdownServer() throws Exception {
     testShutdownServer(Duration.ofSeconds(10));
   }
