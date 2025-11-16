@@ -813,6 +813,52 @@ public class QuicServerTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testWriteWhenClosed() throws Exception {
+    testWriteWhenClosed(true);
+  }
+
+  @Test
+  public void testEndWhenClosed() throws Exception {
+    testWriteWhenClosed(false);
+  }
+
+  private void testWriteWhenClosed(boolean write) throws Exception {
+    disableThreadChecks();
+    QuicServer server = QuicServer.create(vertx, serverOptions());
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.closeHandler(v -> {
+          Future<Void> f;
+          if (write) {
+            f = stream.write("test");
+          } else {
+            f = stream.end();
+          }
+          f.onComplete(onFailure2(err -> {
+            testComplete();
+          }));
+        });
+        stream.handler(buff -> {
+          stream.close();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream();
+      stream.create();
+      stream.write("ping");
+      await();
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
   /*  @Test
   public void testSoReuse() throws Exception {
 
