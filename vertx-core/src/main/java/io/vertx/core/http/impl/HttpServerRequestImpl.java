@@ -96,7 +96,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
     stream.headHandler(this::handleHeaders);
     stream.resetHandler(this::handleReset);
     stream.exceptionHandler(this::handleException);
-    stream.closeHandler(response::handleClose);
+    stream.closeHandler(this::handleClosed);
     stream.dataHandler(this::handleData);
     stream.trailersHandler(this::handleTrailers);
     stream.drainHandler(response::handleWriteQueueDrained);
@@ -148,6 +148,17 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
       notifyException(cause);
     }
     response.handleException(cause);
+  }
+
+  private void handleClosed(Void v) {
+    boolean notify;
+    synchronized (connection) {
+      notify = !ended;
+    }
+    if (notify) {
+      notifyException(HttpUtils.STREAM_CLOSED_EXCEPTION);
+    }
+    response.handleClose(v);
   }
 
   private void notifyException(Throwable failure) {
@@ -226,7 +237,6 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
     boolean notify;
     synchronized (connection) {
       notify = !ended;
-      ended = true;
     }
     if (notify) {
       notifyException(new StreamResetException(errorCode));

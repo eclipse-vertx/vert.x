@@ -646,7 +646,6 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private void handleClosed() {
     Handler<Void> closedHandler;
-    Handler<Void> endHandler;
     Handler<Throwable> exceptionHandler;
     synchronized (conn) {
       if (closed) {
@@ -654,14 +653,10 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       }
       closed = true;
       exceptionHandler = written ? null : this.exceptionHandler;
-      endHandler = this.written ? null : this.endHandler;
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
       context.dispatch(HttpUtils.CONNECTION_CLOSED_EXCEPTION, exceptionHandler);
-    }
-    if (endHandler != null) {
-      context.dispatch(null, endHandler);
     }
     if (closedHandler != null) {
       context.dispatch(null, closedHandler);

@@ -1513,7 +1513,6 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testStreamError() throws Exception {
-    waitFor(2);
     Promise<Void> when = Promise.promise();
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
@@ -1532,11 +1531,10 @@ public class Http2ServerTest extends Http2TestBase {
         assertOnIOContext(ctx);
         assertTrue("Was expecting reqErrors to be > 0", reqErrors.get() > 0);
         assertTrue("Was expecting respErrors to be > 0", respErrors.get() > 0);
-        complete();
+        testComplete();
       });
       req.response().endHandler(v -> {
-        assertOnIOContext(ctx);
-        complete();
+        fail();
       });
       when.complete();
     });
@@ -1566,7 +1564,6 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testPromiseStreamError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    waitFor(2);
     Promise<Void> when = Promise.promise();
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/wibble").onComplete(onSuccess(resp -> {
@@ -1580,11 +1577,10 @@ public class Http2ServerTest extends Http2TestBase {
         resp.closeHandler(v -> {
           assertOnIOContext(ctx);
           assertTrue("Was expecting errors to be > 0", erros.get() > 0);
-          complete();
+          testComplete();
         });
         resp.endHandler(v -> {
-          assertOnIOContext(ctx);
-          complete();
+          fail();
         });
         resp.setChunked(true).write("whatever"); // Transition to half-closed remote
       }));
@@ -1613,7 +1609,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testConnectionDecodeError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    waitFor(3);
+    waitFor(2);
     Promise<Void> when = Promise.promise();
     server.requestHandler(req -> {
       AtomicInteger reqFailures = new AtomicInteger();
@@ -1631,10 +1627,7 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
       req.response().endHandler(v -> {
-        assertOnIOContext(ctx);
-        assertTrue(reqFailures.get() > 0);
-        assertTrue(respFailures.get() > 0);
-        complete();
+        fail();
       });
       HttpConnection conn = req.connection();
       AtomicInteger connFailures = new AtomicInteger();
@@ -1758,7 +1751,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testShutdownWithTimeout() throws Exception {
-    waitFor(6);
+    waitFor(4);
     AtomicReference<HttpServerRequest> first = new AtomicReference<>();
     AtomicInteger status = new AtomicInteger();
     Handler<HttpServerRequest> requestHandler = req -> {
@@ -1770,7 +1763,7 @@ public class Http2ServerTest extends Http2TestBase {
           complete();
         });
         req.response().endHandler(err -> {
-          complete();
+          fail();
         });
       } else {
         assertEquals(0, status.getAndIncrement());
@@ -1781,7 +1774,7 @@ public class Http2ServerTest extends Http2TestBase {
           complete();
         });
         req.response().endHandler(err -> {
-          complete();
+          fail();
         });
         HttpConnection conn = req.connection();
         conn.closeHandler(v -> {
@@ -2593,10 +2586,11 @@ public class Http2ServerTest extends Http2TestBase {
       req.toNetSocket().onComplete(onSuccess(socket -> {
         AtomicInteger status = new AtomicInteger();
         socket.exceptionHandler(err -> {
-          assertTrue(err instanceof StreamResetException);
-          StreamResetException ex = (StreamResetException) err;
-          assertEquals(0, ex.getCode());
-          assertEquals(0, status.getAndIncrement());
+          if (err instanceof StreamResetException) {
+            assertEquals(0, status.getAndIncrement());
+            StreamResetException ex = (StreamResetException) err;
+            assertEquals(0, ex.getCode());
+          }
         });
         socket.endHandler(v -> {
           // fail();
@@ -2976,7 +2970,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testIdleTimeout() throws Exception {
-    waitFor(5);
+    waitFor(4);
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setIdleTimeoutUnit(TimeUnit.MILLISECONDS).setIdleTimeout(2000));
     server.requestHandler(req -> {
@@ -2988,7 +2982,7 @@ public class Http2ServerTest extends Http2TestBase {
         complete();
       });
       req.response().endHandler(v -> {
-        complete();
+        fail();
       });
       req.connection().closeHandler(v -> {
         complete();
