@@ -37,6 +37,7 @@ public class HttpNetSocket implements NetSocket {
     readStream.handler(sock::handleData);
     readStream.endHandler(sock::handleEnd);
     readStream.exceptionHandler(sock::handleException);
+    stream.closeHandler(sock::handleClose);
     return sock;
   }
 
@@ -48,6 +49,7 @@ public class HttpNetSocket implements NetSocket {
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   private Handler<Buffer> dataHandler;
+  private boolean closed;
 
   private HttpNetSocket(HttpStream stream, ContextInternal context, ReadStream<Buffer> readStream, WriteStream<Buffer> writeStream) {
     this.stream = stream;
@@ -62,9 +64,12 @@ public class HttpNetSocket implements NetSocket {
       // Give opportunity to send a last chunk
       endHandler.handle(null);
     }
-    Handler<Void> closeHandler = closeHandler();
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+    if (!closed) {
+      closed = true;
+      Handler<Void> closeHandler = closeHandler();
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 
@@ -86,7 +91,11 @@ public class HttpNetSocket implements NetSocket {
         endHandler.handle(null);
       }
     }
-    if (cause instanceof StreamResetException || cause instanceof HttpClosedException) {
+  }
+
+  private void handleClose(Void v) {
+    if (!closed) {
+      closed = true;
       Handler<Void> closeHandler = closeHandler();
       if (closeHandler != null) {
         closeHandler.handle(null);

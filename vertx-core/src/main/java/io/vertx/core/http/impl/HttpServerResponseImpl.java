@@ -110,16 +110,16 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
   }
 
   void handleClose(Void v) {
-    Handler<Void> endHandler;
     Handler<Void> closeHandler;
+    Handler<Throwable> exceptionHandler;
     synchronized (conn) {
       closed = true;
       boolean failed = !ended;
-      endHandler = failed ? this.endHandler : null;
+      exceptionHandler = failed ? this.exceptionHandler : null;
       closeHandler = this.closeHandler;
     }
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     if (closeHandler != null) {
       closeHandler.handle(null);

@@ -1574,53 +1574,40 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testServerExceptionHandlerOnClose() {
+  public void testServerExceptionHandlerOnClose() throws Exception {
     waitFor(3);
-    vertx.createHttpServer().requestHandler(req -> {
+    AtomicInteger requestCount = new AtomicInteger();
+    server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
-      AtomicInteger respExceptionHandlerCount = new AtomicInteger();
-      AtomicInteger respEndHandlerCount = new AtomicInteger();
       req.exceptionHandler(err -> {
-        assertEquals(1, reqExceptionHandlerCount.incrementAndGet());
-        assertEquals(1, respExceptionHandlerCount.get());
-        assertEquals(1, respEndHandlerCount.get());
-        assertTrue(resp.closed());
-        assertFalse(resp.ended());
-        try {
-          resp.end();
-        } catch (IllegalStateException ignore) {
-          // Expected
+        if (err instanceof HttpClosedException) {
+          complete();
         }
       });
       resp.exceptionHandler(err -> {
-        assertEquals(0, reqExceptionHandlerCount.get());
-        assertEquals(1, respExceptionHandlerCount.incrementAndGet());
-        assertEquals(0, respEndHandlerCount.get());
-        complete();
+        if (err instanceof HttpClosedException) {
+          complete();
+        }
       });
       resp.endHandler(v -> {
-        assertEquals(0, reqExceptionHandlerCount.get());
-        assertEquals(1, respExceptionHandlerCount.get());
-        assertEquals(1, respEndHandlerCount.incrementAndGet());
-        complete();
+        fail();
       });
+      AtomicInteger closeHandlerCount = new AtomicInteger();
       req.connection().closeHandler(v -> {
-        assertEquals(1, reqExceptionHandlerCount.get());
-        assertEquals(1, respExceptionHandlerCount.get());
-        assertEquals(1, respEndHandlerCount.get());
+        assertEquals(1, closeHandlerCount.incrementAndGet());
         complete();
       });
-    }).listen(testAddress).onComplete(onSuccess(ar -> {
-      HttpClient client = vertx.createHttpClient();
-      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
-        .onComplete(onSuccess(req -> {
-          req.setChunked(true);
-          req.writeHead().onComplete(v -> {
-            req.connection().close();
-          });
-      }));
-    }));
+      requestCount.incrementAndGet();
+    });
+
+    startServer(testAddress);
+
+    HttpClientRequest request = client.request(new RequestOptions(requestOptions).setMethod(PUT)).await();
+    request.setChunked(true);
+    request.writeHead();
+    assertWaitUntil(() -> requestCount.get() > 0);
+    HttpConnection connection = request.connection();
+    connection.close();
     await();
   }
 
