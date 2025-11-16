@@ -16,11 +16,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import io.netty.handler.codec.quic.QuicClosedChannelException;
 import io.netty.util.NetUtil;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
@@ -870,6 +868,22 @@ public class QuicServerTest extends VertxTestBase {
     } finally {
       client.close();
       server.close().await();
+    }
+  }
+
+  @Test
+  public void testRebind() {
+    Deployable deployable = ctx -> {
+      QuicServer server = QuicServer.create(vertx, serverOptions());
+      server.handler(connection -> {
+
+      });
+      return server.bind(SocketAddress.inetSocketAddress(9999, "localhost"));
+    };
+    int num = 4;
+    for (int i = 0;i < num;i++) {
+      String id = vertx.deployVerticle(deployable).await();
+      vertx.undeploy(id).await();
     }
   }
 

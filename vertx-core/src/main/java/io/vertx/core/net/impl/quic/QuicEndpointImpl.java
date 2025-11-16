@@ -13,11 +13,13 @@ package io.vertx.core.net.impl.quic;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.FlushStrategy;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Closeable;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
@@ -40,12 +42,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.EnumMap;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsProvider {
+public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsProvider, Closeable {
 
   private static final EnumMap<QuicCongestionControlAlgorithm, io.netty.handler.codec.quic.QuicCongestionControlAlgorithm> CC_MAP = new EnumMap<>(QuicCongestionControlAlgorithm.class);
 
@@ -62,6 +65,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private Channel channel;
   protected ConnectionGroup connectionGroup;
   private FlushStrategy flushStrategy;
+  private ContextInternal context;
 
   public QuicEndpointImpl(VertxInternal vertx, QuicEndpointOptions options) {
 
@@ -95,7 +99,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     }
 
     this.options = options;
-    this.vertx = vertx;
+    this.vertx = Objects.requireNonNull(vertx);
     this.manager = new SslContextManager(new SSLEngineOptions() {
       @Override
       public SSLEngineOptions copy() {
@@ -183,15 +187,28 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       protected void handleClose(Completable<Void> completion) {
         PromiseInternal<Void> promise = (PromiseInternal<Void>) completion;
         Channel ch = channel;
-        ch.close().addListener(promise);
+        ch.close().addListener((ChannelFutureListener) future -> {
+          ContextInternal ctx;
+          synchronized (QuicEndpointImpl.this) {
+            ctx = context;
+            context = null;
+          }
+          ctx.removeCloseHook(QuicEndpointImpl.this);
+        }).addListener(promise);
       }
     };
   }
 
   @Override
   public Future<Integer> bind(SocketAddress address) {
-    ContextInternal context = vertx.getOrCreateContext();
-    Future<SslContextProvider> f1 = manager.resolveSslContextProvider(options.getSslOptions(), context);
+    ContextInternal current = vertx.getOrCreateContext();
+    synchronized (this) {
+      if (context != null) {
+        return current.failedFuture("Already bound");
+      }
+      context = current;
+    }
+    Future<SslContextProvider> f1 = manager.resolveSslContextProvider(options.getSslOptions(), current);
     return f1.compose(sslContextProvider -> {
       VertxMetrics metricsFactory = vertx.metrics();
       QuicEndpointMetrics<?, ?> metrics;
@@ -200,9 +217,10 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       } else {
         metrics = null;
       }
-      return bind(context, address, metrics)
+      return bind(current, address, metrics)
         .map(ch -> {
           handleBind(ch, metrics);
+          context.addCloseHook(this);
           return ((InetSocketAddress)ch.localAddress()).getPort();
         });
     });
@@ -227,5 +245,10 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   public QuicEndpointInternal flushStrategy(FlushStrategy flushStrategy) {
     this.flushStrategy = flushStrategy;
     return this;
+  }
+
+  @Override
+  public void close(Completable<Void> completion) {
+    close().onComplete(completion);
   }
 }
