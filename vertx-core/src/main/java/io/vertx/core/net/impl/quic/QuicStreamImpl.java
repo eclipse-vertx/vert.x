@@ -106,9 +106,16 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   @Override
   public Future<Void> end() {
     PromiseInternal<Void> promise = context.promise();
-    writeToChannel(() -> {
-      ChannelFuture shutdownPromise = channel.shutdownOutput();
-      shutdownPromise.addListener(promise);
+    writeToChannel(new MessageWrite() {
+      @Override
+      public void write() {
+        ChannelFuture shutdownPromise = channel.shutdownOutput();
+        shutdownPromise.addListener(promise);
+      }
+      @Override
+      public void cancel(Throwable cause) {
+        promise.fail(cause);
+      }
     });
     return promise.future();
   }
