@@ -102,6 +102,15 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testConnect() throws Exception {
+    testConnect(9999);
+  }
+
+  @Test
+  public void testConnectRandomPort() throws Exception {
+    testConnect(0);
+  }
+
+  private void testConnect(int port) throws Exception {
     QuicServer server = QuicServer.create(vertx, serverOptions());
     server.handler(conn -> {
       assertEquals("test-protocol", conn.applicationLayerProtocol());
@@ -115,11 +124,16 @@ public class QuicServerTest extends VertxTestBase {
         });
       });
     });
-    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    int actualPort = server.bind(SocketAddress.inetSocketAddress(port, "localhost")).await();
+    if (port == 0) {
+      assertTrue(actualPort > 0);
+    } else {
+      assertEquals(port, actualPort);
+    }
     QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
     try {
       client = new QuicTestClient(new NioEventLoopGroup(1));
-      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));
       QuicTestClient.Stream stream = connection.newStream();
       List<String> received = Collections.synchronizedList(new ArrayList<>());
       stream.handler(data -> {
