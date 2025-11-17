@@ -260,7 +260,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleChunk(Buffer data) {
-    request.dataReceived();
     HttpEventHandler handler;
     synchronized (conn) {
       handler = eventHandler;

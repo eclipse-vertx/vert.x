@@ -384,9 +384,8 @@ public abstract class HttpClientFileUploadTest extends HttpTestBase {
           .compose(HttpClientResponse::body)
         .await();
     } catch (Exception err) {
-      assertEquals(err.getClass(), StreamResetException.class);
-      assertEquals(err.getCause().getClass(), HttpPostRequestEncoder.ErrorDataEncoderException.class);
-      assertEquals(err.getCause().getCause().getClass(), FileNotFoundException.class);
+      assertEquals(err.getClass(), HttpPostRequestEncoder.ErrorDataEncoderException.class);
+      assertEquals(err.getCause().getClass(), FileNotFoundException.class);
     }
     assertTrue(request.response().failed());
   }
