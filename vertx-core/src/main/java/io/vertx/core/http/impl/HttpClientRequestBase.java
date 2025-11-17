@@ -29,6 +29,7 @@ import java.util.Objects;
 public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   protected final ContextInternal context;
+  protected final HttpConnection connection;
   protected final HttpClientStream stream;
   protected final boolean ssl;
   private io.vertx.core.http.HttpMethod method;
@@ -38,11 +39,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private String query;
   private final PromiseInternal<HttpClientResponse> responsePromise;
   private Handler<HttpClientRequest> pushHandler;
-  private long currentTimeoutTimerId = -1;
+  private long currentTimeoutTimerId = -1L;
   private long currentTimeoutMs;
   private long lastDataReceived;
   protected Throwable reset;
-  private HttpConnection connection;
 
   HttpClientRequestBase(HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
     this.connection = connection;
@@ -58,7 +58,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     stream.pushHandler(this::handlePush);
     stream.headHandler(resp -> {
       HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
-      stream.dataHandler(response::handleChunk);
+      stream.dataHandler(chunk -> {
+        dataReceived();
+        response.handleChunk(chunk);
+      });
       stream.trailersHandler(response::handleTrailers);
       stream.priorityChangeHandler(response::handlePriorityChange);
       stream.customFrameHandler(response::handleUnknownFrame);
@@ -132,16 +135,15 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public synchronized HttpClientRequest idleTimeout(long timeout) {
-    cancelTimeout();
-    currentTimeoutMs = timeout;
-    currentTimeoutTimerId = context.setTimer(timeout, id -> handleTimeout(timeout));
+  public HttpClientRequest idleTimeout(long timeout) {
+    scheduleTimeout(timeout);
     return this;
   }
 
   protected Throwable mapException(Throwable t) {
     if ((t instanceof HttpClosedException || t instanceof StreamResetException) && reset != null) {
-      t = reset;
+      Throwable cause = reset.getCause();
+      t = cause != null ? cause : reset;
     }
     return t;
   }
@@ -150,8 +152,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     fail(t);
   }
 
-  void fail(Throwable t) {
+  void handleClosed() {
     cancelTimeout();
+  }
+
+  void fail(Throwable t) {
     responsePromise.tryFail(t);
     HttpClientResponseImpl response = (HttpClientResponseImpl) responsePromise.future().result();
     if (response != null) {
@@ -176,80 +181,76 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   abstract void handleResponse(Promise<HttpClientResponse> promise, HttpClientResponse resp, long timeoutMs);
 
-  private synchronized long cancelTimeout() {
-    long ret;
-    if ((ret = currentTimeoutTimerId) != -1) {
-      context.owner().cancelTimer(currentTimeoutTimerId);
-      currentTimeoutTimerId = -1;
-      ret = currentTimeoutMs;
-      currentTimeoutMs = 0;
+  synchronized void scheduleTimeout(long timeoutMillis) {
+    if (timeoutMillis < 0L) {
+      throw new IllegalArgumentException();
     }
-    return ret;
+    long id = currentTimeoutTimerId;
+    if (id != -1L && !context.owner().cancelTimer(id)) {
+      currentTimeoutMs = 0L;
+      currentTimeoutTimerId = -1L;
+    } else {
+      currentTimeoutMs = timeoutMillis;
+      currentTimeoutTimerId = context.setTimer(timeoutMillis, id_ -> {
+        synchronized (HttpClientRequestBase.this) {
+          currentTimeoutMs = 0L;
+          currentTimeoutTimerId = -1L;
+        }
+        handleTimeout(timeoutMillis);
+      });
+    }
+  }
+
+  private synchronized long cancelTimeout() {
+    long id = currentTimeoutTimerId;
+    if (id >= 0L && context.owner().cancelTimer(id)) {
+      long timeout = currentTimeoutMs;
+      currentTimeoutTimerId = -1L;
+      currentTimeoutMs = 0L;
+      return timeout;
+    } else {
+      return 0L;
+    }
+  }
+
+  private void dataReceived() {
+    lastDataReceived = System.currentTimeMillis();
   }
 
   private void handleTimeout(long timeoutMs) {
     NoStackTraceTimeoutException cause;
-    synchronized (this) {
-      currentTimeoutTimerId = -1;
-      currentTimeoutMs = 0;
-      if (lastDataReceived > 0) {
-        long now = System.currentTimeMillis();
-        long timeSinceLastData = now - lastDataReceived;
-        if (timeSinceLastData < timeoutMs) {
-          // reschedule
-          lastDataReceived = 0;
-          idleTimeout(timeoutMs - timeSinceLastData);
-          return;
-        }
+    if (lastDataReceived > 0) {
+      long now = System.currentTimeMillis();
+      long timeSinceLastData = now - lastDataReceived;
+      long remainingTime = timeoutMs - timeSinceLastData;
+      if (remainingTime > 0L) {
+        lastDataReceived = 0;
+        scheduleTimeout(remainingTime);
+        return;
       }
-      cause = timeoutEx(timeoutMs, method, authority, uri);
     }
-    reset(cause);
+    cause = timeoutEx(timeoutMs, method, authority, uri);
+    reset(0x08L, cause);
   }
 
   static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, HostAndPort peer, String uri) {
     return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + peer);
   }
 
-  synchronized void dataReceived() {
-    if (currentTimeoutTimerId != -1) {
-      lastDataReceived = System.currentTimeMillis();
-    }
-  }
-
   @Override
   public Future<Void> reset(long code) {
-    return reset(new StreamResetException(code));
+    return reset(code, null);
   }
 
   @Override
   public Future<Void> reset(long code, Throwable cause) {
-    return reset(new StreamResetException(code, cause));
-  }
-
-  private Future<Void> reset(Throwable cause) {
     synchronized (this) {
       if (reset != null) {
         return context.failedFuture("Already reset");
       }
-      reset = cause;
+      reset = new StreamResetException(code, cause);
     }
-    long code;
-    if (cause instanceof StreamResetException) {
-      code = ((StreamResetException) cause).getCode();
-    } else if (cause instanceof java.util.concurrent.TimeoutException) {
-      code = 0x08L; // CANCEL
-    } else {
-      code = 0L;
-    }
-    Future<Void> ret = stream.writeReset(code);
-    if (ret == null) {
-      // Not yet sent
-      handleException(cause);
-      return context.succeededFuture();
-    } else {
-      return ret;
-    }
+    return stream.writeReset(code);
   }
 
   @Override

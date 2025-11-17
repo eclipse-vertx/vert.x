@@ -354,7 +354,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
               return conn.createStream(streamCtx).map(stream -> {
                 HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
                 wrapped.closeHandler(v -> lease.recycle());
-                return new ConnectionObtainedResult(proxyOptions, wrapped);
+                return new ConnectionObtainedResult(proxyOptions, wrapped, lease);
               });
             });
           }
@@ -374,7 +374,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
               stream.closeHandler(v -> {
                 lease.recycle();
               });
-              return new ConnectionObtainedResult(proxyOptions, stream);
+              return new ConnectionObtainedResult(proxyOptions, stream, lease);
             });
           });
         }
@@ -395,7 +395,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         options.setFollowRedirects(followRedirects);
         options.setTraceOperation(traceOperation);
         HttpClientStream stream = res.stream;
-        return createRequest(stream.connection(), stream, options);
+        HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
+        stream.closeHandler(v -> {
+          res.lease.recycle();
+          request.handleClosed();
+        });
+        return request;
       });
     }
   }
@@ -403,13 +408,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private static class ConnectionObtainedResult {
     private final ProxyOptions proxyOptions;
     private final HttpClientStream stream;
-    public ConnectionObtainedResult(ProxyOptions proxyOptions, HttpClientStream stream) {
+    private final Lease<HttpClientConnection> lease;
+    public ConnectionObtainedResult(ProxyOptions proxyOptions, HttpClientStream stream, Lease<HttpClientConnection> lease) {
       this.proxyOptions = proxyOptions;
       this.stream = stream;
+      this.lease = lease;
     }
   }
 
-  HttpClientRequest createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
+  HttpClientRequestImpl createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
     HttpClientRequestImpl request = new HttpClientRequestImpl(connection, stream);
     request.init(options);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;

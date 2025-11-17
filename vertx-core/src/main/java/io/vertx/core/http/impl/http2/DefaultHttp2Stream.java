@@ -178,6 +178,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   public void onClose() {
     if (!trailersSent || !trailersReceived) {
       observeReset();
+      onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     connection.flushBytesWritten();
     context.execute(v -> handleClose());
@@ -404,10 +405,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     if (code < 0L) {
       throw new IllegalArgumentException("Invalid reset code value");
     }
-    if (id < 0) {
-      // Not yet sent hack : todo improve this
-      return null;
-    }
     Promise<Void> promise = context.promise();
     EventLoop eventLoop = connection.context().nettyEventLoop();
     if (eventLoop.inEventLoop()) {
@@ -426,7 +423,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
         promise.fail("Stream already reset");
       } else {
         reset = code;
-        if (id != -1) {
+        if (id >= 0) {
           connection.writeReset(id, code, promise);
         } else {
           // Reset happening before stream allocation

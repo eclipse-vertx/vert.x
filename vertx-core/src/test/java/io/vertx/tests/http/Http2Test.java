@@ -216,6 +216,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testResetClientRequestNotYetSent() throws Exception {
+    waitFor(2);
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
     server.requestHandler(req -> {
@@ -224,7 +225,7 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.response().onComplete(onFailure(err -> complete()));
-      assertTrue(req.reset().succeeded());
+      req.reset().onComplete(onSuccess(v -> complete()));
     }));
     await();
   }

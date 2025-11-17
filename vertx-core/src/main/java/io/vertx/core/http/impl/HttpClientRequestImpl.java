@@ -19,7 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -50,13 +49,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
   private Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler;
-  private boolean ended;
   private boolean followRedirects;
   private int maxRedirects;
   private int numberOfRedirections;
-  private MultiMap headers;
+  private final MultiMap headers;
+  private boolean trailersSent;
+  private boolean headersSent;
   private StreamPriority priority;
-  private boolean headWritten;
   private boolean isConnect;
   private String traceOperation;
 
@@ -167,7 +166,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized HttpClientRequestImpl setChunked(boolean chunked) {
     checkEnded();
-    if (headWritten) {
+    if (headersSent) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
@@ -512,19 +511,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (reset != null) {
         return context.failedFuture(reset);
       }
-      if (ended) {
+      if (trailersSent) {
         return context.failedFuture(new IllegalStateException("Request already complete"));
       }
-      checkResponseHandler();
-      if (!headWritten) {
-        headWritten = true;
+      if (!headersSent) {
+        headersSent = true;
         isConnect = connect;
         writeHead = true;
       } else {
         writeHead = false;
       }
       writeEnd = !isConnect && end;
-      ended = end;
+      trailersSent = end;
     }
 
     Future<Void> future;
@@ -549,22 +547,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void checkEnded() {
-    if (ended) {
+    if (trailersSent) {
       throw new IllegalStateException("Request already complete");
     }
   }
 
-  private void checkResponseHandler() {
-/*
-    if (stream == null && !connecting && responsePromise.future().getHandler() == null) {
-      throw new IllegalStateException("You must set a response handler before connecting to the server");
-    }
-*/
-  }
-
   @Override
   public synchronized HttpClientRequest setStreamPriority(StreamPriority priority) {
-    if (headWritten) {
+    if (headersSent) {
       stream.updatePriority(priority);
     } else {
       this.priority = priority;

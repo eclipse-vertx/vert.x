@@ -230,15 +230,6 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     super.onHeaders(headers);
   }
 
-  @Override
-  public void onClose() {
-    if (!isTrailersReceived()) {
-      // NOT SURE OF THAT
-      onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
-    }
-    super.onClose();
-  }
-
   public DefaultHttp2ClientStream headHandler(Handler<HttpResponseHead> handler) {
     headersHandler = handler;
     return this;

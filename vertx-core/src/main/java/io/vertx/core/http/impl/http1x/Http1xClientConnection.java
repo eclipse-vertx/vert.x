@@ -84,8 +84,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private final HttpVersion version;
   private final long lifetimeEvictionTimestamp;
 
-  private final Deque<Stream> requests = new ArrayDeque<>();
-  private final Deque<Stream> responses = new ArrayDeque<>();
+  private final Deque<Stream> pending;
+  private final Deque<Stream> inflight;
   private boolean closed;
   private boolean evicted;
 
@@ -121,6 +121,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
+    this.pending = new ArrayDeque<>();
+    this.inflight = new ArrayDeque<>();
   }
 
   @Override
@@ -158,7 +160,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   @Override
   public synchronized long activeStreams() {
-    return requests.isEmpty() && responses.isEmpty() ? 0 : 1;
+    return (pending.isEmpty() && inflight.isEmpty()) ? 0 : 1;
   }
 
   /**
@@ -250,7 +252,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
-      responses.add(stream);
+      assert stream == pending.removeFirst();
+      inflight.addLast(stream);
       this.isConnect = connect;
       if (this.metrics != null) {
         stream.metric = this.metrics.requestBegin(request.uri, request);
@@ -304,8 +307,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     boolean responseEnded;
     synchronized (this) {
       s.requestEnded = true;
-      requests.pop();
-      next = requests.peek();
+      next = pending.peek();
       responseEnded = s.responseEnded;
       if (metrics != null) {
         metrics.requestEnd(s.metric, s.bytesWritten);
@@ -313,10 +315,12 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     }
     flushBytesWritten();
     if (next != null) {
-      next.promise.complete((HttpClientStream) next);
+      Promise<HttpClientStream> promise = next.promise;
+      next.promise = null;
+      promise.complete((HttpClientStream) next);
     }
     if (responseEnded) {
-      s.context.execute(null, s::handleClosed);
+      s.onClose();
       checkLifecycle();
     }
   }
@@ -332,8 +336,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       return null;
     }
     stream.reset = true;
-    if (!responses.contains(stream)) {
-      requests.remove(stream);
+    if (!inflight.contains(stream)) {
+      pending.remove(stream);
       return true;
     }
     close();
@@ -378,8 +382,11 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   private abstract static class Stream {
 
-    protected final Promise<HttpClientStream> promise;
+    private Promise<HttpClientStream> promise;
+
+    private final InboundMessageQueue<Object> queue;
     protected final ContextInternal context;
+    protected final Http1xClientConnection conn;
     protected final int id;
 
     private HttpVersion version;
@@ -392,55 +399,11 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     private long bytesRead;
     private long bytesWritten;
     private boolean reset;
+    private boolean closed;
 
-    Stream(ContextInternal context, Promise<HttpClientStream> promise, int id) {
+    Stream(ContextInternal context, Http1xClientConnection conn, int id) {
       this.context = context;
       this.id = id;
-      this.promise = promise;
-    }
-
-    // Not really elegant... but well
-    Object metric() {
-      return metric;
-    }
-
-    Object trace() {
-      return trace;
-    }
-
-    abstract void handleContinue();
-    abstract void handleEarlyHints(MultiMap headers);
-    abstract void handleHead(io.vertx.core.http.impl.HttpResponseHead response);
-    abstract void handleChunk(Buffer buff);
-    abstract void handleEnd(LastHttpContent trailer);
-    abstract void handleWriteQueueDrained(Void v);
-    abstract void handleException(Throwable cause);
-    abstract void handleClosed(Throwable err);
-
-  }
-
-  /**
-   * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
-   * state managed by the connection and this class defines the state managed by the stream implementation
-   */
-  private static class StreamImpl extends Stream implements HttpClientStream {
-
-    private final Http1xClientConnection conn;
-    private final InboundMessageQueue<Object> queue;
-    private boolean closed;
-    private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
-    private Handler<Buffer> chunkHandler;
-    private Handler<MultiMap> trailerHandler;
-    private Handler<Void> drainHandler;
-    private Handler<Void> continueHandler;
-
-    private Handler<MultiMap> earlyHintsHandler;
-    private Handler<Throwable> exceptionHandler;
-    private Handler<Void> closeHandler;
-
-    StreamImpl(ContextInternal context, Http1xClientConnection conn, Promise<HttpClientStream> promise, int id) {
-      super(context, promise, id);
-
       this.conn = conn;
       this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
         @Override
@@ -454,19 +417,109 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         @Override
         protected void handleMessage(Object item) {
           if (item instanceof MultiMap) {
-            Handler<MultiMap> handler = trailerHandler;
-            if (handler != null) {
-              context.dispatch((MultiMap) item, handler);
-            }
+            handleEnd((MultiMap) item);
           } else {
-            Buffer buffer = (Buffer) item;
-            Handler<Buffer> handler = chunkHandler;
-            if (handler != null) {
-              context.dispatch(buffer, handler);
-            }
+            handleChunk((Buffer) item);
           }
         }
       };
+    }
+
+    Object metric() {
+      return metric;
+    }
+
+    Object trace() {
+      return trace;
+    }
+
+    public HttpClientStream pause() {
+      queue.pause();
+      return (HttpClientStream)this;
+    }
+
+    public HttpClientStream fetch(long amount) {
+      queue.fetch(amount);
+      return (HttpClientStream)this;
+    }
+
+    void onException(Throwable err) {
+      context.execute(err, this::handleException);
+    }
+
+    void onClose() {
+      if (!closed) {
+        closed = true;
+        if (!requestEnded || !responseEnded) {
+          onException(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+        }
+        context.execute(null, this::handleClosed);
+      }
+    }
+
+    void onEarlyHints(MultiMap headers) {
+      context.execute(headers, this::handleEarlyHints);
+    }
+
+    void onHead(io.vertx.core.http.impl.HttpResponseHead response) {
+      context.emit(response, this::handleHead);
+    }
+
+    void onContinue() {
+      context.emit(null, this::handleContinue);
+    }
+
+    void onEnd(LastHttpContent trailer) {
+      queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
+    }
+
+    void onChunk(Buffer buff) {
+      queue.write(buff);
+    }
+
+    abstract void handleEnd(MultiMap trailer);
+    abstract void handleChunk(Buffer chunk);
+    abstract void handleContinue(Void v);
+    abstract void handleEarlyHints(MultiMap headers);
+    abstract void handleHead(io.vertx.core.http.impl.HttpResponseHead response);
+    abstract void handleWriteQueueDrained(Void v);
+    abstract void handleException(Throwable cause);
+    abstract void handleClosed(Void v);
+
+    final void reset(long code, Promise<Void> promise) {
+      Boolean removed = conn.reset(this);
+      if (removed == null) {
+        promise.fail("Stream already reset");
+      } else {
+        Throwable cause = new StreamResetException(code);
+        if (removed) {
+          onClose();
+        } else {
+          onException(cause);
+        }
+        promise.complete();
+      }
+    }
+  }
+
+  /**
+   * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
+   * state managed by the connection and this class defines the state managed by the stream implementation
+   */
+  private static class StreamImpl extends Stream implements HttpClientStream {
+
+    private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
+    private Handler<Buffer> chunkHandler;
+    private Handler<MultiMap> trailerHandler;
+    private Handler<Void> drainHandler;
+    private Handler<Void> continueHandler;
+
+    private Handler<MultiMap> earlyHintsHandler;
+    private Handler<Throwable> exceptionHandler;
+    private Handler<Void> closeHandler;
+
+    StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
+      super(context, conn, id);
     }
 
     @Override
@@ -593,18 +646,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     }
 
     @Override
-    public HttpClientStream pause() {
-      queue.pause();
-      return this;
-    }
-
-    @Override
-    public HttpClientStream fetch(long amount) {
-      queue.fetch(amount);
-      return this;
-    }
-
-    @Override
     public Future<Void> writeReset(long code) {
       Promise<Void> promise = context.promise();
       EventLoop eventLoop = conn.context.nettyEventLoop();
@@ -614,20 +655,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         eventLoop.execute(() -> reset(code, promise));
       }
       return promise.future();
-    }
-
-    private void reset(long code, Promise<Void> promise) {
-      Boolean removed = conn.reset(this);
-      if (removed == null) {
-        promise.fail("Stream already reset");
-      } else {
-        Throwable cause = new StreamResetException(code);
-        if (removed) {
-          context.execute(cause, this::handleClosed);
-        } else {
-          context.execute(cause, this::handleException);
-        }
-        promise.complete();      }
     }
 
     @Override
@@ -651,10 +678,38 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       }
     }
 
-    void handleContinue() {
+    @Override
+    public HttpClientStream dataHandler(Handler<Buffer> handler) {
+      chunkHandler = handler;
+      return this;
+    }
+
+    @Override
+    public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
+      trailerHandler = handler;
+      return this;
+    }
+
+    @Override
+    void handleEnd(MultiMap trailer) {
+      Handler<MultiMap> handler = trailerHandler;
+      if (handler != null) {
+        handler.handle(trailer);
+      }
+    }
+
+    @Override
+    void handleChunk(Buffer chunk) {
+      Handler<Buffer> handler = chunkHandler;
+      if (handler != null) {
+        handler.handle(chunk);
+      }
+    }
+
+    void handleContinue(Void v) {
       Handler<Void> handler = continueHandler;
       if (handler != null) {
-        context.emit(null, handler);
+        handler.handle(null);
       }
     }
 
@@ -669,49 +724,22 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     void handleHead(io.vertx.core.http.impl.HttpResponseHead response) {
       Handler<io.vertx.core.http.impl.HttpResponseHead> handler = headHandler;
       if (handler != null) {
-        context.emit(response, handler);
+        handler.handle(response);
       }
-    }
-
-    @Override
-    public HttpClientStream dataHandler(Handler<Buffer> handler) {
-      chunkHandler = handler;
-      return this;
-    }
-
-    @Override
-    public HttpClientStream trailersHandler(Handler<MultiMap> handler) {
-      trailerHandler = handler;
-      return this;
-    }
-
-    void handleChunk(Buffer buff) {
-      queue.write(buff);
-    }
-
-    void handleEnd(LastHttpContent trailer) {
-      queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
     }
 
     void handleException(Throwable cause) {
       Handler<Throwable> handler = exceptionHandler;
       if (handler != null) {
-        context.emit(cause, handler);
+        handler.handle(cause);
       }
     }
 
     @Override
-    void handleClosed(Throwable err) {
-      if (err != null) {
-        handleException(err);
-        promise.tryFail(err);
-      }
-      if (!closed) {
-        closed = true;
-        Handler<Void> handler = closeHandler;
-        if (handler != null) {
-          context.emit(null, handler);
-        }
+    void handleClosed(Void v) {
+      Handler<Void> handler = closeHandler;
+      if (handler != null) {
+        handler.handle(null);
       }
     }
   }
@@ -725,7 +753,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   }
 
   private boolean checkLifecycle() {
-    if (wantClose || (shutdownInitiated != null && requests.isEmpty() && responses.isEmpty())) {
+    if (wantClose || (shutdownInitiated != null && pending.isEmpty() && inflight.isEmpty())) {
       closeInternal();
       return true;
     } else if (!isConnect) {
@@ -787,7 +815,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private void handleHttpMessage(HttpObject obj) {
     Stream stream;
     synchronized (this) {
-      stream = responses.peekFirst();
+      stream = inflight.peekFirst();
     }
     if (stream == null) {
       invalidMessageHandler.handle(obj);
@@ -818,8 +846,9 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private void handleChunk(ByteBuf chunk) {
     Stream stream;
     synchronized (this) {
-      stream = responses.peekFirst();
+      stream = inflight.peekFirst();
       if (stream == null) {
+        // Unsolicited ?
         return;
       }
     }
@@ -831,9 +860,9 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private void handleResponseBegin(Stream stream, HttpVersion version, io.vertx.core.http.impl.HttpResponseHead response) {
     // How can we handle future undefined 1xx informational response codes?
     if (response.statusCode == HttpResponseStatus.CONTINUE.code()) {
-      stream.handleContinue();
+      stream.onContinue();
     } else if (response.statusCode == HttpResponseStatus.EARLY_HINTS.code()) {
-      stream.handleEarlyHints(response.headers);
+      stream.onEarlyHints(response.headers);
     } else {
       io.vertx.core.http.impl.HttpRequestHead request;
       synchronized (this) {
@@ -844,7 +873,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
           metrics.responseBegin(stream.metric, response);
         }
       }
-      stream.handleHead(response);
+      stream.onHead(response);
       if (isConnect) {
         if ((request.method == HttpMethod.CONNECT &&
              response.statusCode == 200) || (
@@ -861,8 +890,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   /**
    * Remove all HTTP channel handlers of this connection
-   *
-   * @return the messages emitted by the removed handlers during their removal
    */
   private void removeChannelHandlers() {
     ChannelPipeline pipeline = chctx.pipeline();
@@ -886,7 +913,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     int len = buff.length();
     stream.bytesRead += len;
     if (!stream.reset) {
-      stream.handleChunk(buff);
+      stream.onChunk(buff);
     }
   }
 
@@ -901,7 +928,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         // 100-continue
         return;
       }
-      responses.pop();
+      inflight.removeFirst();
       HttpRequestHead request = stream.request;
       if ((request.method != HttpMethod.CONNECT && response.statusCode != 101)) {
         // See https://tools.ietf.org/html/rfc7230#section-6.3
@@ -927,7 +954,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         }
       }
       stream.responseEnded = true;
-      check = requests.peek() != stream;
     }
     VertxTracer tracer = stream.context.tracer();
     if (tracer != null) {
@@ -937,15 +963,13 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       metrics.responseEnd(stream.metric, stream.bytesRead);
     }
     flushBytesRead();
-    if (check) {
-      checkLifecycle();
-    }
+    checkLifecycle();
     lastResponseReceivedTimestamp = System.currentTimeMillis();
     if (!stream.reset) {
-      stream.handleEnd(trailer);
+      stream.onEnd(trailer);
     }
     if (stream.requestEnded) {
-      stream.handleClosed(null);
+      stream.onClose();
     }
   }
 
@@ -953,9 +977,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     return clientMetrics;
   }
 
-  /**
-   * @return a future of a paused WebSocket
-   */
   public synchronized void toWebSocket(
     ContextInternal context,
     String requestURI,
@@ -1172,7 +1193,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   @Override
   protected void handleWriteQueueDrained() {
-    Stream s = requests.peek();
+    Stream s = inflight.peekLast();
     if (s != null) {
       s.context.execute(s::handleWriteQueueDrained);
     } else {
@@ -1192,17 +1213,22 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         evictionHandler.handle(null);
       }
     }
-    List<Stream> allocatedStreams;
-    List<Stream> sentStreams;
+    Deque<Stream> pending;
+    List<Stream> inflight;
     synchronized (this) {
-      sentStreams = new ArrayList<>(responses);
-      allocatedStreams = new ArrayList<>(requests);
-      allocatedStreams.removeAll(responses);
+      pending = new ArrayDeque<>(this.pending);
+      inflight = new ArrayList<>(this.inflight);
     }
-    for (Stream stream : allocatedStreams) {
-      stream.context.execute(HttpUtils.CONNECTION_CLOSED_EXCEPTION, stream::handleClosed);
+    for (Stream stream : pending) {
+      Promise<HttpClientStream> promise = stream.promise;
+      if (promise != null) {
+        stream.promise = null;
+        promise.tryFail(HttpUtils.CONNECTION_CLOSED_EXCEPTION);
+      } else {
+        stream.onClose();
+      }
     }
-    for (Stream stream : sentStreams) {
+    for (Stream stream : inflight) {
       if (metrics != null) {
         metrics.requestReset(stream.metric);
       }
@@ -1211,13 +1237,13 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       if (tracer != null && trace != null) {
         tracer.receiveResponse(stream.context, null, trace, HttpUtils.CONNECTION_CLOSED_EXCEPTION, TagExtractor.empty());
       }
-      stream.context.execute(HttpUtils.CONNECTION_CLOSED_EXCEPTION, stream::handleClosed);
+      stream.onClose();
     }
   }
 
   protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
-      if (responses.isEmpty() && requests.isEmpty()) {
+      if (pending.isEmpty() && inflight.isEmpty()) {
         return;
       }
     }
@@ -1227,13 +1253,13 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   @Override
   public boolean handleException(Throwable e) {
     boolean ret = super.handleException(e);
-    LinkedHashSet<Stream> allStreams = new LinkedHashSet<>();
+    List<Stream> allStreams = new ArrayList<>(pending.size() + inflight.size());
     synchronized (this) {
-      allStreams.addAll(requests);
-      allStreams.addAll(responses);
+      allStreams.addAll(pending);
+      allStreams.addAll(inflight);
     }
     for (Stream stream : allStreams) {
-      stream.handleException(e);
+      stream.onException(e);
     }
     return ret;
   }
@@ -1246,15 +1272,17 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   }
 
   private void createStream(ContextInternal context, Promise<HttpClientStream> promise) {
+    Stream current;
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       Object result;
       synchronized (this) {
         if (!closed) {
-          if (requests.size() < concurrency()) {
-            StreamImpl stream = new StreamImpl(context, this, promise, seq++);
-            requests.add(stream);
-            if (requests.size() > 1) {
+          if (pending.size() < concurrency()) {
+            Stream stream = new StreamImpl(context, this, seq++);
+            pending.addLast(stream);
+            if (pending.size() > 1 || ((current = inflight.peekLast()) != null && !current.requestEnded)) {
+              stream.promise = promise;
               return;
             }
             result = stream;
