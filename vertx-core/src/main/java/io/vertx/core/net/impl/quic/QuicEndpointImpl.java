@@ -189,7 +189,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   @Override
-  public Future<Void> bind(SocketAddress address) {
+  public Future<Integer> bind(SocketAddress address) {
     ContextInternal context = vertx.getOrCreateContext();
     Future<SslContextProvider> f1 = manager.resolveSslContextProvider(options.getSslOptions(), context);
     return f1.compose(sslContextProvider -> {
@@ -203,7 +203,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       return bind(context, address, metrics)
         .map(ch -> {
           handleBind(ch, metrics);
-          return null;
+          return ((InetSocketAddress)ch.localAddress()).getPort();
         });
     });
   }
