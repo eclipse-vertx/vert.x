@@ -228,7 +228,12 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    return connectionGroup.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    ConnectionGroup group = connectionGroup;
+    if (group == null) {
+      return vertx.getOrCreateContext().succeededFuture();
+    } else {
+      return group.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    }
   }
 
   @Override

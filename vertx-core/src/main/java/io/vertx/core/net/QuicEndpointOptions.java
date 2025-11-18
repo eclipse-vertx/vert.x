@@ -23,7 +23,7 @@ public abstract class QuicEndpointOptions {
 
   private QuicOptions transportOptions;
   private SSLOptions sslOptions;
-  private QLogConfig qLogConfig;
+  private QLogConfig qlogConfig;
   private String keyLogFile;
 
   public QuicEndpointOptions() {
@@ -32,11 +32,11 @@ public abstract class QuicEndpointOptions {
 
   public QuicEndpointOptions(QuicEndpointOptions other) {
 
-    QLogConfig qLogConfig = other.qLogConfig;
+    QLogConfig qLogConfig = other.qlogConfig;
 
     this.transportOptions = other.transportOptions.copy();
     this.sslOptions = other.sslOptions.copy();
-    this.qLogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
+    this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
   }
 
@@ -69,7 +69,7 @@ public abstract class QuicEndpointOptions {
    * @return the endpoint QLog config.
    */
   public QLogConfig getQLogConfig() {
-    return qLogConfig;
+    return qlogConfig;
   }
 
   /**
@@ -81,7 +81,7 @@ public abstract class QuicEndpointOptions {
    * @return this exact object instance
    */
   public QuicEndpointOptions setQLogConfig(QLogConfig qLogConfig) {
-    this.qLogConfig = qLogConfig;
+    this.qlogConfig = qLogConfig;
     return this;
   }
 

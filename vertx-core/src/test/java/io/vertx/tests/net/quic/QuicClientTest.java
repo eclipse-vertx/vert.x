@@ -10,10 +10,12 @@
  */
 package io.vertx.tests.net.quic;
 
+import io.netty.channel.ConnectTimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -100,7 +102,8 @@ public class QuicClientTest extends VertxTestBase {
     }
     QuicClientOptions clientOptions = clientOptions();
     clientOptions.getSslOptions().setTrustOptions(Trust.CLIENT_JKS.get());
-    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), clientOptions.getSslOptions()).await();
+    QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(clientOptions.getSslOptions());
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
     assertWaitUntil(() -> inflight.get() == 1);
     connection.close().await();
     assertWaitUntil(() -> inflight.get() == 0);
@@ -294,5 +297,21 @@ public class QuicClientTest extends VertxTestBase {
     assertEquals(numStreams, shutdownCount.get());
     assertEquals(numStreams, clientEndCount.get());
     assertEquals(numStreams, serverEndCount.get());
+  }
+
+  @Test
+  public void testConnectTimeout() {
+    QuicConnectOptions options = new QuicConnectOptions().setTimeout(Duration.ofMillis(250));
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    long now = System.currentTimeMillis();
+    try {
+      client.connect(SocketAddress.inetSocketAddress(1234, TestUtils.NON_ROUTABLE_HOST), options).await();
+      fail();
+    } catch (Exception e) {
+      assertEquals(ConnectTimeoutException.class, e.getClass());
+      long delta = System.currentTimeMillis() - now;
+      assertTrue(delta >= 250);
+      assertTrue(delta <= 250 * 2);
+    }
   }
 }

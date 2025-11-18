@@ -43,34 +43,17 @@ public interface QuicClient extends QuicEndpoint {
    * @param address the server address
    * @return a Quic connection as a future
    */
-  Future<QuicConnection> connect(SocketAddress address);
+  default Future<QuicConnection> connect(SocketAddress address) {
+    return connect(address, QuicClientImpl.DEFAULT_CONNECT_OPTIONS);
+  }
 
   /**
    * Connect to a Quic server with a specific {@code sslOptions}.
    *
    * @param address the server address
-   * @param sslOptions the ssl options
+   * @param options the connect options
    * @return a Quic connection as a future
    */
-  Future<QuicConnection> connect(SocketAddress address, ClientSSLOptions sslOptions);
-
-  /**
-   * Connect to a Quic server with a specific {@code qLogConfig}.
-   *
-   * @param address the server address
-   * @param qLogConfig the qlog config for this specific connection
-   * @return a Quic connection as a future
-   */
-  Future<QuicConnection> connect(SocketAddress address, QLogConfig qLogConfig);
-
-  /**
-   * Connect to a Quic server with a specific {@code qLogConfig} and a specific {@code sslOptions}.
-   *
-   * @param address the server address
-   * @param qLogConfig the qlog config for this specific connection
-   * @param sslOptions the ssl options
-   * @return a Quic connection as a future
-   */
-  Future<QuicConnection> connect(SocketAddress address, QLogConfig qLogConfig, ClientSSLOptions sslOptions);
+  Future<QuicConnection> connect(SocketAddress address, QuicConnectOptions options);
 
 }
