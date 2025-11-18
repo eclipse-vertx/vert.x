@@ -34,6 +34,7 @@ import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -59,10 +60,10 @@ class NetClientImpl implements NetClientInternal {
   private final SslContextManager sslContextManager;
   private volatile ClientSSLOptions sslOptions;
   public final ConnectionGroup channelGroup;
-  private final TCPMetrics metrics;
+  private final TransportMetrics metrics;
   private final Predicate<SocketAddress> proxyFilter;
 
-  public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options) {
+  public NetClientImpl(VertxInternal vertx, TransportMetrics metrics, NetClientOptions options) {
 
     this.vertx = vertx;
     this.channelGroup = new ConnectionGroup(vertx.acceptorEventLoopGroup().next()) {

@@ -15,8 +15,6 @@ package io.vertx.core.spi.metrics;
  * <p>An SPI used internally by Vert.x to gather metrics on a socket transport which serves
  * as a base class for things like HttpServer and HttpClient, all of which serve connections.</p>
  *
- * <p>Transport can be TCP or QUIC.</p>
- *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface QuicEndpointMetrics<C, S> extends TransportMetrics<C> {

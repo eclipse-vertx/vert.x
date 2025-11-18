@@ -47,7 +47,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -58,7 +58,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   protected final Http2MultiplexHandler handler;
   private final IntObjectMap<StreamChannel> channels;
-  private final TCPMetrics<?> tcpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final Deque<Promise<Buffer>> pendingPingAcks;
   private boolean initialSettingsReceived;
   private int windowSize;
@@ -67,10 +67,10 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   private Handler<GoAway> goAwayHandler;
   private Handler<Buffer> pingHandler;
 
-  public Http2MultiplexConnection(Http2MultiplexHandler handler, TCPMetrics<?> tcpMetrics, ChannelHandlerContext chctx, ContextInternal context) {
+  public Http2MultiplexConnection(Http2MultiplexHandler handler, TransportMetrics<?> transportMetrics, ChannelHandlerContext chctx, ContextInternal context) {
     super(context, chctx);
     this.handler = handler;
-    this.tcpMetrics = tcpMetrics;
+    this.transportMetrics = transportMetrics;
     this.channels = new IntObjectHashMap<>();
     this.initialSettingsReceived = false;
     this.pendingPingAcks = new ArrayDeque<>();
@@ -79,7 +79,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   @Override
   public NetworkMetrics<?> metrics() {
-    return tcpMetrics;
+    return transportMetrics;
   }
 
   final S stream(int id) {

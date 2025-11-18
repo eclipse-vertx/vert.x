@@ -35,7 +35,7 @@ import io.vertx.core.spi.observability.HttpResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
+public interface HttpServerMetrics<R, W, S> extends TransportMetrics<S> {
 
   /**
    * Called when an http server request begins. Vert.x will invoke {@link #responseEnd} when the response has ended

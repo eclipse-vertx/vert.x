@@ -115,6 +115,10 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
+          public String type() {
+            return "tcp";
+          }
+          @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
             requestBeginCalled.set(true);
             return null;
@@ -198,6 +202,10 @@ public class MetricsContextTest extends VertxTestBase {
       @Override
       public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
+          @Override
+          public String type() {
+            return "tcp";
+          }
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
             switch (request.uri()) {
@@ -298,6 +306,10 @@ public class MetricsContextTest extends VertxTestBase {
       @Override
       public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
+          @Override
+          public String type() {
+            return "tcp";
+          }
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
             assertEquals(0, httpLifecycle.getAndIncrement());
@@ -416,6 +428,10 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new HttpClientMetrics<Void, Void, Void>() {
           @Override
+          public String type() {
+            return "tcp";
+          }
+          @Override
           public ClientMetrics<Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
             return new ClientMetrics<>() {
               @Override
@@ -515,6 +531,10 @@ public class MetricsContextTest extends VertxTestBase {
       @Override
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new HttpClientMetrics<Void, Void, Void>() {
+          @Override
+          public String type() {
+            return "tcp";
+          }
           @Override
           public ClientMetrics<Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
             return new ClientMetrics<>() {
