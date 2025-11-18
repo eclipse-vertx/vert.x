@@ -11,11 +11,7 @@
 package io.vertx.tests.net.quic;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QLogConfig;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
+import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -82,7 +78,8 @@ public class QLogTest extends VertxTestBase {
     // Test client with a qlog file
     File qlogFile = File.createTempFile("vertx", ".qlog");
     assertTrue(qlogFile.delete());
-    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), qlogConfig(qlogFile, "the title", "the description")).await();
+    QuicConnectOptions connectOptions = new QuicConnectOptions().setQLogConfig(qlogConfig(qlogFile, "the title", "the description"));
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
     connection.close().await();
     List<JsonObject> qlog = parseQLog(qlogFile);
     assertTrue(!qlog.isEmpty());
