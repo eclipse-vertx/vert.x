@@ -1575,22 +1575,29 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerExceptionHandlerOnClose() throws Exception {
-    waitFor(3);
+    waitFor(4);
     AtomicInteger requestCount = new AtomicInteger();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
+      AtomicInteger requestExceptionHandlerCount = new AtomicInteger();
       req.exceptionHandler(err -> {
         if (err instanceof HttpClosedException) {
+          assertEquals(1, requestExceptionHandlerCount.incrementAndGet());
           complete();
         }
       });
+      AtomicInteger responseExceptionHandlerCount = new AtomicInteger();
       resp.exceptionHandler(err -> {
         if (err instanceof HttpClosedException) {
+          assertEquals(1, responseExceptionHandlerCount.incrementAndGet());
           complete();
         }
       });
       resp.endHandler(v -> {
         fail();
+      });
+      resp.closeHandler(v -> {
+        complete();
       });
       AtomicInteger closeHandlerCount = new AtomicInteger();
       req.connection().closeHandler(v -> {

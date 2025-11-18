@@ -139,7 +139,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
     handler.handle(this);
   }
 
-  public void handleException(Throwable cause) {
+  private void handleException(Throwable cause) {
     boolean notify;
     synchronized (connection) {
       notify = !ended;
@@ -151,13 +151,6 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   }
 
   private void handleClosed(Void v) {
-    boolean notify;
-    synchronized (connection) {
-      notify = !ended;
-    }
-    if (notify) {
-      notifyException(HttpUtils.STREAM_CLOSED_EXCEPTION);
-    }
     response.handleClose(v);
   }
 

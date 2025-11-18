@@ -34,7 +34,6 @@ import io.vertx.core.http.impl.http2.Http2Stream;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
@@ -139,13 +138,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   void onStreamClosed(io.netty.handler.codec.http2.Http2Stream s) {
     Http2Stream stream = s.getProperty(streamKey);
     if (stream != null) {
-      boolean active = chctx.channel().isActive();
-//      if (goAwayStatus != null) {
-//        stream.onException(new HttpClosedException(goAwayStatus));
-//      } else if (!active) {
-//        stream.onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
-//      }
-      stream.onClose();
+      stream.onClose(goAwayStatus);
     }
   }
 
