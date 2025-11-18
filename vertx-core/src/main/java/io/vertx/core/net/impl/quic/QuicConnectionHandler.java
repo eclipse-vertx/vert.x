@@ -27,21 +27,33 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class QuicConnectionHandler extends ChannelDuplexHandler implements NetworkMetrics<Object> {
 
+  private static long timeoutMillis(Duration timeout) {
+    return timeout == null || timeout.isNegative() | timeout.isZero() ? -1L : timeout.toMillis();
+  }
+
   private final ContextInternal context;
   private final TransportMetrics<?> metrics;
+  private final long idleTimeout;
+  private final long readIdleTimeout;
+  private final long writeIdleTimeout;
   private Handler<QuicConnection> handler;
   private QuicChannel channel;
   private QuicConnectionImpl connection;
 
-  public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Handler<QuicConnection> handler) {
+  public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
+                               Duration readIdleTimeout, Duration writeIdleTimeout, Handler<QuicConnection> handler) {
     this.context = context;
     this.metrics = metrics;
+    this.idleTimeout = timeoutMillis(idleTimeout);
+    this.readIdleTimeout = timeoutMillis(readIdleTimeout);
+    this.writeIdleTimeout = timeoutMillis(writeIdleTimeout);
     this.handler = handler;
   }
 
@@ -49,7 +61,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   public void handlerAdded(ChannelHandlerContext ctx) {
     QuicChannel ch = (QuicChannel) ctx.channel();
     channel = ch;
-    connection = new QuicConnectionImpl(context, metrics, ch, ctx);
+    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, ch, ctx);
     if (ch.isActive()) {
       activate();
     }

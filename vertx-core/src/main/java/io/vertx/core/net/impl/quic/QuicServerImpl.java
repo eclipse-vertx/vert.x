@@ -155,7 +155,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
-                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, QuicServerImpl.this.handler);
+                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getIdleTimeout(),
+                  options.getReadIdleTimeout(), options.getWriteIdleTimeout(), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);
               }
