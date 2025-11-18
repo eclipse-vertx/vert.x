@@ -13,6 +13,9 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Config operations of a Quic endpoint.
  *
@@ -25,6 +28,9 @@ public abstract class QuicEndpointOptions {
   private SSLOptions sslOptions;
   private QLogConfig qlogConfig;
   private String keyLogFile;
+  private Duration idleTimeout;
+  private Duration readIdleTimeout;
+  private Duration writeIdleTimeout;
 
   public QuicEndpointOptions() {
     this.transportOptions = new QuicOptions();
@@ -38,6 +44,9 @@ public abstract class QuicEndpointOptions {
     this.sslOptions = other.sslOptions.copy();
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
+    this.idleTimeout = other.idleTimeout;
+    this.readIdleTimeout = other.readIdleTimeout;
+    this.writeIdleTimeout = other.writeIdleTimeout;
   }
 
   public QuicEndpointOptions(JsonObject json) {
@@ -110,7 +119,70 @@ public abstract class QuicEndpointOptions {
     return this;
   }
 
-  public JsonObject toJson() {
-    throw new UnsupportedOperationException();
+  /**
+   * Set the idle timeout, {@code null} means don't timeout.
+   * This determines if a stream will timeout and be closed if no data is received nor sent within the timeout.
+   *
+   * @param idleTimeout  the idle timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicEndpointOptions setIdleTimeout(Duration idleTimeout) {
+    if (idleTimeout != null && idleTimeout.isNegative()) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.idleTimeout = idleTimeout;
+    return this;
   }
+
+  /**
+   * @return the idle timeout applied to each stream
+   */
+  public Duration getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Set the read idle timeout, {@code null} means don't timeout.
+   * This determines if a stream will timeout and be closed if no data is received within the timeout.
+   *
+   * @param idleTimeout  the read idle timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicEndpointOptions setReadIdleTimeout(Duration idleTimeout) {
+    if (idleTimeout != null && idleTimeout.isNegative()) {
+      throw new IllegalArgumentException("readIdleTimeout must be >= 0");
+    }
+    this.readIdleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the read idle timeout applied to each stream
+   */
+  public Duration getReadIdleTimeout() {
+    return readIdleTimeout;
+  }
+
+  /**
+   * Set the write idle timeout, {@code null} means don't timeout.
+   * This determines if a stream will timeout and be closed if no data is sent within the timeout.
+   *
+   * @param idleTimeout  the write idle timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicEndpointOptions setWriteIdleTimeout(Duration idleTimeout) {
+    if (idleTimeout != null && idleTimeout.isNegative()) {
+      throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
+    }
+    this.writeIdleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the write idle timeout applied to each stream
+   */
+  public Duration getWriteIdleTimeout() {
+    return writeIdleTimeout;
+  }
+
 }

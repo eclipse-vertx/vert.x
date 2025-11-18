@@ -15,11 +15,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import io.netty.handler.codec.quic.QuicClosedChannelException;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
+import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
@@ -884,6 +886,43 @@ public class QuicServerTest extends VertxTestBase {
     for (int i = 0;i < num;i++) {
       String id = vertx.deployVerticle(deployable).await();
       vertx.undeploy(id).await();
+    }
+  }
+
+  @Test
+  public void testStreamIdleTimeout() throws Exception {
+    QuicServerOptions options = serverOptions();
+    options.setIdleTimeout(Duration.ofMillis(100));
+    QuicServer server = QuicServer.create(vertx, options);
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        long now = System.currentTimeMillis();
+        AtomicInteger idleEvents = new AtomicInteger();
+        ((QuicStreamInternal)stream).eventHandler(event -> {
+          if (event instanceof IdleStateEvent) {
+            idleEvents.incrementAndGet();
+          }
+        });
+        stream.closeHandler(v -> {
+          long delta = System.currentTimeMillis() - now;
+          assertTrue(delta >= 100);
+          assertTrue(delta <= 300);
+          assertEquals(1, idleEvents.get());
+          testComplete();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream().create();
+      stream.write("ping");
+      await();
+    } finally {
+      client.close();
+      server.close().await();
     }
   }
 

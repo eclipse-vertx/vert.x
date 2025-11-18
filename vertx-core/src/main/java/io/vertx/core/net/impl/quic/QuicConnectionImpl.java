@@ -16,6 +16,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamType;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
@@ -50,6 +51,9 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final ContextInternal context;
   private final QuicChannel channel;
   private final TransportMetrics<?> metrics;
+  private final long idleTimeout;
+  private final long readIdleTimeout;
+  private final long writeIdleTimeout;
   private final ConnectionGroup streamGroup;
   private Function<ContextInternal, ContextInternal> streamContextProvider;
   private Handler<QuicStream> handler;
@@ -59,10 +63,15 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private QuicConnectionClose closePayload;
   private final NetworkMetrics<?> streamMetrics;
 
-  public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, QuicChannel channel, ChannelHandlerContext chctx) {
+  public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
+                            long readIdleTimeout,  long writeIdleTimeout, QuicChannel channel,
+                            ChannelHandlerContext chctx) {
     super(context, chctx);
     this.channel = channel;
     this.metrics = metrics;
+    this.idleTimeout = idleTimeout;
+    this.readIdleTimeout = readIdleTimeout;
+    this.writeIdleTimeout = writeIdleTimeout;
     this.context = context;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
       @Override
@@ -115,6 +124,10 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       // Only consider stream we can end for shutdown, e.g. this excludes remote opened HTTP/3 control stream
       streamGroup.add(streamChannel);
     }
+    ChannelPipeline pipeline = streamChannel.pipeline();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
+    }
     Function<ContextInternal, ContextInternal> provider = streamContextProvider;
     ContextInternal streamContext;
     if (provider != null) {
@@ -129,7 +142,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
         context.dispatch(stream, h);
       }
     });
-    streamChannel.pipeline().addLast("handler", handler);
+    pipeline.addLast("handler", handler);
   }
 
   void handleDatagram(ByteBuf byteBuf) {
