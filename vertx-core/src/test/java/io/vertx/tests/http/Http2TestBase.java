@@ -62,11 +62,6 @@ public class Http2TestBase extends HttpTestBase {
   }
 
   @Override
-  protected void configureDomainSockets() throws Exception {
-    // Nope
-  }
-
-  @Override
   protected void tearDown() throws Exception {
     super.tearDown();
     for (EventLoopGroup eventLoopGroup : eventLoopGroups) {

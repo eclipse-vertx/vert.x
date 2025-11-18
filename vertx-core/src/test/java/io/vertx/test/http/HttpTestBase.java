@@ -14,9 +14,9 @@ package io.vertx.test.http;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 
 import java.io.BufferedWriter;
@@ -50,6 +50,26 @@ public class HttpTestBase extends VertxTestBase {
   protected RequestOptions requestOptions;
   private File tmp;
 
+  protected HttpServer createHttpServer(HttpServerOptions options) {
+    return vertx.createHttpServer(options);
+  }
+
+  protected HttpClientAgent createHttpClient(HttpClientOptions options) {
+    return vertx.createHttpClient(options);
+  }
+
+  protected HttpClientAgent createHttpClient(HttpClientOptions options, PoolOptions pool) {
+    return vertx.createHttpClient(options, pool);
+  }
+
+  protected HttpClientBuilder httpClientBuilder(Vertx vertx, HttpClientOptions options) {
+    return vertx.httpClientBuilder().with(options);
+  }
+
+  protected HttpClientBuilder httpClientBuilder(HttpClientOptions options) {
+    return httpClientBuilder(vertx, options);
+  }
+
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }
@@ -66,20 +86,8 @@ public class HttpTestBase extends VertxTestBase {
       .setHost(baseServerOptions.getHost())
       .setPort(baseServerOptions.getPort())
       .setURI(DEFAULT_TEST_URI);
-    server = vertx.createHttpServer(baseServerOptions);
-    client = vertx.createHttpClient(createBaseClientOptions());
-  }
-
-  /**
-   * Override to disable domain sockets testing.
-   */
-  protected void configureDomainSockets() throws Exception {
-    if (USE_DOMAIN_SOCKETS) {
-      assertTrue("Native transport not enabled", TRANSPORT.implementation().supportsDomainSockets());
-      tmp = TestUtils.tmpFile(".sock");
-      testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
-      requestOptions.setServer(testAddress);
-    }
+    server = createHttpServer(baseServerOptions);
+    client = createHttpClient(createBaseClientOptions());
   }
 
   @SuppressWarnings("unchecked")

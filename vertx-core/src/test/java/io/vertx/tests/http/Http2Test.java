@@ -61,7 +61,6 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  @Override
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(1);
   }
