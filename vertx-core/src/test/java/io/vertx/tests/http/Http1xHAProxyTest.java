@@ -8,25 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.test.proxy;
 
-public enum ProxyKind {
+package io.vertx.tests.http;
 
-  /**
-   * HTTP CONNECT ssl proxy
-   */
-  HTTP,
-
-  /**
-   * SOCKS4/4a tcp proxy
-   */
-  SOCKS4,
-
-  /**
-   * SOCSK5 tcp proxy
-   */
-  SOCKS5,
-
-  HA
-
+/**
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+public class Http1xHAProxyTest extends HAProxyTest {
 }

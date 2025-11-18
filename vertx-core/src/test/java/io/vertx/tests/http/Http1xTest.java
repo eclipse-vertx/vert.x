@@ -1009,7 +1009,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  @Override
   public void testCloseHandlerNotCalledWhenConnectionClosedAfterEnd() throws Exception {
     testCloseHandlerNotCalledWhenConnectionClosedAfterEnd(0);
   }
@@ -5946,4 +5945,26 @@ public class Http1xTest extends HttpTest {
       .await();
   }
 
+  @Test
+  public void testListenSocketAddress() throws Exception {
+    NetClient netClient = vertx.createNetClient();
+    server.requestHandler(req -> req.response().end());
+    SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    startServer(sockAddress);
+    netClient
+      .connect(sockAddress)
+      .onComplete(onSuccess(sock -> {
+        sock.handler(buf -> {
+          assertTrue("Response is not an http 200", buf.toString("UTF-8").startsWith("HTTP/1.1 200 OK"));
+          testComplete();
+        });
+        sock.write("GET / HTTP/1.1\r\n\r\n");
+      }));
+
+    try {
+      await();
+    } finally {
+      netClient.close();
+    }
+  }
 }
