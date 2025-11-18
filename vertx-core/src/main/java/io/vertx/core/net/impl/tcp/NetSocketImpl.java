@@ -32,6 +32,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.impl.SocketBase;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.UUID;
 
@@ -44,7 +45,7 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
   private final SslContextManager sslContextManager;
   private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
-  private final TCPMetrics metrics;
+  private final TransportMetrics<?> metrics;
   private final String negotiatedApplicationLayerProtocol;
   private MessageConsumer registration;
 
@@ -52,7 +53,7 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
                        ChannelHandlerContext channel,
                        SslContextManager sslContextManager,
                        SSLOptions sslOptions,
-                       TCPMetrics metrics,
+                       TransportMetrics<?> metrics,
                        boolean registerWriteHandler) {
     this(context, channel, null, sslContextManager, sslOptions, metrics, null, registerWriteHandler);
   }
@@ -62,7 +63,7 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
                        SocketAddress remoteAddress,
                        SslContextManager sslContextManager,
                        SSLOptions sslOptions,
-                       TCPMetrics metrics,
+                       TransportMetrics<?> metrics,
                        String negotiatedApplicationLayerProtocol,
                        boolean registerWriteHandler) {
     super(context, channel);
@@ -90,7 +91,7 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
   }
 
   @Override
-  public TCPMetrics metrics() {
+  public TransportMetrics<?> metrics() {
     return metrics;
   }
 

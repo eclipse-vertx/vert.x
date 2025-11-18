@@ -21,10 +21,7 @@ import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.NetworkMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.*;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -42,14 +39,14 @@ public final class WebSocketConnectionImpl extends VertxConnection {
   private final long closingTimeoutMS;
   private ScheduledFuture<?> closingTimeout;
   private final boolean server;
-  private final TCPMetrics metrics;
+  private final TransportMetrics<?> metrics;
   private WebSocketImplBase<?> webSocket;
   private boolean closeSent;
   private ChannelPromise closePromise;
   private Object closeReason;
   private boolean closeReceived;
 
-  public WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TCPMetrics metrics) {
+  public WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TransportMetrics<?> metrics) {
     super(context, chctx);
     this.closingTimeoutMS = closingTimeoutMS;
     this.metrics = metrics;

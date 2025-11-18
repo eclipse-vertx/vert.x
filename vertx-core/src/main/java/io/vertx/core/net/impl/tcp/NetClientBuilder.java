@@ -14,6 +14,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 /**
  * A builder to configure NetClient plugins.
@@ -22,14 +23,14 @@ public class NetClientBuilder {
 
   private VertxInternal vertx;
   private NetClientOptions options;
-  private TCPMetrics metrics;
+  private TransportMetrics metrics;
 
   public NetClientBuilder(VertxInternal vertx, NetClientOptions options) {
     this.vertx = vertx;
     this.options = options;
   }
 
-  public NetClientBuilder metrics(TCPMetrics metrics) {
+  public NetClientBuilder metrics(TransportMetrics metrics) {
     this.metrics = metrics;
     return this;
   }

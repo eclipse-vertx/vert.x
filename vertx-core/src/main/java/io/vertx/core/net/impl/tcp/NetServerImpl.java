@@ -59,6 +59,7 @@ import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.InetAddress;
@@ -98,7 +99,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
-  private TCPMetrics<?> metrics;
+  private TransportMetrics<?> metrics;
   private volatile int actualPort;
 
   public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
@@ -258,7 +259,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
     private void connected(Channel ch, SslContextManager sslContextManager, SSLOptions sslOptions) {
       initChannel(ch.pipeline(), options.isSsl());
-      TCPMetrics<?> metrics = getMetrics();
+      TransportMetrics<?> metrics = getMetrics();
       VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
@@ -575,7 +576,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return listening;
   }
 
-  private TCPMetrics<?> createMetrics(SocketAddress localAddress) {
+  private TransportMetrics<?> createMetrics(SocketAddress localAddress) {
     VertxMetrics metrics = vertx.metrics();
     if (metrics != null) {
       if (options instanceof HttpServerOptions) {
@@ -627,7 +628,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   @Override
-  public synchronized TCPMetrics<?> getMetrics() {
+  public synchronized TransportMetrics<?> getMetrics() {
     return actualServer != null ? actualServer.metrics : null;
   }
 

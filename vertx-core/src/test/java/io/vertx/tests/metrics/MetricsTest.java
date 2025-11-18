@@ -1236,6 +1236,10 @@ public class MetricsTest extends VertxTestBase {
           lifecycle.compareAndSet(0, 1);
           return new HttpServerMetrics<>() {
             @Override
+            public String type() {
+              return "tcp";
+            }
+            @Override
             public void close() {
               lifecycle.compareAndSet(1, 2);
               HttpServerMetrics.super.close();
