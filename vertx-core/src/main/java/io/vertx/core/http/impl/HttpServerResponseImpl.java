@@ -99,10 +99,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
   void handleException(Throwable cause) {
     Handler<Throwable> handler;
     synchronized (conn) {
-      if (ended) {
-        return;
-      }
-      handler = exceptionHandler;
+      handler = ended ? null : exceptionHandler;
     }
     if (handler != null) {
       handler.handle(cause);
@@ -110,19 +107,13 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
   }
 
   void handleClose(Void v) {
-    Handler<Void> closeHandler;
-    Handler<Throwable> exceptionHandler;
+    Handler<Void> handler;
     synchronized (conn) {
       closed = true;
-      boolean failed = !ended;
-      exceptionHandler = failed ? this.exceptionHandler : null;
-      closeHandler = this.closeHandler;
+      handler = closeHandler;
     }
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(HttpUtils.STREAM_CLOSED_EXCEPTION);
-    }
-    if (closeHandler != null) {
-      closeHandler.handle(null);
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 
@@ -781,7 +772,7 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
       response.handleReset(errorCode);
     }
 
-    public  void handleException(Throwable cause) {
+    public void handleException(Throwable cause) {
       response.handleException(cause);
     }
 

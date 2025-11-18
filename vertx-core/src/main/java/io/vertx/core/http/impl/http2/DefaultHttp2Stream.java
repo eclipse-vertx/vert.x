@@ -21,10 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpFrame;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
@@ -175,10 +172,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     this.writable = writable;
   }
 
-  public void onClose() {
+  public void onClose(GoAway goAway) {
     if (!trailersSent || !trailersReceived) {
       observeReset();
-      onException(HttpUtils.STREAM_CLOSED_EXCEPTION);
+      onException(goAway != null ? new HttpClosedException(goAway) : HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     connection.flushBytesWritten();
     context.execute(v -> handleClose());

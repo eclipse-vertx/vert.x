@@ -350,13 +350,10 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   void onStreamClose(int streamId) {
     StreamChannel streamChannel = channels.remove(streamId);
-    GoAway goAway = handler.goAwayStatus();
     if (streamChannel != null) {
       S stream = streamChannel.stream;
-      if (goAway != null) {
-        stream.onException(new HttpClosedException(goAway));
-      }
-      stream.onClose();
+      GoAway goAway = handler.goAwayStatus();
+      stream.onClose(goAway);
     }
   }
 

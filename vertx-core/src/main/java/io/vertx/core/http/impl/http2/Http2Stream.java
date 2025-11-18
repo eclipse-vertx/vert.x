@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.http2;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.GoAway;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
@@ -39,6 +40,6 @@ public interface Http2Stream {
   void onReset(long code);
   void onWritabilityChanged();
   void onException(Throwable err);
-  void onClose();
+  void onClose(GoAway goAway);
 
 }
