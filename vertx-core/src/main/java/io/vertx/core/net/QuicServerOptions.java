@@ -62,6 +62,21 @@ public class QuicServerOptions extends QuicEndpointOptions {
   }
 
   @Override
+  public QuicServerOptions setIdleTimeout(Duration idleTimeout) {
+    return (QuicServerOptions) super.setIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public QuicServerOptions setReadIdleTimeout(Duration idleTimeout) {
+    return (QuicServerOptions) super.setReadIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public QuicServerOptions setWriteIdleTimeout(Duration idleTimeout) {
+    return (QuicServerOptions) super.setWriteIdleTimeout(idleTimeout);
+  }
+
+  @Override
   public ServerSSLOptions getSslOptions() {
     return (ServerSSLOptions) super.getSslOptions();
   }
