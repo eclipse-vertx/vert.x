@@ -22,19 +22,15 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
 import io.vertx.core.http.impl.HttpServerStream;
-import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
+import io.vertx.core.http.impl.observality.StreamObserver;
+import io.vertx.core.http.impl.observality.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.observability.HttpRequest;
-import io.vertx.core.spi.observability.HttpResponse;
-import io.vertx.core.spi.tracing.SpanKind;
-import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -43,20 +39,11 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStream> implements HttpServerStream, Http2ServerStream {
 
   private final Http2ServerConnection connection;
+  private final ServerStreamObserver observable;
   private HttpRequestHeaders requestHeaders;
-  private HttpResponseHeaders responseHeaders;
   private String scheme;
   private HttpMethod method;
   private String uri;
-
-  // Observability
-  private final HttpServerMetrics serverMetrics;
-  private final Object socketMetric;
-  private final TracingPolicy tracingPolicy;
-  private Object metric;
-  private Object trace;
-  private HttpRequest observableRequest;
-  private HttpResponse observableResponse;
 
   // Client handlers
   private Handler<HttpRequestHead> headersHandler;
@@ -72,14 +59,14 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
                            int promisedId) {
     super(promisedId, connection, context, true);
 
+    VertxTracer<?, ?> tracer = vertx.tracer();
+
     this.connection = connection;
     this.requestHeaders = requestHeaders;
     this.method = method;
     this.uri = uri;
     this.scheme = null;
-    this.tracingPolicy = tracingPolicy;
-    this.serverMetrics = serverMetrics;
-    this.socketMetric = socketMetric;
+    this.observable = serverMetrics != null || tracer != null ? new ServerStreamObserver(context, serverMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
   }
 
   DefaultHttp2ServerStream(Http2ServerConnection connection,
@@ -89,24 +76,15 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
                            TracingPolicy tracingPolicy) {
     super(connection, context);
 
+    VertxTracer<?, ?> tracer = vertx.tracer();
+
     this.connection = connection;
-    this.tracingPolicy = tracingPolicy;
-    this.serverMetrics = serverMetrics;
-    this.socketMetric = socketMetric;
+    this.observable = serverMetrics != null || tracer != null ? new ServerStreamObserver(context, serverMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
   }
 
-  private HttpRequest observableRequest() {
-    if (observableRequest == null) {
-      observableRequest = new HttpRequestHead(method, uri, requestHeaders, requestHeaders.authority(), null, null);
-    }
-    return observableRequest;
-  }
-
-  private HttpResponse observableResponse() {
-    if (observableResponse == null) {
-      observableResponse = new HttpResponseHead(responseHeaders.status(), null, responseHeaders);
-    }
-    return observableResponse;
+  @Override
+  StreamObserver observable() {
+    return observable;
   }
 
   public HttpHeaders headers() {
@@ -134,7 +112,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   }
 
   public Object metric() {
-    return metric;
+    return observable != null ? observable.metric() : null;
   }
 
   @Override
@@ -165,6 +143,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     HttpRequestHeaders requestHeaders = (HttpRequestHeaders)map;
 
     HttpRequestHead head = new HttpRequestHead(
+      requestHeaders.scheme(),
       requestHeaders.method(),
       requestHeaders.path(),
       map,
@@ -172,7 +151,6 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
       null,
       null
     );
-    head.scheme = requestHeaders.scheme();
     map.sanitize();
     if (handler != null) {
       context.dispatch(head, handler);
@@ -190,15 +168,6 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
       writeHeaders(headers, end, true, promise);
     }
     return promise.future();
-  }
-
-  @Override
-  void writeHeaders0(HttpHeaders headers, boolean end, boolean checkFlush, Promise<Void> promise) {
-    // Work around
-    if (headers instanceof HttpResponseHeaders) {
-      responseHeaders = (HttpResponseHeaders) headers;
-    }
-    super.writeHeaders0(headers, end, checkFlush, promise);
   }
 
   public void routed(String route) {
@@ -223,76 +192,20 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
       }
       mmap.status(200);
       DefaultHttp2ServerStream s = (DefaultHttp2ServerStream)pushStream;
-      s.responseHeaders = mmap;
-      s.observablePush();
+      s.observePush(mmap);
       return pushStream.unwrap();
     });
   }
 
-  @Override
-  protected void observeOutboundHeaders(HttpHeaders headers) {
-    if (Metrics.METRICS_ENABLED) {
-      if (serverMetrics != null) {
-        serverMetrics.responseBegin(metric, observableResponse());
-      }
-    }
-    VertxTracer tracer = context.tracer();
-    Object trace = this.trace;
-    if (tracer != null && trace != null) {
-      tracer.sendResponse(context, observableResponse(), trace, null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
-    }
-  }
-
-  @Override
-  protected void observeInboundTrailers() {
-    if (Metrics.METRICS_ENABLED) {
-      if (serverMetrics != null) {
-        serverMetrics.requestEnd(metric, observableRequest(), bytesRead());
-      }
-    }
-  }
-
-  @Override
-  protected void observeInboundHeaders(HttpHeaders headers) {
-    if (METRICS_ENABLED) {
-      if (serverMetrics != null) {
-        metric = serverMetrics.requestBegin(socketMetric, observableRequest());
-      }
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers, HTTP_2_SERVER_STREAM_TAG_EXTRACTOR);
-    }
-  }
-
-  @Override
-  protected void observeOutboundTrailers() {
-    if (serverMetrics != null) {
-      serverMetrics.responseEnd(metric, observableResponse, bytesWritten());
-    }
-  }
-
-  @Override
-  protected void observeReset() {
-    if (serverMetrics != null) {
-      serverMetrics.requestReset(metric);
-    }
-    VertxTracer tracer = context.tracer();
-    Object trace = this.trace;
-    if (tracer != null && trace != null) {
-      tracer.sendResponse(context, null, trace, HttpUtils.STREAM_CLOSED_EXCEPTION, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
-    }
-  }
-
   private void observeRoute(String route) {
-    if (serverMetrics != null && !isTrailersSent()) {
-      serverMetrics.requestRouted(metric, route);
+    if (observable != null && !isTrailersSent()) {
+      observable.observeRoute(route);
     }
   }
 
-  private void observablePush() {
-    if (serverMetrics != null) {
-      metric = serverMetrics.responsePushed(socketMetric, method(), uri, observableResponse());
+  private void observePush(HttpResponseHeaders headers) {
+    if (observable != null) {
+      observable.observePush(headers, method, uri);
     }
   }
 
@@ -306,58 +219,4 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   public HttpServerStream unwrap() {
     return this;
   }
-
-  public static final TagExtractor<DefaultHttp2ServerStream> HTTP_2_SERVER_STREAM_TAG_EXTRACTOR = new TagExtractor<>() {
-    @Override
-    public int len(DefaultHttp2ServerStream req) {
-      return ((HttpRequestHeaders)req.headers()).path().indexOf('?') == -1 ? 4 : 5;
-    }
-
-    @Override
-    public String name(DefaultHttp2ServerStream req, int index) {
-      switch (index) {
-        case 0:
-          return "http.url";
-        case 1:
-          return "http.request.method";
-        case 2:
-          return "url.scheme";
-        case 3:
-          return "url.path";
-        case 4:
-          return "url.query";
-      }
-      throw new IndexOutOfBoundsException("Invalid tag index " + index);
-    }
-
-    @Override
-    public String value(DefaultHttp2ServerStream req, int index) {
-      int idx;
-      switch (index) {
-        case 0:
-          String sb = req.scheme() +
-            "://" +
-            req.authority() +
-            ((HttpRequestHeaders)req.headers()).path();
-          return sb;
-        case 1:
-          return req.method().name();
-        case 2:
-          return req.scheme();
-        case 3:
-          String path = ((HttpRequestHeaders)req.headers()).path();
-          idx = path.indexOf('?');
-          if (idx > 0) {
-            path = path.substring(0, idx);
-          }
-          return path;
-        case 4:
-          String query = ((HttpRequestHeaders)req.headers()).path();
-          idx = query.indexOf('?');
-          query = query.substring(idx + 1);
-          return query;
-      }
-      throw new IndexOutOfBoundsException("Invalid tag index " + index);
-    }
-  };
 }

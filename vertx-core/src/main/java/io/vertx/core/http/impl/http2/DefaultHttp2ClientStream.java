@@ -20,7 +20,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
@@ -29,18 +28,18 @@ import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
+import io.vertx.core.http.impl.observality.ClientStreamObserver;
+import io.vertx.core.http.impl.observality.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.TRANSFER_ENCODING;
 
@@ -53,13 +52,8 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   private static final AtomicInteger id_seq = new AtomicInteger(-1);
 
   private final Http2ClientConnection connection;
-  private final TracingPolicy tracingPolicy;
   private final boolean decompressionSupported;
-  private final ClientMetrics clientMetrics;
-  private HttpResponseHead responseHead;
-  private HttpRequestHead requestHead;
-  private Object metric;
-  private Object trace;
+  private final ClientStreamObserver observable;
 
   // Handlers
   private Handler<HttpResponseHead> headersHandler;
@@ -76,15 +70,22 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
                            boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
     super(id, connection, context, writable);
 
+    VertxTracer<?, ?> tracer = vertx.tracer();
+
     this.connection = connection;
-    this.tracingPolicy = tracingPolicy;
     this.decompressionSupported = decompressionSupported;
-    this.clientMetrics = clientMetrics;
+    this.observable = clientMetrics != null || tracer != null ? new ClientStreamObserver(context, tracingPolicy, clientMetrics, tracer, connection.remoteAddress()) : null;
+  }
+
+  @Override
+  StreamObserver observable() {
+    return observable;
   }
 
   public void upgrade(Object metric, Object trace) {
-    this.metric = metric;
-    this.trace = trace;
+    if (observable != null) {
+      observable.observeUpgrade(metric, trace);
+    }
   }
 
   @Override
@@ -123,6 +124,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     public void write() {
       HttpRequestHeaders headers = new HttpRequestHeaders(new DefaultHttp2Headers());
       headers.method(request.method);
+      headers.trace(request.traceOperation);
       boolean e;
       if (request.method == HttpMethod.CONNECT) {
         if (request.authority == null) {
@@ -150,8 +152,6 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
-      request.remoteAddress = ((HttpConnection) connection).remoteAddress();
-      requestHead = request;
       try {
         connection.createStream(DefaultHttp2ClientStream.this);
       } catch (Exception ex) {
@@ -174,11 +174,11 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   public Object metric() {
-    return metric;
+    return observable != null ? observable.metric() : null;
   }
 
   public Object trace() {
-    return trace;
+    return observable != null ? observable.trace() : null;
   }
 
   @Override
@@ -192,12 +192,10 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   public void onPush(DefaultHttp2ClientStream pushStream, int promisedStreamId, HttpRequestHeaders headers, boolean writable) {
-    HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
+    HttpClientPush push = new HttpClientPush(new HttpRequestHead(headers.scheme(), headers.method(), headers.path(), headers, headers.authority(), null, null), pushStream);
     pushStream.init(promisedStreamId, writable);
-    if (clientMetrics != null) {
-      Object metric = clientMetrics.requestBegin(headers.path().toString(), push);
-      pushStream.metric = metric;
-      clientMetrics.requestEnd(metric, 0L);
+    if (pushStream.observable != null) {
+      pushStream.observable.observePush(headers);
     }
     context.execute(push, this::handlePush);
   }
@@ -225,8 +223,6 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
       onEarlyHints(headersMultiMap);
       return;
     }
-    String statusMessage = HttpResponseStatus.valueOf(status).reasonPhrase();
-    this.responseHead = new HttpResponseHead(responseHeaders.status(), statusMessage, headers);
     super.onHeaders(headers);
   }
 
@@ -282,58 +278,6 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     Handler<MultiMap> handler = earlyHintsHandler;
     if (handler != null) {
       context.dispatch(headers, handler);
-    }
-  }
-
-  @Override
-  protected void observeOutboundHeaders(HttpHeaders headers) {
-    if (clientMetrics != null) {
-      metric = clientMetrics.requestBegin(requestHead.uri, requestHead);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      BiConsumer<String, String> headers_ = (key, val) -> headers.add(key, val);
-      String operation = requestHead.traceOperation;
-      if (operation == null) {
-        operation = requestHead.method().toString();
-      }
-      trace = tracer.sendRequest(context, SpanKind.RPC, tracingPolicy, requestHead, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
-    }
-  }
-
-  @Override
-  protected void observeInboundTrailers() {
-    if (clientMetrics != null) {
-      clientMetrics.responseEnd(metric, bytesRead());
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null && trace != null) {
-      tracer.receiveResponse(context, responseHead, trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
-    }
-  }
-
-  @Override
-  protected void observeReset() {
-    if (clientMetrics != null) {
-      clientMetrics.requestReset(metric);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null && trace != null) {
-      tracer.receiveResponse(context, responseHead, trace, HttpUtils.STREAM_CLOSED_EXCEPTION, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
-    }
-  }
-
-  @Override
-  protected void observeInboundHeaders(HttpHeaders headers) {
-    if (clientMetrics != null) {
-      clientMetrics.responseBegin(metric, responseHead);
-    }
-  }
-
-  @Override
-  protected void observeOutboundTrailers() {
-    if (clientMetrics != null) {
-      clientMetrics.requestEnd(metric, bytesWritten());
     }
   }
 

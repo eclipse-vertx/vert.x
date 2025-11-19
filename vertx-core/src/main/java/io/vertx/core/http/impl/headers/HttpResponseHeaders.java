@@ -12,11 +12,35 @@ package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.vertx.core.spi.tracing.TagExtractor;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class HttpResponseHeaders extends HttpHeaders {
+
+  public static final TagExtractor<HttpResponseHeaders> CLIENT_TAG_EXTRACTOR = new TagExtractor<>() {
+    @Override
+    public int len(HttpResponseHeaders resp) {
+      return 1;
+    }
+
+    @Override
+    public String name(HttpResponseHeaders resp, int index) {
+      if (index == 0) {
+        return "http.response.status_code";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+
+    @Override
+    public String value(HttpResponseHeaders resp, int index) {
+      if (index == 0) {
+        return Integer.toString(resp.status());
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
 
   private Integer status;
 

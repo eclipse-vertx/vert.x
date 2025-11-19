@@ -28,6 +28,7 @@ import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.tracing.TracingPolicy;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -174,7 +175,6 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("X-B3-TraceId", traceId);
         assertNotNull(request);
-        assertTrue(request instanceof HttpRequest);
         assertEquals(expectedOperation, operation);
         return request;
       }
@@ -183,7 +183,6 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertSame(val, key.get(context));
         key.remove(context);
         assertNotNull(response);
-        assertTrue(response instanceof HttpResponse);
         assertNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
       }

@@ -14,16 +14,101 @@ import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.spi.tracing.TagExtractor;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class HttpRequestHeaders extends HttpHeaders {
 
+  public static final TagExtractor<HttpRequestHeaders> SERVER_TAG_EXTRACTOR = new TagExtractor<>() {
+    @Override
+    public int len(HttpRequestHeaders req) {
+      String path = req.path();
+      int idx = path.indexOf('?');
+      return idx == -1 ? 4 : 5;
+    }
+
+    @Override
+    public String name(HttpRequestHeaders req, int index) {
+      switch (index) {
+        case 0:
+          return "http.url";
+        case 1:
+          return "http.request.method";
+        case 2:
+          return "url.scheme";
+        case 3:
+          return "url.path";
+        case 4:
+          return "url.query";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+
+    @Override
+    public String value(HttpRequestHeaders req, int index) {
+      int idx;
+      String path;
+      switch (index) {
+        case 0:
+          StringBuilder tmp = new StringBuilder();
+          tmp.append(req.scheme);
+          tmp.append("://");
+          tmp.append(req.authority);
+          tmp.append(req.path());
+          return tmp.toString();
+        case 1:
+          return req.method().name();
+        case 2:
+          return req.scheme();
+        case 3:
+          path = req.path();
+          idx = path.indexOf('?');
+          return idx == -1 ? path : path.substring(0, idx);
+        case 4:
+          path = req.path();
+          idx = path.indexOf('?');
+          return idx == -1 ? null : path.substring(idx + 1);
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
+
+  public static final TagExtractor<HttpRequestHeaders> CLIENT_TAG_EXTRACTOR = new TagExtractor<>() {
+    @Override
+    public int len(HttpRequestHeaders req) {
+      return 2;
+    }
+
+    @Override
+    public String name(HttpRequestHeaders req, int index) {
+      switch (index) {
+        case 0:
+          return "url.full";
+        case 1:
+          return "http.request.method";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+
+    @Override
+    public String value(HttpRequestHeaders req, int index) {
+      switch (index) {
+        case 0:
+          return req.absoluteUri();
+        case 1:
+          return req.method.name();
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
+
   private HttpMethod method;
   private HostAndPort authority;
   private String uri;
   private String scheme;
+  private String trace;
 
   public HttpRequestHeaders(Headers<CharSequence, CharSequence, ?> headers) {
     super(headers);
@@ -36,6 +121,10 @@ public class HttpRequestHeaders extends HttpHeaders {
   public HttpHeaders path(String path) {
     this.uri = path;
     return this;
+  }
+
+  public String absoluteUri() {
+    return scheme + "://" + authority + uri;
   }
 
   public String path() {
@@ -66,6 +155,15 @@ public class HttpRequestHeaders extends HttpHeaders {
 
   public HttpHeaders scheme(String scheme) {
     this.scheme = scheme;
+    return this;
+  }
+
+  public String trace() {
+    return trace;
+  }
+
+  public HttpHeaders trace(String trace) {
+    this.trace = trace;
     return this;
   }
 
