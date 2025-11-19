@@ -50,14 +50,14 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
                                         ChannelHandlerContext chctx,
                                         ContextInternal context,
                                         ClientMetrics<?, ?, ?> clientMetrics,
-                                        HttpClientMetrics<?, ?, ?> tcpMetrics,
+                                        HttpClientMetrics<?, ?, ?> transportMetrics,
                                         HostAndPort authority,
                                         int maxConcurrency,
                                         long keepAliveTimeoutMillis,
                                         long maxLifetimeMillis,
                                         boolean decompressionSupported,
                                         Promise<HttpClientConnection> completion) {
-    super(handler, tcpMetrics, chctx, context);
+    super(handler, transportMetrics, chctx, context);
 
     this.authority = authority;
     this.completion = completion;
@@ -171,7 +171,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public Future<HttpClientStream> createStream(ContextInternal context) {
-    Http2ClientStream stream = Http2ClientStream.create(this, context, null, decompressionSupported, clientMetrics);
+    Http2ClientStream stream = Http2ClientStream.create(this, context, null, decompressionSupported, transportMetrics, clientMetrics);
     return context.succeededFuture(stream.unwrap());
   }
 

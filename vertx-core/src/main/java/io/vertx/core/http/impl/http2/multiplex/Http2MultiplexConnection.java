@@ -57,8 +57,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class Http2MultiplexConnection<S extends Http2Stream> extends ConnectionBase implements HttpConnection {
 
   protected final Http2MultiplexHandler handler;
+  protected final TransportMetrics<?> transportMetrics;
   private final IntObjectMap<StreamChannel> channels;
-  private final TransportMetrics<?> transportMetrics;
   private final Deque<Promise<Buffer>> pendingPingAcks;
   private boolean initialSettingsReceived;
   private int windowSize;

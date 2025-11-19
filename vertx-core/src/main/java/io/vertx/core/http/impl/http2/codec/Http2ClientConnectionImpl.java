@@ -16,7 +16,6 @@ import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBase;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
@@ -27,15 +26,16 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
-  private final HttpClientMetrics clientMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final HttpClientOptions options;
-  private final ClientMetrics metrics;
+  private final ClientMetrics clientMetrics;
   private final HostAndPort authority;
   private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
@@ -47,13 +47,13 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   Http2ClientConnectionImpl(ContextInternal context,
                             HostAndPort authority,
                             VertxHttp2ConnectionHandler connHandler,
-                            HttpClientMetrics clientMetrics,
-                            ClientMetrics metrics,
+                            HttpClientMetrics transportMetrics,
+                            ClientMetrics clientMetrics,
                             HttpClientOptions options,
                             long maxLifetime) {
     super(context, connHandler);
-    this.metrics = metrics;
     this.clientMetrics = clientMetrics;
+    this.transportMetrics = transportMetrics;
     this.options = options;
     this.authority = authority;
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
@@ -143,17 +143,18 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public HttpClientMetrics metrics() {
-    return clientMetrics;
+  public TransportMetrics<?> metrics() {
+    return transportMetrics;
   }
 
   ClientMetrics clientMetrics() {
-    return metrics;
+    return clientMetrics;
   }
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2Stream nettyStream = handler.connection().stream(1);
-    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, options.getTracingPolicy(), options.isDecompressionSupported(), clientMetrics(), isWritable(1));
+    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, options.getTracingPolicy(),
+      options.isDecompressionSupported(), transportMetrics, clientMetrics, isWritable(1));
     s.upgrade(metric, trace);
     nettyStream.setProperty(streamKey, s);
     return s.unwrap();
@@ -177,6 +178,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       context,
       options.getTracingPolicy(),
       options.isDecompressionSupported(),
+      transportMetrics,
       clientMetrics());
   }
 
@@ -230,7 +232,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
 //      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      Http2ClientStream s = Http2ClientStream.create(this, context, options.getTracingPolicy(), options.isDecompressionSupported(), clientMetrics());
+      Http2ClientStream s = Http2ClientStream.create(this, context, options.getTracingPolicy(), options.isDecompressionSupported(), transportMetrics, clientMetrics);
 //      pushStream.init(s);
 //      pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);

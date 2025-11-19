@@ -139,7 +139,8 @@ public final class Http2MultiplexHandler extends ChannelDuplexHandler implements
     ChannelHandlerContext chctx = pendingChannels.remove(channel);
     ClientMetrics<?, ?, ?> clientMetrics = ((Http2MultiplexClientConnection) connection).clientMetrics();
     Http2FrameStream s = channel.stream();
-    Http2ClientStream sb = Http2ClientStream.create(s.id(), (Http2ClientConnection) connection, context, null, false, clientMetrics, channel.isWritable());
+    Http2ClientStream sb = Http2ClientStream.create(s.id(), (Http2ClientConnection) connection, context,
+      null, false, connection.transportMetrics, clientMetrics, channel.isWritable());
     connection.registerChannel(sb, s, chctx);
     sb.upgrade(metric, trace);
     return sb;

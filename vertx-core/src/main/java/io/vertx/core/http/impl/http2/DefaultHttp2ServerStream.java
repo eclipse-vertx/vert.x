@@ -70,7 +70,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   }
 
   DefaultHttp2ServerStream(Http2ServerConnection connection,
-                           HttpServerMetrics serverMetrics,
+                           HttpServerMetrics<?, ?, ?> serverMetrics,
                            Object socketMetric,
                            ContextInternal context,
                            TracingPolicy tracingPolicy) {
@@ -83,7 +83,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   }
 
   @Override
-  StreamObserver observable() {
+  StreamObserver observer() {
     return observable;
   }
 

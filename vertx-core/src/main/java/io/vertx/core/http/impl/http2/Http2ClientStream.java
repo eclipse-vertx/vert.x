@@ -14,6 +14,8 @@ import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 /**
@@ -23,14 +25,14 @@ public interface Http2ClientStream extends Http2Stream {
 
   static Http2ClientStream create(Http2ClientConnection connection, ContextInternal context,
                                   TracingPolicy tracingPolicy, boolean decompressionSupported,
-                                  ClientMetrics clientMetrics) {
-    return new DefaultHttp2ClientStream(connection, context, tracingPolicy, decompressionSupported, clientMetrics);
+                                  TransportMetrics<?> transportMetrics, ClientMetrics clientMetrics) {
+    return new DefaultHttp2ClientStream(connection, context, tracingPolicy, decompressionSupported, transportMetrics, clientMetrics);
   }
 
   static Http2ClientStream create(int id, Http2ClientConnection connection, ContextInternal context,
                                   TracingPolicy tracingPolicy, boolean decompressionSupported,
-                                  ClientMetrics clientMetrics, boolean writable) {
-    return new DefaultHttp2ClientStream(id, connection, context, tracingPolicy, decompressionSupported, clientMetrics, writable);
+                                  TransportMetrics<?> transportMetrics, ClientMetrics clientMetrics, boolean writable) {
+    return new DefaultHttp2ClientStream(id, connection, context, tracingPolicy, decompressionSupported, transportMetrics, clientMetrics, writable);
   }
 
   void upgrade(Object metric, Object trace);

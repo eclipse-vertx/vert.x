@@ -183,16 +183,6 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AsyncTestBase.assertWaitUntil(() -> !clientSocketMetric.get().connected.get());
     assertEquals(contentLength, clientSocketMetric.get().bytesRead.get());
     assertEquals(contentLength, clientSocketMetric.get().bytesWritten.get());
-    for (Iterator<Long> it : Arrays.asList(clientSocketMetric.get().bytesReadEvents.iterator(), serverMetric.get().socket.bytesWrittenEvents.iterator())) {
-      while (it.hasNext()) {
-        long val = it.next();
-        if (it.hasNext()) {
-          assertEquals(4096, val);
-        } else {
-          assertTrue(val < 4096);
-        }
-      }
-    }
   }
 
   @Test

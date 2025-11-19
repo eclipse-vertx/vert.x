@@ -17,6 +17,7 @@ import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -27,6 +28,8 @@ import io.vertx.core.tracing.TracingPolicy;
  */
 public abstract class StreamObserver {
 
+  private final TransportMetrics transportMetrics;
+  final Object socketMetric;
   final ContextInternal context;
   final SocketAddress remoteAddress;
   final TracingPolicy tracingPolicy;
@@ -36,8 +39,11 @@ public abstract class StreamObserver {
   HttpRequest observableRequest;
   HttpResponse observableResponse;
 
-  public StreamObserver(ContextInternal context, SocketAddress remoteAddress, TracingPolicy tracingPolicy, VertxTracer tracer) {
+  public StreamObserver(ContextInternal context, SocketAddress remoteAddress, TransportMetrics transportMetrics,
+                        Object socketMetric, TracingPolicy tracingPolicy, VertxTracer tracer) {
     this.context = context;
+    this.transportMetrics = transportMetrics;
+    this.socketMetric = socketMetric;
     this.remoteAddress = remoteAddress;
     this.tracingPolicy = tracingPolicy;
     this.tracer = tracer;
@@ -55,11 +61,19 @@ public abstract class StreamObserver {
 
   public abstract void observeInboundHeaders(HttpHeaders headers);
 
-  public abstract void observeOutboundTrailers(long bytesWritten);
+  public void observeOutboundTrailers(long bytesWritten) {
+    if (transportMetrics != null) {
+      transportMetrics.bytesWritten(socketMetric, remoteAddress, bytesWritten);
+    }
+  }
 
   public abstract void observeOutboundHeaders(HttpHeaders headers);
 
-  public abstract void observeInboundTrailers(long bytesRead);
+  public void observeInboundTrailers(long bytesRead) {
+    if (transportMetrics != null) {
+      transportMetrics.bytesRead(socketMetric, remoteAddress, bytesRead);
+    }
+  }
 
   HttpRequest observableRequest(HttpRequestHeaders requestHeaders, SocketAddress remoteAddress) {
     if (observableRequest == null) {

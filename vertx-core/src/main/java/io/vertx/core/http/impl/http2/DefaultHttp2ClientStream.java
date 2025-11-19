@@ -35,6 +35,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -62,23 +63,24 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   private Handler<MultiMap> earlyHintsHandler;
 
   DefaultHttp2ClientStream(Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
-                           boolean decompressionSupported, ClientMetrics clientMetrics) {
-    this(id_seq.getAndDecrement(), connection, context, tracingPolicy, decompressionSupported, clientMetrics, true);
+                           boolean decompressionSupported, TransportMetrics<?> transportMetrics, ClientMetrics clientMetrics) {
+    this(id_seq.getAndDecrement(), connection, context, tracingPolicy, decompressionSupported, transportMetrics, clientMetrics, true);
   }
 
   DefaultHttp2ClientStream(int id, Http2ClientConnection connection, ContextInternal context, TracingPolicy tracingPolicy,
-                           boolean decompressionSupported, ClientMetrics clientMetrics, boolean writable) {
+                           boolean decompressionSupported, TransportMetrics<?> transportMetrics,  ClientMetrics clientMetrics, boolean writable) {
     super(id, connection, context, writable);
 
     VertxTracer<?, ?> tracer = vertx.tracer();
 
     this.connection = connection;
     this.decompressionSupported = decompressionSupported;
-    this.observable = clientMetrics != null || tracer != null ? new ClientStreamObserver(context, tracingPolicy, clientMetrics, tracer, connection.remoteAddress()) : null;
+    this.observable = clientMetrics != null || tracer != null ? new ClientStreamObserver(context, tracingPolicy,
+      clientMetrics, transportMetrics, connection.metric(), tracer, connection.remoteAddress()) : null;
   }
 
   @Override
-  StreamObserver observable() {
+  StreamObserver observer() {
     return observable;
   }
 

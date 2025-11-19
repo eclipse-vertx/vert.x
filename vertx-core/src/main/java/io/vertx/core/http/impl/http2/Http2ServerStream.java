@@ -16,6 +16,7 @@ import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 /**
@@ -46,7 +47,7 @@ public interface Http2ServerStream extends Http2Stream {
 
   static Http2ServerStream create(
     Http2ServerConnection connection,
-    HttpServerMetrics serverMetrics,
+    HttpServerMetrics<?, ?, ?> serverMetrics,
     Object socketMetric,
     ContextInternal context,
     TracingPolicy tracingPolicy) {
