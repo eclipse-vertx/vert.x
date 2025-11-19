@@ -44,6 +44,8 @@ import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -61,13 +63,16 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private final QuicEndpointOptions options;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
+  protected final BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
   private TransportMetrics<?> metrics;
   private Channel channel;
   protected ConnectionGroup connectionGroup;
   private FlushStrategy flushStrategy;
   private ContextInternal context;
 
-  public QuicEndpointImpl(VertxInternal vertx, QuicEndpointOptions options) {
+  public QuicEndpointImpl(VertxInternal vertx,
+                          BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
+                          QuicEndpointOptions options) {
 
     String keyLogFilePath = options.getKeyLogFile();
     File keylogFile;
@@ -100,6 +105,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
     this.options = options;
     this.vertx = Objects.requireNonNull(vertx);
+    this.metricsProvider = metricsProvider;
     this.manager = new SslContextManager(new SSLEngineOptions() {
       @Override
       public SSLEngineOptions copy() {
@@ -212,8 +218,8 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     return f1.compose(sslContextProvider -> {
       VertxMetrics metricsFactory = vertx.metrics();
       TransportMetrics<?> metrics;
-      if (metricsFactory != null) {
-        metrics = metricsFactory.createQuicEndpointMetrics(options, address);
+      if (metricsProvider != null) {
+        metrics = metricsProvider.apply(options, address);
       } else {
         metrics = null;
       }

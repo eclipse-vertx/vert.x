@@ -15,6 +15,11 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
+import io.vertx.core.spi.metrics.TransportMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
+
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * A Quic client.
@@ -34,7 +39,15 @@ public interface QuicClient extends QuicEndpoint {
    * @return the client
    */
   static QuicClient create(Vertx vertx, QuicClientOptions options) {
-    return QuicClientImpl.create((VertxInternal) vertx, options);
+    VertxInternal vertxInternal = (VertxInternal) vertx;
+    VertxMetrics metrics = vertxInternal.metrics();
+    BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
+    if (metrics != null) {
+      metricsProvider = metrics::createQuicEndpointMetrics;
+    } else {
+      metricsProvider = null;
+    }
+    return QuicClientImpl.create(vertxInternal, metricsProvider, options);
   }
 
   /**

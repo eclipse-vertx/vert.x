@@ -34,13 +34,8 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicServerInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.QLogConfig;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicServerOptions;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.spi.metrics.TransportMetrics;
@@ -51,6 +46,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -59,16 +55,18 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   public static final String QUIC_SERVER_MAP_KEY = "__vertx.shared.quicServers";
 
-  public static QuicServerImpl create(VertxInternal vertx, QuicServerOptions options) {
-    return new QuicServerImpl(vertx, new QuicServerOptions(options));
+  public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
+                                      QuicServerOptions options) {
+    return new QuicServerImpl(vertx, metricsProvider, new QuicServerOptions(options));
   }
 
   private final QuicServerOptions options;
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
-  public QuicServerImpl(VertxInternal vertx, QuicServerOptions options) {
-    super(vertx, options);
+  public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
+                        QuicServerOptions options) {
+    super(vertx, metricsProvider, options);
     this.options = options;
   }
 
