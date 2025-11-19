@@ -34,6 +34,8 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -43,16 +45,17 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   public static final QuicConnectOptions DEFAULT_CONNECT_OPTIONS = new QuicConnectOptions();
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
 
-  public static QuicClientImpl create(VertxInternal vertx, QuicClientOptions options) {
-    return new QuicClientImpl(vertx, new QuicClientOptions(options));
+  public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientOptions options) {
+    return new QuicClientImpl(vertx, metricsProvider, new QuicClientOptions(options));
   }
 
   private final QuicClientOptions options;
   private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
-  public QuicClientImpl(VertxInternal vertx, QuicClientOptions options) {
-    super(vertx, options);
+  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
+                        QuicClientOptions options) {
+    super(vertx, metricsProvider, options);
     this.options = options;
   }
 
