@@ -17,6 +17,7 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -32,8 +33,10 @@ public class ClientStreamObserver extends StreamObserver {
   private Object trace;
   private HttpResponseHeaders inboundHeaders;
 
-  public ClientStreamObserver(ContextInternal context, TracingPolicy tracingPolicy, ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics, VertxTracer tracer, SocketAddress remoteAddress) {
-    super(context, remoteAddress, tracingPolicy, tracer);
+  public ClientStreamObserver(ContextInternal context, TracingPolicy tracingPolicy,
+                              ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics,
+                              TransportMetrics<?> transportMetrics, Object socketMetric, VertxTracer tracer, SocketAddress remoteAddress) {
+    super(context, remoteAddress, transportMetrics, socketMetric, tracingPolicy, tracer);
     this.clientMetrics = clientMetrics;
   }
 
@@ -67,6 +70,7 @@ public class ClientStreamObserver extends StreamObserver {
   }
 
   public void observeInboundTrailers(long bytesRead) {
+    super.observeInboundTrailers(bytesRead);
     if (clientMetrics != null) {
       clientMetrics.responseEnd(metric, bytesRead);
     }
@@ -94,6 +98,7 @@ public class ClientStreamObserver extends StreamObserver {
   }
 
   public void observeOutboundTrailers(long bytesWritten) {
+    super.observeOutboundTrailers(bytesWritten);
     if (clientMetrics != null) {
       clientMetrics.requestEnd(metric, bytesWritten);
     }

@@ -34,6 +34,7 @@ import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -47,7 +48,7 @@ import java.util.function.Supplier;
 public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
   private final HttpServerOptions options;
-  private final HttpServerMetrics metrics;
+  private final HttpServerMetrics<?, ?, ?> metrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp2ConnectionHandler handler;
@@ -78,7 +79,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     return this;
   }
 
-  public HttpServerMetrics metrics() {
+  public TransportMetrics<?> metrics() {
     return metrics;
   }
 

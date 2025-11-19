@@ -175,7 +175,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   public void onClose(GoAway goAway) {
     if (!trailersSent || !trailersReceived) {
-      StreamObserver observer = observable();
+      StreamObserver observer = observer();
       if (observer != null) {
         observer.observeReset();
       }
@@ -187,7 +187,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public void onReset(long code) {
-    StreamObserver observer = observable();
+    StreamObserver observer = observer();
     if (observer != null) {
       observer.observeReset();
     }
@@ -200,7 +200,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       throw new IllegalStateException();
     }
     headersReceived = true;
-    StreamObserver observer = observable();
+    StreamObserver observer = observer();
     if (observer != null) {
       observer.observeInboundHeaders(headers);
     }
@@ -225,7 +225,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   public void onData(Buffer data) {
     bytesRead += data.length();
-    connection.reportBytesRead(data.length());
     inboundQueue.write(data);
   }
 
@@ -245,7 +244,7 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       throw new IllegalStateException();
     }
     trailersReceived = true;
-    StreamObserver observer = observable();
+    StreamObserver observer = observer();
     if (observer != null) {
       observer.observeInboundTrailers(bytesRead);
     }
@@ -339,14 +338,14 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     if (!headersSent) {
       headersSent = true;
-      StreamObserver observer = observable();
+      StreamObserver observer = observer();
       if (observer != null) {
         observer.observeOutboundHeaders(headers);
       }
     }
     if (end) {
       trailersSent = true;
-      StreamObserver observer = observable();
+      StreamObserver observer = observer();
       if (observer != null) {
         observer.observeOutboundTrailers(bytesWritten);
       }
@@ -409,10 +408,9 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     int numOfBytes = chunk.readableBytes();
     bytesWritten += numOfBytes;
-    connection.reportBytesWritten(numOfBytes);
     if (end) {
       trailersSent = true;
-      StreamObserver observer = observable();
+      StreamObserver observer = observer();
       if (observer != null) {
         observer.observeOutboundTrailers(bytesWritten);
       }
@@ -561,6 +559,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return (S)this;
   }
 
-  abstract StreamObserver observable();
+  abstract StreamObserver observer();
 
 }
