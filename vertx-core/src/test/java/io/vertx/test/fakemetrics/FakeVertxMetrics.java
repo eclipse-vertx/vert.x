@@ -72,7 +72,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public QuicEndpointMetrics<?, ?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
+  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
     return new FakeQuicEndpointMetrics();
   }
 

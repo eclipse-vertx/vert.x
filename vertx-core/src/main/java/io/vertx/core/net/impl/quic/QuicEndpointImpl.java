@@ -32,7 +32,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.spi.metrics.QuicEndpointMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tls.QuicSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -61,7 +61,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private final QuicEndpointOptions options;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
-  private QuicEndpointMetrics<?, ?> metrics;
+  private TransportMetrics<?> metrics;
   private Channel channel;
   protected ConnectionGroup connectionGroup;
   private FlushStrategy flushStrategy;
@@ -112,9 +112,9 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     });
   }
 
-  protected abstract Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, QuicEndpointMetrics<?, ?> metrics) throws Exception;
+  protected abstract Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception;
 
-  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) throws Exception {
     return codecBuilder(context, metrics).map(codecBuilder -> {
       try {
         initQuicCodecBuilder(codecBuilder, metrics);
@@ -127,7 +127,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     });
   }
 
-  private Future<Channel> bind(ContextInternal context, SocketAddress bindAddr, QuicEndpointMetrics<?, ?> metrics) {
+  private Future<Channel> bind(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) {
    Bootstrap bootstrap = new Bootstrap()
       .group(context.nettyEventLoop())
       .channelFactory(vertx.transport().datagramChannelFactory());
@@ -152,7 +152,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     });
   }
 
-  void initQuicCodecBuilder(QuicCodecBuilder<?> codecBuilder, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  void initQuicCodecBuilder(QuicCodecBuilder<?> codecBuilder, TransportMetrics<?> metrics) throws Exception {
     QuicOptions transportOptions = options.getTransportOptions();
     codecBuilder.initialMaxData(transportOptions.getInitialMaxData());
     codecBuilder.initialMaxStreamDataBidirectionalLocal(transportOptions.getInitialMaxStreamDataBidirectionalLocal());
@@ -179,7 +179,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     codecBuilder.initialCongestionWindowPackets(transportOptions.getInitialCongestionWindowPackets());
   }
 
-  protected void handleBind(Channel channel, QuicEndpointMetrics<?, ?> metrics) {
+  protected void handleBind(Channel channel, TransportMetrics<?> metrics) {
     this.channel = channel;
     this.metrics = metrics;
     this.connectionGroup = new ConnectionGroup(channel.eventLoop()) {
@@ -211,7 +211,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     Future<SslContextProvider> f1 = manager.resolveSslContextProvider(options.getSslOptions(), current);
     return f1.compose(sslContextProvider -> {
       VertxMetrics metricsFactory = vertx.metrics();
-      QuicEndpointMetrics<?, ?> metrics;
+      TransportMetrics<?> metrics;
       if (metricsFactory != null) {
         metrics = metricsFactory.createQuicEndpointMetrics(options, address);
       } else {

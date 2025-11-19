@@ -15,7 +15,9 @@ package io.vertx.core.spi.metrics;
  * An SPI used internally by Vert.x to gather metrics on a TCP socket.<p/>
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
+ * @deprecated instead use {@link TransportMetrics}
  */
+@Deprecated(forRemoval = true)
 public interface TCPMetrics<S> extends TransportMetrics<S> {
 
   @Override

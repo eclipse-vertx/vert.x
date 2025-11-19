@@ -129,7 +129,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  default QuicEndpointMetrics<?, ?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
+  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
     return null;
   }
 

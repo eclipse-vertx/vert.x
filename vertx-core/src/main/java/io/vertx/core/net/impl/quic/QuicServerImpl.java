@@ -43,7 +43,7 @@ import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerOptions;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
-import io.vertx.core.spi.metrics.QuicEndpointMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.net.StandardSocketOptions;
 import java.nio.channels.DatagramChannel;
@@ -85,7 +85,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) throws Exception {
     if (options.isLoadBalanced()) {
       ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
@@ -114,7 +114,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
     Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
     return f.map(sslContextProvider -> {
       try {
@@ -126,7 +126,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     });
   }
 
-  protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
     Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(true);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;
@@ -211,16 +211,16 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
       final ContextInternal context;
       final QuicServerImpl server;
-      final QuicEndpointMetrics<?, ?> metrics;
+      final TransportMetrics<?> metrics;
 
-      ServerRegistration(ContextInternal context, QuicServerImpl server, QuicEndpointMetrics<?, ?> metrics) {
+      ServerRegistration(ContextInternal context, QuicServerImpl server, TransportMetrics<?> metrics) {
         this.context = context;
         this.server = server;
         this.metrics = metrics;
       }
     }
 
-    void register(Channel ch, ContextInternal context, QuicServerImpl server, QuicEndpointMetrics<?, ?> metrics) {
+    void register(Channel ch, ContextInternal context, QuicServerImpl server, TransportMetrics<?> metrics) {
       registrations.put(ch, new ServerRegistration(context, server, metrics));
     }
 

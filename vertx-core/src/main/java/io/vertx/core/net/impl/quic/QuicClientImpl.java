@@ -29,7 +29,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.QuicEndpointMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -48,7 +48,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   }
 
   private final QuicClientOptions options;
-  private QuicEndpointMetrics<?, ?> metrics;
+  private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
   public QuicClientImpl(VertxInternal vertx, QuicClientOptions options) {
@@ -57,14 +57,14 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   }
 
   @Override
-  protected void handleBind(Channel channel, QuicEndpointMetrics<?, ?> metrics) {
+  protected void handleBind(Channel channel, TransportMetrics<?> metrics) {
     super.handleBind(channel, metrics);
     this.metrics = metrics;
     this.channel = channel;
   }
 
   @Override
-  protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, QuicEndpointMetrics<?, ?> metrics) throws Exception {
+  protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
         Attribute<SslContextProvider> attr = q.attr(SSL_CONTEXT_PROVIDER_KEY);
@@ -110,7 +110,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     if (ch == null) {
       return context.failedFuture("Client must be bound");
     }
-    QuicEndpointMetrics<?, ?> metrics = this.metrics;
+    TransportMetrics<?> metrics = this.metrics;
     PromiseInternal<QuicConnection> promise = context.promise();
     QuicChannelBootstrap bootstrap = QuicChannel.newBootstrap(ch)
       .attr(SSL_CONTEXT_PROVIDER_KEY, sslContextProvider)
