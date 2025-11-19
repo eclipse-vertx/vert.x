@@ -248,7 +248,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     return Zstd.isAvailable();
   }
   private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
-    request.remoteAddress = remoteAddress();
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
@@ -256,7 +255,33 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       inflight.addLast(stream);
       this.isConnect = connect;
       if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(request.uri, request);
+        stream.metric = this.metrics.requestBegin(request.uri, new io.vertx.core.spi.observability.HttpRequest() {
+          @Override
+          public int id() {
+            return 1;
+          }
+          @Override
+          public String uri() {
+            return request.uri;
+          }
+          @Override
+          public String absoluteURI() {
+            return request.absoluteURI;
+          }
+          @Override
+          public HttpMethod method() {
+            return request.method;
+          }
+          @Override
+          public MultiMap headers() {
+            return request.headers;
+          }
+
+          @Override
+          public SocketAddress remoteAddress() {
+            return Http1xClientConnection.this.remoteAddress();
+          }
+        });
       }
       VertxTracer tracer = stream.context.tracer();
       if (tracer != null) {
@@ -870,7 +895,16 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         stream.version = version;
         stream.response = response;
         if (metrics != null) {
-          metrics.responseBegin(stream.metric, response);
+          metrics.responseBegin(stream.metric, new io.vertx.core.spi.observability.HttpResponse() {
+            @Override
+            public int statusCode() {
+              return response.statusCode;
+            }
+            @Override
+            public MultiMap headers() {
+              return response.headers;
+            }
+          });
         }
       }
       stream.onHead(response);

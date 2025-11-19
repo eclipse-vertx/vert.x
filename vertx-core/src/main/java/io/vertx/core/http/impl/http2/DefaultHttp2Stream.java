@@ -26,6 +26,7 @@ import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.observality.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -174,7 +175,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
 
   public void onClose(GoAway goAway) {
     if (!trailersSent || !trailersReceived) {
-      observeReset();
+      StreamObserver observer = observable();
+      if (observer != null) {
+        observer.observeReset();
+      }
       onException(goAway != null ? new HttpClosedException(goAway) : HttpUtils.STREAM_CLOSED_EXCEPTION);
     }
     connection.flushBytesWritten();
@@ -183,7 +187,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
   }
 
   public void onReset(long code) {
-    observeReset();
+    StreamObserver observer = observable();
+    if (observer != null) {
+      observer.observeReset();
+    }
     reset = code;
     context.execute(code, this::handleReset);
   }
@@ -193,7 +200,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       throw new IllegalStateException();
     }
     headersReceived = true;
-    observeInboundHeaders(headers);
+    StreamObserver observer = observable();
+    if (observer != null) {
+      observer.observeInboundHeaders(headers);
+    }
     context.execute(headers, this::handleHeader);
   }
 
@@ -235,7 +245,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
       throw new IllegalStateException();
     }
     trailersReceived = true;
-    observeInboundTrailers();
+    StreamObserver observer = observable();
+    if (observer != null) {
+      observer.observeInboundTrailers(bytesRead);
+    }
     connection.flushBytesRead();
     inboundQueue.write(trailers);
   }
@@ -326,11 +339,17 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     }
     if (!headersSent) {
       headersSent = true;
-      observeOutboundHeaders(headers);
+      StreamObserver observer = observable();
+      if (observer != null) {
+        observer.observeOutboundHeaders(headers);
+      }
     }
     if (end) {
       trailersSent = true;
-      observeOutboundTrailers();
+      StreamObserver observer = observable();
+      if (observer != null) {
+        observer.observeOutboundTrailers(bytesWritten);
+      }
     }
     headers.prepare();
     connection.writeHeaders(id, headers.unwrap(), priority, end, checkFlush, promise);
@@ -393,7 +412,10 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.reportBytesWritten(numOfBytes);
     if (end) {
       trailersSent = true;
-      observeOutboundTrailers();
+      StreamObserver observer = observable();
+      if (observer != null) {
+        observer.observeOutboundTrailers(bytesWritten);
+      }
     }
     connection.writeData(id, chunk, end, promise);
   }
@@ -539,18 +561,6 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     return (S)this;
   }
 
-  protected void observeReset() {
-  }
+  abstract StreamObserver observable();
 
-  protected void observeInboundHeaders(HttpHeaders headers) {
-  }
-
-  protected void observeOutboundTrailers() {
-  }
-
-  protected void observeOutboundHeaders(HttpHeaders headers) {
-  }
-
-  protected void observeInboundTrailers() {
-  }
 }

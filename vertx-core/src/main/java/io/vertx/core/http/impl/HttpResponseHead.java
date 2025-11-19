@@ -17,7 +17,7 @@ import io.vertx.core.spi.observability.HttpResponse;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpResponseHead implements HttpResponse {
+public class HttpResponseHead {
 
   public final int statusCode;
   public final String statusMessage;
@@ -29,12 +29,10 @@ public class HttpResponseHead implements HttpResponse {
     this.headers = headers;
   }
 
-  @Override
   public int statusCode() {
     return statusCode;
   }
 
-  @Override
   public MultiMap headers() {
     return headers;
   }
