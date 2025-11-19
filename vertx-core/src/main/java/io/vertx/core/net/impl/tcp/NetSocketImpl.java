@@ -31,7 +31,6 @@ import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.impl.SocketBase;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.UUID;

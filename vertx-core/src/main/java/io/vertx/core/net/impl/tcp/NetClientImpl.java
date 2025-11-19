@@ -33,7 +33,6 @@ import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.io.FileNotFoundException;

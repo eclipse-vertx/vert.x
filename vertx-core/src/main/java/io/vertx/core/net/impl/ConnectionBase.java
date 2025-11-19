@@ -28,15 +28,10 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.NetworkMetrics;
-import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
-import java.security.cert.Certificate;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Abstract base class for connections managed by a vertx instance. This base implementation does not handle
