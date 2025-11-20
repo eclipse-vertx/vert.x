@@ -46,14 +46,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider {
 
-  static class Config {
-    List<String> nonProxyHosts;
-    boolean verifyHost;
-    boolean defaultSsl;
-    String defaultHost;
-    int defaultPort;
-    int maxRedirects;
-    int initialPoolKind;
+  public static class Config {
+    public List<String> nonProxyHosts;
+    public boolean verifyHost;
+    public boolean defaultSsl;
+    public String defaultHost;
+    public int defaultPort;
+    public int maxRedirects;
+    public int initialPoolKind;
   }
 
   // Pattern to check we are not dealing with an absoluate URI
