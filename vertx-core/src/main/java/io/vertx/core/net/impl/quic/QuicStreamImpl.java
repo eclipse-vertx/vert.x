@@ -18,6 +18,7 @@ import io.netty.handler.codec.quic.QuicException;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamFrame;
 import io.netty.handler.codec.quic.QuicStreamType;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -42,6 +43,7 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   private final boolean bidirectional;
   private final boolean localCreated;
   private Handler<Integer> resetHandler;
+  private Handler<IdleStateEvent> idleHandler;
 
   public QuicStreamImpl(QuicConnection connection, ContextInternal context, QuicStreamChannel channel, NetworkMetrics<?> streamMetrics, ChannelHandlerContext chctx) {
     super(context, chctx);
@@ -56,6 +58,12 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   @Override
   public long id() {
     return channel.streamId();
+  }
+
+  @Override
+  public QuicStreamInternal idleHandler(Handler<IdleStateEvent> handler) {
+    this.idleHandler = handler;
+    return this;
   }
 
   @Override
@@ -118,6 +126,16 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
       }
     });
     return promise.future();
+  }
+
+  @Override
+  protected void handleIdle(IdleStateEvent event) {
+    Handler<IdleStateEvent> handler = idleHandler;
+    if (handler != null) {
+      context.dispatch(event, handler);
+    } else {
+      super.handleIdle(event);
+    }
   }
 
   @Override

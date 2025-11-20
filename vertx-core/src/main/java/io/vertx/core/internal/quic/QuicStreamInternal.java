@@ -10,6 +10,7 @@
  */
 package io.vertx.core.internal.quic;
 
+import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -23,6 +24,16 @@ import io.vertx.core.net.QuicStream;
 public interface QuicStreamInternal extends QuicStream, SocketInternal {
 
   ContextInternal context();
+
+  /**
+   * Set a {@code handler} notified when the stream becomes idle.
+   *
+   * Setting a handler delegates the responsibility to this handler to close the stream.
+   *
+   * @param handler  the handler notified with the Netty idle event
+   * @return a reference to this, so the API can be used fluently
+   */
+  QuicStreamInternal idleHandler(Handler<IdleStateEvent> handler);
 
   @Override
   QuicStreamInternal messageHandler(Handler<Object> handler);
