@@ -55,19 +55,19 @@ public class HttpTestBase extends VertxTestBase {
   }
 
   protected HttpClientAgent createHttpClient(HttpClientOptions options) {
-    return vertx.createHttpClient(options);
+    return httpClientBuilder().with(options).build();
   }
 
-  protected HttpClientAgent createHttpClient(HttpClientOptions options, PoolOptions pool) {
-    return vertx.createHttpClient(options, pool);
+  protected final HttpClientAgent createHttpClient(HttpClientOptions options, PoolOptions pool) {
+    return httpClientBuilder().with(options).with(pool).build();
   }
 
-  protected HttpClientBuilder httpClientBuilder(Vertx vertx, HttpClientOptions options) {
-    return vertx.httpClientBuilder().with(options);
+  protected final HttpClientBuilder httpClientBuilder() {
+    return httpClientBuilder(vertx);
   }
 
-  protected HttpClientBuilder httpClientBuilder(HttpClientOptions options) {
-    return httpClientBuilder(vertx, options);
+  protected HttpClientBuilder httpClientBuilder(Vertx vertx) {
+    return vertx.httpClientBuilder().with(createBaseClientOptions());
   }
 
   protected HttpServerOptions createBaseServerOptions() {
