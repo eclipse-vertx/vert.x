@@ -18,17 +18,24 @@ import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class HttpTracingTestBase extends HttpTestBase {
+public abstract class HttpTracingTestBase extends SimpleHttpTest {
 
   private FakeTracer tracer;
+
+  protected HttpTracingTestBase(HttpConfig config) {
+    super(config);
+  }
 
   @Override
   protected VertxTracer getTracer() {
@@ -46,7 +53,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1")
+      client.request(HttpMethod.GET,"/1")
         .compose(HttpClientRequest::send).onComplete(onSuccess(resp -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
@@ -64,12 +71,12 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
         case "/1": {
           vertx.setTimer(10, id1 -> {
             client
-              .request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/2")
+              .request(HttpMethod.GET,"/2")
               .compose(HttpClientRequest::send)
               .onComplete(onSuccess(resp1 -> {
                 vertx.setTimer(10, id2 -> {
                   client
-                    .request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/2")
+                    .request(HttpMethod.GET,"/2")
                     .compose(HttpClientRequest::send)
                     .onComplete(onSuccess(resp2 -> req.response().end()));
                 });
@@ -92,7 +99,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
       client
-        .request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1")
+        .request(HttpMethod.GET,"/1")
         .compose(req -> req
           .send()
           .expecting(HttpResponseExpectation.SC_OK)
@@ -108,12 +115,16 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
 
   @Test
   public void testMultipleHttpServerRequest() throws Exception {
+
+
+    AtomicBoolean ssl = new AtomicBoolean();
     server.requestHandler(serverReq -> {
+      ssl.set(serverReq.isSSL());
       assertNotNull(tracer.activeSpan());
       switch (serverReq.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
-            client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/2?q=true")
+            client.request(HttpMethod.GET,"/2?q=true")
               .compose(HttpClientRequest::send)
               .onComplete(onSuccess(resp -> {
                 serverReq.response().end();
@@ -136,7 +147,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/1")
+      client.request(HttpMethod.GET,"/1")
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           assertEquals(rootSpan, tracer.activeSpan());
@@ -155,18 +166,18 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
 
     List<Span> lastServerSpans = finishedSpans.stream()
       .filter(mockSpan ->  mockSpan.getTags().get("span_kind").equals("server"))
-      .filter(mockSpan -> mockSpan.getTags().get("http.url").contains(DEFAULT_HTTP_HOST_AND_PORT + "/2"))
+      .filter(mockSpan -> mockSpan.getTags().get("http.url").contains(config.host() + ":" + config.port() + "/2"))
       .collect(Collectors.toList());
     assertEquals(1, lastServerSpans.size());
 
-    String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
+    String scheme = ssl.get() ? "https" : "http";
     for (Span server2Span: lastServerSpans) {
       assertEquals(scheme, server2Span.getTags().get("url.scheme"));
       assertEquals("/2", server2Span.getTags().get("url.path"));
       assertEquals("q=true", server2Span.getTags().get("url.query"));
       Span client2Span = spanMap.get(server2Span.parentId);
       assertEquals("GET", client2Span.operation);
-      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/2?q=true", client2Span.getTags().get("url.full"));
+      assertEquals(scheme + "://" + config.host() + ":" + config.port() + "/2?q=true", client2Span.getTags().get("url.full"));
       assertEquals("200", client2Span.getTags().get("http.response.status_code"));
       assertEquals("client", client2Span.getTags().get("span_kind"));
       Span server1Span = spanMap.get(client2Span.parentId);
@@ -175,7 +186,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       assertEquals("server", server1Span.getTags().get("span_kind"));
       Span client1Span = spanMap.get(server1Span.parentId);
       assertEquals("GET", client1Span.operation);
-      assertEquals(scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/1", client1Span.getTags().get("url.full"));
+      assertEquals(scheme + "://" + config.host() + ":" + config.port() + "/1", client1Span.getTags().get("url.full"));
       assertEquals("200", client2Span.getTags().get("http.response.status_code"));
       assertEquals("client", client1Span.getTags().get("span_kind"));
     }

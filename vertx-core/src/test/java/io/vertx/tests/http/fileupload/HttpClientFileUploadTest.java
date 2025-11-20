@@ -18,7 +18,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,10 +38,14 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public abstract class HttpClientFileUploadTest extends HttpTestBase {
+public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
+
+  protected HttpClientFileUploadTest(HttpConfig config) {
+    super(config);
+  }
 
   @Test
   public void testFormUrlEncoded() throws Exception {
