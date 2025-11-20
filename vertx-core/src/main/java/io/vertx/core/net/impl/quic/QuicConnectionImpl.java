@@ -115,7 +115,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
-  public NetworkMetrics<?> metrics() {
+  public TransportMetrics<?> metrics() {
     return metrics;
   }
 
