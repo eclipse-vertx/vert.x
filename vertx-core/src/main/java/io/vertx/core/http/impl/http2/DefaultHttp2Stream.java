@@ -26,7 +26,7 @@ import io.vertx.core.http.impl.HttpFrameImpl;
 import io.vertx.core.http.impl.HttpStream;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
-import io.vertx.core.http.impl.observality.StreamObserver;
+import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;

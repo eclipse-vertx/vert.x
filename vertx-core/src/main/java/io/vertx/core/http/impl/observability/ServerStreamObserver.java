@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.observality;
+package io.vertx.core.http.impl.observability;
 
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.HttpUtils;
