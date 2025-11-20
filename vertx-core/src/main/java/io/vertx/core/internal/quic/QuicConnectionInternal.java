@@ -18,6 +18,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.QuicConnection;
 import io.vertx.core.net.QuicStream;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -28,6 +29,10 @@ import java.util.function.Function;
 public interface QuicConnectionInternal extends QuicConnection {
 
   ContextInternal context();
+
+  Object metric();
+
+  TransportMetrics<?> metrics();
 
   QuicConnectionInternal streamContextProvider(Function<ContextInternal, ContextInternal> provider);
 
