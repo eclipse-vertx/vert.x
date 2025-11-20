@@ -926,6 +926,43 @@ public class QuicServerTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testStreamIdleHandler() throws Exception {
+    int numEvents = 10;
+    QuicServerOptions options = serverOptions();
+    options.setIdleTimeout(Duration.ofMillis(100));
+    QuicServer server = QuicServer.create(vertx, options);
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+        long now = System.currentTimeMillis();
+        AtomicInteger count = new AtomicInteger();
+        ((QuicStreamInternal) stream).idleHandler(idle -> {
+          if (count.incrementAndGet() == numEvents) {
+            stream.close();
+          }
+        });
+        stream.closeHandler(v -> {
+          assertEquals(numEvents, count.get());
+          long delta = System.currentTimeMillis() - now;
+          assertTrue(delta >= 100L * numEvents);
+          assertTrue(delta <= 100L * (numEvents + 2));
+          testComplete();
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+      QuicTestClient.Stream stream = connection.newStream().create();
+      stream.write("ping");
+      await();
+    } finally {
+      client.close();
+      server.close().await();
+    }  }
+
   /*  @Test
   public void testSoReuse() throws Exception {
 
