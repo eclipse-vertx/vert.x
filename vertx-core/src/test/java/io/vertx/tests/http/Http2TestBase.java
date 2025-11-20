@@ -29,6 +29,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class Http2TestBase extends HttpTestBase {
 
+  public static HttpServerOptions createHttp2ServerOptions() {
+    return createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
+  }
+
   public static HttpServerOptions createHttp2ServerOptions(int port, String host) {
     return new HttpServerOptions()
         .setPort(port)

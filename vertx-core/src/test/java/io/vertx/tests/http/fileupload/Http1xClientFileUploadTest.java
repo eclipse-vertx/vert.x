@@ -10,5 +10,11 @@
  */
 package io.vertx.tests.http.fileupload;
 
+import io.vertx.test.http.HttpConfig;
+
 public class Http1xClientFileUploadTest extends HttpClientFileUploadTest {
+
+  public Http1xClientFileUploadTest() {
+    super(HttpConfig.Http1x.DEFAULT);
+  }
 }

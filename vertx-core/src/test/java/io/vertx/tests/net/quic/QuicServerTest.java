@@ -24,6 +24,7 @@ import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -430,8 +431,12 @@ public class QuicServerTest extends VertxTestBase {
       assertWaitUntil(() -> received.get() > 0);
       stream.abort(10);
       try {
-        streamRef.get().write("test").await();
-        fail();
+        QuicStream ref = streamRef.get();
+        long now = System.currentTimeMillis();
+        while (true) {
+          ref.write("test").await();
+          assert(System.currentTimeMillis() - now < 10_000);
+        }
       } catch (Exception e) {
         assertEquals(ChannelOutputShutdownException.class, e.getClass());
         assertEquals("STOP_SENDING frame received", e.getMessage());

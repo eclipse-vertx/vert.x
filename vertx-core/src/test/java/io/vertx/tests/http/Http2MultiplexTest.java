@@ -17,14 +17,8 @@ import org.junit.Test;
 
 public class Http2MultiplexTest extends Http2Test {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return super.createBaseServerOptions().setHttp2MultiplexImplementation(true);
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return super.createBaseClientOptions().setHttp2MultiplexImplementation(true);
+  public Http2MultiplexTest() {
+    super(true);
   }
 
   @Test

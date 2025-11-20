@@ -25,6 +25,8 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -50,14 +52,12 @@ import static io.vertx.test.core.AssertExpectations.that;
  */
 public class Http2Test extends HttpTest {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+  public Http2Test() {
+    this(false);
   }
 
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+  protected Http2Test(boolean multiplex) {
+    super(new HttpConfig.Http2(multiplex));
   }
 
   @Test
@@ -192,13 +192,12 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testServerOpenSSL() throws Exception {
-    HttpServerOptions opts = Http2TestBase
-      .createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST)
+    HttpServerOptions opts = Http2TestBase.createHttp2ServerOptions()
       .setKeyCertOptions(Cert.SERVER_PEM.get())
       .setSslEngineOptions(new OpenSSLEngineOptions());
     server.close();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     server = vertx.createHttpServer(opts);
     server.requestHandler(req -> {
       req.response().end();
@@ -217,7 +216,7 @@ public class Http2Test extends HttpTest {
   public void testResetClientRequestNotYetSent() throws Exception {
     waitFor(2);
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
     server.requestHandler(req -> {
       fail();
     });
@@ -243,7 +242,7 @@ public class Http2Test extends HttpTest {
     AtomicInteger closed = new AtomicInteger();
     client.close();
     client = vertx.httpClientBuilder()
-      .with(createBaseClientOptions())
+      .with(Http2TestBase.createHttp2ClientOptions())
       .withConnectHandler(conn -> conn.closeHandler(v -> closed.incrementAndGet()))
       .build();
     client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -268,7 +267,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false));
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
@@ -282,7 +281,7 @@ public class Http2Test extends HttpTest {
   public void testServerDoesNotSupportAlpn() throws Exception {
     waitFor(2);
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setUseAlpn(false));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setUseAlpn(false));
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
@@ -301,7 +300,7 @@ public class Http2Test extends HttpTest {
   @Test
   public void testClientMakeRequestHttp2WithSSLWithoutAlpn() throws Exception {
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setUseAlpn(false));
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions().setUseAlpn(false));
     client.request(requestOptions).onComplete(onFailure(err -> testComplete()));
     await();
   }
@@ -335,7 +334,7 @@ public class Http2Test extends HttpTest {
   public void testInitialMaxConcurrentStreamZero() throws Exception {
     waitFor(2);
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -347,7 +346,7 @@ public class Http2Test extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.httpClientBuilder()
-      .with(createBaseClientOptions())
+      .with(Http2TestBase.createHttp2ClientOptions())
       .withConnectHandler(conn -> {
         assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
         conn.remoteSettingsHandler(settings -> {
@@ -365,7 +364,7 @@ public class Http2Test extends HttpTest {
   @Test
   public void testMaxHaderListSize() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -421,7 +420,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .setStreamPriority(new StreamPriority()
@@ -473,7 +472,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .setStreamPriority(new StreamPriority()
@@ -526,7 +525,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .response().onComplete(onSuccess(resp -> {
@@ -574,7 +573,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .send()
@@ -606,7 +605,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .setStreamPriority(new StreamPriority()
@@ -636,7 +635,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         assertEquals(defaultStreamWeight, req.getStreamPriority().getWeight());
@@ -665,7 +664,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .pushHandler(pushReq -> {
@@ -695,7 +694,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions());
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions());
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req
         .pushHandler(pushReq -> {
@@ -782,7 +781,7 @@ public class Http2Test extends HttpTest {
   @Test
   public void testSslHandshakeTimeout() throws Exception {
     waitFor(2);
-    HttpServerOptions opts = createBaseServerOptions()
+    HttpServerOptions opts = Http2TestBase.createHttp2ServerOptions()
       .setSslHandshakeTimeout(1234)
       .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     server.close();
@@ -795,7 +794,7 @@ public class Http2Test extends HttpTest {
         }
       });
     startServer();
-    vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+    vertx.createNetClient().connect(config.port(), config.host())
       .onFailure(this::fail)
       .onSuccess(so -> so.closeHandler(u -> complete()));
     await();
@@ -969,7 +968,7 @@ public class Http2Test extends HttpTest {
 
   private void testUnsupportedAlpnVersion(SSLEngineOptions engine, boolean accept) throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions()
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions()
       .setSslEngineOptions(engine)
       .setAlpnVersions(Collections.singletonList(HttpVersion.HTTP_2))
     );
@@ -978,7 +977,7 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1));
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1));
     client.request(requestOptions).onComplete(ar -> {
       if (ar.succeeded()) {
         if (accept) {
@@ -1097,7 +1096,7 @@ public class Http2Test extends HttpTest {
   @Test
   public void testClientKeepAliveTimeoutNoStreams() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
     server.requestHandler(req -> {
       req.response().end();
     });
@@ -1116,7 +1115,7 @@ public class Http2Test extends HttpTest {
           }
         });
       })
-      .with(createBaseClientOptions().setHttp2KeepAliveTimeout(1))
+      .with(Http2TestBase.createHttp2ClientOptions().setHttp2KeepAliveTimeout(1))
       .build();
     client.request(requestOptions).onComplete(ar -> {
       if (ar.succeeded()) {
@@ -1129,14 +1128,14 @@ public class Http2Test extends HttpTest {
   @Test
   public void testClearTextDirect() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setSsl(false).setHttp2ClearTextEnabled(true));
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setSsl(false).setHttp2ClearTextEnabled(true));
     server.requestHandler(req -> {
       assertFalse(req.isSSL());
       req.response().end();
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setSsl(false).setHttp2ClearTextUpgrade(false));
+    client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions().setSsl(false).setHttp2ClearTextUpgrade(false));
     client.request(requestOptions).compose(request -> request
         .send()
         .expecting(HttpResponseExpectation.SC_OK)

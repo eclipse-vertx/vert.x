@@ -27,9 +27,12 @@ import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
 import io.vertx.test.fakemetrics.SocketMetric;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -39,12 +42,13 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpMetricsTestBase extends HttpTestBase {
+public abstract class HttpMetricsTestBase extends SimpleHttpTest {
 
   private final HttpVersion protocol;
   private final ThreadingModel threadingModel;
 
-  public HttpMetricsTestBase(HttpVersion protocol, ThreadingModel threadingModel) {
+  public HttpMetricsTestBase(HttpConfig config,  HttpVersion protocol, ThreadingModel threadingModel) {
+    super(config);
     this.protocol = protocol;
     this.threadingModel = threadingModel;
   }
@@ -182,15 +186,6 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   @Test
   public void testHttpClientLifecycle() throws Exception {
-
-    // The test cannot pass for HTTP/2 upgrade for now
-    HttpClientOptions opts = createBaseClientOptions();
-    if (opts.getProtocolVersion() == HttpVersion.HTTP_2 &&
-      !opts.isSsl() &&
-      opts.isHttp2ClearTextUpgrade()) {
-      return;
-    }
-
     CountDownLatch requestBeginLatch = new CountDownLatch(1);
     CountDownLatch requestBodyLatch = new CountDownLatch(1);
     CountDownLatch requestEndLatch = new CountDownLatch(1);
@@ -220,31 +215,25 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
-    CountDownLatch responseEndLatch = new CountDownLatch(1);
-    Future<HttpClientRequest> request = client.request(new RequestOptions()
+    HttpClientRequest request = client.request(new RequestOptions(requestOptions)
       .setMethod(HttpMethod.POST)
-      .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
-      .setHost("localhost")
-      .setURI("/somepath")).onComplete(onSuccess(req -> {
-      req
-        .response().onComplete(onSuccess(resp -> {
-          responseBeginLatch.countDown();
-          resp.endHandler(v -> {
-            responseEndLatch.countDown();
-          });
-        }));
-      req.setChunked(true);
-      req.writeHead();
-    }));
+      .setURI("/somepath")).await();
+    Future<Void> responseEndLatch = request
+      .response()
+      .compose(response -> {
+      responseBeginLatch.countDown();
+      return response.end();
+    });
+    request.setChunked(true).writeHead().await();
     awaitLatch(requestBeginLatch);
-    HttpClientMetric reqMetric = clientMetrics.getMetric(request.result());
+    HttpClientMetric reqMetric = clientMetrics.getMetric(request);
     waitUntil(() -> reqMetric.requestEnded.get() == 0);
     waitUntil(() -> reqMetric.responseBegin.get() == 0);
-    request.result().write(TestUtils.randomAlphaString(1024));
+    request.write(TestUtils.randomAlphaString(1024));
     awaitLatch(requestBodyLatch);
     assertEquals(0, reqMetric.requestEnded.get());
     assertEquals(0, reqMetric.responseBegin.get());
-    request.result().end();
+    request.end();
     awaitLatch(requestEndLatch);
     waitUntil(() -> reqMetric.requestEnded.get() == 1);
     assertEquals(0, reqMetric.responseBegin.get());
@@ -253,8 +242,8 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     assertEquals(1, reqMetric.requestEnded.get());
     waitUntil(() -> reqMetric.responseBegin.get() == 1);
     endResponse.complete(null);
-    awaitLatch(responseEndLatch);
-    waitUntil(() -> clientMetrics.getMetric(request.result()) == null);
+    responseEndLatch.await();
+    waitUntil(() -> clientMetrics.getMetric(request) == null);
     assertEquals(1, reqMetric.requestEnded.get());
     assertEquals(1, reqMetric.responseBegin.get());
   }
@@ -266,7 +255,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     });
     startServer(testAddress);
     client.close().await();
-    client = createHttpClient(createBaseClientOptions().setIdleTimeout(1));
+    client = config.forClient().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     AtomicReference<HttpClientMetric> ref = new AtomicReference<>();
     client.request(requestOptions).onComplete(onSuccess(req -> {
@@ -287,7 +276,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
   @Test
   public void testServerConnectionClosed() throws Exception {
     server.close();
-    server = createHttpServer(createBaseServerOptions().setIdleTimeout(1));
+    server = config.forServer().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);

@@ -10,20 +10,9 @@
  */
 package io.vertx.tests.http.fileupload;
 
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.test.http.HttpTestBase;
-import io.vertx.tests.http.Http2TestBase;
-
 public class Http2MultiplexClientFileUploadTest extends Http2ClientFileUploadTest {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return super.createBaseServerOptions().setHttp2MultiplexImplementation(true);
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return super.createBaseClientOptions().setHttp2MultiplexImplementation(true);
+  public Http2MultiplexClientFileUploadTest() {
+    super(true);
   }
 }

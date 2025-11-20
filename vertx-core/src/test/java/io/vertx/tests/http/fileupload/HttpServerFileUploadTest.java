@@ -18,7 +18,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -36,12 +38,16 @@ import java.util.function.BooleanSupplier;
 
 /**
  */
-public abstract class HttpServerFileUploadTest extends HttpTestBase {
+public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   protected File testDir;
+
+  protected HttpServerFileUploadTest(HttpConfig config) {
+    super(config);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -558,7 +564,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
   @Test
   public void testAttributeSizeOverflow() {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setMaxFormAttributeSize(9));
+    server = config.forServer().setMaxFormAttributeSize(9).create(vertx);
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
@@ -650,7 +656,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
   private void testMaxFormFieldOverride(boolean pass) throws Exception {
     int newMax = 512;
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setMaxFormFields(newMax));
+    server = config.forServer().setMaxFormFields(newMax).create(vertx);
     testMaxFormFields(pass ? newMax : (newMax + 2), pass);
   }
 
@@ -716,7 +722,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
   private void testFormMaxBufferedBytesOverride(boolean pass) throws Exception {
     int newMax = 2048;
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setMaxFormBufferedBytes(newMax));
+    server = config.forServer().setMaxFormBufferedBytes(newMax).create(vertx);
     testFormMaxBufferedBytes(pass ? newMax : (newMax + 1), pass);
   }
 

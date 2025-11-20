@@ -11,7 +11,9 @@
 package io.vertx.tests.metrics;
 
 import io.vertx.core.ThreadingModel;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.test.http.HttpConfig;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -23,7 +25,7 @@ public class Http1xMetricsTest extends HttpMetricsTestBase {
   }
 
   protected Http1xMetricsTest(ThreadingModel threadingModel) {
-    super(HttpVersion.HTTP_1_1, threadingModel);
+    super(HttpConfig.Http1x.DEFAULT, HttpVersion.HTTP_1_1, threadingModel);
   }
 
   @Test
@@ -33,7 +35,7 @@ public class Http1xMetricsTest extends HttpMetricsTestBase {
     });
     startServer(testAddress);
     CountDownLatch latch = new CountDownLatch(1);
-    client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
+    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(2));
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.exceptionHandler(err -> {
         latch.countDown();
