@@ -239,7 +239,11 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     });
     QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;
     ChannelInitializer<QuicStreamChannel> initializer = initializerProvider.apply(ch -> {
-      ch.pipeline().addLast("handler", handler);
+      ChannelPipeline pipeline = ch.pipeline();
+      if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+        pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
+      }
+      pipeline.addLast("handler", handler);
       streamGroup.add(ch);
     });
     io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(type, initializer);

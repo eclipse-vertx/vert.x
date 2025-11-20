@@ -11,8 +11,12 @@
 package io.vertx.tests.net.quic;
 
 import io.netty.channel.ConnectTimeoutException;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
@@ -23,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -313,5 +318,39 @@ public class QuicClientTest extends VertxTestBase {
       assertTrue(delta >= 250);
       assertTrue(delta <= 250 * 2);
     }
+  }
+
+  @Test
+  public void testStreamIdleTimeout() throws Exception {
+    QuicServerOptions options = serverOptions();
+    options.setIdleTimeout(Duration.ofMillis(100));
+    QuicServer server = QuicServer.create(vertx, options);
+    server.handler(conn -> {
+      conn.streamHandler(stream -> {
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    client.close();
+    client = QuicClient.create(vertx, clientOptions().setIdleTimeout(Duration.ofMillis(100)));
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicStream stream = connection.openStream().await();
+    long now = System.currentTimeMillis();
+    AtomicInteger idleEvents = new AtomicInteger();
+    ((QuicStreamInternal)stream).eventHandler(event -> {
+      if (event instanceof IdleStateEvent) {
+        idleEvents.incrementAndGet();
+      }
+    });
+    stream.closeHandler(v -> {
+      long delta = System.currentTimeMillis() - now;
+      assertTrue(delta >= 100);
+      assertTrue(delta <= 300);
+      assertEquals(1, idleEvents.get());
+      testComplete();
+    });
+    stream.write("ping").await();
+    await();
   }
 }
