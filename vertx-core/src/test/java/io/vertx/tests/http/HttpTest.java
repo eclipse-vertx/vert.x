@@ -3313,7 +3313,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     client.close();
-    client = httpClientBuilder(createBaseClientOptions())
+    client = httpClientBuilder()
       .withConnectHandler(conn -> {
         assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
         complete();
@@ -3361,7 +3361,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress, serverCtx, server);
     client.close();
-    client = httpClientBuilder(createBaseClientOptions())
+    client = httpClientBuilder()
       .withConnectHandler(conn -> {
         conn.closeHandler(v -> {
           complete();
@@ -3408,7 +3408,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = httpClientBuilder(createBaseClientOptions())
+    client = httpClientBuilder()
       .withConnectHandler(conn -> {
         conn.closeHandler(v -> {
           complete();
@@ -3975,7 +3975,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(redirectedServerAddress, redirectedServer);
     Context ctx = vertx.getOrCreateContext();
     client.close();
-    client = httpClientBuilder(createBaseClientOptions())
+    client = httpClientBuilder()
       .withRedirectHandler(resp -> {
         assertEquals(ctx, Vertx.currentContext());
         Promise<RequestOptions> fut = Promise.promise();
@@ -4369,7 +4369,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = httpClientBuilder(createBaseClientOptions())
+    client = httpClientBuilder()
       .withConnectHandler(clientConn::set)
       .build();
     client.request(requestOptions).compose(HttpClientRequest::send).onComplete(onFailure(err -> {
@@ -5960,7 +5960,7 @@ public abstract class HttpTest extends HttpTestBase {
         servers.add(server);
       }
       client.close();
-      client = httpClientBuilder(createBaseClientOptions())
+      client = httpClientBuilder()
         .withConnectHandler(conn -> {
           inflight.incrementAndGet();
           conn.closeHandler(v -> {
@@ -6257,7 +6257,7 @@ public abstract class HttpTest extends HttpTestBase {
     Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
     try {
       AtomicInteger val = new AtomicInteger();
-      HttpClient client = httpClientBuilder(vertx, createBaseClientOptions())
+      HttpClient client = httpClientBuilder(vertx)
         .withLoadBalancer(enabled ? endpoints -> () -> {
           val.set(endpoints.size());
           return 0;

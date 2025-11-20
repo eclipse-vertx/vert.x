@@ -33,6 +33,7 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
   }
 
   public Integer connectionCount(SocketAddress socket) {
+    socket = keyOf(socket);
     return sockets.getOrDefault(socket, new SocketMetric[0]).length;
   }
 
@@ -41,7 +42,15 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
     return type;
   }
 
+  private SocketAddress keyOf(SocketAddress addr) {
+    if ("localhost".equals(addr.hostName())) {
+      addr = SocketAddress.inetSocketAddress(addr.port(), "127.0.0.1");
+    }
+    return addr;
+  }
+
   public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
+    remoteAddress = keyOf(remoteAddress);
     SocketMetric metric = new SocketMetric(remoteAddress, remoteName);
     sockets.compute(remoteAddress, (key, value) -> {
       if (value == null) {
@@ -57,6 +66,7 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
   }
 
   public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
+    remoteAddress = keyOf(remoteAddress);
     sockets.compute(remoteAddress, (key, value) -> {
       if (value != null) {
         for (int idx = 0;idx < value.length;idx++) {
@@ -79,6 +89,7 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
   }
 
   public SocketMetric firstMetric(SocketAddress address) {
+    address = keyOf(address);
     return sockets.get(address)[0];
   }
 
