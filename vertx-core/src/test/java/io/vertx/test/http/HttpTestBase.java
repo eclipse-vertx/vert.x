@@ -11,59 +11,24 @@
 
 package io.vertx.test.http;
 
-import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.VertxTestBase;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class HttpTestBase extends VertxTestBase {
+public class HttpTestBase extends AbstractHttpTest {
 
-  public static final String DEFAULT_HTTP_HOST = "localhost";
-  public static final int DEFAULT_HTTP_PORT = Integer.parseInt(System.getProperty("vertx.httpPort", "8080"));
-  public static final String DEFAULT_HTTP_HOST_AND_PORT = DEFAULT_HTTP_HOST + ":" +  DEFAULT_HTTP_PORT;
-  public static final String DEFAULT_HTTPS_HOST = "localhost";
-  public static final int DEFAULT_HTTPS_PORT = Integer.parseInt(System.getProperty("vertx.httpsPort", "4043"));;
-  public static final String DEFAULT_HTTPS_HOST_AND_PORT = DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT;;
-  public static final String DEFAULT_TEST_URI = "some-uri";
-
-  protected HttpServer server;
-  protected HttpClientAgent client;
-  protected SocketAddress testAddress;
-  protected RequestOptions requestOptions;
-  private File tmp;
-
-  protected HttpServer createHttpServer(HttpServerOptions options) {
-    return vertx.createHttpServer(options);
+  @Override
+  protected HttpClientAgent createHttpClient() {
+    return vertx.createHttpClient(createBaseClientOptions());
   }
 
-  protected HttpClientAgent createHttpClient(HttpClientOptions options) {
-    return httpClientBuilder().with(options).build();
-  }
-
-  protected final HttpClientAgent createHttpClient(HttpClientOptions options, PoolOptions pool) {
-    return httpClientBuilder().with(options).with(pool).build();
-  }
-
-  protected final HttpClientBuilder httpClientBuilder() {
-    return httpClientBuilder(vertx);
+  protected HttpServer createHttpServer() {
+    return vertx.createHttpServer(createBaseServerOptions());
   }
 
   protected HttpClientBuilder httpClientBuilder(Vertx vertx) {
@@ -86,8 +51,6 @@ public class HttpTestBase extends VertxTestBase {
       .setHost(baseServerOptions.getHost())
       .setPort(baseServerOptions.getPort())
       .setURI(DEFAULT_TEST_URI);
-    server = createHttpServer(baseServerOptions);
-    client = createHttpClient(createBaseClientOptions());
   }
 
   @SuppressWarnings("unchecked")
@@ -97,74 +60,4 @@ public class HttpTestBase extends VertxTestBase {
 
   private static final Handler noOp = e -> {
   };
-
-  protected void startServer() throws Exception {
-    startServer(vertx.getOrCreateContext());
-  }
-
-  protected void startServer(SocketAddress bindAddress) throws Exception {
-    startServer(bindAddress, vertx.getOrCreateContext());
-  }
-
-  protected void startServer(HttpServer server) throws Exception {
-    startServer(vertx.getOrCreateContext(), server);
-  }
-
-  protected void startServer(SocketAddress bindAddress, HttpServer server) throws Exception {
-    startServer(bindAddress, vertx.getOrCreateContext(), server);
-  }
-
-  protected void startServer(Context context) throws Exception {
-    startServer(context, server);
-  }
-
-  protected void startServer(SocketAddress bindAddress, Context context) throws Exception {
-    startServer(bindAddress, context, server);
-  }
-
-  protected void startServer(Context context, HttpServer server) throws Exception {
-    startServer(null, context, server);
-  }
-
-  protected void startServer(SocketAddress bindAddress, Context context, HttpServer server) throws Exception {
-    CompletableFuture<Void> latch = new CompletableFuture<>();
-    context.runOnContext(v -> {
-      Future<HttpServer> fut;
-      if (bindAddress != null) {
-        fut = server.listen(bindAddress);
-      } else {
-        fut = server.listen();
-      }
-      fut.onComplete(ar -> {
-        if (ar.succeeded()) {
-          latch.complete(null);
-        } else {
-          latch.completeExceptionally(ar.cause());
-        }
-      });
-    });
-    try {
-      latch.get(20, TimeUnit.SECONDS);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof Exception) {
-        throw (Exception) cause;
-      } else {
-        throw e;
-      }
-    }
-  }
-
-  protected File setupFile(String fileName, String content) throws Exception {
-    Path dir = Files.createTempDirectory("vertx");
-    File file = new File(dir.toFile(), fileName);
-    if (file.exists()) {
-      file.delete();
-    }
-    file.deleteOnExit();
-    try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-      out.write(content);
-    }
-    return file;
-  }
 }

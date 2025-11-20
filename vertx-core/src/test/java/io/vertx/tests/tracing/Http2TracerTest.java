@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.tracing;
 
+import io.vertx.test.http.HttpConfig;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,14 +27,12 @@ public class Http2TracerTest extends HttpTracerTestBase {
   private static final String SPAN_KIND_CLIENT = "client";
   private static final String SPAN_KIND_KEY = "span_kind";
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+  public Http2TracerTest() {
+    this(false);
   }
 
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+  protected Http2TracerTest(boolean multiplex) {
+    super(new HttpConfig.Http2(multiplex));
   }
 
   @Test
