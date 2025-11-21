@@ -29,14 +29,15 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.fakestream.FakeStream;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpClientConfig;
+import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.SimpleHttpTest;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
@@ -49,6 +50,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,7 +69,11 @@ import static org.junit.Assume.assumeTrue;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpTest extends HttpTestBase {
+public abstract class HttpTest extends SimpleHttpTest {
+
+  protected HttpTest(HttpConfig config) {
+    super(config);
+  }
 
   @Test
   public void testCloseMulti() throws Exception {
@@ -76,7 +82,7 @@ public abstract class HttpTest extends HttpTestBase {
     HttpServer[] servers = new HttpServer[num];
     for (int i = 0;i < num;i++) {
       int val = i;
-      servers[i] = createHttpServer(createBaseServerOptions()).requestHandler(req -> {
+      servers[i] = createHttpServer().requestHandler(req -> {
         req.response().end("Server " + val);
       });
       startServer(testAddress, servers[i]);
@@ -201,8 +207,8 @@ public abstract class HttpTest extends HttpTestBase {
           request.response().end("hello");
         });
     startServer(testAddress);
-    assertEquals(server.actualPort(), DEFAULT_HTTP_PORT);
-    HttpClient client = createHttpClient(createBaseClientOptions());
+    assertEquals(server.actualPort(), config.port());
+    HttpClient client = createHttpClient();
     client
       .request(new RequestOptions(requestOptions).setPort(server.actualPort()))
       .compose(req -> req
@@ -222,14 +228,14 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerActualPortWhenZero() throws Exception {
     assumeTrue(testAddress.isInetSocket());
     server.close();
-    server = createHttpServer(createBaseServerOptions().setPort(0).setHost(DEFAULT_HTTP_HOST));
+    server = createHttpServer();
     server
         .requestHandler(request -> {
           request.response().end("hello");
         });
-    startServer();
+    server.listen(0).await();
     assertTrue(server.actualPort() != 0);
-    HttpClient client = createHttpClient(createBaseClientOptions());
+    HttpClient client = createHttpClient();
     client
       .request(new RequestOptions(requestOptions).setPort(server.actualPort()))
       .compose(req -> req
@@ -249,7 +255,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerActualPortWhenZeroPassedInListen() throws Exception {
     assumeTrue(testAddress.isInetSocket());
     server.close();
-    server = createHttpServer(new HttpServerOptions(createBaseServerOptions()).setHost(DEFAULT_HTTP_HOST));
+    server = createHttpServer();
     server
         .requestHandler(request -> {
           request.response().end("hello");
@@ -257,7 +263,7 @@ public abstract class HttpTest extends HttpTestBase {
     startServer();
     assertTrue(server.actualPort() != 0);
     client.close();
-    client = createHttpClient(createBaseClientOptions());
+    client = createHttpClient();
     client.request(new RequestOptions(requestOptions).setPort(server.actualPort()))
       .compose(req -> req
         .send()
@@ -482,7 +488,7 @@ public abstract class HttpTest extends HttpTestBase {
     boolean ssl = this instanceof Http2Test;
     RequestOptions options;
     if (absolute) {
-      options = new RequestOptions(requestOptions).setServer(testAddress).setMethod(method).setAbsoluteURI((ssl ? "https://" : "http://") + DEFAULT_HTTP_HOST_AND_PORT + uri);
+      options = new RequestOptions(requestOptions).setServer(testAddress).setMethod(method).setAbsoluteURI((ssl ? "https://" : "http://") + config.host() + ":" + config.port() + uri);
     } else {
       options = new RequestOptions(requestOptions).setMethod(method).setURI(uri);
     }
@@ -672,7 +678,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testAbsoluteURI() throws Exception {
-    String uri = "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/this/is/a/path/foo.html";
+    String uri = "http://" + config.host() + ":" + config.port() + "/this/is/a/path/foo.html";
     testURIAndPath(uri, uri, "/this/is/a/path/foo.html");
   }
 
@@ -684,7 +690,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testAbsoluteURIWithHttpSchemaInQuery() throws Exception {
-    String uri = "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/correct/path?url=http://localhost:8008/wrong/path";
+    String uri = "http://" + config.host() + ":" + config.port() + "/correct/path?url=http://localhost:8008/wrong/path";
     testURIAndPath(uri, uri, "/correct/path");
   }
 
@@ -696,7 +702,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testAbsoluteURIEmptyPath() throws Exception {
-    String uri = "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/";
+    String uri = "http://" + config.host() + ":" + config.port() + "/";
     testURIAndPath(uri, uri, "/");
   }
 
@@ -916,7 +922,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       if (req.version() == HttpVersion.HTTP_1_1) {
         assertEquals(1, req.headers().size());
-        assertEquals( DEFAULT_HTTP_HOST_AND_PORT, req.headers().get("host"));
+        assertEquals(config.host() + ":" + config.port(), req.headers().get("host"));
       } else {
         assertEquals(0, req.headers().size());
       }
@@ -1129,7 +1135,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testUseRequestAfterComplete() throws Exception {
-    server.requestHandler(noOpHandler());
+    server.requestHandler(v -> {});
 
     startServer(testAddress);
 
@@ -1138,8 +1144,8 @@ public abstract class HttpTest extends HttpTestBase {
 
       Buffer buff = Buffer.buffer();
       assertIllegalStateExceptionAsync(() -> req.end());
-      assertIllegalStateException(() -> req.continueHandler(noOpHandler()));
-      assertIllegalStateException(() -> req.drainHandler(noOpHandler()));
+      assertIllegalStateException(() -> req.continueHandler(v -> {}));
+      assertIllegalStateException(() -> req.drainHandler(v -> {}));
       assertIllegalStateExceptionAsync(() -> req.end("foo"));
       assertIllegalStateExceptionAsync(() -> req.end(buff));
       assertIllegalStateExceptionAsync(() -> req.end("foo", "UTF-8"));
@@ -1427,7 +1433,7 @@ public abstract class HttpTest extends HttpTestBase {
           testComplete();
         }
       });
-      client = createHttpClient(createBaseClientOptions());
+      client = createHttpClient();
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
           resp.handler(data -> {
@@ -1446,7 +1452,7 @@ public abstract class HttpTest extends HttpTestBase {
       request.response().end("foo");
     });
     startServer(testAddress);
-    client = createHttpClient(createBaseClientOptions());
+    client = createHttpClient();
     // Exception handler should be called for any exceptions in the data handler
     Context ctx = vertx.getOrCreateContext();
     RuntimeException cause = new RuntimeException("should be caught");
@@ -1750,8 +1756,8 @@ public abstract class HttpTest extends HttpTestBase {
       resp.end();
       assertTrue(resp.ended());
       Buffer buff = Buffer.buffer();
-      assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
-      assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.drainHandler(v -> {}));
+      assertIllegalStateException(() -> resp.exceptionHandler(v -> {}));
       assertIllegalStateException(() -> resp.setChunked(false));
       assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
       assertIllegalStateException(() -> resp.writeQueueFull());
@@ -1959,7 +1965,7 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
     server.close();
-    server = createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(true));
+    server = config.forServer().setHandle100ContinueAutomatically(true).create(vertx);
 
     server.requestHandler(req -> {
       req.bodyHandler(data -> {
@@ -2054,7 +2060,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     client.close();
-    client = createHttpClient(createBaseClientOptions().setIdleTimeout(1));
+    client = config.forClient().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
 
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT))
@@ -2201,7 +2207,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidPort() {
-    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()));
+    client.request(HttpMethod.GET, 9998, config.host(), DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()));
     await();
   }
 
@@ -2213,12 +2219,12 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testSetHandlersAfterListening() throws Exception {
-    server.requestHandler(noOpHandler());
+    server.requestHandler(v -> {});
 
     startServer(testAddress);
 
-    assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
-    assertIllegalStateException(() -> server.webSocketHandler(noOpHandler()));
+    assertIllegalStateException(() -> server.requestHandler(v -> {}));
+    assertIllegalStateException(() -> server.webSocketHandler(v -> {}));
   }
 
   @Test
@@ -2228,7 +2234,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenTwice() throws Exception {
-    server.requestHandler(noOpHandler());
+    server.requestHandler(v -> {});
     startServer(testAddress);
     assertIllegalStateException(() -> server.listen().await());
   }
@@ -2435,7 +2441,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testGetAbsoluteURI() throws Exception {
     server.requestHandler(req -> {
-      assertEquals(req.scheme() + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/foo/bar", req.absoluteURI());
+      assertEquals(req.scheme() + "://" + config.host() + ":" + config.port() + "/foo/bar", req.absoluteURI());
       req.response().end();
     });
 
@@ -2452,7 +2458,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testGetAbsoluteURIWithParam() throws Exception {
     server.requestHandler(req -> {
-      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a=1", req.absoluteURI());
+      assertEquals(req.scheme() + "://" + config.host() + ":" + config.port() + "/foo/bar?a=1", req.absoluteURI());
       req.response().end();
     });
 
@@ -2469,7 +2475,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testGetAbsoluteURIWithUnsafeParam() throws Exception {
     server.requestHandler(req -> {
-      assertEquals(req.scheme() + "://localhost:" + DEFAULT_HTTP_PORT + "/foo/bar?a={1}", req.absoluteURI());
+      assertEquals(req.scheme() + "://" + config.host() + ":" + config.port() + "/foo/bar?a={1}", req.absoluteURI());
       req.response().end();
     });
 
@@ -2527,7 +2533,7 @@ public abstract class HttpTest extends HttpTestBase {
       occupied = new ServerSocket(0);
       occupied.setReuseAddress(false);
       server = createHttpServer(new HttpServerOptions().setPort(occupied.getLocalPort()));
-      server.requestHandler(noOpHandler()).listen().onComplete(onFailure(server -> testComplete()));
+      server.requestHandler(v -> {}).listen().onComplete(onFailure(server -> testComplete()));
       await();
     }finally {
       if( occupied != null ) {
@@ -2539,8 +2545,8 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidHost() {
     server.close();
-    server = createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost("iqwjdoqiwjdoiqwdiojwd"));
-    server.requestHandler(noOpHandler());
+    server = createHttpServer(new HttpServerOptions().setPort(config.port()).setHost("iqwjdoqiwjdoiqwdiojwd"));
+    server.requestHandler(v -> {});
     server.listen().onComplete(onFailure(s -> testComplete()));
     await();
   }
@@ -2652,7 +2658,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
+    client = config.forClient().create(vertx, new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
       int idx = i;
       client.request(new RequestOptions(requestOptions).setURI("/" + i)).onComplete(onSuccess(req -> {
@@ -2686,7 +2692,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions().setKeepAlive(true), new PoolOptions().setHttp1MaxSize(1));
+    client = config.forClient().create(vertx, new PoolOptions().setHttp1MaxSize(1));
     for (int i = 0;i < num;i++) {
       client.request(requestOptions)
         .compose(req -> req
@@ -2784,7 +2790,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
       req
         .send(Buffer.buffer("small")).onComplete(onSuccess(resp -> {
@@ -2810,7 +2816,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         AtomicBoolean ended = new AtomicBoolean();
@@ -2911,61 +2917,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testInVerticle() throws Exception {
-    testInVerticle(false);
-  }
-
-  private void testInVerticle(boolean worker) {
-    client.close();
-    server.close();
-    class MyVerticle extends AbstractVerticle {
-      Context ctx;
-      @Override
-      public void start() {
-        ctx = Vertx.currentContext();
-        if (worker) {
-          assertTrue(ctx.isWorkerContext());
-        } else {
-          assertTrue(ctx.isEventLoopContext());
-        }
-        Thread thr = Thread.currentThread();
-        server = createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-        server.requestHandler(req -> {
-          req.response().end();
-          assertSameEventLoop(ctx, Vertx.currentContext());
-          assertSame(((HttpServerRequestInternal)req).context(), Vertx.currentContext());
-          if (!worker) {
-            assertSame(thr, Thread.currentThread());
-          }
-        });
-        server
-          .listen(testAddress)
-          .onComplete(onSuccess(s -> {
-          assertSame(ctx, Vertx.currentContext());
-          if (!worker) {
-            assertSame(thr, Thread.currentThread());
-          }
-          client = createHttpClient(new HttpClientOptions());
-          client
-            .request(requestOptions)
-            .compose(HttpClientRequest::send)
-            .onComplete(onSuccess(resp -> {
-              assertSameEventLoop(ctx, Vertx.currentContext());
-              if (!worker) {
-                assertSame(thr, Thread.currentThread());
-              }
-              assertEquals(200, resp.statusCode());
-              testComplete();
-          }));
-        }));
-      }
-    }
-    MyVerticle verticle = new MyVerticle();
-    vertx.deployVerticle(verticle, new DeploymentOptions().setThreadingModel(worker ? ThreadingModel.WORKER : ThreadingModel.EVENT_LOOP));
-    await();
-  }
-
-  @Test
   public void testWorkerServer() throws Exception {
     int numReq = 5; // 5 == the HTTP/1 pool max size
     waitFor(numReq);
@@ -2975,7 +2926,7 @@ public abstract class HttpTest extends HttpTestBase {
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        createHttpServer(createBaseServerOptions())
+        createHttpServer()
           .requestHandler(req -> {
             Context current = Vertx.currentContext();
             assertTrue(current.isWorkerContext());
@@ -3024,7 +2975,7 @@ public abstract class HttpTest extends HttpTestBase {
       public void start() throws Exception {
         assertTrue(Vertx.currentContext().isWorkerContext());
         assertTrue(Context.isOnWorkerThread());
-        HttpServer server = createHttpServer(createBaseServerOptions());
+        HttpServer server = createHttpServer();
         server.requestHandler(req -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
@@ -3038,7 +2989,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           client.close();
-          client = createHttpClient(createBaseClientOptions());
+          client = createHttpClient();
           client.request(new RequestOptions(requestOptions).setMethod(PUT)).onComplete(onSuccess(req -> {
             req.send(Buffer.buffer("hello"))
               .onComplete(onSuccess(resp -> {
@@ -3067,7 +3018,7 @@ public abstract class HttpTest extends HttpTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        HttpServer server = createHttpServer(createBaseServerOptions());
+        HttpServer server = createHttpServer();
         server.requestHandler(req -> {
           req.response().end(body);
         }).listen(testAddress)
@@ -3080,7 +3031,7 @@ public abstract class HttpTest extends HttpTestBase {
       HttpClient client;
       @Override
       public void start(Promise<Void> startPromise) {
-        client = createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+        client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0; i < numReq; i++) {
           client.request(requestOptions)
             .compose(req -> req
@@ -3108,7 +3059,7 @@ public abstract class HttpTest extends HttpTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        HttpServer server = createHttpServer(createBaseServerOptions());
+        HttpServer server = createHttpServer();
         server.requestHandler(req -> {
           req.end().onComplete(onSuccess(v -> {
             req.response().end();
@@ -3127,7 +3078,7 @@ public abstract class HttpTest extends HttpTestBase {
       HttpClient client;
       @Override
       public void start(Promise<Void> startPromise) {
-        client = createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+        client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0; i < numReq; i++) {
           client.request(requestOptions).
             compose(req -> req
@@ -3142,7 +3093,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testMultipleServerClose() {
-    this.server = createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    this.server = createHttpServer();
     // We assume the endHandler and the close completion handler are invoked in the same context task
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
@@ -3254,7 +3205,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testAbsoluteURIServer() throws Exception {
     server.requestHandler(req -> {
       String absURI = req.absoluteURI();
-      assertEquals(req.scheme() + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/path", absURI);
+      assertEquals(req.scheme() + "://" + config.host() + ":" + config.port() + "/path", absURI);
       req.response().end();
     });
     startServer(testAddress);
@@ -3273,12 +3224,8 @@ public abstract class HttpTest extends HttpTestBase {
   public void testDumpManyRequestsOnQueue() throws Exception {
     int sendRequests = 10000;
     AtomicInteger receivedRequests = new AtomicInteger();
-    HttpClientOptions ops = createBaseClientOptions()
-      .setDefaultPort(DEFAULT_HTTP_PORT)
-      .setPipelining(true)
-      .setKeepAlive(true);
     client.close();
-    client = createHttpClient(ops);
+    client = config.forClient().create(vertx);
     server.requestHandler(r-> {
       r.response().end();
       if (receivedRequests.incrementAndGet() == sendRequests) {
@@ -3430,7 +3377,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testServerLogging() throws Exception {
     server.close();
-    server = createHttpServer(createBaseServerOptions().setLogActivity(true));
+    server = config.forServer().setLogActivity(true).create(vertx);
     TestLoggerFactory factory = testLogging();
     if (this instanceof Http1xTest) {
       assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
@@ -3442,7 +3389,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testClientLogging() throws Exception {
     client.close();
-    client = createHttpClient(createBaseClientOptions().setLogActivity(true));
+    client = config.forClient().setLogActivity(true).create(vertx);
     TestLoggerFactory factory = testLogging();
     if (this instanceof Http1xTest) {
       assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
@@ -3455,13 +3402,13 @@ public abstract class HttpTest extends HttpTestBase {
   public void testClientLocalAddress() throws Exception {
     String expectedAddress = TestUtils.loopbackAddress();
     client.close();
-    client = createHttpClient(createBaseClientOptions().setLocalAddress(expectedAddress));
+    client = config.forClient().setLocalAddress(expectedAddress).create(vertx);
     server.requestHandler(req -> {
       assertEquals(expectedAddress, req.remoteAddress().host());
       req.response().end();
     });
     startServer(testAddress);
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+    client.request(HttpMethod.GET, config.port(), config.host(), "/somepath")
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
@@ -3472,87 +3419,87 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectGetOn301() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn301() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 301, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 301, 301, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn301() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 301, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 301, 301, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectGetOn302() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 302, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn302() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 302, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 302, 302, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn302() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 302, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 302, 302, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectGetOn303() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 303, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn303() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.GET, 303, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectPutOn303() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.GET, 303, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectNotOn304() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 304, 304, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectGetOn307() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 307, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn307() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 307, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 307, 307, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn307() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 307, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 307, 307, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectWithRelativeLocation() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/another");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://" + config.host() + ":" + config.port() + "/another");
   }
 
   @Test
   public void testFollowRedirectGetOn308() throws Exception {
-    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected");
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectPostOn308() throws Exception {
-    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectPutOn308() throws Exception {
-    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 308, 308, 1, "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/redirected", "http://" + DEFAULT_HTTP_HOST_AND_PORT + "/somepath");
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 308, 308, 1, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   private void testFollowRedirect(
@@ -3645,7 +3592,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.bodyHandler(body -> {
           assertEquals(body, expected);
           String scheme = req.connection().isSsl() ? "https" : "http";
-          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/whatever").end();
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
@@ -3656,8 +3603,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(new RequestOptions()
       .setMethod(HttpMethod.PUT)
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(config.host())
+      .setPort(config.port())
     )
       .onComplete(onSuccess(req -> {
         req.setFollowRedirects(true);
@@ -3680,7 +3627,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp
           .setStatusCode(303)
           .putHeader(HttpHeaders.CONTENT_LENGTH, "11")
-          .putHeader(HttpHeaders.LOCATION, scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/whatever")
+          .putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever")
           .write("hello ");
         vertx.setTimer(500, id -> {
           sent.set(true);
@@ -3694,8 +3641,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(new RequestOptions()
       .setMethod(HttpMethod.PUT)
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(config.host())
+      .setPort(config.port())
     )
       .onComplete(onSuccess(req -> {
         req.setFollowRedirects(true);
@@ -3724,7 +3671,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.bodyHandler(body -> {
           assertEquals(body, expected);
           String scheme = req.connection().isSsl() ? "https" : "http";
-          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/whatever").end();
+          req.response().setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
@@ -3734,8 +3681,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(new RequestOptions()
       .setMethod(HttpMethod.PUT)
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(config.host())
+      .setPort(config.port())
       .setURI(DEFAULT_TEST_URI)
     )
       .onComplete(onSuccess(req -> {
@@ -3777,7 +3724,7 @@ public abstract class HttpTest extends HttpTestBase {
           if (body.length() == 0) {
             HttpServerResponse resp = req.response();
             String scheme = req.connection().isSsl() ? "https" : "http";
-            resp.setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/whatever");
+            resp.setStatusCode(303).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever");
             if (expectFail) {
               resp
                 .setChunked(true)
@@ -3848,8 +3795,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.request(new RequestOptions()
       .setMethod(HttpMethod.PUT)
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(config.host())
+      .setPort(config.port())
       .setURI("/somepath")
     ).onComplete(onSuccess(req -> {
       req
@@ -3876,7 +3823,7 @@ public abstract class HttpTest extends HttpTestBase {
         fail();
       } else {
         String scheme = req.connection().isSsl() ? "https" : "http";
-        req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/otherpath").end();
+        req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/otherpath").end();
       }
     });
     startServer(testAddress);
@@ -3901,7 +3848,7 @@ public abstract class HttpTest extends HttpTestBase {
       switch (redirections.getAndIncrement()) {
         case 0:
           String scheme = req.connection().isSsl() ? "https" : "http";
-          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + DEFAULT_HTTP_HOST_AND_PORT + "/whatever").end();
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
           break;
       }
     });
@@ -3925,14 +3872,14 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testFollowRedirectHost() throws Exception {
     waitFor(2);
-    int port = createBaseServerOptions().getPort() + 1;
+    int port = config.port() + 1;
     AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
       redirects.incrementAndGet();
       req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, req.scheme() + "://localhost:" + (server.actualPort() + 1) + "/whatever").end();
     });
     startServer(testAddress);
-    HttpServer server2 = createHttpServer(createBaseServerOptions());
+    HttpServer server2 = createHttpServer();
     server2.requestHandler(req -> {
       assertEquals(1, redirects.get());
       assertEquals(req.scheme() + "://localhost:" + port + "/whatever", req.absoluteURI());
@@ -3957,15 +3904,15 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testFollowRedirectWithCustomHandler() throws Exception {
     waitFor(2);
-    HttpServerOptions options = createBaseServerOptions();
-    SocketAddress redirectedServerAddress = SocketAddress.inetSocketAddress(options.getPort() + 1, testAddress.host());
+    int basePort = config.port();
+    SocketAddress redirectedServerAddress = SocketAddress.inetSocketAddress(basePort + 1, testAddress.host());
     AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
       redirects.incrementAndGet();
       req.response().setStatusCode(301).putHeader(HttpHeaders.LOCATION, req.scheme() + "://localhost:" + (server.actualPort() + 1) + "/whatever").end();
     });
     startServer(testAddress);
-    HttpServer redirectedServer = createHttpServer(options);
+    HttpServer redirectedServer = createHttpServer();
     redirectedServer.requestHandler(req -> {
       assertEquals(1, redirects.get());
       assertEquals(req.scheme() + "://localhost:" + redirectedServerAddress.port() + "/custom", req.absoluteURI());
@@ -3987,8 +3934,8 @@ public abstract class HttpTest extends HttpTestBase {
       .build();
     ctx.runOnContext(v -> {
       client.request(new RequestOptions()
-        .setHost(DEFAULT_HTTP_HOST)
-        .setPort(DEFAULT_HTTP_PORT)).onComplete(onSuccess(req -> {
+        .setHost(config.host())
+        .setPort(config.port())).onComplete(onSuccess(req -> {
           req.setFollowRedirects(true);
           req.putHeader("foo", "foo_value");
           req
@@ -4014,14 +3961,14 @@ public abstract class HttpTest extends HttpTestBase {
     testFoo("https://example.com:8000/somepath", "https://example.com:8000/somepath");
     testFoo("whatever://example.com", null);
     testFoo("http://", null);
-    testFoo("http://:" + DEFAULT_HTTP_PORT+ "/somepath", null);
+    testFoo("http://:" + config.host() + ":" + config.port() + "/somepath", null);
   }
 
   private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
     MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
-    String baseURI = "https://" + DEFAULT_HTTP_HOST_AND_PORT;
+    String baseURI = "https://" + config.host() + ":" + config.port();
     class MockReq implements HttpClientRequest {
       public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> write(Buffer data) { throw new UnsupportedOperationException(); }
@@ -4120,7 +4067,7 @@ public abstract class HttpTest extends HttpTestBase {
           StringBuilder location = null;
           try {
             location = new StringBuilder()
-              .append(req.scheme()).append("://").append(DEFAULT_HTTP_HOST).append(':').append(DEFAULT_HTTP_PORT)
+              .append(req.scheme()).append("://").append(config.host()).append(':').append(config.port())
               .append("/redirected/from/client?")
               .append("encoded1=").append(URLEncoder.encode(value1, "UTF-8")).append('&')
               .append("encoded2=").append(URLEncoder.encode(value2, "UTF-8")).append('&')
@@ -4319,8 +4266,8 @@ public abstract class HttpTest extends HttpTestBase {
   public void testUseResponseAfterClose() throws Exception {
     testAfterServerResponseClose(resp -> {
       Buffer buff = Buffer.buffer();
-      resp.drainHandler(noOpHandler());
-      resp.exceptionHandler(noOpHandler());
+      resp.drainHandler(v -> {});
+      resp.exceptionHandler(v -> {});
       resp.setChunked(false);
       resp.setWriteQueueMaxSize(123);
       resp.writeQueueFull();
@@ -4433,7 +4380,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions().setDecompressionSupported(true));
+    client = config.forClient().setDecompressionSupported(true).create(vertx);
     client.request(requestOptions)
       .compose(req -> req.send().compose(HttpClientResponse::body))
       .onFailure(err -> {
@@ -4693,9 +4640,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions()
-      .setIdleTimeout(1)
-      .setKeepAliveTimeout(10), new PoolOptions().setHttp1MaxSize(1));
+    client = config.forClient().setIdleTimeout(Duration.ofSeconds(1)).setKeepAliveTimeout(Duration.ofSeconds(10)).create(vertx, new PoolOptions().setHttp1MaxSize(1));
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
@@ -4718,16 +4663,14 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().end();
     });
-    HttpClientOptions options = createBaseClientOptions()
-      .setKeepAliveTimeout(3)
-      .setHttp2KeepAliveTimeout(3);
+    HttpClientConfig options = config.forClient().setKeepAliveTimeout(Duration.ofSeconds(3));
     testKeepAliveTimeout(options, new PoolOptions(), 1);
   }
 
-  protected void testKeepAliveTimeout(HttpClientOptions options, PoolOptions poolOptions, int numReqs) throws Exception {
+  protected void testKeepAliveTimeout(HttpClientConfig options, PoolOptions poolOptions, int numReqs) throws Exception {
     startServer(testAddress);
     client.close();
-    client = createHttpClient(options, poolOptions.setCleanerPeriod(1));
+    client = options.create(vertx, poolOptions.setCleanerPeriod(1));
     AtomicInteger respCount = new AtomicInteger();
     for (int i = 0;i < numReqs;i++) {
       int current = 1 + i;
@@ -4754,15 +4697,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testPoolNotExpiring1() throws Exception {
-    testPoolNotExpiring(createBaseClientOptions().setKeepAliveTimeout(100).setHttp2KeepAliveTimeout(100), new PoolOptions().setCleanerPeriod(0));
+    testPoolNotExpiring(config.forClient().setKeepAliveTimeout(Duration.ofSeconds(100)), new PoolOptions().setCleanerPeriod(0));
   }
 
   @Test
   public void testPoolNotExpiring2() throws Exception {
-    testPoolNotExpiring(createBaseClientOptions().setKeepAliveTimeout(0).setHttp2KeepAliveTimeout(0), new PoolOptions().setCleanerPeriod(10));
+    testPoolNotExpiring(config.forClient().setKeepAliveTimeout(Duration.ofSeconds(0)), new PoolOptions().setCleanerPeriod(10));
   }
 
-  private void testPoolNotExpiring(HttpClientOptions options, PoolOptions poolOptions) throws Exception {
+  private void testPoolNotExpiring(HttpClientConfig options, PoolOptions poolOptions) throws Exception {
     AtomicLong now = new AtomicLong();
     server.requestHandler(req -> {
       req.response().end();
@@ -4773,7 +4716,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(options, poolOptions);
+    client = options.create(vertx, poolOptions);
     client.request(requestOptions)
       .onComplete(onSuccess(req -> req.send().onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
@@ -4816,7 +4759,7 @@ public abstract class HttpTest extends HttpTestBase {
       .setCleanerPeriod(poolCleanerPeriod)
       .setMaxLifetime(maxLifetime)
       .setMaxLifetimeUnit(TimeUnit.MILLISECONDS);
-    client = createHttpClient(createBaseClientOptions(), poolOptions);
+    client = createHttpClient(poolOptions);
 
     // Create a connection that remains in the pool
     client.request(requestOptions)
@@ -5036,7 +4979,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions());
+    client = createHttpClient();
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
       req.connect().onComplete(onSuccess(so -> {
         assertNotNull(so);
@@ -5069,7 +5012,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions());
+    client = createHttpClient();
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
       req.connect().onComplete(onSuccess(resp -> {
         NetSocket so = resp.netSocket();
@@ -5155,7 +5098,7 @@ public abstract class HttpTest extends HttpTestBase {
 
     startServer(testAddress);
 
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/").onComplete(onSuccess(req -> {
+    client.request(HttpMethod.GET, config.port(), config.host(), "/").onComplete(onSuccess(req -> {
       req.connect().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         List<String> chunks = new ArrayList<>();
@@ -5817,7 +5760,7 @@ public abstract class HttpTest extends HttpTestBase {
     Context ctx = vertx.getOrCreateContext();
     CompletableFuture<HttpClientRequest> reqFut = new CompletableFuture<>();
     ctx.runOnContext(v -> {
-      client = createHttpClient(createBaseClientOptions());
+      client = createHttpClient();
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.response().onComplete(onSuccess(resp -> {
           complete();
@@ -5885,8 +5828,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     RequestOptions options = new RequestOptions()
       .setMethod(HttpMethod.PUT)
-      .setPort(DEFAULT_HTTP_PORT)
-      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(config.port())
+      .setHost(config.host())
       .setURI(DEFAULT_TEST_URI);
     client.request(options)
       .compose(req -> {
@@ -5914,7 +5857,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
     Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(1024));
     client.request(requestOptions).onComplete(onSuccess(req1 -> {
       assertTrue(req1.reset().succeeded());
@@ -5953,10 +5896,10 @@ public abstract class HttpTest extends HttpTestBase {
     List<HttpServer> servers = new ArrayList<>();
     try {
       for (int i = 0;i < num;i++) {
-        HttpServer server = createHttpServer(createBaseServerOptions());
+        HttpServer server = createHttpServer();
         server.requestHandler(req -> {
         });
-        startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST), server);
+        startServer(SocketAddress.inetSocketAddress(config.port() + i, config.host()), server);
         servers.add(server);
       }
       client.close();
@@ -5970,8 +5913,8 @@ public abstract class HttpTest extends HttpTestBase {
         .build();
       for (int i = 0;i < num;i++) {
         client.request(new RequestOptions()
-          .setHost(DEFAULT_HTTP_HOST)
-          .setPort(DEFAULT_HTTP_PORT + i))
+          .setHost(config.host())
+          .setPort(config.port() + i))
           .onComplete(onSuccess(HttpClientRequest::send));
       }
       assertWaitUntil(() -> inflight.get() == num);
@@ -6146,8 +6089,8 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConnectTimeout() {
     client.close();
-    client = createHttpClient(createBaseClientOptions().setConnectTimeout(1));
-    client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+    client = config.forClient().setConnectTimeout(Duration.ofMillis(1)).create(vertx);
+    client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(config.port()))
       .onComplete(onFailure(err -> {
         assertTrue(err instanceof ConnectTimeoutException);
         testComplete();
@@ -6263,7 +6206,7 @@ public abstract class HttpTest extends HttpTestBase {
           return 0;
         } : null)
         .build();
-      client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "vertx.io", "/").onComplete(onFailure(err -> {
+      client.request(HttpMethod.GET,"vertx.io", "/").onComplete(onFailure(err -> {
         assertEquals(enabled ? 2 : 0, val.get());
         testComplete();
       }));
@@ -6321,7 +6264,7 @@ public abstract class HttpTest extends HttpTestBase {
                                     }));
     startServer(testAddress);
     client.close();
-    client = createHttpClient(createBaseClientOptions());
+    client = createHttpClient();
     client.request(requestOptions)
       .compose(req -> {
         req.setChunked(true);

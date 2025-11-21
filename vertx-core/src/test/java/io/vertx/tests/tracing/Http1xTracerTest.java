@@ -10,5 +10,11 @@
  */
 package io.vertx.tests.tracing;
 
+import io.vertx.test.http.HttpConfig;
+
 public class Http1xTracerTest extends HttpTracerTestBase {
+
+  public Http1xTracerTest() {
+    super(HttpConfig.Http1x.DEFAULT);
+  }
 }
