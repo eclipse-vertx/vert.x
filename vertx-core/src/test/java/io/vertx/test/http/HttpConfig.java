@@ -77,6 +77,21 @@ public interface HttpConfig {
       HttpServerOptions options = createBaseServerOptions();
       return new HttpServerConfig() {
         @Override
+        public HttpServerConfig setDecompressionSupported(boolean supported) {
+          options.setDecompressionSupported(supported);
+          return this;
+        }
+        @Override
+        public HttpServerConfig setCompressionSupported(boolean supported) {
+          options.setCompressionSupported(supported);
+          return this;
+        }
+        @Override
+        public HttpServerConfig setCompression(HttpCompressionOptions compression) {
+          options.setCompression(compression);
+          return this;
+        }
+        @Override
         public HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes) {
           options.setMaxFormBufferedBytes(maxFormBufferedBytes);
           return this;

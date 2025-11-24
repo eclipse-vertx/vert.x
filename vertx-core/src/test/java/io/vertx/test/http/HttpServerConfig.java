@@ -1,12 +1,16 @@
 package io.vertx.test.http;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpCompressionOptions;
 import io.vertx.core.http.HttpServer;
 
 import java.time.Duration;
 
 public interface HttpServerConfig {
 
+  HttpServerConfig setDecompressionSupported(boolean supported);
+  HttpServerConfig setCompressionSupported(boolean supported);
+  HttpServerConfig setCompression(HttpCompressionOptions compression);
   HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes);
   HttpServerConfig setMaxFormAttributeSize(int maxSize);
   HttpServerConfig setMaxFormFields(int maxFormFields);
