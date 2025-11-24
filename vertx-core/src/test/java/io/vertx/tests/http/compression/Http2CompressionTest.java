@@ -11,28 +11,15 @@
 
 package io.vertx.tests.http.compression;
 
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.test.http.HttpTestBase;
-import io.vertx.tests.http.Http2TestBase;
+import io.vertx.test.http.HttpConfig;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class Http2CompressionTest extends GzipHttpCompressionTestBase {
+public class Http2CompressionTest extends HttpCompressionTest {
 
-  public Http2CompressionTest(int compressionLevel) {
-    super(compressionLevel);
-  }
-
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST);
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions().setDefaultPort(DEFAULT_HTTPS_PORT).setDefaultHost(DEFAULT_HTTPS_HOST);
+  public Http2CompressionTest(CompressionConfig config) {
+    super(HttpConfig.Http2.CODEC, config);
   }
 }

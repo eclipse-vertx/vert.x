@@ -12,84 +12,74 @@
 package io.vertx.tests.http.compression;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
+import io.netty.handler.codec.compression.Zstd;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.StringUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpServerConfig;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static io.vertx.core.http.HttpHeaders.ACCEPT_ENCODING;
 import static io.vertx.core.http.HttpMethod.PUT;
 
-public abstract class HttpCompressionTest extends HttpTestBase {
+@RunWith(Parameterized.class)
+public abstract class HttpCompressionTest extends HttpCompressionTestBase {
 
-  protected static final String COMPRESS_TEST_STRING = "/*\n" +
-      " * Copyright (c) 2011-2016 The original author or authors\n" +
-      " * ------------------------------------------------------\n" +
-      " * All rights reserved. This program and the accompanying materials\n" +
-      " * are made available under the terms of the Eclipse Public License v1.0\n" +
-      " * and Apache License v2.0 which accompanies this distribution.\n" +
-      " *\n" +
-      " *     The Eclipse Public License is available at\n" +
-      " *     http://www.eclipse.org/legal/epl-v10.html\n" +
-      " *\n" +
-      " *     The Apache License v2.0 is available at\n" +
-      " *     http://www.opensource.org/licenses/apache2.0.php\n" +
-      " *\n" +
-      " * You may elect to redistribute this code under either of these licenses.\n" +
-      " */";
-
-  protected Buffer compressedTestString;
-
-  public HttpCompressionTest() {
-  }
-
-  protected abstract String encoding();
-
-  protected abstract MessageToByteEncoder<ByteBuf> encoder();
-
-  protected void configureServerCompression(HttpServerOptions options) {
-  }
-
-  protected Buffer compress(Buffer src) {
-    EmbeddedChannel channel = new EmbeddedChannel();
-    channel.pipeline().addFirst(encoder());
-    channel.writeAndFlush(Unpooled.copiedBuffer(((BufferInternal)src).getByteBuf()));
-    channel.close();
-    Queue<Object> messages = channel.outboundMessages();
-    Buffer dst = Buffer.buffer();
-    ByteBuf buf;
-    while ((buf = (ByteBuf) messages.poll()) != null) {
-      byte[] tmp = new byte[buf.readableBytes()];
-      buf.readBytes(tmp);
-      buf.release();
-      dst.appendBytes(tmp);
+  @Parameterized.Parameters(name = "{index}: algorithm = {0}")
+  public static Collection<Object[]> data() {
+    List<Object[]> list = new ArrayList<>();
+    list.add(new Object[] { CompressionConfig.gzip(1) });
+    list.add(new Object[] { CompressionConfig.gzip(6) });
+    list.add(new Object[] { CompressionConfig.gzip(9) });
+    if (Zstd.isAvailable()) {
+      list.add(new Object[] { CompressionConfig.zstd() });
     }
-    return dst;
+    list.add(new Object[] { CompressionConfig.snappy() });
+    list.add(new Object[] { CompressionConfig.brotli() });
+    return list;
+  }
+
+  private final CompressionConfig compressionConfig;
+
+  protected HttpCompressionTest(HttpConfig config, CompressionConfig compressionConfig) {
+    super(config);
+    this.compressionConfig = compressionConfig;
   }
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    compressedTestString = compress(Buffer.buffer(COMPRESS_TEST_STRING));
+  protected final String encoding() {
+    return compressionConfig.encoding;
+  }
+
+  @Override
+  protected final MessageToByteEncoder<ByteBuf> encoder() {
+    return compressionConfig.encoder.get();
+  }
+
+  @Override
+  protected final Optional<HttpCompressionOptions> serverCompressionConfig() {
+    return Optional.of(new HttpCompressionOptions().addCompressor(compressionConfig.compressor));
   }
 
   @Test
   public void testSkipEncoding() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setCompressionSupported(true));
+    server = config.forServer().setCompressionSupported(true).create(vertx);
     server.requestHandler(req -> {
       assertNotNull(req.headers().get(HttpHeaders.ACCEPT_ENCODING));
       req.response()
@@ -128,9 +118,10 @@ public abstract class HttpCompressionTest extends HttpTestBase {
   private void testServerStandardCompression(Function<HttpServerResponse, Future<?>> sender) throws Exception {
     waitFor(2);
     server.close();
-    HttpServerOptions options = createBaseServerOptions();
-    configureServerCompression(options);
-    server = vertx.createHttpServer(options);
+    HttpServerConfig options = config.forServer();
+    options.setCompressionSupported(true);
+    options.setCompression(serverCompressionConfig().get());
+    server = options.create(vertx);
     server.requestHandler(req -> {
       // assertEquals(2, req.headers().size());
       assertNotNull(req.headers().get(HttpHeaders.ACCEPT_ENCODING));
@@ -153,7 +144,7 @@ public abstract class HttpCompressionTest extends HttpTestBase {
   @Test
   public void testServerDecompression() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setDecompressionSupported(true));
+    server = config.forServer().setDecompressionSupported(true).create(vertx);
     server.requestHandler(req -> {
       req.body().onComplete(onSuccess(body -> {
         assertEquals(COMPRESS_TEST_STRING, body.toString());
@@ -183,7 +174,7 @@ public abstract class HttpCompressionTest extends HttpTestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setDecompressionSupported(true));
+    client = config.forClient().setDecompressionSupported(true).create(vertx);
     client.request(new RequestOptions())
       .onComplete(onSuccess(req -> {
         req.send()
@@ -198,24 +189,27 @@ public abstract class HttpCompressionTest extends HttpTestBase {
 
   @Test
   public void testClientAcceptEncoding() throws Exception {
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
-    server.requestHandler(req -> {
-      String acceptEncoding = req.headers().get(ACCEPT_ENCODING);
-      assertTrue("Expects accept-encoding '" + acceptEncoding + "' to contain " + encoding(), acceptEncoding.contains(encoding()));
-      req.response().end();
-    });
-    startServer();
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setDecompressionSupported(true));
-    client.request(new RequestOptions())
-      .onComplete(onSuccess(req -> {
-        req.send().onComplete(onSuccess(resp -> {
-          resp.end().onComplete(onSuccess(v -> {
-            testComplete();
+    HttpServer server = config.forServer().create(vertx);
+    try {
+      server.requestHandler(req -> {
+        String acceptEncoding = req.headers().get(ACCEPT_ENCODING);
+        assertTrue("Expects accept-encoding '" + acceptEncoding + "' to contain " + encoding(), acceptEncoding.contains(encoding()));
+        req.response().end();
+      });
+      server.listen().await();
+      client.close();
+      client = config.forClient().setDecompressionSupported(true).create(vertx);
+      client.request(new RequestOptions())
+        .onComplete(onSuccess(req -> {
+          req.send().onComplete(onSuccess(resp -> {
+            resp.end().onComplete(onSuccess(v -> {
+              testComplete();
+            }));
           }));
         }));
-      }));
-    await();
+      await();
+    } finally {
+      server.close().await();
+    }
   }
 }

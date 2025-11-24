@@ -211,8 +211,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   private boolean compressionSupported;
   private int compressionLevel;
-  private int compressionContentSizeThreshold;
-  private List<CompressionOptions> compressors;
+  private HttpCompressionOptions compression;
   private int maxWebSocketFrameSize;
   private int maxWebSocketMessageSize;
   private List<String> webSocketSubProtocols;
@@ -261,8 +260,7 @@ public class HttpServerOptions extends NetServerOptions {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
     this.compressionLevel = other.getCompressionLevel();
-    this.compressionContentSizeThreshold = other.getCompressionContentSizeThreshold();
-    this.compressors = other.compressors != null ? new ArrayList<>(other.compressors) : null;
+    this.compression = other.compression != null ? new HttpCompressionOptions(other.compression) : new HttpCompressionOptions();
     this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
     this.webSocketSubProtocols = other.webSocketSubProtocols != null ? new ArrayList<>(other.webSocketSubProtocols) : null;
@@ -320,8 +318,7 @@ public class HttpServerOptions extends NetServerOptions {
   private void init() {
     strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
-    compressionLevel = DEFAULT_COMPRESSION_LEVEL;
-    compressionContentSizeThreshold = DEFAULT_COMPRESSION_CONTENT_SIZE_THRESHOLD;
+    compression = new HttpCompressionOptions();
     maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
@@ -573,13 +570,30 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
+   * @return the compression configuration
+   */
+  public HttpCompressionOptions getCompression() {
+    return compression;
+  }
+
+  /**
+   * Configure the server compression, this overwrites any previously configuration.
+   *
+   * @param compression the new configuration
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setCompression(HttpCompressionOptions compression) {
+    this.compression = compression == null ? new HttpCompressionOptions() : compression;
+    return this;
+  }
+
+  /**
    *
    * @return the server gzip/deflate 'compression level' to be used in responses when client and server support is turned on
    */
   public int getCompressionLevel() {
     return this.compressionLevel;
   }
-
 
   /**
    * This method allows to set the compression level to be used in http1.x/2 response bodies
@@ -616,7 +630,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the compression content size threshold
    */
   public int getCompressionContentSizeThreshold() {
-    return compressionContentSizeThreshold;
+    return compression.getContentSizeThreshold();
   }
 
   /**
@@ -627,8 +641,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionContentSizeThreshold(int compressionContentSizeThreshold) {
-    Arguments.require(compressionContentSizeThreshold >= 0, "compressionContentSizeThreshold must be >= 0");
-    this.compressionContentSizeThreshold = compressionContentSizeThreshold;
+    compression.setContentSizeThreshold(compressionContentSizeThreshold);
     return this;
   }
 
@@ -636,7 +649,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the list of compressor to use
    */
   public List<CompressionOptions> getCompressors() {
-    return compressors;
+    return compression.getCompressors();
   }
 
   /**
@@ -646,10 +659,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions addCompressor(CompressionOptions compressor) {
-    if (compressors == null) {
-      compressors = new ArrayList<>();
-    }
-    compressors.add(compressor);
+    compression.addCompressor(compressor);
     return this;
   }
 
@@ -662,7 +672,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressors(List<CompressionOptions> compressors) {
-    this.compressors = compressors;
+    compression.setCompressors(compressors);
     return this;
   }
 
