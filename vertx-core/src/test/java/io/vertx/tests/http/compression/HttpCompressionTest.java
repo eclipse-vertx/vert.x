@@ -79,7 +79,7 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
   @Test
   public void testSkipEncoding() throws Exception {
     server.close();
-    server = config.forServer().setCompressionSupported(true).create(vertx);
+    server = config.forServer().setCompression(new HttpCompressionOptions().addCompressor(CompressionConfig.gzip(6).compressor)).create(vertx);
     server.requestHandler(req -> {
       assertNotNull(req.headers().get(HttpHeaders.ACCEPT_ENCODING));
       req.response()
@@ -119,7 +119,6 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
     waitFor(2);
     server.close();
     HttpServerConfig options = config.forServer();
-    options.setCompressionSupported(true);
     options.setCompression(serverCompressionConfig().get());
     server = options.create(vertx);
     server.requestHandler(req -> {

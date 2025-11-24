@@ -49,7 +49,6 @@ public class Http1xCompressionTest extends HttpCompressionTest {
   public void testServerCompressionAboveThreshold() throws Exception {
     // set compression threshold to be less than the content string size so it WILL be compressed
     HttpServerConfig httpServerOptions = config.forServer();
-    httpServerOptions.setCompressionSupported(true);
     httpServerOptions.setCompression(serverCompressionConfig().get().setContentSizeThreshold(COMPRESS_TEST_STRING.length() / 2));
 
     doTest(httpServerOptions, onSuccess(resp -> {
