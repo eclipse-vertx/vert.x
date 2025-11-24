@@ -82,13 +82,14 @@ public interface HttpConfig {
           return this;
         }
         @Override
-        public HttpServerConfig setCompressionSupported(boolean supported) {
-          options.setCompressionSupported(supported);
-          return this;
-        }
-        @Override
         public HttpServerConfig setCompression(HttpCompressionOptions compression) {
-          options.setCompression(compression);
+          if (compression != null) {
+            options.setCompressionSupported(true);
+            options.setCompression(compression);
+          } else {
+            options.setCompressionSupported(false);
+            options.setCompression(null);
+          }
           return this;
         }
         @Override

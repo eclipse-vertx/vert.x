@@ -9,7 +9,6 @@ import java.time.Duration;
 public interface HttpServerConfig {
 
   HttpServerConfig setDecompressionSupported(boolean supported);
-  HttpServerConfig setCompressionSupported(boolean supported);
   HttpServerConfig setCompression(HttpCompressionOptions compression);
   HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes);
   HttpServerConfig setMaxFormAttributeSize(int maxSize);
