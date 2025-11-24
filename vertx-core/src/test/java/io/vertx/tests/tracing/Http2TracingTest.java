@@ -10,19 +10,15 @@
  */
 package io.vertx.tests.tracing;
 
-import io.vertx.tests.http.Http2TestBase;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.test.http.HttpConfig;
 
 public class Http2TracingTest extends HttpTracingTestBase {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+  public Http2TracingTest() {
+    this(false);
   }
 
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions();
+  protected Http2TracingTest(boolean multiplex) {
+    super(new HttpConfig.Http2(multiplex));
   }
 }

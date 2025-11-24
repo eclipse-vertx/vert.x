@@ -10,12 +10,17 @@
  */
 package io.vertx.tests.http.fileupload;
 
+import io.vertx.test.http.HttpConfig;
 import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  */
 public class Http1xServerFileUploadTest extends HttpServerFileUploadTest {
+
+  public Http1xServerFileUploadTest() {
+    super(HttpConfig.Http1x.DEFAULT);
+  }
 
   @Ignore
   @Test

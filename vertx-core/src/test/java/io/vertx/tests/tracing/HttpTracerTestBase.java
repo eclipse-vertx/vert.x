@@ -11,36 +11,35 @@
 package io.vertx.tests.tracing;
 
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpResponseExpectation;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.test.http.HttpTestBase;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.test.core.ContextLocalHelper;
 import io.vertx.core.spi.context.storage.ContextLocal;
-import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.tracing.TracingPolicy;
-import org.junit.Ignore;
+import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Test;
 
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
-public abstract class HttpTracerTestBase extends HttpTestBase {
+public abstract class HttpTracerTestBase extends SimpleHttpTest {
 
   private VertxTracer tracer;
   private ContextLocal<Object> key;
+
+  protected HttpTracerTestBase(HttpConfig config) {
+    super(config);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -81,7 +80,6 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         key.remove(context);
       }
     });
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
@@ -91,11 +89,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertEquals(2, seq.get());
       });
       req.response().end();
-    }).listen(DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(v -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(req -> {
+    }).listen().await();
+    client.request(HttpMethod.GET, "/").onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
         testComplete();
       }));
@@ -105,7 +100,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
 
   @Test
   public void testHttpServerError() throws Exception {
-    waitFor(3);
+    waitFor(2);
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
     setTracer(new VertxTracer() {
@@ -124,7 +119,6 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         complete();
       }
     });
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
@@ -132,36 +126,34 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       req.exceptionHandler(v -> {
 //        assertNull(ctx.localContextData().get(key));
 //        assertEquals(2, seq.get());
-        complete();
-      });
-    }).listen(DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(v -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
-    client.request(new RequestOptions()
-      .setPort(DEFAULT_HTTP_PORT)
-      .setHost("localhost")
-      .setURI("/")).onComplete(onSuccess(req -> {
-      req
-        .response().onComplete(onFailure(err -> {
+        if (v instanceof HttpClosedException) {
           complete();
-        }));
-      req.setChunked(true)
-        .writeHead().onComplete(v -> {
-          req.connection().close();
-        });
-    }));
+        }
+      });
+    }).listen().await();
+    HttpClientRequest request = client.request(HttpMethod.GET, "/").await();
+    request.response();
+    request.setChunked(true)
+      .writeHead()
+      .await();
+    assertWaitUntil(() -> seq.get() == 1);
+    request.connection().close();
+    try {
+      request.response().await();
+      fail();
+    } catch (Exception expected) {
+    }
     await();
   }
 
   @Test
   public void testHttpClientRequest() throws Exception {
-    testHttpClientRequest(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost("localhost").setURI("/"), "GET");
+    testHttpClientRequest(new RequestOptions(requestOptions).setURI("/"), "GET");
   }
 
   @Test
   public void testHttpClientRequestOverrideOperation() throws Exception {
-    testHttpClientRequest(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost("localhost").setURI("/").setTraceOperation("operation-override"), "operation-override");
+    testHttpClientRequest(new RequestOptions(requestOptions).setURI("/").setTraceOperation("operation-override"), "operation-override");
   }
 
   private void testHttpClientRequest(RequestOptions request, String expectedOperation) throws Exception {
@@ -187,14 +179,10 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertTrue(seq.compareAndSet(1, 2));
       }
     });
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.response().end();
-    }).listen(DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(v -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    }).listen().await();
     Context ctx = vertx.getOrCreateContext();
     Promise<Void> response = Promise.promise();
     ctx.runOnContext(v1 -> {
@@ -234,18 +222,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         complete();
       }
     });
-    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
       assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.connection().close();
-    }).listen(DEFAULT_HTTP_PORT, "localhost").onComplete(onSuccess(v -> {
-      latch.countDown();
-    }));
-    awaitLatch(latch);
+    }).listen().await();
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       key.put(ctx, val);
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "localhost", "/").onComplete(onSuccess(req -> {
+      client.request(HttpMethod.GET,"/").onComplete(onSuccess(req -> {
         req.send().onComplete(onFailure(err -> {
           // assertNull(tracerMap.get(key));
           complete();
@@ -260,7 +244,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     this.tracer = tracer;
     // So, the vertx options is reset with the new tracer.
     this.vertx = vertx(getOptions());
-    this.server = this.vertx.createHttpServer(createBaseServerOptions());
-    this.client = this.vertx.createHttpClient(createBaseClientOptions());
+    this.server = createHttpServer();
+    this.client = createHttpClient();
   }
 }

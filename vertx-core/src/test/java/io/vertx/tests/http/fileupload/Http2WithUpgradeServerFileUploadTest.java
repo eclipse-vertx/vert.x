@@ -12,16 +12,20 @@ package io.vertx.tests.http.fileupload;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.test.http.HttpConfig;
 
 /**
  */
 public class Http2WithUpgradeServerFileUploadTest extends HttpServerFileUploadTest {
 
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return new HttpClientOptions()
-      .setProtocolVersion(HttpVersion.HTTP_2)
-      .setHttp2ClearTextUpgrade(true);
+  public Http2WithUpgradeServerFileUploadTest() {
+    super(new HttpConfig.Http1x(DEFAULT_HTTPS_HOST, DEFAULT_HTTP_PORT) {
+      @Override
+      public HttpClientOptions createBaseClientOptions() {
+        return new HttpClientOptions()
+          .setProtocolVersion(HttpVersion.HTTP_2)
+          .setHttp2ClearTextUpgrade(true);
+      }
+    });
   }
-
 }
