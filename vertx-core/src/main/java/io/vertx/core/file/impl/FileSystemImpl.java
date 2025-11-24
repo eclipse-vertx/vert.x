@@ -25,10 +25,10 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.CopyOption;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.FileVisitOption;
@@ -531,7 +531,7 @@ public class FileSystemImpl implements FileSystem {
             raf.setLength(len);
           }
         } catch (IOException e) {
-          throw new FileSystemException(getFileAccessErrorMessage("truncate", p), e);
+          throw new FileSystemException(getFileAccessErrorMessage("truncate", p) ,e);
         }
         return null;
       }
@@ -840,28 +840,33 @@ public class FileSystemImpl implements FileSystem {
           if (!file.isDirectory()) {
             throw new FileSystemException("Cannot read directory " + file + ". It's not a directory");
           } else {
-            try (DirectoryStream<Path> pathStream = Files.newDirectoryStream(file.toPath(), directoryFilterInternal(filter))) {
-              List<String> ret = new ArrayList<>();
-              for (final Path path : pathStream) {
-                ret.add(path.toRealPath().toString());
-              }
-              return ret;
+            FilenameFilter fnFilter;
+            if (filter != null) {
+              fnFilter = new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                  return Pattern.matches(filter, name);
+                }
+              };
+            } else {
+              fnFilter = null;
             }
+            File[] files;
+            if (fnFilter == null) {
+              files = file.listFiles();
+            } else {
+              files = file.listFiles(fnFilter);
+            }
+            List<String> ret = new ArrayList<>(files.length);
+            for (File f : files) {
+              ret.add(f.getCanonicalPath());
+            }
+            return ret;
           }
         } catch (IOException e) {
           throw new FileSystemException(getFolderAccessErrorMessage("read", p), e);
         }
       }
     };
-  }
-
-  private static DirectoryStream.Filter<Path> directoryFilterInternal(String filter) {
-    if (filter == null) {
-      return entry -> true;
-    } else {
-      Pattern filePattern = Pattern.compile(filter);
-      return entry -> filePattern.matcher(entry.getFileName().toString()).matches();
-    }
   }
 
   private BlockingAction<Buffer> readFileInternal(String path) {
