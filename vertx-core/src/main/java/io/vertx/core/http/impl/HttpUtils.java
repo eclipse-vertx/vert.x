@@ -17,7 +17,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.Http2Settings;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
@@ -35,6 +34,8 @@ import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -135,14 +136,14 @@ public final class HttpUtils {
     }
   };
 
-  public static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<HttpRequest> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
-    public int len(HttpRequestHead req) {
+    public int len(HttpRequest req) {
       return 2;
     }
 
     @Override
-    public String name(HttpRequestHead req, int index) {
+    public String name(HttpRequest req, int index) {
       switch (index) {
         case 0:
           return "url.full";
@@ -153,25 +154,25 @@ public final class HttpUtils {
     }
 
     @Override
-    public String value(HttpRequestHead req, int index) {
+    public String value(HttpRequest req, int index) {
       switch (index) {
         case 0:
-          return req.absoluteURI;
+          return req.absoluteURI();
         case 1:
-          return req.method.name();
+          return req.method().name();
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
   };
 
-  public static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
+  public static final TagExtractor<HttpResponse> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<>() {
     @Override
-    public int len(HttpResponseHead resp) {
+    public int len(HttpResponse resp) {
       return 1;
     }
 
     @Override
-    public String name(HttpResponseHead resp, int index) {
+    public String name(HttpResponse resp, int index) {
       if (index == 0) {
         return "http.response.status_code";
       }
@@ -179,9 +180,9 @@ public final class HttpUtils {
     }
 
     @Override
-    public String value(HttpResponseHead resp, int index) {
+    public String value(HttpResponse resp, int index) {
       if (index == 0) {
-        return Integer.toString(resp.statusCode);
+        return Integer.toString(resp.statusCode());
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
@@ -927,7 +928,7 @@ public final class HttpUtils {
     return false;
   }
 
-  public static boolean isKeepAlive(HttpRequest request) {
+  public static boolean isKeepAlive(io.netty.handler.codec.http.HttpRequest request) {
     HttpVersion version = request.protocolVersion();
     return (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, io.vertx.core.http.HttpHeaders.KEEP_ALIVE, true));
