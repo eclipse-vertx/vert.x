@@ -1031,9 +1031,10 @@ public class FileSystemImpl implements FileSystem {
           } else {
             FilenameFilter fnFilter;
             if (filter != null) {
+              Pattern fnPattern = Pattern.compile(filter);
               fnFilter = new FilenameFilter() {
                 public boolean accept(File dir, String name) {
-                  return Pattern.matches(filter, name);
+                  return fnPattern.matcher(name).matches();
                 }
               };
             } else {
