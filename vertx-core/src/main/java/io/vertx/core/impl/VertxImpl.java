@@ -50,6 +50,7 @@ import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.net.impl.tcp.NetServerInternal;
+import io.vertx.core.spi.ThreadFactoryProvider;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
@@ -77,6 +78,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -154,7 +156,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   final WorkerPool virtualThreadWorkerPool;
-  private final VertxThreadFactory threadFactory;
+  private final ThreadFactoryProvider threadFactoryProvider;
   private final ExecutorServiceFactory executorServiceFactory;
   private final ThreadFactory eventLoopThreadFactory;
   private final EventLoopGroup eventLoopGroup;
@@ -183,7 +185,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, Throwable transportUnavailabilityCause,
-            FileResolver fileResolver, VertxThreadFactory threadFactory, ExecutorServiceFactory executorServiceFactory,
+            FileResolver fileResolver, ThreadFactoryProvider threadFactoryProvider, ExecutorServiceFactory executorServiceFactory,
             EventExecutorProvider eventExecutorProvider, boolean enableShadowContext) {
     // Sanity check
     if (Vertx.currentContext() != null) {
@@ -196,14 +198,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     BlockedThreadChecker checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     long maxEventLoopExecuteTime = options.getMaxEventLoopExecuteTime();
     TimeUnit maxEventLoopExecuteTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
-    ThreadFactory acceptorEventLoopThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxEventLoopExecuteTime, maxEventLoopExecuteTimeUnit, "vert.x-acceptor-thread-", false);
+    ThreadFactory acceptorEventLoopThreadFactory = createThreadFactory(threadFactoryProvider, checker, useDaemonThread, maxEventLoopExecuteTime, maxEventLoopExecuteTimeUnit, "vert.x-acceptor-thread-", false);
     TimeUnit maxWorkerExecuteTimeUnit = options.getMaxWorkerExecuteTimeUnit();
     long maxWorkerExecuteTime = options.getMaxWorkerExecuteTime();
 
-    ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxWorkerExecuteTime, maxWorkerExecuteTimeUnit, "vert.x-worker-thread-", true);
+    ThreadFactory workerThreadFactory = createThreadFactory(threadFactoryProvider, checker, useDaemonThread, maxWorkerExecuteTime, maxWorkerExecuteTimeUnit, "vert.x-worker-thread-", true);
     ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, workerPoolSize, workerPoolSize);
     PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
-    ThreadFactory internalWorkerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxWorkerExecuteTime, maxWorkerExecuteTimeUnit, "vert.x-internal-blocking-", true);
+    ThreadFactory internalWorkerThreadFactory = createThreadFactory(threadFactoryProvider, checker, useDaemonThread, maxWorkerExecuteTime, maxWorkerExecuteTimeUnit, "vert.x-internal-blocking-", true);
     ExecutorService internalWorkerExec = executorServiceFactory.createExecutor(internalWorkerThreadFactory, internalBlockingPoolSize, internalBlockingPoolSize);
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", internalBlockingPoolSize) : null;
 
@@ -215,7 +217,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
-    eventLoopThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxEventLoopExecTime, maxEventLoopExecTimeUnit, "vert.x-eventloop-thread-", false);
+    eventLoopThreadFactory = createThreadFactory(threadFactoryProvider, checker, useDaemonThread, maxEventLoopExecTime, maxEventLoopExecTimeUnit, "vert.x-eventloop-thread-", false);
     eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
@@ -231,7 +233,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.checker = checker;
     this.useDaemonThread = useDaemonThread;
     this.executorServiceFactory = executorServiceFactory;
-    this.threadFactory = threadFactory;
+    this.threadFactoryProvider = threadFactoryProvider;
     this.metrics = metrics;
     this.transport = transport;
     this.transportUnavailabilityCause = transportUnavailabilityCause;
@@ -1106,7 +1108,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalArgumentException("maxExecuteTime must be > 0");
     }
     WorkerPool shared = createSharedResource("__vertx.shared.workerPools", name, closeFuture, cf -> {
-      ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
+      ThreadFactory workerThreadFactory = createThreadFactory(threadFactoryProvider, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
       ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
       PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
@@ -1130,14 +1132,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new WorkerPool(executor, workerMetrics);
   }
 
-  private ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
-    AtomicInteger threadCount = new AtomicInteger(0);
+  private ThreadFactory createThreadFactory(ThreadFactoryProvider threadFactoryProvider, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
+    ThreadFactory factory = threadFactoryProvider.threadFactory(prefix, worker, Duration.ofMillis(maxExecuteTimeUnit.toMillis(maxExecuteTime)));
     return runnable -> {
-      VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
-      thread.owner = VertxImpl.this;
-      checker.registerThread(thread, thread.info);
-      if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
-        thread.setDaemon(useDaemonThread);
+      Thread thread = factory.newThread(runnable);
+      if (thread instanceof VertxThread) {
+        VertxThread vertxThread = (VertxThread) thread;
+        vertxThread.owner = VertxImpl.this;
+        checker.registerThread(thread, vertxThread.info);
+        if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
+          thread.setDaemon(useDaemonThread);
+        }
       }
       return thread;
     };
