@@ -191,6 +191,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
     assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
     assertEquals(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS, options.getSearchDomains());
+    assertEquals(AddressResolverOptions.DEFAULT_USE_TCP_FOR_FALLBACK_DNS_RESOLVING, options.isUseTcpForFallbackDnsResolving());
 
     boolean optResourceEnabled = TestUtils.randomBoolean();
     List<String> servers = Arrays.asList("1.2.3.4", "5.6.7.8");
@@ -205,11 +206,13 @@ public class HostnameResolutionTest extends VertxTestBase {
     for (int i = 0; i < 2; i++) {
       searchDomains.add(TestUtils.randomAlphaString(15));
     }
+    boolean useTcpForFallbackDnsResolving = true;
 
     assertSame(options, options.setOptResourceEnabled(optResourceEnabled));
     assertSame(options, options.setServers(new ArrayList<>(servers)));
     assertSame(options, options.setCacheMinTimeToLive(0));
     assertSame(options, options.setCacheMinTimeToLive(minTTL));
+    assertSame(options, options.setUseTcpForFallbackDnsResolving(useTcpForFallbackDnsResolving));
     try {
       options.setCacheMinTimeToLive(-1);
       fail("Should throw exception");
@@ -266,6 +269,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(rdFlag, options.getRdFlag());
     assertEquals(ndots, options.getNdots());
     assertEquals(searchDomains, options.getSearchDomains());
+    assertEquals(useTcpForFallbackDnsResolving, options.isUseTcpForFallbackDnsResolving());
 
     // Test copy and json copy
     AddressResolverOptions copy = new AddressResolverOptions(options);
@@ -303,6 +307,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(rdFlag, jsonCopy.getRdFlag());
     assertEquals(ndots, jsonCopy.getNdots());
     assertEquals(searchDomains, jsonCopy.getSearchDomains());
+    assertEquals(useTcpForFallbackDnsResolving, jsonCopy.isUseTcpForFallbackDnsResolving());
   }
 
   @Test
@@ -318,6 +323,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
     assertEquals(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS, options.getSearchDomains());
     assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
+    assertEquals(AddressResolverOptions.DEFAULT_USE_TCP_FOR_FALLBACK_DNS_RESOLVING, options.isUseTcpForFallbackDnsResolving());
   }
 
   @Test
