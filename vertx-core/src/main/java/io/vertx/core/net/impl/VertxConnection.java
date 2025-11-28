@@ -115,7 +115,7 @@ public class VertxConnection extends ConnectionBase {
         shutdown = promise;
         handleShutdown(shutdownEvent.timeout(), promise);
       } else {
-        throw new UnsupportedOperationException();
+        log.debug("Client shutdown after connection shutdown, ignoring ShutdownEvent");
       }
     } else {
       // Will release the event if needed
@@ -194,15 +194,7 @@ public class VertxConnection extends ConnectionBase {
         shutdown = promise;
         channel.close(promise);
       } else {
-        channel
-          .closeFuture()
-          .addListener(future -> {
-            if (future.isSuccess()) {
-              promise.setSuccess();
-            } else {
-              promise.setFailure(future.cause());
-            }
-          });
+        completeWhenChannelIsClosed(promise);
       }
     } else {
       shutdown = promise;
@@ -216,6 +208,16 @@ public class VertxConnection extends ConnectionBase {
     }
   }
 
+  protected void completeWhenChannelIsClosed(ChannelPromise promise) {
+    channel.closeFuture().addListener(future -> {
+      if (future.isSuccess()) {
+        promise.setSuccess();
+      } else {
+        promise.setFailure(future.cause());
+      }
+    });
+  }
+
   // Exclusively called by the owning handler close signal
   void handleClose(ChannelPromise promise) {
     terminateClose(promise);
@@ -226,15 +228,7 @@ public class VertxConnection extends ConnectionBase {
       closeSent = true;
       writeClose(promise);
     } else {
-      channel
-        .closeFuture()
-        .addListener(future -> {
-          if (future.isSuccess()) {
-            promise.setSuccess();
-          } else {
-            promise.setFailure(future.cause());
-          }
-        });
+      completeWhenChannelIsClosed(promise);
     }
   }
 
