@@ -14,16 +14,16 @@ package io.vertx.tests.net;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.*;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
-import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -36,10 +36,10 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.net.impl.tcp.CleanableNetClient;
+import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
@@ -4618,5 +4618,35 @@ public class NetTest extends VertxTestBase {
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
     assertEquals("host2.com", test.indicatedServerName);
     assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+  }
+
+  @Test
+  public void testCloseConnectionAndClient() {
+    waitFor(4);
+    server.connectHandler(so -> {
+      so.closeHandler(v -> {
+        complete();
+      });
+    }).listen(testAddress).onComplete(onSuccess(s -> {
+      Promise<Void> trigger = Promise.promise();
+      client.connect(testAddress).onComplete(onSuccess(so -> {
+        so.exceptionHandler(this::fail);
+        so.shutdownHandler(duration -> {
+          trigger.future().onComplete(onSuccess(tg -> {
+            so.close().onComplete(onSuccess(v -> {
+              complete();
+            }));
+          }));
+        });
+        so.close().onComplete(onSuccess(v -> {
+          complete();
+        }));
+        client.close().onComplete(onSuccess(v -> {
+          complete();
+        }));
+        trigger.complete();
+      }));
+    }));
+    await();
   }
 }
