@@ -45,9 +45,17 @@ public class FileSystemOptions {
    */
   public static final String DEFAULT_FILE_CACHING_DIR = SysProps.FILE_CACHE_DIR.get();
 
+  /**
+   * The default exact file caching dir, which is {@code null} as {@link FileSystemOptions#setExactFileCacheDir}
+   * is meant to be used by advanced integrations that can guarantee on their own that the cache dir
+   * will be unique
+   */
+  public static final String DEFAULT_EXACT_FILE_CACHING_DIR = null;
+
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
   private String fileCacheDir = DEFAULT_FILE_CACHING_DIR;
+  private String exactFileCacheDir = DEFAULT_EXACT_FILE_CACHING_DIR;
 
   /**
    * Default constructor
@@ -128,7 +136,7 @@ public class FileSystemOptions {
   }
 
   /**
-   * @return the configured file cache dir
+   * @return the base name of the configured file cache dir. Vert.x will append a random value to this when determining the effective value
    */
   public String getFileCacheDir() {
     return this.fileCacheDir;
@@ -147,6 +155,26 @@ public class FileSystemOptions {
     return this;
   }
 
+  /**
+   * @return the configured exact file cache dir to be used as is
+   */
+  public String getExactFileCacheDir() {
+    return this.exactFileCacheDir;
+  }
+
+  /**
+   * When vert.x reads a file that is packaged with the application it gets
+   * extracted to this directory first and subsequent reads will use the extracted
+   * file to get better IO performance.
+   *
+   * @param exactFileCacheDir the value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public FileSystemOptions setExactFileCacheDir(String exactFileCacheDir) {
+    this.exactFileCacheDir = exactFileCacheDir;
+    return this;
+  }
+
 
   @Override
   public String toString() {
@@ -154,6 +182,7 @@ public class FileSystemOptions {
     "classPathResolvingEnabled=" + classPathResolvingEnabled +
     ", fileCachingEnabled=" + fileCachingEnabled +
     ", fileCacheDir=" + fileCacheDir +
+    ", exactFileCacheDir=" + exactFileCacheDir +
     '}';
   }
 }
