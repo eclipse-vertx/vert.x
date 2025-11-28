@@ -187,6 +187,14 @@ For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz
 
 Then the path would be `/a/b/c/page.html`
 
+Note that `HttpServerRequest#path()` returns the raw path as it was sent by the client.
+This value may contain repeated separators such as `//` or path traversal markers like `..`.
+
+If you are using Vert.x Web and need to perform security-sensitive checks or route
+comparisons based on a normalized version of the path, prefer using
+`RoutingContext#normalizedPath()` instead. Vert.x Web applies additional
+transformations to ensure the path is canonicalized before matching routes.
+
 ==== Request query
 
 Use {@link io.vertx.core.http.HttpServerRequest#query} to return the query part of the URI
