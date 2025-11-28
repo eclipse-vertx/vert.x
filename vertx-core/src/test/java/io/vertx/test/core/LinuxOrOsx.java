@@ -13,7 +13,7 @@ public class LinuxOrOsx extends BlockJUnit4ClassRunner {
 
   @Override
   public void run(RunNotifier notifier) {
-    if (PlatformDependent.isWindows()) {
+    if (PlatformDependent.isWindows() || VertxTestBase.USE_DOMAIN_SOCKETS) {
       // Skip
     } else {
       super.run(notifier);
