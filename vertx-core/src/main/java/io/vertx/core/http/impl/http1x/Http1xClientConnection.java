@@ -255,33 +255,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       inflight.addLast(stream);
       this.isConnect = connect;
       if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(request.uri, new io.vertx.core.spi.observability.HttpRequest() {
-          @Override
-          public int id() {
-            return 1;
-          }
-          @Override
-          public String uri() {
-            return request.uri;
-          }
-          @Override
-          public String absoluteURI() {
-            return request.absoluteURI;
-          }
-          @Override
-          public HttpMethod method() {
-            return request.method;
-          }
-          @Override
-          public MultiMap headers() {
-            return request.headers;
-          }
-
-          @Override
-          public SocketAddress remoteAddress() {
-            return Http1xClientConnection.this.remoteAddress();
-          }
-        });
+        stream.metric = this.metrics.requestBegin(request.uri, new ObservableRequest(request));
       }
       VertxTracer tracer = stream.context.tracer();
       if (tracer != null) {
@@ -290,7 +264,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         if (operation == null) {
           operation = request.method.name();
         }
-        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), new ObservableRequest(request), operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
     write(nettyRequest, false, promise);
@@ -895,16 +869,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         stream.version = version;
         stream.response = response;
         if (metrics != null) {
-          metrics.responseBegin(stream.metric, new io.vertx.core.spi.observability.HttpResponse() {
-            @Override
-            public int statusCode() {
-              return response.statusCode;
-            }
-            @Override
-            public MultiMap headers() {
-              return response.headers;
-            }
-          });
+          metrics.responseBegin(stream.metric, new ObservableResponse(response));
         }
       }
       stream.onHead(response);
@@ -991,7 +956,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     }
     VertxTracer tracer = stream.context.tracer();
     if (tracer != null) {
-      tracer.receiveResponse(stream.context, response, stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
+      tracer.receiveResponse(stream.context, new ObservableResponse(response), stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
     if (metrics != null) {
       metrics.responseEnd(stream.metric, stream.bytesRead);
@@ -1363,5 +1328,59 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   @Override
   public String toString() {
     return super.toString() + "[lastResponseReceivedTimestamp=" + lastResponseReceivedTimestamp + "]";
+  }
+
+  private class ObservableRequest implements io.vertx.core.spi.observability.HttpRequest {
+
+    private final io.vertx.core.http.impl.HttpRequestHead request;
+
+    public ObservableRequest(io.vertx.core.http.impl.HttpRequestHead requestHead) {
+      this.request = requestHead;
+    }
+
+    @Override
+    public int id() {
+      return 1;
+    }
+    @Override
+    public String uri() {
+      return request.uri;
+    }
+    @Override
+    public String absoluteURI() {
+      return request.absoluteURI;
+    }
+    @Override
+    public HttpMethod method() {
+      return request.method;
+    }
+    @Override
+    public MultiMap headers() {
+      return request.headers;
+    }
+
+    @Override
+    public SocketAddress remoteAddress() {
+      return Http1xClientConnection.this.remoteAddress();
+    }
+  }
+
+  private class ObservableResponse implements io.vertx.core.spi.observability.HttpResponse {
+
+    private final io.vertx.core.http.impl.HttpResponseHead response;
+
+    public ObservableResponse(io.vertx.core.http.impl.HttpResponseHead requestHead) {
+      this.response = requestHead;
+    }
+
+    @Override
+    public int statusCode() {
+      return response.statusCode;
+    }
+
+    @Override
+    public MultiMap headers() {
+      return response.headers;
+    }
   }
 }

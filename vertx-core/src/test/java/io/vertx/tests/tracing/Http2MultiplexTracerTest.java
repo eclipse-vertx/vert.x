@@ -10,25 +10,9 @@
  */
 package io.vertx.tests.tracing;
 
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.tracing.TracingPolicy;
-import io.vertx.test.faketracer.FakeTracer;
-import io.vertx.tests.http.Http2TestBase;
-import org.junit.Assert;
-import org.junit.Test;
-
 public class Http2MultiplexTracerTest extends Http2TracerTest {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return super.createBaseServerOptions().setHttp2MultiplexImplementation(true);
+  public Http2MultiplexTracerTest() {
+    super(true);
   }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return super.createBaseClientOptions().setHttp2MultiplexImplementation(true);
-  }
-
 }

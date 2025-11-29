@@ -46,7 +46,7 @@ import static io.vertx.core.http.HttpHeaders.*;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse {
+public class HttpServerResponseImpl implements HttpServerResponse {
 
   private final HttpServerStream stream;
   private final HttpServerConnection conn;
@@ -132,11 +132,6 @@ public class HttpServerResponseImpl implements HttpServerResponse, HttpResponse 
       exceptionHandler = handler;
       return this;
     }
-  }
-
-  @Override
-  public int statusCode() {
-    return getStatusCode();
   }
 
   @Override
