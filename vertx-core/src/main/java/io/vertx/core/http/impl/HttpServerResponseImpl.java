@@ -713,6 +713,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public Future<Boolean> cancel() {
+    return stream.cancel();
+  }
+
+  @Override
   public Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers) {
     if (push) {
       throw new IllegalStateException("A push response cannot promise another push");

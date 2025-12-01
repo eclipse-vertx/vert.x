@@ -418,6 +418,11 @@ abstract class DefaultHttp2Stream<S extends DefaultHttp2Stream<S>> implements Ht
     connection.writeData(id, chunk, end, promise);
   }
 
+  @Override
+  public Future<Boolean> cancel() {
+    return writeReset(0x08L).map(true);
+  }
+
   public final Future<Void> writeReset(long code) {
     if (code < 0L) {
       throw new IllegalArgumentException("Invalid reset code value");

@@ -614,6 +614,17 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> reset(long code);
 
   /**
+   * Attempt to cancel the request according to the semantics of the underlying HTTP implementation.
+   * <ul>
+   *   <li>for HTTP/1.x, this closes the connection when the current request is inflight</li>
+   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the error {@code 0x08}</li>
+   *   <li>for HTTP/3, this resets or abort reading the underlying QUIC stream with code {@code 0x10c}</li>
+   * </ul>
+   * @return a future notifying the cancellation outcome
+   */
+  Future<Boolean> cancel();
+
+  /**
    * Write an HTTP/2 frame to the response, allowing to extend the HTTP/2 protocol.<p>
    *
    * The frame is sent immediatly and is not subject to flow control.

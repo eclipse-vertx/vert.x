@@ -788,6 +788,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public Future<Boolean> cancel() {
+    return reset().map(true);
+  }
+
+  @Override
   public Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers) {
     return context.failedFuture("HTTP/1 does not support response push");
   }

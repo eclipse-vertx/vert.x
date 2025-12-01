@@ -237,6 +237,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     }
 
     @Override
+    public Future<Boolean> cancel() {
+      return delegate.cancel();
+    }
+
+    @Override
     public StreamPriority priority() {
       return delegate.priority();
     }
@@ -670,6 +675,15 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
         return upgradedStream.writeReset(code);
       } else {
         return upgradingStream.writeReset(code);
+      }
+    }
+
+    @Override
+    public Future<Boolean> cancel() {
+      if (upgradedStream != null) {
+        return upgradedStream.cancel();
+      } else {
+        return upgradingStream.cancel();
       }
     }
 

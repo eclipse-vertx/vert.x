@@ -4012,6 +4012,7 @@ public abstract class HttpTest extends SimpleHttpTest {
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> reset(long code) { return Future.failedFuture(new UnsupportedOperationException()); }
       public Future<Void> reset(long code, Throwable cause) { return Future.failedFuture(new UnsupportedOperationException()); }
+      public Future<Boolean> cancel() { return Future.failedFuture(new UnsupportedOperationException()); }
       public HttpClientConnection connection() { throw new UnsupportedOperationException(); }
       public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
@@ -5446,6 +5447,76 @@ public abstract class HttpTest extends SimpleHttpTest {
         testComplete();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testCancelPartialServerResponse() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.exceptionHandler(err -> {
+        switch (req.version()) {
+          case HTTP_1_1:
+            assertSame(HttpClosedException.class, err.getClass());
+            complete();
+            break;
+          case HTTP_2:
+            if (err instanceof HttpClosedException) {
+              complete();
+            } else if (err instanceof StreamResetException) {
+              assertEquals(8L, ((StreamResetException)err).getCode());
+            } else {
+              fail();
+            }
+            break;
+          default:
+            fail();
+            break;
+        }
+      });
+      resp.setChunked(true);
+      resp.write("chunk");
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        resp.handler(chunk -> {
+          req.cancel().onComplete(onSuccess(b -> {
+            assertTrue(b);
+            complete();
+          }));
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testCancelPartialClientRequest() throws Exception {
+    List<HttpServerRequest> serverRequests = Collections.synchronizedList(new ArrayList<>());
+    server.requestHandler(serverRequests::add);
+    startServer(testAddress);
+    HttpClientRequest clientRequest = client.request(requestOptions).await();
+    clientRequest.exceptionHandler(err -> {
+      switch (clientRequest.version()) {
+        case HTTP_1_1:
+          assertSame(HttpClosedException.class, err.getClass());
+          break;
+        case HTTP_2:
+          assertSame(StreamResetException.class, err.getClass());
+          assertEquals(8L, ((StreamResetException)err).getCode());
+          break;
+        default:
+          fail();
+          return;
+      }
+      testComplete();
+    });
+    clientRequest.setChunked(true).writeHead().await();
+    assertWaitUntil(() -> serverRequests.size() == 1);
+    HttpServerRequest serverRequest = serverRequests.get(0);
+    assertTrue(serverRequest.response().cancel().await());
     await();
   }
 

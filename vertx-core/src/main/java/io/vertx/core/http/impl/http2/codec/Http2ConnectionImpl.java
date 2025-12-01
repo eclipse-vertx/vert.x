@@ -516,6 +516,6 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void writeReset(int streamId, long code, Promise<Void> promise) {
-    handler.writeReset(streamId, code, null);
+    handler.writeReset(streamId, code, (FutureListener<Void>) promise);
   }
 }
