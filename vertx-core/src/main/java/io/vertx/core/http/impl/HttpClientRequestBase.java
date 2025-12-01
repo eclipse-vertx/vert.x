@@ -253,6 +253,16 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return stream.writeReset(code);
   }
 
+  public Future<Boolean> cancel() {
+    synchronized (this) {
+      if (reset != null) {
+        return context.failedFuture("Already reset");
+      }
+      reset = new StreamResetException(0x08);
+    }
+    return stream.cancel();
+  }
+
   @Override
   public Future<HttpClientResponse> response() {
     return responsePromise.future();

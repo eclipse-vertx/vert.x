@@ -469,8 +469,9 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * Reset this request:
    * <p/>
    * <ul>
-   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
    *   <li>for HTTP/1.x, this closes the connection when the current request is inflight</li>
+   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
+   *   <li>for HTTP/3, this is only effective if the stream has not been fully sent</li>
    * </ul>
    * <p/>
    * When the request has not yet been sent, the request will be aborted and false is returned as indicator.
@@ -480,6 +481,17 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return {@code true} when reset has been performed
    */
   Future<Void> reset(long code);
+
+  /**
+   * Attempt to cancel the request according to the semantics of the underlying HTTP implementation.
+   * <ul>
+   *   <li>for HTTP/1.x, this closes the connection when the current request is inflight</li>
+   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the error {@code 0x08}</li>
+   *   <li>for HTTP/3, this resets or abort reading the underlying QUIC stream with code {@code 0x10c}</li>
+   * </ul>
+   * @return a future notifying the cancellation outcome
+   */
+  Future<Boolean> cancel();
 
   /**
    * Reset this request:

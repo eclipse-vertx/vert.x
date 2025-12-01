@@ -645,6 +645,11 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     }
 
     @Override
+    public Future<Boolean> cancel() {
+      return writeReset(0x8).map(true);
+    }
+
+    @Override
     public Future<Void> writeReset(long code) {
       Promise<Void> promise = context.promise();
       EventLoop eventLoop = conn.context.nettyEventLoop();

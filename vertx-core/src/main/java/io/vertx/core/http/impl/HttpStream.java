@@ -45,6 +45,8 @@ public interface HttpStream {
   Future<Void> writeFrame(int type, int flags, Buffer payload);
   Future<Void> writeReset(long code);
 
+  Future<Boolean> cancel();
+
   HttpStream resetHandler(Handler<Long> handler);
   HttpStream exceptionHandler(Handler<Throwable> handler);
   HttpStream customFrameHandler(Handler<HttpFrame> handler);

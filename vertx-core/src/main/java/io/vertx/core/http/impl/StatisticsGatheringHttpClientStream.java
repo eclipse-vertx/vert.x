@@ -170,6 +170,11 @@ class StatisticsGatheringHttpClientStream implements HttpClientStream {
   }
 
   @Override
+  public Future<Boolean> cancel() {
+    return delegate.cancel();
+  }
+
+  @Override
   public Future<Void> writeReset(long code) {
     return delegate.writeReset(code);
   }
