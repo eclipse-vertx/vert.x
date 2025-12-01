@@ -255,7 +255,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       inflight.addLast(stream);
       this.isConnect = connect;
       if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(request.uri, new ObservableRequest(request));
+        stream.metric = this.metrics.requestBegin(stream.context, request.uri, new ObservableRequest(request));
       }
       VertxTracer tracer = stream.context.tracer();
       if (tracer != null) {

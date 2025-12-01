@@ -32,6 +32,7 @@ import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
@@ -229,7 +230,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
             this,
             metrics,
             metric(),
-            context,
+            ((PromiseInternal)promise).context(),
             new HttpRequestHeaders(headers_),
             method,
             path,

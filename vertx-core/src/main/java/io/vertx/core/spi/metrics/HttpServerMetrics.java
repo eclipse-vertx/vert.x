@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.vertx.core.Context;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -38,15 +39,24 @@ import io.vertx.core.spi.observability.HttpResponse;
 public interface HttpServerMetrics<R, W, S> extends TransportMetrics<S> {
 
   /**
+   * @deprecated instead override {@link #requestBegin(Context, Object, HttpRequest)}, this will be removed in Vert.x 6
+   */
+  @Deprecated(forRemoval = true)
+  default R requestBegin(S socketMetric, HttpRequest request) {
+    return null;
+  }
+
+  /**
    * Called when an http server request begins. Vert.x will invoke {@link #responseEnd} when the response has ended
    * or {@link #requestReset} if the request/response has failed before.
    *
+   * @param context the vertx context associated with the request
    * @param socketMetric the socket metric
    * @param request the http server reuqest
    * @return the request metric
    */
-  default R requestBegin(S socketMetric, HttpRequest request) {
-    return null;
+  default R requestBegin(Context context, S socketMetric, HttpRequest request) {
+    return requestBegin(socketMetric, request);
   }
 
   /**
@@ -77,15 +87,25 @@ public interface HttpServerMetrics<R, W, S> extends TransportMetrics<S> {
   }
 
   /**
+   * @deprecated instead override {@link #responsePushed(Context, Object, HttpMethod, String, HttpResponse)},
+   * this will be removed in Vert.x 6
+   */
+  @Deprecated(forRemoval = true)
+  default R responsePushed(S socketMetric, HttpMethod method, String uri, HttpResponse response) {
+    return null;
+  }
+
+  /**
    * Called when an http server response is pushed.
    *
+   * @param context the vertx context associated with the request
    * @param socketMetric the socket metric
    * @param method the pushed response method
    * @param uri the pushed response uri
    * @param response the http server response  @return the request metric
    */
-  default R responsePushed(S socketMetric, HttpMethod method, String uri, HttpResponse response) {
-    return null;
+  default R responsePushed(Context context, S socketMetric, HttpMethod method, String uri, HttpResponse response) {
+    return responsePushed(socketMetric, method, uri, response);
   }
 
   /**

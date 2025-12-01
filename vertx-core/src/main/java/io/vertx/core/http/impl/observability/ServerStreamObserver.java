@@ -51,7 +51,7 @@ public class ServerStreamObserver extends StreamObserver {
 
   public void observeInboundHeaders(HttpHeaders headers) {
     if (serverMetrics != null) {
-      metric = serverMetrics.requestBegin(socketMetric, observableRequest((HttpRequestHeaders) headers, remoteAddress));
+      metric = serverMetrics.requestBegin(context, socketMetric, observableRequest((HttpRequestHeaders) headers, remoteAddress));
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
@@ -85,7 +85,7 @@ public class ServerStreamObserver extends StreamObserver {
 
   public void observePush(HttpResponseHeaders headers, HttpMethod method, String uri) {
     if (serverMetrics != null) {
-      metric = serverMetrics.responsePushed(socketMetric, method, uri, observableResponse(headers, remoteAddress));
+      metric = serverMetrics.responsePushed(context, socketMetric, method, uri, observableResponse(headers, remoteAddress));
     }
   }
 }

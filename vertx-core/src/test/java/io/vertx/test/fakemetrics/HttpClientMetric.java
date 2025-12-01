@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.Context;
 import io.vertx.core.spi.observability.HttpRequest;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class HttpClientMetric {
 
   public final EndpointMetric endpoint;
+  public final Context context;
   public final HttpRequest request;
   public final AtomicInteger requestEnded = new AtomicInteger();
   public final AtomicInteger responseBegin = new AtomicInteger();
@@ -30,8 +32,9 @@ public class HttpClientMetric {
   public final AtomicLong bytesWritten = new AtomicLong();
   public final AtomicBoolean failed = new AtomicBoolean();
 
-  public HttpClientMetric(EndpointMetric endpoint, HttpRequest request) {
+  public HttpClientMetric(EndpointMetric endpoint, Context context, HttpRequest request) {
     this.endpoint = endpoint;
     this.request = request;
+    this.context = context;
   }
 }

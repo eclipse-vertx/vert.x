@@ -609,7 +609,7 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   private void reportRequestBegin() {
     HttpServerMetrics metrics = conn.metrics;
     if (metrics != null) {
-      metric = metrics.requestBegin(conn.metric(), this);
+      metric = metrics.requestBegin(context, conn.metric(), this);
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {

@@ -231,10 +231,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     Http2ClientStream stream = (Http2ClientStream) stream(streamId);
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-//      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      Http2ClientStream s = Http2ClientStream.create(this, context, options.getTracingPolicy(), options.isDecompressionSupported(), transportMetrics, clientMetrics);
-//      pushStream.init(s);
-//      pushStream.stream = s;
+      Http2ClientStream s = Http2ClientStream.create(this, stream.context(), options.getTracingPolicy(), options.isDecompressionSupported(), transportMetrics, clientMetrics);
       promisedStream.setProperty(streamKey, s);
       HttpRequestHeaders headersMap = new HttpRequestHeaders(headers);
       headersMap.validate();

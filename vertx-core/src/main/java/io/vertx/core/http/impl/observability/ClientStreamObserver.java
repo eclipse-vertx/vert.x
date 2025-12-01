@@ -40,9 +40,9 @@ public class ClientStreamObserver extends StreamObserver {
     this.clientMetrics = clientMetrics;
   }
 
-  public void observePush(HttpRequestHeaders headers) {
+  public void observePush(ContextInternal context,  HttpRequestHeaders headers) {
     if (clientMetrics != null) {
-      Object metric = clientMetrics.requestBegin(headers.path().toString(), observableRequest(headers, remoteAddress));
+      Object metric = clientMetrics.requestBegin(context, headers.path().toString(), observableRequest(headers, remoteAddress));
       this.metric = metric;
       clientMetrics.requestEnd(metric, 0L);
     }
@@ -56,7 +56,7 @@ public class ClientStreamObserver extends StreamObserver {
   public void observeOutboundHeaders(HttpHeaders headers) {
     HttpRequestHeaders r = (HttpRequestHeaders) headers;
     if (clientMetrics != null) {
-      metric = clientMetrics.requestBegin(r.path(), observableRequest(r, remoteAddress));
+      metric = clientMetrics.requestBegin(context, r.path(), observableRequest(r, remoteAddress));
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
