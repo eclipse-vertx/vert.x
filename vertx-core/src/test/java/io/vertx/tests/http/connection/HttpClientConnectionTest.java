@@ -12,10 +12,7 @@ package io.vertx.tests.http.connection;
 
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientConnection;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnectOptions;
-import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Test;
@@ -124,6 +121,31 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
           }));
       }
     }));
+    await();
+  }
+
+  @Test
+  public void testAlternateServiceHandler() throws Exception {
+    String expected = "Alt-Svc: h2=\":443\"; ma=2592000;";
+    server.requestHandler(req -> {
+      req.response()
+        .putHeader(HttpHeaders.ALT_SVC, expected)
+        .end("Hello World");
+    });
+    startServer(testAddress);
+    HttpClientConnection connection = client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).await();
+    ((io.vertx.core.http.impl.UnpooledHttpClientConnection)connection).unwrap().alternativeServicesHandler(altSvc -> {
+      assertEquals(expected, altSvc);
+      testComplete();
+    });
+    Buffer response = connection
+      .request()
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals("Hello World", response.toString());
     await();
   }
 }

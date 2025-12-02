@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.Headers;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -76,6 +75,15 @@ public interface HttpClientConnection extends HttpConnection {
    * @return a reference to this, so the API can be used fluently
    */
   HttpClientConnection concurrencyChangeHandler(Handler<Long> handler);
+
+  /**
+   *
+   * @param handler
+   * @return
+   */
+  default HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+    return this;
+  }
 
   /**
    * @return the {@link ChannelHandlerContext} of the handler managing the connection

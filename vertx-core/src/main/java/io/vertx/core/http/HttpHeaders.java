@@ -450,6 +450,12 @@ public interface HttpHeaders {
   CharSequence VARY = createOptimized("vary");
 
   /**
+   * Alt-svc header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence ALT_SVC = HttpHeaderNames.ALT_SVC;
+
+  /**
    * HTTP/2 {@code :path} pseudo header
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

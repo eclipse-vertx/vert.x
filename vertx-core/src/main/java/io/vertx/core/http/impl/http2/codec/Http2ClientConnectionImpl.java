@@ -28,6 +28,8 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
+import static io.vertx.core.http.HttpHeaders.ALT_SVC;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -40,6 +42,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
+  private Handler<String> alternativeServicesHandler;
   private long expirationTimestamp;
   private boolean evicted;
   private final VertxHttp2ConnectionHandler handler;
@@ -84,6 +87,12 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   public Http2ClientConnectionImpl concurrencyChangeHandler(Handler<Long> handler) {
     concurrencyChangeHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+    alternativeServicesHandler = handler;
     return this;
   }
 
@@ -212,6 +221,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       if (!headersMap.validate()) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
       } else {
+        CharSequence altSvcHeader = headers.get(ALT_SVC);
+        Handler<String> handler;
+        if (altSvcHeader != null && (handler = alternativeServicesHandler) != null) {
+          context.emit(altSvcHeader.toString(), handler);
+        }
         headersMap.sanitize();
         if (streamPriority != null) {
           stream.priority(streamPriority);

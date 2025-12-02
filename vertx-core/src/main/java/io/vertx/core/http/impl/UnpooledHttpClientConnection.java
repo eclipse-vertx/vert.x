@@ -22,12 +22,9 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -60,6 +57,10 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
       checkPending(null);
     });
     return this;
+  }
+
+  public HttpClientConnection unwrap() {
+    return actual;
   }
 
   @Override

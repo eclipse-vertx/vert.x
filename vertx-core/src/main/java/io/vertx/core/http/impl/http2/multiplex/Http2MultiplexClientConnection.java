@@ -31,6 +31,8 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import static io.vertx.core.http.HttpHeaders.ALT_SVC;
+
 public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
   private final boolean decompressionSupported;
@@ -39,6 +41,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   private Promise<HttpClientConnection> completion;
   private long concurrency;
   private Handler<Long> concurrencyChangeHandler;
+  private Handler<String> alternativeServicesHandler;
   private Handler<Void> evictionHandler;
   private final long maxConcurrency;
   private final long keepAliveTimeoutMillis;
@@ -126,6 +129,11 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
         chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.PROTOCOL_ERROR.code()));
       } else {
         headersMap.sanitize();
+        CharSequence altSvcHeader = headers.get(ALT_SVC);
+        Handler<String> handler;
+        if (altSvcHeader != null && (handler = alternativeServicesHandler) != null) {
+          context.emit(altSvcHeader.toString(), handler);
+        }
         stream.onHeaders(headersMap);
         if (ended) {
           stream.onTrailers();
@@ -166,6 +174,12 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   @Override
   public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
     concurrencyChangeHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+    alternativeServicesHandler = handler;
     return this;
   }
 
