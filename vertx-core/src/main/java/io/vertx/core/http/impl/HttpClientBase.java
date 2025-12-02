@@ -15,7 +15,6 @@ import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -30,11 +29,10 @@ import java.util.function.Predicate;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientBase implements MetricsProvider, Closeable {
+public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   protected final VertxInternal vertx;
   protected final ProxyOptions defaultProxyOptions;
-  protected final HttpChannelConnector connector;
   protected final HttpClientMetrics<?, ?, ?> metrics;
   protected final CloseSequence closeSequence;
   private volatile ClientSSLOptions defaultSslOptions;
@@ -42,22 +40,13 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private Predicate<SocketAddress> proxyFilter;
   private final boolean verifyHost;
-  protected final boolean defaultSsl;
-  protected final String defaultHost;
-  protected final int defaultPort;
-  protected final int maxRedirects;
 
   public HttpClientBase(VertxInternal vertx,
-                        HttpChannelConnector connector,
                         HttpClientMetrics<?, ?, ?> metrics,
                         ProxyOptions defaultProxyOptions,
                         ClientSSLOptions defaultSslOptions,
                         List<String> nonProxyHosts,
-                        boolean verifyHost,
-                        boolean defaultSsl,
-                        String defaultHost,
-                        int defaultPort,
-                        int maxRedirects) {
+                        boolean verifyHost) {
 
     if (defaultSslOptions != null) {
       configureSSLOptions(verifyHost, defaultSslOptions);
@@ -66,25 +55,16 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     this.vertx = vertx;
     this.metrics = metrics;
     this.defaultProxyOptions = defaultProxyOptions;
-    this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(p1));
+    this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(Duration.ofMillis(closeTimeoutUnit.toMillis(closeTimeout)), p1));
     this.proxyFilter = nonProxyHosts != null ? ProxyFilter.nonProxyHosts(nonProxyHosts) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.connector = connector;
     this.defaultSslOptions = defaultSslOptions;
     this.verifyHost = verifyHost;
-    this.defaultSsl = defaultSsl;
-    this.defaultHost = defaultHost;
-    this.defaultPort = defaultPort;
-    this.maxRedirects = maxRedirects;
   }
 
   void configureSSLOptions(boolean verifyHost, ClientSSLOptions sslOptions) {
     if (sslOptions.getHostnameVerificationAlgorithm() == null) {
       sslOptions.setHostnameVerificationAlgorithm(verifyHost ? "HTTPS" : "");
     }
-  }
-
-  public HttpChannelConnector channelConnector() {
-    return connector;
   }
 
   public Future<Void> closeFuture() {
@@ -95,35 +75,11 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     closeSequence.close(completion);
   }
 
-  protected int getPort(RequestOptions request) {
-    Integer port = request.getPort();
-    if (port != null) {
-      return port;
-    }
-    SocketAddress server = (SocketAddress) request.getServer();
-    if (server != null && server.isInetSocket()) {
-      return server.port();
-    }
-    return defaultPort;
-  }
-
   private ProxyOptions getProxyOptions(ProxyOptions proxyOptions) {
     if (proxyOptions == null) {
       proxyOptions = defaultProxyOptions;
     }
     return proxyOptions;
-  }
-
-  protected String getHost(RequestOptions request) {
-    String host = request.getHost();
-    if (host != null) {
-      return host;
-    }
-    SocketAddress server = (SocketAddress) request.getServer();
-    if (server != null && server.isInetSocket()) {
-      return server.host();
-    }
-    return defaultHost;
   }
 
   protected ProxyOptions computeProxyOptions(ProxyOptions proxyOptions, SocketAddress addr) {
@@ -151,13 +107,9 @@ public class HttpClientBase implements MetricsProvider, Closeable {
     return metrics;
   }
 
-  protected void doShutdown(Completable<Void> p) {
-    connector.shutdown(Duration.ofMillis(closeTimeoutUnit.toMillis(closeTimeout))).onComplete(p);
-  }
+  protected abstract void doShutdown(Duration timeout, Completable<Void> p);
 
-  protected void doClose(Completable<Void> p) {
-    connector.close().onComplete(p);
-  }
+  protected abstract void doClose(Completable<Void> p);
 
   public Future<Void> shutdown(long timeout, TimeUnit unit) {
     this.closeTimeout = timeout;

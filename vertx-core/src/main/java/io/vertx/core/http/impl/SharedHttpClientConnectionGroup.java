@@ -12,10 +12,10 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
-import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.pool.ConnectResult;
 import io.vertx.core.internal.pool.ConnectionPool;
@@ -36,7 +36,7 @@ import java.util.function.Function;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class SharedHttpClientConnectionGroup extends ManagedResource implements PoolConnector<HttpClientConnection> {
+class SharedHttpClientConnectionGroup extends ManagedResource {
 
   /**
    * LIFO pool selector.
@@ -64,97 +64,37 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
   private final PoolMetrics poolMetrics;
   private final ClientMetrics clientMetrics;
   private final Handler<HttpConnection> connectHandler;
-  private final HttpChannelConnector connector;
-  private final HttpConnectParams connectParams;
+  private final Pool pool;
   private final HostAndPort authority;
-  private final long maxLifetimeMillis;
-  private final ConnectionPool<HttpClientConnection> pool;
   private final SocketAddress server;
-  private final int initialPoolKind;
 
   public SharedHttpClientConnectionGroup(ClientMetrics clientMetrics,
                                          Handler<HttpConnection> connectHandler,
-                                         Function<ContextInternal, ContextInternal> contextProvider,
+                                         Function<SharedHttpClientConnectionGroup, Pool> poolProvider,
                                          PoolMetrics poolMetrics,
-                                         int queueMaxSize,
-                                         int http1MaxSize,
-                                         int http2MaxSize,
-                                         int initialPoolKind,
-                                         HttpChannelConnector connector,
-                                         HttpConnectParams connectParams,
                                          HostAndPort authority,
-                                         long maxLifetimeMillis,
                                          SocketAddress server) {
-    ConnectionPool<HttpClientConnection> pool = ConnectionPool
-      .pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
-      .connectionSelector(LIFO_SELECTOR)
-      .contextProvider(contextProvider);
-
     this.poolMetrics = poolMetrics;
     this.clientMetrics = clientMetrics;
-    this.connector = connector;
     this.authority = authority;
-    this.pool = pool;
-    this.maxLifetimeMillis = maxLifetimeMillis;
+    this.pool = poolProvider.apply(this);
     this.server = server;
-    this.connectParams = connectParams;
-    this.initialPoolKind = initialPoolKind;
     this.connectHandler = connectHandler;
   }
 
-  @Override
-  public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
-    return connector
-      .httpConnect(context, server, authority, connectParams, maxLifetimeMillis, clientMetrics)
-      .map(connection -> {
-        incRefCount();
-        connection.evictionHandler(v -> {
-          decRefCount();
-          listener.onRemove();
-        });
-        connection.alternativeServicesHandler(protocol -> {
-          // Handle me
-        });
-        connection.concurrencyChangeHandler(listener::onConcurrencyChange);
-        long capacity = connection.concurrency();
-        if (connectHandler != null) {
-          context.emit(connection, connectHandler);
-        }
-        int idx;
-        if (connection instanceof Http1xClientConnection) {
-          idx = 0;
-        } else {
-          idx = 1;
-        }
-        return new ConnectResult<>(connection, capacity, idx);
-    });
-  }
-
-  @Override
-  public boolean isValid(HttpClientConnection connection) {
-    return connection.isValid();
-  }
-
   protected void checkExpired() {
-    pool
-      .evict(conn -> !conn.isValid(), (lst, err) -> {
-        if (err == null) {
-          lst.forEach(HttpConnection::close);
-        }
-      });
+    pool.checkExpired();
   }
 
   private class Request implements PoolWaiter.Listener<HttpClientConnection>, Completable<Lease<HttpClientConnection>> {
 
     private final ContextInternal context;
-    private final int initialPoolKind;
     private final long timeout;
     private final Promise<Lease<HttpClientConnection>> promise;
     private long timerID;
 
-    Request(ContextInternal context, int initialPoolKind, long timeout, Promise<Lease<HttpClientConnection>> promise) {
+    Request(ContextInternal context, long timeout, Promise<Lease<HttpClientConnection>> promise) {
       this.context = context;
-      this.initialPoolKind = initialPoolKind;
       this.timeout = timeout;
       this.promise = promise;
       this.timerID = -1L;
@@ -169,7 +109,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     public void onConnect(PoolWaiter<HttpClientConnection> waiter) {
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
-          pool.cancel(waiter, (res, err) -> {
+          pool.pool.cancel(waiter, (res, err) -> {
             if (err == null & res)
               promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + server));
             });
@@ -186,12 +126,17 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
 
     void acquire() {
-      pool.acquire(context, this, initialPoolKind, this);
+      pool.acquire(context,this, promise);
     }
   }
 
-  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, long timeout) {
-    Future<Lease<HttpClientConnection>> fut = requestConnection2(ctx, timeout);
+  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, HttpVersion protocol, long timeout) {
+    Promise<Lease<HttpClientConnection>> promise = ctx.promise();
+    Future<Lease<HttpClientConnection>> fut = promise.future();
+    // ctx.workerPool() -> not sure we want that in a pool
+    ContextInternal connCtx = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
+    Request request = new Request(connCtx, timeout, promise);
+    request.acquire();
     if (poolMetrics != null) {
       Object metric = poolMetrics.enqueue();
       fut = fut.andThen(ar -> {
@@ -201,18 +146,9 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     return fut;
   }
 
-  private Future<Lease<HttpClientConnection>> requestConnection2(ContextInternal ctx, long timeout) {
-    PromiseInternal<Lease<HttpClientConnection>> promise = ctx.promise();
-    // ctx.workerPool() -> not sure we want that in a pool
-    ContextInternal connCtx = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
-    Request request = new Request(connCtx, initialPoolKind, timeout, promise);
-    request.acquire();
-    return promise.future();
-  }
-
   @Override
   protected void handleClose() {
-    pool.close((res, err) -> {});
+    pool.close();
   }
 
   @Override
@@ -222,6 +158,93 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
     }
     if (poolMetrics != null) {
       poolMetrics.close();
+    }
+  }
+
+  private void init(HttpClientConnection connection) {
+    incRefCount();
+    if (connectHandler != null) {
+      ContextInternal context = connection.context();
+      context.emit(connection, connectHandler);
+    }
+  }
+
+  private void dispose(HttpClientConnection connection) {
+    decRefCount();
+  }
+
+  static class Pool implements PoolConnector<HttpClientConnection> {
+
+    private final SharedHttpClientConnectionGroup owner;
+    private final HttpChannelConnector connector;
+    private final long maxLifetimeMillis;
+    private final HttpConnectParams connectParams;
+    private final ConnectionPool<HttpClientConnection> pool;
+    private final int poolKind;
+
+    Pool(SharedHttpClientConnectionGroup owner,
+                HttpChannelConnector connector,
+                int queueMaxSize,
+                int http1MaxSize,
+                int http2MaxSize,
+                long maxLifetimeMillis,
+                int initialPoolKind,
+                HttpConnectParams connectParams,
+                Function<ContextInternal,
+                ContextInternal> contextProvider) {
+      this.owner = owner;
+      this.connector = connector;
+      this.maxLifetimeMillis = maxLifetimeMillis;
+      this.connectParams = connectParams;
+      this.poolKind = initialPoolKind;
+      this.pool = ConnectionPool
+        .pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
+        .connectionSelector(LIFO_SELECTOR)
+        .contextProvider(contextProvider);
+    }
+
+    @Override
+    public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
+      return connector
+        .httpConnect(context, owner.server, owner.authority, connectParams, maxLifetimeMillis, owner.clientMetrics)
+        .map(connection -> {
+          connection.evictionHandler(v -> {
+            owner.dispose(connection);
+            listener.onRemove();
+          });
+          connection.concurrencyChangeHandler(listener::onConcurrencyChange);
+          owner.init(connection);
+          long capacity = connection.concurrency();
+          int idx;
+          if (connection instanceof Http1xClientConnection) {
+            idx = 0;
+          } else {
+            idx = 1;
+          }
+          return new ConnectResult<>(connection, capacity, idx);
+        });
+    }
+
+    @Override
+    public boolean isValid(HttpClientConnection connection) {
+      return connection.isValid();
+    }
+
+    void checkExpired() {
+      pool
+        .evict(conn -> !conn.isValid(), (lst, err) -> {
+          if (err == null) {
+            lst.forEach(HttpConnection::close);
+          }
+        });
+    }
+
+    void acquire(ContextInternal context, PoolWaiter.Listener<HttpClientConnection> listener, Promise<Lease<HttpClientConnection>> promise) {
+      pool.acquire(context, listener, poolKind, promise);
+    }
+
+    void close() {
+      pool.close((res, err) -> {});
     }
   }
 }

@@ -31,11 +31,13 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.List;
 import java.util.function.Function;
 
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
+  private final HttpChannelConnector connector;
   private final WebSocketClientOptions options;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
 
@@ -44,20 +46,21 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
                              WebSocketClientOptions wsOptions,
                              HttpChannelConnector connector,
                              HttpClientMetrics<?, ?, ?> metrics) {
-    super(vertx, connector, metrics, options.getProxyOptions(), options.getSslOptions(), options.getNonProxyHosts(),
-      options.isVerifyHost(), options.isSsl(), options.getDefaultHost(), options.getDefaultPort(), options.getMaxRedirects());
+    super(vertx, metrics, options.getProxyOptions(), options.getSslOptions(), options.getNonProxyHosts(),
+      options.isVerifyHost());
     this.options = wsOptions;
     this.webSocketCM = new ResourceManager<>();
+    this.connector = connector;
   }
 
-  protected void doShutdown(Completable<Void> p) {
+  protected void doShutdown(Duration timeout, Completable<Void> p) {
     webSocketCM.shutdown();
-    super.doShutdown(p);
+    connector.shutdown(timeout).onComplete(p);
   }
 
   protected void doClose(Completable<Void> p) {
     webSocketCM.close();
-    super.doClose(p);
+    connector.close().onComplete(p);
   }
 
   @Override
@@ -153,5 +156,29 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
   public ClientWebSocket webSocket() {
     return new ClientWebSocketImpl(this);
+  }
+
+  protected int getPort(RequestOptions request) {
+    Integer port = request.getPort();
+    if (port != null) {
+      return port;
+    }
+    SocketAddress server = (SocketAddress) request.getServer();
+    if (server != null && server.isInetSocket()) {
+      return server.port();
+    }
+    return options.getDefaultPort();
+  }
+
+  protected String getHost(RequestOptions request) {
+    String host = request.getHost();
+    if (host != null) {
+      return host;
+    }
+    SocketAddress server = (SocketAddress) request.getServer();
+    if (server != null && server.isInetSocket()) {
+      return server.host();
+    }
+    return options.getDefaultHost();
   }
 }
