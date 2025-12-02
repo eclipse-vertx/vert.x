@@ -112,6 +112,9 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
           decRefCount();
           listener.onRemove();
         });
+        connection.alternativeServicesHandler(protocol -> {
+          // Handle me
+        });
         connection.concurrencyChangeHandler(listener::onConcurrencyChange);
         long capacity = connection.concurrency();
         if (connectHandler != null) {
