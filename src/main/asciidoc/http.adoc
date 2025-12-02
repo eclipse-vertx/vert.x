@@ -41,6 +41,10 @@ To handle `h2` requests, TLS must be enabled along with {@link io.vertx.core.htt
 {@link examples.HTTP2Examples#example0}
 ----
 
+The rise of quantum computers will make key exchange protocols such as x25519 obsolete as they will be able to "crack" secret keys quickly.
+Vert.x proposes a quantum-safe key exchange protocol, x25519MLKEM768 (official recommendation of NIST) to ensure sessions over TLS are safe against quantum computers.
+Hybrid key exchange must be enabled along with {@link io.vertx.core.http.HttpServerOptions#setUseHybrid(boolean)} and only works using OpenSsl ({$@link io.vertx.core.http.HttpServerOptions#setSslEngineOptions(SSLEngineOptions)})
+
 ALPN is a TLS extension that negotiates the protocol before the client and the server start to exchange data.
 
 Clients that don't support ALPN will still be able to do a _classic_ SSL handshake.

@@ -341,6 +341,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setUseHybrid(boolean useHyrbrid) {
+    return (ClientOptionsBase) super.setUseHybrid(useHyrbrid);
+  }
+
+  @Override
   public ClientOptionsBase setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (ClientOptionsBase) super.setSslEngineOptions(sslEngineOptions);
   }

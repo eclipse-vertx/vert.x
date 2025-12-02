@@ -37,7 +37,11 @@ public class SSLOptions {
   /**
    * Default use alpn = false
    */
-  public static final boolean DEFAULT_USE_ALPN = false;
+  public static final boolean DEFAULT_USE_ALPN = false;  /**
+
+   * Default use hybrid = false
+   */
+  public static final boolean DEFAULT_USE_HYBRID = false;
 
   /**
    * The default value of SSL handshake timeout = 10
@@ -66,6 +70,7 @@ public class SSLOptions {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
+  private boolean useHybrid;
   private Set<String> enabledSecureTransportProtocols;
 
   /**
@@ -99,6 +104,7 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
+    this.useHybrid = other.useHybrid;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
@@ -110,6 +116,7 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
+    useHybrid = DEFAULT_USE_HYBRID;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
   }
 
@@ -237,12 +244,24 @@ public class SSLOptions {
   }
 
   /**
+   * @return whether to use or not Hybrid key exchange protocol x25519MLKEM768
+   */
+  public boolean isUseHybrid() {
+    return useHybrid;
+  }
+
+  /**
    * Set the ALPN usage.
    *
    * @param useAlpn true when Application-Layer Protocol Negotiation should be used
    */
   public SSLOptions setUseAlpn(boolean useAlpn) {
     this.useAlpn = useAlpn;
+    return this;
+  }
+
+  public SSLOptions setUseHybrid(boolean useHybrid) {
+    this.useHybrid = useHybrid;
     return this;
   }
 

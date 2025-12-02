@@ -279,6 +279,11 @@ public class EventBusOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
+        case "useHybrid":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseHybrid((Boolean)member.getValue());
+          }
+          break;
         case "writeIdleTimeout":
           if (member.getValue() instanceof Number) {
             obj.setWriteIdleTimeout(((Number)member.getValue()).intValue());
@@ -388,6 +393,7 @@ public class EventBusOptionsConverter {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("useHybrid", obj.isUseHybrid());
     json.put("writeIdleTimeout", obj.getWriteIdleTimeout());
   }
 }

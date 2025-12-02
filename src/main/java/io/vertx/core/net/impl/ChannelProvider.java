@@ -34,6 +34,8 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.InetAddress;
@@ -49,6 +51,7 @@ import java.net.InetSocketAddress;
  */
 public final class ChannelProvider {
 
+  private static final Logger log = LoggerFactory.getLogger(ChannelProvider.class);
   private final Bootstrap bootstrap;
   private final SslChannelProvider sslContextProvider;
   private final ContextInternal context;
@@ -115,9 +118,17 @@ public final class ChannelProvider {
 
   private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, useAlpn);
+      SslHandler sslHandler = null;
+      try {
+        sslHandler = sslContextProvider.createClientSslHandler(peerAddress, serverName, useAlpn);
+      } catch (Exception e) {
+        log.error(e.getMessage());
+        ch.close();
+        return;
+      }
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
+      SslHandler finalSslHandler = sslHandler;
       pipeline.addLast(new ChannelInboundHandlerAdapter() {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
@@ -127,7 +138,7 @@ public final class ChannelProvider {
             if (completion.isSuccess()) {
               // Remove from the pipeline after handshake result
               ctx.pipeline().remove(this);
-              applicationProtocol = sslHandler.applicationProtocol();
+              applicationProtocol = finalSslHandler.applicationProtocol();
               if (handler != null) {
                 context.dispatch(ch, handler);
               }
