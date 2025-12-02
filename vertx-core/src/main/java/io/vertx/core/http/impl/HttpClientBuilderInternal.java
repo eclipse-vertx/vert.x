@@ -102,15 +102,18 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
     NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
     HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, co, metrics);
-    HttpClientImpl.Config config = new HttpClientImpl.Config();
-    config.nonProxyHosts = co.getNonProxyHosts();
-    config.verifyHost = co.isVerifyHost();
-    config.defaultSsl = co.isSsl();
-    config.defaultHost = co.getDefaultHost();
-    config.defaultPort = co.getDefaultPort();
-    config.maxRedirects = co.getMaxRedirects();
-    config.initialPoolKind = co.getProtocolVersion() == HttpVersion.HTTP_2 ? 1 : 0;
-    return new HttpClientImpl(vertx, connectionHandler, redirectHandler, channelConnector, metrics, resolver, po, co.getProxyOptions(), co.getSslOptions(), config);
+    HttpClientImpl.Transport transport = new HttpClientImpl.Transport(
+      resolver,
+      channelConnector,
+      co.isVerifyHost(),
+      co.isSsl(),
+      co.getDefaultHost(),
+      co.getDefaultPort(),
+      co.getMaxRedirects(),
+      co.getProtocolVersion()
+    );
+    return new HttpClientImpl(vertx, connectionHandler, redirectHandler, metrics, po,
+      co.getProxyOptions(), co.getNonProxyHosts(), co.getSslOptions(), transport);
   }
 
   private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {
