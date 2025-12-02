@@ -12,24 +12,24 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
+import io.netty.handler.ssl.ReferenceCountedOpenSslEngine;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.internal.tcnative.SSL;
 import io.netty.util.AsyncMapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-
-import static io.vertx.core.net.impl.SslContextProvider.DEFAULT_SNI_CACHE_SIZE;
 
 /**
  * Provider for {@link SslHandler} and {@link SniHandler}.
@@ -48,7 +48,7 @@ public class SslChannelProvider {
   private final SslContextProvider sslContextProvider;
   private final SslContext[] sslContexts = new SslContext[2];
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
-    new LruCache<>(DEFAULT_SNI_CACHE_SIZE), new LruCache<>(DEFAULT_SNI_CACHE_SIZE)
+    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
   };
 
   public SslChannelProvider(SslContextProvider sslContextProvider,
@@ -58,7 +58,7 @@ public class SslChannelProvider {
                             boolean trustAll,
                             boolean useAlpn,
                             Executor workerPool,
-                            boolean useWorkerPool) {
+                            boolean useWorkerPool, boolean useHybrid) {
     this.workerPool = workerPool;
     this.useWorkerPool = useWorkerPool;
     this.useAlpn = useAlpn;
@@ -67,6 +67,7 @@ public class SslChannelProvider {
     this.sslHandshakeTimeout = sslHandshakeTimeout;
     this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
     this.sslContextProvider = sslContextProvider;
+    this.useHybrid = useHybrid;
   }
 
   public int sniEntrySize() {
@@ -143,7 +144,7 @@ public class SslChannelProvider {
     };
   }
 
-  public SslHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn) {
+  public SslHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn) throws Exception {
     SslContext sslContext = sslClientContext(serverName, useAlpn);
     SslHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
@@ -152,19 +153,35 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
     }
+    if (useHybrid) {
+      SSLEngine engine = sslHandler.engine();
+      try {
+        long sslPtr = ((ReferenceCountedOpenSslEngine) engine).sslPointer();
+        boolean success = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
+        if (!success) {
+          throw new Exception("Failed to set hybrid PQC groups on SSL instance");
+        }
+      } catch (Exception e) {
+        throw new Exception("Unable to create sslHandler: "+e.getMessage());
+      }
+    }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  public ChannelHandler createServerHandler(HostAndPort remoteAddress) {
+  public ChannelHandler createServerHandler(HostAndPort remoteAddress) throws Exception {
     if (sni) {
-      return createSniHandler(remoteAddress);
+      SniHandler sniHandler = createSniHandler(useHybrid, remoteAddress);
+      if(sniHandler == null){
+        throw new Exception("Unable to create a SNI handler");
+      }
+      return sniHandler;
     } else {
-      return createServerSslHandler(useAlpn, remoteAddress);
+      return createServerSslHandler(useAlpn, useHybrid, remoteAddress);
     }
   }
 
-  private SslHandler createServerSslHandler(boolean useAlpn, HostAndPort remoteAddress) {
+  private SslHandler createServerSslHandler(boolean useAlpn, boolean useHybrid, HostAndPort remoteAddress) throws Exception {
     SslContext sslContext = sslServerContext(useAlpn);
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
     SslHandler sslHandler;
@@ -173,13 +190,26 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
+    if (useHybrid) {
+      SSLEngine engine = sslHandler.engine();
+      try {
+        long sslPtr = ((ReferenceCountedOpenSslEngine) engine).sslPointer();
+        boolean success = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
+        if (!success) {
+          throw new Exception("Failed to set hybrid PQC groups on SSL instance");
+        }
+      } catch (Exception e) {
+        throw new Exception("Unable to create sslHandler: "+e.getMessage());
+      }
+    }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  private SniHandler createSniHandler(HostAndPort remoteAddress) {
+  private SniHandler createSniHandler(boolean useHybrid, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, remoteAddress);
+    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec,
+      useHybrid, remoteAddress);
   }
 
   private static int idx(boolean useAlpn) {
