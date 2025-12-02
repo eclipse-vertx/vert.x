@@ -264,6 +264,7 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     }
     if (handler != null) {
       context.emit(timeout, handler);
+      completeWhenChannelIsClosed(promise);
     } else {
       super.handleShutdown(timeout, promise);
     }
