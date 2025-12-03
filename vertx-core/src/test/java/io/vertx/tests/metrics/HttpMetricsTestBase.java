@@ -186,6 +186,15 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
 
   @Test
   public void testHttpClientLifecycle() throws Exception {
+    testHttpClientLifecycle(false);
+  }
+
+  @Test
+  public void testHttpClientLifecycleWithInit() throws Exception {
+    testHttpClientLifecycle(true);
+  }
+
+  void testHttpClientLifecycle(boolean implementInit) throws Exception {
     CountDownLatch requestBeginLatch = new CountDownLatch(1);
     CountDownLatch requestBodyLatch = new CountDownLatch(1);
     CountDownLatch requestEndLatch = new CountDownLatch(1);
@@ -214,6 +223,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     });
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    clientMetrics.setImplementInit(implementInit);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     HttpClientRequest request = client.request(new RequestOptions(requestOptions)
       .setMethod(HttpMethod.POST)

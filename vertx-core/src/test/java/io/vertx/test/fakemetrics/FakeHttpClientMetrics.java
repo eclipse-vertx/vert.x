@@ -34,6 +34,7 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
   private final String name;
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();
+  private volatile boolean implementInit = false;
 
   public FakeHttpClientMetrics(String name) {
     this.name = name;
@@ -54,6 +55,10 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
       }
     }
     return null;
+  }
+
+  public void setImplementInit(boolean implementInit) {
+    this.implementInit = implementInit;
   }
 
   public String getName() {
@@ -85,7 +90,7 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
 
   @Override
   public ClientMetrics<HttpClientMetric, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
-    EndpointMetric metric = new EndpointMetric() {
+    EndpointMetric metric = new EndpointMetric(implementInit) {
       @Override
       public void close() {
         endpoints.remove(remoteAddress);

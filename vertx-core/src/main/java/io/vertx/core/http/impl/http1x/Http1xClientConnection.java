@@ -262,8 +262,14 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       assert stream == pending.removeFirst();
       inflight.addLast(stream);
       this.isConnect = connect;
-      if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(request.uri, new ObservableRequest(request));
+      if (metrics != null) {
+        Object m = stream.metric;
+        ObservableRequest observable = new ObservableRequest(request);
+        if (m != null) {
+          metrics.requestBegin(m, request.uri, observable);
+        } else {
+          stream.metric = metrics.requestBegin(request.uri, observable);
+        }
       }
       VertxTracer tracer = stream.context.tracer();
       if (tracer != null) {
@@ -408,10 +414,11 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     private boolean reset;
     private boolean closed;
 
-    Stream(ContextInternal context, Http1xClientConnection conn, int id) {
+    Stream(ContextInternal context, Http1xClientConnection conn, int id, Object metric) {
       this.context = context;
       this.id = id;
       this.conn = conn;
+      this.metric = metric;
       this.queue = new InboundMessageQueue<>(conn.context.eventLoop(), context.executor()) {
         @Override
         protected void handleResume() {
@@ -525,8 +532,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> closeHandler;
 
-    StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
-      super(context, conn, id);
+    StreamImpl(ContextInternal context, Http1xClientConnection conn, int id, Object metric) {
+      super(context, conn, id, metric);
     }
 
     @Override
@@ -1296,7 +1303,13 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
       synchronized (this) {
         if (!closed) {
           if (pending.size() < concurrency()) {
-            Stream stream = new StreamImpl(context, this, seq++);
+            Object metric;
+            if (metrics != null) {
+              metric = metrics.init();
+            } else {
+              metric = null;
+            }
+            Stream stream = new StreamImpl(context, this, seq++, metric);
             pending.addLast(stream);
             if (pending.size() > 1 || ((current = inflight.peekLast()) != null && !current.requestEnded)) {
               stream.promise = promise;
