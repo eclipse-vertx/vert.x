@@ -40,17 +40,24 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   private final HttpChannelConnector connector;
   private final WebSocketClientOptions options;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
+  private volatile ClientSSLOptions defaultSslOptions;
 
   public WebSocketClientImpl(VertxInternal vertx,
                              HttpClientOptions options,
                              WebSocketClientOptions wsOptions,
                              HttpChannelConnector connector,
                              HttpClientMetrics<?, ?, ?> metrics) {
-    super(vertx, metrics, options.getProxyOptions(), options.getSslOptions(), options.getNonProxyHosts(),
-      options.isVerifyHost());
+    super(vertx, metrics, options.getProxyOptions(), options.getNonProxyHosts());
+
+    ClientSSLOptions sslOptions = options.getSslOptions();
+    if (sslOptions != null) {
+      configureSSLOptions(options.isVerifyHost(), sslOptions);
+    }
+
     this.options = wsOptions;
     this.webSocketCM = new ResourceManager<>();
     this.connector = connector;
+    this.defaultSslOptions = sslOptions;
   }
 
   protected void doShutdown(Duration timeout, Completable<Void> p) {
@@ -68,13 +75,19 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     return webSocket(options);
   }
 
+  @Override
+  protected void setDefaultSslOptions(ClientSSLOptions options) {
+    configureSSLOptions(this.options.isVerifyHost(), options);
+    this.defaultSslOptions = options;
+  }
+
   public void webSocket(ContextInternal ctx, WebSocketConnectOptions connectOptions, Promise<WebSocket> promise) {
     int port = getPort(connectOptions);
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     HostAndPort peer = HostAndPort.create(host, port);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
-    ClientSSLOptions sslOptions = sslOptions(connectOptions);
+    ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), connectOptions, defaultSslOptions);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), sslOptions, proxyOptions, addr, peer);
     // todo: cache
     Function<EndpointKey, WebSocketGroup> provider = (key_) -> {
