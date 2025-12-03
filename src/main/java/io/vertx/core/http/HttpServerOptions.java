@@ -421,6 +421,18 @@ public class HttpServerOptions extends NetServerOptions {
     return this;
   }
 
+  /*
+  Use X25519MLKEM768 instead of X25519 for key exchange.
+  X25519MLKEM768 is a hybrid protocol exchange ensuring that encryption will resist quantum computers
+   */
+  @Override
+  public HttpServerOptions setUseHybrid(boolean useHybrid) {
+    super.setUseHybrid(useHybrid);
+    return this;
+  }
+
+
+
   @Override
   public HttpServerOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);

@@ -713,12 +713,24 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * @return whether to use or not Hybrid key exchange protocol x25519MLKEM768
+   */
+  public boolean isUseHybrid() {
+    return sslOptions.isUseHybrid();
+  }
+
+  /**
    * Set the ALPN usage.
    *
    * @param useAlpn true when Application-Layer Protocol Negotiation should be used
    */
   public TCPSSLOptions setUseAlpn(boolean useAlpn) {
     sslOptions.setUseAlpn(useAlpn);
+    return this;
+  }
+
+  public TCPSSLOptions setUseHybrid(boolean useHybrid) {
+    sslOptions.setUseHybrid(useHybrid);
     return this;
   }
 
