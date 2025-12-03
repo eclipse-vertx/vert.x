@@ -65,9 +65,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  PoolOptions poolOptions,
                  ProxyOptions defaultProxyOptions,
                  List<String> nonProxyHosts,
-                 ClientSSLOptions defaultSslOptions,
                  Transport transport) {
-    super(vertx, metrics, defaultProxyOptions, defaultSslOptions, nonProxyHosts, transport.verifyHost);
+    super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
     this.transport = transport;
     this.connectHandler = connectHandler;
@@ -167,6 +166,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return transport.connector;
   }
 
+  protected void setDefaultSslOptions(ClientSSLOptions options) {
+    configureSSLOptions(transport.verifyHost, options);
+    transport.sslOptions = options;
+  }
+
   @Override
   protected void doShutdown(Duration timeout, Completable<Void> p) {
     synchronized (this) {
@@ -221,7 +225,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       throw new IllegalArgumentException("Only socket address are currently supported");
     }
     HostAndPort authority = HostAndPort.create(host, port);
-    ClientSSLOptions sslOptions = sslOptions(connect);
+    ClientSSLOptions sslOptions = sslOptions(transport.verifyHost, connect, transport.sslOptions);
     ProxyOptions proxyOptions = computeProxyOptions(connect.getProxyOptions(), server);
     ClientMetrics clientMetrics = metrics != null ? metrics.createEndpointMetrics(server, 1) : null;
     Boolean ssl = connect.isSsl();
@@ -302,7 +306,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       authority = null;
     }
-    ClientSSLOptions sslOptions = sslOptions(request);
+    ClientSSLOptions sslOptions = sslOptions(transport.verifyHost, request, transport.sslOptions);
     return doRequest(transport, request.getRoutingKey(), method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions, request.getProxyOptions());
   }
 
@@ -443,9 +447,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     private final int defaultPort;
     private final int maxRedirects;
     private final HttpVersion protocol;
+    private volatile ClientSSLOptions sslOptions;
 
     Transport(EndpointResolver resolver, HttpChannelConnector connector, boolean verifyHost, boolean defaultSsl,
-              String defaultHost, int defaultPort, int maxRedirects, HttpVersion protocol) {
+              String defaultHost, int defaultPort, int maxRedirects, HttpVersion protocol, ClientSSLOptions sslOptions) {
+
+      if (sslOptions != null) {
+        configureSSLOptions(verifyHost, sslOptions);
+      }
+
       this.resolver = (EndpointResolverInternal)resolver;
       this.connector = connector;
       this.verifyHost = verifyHost;
@@ -454,6 +464,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       this.defaultPort = defaultPort;
       this.maxRedirects = maxRedirects;
       this.protocol = protocol;
+      this.sslOptions = sslOptions;
     }
   }
 }

@@ -29,7 +29,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private AddressResolver<?> addressResolver;
-  private LoadBalancer loadBalancer = null;
+  private LoadBalancer loadBalancer;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
     this.vertx = vertx;
@@ -110,10 +110,11 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co.getDefaultHost(),
       co.getDefaultPort(),
       co.getMaxRedirects(),
-      co.getProtocolVersion()
+      co.getProtocolVersion(),
+      co.getSslOptions()
     );
     return new HttpClientImpl(vertx, connectionHandler, redirectHandler, metrics, po,
-      co.getProxyOptions(), co.getNonProxyHosts(), co.getSslOptions(), transport);
+      co.getProxyOptions(), co.getNonProxyHosts(), transport);
   }
 
   private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {

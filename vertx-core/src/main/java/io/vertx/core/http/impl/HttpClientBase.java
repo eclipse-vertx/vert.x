@@ -35,33 +35,22 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
   protected final ProxyOptions defaultProxyOptions;
   protected final HttpClientMetrics<?, ?, ?> metrics;
   protected final CloseSequence closeSequence;
-  private volatile ClientSSLOptions defaultSslOptions;
   private long closeTimeout = 0L;
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private Predicate<SocketAddress> proxyFilter;
-  private final boolean verifyHost;
 
   public HttpClientBase(VertxInternal vertx,
                         HttpClientMetrics<?, ?, ?> metrics,
                         ProxyOptions defaultProxyOptions,
-                        ClientSSLOptions defaultSslOptions,
-                        List<String> nonProxyHosts,
-                        boolean verifyHost) {
-
-    if (defaultSslOptions != null) {
-      configureSSLOptions(verifyHost, defaultSslOptions);
-    }
-
+                        List<String> nonProxyHosts) {
     this.vertx = vertx;
     this.metrics = metrics;
     this.defaultProxyOptions = defaultProxyOptions;
     this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(Duration.ofMillis(closeTimeoutUnit.toMillis(closeTimeout)), p1));
     this.proxyFilter = nonProxyHosts != null ? ProxyFilter.nonProxyHosts(nonProxyHosts) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.defaultSslOptions = defaultSslOptions;
-    this.verifyHost = verifyHost;
   }
 
-  void configureSSLOptions(boolean verifyHost, ClientSSLOptions sslOptions) {
+  static void configureSSLOptions(boolean verifyHost, ClientSSLOptions sslOptions) {
     if (sslOptions.getHostnameVerificationAlgorithm() == null) {
       sslOptions.setHostnameVerificationAlgorithm(verifyHost ? "HTTPS" : "");
     }
@@ -92,7 +81,7 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
     return proxyOptions;
   }
 
-  protected ClientSSLOptions sslOptions(HttpConnectOptions connectOptions) {
+  protected static ClientSSLOptions sslOptions(boolean verifyHost, HttpConnectOptions connectOptions, ClientSSLOptions defaultSslOptions) {
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions != null) {
       sslOptions = sslOptions.copy();
@@ -129,10 +118,11 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
     options = options.copy();
-    configureSSLOptions(verifyHost, options);
-    defaultSslOptions = options;
+    setDefaultSslOptions(options);
     return Future.succeededFuture(true);
   }
+
+  protected abstract void setDefaultSslOptions(ClientSSLOptions options);
 
   public HttpClientBase proxyFilter(Predicate<SocketAddress> filter) {
     proxyFilter = filter;
