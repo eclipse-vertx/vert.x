@@ -104,6 +104,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, co, metrics);
     HttpClientImpl.Transport transport = new HttpClientImpl.Transport(
       resolver,
+      connectionHandler,
       channelConnector,
       co.isVerifyHost(),
       co.isSsl(),
@@ -113,7 +114,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co.getProtocolVersion(),
       co.getSslOptions()
     );
-    return new HttpClientImpl(vertx, connectionHandler, redirectHandler, metrics, po,
+    return new HttpClientImpl(vertx, redirectHandler, metrics, po,
       co.getProxyOptions(), co.getNonProxyHosts(), transport);
   }
 

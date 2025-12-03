@@ -53,13 +53,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final ResourceManager<EndpointKey, SharedHttpClientConnectionGroup> resourceManager;
   private final Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private long timerID;
-  private final Handler<HttpConnection> connectHandler;
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
   private final Transport transport;
 
   HttpClientImpl(VertxInternal vertx,
-                 Handler<HttpConnection> connectHandler,
                  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
                  HttpClientMetrics<?, ?, ?> metrics,
                  PoolOptions poolOptions,
@@ -69,7 +67,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
     this.transport = transport;
-    this.connectHandler = connectHandler;
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
@@ -153,7 +150,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       };
       return new SharedHttpClientConnectionGroup(
         clientMetrics,
-        connectHandler,
+        transport.connectHandler,
         p,
         poolMetrics,
         key.authority,
@@ -440,6 +437,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   static class Transport {
 
     private final EndpointResolverInternal resolver;
+    private final Handler<HttpConnection> connectHandler;
     private final HttpChannelConnector connector;
     private final boolean verifyHost;
     private final boolean defaultSsl;
@@ -449,14 +447,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     private final HttpVersion protocol;
     private volatile ClientSSLOptions sslOptions;
 
-    Transport(EndpointResolver resolver, HttpChannelConnector connector, boolean verifyHost, boolean defaultSsl,
-              String defaultHost, int defaultPort, int maxRedirects, HttpVersion protocol, ClientSSLOptions sslOptions) {
+    Transport(EndpointResolver resolver, Handler<HttpConnection> connectHandler, HttpChannelConnector connector,
+              boolean verifyHost, boolean defaultSsl, String defaultHost, int defaultPort, int maxRedirects,
+              HttpVersion protocol, ClientSSLOptions sslOptions) {
 
       if (sslOptions != null) {
         configureSSLOptions(verifyHost, sslOptions);
       }
 
       this.resolver = (EndpointResolverInternal)resolver;
+      this.connectHandler = connectHandler;
       this.connector = connector;
       this.verifyHost = verifyHost;
       this.defaultSsl = defaultSsl;
