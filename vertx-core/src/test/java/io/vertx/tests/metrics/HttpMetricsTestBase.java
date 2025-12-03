@@ -14,6 +14,7 @@ package io.vertx.tests.metrics;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.http.HttpClientRequestInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
@@ -228,6 +229,8 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     HttpClientRequest request = client.request(new RequestOptions(requestOptions)
       .setMethod(HttpMethod.POST)
       .setURI("/somepath")).await();
+    HttpClientMetric initRequestMetric = (HttpClientMetric)((HttpClientRequestInternal)request).metric(); // Might be null
+    assertEquals(implementInit, initRequestMetric != null);
     Future<Void> responseEndLatch = request
       .response()
       .compose(response -> {
@@ -236,26 +239,29 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     });
     request.setChunked(true).writeHead().await();
     awaitLatch(requestBeginLatch);
-    HttpClientMetric reqMetric = clientMetrics.getMetric(request);
-    waitUntil(() -> reqMetric.requestEnded.get() == 0);
-    waitUntil(() -> reqMetric.responseBegin.get() == 0);
+    HttpClientMetric requestMetric = clientMetrics.getMetric(request);
+    if (implementInit) {
+      assertSame(initRequestMetric, requestMetric);
+    }
+    waitUntil(() -> requestMetric.requestEnded.get() == 0);
+    waitUntil(() -> requestMetric.responseBegin.get() == 0);
     request.write(TestUtils.randomAlphaString(1024));
     awaitLatch(requestBodyLatch);
-    assertEquals(0, reqMetric.requestEnded.get());
-    assertEquals(0, reqMetric.responseBegin.get());
+    assertEquals(0, requestMetric.requestEnded.get());
+    assertEquals(0, requestMetric.responseBegin.get());
     request.end();
     awaitLatch(requestEndLatch);
-    waitUntil(() -> reqMetric.requestEnded.get() == 1);
-    assertEquals(0, reqMetric.responseBegin.get());
+    waitUntil(() -> requestMetric.requestEnded.get() == 1);
+    assertEquals(0, requestMetric.responseBegin.get());
     beginResponse.complete(null);
     awaitLatch(responseBeginLatch);
-    assertEquals(1, reqMetric.requestEnded.get());
-    waitUntil(() -> reqMetric.responseBegin.get() == 1);
+    assertEquals(1, requestMetric.requestEnded.get());
+    waitUntil(() -> requestMetric.responseBegin.get() == 1);
     endResponse.complete(null);
     responseEndLatch.await();
     waitUntil(() -> clientMetrics.getMetric(request) == null);
-    assertEquals(1, reqMetric.requestEnded.get());
-    assertEquals(1, reqMetric.responseBegin.get());
+    assertEquals(1, requestMetric.requestEnded.get());
+    assertEquals(1, requestMetric.responseBegin.get());
   }
 
   @Test
