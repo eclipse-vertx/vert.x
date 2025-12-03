@@ -822,6 +822,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   @Override
+  public HttpVersion protocolVersion() {
+    return current.protocolVersion();
+  }
+
+  @Override
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     return current.goAway(errorCode, lastStreamId, debugData);
   }

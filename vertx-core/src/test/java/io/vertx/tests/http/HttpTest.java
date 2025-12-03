@@ -6441,4 +6441,20 @@ public abstract class HttpTest extends SimpleHttpTest {
     fut.await();
     assertTrue((System.currentTimeMillis() - now) < timeout / 4);
   }
+
+  @Test
+  public void testConnectionVersion() throws Exception {
+    server.requestHandler(request -> {
+      assertEquals(request.version(), request.connection().protocolVersion());
+      request.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
+  }
+
 }

@@ -28,6 +28,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2Connection;
 import io.vertx.core.http.impl.http2.Http2Stream;
@@ -335,6 +336,11 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
     } catch (Http2Exception e) {
       throw new VertxException(e);
     }
+  }
+
+  @Override
+  public HttpVersion protocolVersion() {
+    return HttpVersion.HTTP_2;
   }
 
   @Override
