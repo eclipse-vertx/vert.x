@@ -40,6 +40,11 @@ import java.util.concurrent.TimeUnit;
 public interface HttpConnection {
 
   /**
+   * @return the version of the protocol of this connection
+   */
+  HttpVersion protocolVersion();
+
+  /**
    * @return the current connection window size or {@code -1} for HTTP/1.x
    */
   default int getWindowSize() {

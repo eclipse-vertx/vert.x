@@ -203,6 +203,11 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   }
 
   @Override
+  public HttpVersion protocolVersion() {
+    return HttpVersion.HTTP_2;
+  }
+
+  @Override
   public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) {
     handler.writeGoAway(errorCode, debugData != null ? ((BufferInternal)debugData).getByteBuf() : Unpooled.EMPTY_BUFFER, context.promise());
     return this;

@@ -27,6 +27,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
@@ -92,6 +93,11 @@ abstract class Http1xConnection extends VertxConnection implements io.vertx.core
   @Override
   public Http1xConnection closeHandler(Handler<Void> handler) {
     return (Http1xConnection) super.closeHandler(handler);
+  }
+
+  @Override
+  public HttpVersion protocolVersion() {
+    return HttpVersion.HTTP_1_1;
   }
 
   @Override

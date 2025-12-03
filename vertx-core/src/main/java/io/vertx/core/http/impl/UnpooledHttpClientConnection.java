@@ -90,6 +90,11 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
   }
 
   @Override
+  public HttpVersion protocolVersion() {
+    return actual.protocolVersion();
+  }
+
+  @Override
   @Fluent
   public HttpConnection goAway(long errorCode) {
     return actual.goAway(errorCode);
