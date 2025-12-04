@@ -26,12 +26,18 @@ public interface VertxThreadFactory extends VertxServiceProvider {
 
   @Override
   default void init(VertxBootstrap builder) {
-    if (builder.threadFactory() == null) {
-      builder.threadFactory(this);
+    if (builder.threadFactoryProvider() == null) {
+      builder.threadFactoryProvider(provider());
     }
   }
 
   default VertxThread newVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     return new VertxThread(target, name, worker, maxExecTime, maxExecTimeUnit);
+  }
+
+  default ThreadFactoryProvider provider() {
+    return (prefix, worker, maxExecuteTime) ->
+      target ->
+        newVertxThread(target, prefix, worker, maxExecuteTime.toMillis(), TimeUnit.MILLISECONDS);
   }
 }
