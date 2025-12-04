@@ -259,7 +259,8 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
-      assert stream == pending.removeFirst();
+      Stream removed = pending.removeFirst();
+      assert stream == removed;
       inflight.addLast(stream);
       this.isConnect = connect;
       if (this.metrics != null) {
