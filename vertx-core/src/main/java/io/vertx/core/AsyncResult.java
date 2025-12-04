@@ -45,7 +45,7 @@ public interface AsyncResult<T> {
   /**
    * Did it succeed?
    *
-   * @return true if it succeded or false otherwise
+   * @return true if it succeeded or false otherwise
    */
   boolean succeeded();
 
@@ -100,7 +100,7 @@ public interface AsyncResult<T> {
   /**
    * Map the result of this async result to a specific {@code value}.<p>
    *
-   * When this async result succeeds, this {@code value} will succeeed the async result returned by this method call.<p>
+   * When this async result succeeds, this {@code value} will succeed the async result returned by this method call.<p>
    *
    * When this async result fails, the failure will be propagated to the returned async result.
    *
@@ -116,7 +116,7 @@ public interface AsyncResult<T> {
    *
    * This is a convenience for {@code asyncResult.map((T) null)} or {@code asyncResult.map((Void) null)}.<p>
    *
-   * When this async result succeeds, {@code null} will succeeed the async result returned by this method call.<p>
+   * When this async result succeeds, {@code null} will succeed the async result returned by this method call.<p>
    *
    * When this async result fails, the failure will be propagated to the returned async result.
    *
@@ -172,7 +172,7 @@ public interface AsyncResult<T> {
   /**
    * Map the failure of this async result to a specific {@code value}.<p>
    *
-   * When this async result fails, this {@code value} will succeeed the async result returned by this method call.<p>
+   * When this async result fails, this {@code value} will succeed the async result returned by this method call.<p>
    *
    * When this async succeeds, the result will be propagated to the returned async result.
    *
@@ -188,7 +188,7 @@ public interface AsyncResult<T> {
    *
    * This is a convenience for {@code asyncResult.otherwise((T) null)}.<p>
    *
-   * When this async result fails, the {@code null} will succeeed the async result returned by this method call.<p>
+   * When this async result fails, the {@code null} will succeed the async result returned by this method call.<p>
    *
    * When this async succeeds, the result will be propagated to the returned async result.
    *
