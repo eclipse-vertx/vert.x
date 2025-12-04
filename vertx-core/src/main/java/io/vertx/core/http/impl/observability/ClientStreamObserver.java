@@ -29,20 +29,25 @@ import java.util.function.BiConsumer;
 public class ClientStreamObserver extends StreamObserver {
 
   private final ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics;
-  private Object metric;
   private Object trace;
   private HttpResponseHeaders inboundHeaders;
 
   public ClientStreamObserver(ContextInternal context, TracingPolicy tracingPolicy,
-                              ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics,
+                              ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics, Object metric,
                               TransportMetrics<?> transportMetrics, Object socketMetric, VertxTracer tracer, SocketAddress remoteAddress) {
     super(context, remoteAddress, transportMetrics, socketMetric, tracingPolicy, tracer);
     this.clientMetrics = clientMetrics;
+    this.metric = metric;
   }
 
   public void observePush(HttpRequestHeaders headers) {
     if (clientMetrics != null) {
-      Object metric = clientMetrics.requestBegin(headers.path().toString(), observableRequest(headers, remoteAddress));
+      Object metric = clientMetrics.init();
+      if (metric == null) {
+        metric = clientMetrics.requestBegin(headers.path().toString(), observableRequest(headers, remoteAddress));
+      } else {
+        clientMetrics.requestBegin(metric, headers.path().toString(), observableRequest(headers, remoteAddress));
+      }
       this.metric = metric;
       clientMetrics.requestEnd(metric, 0L);
     }
@@ -56,7 +61,12 @@ public class ClientStreamObserver extends StreamObserver {
   public void observeOutboundHeaders(HttpHeaders headers) {
     HttpRequestHeaders r = (HttpRequestHeaders) headers;
     if (clientMetrics != null) {
-      metric = clientMetrics.requestBegin(r.path(), observableRequest(r, remoteAddress));
+      Object m = metric;
+      if (m == null) {
+        metric = clientMetrics.requestBegin(r.path(), observableRequest(r, remoteAddress));
+      } else {
+        clientMetrics.requestBegin(metric, r.path(), observableRequest(r, remoteAddress));
+      }
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
