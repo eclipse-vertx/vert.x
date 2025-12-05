@@ -191,6 +191,15 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   @Test
   public void testHttpClientLifecycle() throws Exception {
+    testHttpClientLifecycle(false);
+  }
+
+  @Test
+  public void testHttpClientLifecycleWithInit() throws Exception {
+    testHttpClientLifecycle(true);
+  }
+
+  public void testHttpClientLifecycle(boolean implementInit) throws Exception {
 
     // The test cannot pass for HTTP/2 upgrade for now
     HttpClientOptions opts = createBaseClientOptions();
@@ -228,6 +237,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     });
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    clientMetrics.setImplementInit(implementInit);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
     Future<HttpClientRequest> request = client.request(new RequestOptions()
