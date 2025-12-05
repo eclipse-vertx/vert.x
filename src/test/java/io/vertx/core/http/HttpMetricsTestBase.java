@@ -17,6 +17,7 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpClientRequestInternal;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
@@ -245,6 +246,9 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
       .setHost("localhost")
       .setURI("/somepath")).onComplete(onSuccess(req -> {
+      if (implementInit) {
+        assertNotNull(((HttpClientRequestInternal)req).metric());
+      }
       req
         .response(onSuccess(resp -> {
           responseBeginLatch.countDown();
