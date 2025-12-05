@@ -11,11 +11,11 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
-import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.endpoint.EndpointResolver;
+import io.vertx.core.net.endpoint.LoadBalancer;
+import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -110,6 +110,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co.isSsl(),
       co.getDefaultHost(),
       co.getDefaultPort(),
+      co.getDefaultAddress(),
       co.getMaxRedirects(),
       co.getProtocolVersion(),
       co.getSslOptions()

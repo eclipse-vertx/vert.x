@@ -11,7 +11,10 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Completable;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -197,6 +200,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String host = connect.getHost();
     SocketAddress server;
     if (addr == null) {
+      addr = transport.defaultAddress;
+    }
+    if (addr == null) {
       if (port == null) {
         port = transport.defaultPort;
       }
@@ -241,6 +247,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Address addr = request.getServer();
     Integer port = request.getPort();
     String host = request.getHost();
+    if (addr == null) {
+      addr = transport.defaultAddress;
+    }
     if (addr == null) {
       if (port == null) {
         port = transport.defaultPort;
@@ -443,12 +452,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     private final boolean defaultSsl;
     private final String defaultHost;
     private final int defaultPort;
+    private final Address defaultAddress;
     private final int maxRedirects;
     private final HttpVersion protocol;
     private volatile ClientSSLOptions sslOptions;
 
     Transport(EndpointResolver resolver, Handler<HttpConnection> connectHandler, HttpChannelConnector connector,
-              boolean verifyHost, boolean defaultSsl, String defaultHost, int defaultPort, int maxRedirects,
+              boolean verifyHost, boolean defaultSsl, String defaultHost, int defaultPort, Address defaultAddress, int maxRedirects,
               HttpVersion protocol, ClientSSLOptions sslOptions) {
 
       if (sslOptions != null) {
@@ -462,6 +472,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       this.defaultSsl = defaultSsl;
       this.defaultHost = defaultHost;
       this.defaultPort = defaultPort;
+      this.defaultAddress = defaultAddress;
       this.maxRedirects = maxRedirects;
       this.protocol = protocol;
       this.sslOptions = sslOptions;

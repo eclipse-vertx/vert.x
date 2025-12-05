@@ -13,7 +13,6 @@ package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
@@ -22,7 +21,10 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -178,6 +180,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
+  private Address defaultAddress;
   private HttpVersion protocolVersion;
   private int maxChunkSize;
   private int maxInitialLineLength;
@@ -232,6 +235,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
+    this.defaultAddress = other.defaultAddress;
     this.protocolVersion = other.protocolVersion;
     this.maxChunkSize = other.maxChunkSize;
     this.maxInitialLineLength = other.getMaxInitialLineLength();
@@ -283,6 +287,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
+    defaultAddress = null;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
@@ -748,6 +753,27 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setDefaultPort(int defaultPort) {
     this.defaultPort = defaultPort;
+    return this;
+  }
+
+  /**
+   * Get the default service {@link Address} to be used by this client in requests if none is provided when making the request.
+   * It's not set by default. If set, it takes precedence over {@link #setDefaultHost(String)} and {@link #setDefaultPort(int)}.
+   *
+   * @return the default address
+   */
+  public Address getDefaultAddress() {
+    return defaultAddress;
+  }
+
+  /**
+   * Set the default service {@link Address} to be used by this client in requests if none is provided when making the request.
+   * It's not set by default. If set, it takes precedence over {@link #setDefaultHost(String)} and {@link #setDefaultPort(int)}.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setDefaultAddress(Address defaultAddress) {
+    this.defaultAddress = defaultAddress;
     return this;
   }
 

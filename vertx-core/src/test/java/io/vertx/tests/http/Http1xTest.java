@@ -16,14 +16,13 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.TooLongHttpHeaderException;
-import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
-import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.http1x.Http1xServerConnection;
 import io.vertx.core.http.impl.http2.codec.Http1xUpgradeToH2CHandler;
 import io.vertx.core.impl.SysProps;
@@ -56,6 +55,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static io.vertx.core.http.HttpMethod.GET;
 import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
@@ -5941,5 +5941,27 @@ public class Http1xTest extends HttpTest {
     } finally {
       netClient.close();
     }
+  }
+
+  @Test
+  public void testClientOptionsDefaultAddress() throws Exception {
+    client.close();
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setDefaultHost("doesnt-resolve.host-name")
+      .setDefaultPort(13)
+      // Should take precedence
+      .setDefaultAddress(SocketAddress.inetSocketAddress(config.port(), config.host()));
+    client = vertx.createHttpClient(clientOptions);
+
+    server.requestHandler(req -> req.response().end("foobar"));
+    startServer(testAddress);
+
+    client.request(GET, RequestOptions.DEFAULT_URI)
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .onComplete(onSuccess(resp -> {
+        assertEquals("foobar", resp.toString());
+        complete();
+      }));
+    await();
   }
 }
