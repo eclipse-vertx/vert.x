@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpClientRequestBase implements HttpClientRequest {
+public abstract class HttpClientRequestBase implements HttpClientRequestInternal {
 
   protected final ContextInternal context;
   protected final HttpClientStream stream;
@@ -74,6 +74,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     } else {
       return host + ':' + port;
     }
+  }
+
+  public Object metric() {
+    return stream.metric();
   }
 
   @Override

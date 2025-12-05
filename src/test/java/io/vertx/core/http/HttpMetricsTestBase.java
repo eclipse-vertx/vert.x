@@ -17,6 +17,7 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.http.impl.HttpClientRequestInternal;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
@@ -191,6 +192,15 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   @Test
   public void testHttpClientLifecycle() throws Exception {
+    testHttpClientLifecycle(false);
+  }
+
+  @Test
+  public void testHttpClientLifecycleWithInit() throws Exception {
+    testHttpClientLifecycle(true);
+  }
+
+  public void testHttpClientLifecycle(boolean implementInit) throws Exception {
 
     // The test cannot pass for HTTP/2 upgrade for now
     HttpClientOptions opts = createBaseClientOptions();
@@ -228,6 +238,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     });
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    clientMetrics.setImplementInit(implementInit);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
     Future<HttpClientRequest> request = client.request(new RequestOptions()
@@ -235,6 +246,9 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
       .setHost("localhost")
       .setURI("/somepath")).onComplete(onSuccess(req -> {
+      if (implementInit) {
+        assertNotNull(((HttpClientRequestInternal)req).metric());
+      }
       req
         .response(onSuccess(resp -> {
           responseBeginLatch.countDown();
