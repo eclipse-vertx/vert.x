@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.Context;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
@@ -45,8 +46,8 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   }
 
   @Override
-  public HttpServerMetric requestBegin(SocketMetric socketMetric, HttpRequest request) {
-    HttpServerMetric metric = new HttpServerMetric(request, socketMetric);
+  public HttpServerMetric requestBegin(Context context, SocketMetric socketMetric, HttpRequest request) {
+    HttpServerMetric metric = new HttpServerMetric(context, request, socketMetric);
     requests.add(metric);
     return metric;
   }
@@ -58,8 +59,8 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   }
 
   @Override
-  public HttpServerMetric responsePushed(SocketMetric socketMetric, HttpMethod method, String uri, HttpResponse response) {
-    HttpServerMetric requestMetric = new HttpServerMetric(uri, socketMetric);
+  public HttpServerMetric responsePushed(Context context, SocketMetric socketMetric, HttpMethod method, String uri, HttpResponse response) {
+    HttpServerMetric requestMetric = new HttpServerMetric(context, uri, socketMetric);
     requestMetric.response.set(response);
     requests.add(requestMetric);
     return requestMetric;

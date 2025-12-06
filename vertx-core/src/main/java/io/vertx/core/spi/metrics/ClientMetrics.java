@@ -11,6 +11,8 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.vertx.core.Context;
+
 /**
  * The client metrics SPI that Vert.x will use to call when client events occur.<p/>
  *
@@ -19,18 +21,27 @@ package io.vertx.core.spi.metrics;
 public interface ClientMetrics<M, Req, Resp> extends Metrics {
 
   /**
+   * @deprecated instead override {@link #requestBegin(Context, String, Object)}, this will be removed in Vert.x 6
+   */
+  @Deprecated(forRemoval = true)
+  default M requestBegin(String uri, Req request) {
+    return null;
+  }
+
+  /**
    * Called when a client request begins. Vert.x will invoke {@link #requestEnd} when the request
    * has ended or {@link #requestReset} if the request/response has failed before.
    *
    * <p>The request uri is an arbitrary URI that depends on the client, e.g an HTTP request uri,
    * a SQL query, etc...
    *
+   * @param context the vertx context associated with the request
    * @param uri an arbitrary uri
    * @param request the request object
    * @return the request metric
    */
-  default M requestBegin(String uri, Req request) {
-    return null;
+  default M requestBegin(Context context, String uri, Req request) {
+    return requestBegin(uri, request);
   }
 
   /**

@@ -36,6 +36,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -92,6 +93,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
       FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(serverMetrics);
       HttpServerMetric metric = serverMetrics.getRequestMetric(req);
+      assertSame(Vertx.currentContext(), metric.context);
       serverMetric.set(metric);
       assertSame(((HttpServerRequestInternal)req).metric(), metric);
       assertNotNull(serverMetric.get());
@@ -224,9 +226,10 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
       responseBeginLatch.countDown();
       return response.end();
     });
-    request.setChunked(true).writeHead().await();
+    Context requestCtx = request.setChunked(true).writeHead().map(v -> Vertx.currentContext()).await();
     awaitLatch(requestBeginLatch);
     HttpClientMetric reqMetric = clientMetrics.getMetric(request);
+    assertSame(requestCtx, reqMetric.context);
     waitUntil(() -> reqMetric.requestEnded.get() == 0);
     waitUntil(() -> reqMetric.responseBegin.get() == 0);
     request.write(TestUtils.randomAlphaString(1024));
