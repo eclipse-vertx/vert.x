@@ -39,12 +39,15 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.AltSvc;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.Origin;
 import io.vertx.core.http.impl.http2.Http2Stream;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
@@ -118,6 +121,41 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   void receiveUnknownFrame(int streamId, int type, int flags, ByteBuf content) {
     StreamChannel channel = channels.get(streamId);
+    receiveUnknownFrame(channel, streamId, type, flags, content);
+  }
+
+  private void receiveUnknownFrame(StreamChannel channel, int streamId, int type, int flags, ByteBuf content) {
+    if (type == 0xA) {
+      AltSvc altSvc = HttpUtils.parseAltSvcFrame(content);
+      if (altSvc != null) {
+        if (streamId == 0) {
+          // Assume the event contains an origin
+        } else if (channel == null) {
+          altSvc = null;
+        } else {
+          String scheme = channel.stream.scheme();
+          HostAndPort authority = channel.stream.authority();
+          int port = authority.port();
+          if (port == -1) {
+            switch (scheme) {
+              case "http":
+                port = 80;
+                break;
+              case "https":
+                port = 443;
+                break;
+            }
+          }
+          if (port > 0) {
+            String host = authority.host();
+            altSvc = new AltSvc(new Origin(scheme, host, port), altSvc.value);
+          }
+        }
+        if (altSvc != null && altSvc.origin != null) {
+          onAltSvc(altSvc);
+        }
+      }
+    }
     ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(content.readableBytes());
     buffer.writeBytes(content, content.readerIndex(), content.readableBytes());
     Buffer buff = BufferInternal.buffer(buffer);
@@ -127,6 +165,9 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   void receiveResetFrame(int streamId, long code) {
     StreamChannel channel = channels.get(streamId);
     channel.stream.onReset(code);
+  }
+
+  void onAltSvc(AltSvc event) {
   }
 
   void onWritabilityChanged(int streamId) {

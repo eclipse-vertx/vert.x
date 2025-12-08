@@ -20,6 +20,7 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -1012,4 +1013,39 @@ public final class HttpUtils {
       .map(io.vertx.core.http.HttpVersion::fromAlpnName)
       .collect(Collectors.toList());
   }
+
+  public static AltSvc parseAltSvcFrame(ByteBuf payload) {
+    if (payload.readableBytes() >= 2) {
+      int idx = payload.readerIndex();
+      try {
+        int len = payload.readUnsignedShort();
+        String serializedOrigin;
+        Origin origin;
+        if (len > 0) {
+          if (len < payload.readableBytes()) {
+            serializedOrigin = payload.readString(len, StandardCharsets.US_ASCII);
+            if (serializedOrigin == null) {
+              return null;
+            }
+            origin = Origin.fromASCII(serializedOrigin);
+            if (origin == null) {
+              return null;
+            }
+          } else {
+            // Invalid frame
+            return null;
+          }
+        } else {
+          origin = null;
+        }
+        String value = payload.readString(payload.readableBytes(), StandardCharsets.US_ASCII);
+        return new AltSvc(origin, value);
+      } finally {
+        payload.readerIndex(idx);
+      }
+    }
+    return null;
+  }
+
+
 }

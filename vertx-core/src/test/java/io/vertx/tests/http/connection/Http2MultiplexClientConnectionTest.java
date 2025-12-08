@@ -12,6 +12,7 @@ package io.vertx.tests.http.connection;
 
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import org.junit.Ignore;
 
 public class Http2MultiplexClientConnectionTest extends Http2ClientConnectionTest {
 
@@ -23,5 +24,11 @@ public class Http2MultiplexClientConnectionTest extends Http2ClientConnectionTes
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return super.createBaseClientOptions().setHttp2MultiplexImplementation(true);
+  }
+
+  @Ignore
+  @Override
+  public void testAlternateServiceHandlerConnectionStream() throws Exception {
+    // The multiplex API does not allow to send custom frames on in the connection stream
   }
 }

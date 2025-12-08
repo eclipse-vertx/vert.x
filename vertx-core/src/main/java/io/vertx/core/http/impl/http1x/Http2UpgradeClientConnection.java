@@ -22,9 +22,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.HttpClientPush;
-import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
@@ -63,7 +62,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private Handler<Void> evictionHandler;
   private Handler<Object> invalidMessageHandler;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<String> alternativeServicesHandler;
+  private Handler<AltSvc> alternativeServicesHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
   public Http2UpgradeClientConnection(Http1xClientConnection connection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
@@ -813,7 +812,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
     if (current instanceof Http1xClientConnection) {
       alternativeServicesHandler = handler;
     }

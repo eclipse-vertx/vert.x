@@ -11,13 +11,14 @@
 
 package io.vertx.core.http.impl.http2.codec;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
@@ -28,7 +29,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
-import static io.vertx.core.http.HttpHeaders.ALT_SVC;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,7 +43,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
-  private Handler<String> alternativeServicesHandler;
+  private Handler<AltSvc> alternativeServicesHandler;
   private long expirationTimestamp;
   private boolean evicted;
   private final VertxHttp2ConnectionHandler handler;
@@ -91,7 +92,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
     alternativeServicesHandler = handler;
     return this;
   }
@@ -221,11 +222,6 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       if (!headersMap.validate()) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code(), null);
       } else {
-        CharSequence altSvcHeader = headers.get(ALT_SVC);
-        Handler<String> handler;
-        if (altSvcHeader != null && (handler = alternativeServicesHandler) != null) {
-          context.emit(altSvcHeader.toString(), handler);
-        }
         headersMap.sanitize();
         if (streamPriority != null) {
           stream.priority(streamPriority);
@@ -257,6 +253,38 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     } else {
       Http2ClientConnectionImpl.this.handler.writeReset(promisedStreamId, Http2Error.CANCEL.code(), null);
     }
+  }
+
+  @Override
+  public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) {
+    if (frameType == 0xA) {
+      io.vertx.core.http.impl.http2.Http2Stream stream = stream(streamId);
+      AltSvc event = HttpUtils.parseAltSvcFrame(payload);
+      Handler<AltSvc> handler;
+      if (event != null && (handler = alternativeServicesHandler) != null) {
+        if (stream != null) {
+          String scheme = stream.scheme();
+          HostAndPort authority = stream.authority();
+          String host = authority.host();
+          int port = authority.port();
+          if (port == -1) {
+            switch (scheme) {
+              case "http":
+                port = 80;
+                break;
+              case "https":
+                port = 443;
+                break;
+            }
+          }
+          event = new AltSvc(new Origin(scheme, host, port), event.value);
+        }
+        if (event.origin != null) {
+          context.emit(event, handler);
+        }
+      }
+    }
+    super.onUnknownFrame(ctx, frameType, streamId, flags, payload);
   }
 
   @Override

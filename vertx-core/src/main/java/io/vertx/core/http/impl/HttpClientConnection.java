@@ -81,7 +81,7 @@ public interface HttpClientConnection extends HttpConnection {
    * @param handler
    * @return
    */
-  default HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+  default HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
     return this;
   }
 
