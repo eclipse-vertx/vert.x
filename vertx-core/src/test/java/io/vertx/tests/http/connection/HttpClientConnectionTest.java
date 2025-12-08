@@ -13,6 +13,9 @@ package io.vertx.tests.http.connection;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.Origin;
+import io.vertx.core.http.impl.http2.Http2Connection;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Test;
@@ -126,16 +129,49 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   @Test
   public void testAlternateServiceHandler() throws Exception {
+    testAlternateServiceHandler(null);
+  }
+
+  void testAlternateServiceHandler(Origin origin) throws Exception {
     String expected = "Alt-Svc: h2=\":443\"; ma=2592000;";
-    server.requestHandler(req -> {
-      req.response()
-        .putHeader(HttpHeaders.ALT_SVC, expected)
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      if (request.version() == HttpVersion.HTTP_2) {
+        if (origin != null) {
+          Http2Connection http2Connection = (Http2Connection)request.connection();
+          Buffer ascii = origin.toASCII();
+          BufferInternal buffer = BufferInternal.buffer();
+          buffer.appendShort((short)ascii.length());
+          buffer.appendBuffer(ascii);
+          buffer.appendString(expected);
+          http2Connection.writeFrame(0, 0xA, 0, buffer.getByteBuf(), null);
+        } else {
+          Buffer value = Buffer.buffer();
+          value.appendShort((short)0);
+          value.appendString(expected);
+          response.writeCustomFrame(0xA, 0, value);
+        }
+      } else {
+        response.putHeader(HttpHeaders.ALT_SVC, expected);
+      }
+      response
         .end("Hello World");
     });
     startServer(testAddress);
     HttpClientConnection connection = client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).await();
     ((io.vertx.core.http.impl.UnpooledHttpClientConnection)connection).unwrap().alternativeServicesHandler(altSvc -> {
-      assertEquals(expected, altSvc);
+      assertNotNull(altSvc);
+      assertNotNull(altSvc.origin);
+      if (origin != null) {
+        assertEquals(origin.scheme, altSvc.origin.scheme);
+        assertEquals(origin.host, altSvc.origin.host);
+        assertEquals(origin.port, altSvc.origin.port);
+      } else {
+        assertEquals("http", altSvc.origin.scheme);
+        assertEquals(testAddress.host(), altSvc.origin.host);
+        assertEquals(testAddress.port(), altSvc.origin.port);
+      }
+      assertEquals(expected, altSvc.value);
       testComplete();
     });
     Buffer response = connection

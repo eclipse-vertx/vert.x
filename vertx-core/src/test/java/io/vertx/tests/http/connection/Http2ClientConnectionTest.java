@@ -13,7 +13,9 @@ package io.vertx.tests.http.connection;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.Origin;
 import io.vertx.tests.http.Http2TestBase;
+import org.junit.Test;
 
 public class Http2ClientConnectionTest extends HttpClientConnectionTest {
 
@@ -26,5 +28,10 @@ public class Http2ClientConnectionTest extends HttpClientConnectionTest {
   @Override
   protected HttpClientOptions createBaseClientOptions() {
     return Http2TestBase.createHttp2ClientOptions();
+  }
+
+  @Test
+  public void testAlternateServiceHandlerConnectionStream() throws Exception {
+    testAlternateServiceHandler(new Origin("https", "example.com", 334));
   }
 }

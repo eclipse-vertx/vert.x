@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.http2.multiplex;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.*;
@@ -20,6 +21,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.impl.AltSvc;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
@@ -41,7 +43,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   private Promise<HttpClientConnection> completion;
   private long concurrency;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<String> alternativeServicesHandler;
+  private Handler<AltSvc> alternativeServicesHandler;
   private Handler<Void> evictionHandler;
   private final long maxConcurrency;
   private final long keepAliveTimeoutMillis;
@@ -129,11 +131,6 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
         chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.PROTOCOL_ERROR.code()));
       } else {
         headersMap.sanitize();
-        CharSequence altSvcHeader = headers.get(ALT_SVC);
-        Handler<String> handler;
-        if (altSvcHeader != null && (handler = alternativeServicesHandler) != null) {
-          context.emit(altSvcHeader.toString(), handler);
-        }
         stream.onHeaders(headersMap);
         if (ended) {
           stream.onTrailers();
@@ -178,7 +175,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<String> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
     alternativeServicesHandler = handler;
     return this;
   }
@@ -213,6 +210,14 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   @Override
   public void writePriorityFrame(int streamId, StreamPriority priority, Promise<Void> promise) {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  void onAltSvc(AltSvc event) {
+    Handler<AltSvc> handler = alternativeServicesHandler;
+    if (handler != null) {
+      context.emit(event, handler);
+    }
   }
 
   @Override

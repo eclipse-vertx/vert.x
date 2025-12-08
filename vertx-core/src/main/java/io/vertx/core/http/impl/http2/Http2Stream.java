@@ -15,6 +15,7 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.net.HostAndPort;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -22,6 +23,8 @@ import io.vertx.core.internal.ContextInternal;
 public interface Http2Stream {
 
   int id();
+  String scheme();
+  HostAndPort authority();
 
   ContextInternal context();
 

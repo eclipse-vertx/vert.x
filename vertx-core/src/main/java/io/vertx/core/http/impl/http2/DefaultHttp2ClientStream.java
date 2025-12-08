@@ -33,6 +33,7 @@ import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
@@ -55,6 +56,8 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   private final Http2ClientConnection connection;
   private final boolean decompressionSupported;
   private final ClientStreamObserver observable;
+  private String scheme;
+  private HostAndPort authority;
 
   // Handlers
   private Handler<HttpResponseHead> headersHandler;
@@ -80,6 +83,16 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   }
 
   @Override
+  public String scheme() {
+    return scheme;
+  }
+
+  @Override
+  public HostAndPort authority() {
+    return authority;
+  }
+
+  @Override
   StreamObserver observer() {
     return observable;
   }
@@ -94,6 +107,8 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer buf, boolean end, StreamPriority priority, boolean connect) {
     PromiseInternal<Void> promise = context.promise();
     priority(priority);
+    scheme = request.scheme;
+    authority = request.authority;
     write(new HeadersWrite(request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
     return promise.future();
   }
