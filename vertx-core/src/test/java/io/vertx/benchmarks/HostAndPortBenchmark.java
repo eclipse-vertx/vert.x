@@ -11,7 +11,7 @@
 
 package io.vertx.benchmarks;
 
-import io.vertx.core.http.impl.UriParser;
+import io.vertx.core.net.impl.UriParser;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import org.openjdk.jmh.annotations.*;
 
