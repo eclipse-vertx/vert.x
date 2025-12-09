@@ -30,8 +30,10 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   public final AtomicInteger connectionCount = new AtomicInteger();
   public final AtomicInteger requestCount = new AtomicInteger();
   public final ConcurrentMap<HttpRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
+  private final boolean implementInit;
 
-  public EndpointMetric() {
+  public EndpointMetric(boolean implementInit) {
+    this.implementInit = implementInit;
   }
 
   @Override
@@ -46,11 +48,35 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
+  public HttpClientMetric init() {
+    if (implementInit) {
+      return new HttpClientMetric(this);
+    } else {
+      return ClientMetrics.super.init();
+    }
+  }
+
+  @Override
+  public void requestBegin(HttpClientMetric requestMetric, String uri, HttpRequest request) {
+    if (implementInit) {
+      requestCount.incrementAndGet();
+      requestMetric.request.set(request);
+      requests.put(request, requestMetric);
+    } else {
+      ClientMetrics.super.requestBegin(requestMetric, uri, request);
+    }
+  }
+
+  @Override
   public HttpClientMetric requestBegin(String uri, HttpRequest request) {
-    requestCount.incrementAndGet();
-    HttpClientMetric metric = new HttpClientMetric(this, request);
-    requests.put(request, metric);
-    return metric;
+    if (implementInit) {
+      return null;
+    } else {
+      requestCount.incrementAndGet();
+      HttpClientMetric metric = new HttpClientMetric(this, request);
+      requests.put(request, metric);
+      return metric;
+    }
   }
 
   @Override
@@ -84,13 +110,13 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
     }
     requestCount.decrementAndGet();
     requestMetric.failed.set(true);
-    requests.remove(requestMetric.request);
+    requests.remove(requestMetric.request.get());
   }
 
   @Override
   public void responseEnd(HttpClientMetric requestMetric, long bytesRead) {
     requestMetric.bytesRead.set(bytesRead);
     requestCount.decrementAndGet();
-    requests.remove(requestMetric.request);
+    requests.remove(requestMetric.request.get());
   }
 }
