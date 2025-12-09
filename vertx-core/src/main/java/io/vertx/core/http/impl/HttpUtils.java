@@ -33,6 +33,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
+import io.vertx.core.net.impl.UriParser;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;

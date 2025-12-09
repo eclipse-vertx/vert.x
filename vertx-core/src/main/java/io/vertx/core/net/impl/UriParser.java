@@ -8,9 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.net.impl;
+
+import io.vertx.core.internal.net.RFC3986;
 
 import java.util.Arrays;
+
+import static io.vertx.core.net.impl.Rfc5234Parser.*;
 
 /**
  * URI related parsing, as in RFC3986
@@ -81,7 +85,16 @@ public class UriParser {
    * @return the index after parsing or {@code -1} if the value is invalid
    */
   public static int parseIPLiteral(String s, int from, int to) {
-    return from + 2 < to && s.charAt(from) == '[' ? foo(s.indexOf(']', from + 2)) : -1;
+    if (from < to && s.charAt(from++) == '[') {
+      int idx = parseIPv6Address(s, from, to);
+      if (idx == -1) {
+        idx = parseIPvFuture(s, from, to);
+      }
+      if (idx != -1 && idx < to && s.charAt(idx++) == ']') {
+        return idx;
+      }
+    }
+    return -1;
   }
 
   private static int foo(int v) {
@@ -125,6 +138,198 @@ public class UriParser {
     }
     // we (maybe) have a port - even with a single digit; the ipv4 addr is fine
     return from;
+  }
+
+  /**
+   * Try to parse the <i>IPv6address</i> rule as per
+   * <a href="https://datatracker.ietf.org/doc/html/rfc3986#appendix-A">RFC3986</a>.
+   *
+   * @param s a string containing the value to parse
+   * @param from the index at which parsing begins
+   * @param to the index at which parsing ends
+   * @return the index after parsing or {@code -1} if the value is invalid
+   */
+  public static int parseIPv6Address(String s, int from, int to) {
+    int doubleColonIdx = s.indexOf("::", from);
+    if (doubleColonIdx == -1 || (doubleColonIdx + 2) > to) {
+      // Rule1
+      for (int i = 0;i < 6;i++) {
+        from = parseH16(s, from, to);
+        if (from == -1) {
+          return -1;
+        }
+        from = _parseColon(s, from, to);
+        if (from == -1) {
+          return -1;
+        }
+      }
+      return parseLs32(s, from, to);
+    }
+
+    // To ease parsing we use the first colon (:) or double colon (::)
+    // e.g. "0::" = "0:" + ":"
+    //      "0:1:2:3::" = "0:1:2:3:" + ":"
+    int a = doubleColonIdx + 1;
+    int count1 = 0;
+    while (true) {
+      from = parseH16(s, from, a);
+      if (from == -1) {
+        break;
+      }
+      from = _parseColon(s, from, a);
+      if (from == -1) {
+        return -1;
+      }
+      count1++;
+    }
+
+    int count2 = 0;
+    from = doubleColonIdx + 2;
+    while (true) {
+      int idx = parseH16(s, from, to);
+      if (idx == -1) {
+        break;
+      }
+      idx = _parseColon(s, idx, to);
+      if (idx == -1) {
+        break;
+      }
+      from = idx;
+      count2++;
+    }
+    int idx;
+    if ((idx = parseIPv4Address(s, from, to)) != -1) {
+      //
+    } else if ((idx = parseH16(s, from, to)) != -1) {
+      count2--;
+    } else {
+      // Rule 9
+      return count1 <= 7 ? from : -1;
+    }
+    from = idx;
+
+
+    switch (count2) {
+      case 5:
+        // Rule 2
+        return count1 == 0 ? from : -1;
+      case 4:
+        // Rule 3
+        return count1 <= 1 ? from : -1;
+      case 3:
+        // Rule 4
+        return count1 <= 2 ? from : -1;
+      case 2:
+        // Rule 5
+        return count1 <= 3 ? from : -1;
+      case 1:
+        // Rule 6
+        return count1 <= 4 ? from : -1;
+      case 0:
+        // Rule 7
+        return count1 <= 5 ? from : -1;
+      case -1:
+        // Rule 8
+        return count1 <= 6 ? from : -1;
+      default:
+        throw new AssertionError();
+    }
+  }
+
+  public static int _parseColon(String s, int from, int to) {
+    return from < to && s.charAt(from) == ':' ? from + 1 : -1;
+  }
+
+  public static int _parseDoubleColon(String s, int from, int to) {
+    return from + 1 < to && s.charAt(from) == ':' && s.charAt(from + 1) == ':' ? from + 2 : -1;
+  }
+
+  /**
+   * Try to parse the <i>ls32</i> rule as per
+   * <a href="https://datatracker.ietf.org/doc/html/rfc3986#appendix-A">RFC3986</a>.
+   *
+   * @param s a string containing the value to parse
+   * @param from the index at which parsing begins
+   * @param to the index at which parsing ends
+   * @return the index after parsing or {@code -1} if the value is invalid
+   */
+  public static int parseLs32(String s, int from, int to) {
+    int idx = _parseH16ColonH16(s, from, to);
+    if (idx == -1) {
+      idx = parseIPv4Address(s, from, to);
+    }
+    return idx;
+  }
+
+  public static int _parseH16ColonH16(String s, int from, int to) {
+    int idx = parseH16(s, from, to);
+    if (idx == -1) {
+      return -1;
+    }
+    from = idx;
+    if (from >= to || s.charAt(from++) != ':') {
+      return -1;
+    }
+    return parseH16(s, from, to);
+  }
+
+  /**
+   * Try to parse the <i>h16</i> rule as per
+   * <a href="https://datatracker.ietf.org/doc/html/rfc3986#appendix-A">RFC3986</a>.
+   *
+   * @param s a string containing the value to parse
+   * @param from the index at which parsing begins
+   * @param to the index at which parsing ends
+   * @return the index after parsing or {@code -1} if the value is invalid
+   */
+  public static int parseH16(String s, int from, int to) {
+    if (from >= to || !isHEXDIG(s.charAt(from++))) {
+      return -1;
+    }
+    for (int i = 0;i < 3;i++) {
+      if (from < to && isHEXDIG(s.charAt(from))) {
+        from++;
+      }
+    }
+    return from;
+  }
+
+  /**
+   * Try to parse the <i>IPvFuture</i> rule as per
+   * <a href="https://datatracker.ietf.org/doc/html/rfc3986#appendix-A">RFC3986</a>.
+   *
+   * @param s a string containing the value to parse
+   * @param from the index at which parsing begins
+   * @param to the index at which parsing ends
+   * @return the index after parsing or {@code -1} if the value is invalid
+   */
+  public static int parseIPvFuture(String s, int from, int to) {
+    if (from >= to || s.charAt(from++) != 'v') {
+      return -1;
+    }
+    if (from >= to || !isHEXDIG(s.charAt(from++))) {
+      return -1;
+    }
+    while (from < to) {
+      if (isHEXDIG(s.charAt(from))) {
+        // Continue
+        from++;
+      } else {
+        break;
+      }
+    }
+    if (from >= to || s.charAt(from++) != '.') {
+      return -1;
+    }
+    int count = 0;
+    char c;
+    while ((from + count) < to && (isUnreserved(c = s.charAt(from + count)) || isSubDelims(c) || c == ':')) {
+      count++;
+    }
+    if (count == 0) {
+      return -1;
+    }
+    return from + count;
   }
 
   /**
@@ -185,23 +390,7 @@ public class UriParser {
     return isALPHA(ch) || isDIGIT(ch) || ch == '-' || ch == '.' || ch == '_' || ch == '~';
   }
 
-  private static boolean isALPHA(char ch) {
-    return ('A' <= ch && ch <= 'Z')
-      || ('a'<= ch && ch <= 'z');
-  }
-
-  private static boolean isDIGIT(char ch) {
-    if (ch < 128) {
-      return DIGITS[ch] != -1;
-    }
-    return false;
-  }
-
   private static boolean isSubDelims(char ch) {
     return ch == '!' || ch == '$' || ch == '&' || ch == '\'' || ch == '(' || ch == ')' || ch == '*' || ch == '+' || ch == ',' || ch == ';' || ch == '=';
-  }
-
-  static boolean isHEXDIG(char ch) {
-    return isDIGIT(ch) || ('A' <= ch && ch <= 'F') || ('a' <= ch && ch <= 'f');
   }
 }

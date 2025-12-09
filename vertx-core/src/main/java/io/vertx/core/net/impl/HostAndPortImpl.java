@@ -1,6 +1,5 @@
 package io.vertx.core.net.impl;
 
-import io.vertx.core.http.impl.UriParser;
 import io.vertx.core.net.HostAndPort;
 
 public class HostAndPortImpl implements HostAndPort {
