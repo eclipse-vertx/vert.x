@@ -10,7 +10,6 @@
  */
 package io.vertx.core.internal.http;
 
-import io.vertx.core.Context;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.observability.HttpRequest;

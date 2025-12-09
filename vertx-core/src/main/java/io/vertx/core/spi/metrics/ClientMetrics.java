@@ -19,6 +19,31 @@ package io.vertx.core.spi.metrics;
 public interface ClientMetrics<M, Req, Resp> extends Metrics {
 
   /**
+   * Create a request metric instance, when the implementation
+   *
+   * <ul>
+   *   <li>returns {@code null}, {@link #requestBegin(String, Object)} is called (backward compatibility mode)</li>
+   *   <li>returns a non-null value, {@link #requestBegin(Object, String, Object)} is called with the returned request
+   *   metric instance</li>
+   * </ul>
+   *
+   * @return a newly created request metric
+   */
+  default M init() {
+    return null;
+  }
+
+  /**
+   * Called when a client request begins and {@link #init()} has returned a non-null value.
+   *
+   * @param requestMetric the request metric
+   * @param uri an arbitrary uri
+   * @param request the request object
+   */
+  default void requestBegin(M requestMetric, String uri, Req request) {
+  }
+
+  /**
    * Called when a client request begins. Vert.x will invoke {@link #requestEnd} when the request
    * has ended or {@link #requestReset} if the request/response has failed before.
    *
@@ -28,7 +53,9 @@ public interface ClientMetrics<M, Req, Resp> extends Metrics {
    * @param uri an arbitrary uri
    * @param request the request object
    * @return the request metric
+   * @deprecated instead override {@link #init()} and {@link #requestBegin(Object, String, Object)}
    */
+  @Deprecated
   default M requestBegin(String uri, Req request) {
     return null;
   }

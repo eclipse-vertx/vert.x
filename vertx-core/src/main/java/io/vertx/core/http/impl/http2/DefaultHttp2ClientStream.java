@@ -76,10 +76,17 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
 
     VertxTracer<?, ?> tracer = vertx.tracer();
 
+    Object metric;
+    if (clientMetrics != null) {
+      metric = clientMetrics.init();
+    } else {
+      metric = null;
+    }
+
     this.connection = connection;
     this.decompressionSupported = decompressionSupported;
     this.observable = clientMetrics != null || tracer != null ? new ClientStreamObserver(context, tracingPolicy,
-      clientMetrics, transportMetrics, connection.metric(), tracer, connection.remoteAddress()) : null;
+      clientMetrics, metric, transportMetrics, connection.metric(), tracer, connection.remoteAddress()) : null;
   }
 
   @Override

@@ -19,6 +19,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.HttpClientRequestInternal;
 import io.vertx.core.net.HostAndPort;
 
 import java.util.Objects;
@@ -26,7 +27,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpClientRequestBase implements HttpClientRequest {
+public abstract class HttpClientRequestBase implements HttpClientRequestInternal {
 
   protected final ContextInternal context;
   protected final HttpConnection connection;
@@ -76,6 +77,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   @Override
   public int streamId() {
     return stream.id();
+  }
+
+  @Override
+  public Object metric() {
+    return stream.metric();
   }
 
   @Override
