@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.Context;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -32,9 +33,9 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, HttpReque
   }
 
   @Override
-  public HttpClientMetric requestBegin(String uri, HttpRequest request) {
+  public HttpClientMetric requestBegin(Context context, String uri, HttpRequest request) {
     requestCount.incrementAndGet();
-    HttpClientMetric metric = new HttpClientMetric(this, request);
+    HttpClientMetric metric = new HttpClientMetric(this, context, request);
     requests.put(request, metric);
     return metric;
   }

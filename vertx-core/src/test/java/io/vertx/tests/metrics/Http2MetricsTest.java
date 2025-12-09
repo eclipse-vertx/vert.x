@@ -10,7 +10,9 @@
  */
 package io.vertx.tests.metrics;
 
+import io.vertx.core.Context;
 import io.vertx.core.ThreadingModel;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
@@ -81,10 +83,11 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     int contentLength = numBuffers * 1000;
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/wibble").onComplete(ar -> {
-        HttpServerResponse pushedResp = ar.result();
+;        HttpServerResponse pushedResp = ar.result();
         FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
         HttpServerMetric serverMetric = serverMetrics.getResponseMetric("/wibble");
         assertNotNull(serverMetric);
+        assertSame(Vertx.currentContext(), serverMetric.context);
         pushedResp.putHeader("content-length", "" + contentLength);
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
@@ -104,16 +107,18 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     client = createHttpClient();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     client.request(requestOptions).onComplete(onSuccess(req -> {
+      Context expected = Vertx.currentContext();
       req.pushHandler(pushedReq -> {
-        HttpClientMetric metric = metrics.getMetric(pushedReq);
-        assertNotNull(metric);
-        pushedReq.response().onComplete(onSuccess(resp -> {
-          resp.endHandler(v -> {
-            assertNull(metrics.getMetric(pushedReq));
-            complete();
-          });
-        }));
-      })
+          HttpClientMetric metric = metrics.getMetric(pushedReq);
+          assertNotNull(metric);
+          assertSame(Vertx.currentContext(), metric.context);
+          pushedReq.response().onComplete(onSuccess(resp -> {
+            resp.endHandler(v -> {
+              assertNull(metrics.getMetric(pushedReq));
+              complete();
+            });
+          }));
+        })
         .end();
     }));
     await();
