@@ -20,7 +20,6 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -937,7 +936,7 @@ public final class HttpUtils {
 
   public static boolean isValidHostAuthority(String host) {
     int len = host.length();
-    return HostAndPortImpl.parseHost(host, 0, len) == len;
+    return UriParser.parseHost(host, 0, len) == len;
   }
 
   public static boolean canUpgradeToWebSocket(HttpServerRequest req) {
