@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl.http2.multiplex;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.*;
@@ -21,7 +20,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.AltSvc;
+import io.vertx.core.http.impl.AltSvcEvent;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
@@ -33,8 +32,6 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import static io.vertx.core.http.HttpHeaders.ALT_SVC;
-
 public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
   private final boolean decompressionSupported;
@@ -43,7 +40,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   private Promise<HttpClientConnection> completion;
   private long concurrency;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<AltSvc> alternativeServicesHandler;
+  private Handler<AltSvcEvent> alternativeServicesHandler;
   private Handler<Void> evictionHandler;
   private final long maxConcurrency;
   private final long keepAliveTimeoutMillis;
@@ -175,7 +172,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvcEvent> handler) {
     alternativeServicesHandler = handler;
     return this;
   }
@@ -213,8 +210,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  void onAltSvc(AltSvc event) {
-    Handler<AltSvc> handler = alternativeServicesHandler;
+  void onAltSvc(AltSvcEvent event) {
+    Handler<AltSvcEvent> handler = alternativeServicesHandler;
     if (handler != null) {
       context.emit(event, handler);
     }

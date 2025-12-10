@@ -1014,7 +1014,7 @@ public final class HttpUtils {
       .collect(Collectors.toList());
   }
 
-  public static AltSvc parseAltSvcFrame(ByteBuf payload) {
+  public static AltSvcEvent parseAltSvcFrame(ByteBuf payload) {
     if (payload.readableBytes() >= 2) {
       int idx = payload.readerIndex();
       try {
@@ -1039,7 +1039,7 @@ public final class HttpUtils {
           origin = null;
         }
         String value = payload.readString(payload.readableBytes(), StandardCharsets.US_ASCII);
-        return new AltSvc(origin, value);
+        return new AltSvcEvent(origin, value);
       } finally {
         payload.readerIndex(idx);
       }

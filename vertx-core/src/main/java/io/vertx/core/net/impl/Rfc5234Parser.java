@@ -27,6 +27,22 @@ public class Rfc5234Parser {
     }
   }
 
+  public static boolean isSP(char c) {
+    return c == 0x20;
+  }
+
+  public static boolean isHTAB(char c) {
+    return c == 0x09;
+  }
+
+  public static boolean isDQUOTE(char c) {
+    return c == '"';
+  }
+
+  public static boolean isVCHAR(char c) {
+    return 0x21 <= c && c <= 0x7E;
+  }
+
   public static boolean isDIGIT(char ch) {
     if (ch < 128) {
       return DIGITS[ch] != -1;
