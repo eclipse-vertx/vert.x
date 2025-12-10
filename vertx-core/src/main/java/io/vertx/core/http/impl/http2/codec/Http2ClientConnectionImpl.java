@@ -29,8 +29,6 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -43,7 +41,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   private final long lifetimeEvictionTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
-  private Handler<AltSvc> alternativeServicesHandler;
+  private Handler<AltSvcEvent> alternativeServicesHandler;
   private long expirationTimestamp;
   private boolean evicted;
   private final VertxHttp2ConnectionHandler handler;
@@ -92,7 +90,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvcEvent> handler) {
     alternativeServicesHandler = handler;
     return this;
   }
@@ -259,8 +257,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) {
     if (frameType == 0xA) {
       io.vertx.core.http.impl.http2.Http2Stream stream = stream(streamId);
-      AltSvc event = HttpUtils.parseAltSvcFrame(payload);
-      Handler<AltSvc> handler;
+      AltSvcEvent event = HttpUtils.parseAltSvcFrame(payload);
+      Handler<AltSvcEvent> handler;
       if (event != null && (handler = alternativeServicesHandler) != null) {
         if (stream != null) {
           String scheme = stream.scheme();
@@ -277,7 +275,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                 break;
             }
           }
-          event = new AltSvc(new Origin(scheme, host, port), event.value);
+          event = new AltSvcEvent(new Origin(scheme, host, port), event.value);
         }
         if (event.origin != null) {
           context.emit(event, handler);

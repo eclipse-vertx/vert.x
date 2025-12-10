@@ -20,7 +20,7 @@ public class HostAndPortImpl implements HostAndPort {
       return true;
     }
     if (pos < s.length() && s.charAt(pos) == ':') {
-      return parsePort(s, pos) != -1;
+      return UriParser.parseAndEvalPort(s, pos) != -1;
     }
     return false;
   }
@@ -38,28 +38,13 @@ public class HostAndPortImpl implements HostAndPort {
     }
     if (pos < s.length() && s.charAt(pos) == ':') {
       String host = s.substring(0, pos);
-      int port = parsePort(s, pos);
+      int port = UriParser.parseAndEvalPort(s, pos);
       if (port == -1) {
         return null;
       }
       return new HostAndPortImpl(host, port);
     }
     return null;
-  }
-
-  private static int parsePort(String s, int pos) {
-    int port = 0;
-    while (++pos < s.length()) {
-      int digit = UriParser.parseAndEvalDigit(s, pos, s.length());
-      if (digit == -1) {
-        return -1;
-      }
-      port = port * 10 + digit;
-      if (port > 65535) {
-        return -1;
-      }
-    }
-    return port;
   }
 
   private final String host;

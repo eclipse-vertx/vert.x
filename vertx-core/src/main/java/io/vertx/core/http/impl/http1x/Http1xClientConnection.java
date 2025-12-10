@@ -92,7 +92,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
-  private Handler<AltSvc> alternativeServicesHandler;
+  private Handler<AltSvcEvent> alternativeServicesHandler;
   private boolean wantClose;
   private boolean isConnect;
   private int keepAliveTimeout;
@@ -150,7 +150,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvcEvent> handler) {
     alternativeServicesHandler = handler;
     return this;
   }
@@ -906,14 +906,14 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         }
       }
       String altSvcHeader = response.headers.get(ALT_SVC);
-      Handler<AltSvc> handler;
+      Handler<AltSvcEvent> handler;
       if (altSvcHeader != null && (handler = alternativeServicesHandler) != null) {
         int port = authority.port();
         if (port == -1) {
           port = ssl ? 443 : 80;
         }
         Origin origin = new Origin(ssl ? "https" : "http", authority.host(), port);
-        context.emit(new AltSvc(origin, altSvcHeader), handler);
+        context.emit(new AltSvcEvent(origin, altSvcHeader), handler);
       }
     }
   }

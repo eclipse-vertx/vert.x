@@ -10,8 +10,6 @@
  */
 package io.vertx.core.net.impl;
 
-import io.vertx.core.internal.net.RFC3986;
-
 import java.util.Arrays;
 
 import static io.vertx.core.net.impl.Rfc5234Parser.*;
@@ -392,5 +390,20 @@ public class UriParser {
 
   private static boolean isSubDelims(char ch) {
     return ch == '!' || ch == '$' || ch == '&' || ch == '\'' || ch == '(' || ch == ')' || ch == '*' || ch == '+' || ch == ',' || ch == ';' || ch == '=';
+  }
+
+  public static int parseAndEvalPort(String s, int pos) {
+    int port = 0;
+    while (++pos < s.length()) {
+      int digit = parseAndEvalDigit(s, pos, s.length());
+      if (digit == -1) {
+        return -1;
+      }
+      port = port * 10 + digit;
+      if (port > 65535) {
+        return -1;
+      }
+    }
+    return port;
   }
 }
