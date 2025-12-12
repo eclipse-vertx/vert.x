@@ -275,7 +275,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                 break;
             }
           }
-          event = new AltSvcEvent(new Origin(scheme, host, port), event.value);
+          event = new AltSvcEvent(new Origin(scheme, host, port), event.altSvc);
         }
         if (event.origin != null) {
           context.emit(event, handler);

@@ -148,7 +148,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
           }
           if (port > 0) {
             String host = authority.host();
-            altSvcEvt = new AltSvcEvent(new Origin(scheme, host, port), altSvcEvt.value);
+            altSvcEvt = new AltSvcEvent(new Origin(scheme, host, port), altSvcEvt.altSvc);
           }
         }
         if (altSvcEvt != null && altSvcEvt.origin != null) {

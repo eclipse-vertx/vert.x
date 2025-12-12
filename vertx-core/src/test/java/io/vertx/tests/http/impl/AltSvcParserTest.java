@@ -15,7 +15,6 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.test.core.TestParser;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -98,11 +97,11 @@ public class AltSvcParserTest {
   public void testParseAltSvc() {
     AltSvc.Clear clear = (AltSvc.Clear)AltSvc.parseAltSvc("clear");
     assertNotNull(clear);
-    AltSvc.ListOfValues values = (AltSvc.ListOfValues)AltSvc.parseAltSvc("abc=\":10\"" + "," + "abc=\":12\"");
+    AltSvc.ListOfValue values = (AltSvc.ListOfValue)AltSvc.parseAltSvc("abc=\":10\"" + "," + "abc=\":12\"");
     assertEquals(2, values.size());
-    values = (AltSvc.ListOfValues)AltSvc.parseAltSvc("abc=\":10\"" + ",");
+    values = (AltSvc.ListOfValue)AltSvc.parseAltSvc("abc=\":10\"" + ",");
     assertNull(values);
-    values = (AltSvc.ListOfValues)AltSvc.parseAltSvc("abc=\":10\"" + " a");
+    values = (AltSvc.ListOfValue)AltSvc.parseAltSvc("abc=\":10\"" + " a");
     assertNull(values);
   }
 }

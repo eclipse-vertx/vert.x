@@ -30,8 +30,8 @@ public interface AltSvc {
     }
   }
 
-  class ListOfValues extends ArrayList<Value> implements AltSvc {
-    public ListOfValues() {
+  class ListOfValue extends ArrayList<Value> implements AltSvc {
+    public ListOfValue() {
       super(3);
     }
   }
@@ -87,7 +87,7 @@ public interface AltSvc {
     }
     int from = 0;
     int to = s.length();
-    ListOfValues values = new ListOfValues();
+    ListOfValue values = new ListOfValue();
     while (true) {
       Value value = new Value();
       from = parseAltValue(s, from, to, value);
