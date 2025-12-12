@@ -56,8 +56,10 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
   private final Transport transport;
+  private final EndpointResolverInternal resolver;
 
   HttpClientImpl(VertxInternal vertx,
+                 EndpointResolver resolver,
                  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
                  HttpClientMetrics<?, ?, ?> metrics,
                  PoolOptions poolOptions,
@@ -67,6 +69,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
     this.transport = transport;
+    this.resolver = (EndpointResolverInternal) resolver;
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
@@ -121,8 +124,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       }
     }
     resourceManager.checkExpired();
-    if (transport.resolver != null) {
-      transport.resolver.checkExpired();
+    if (resolver != null) {
+      resolver.checkExpired();
     }
   }
 
@@ -324,9 +327,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     ProxyOptions proxyConfig) {
     ContextInternal streamCtx = vertx.getOrCreateContext();
     Future<ConnectionObtainedResult> future;
-    if (transport.resolver != null) {
+    if (resolver != null) {
       PromiseInternal<Endpoint> promise = vertx.promise();
-      transport.resolver.lookupEndpoint(server, promise);
+      resolver.lookupEndpoint(server, promise);
       future = promise.future()
         .map(endpoint -> endpoint.selectServer(routingKey))
         .compose(lookup -> {
@@ -436,7 +439,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
    */
   static class Transport {
 
-    private final EndpointResolverInternal resolver;
     private final Handler<HttpConnection> connectHandler;
     private final HttpChannelConnector connector;
     private final boolean verifyHost;
@@ -447,7 +449,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     private final HttpVersion protocol;
     private volatile ClientSSLOptions sslOptions;
 
-    Transport(EndpointResolver resolver, Handler<HttpConnection> connectHandler, HttpChannelConnector connector,
+    Transport(Handler<HttpConnection> connectHandler, HttpChannelConnector connector,
               boolean verifyHost, boolean defaultSsl, String defaultHost, int defaultPort, int maxRedirects,
               HttpVersion protocol, ClientSSLOptions sslOptions) {
 
@@ -455,7 +457,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         configureSSLOptions(verifyHost, sslOptions);
       }
 
-      this.resolver = (EndpointResolverInternal)resolver;
       this.connectHandler = connectHandler;
       this.connector = connector;
       this.verifyHost = verifyHost;
