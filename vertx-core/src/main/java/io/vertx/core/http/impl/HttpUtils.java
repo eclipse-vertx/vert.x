@@ -1039,7 +1039,10 @@ public final class HttpUtils {
           origin = null;
         }
         String value = payload.readString(payload.readableBytes(), StandardCharsets.US_ASCII);
-        return new AltSvcEvent(origin, value);
+        AltSvc altSvc;
+        if (value != null && (altSvc = AltSvc.parseAltSvc(value)) != null) {
+          return new AltSvcEvent(origin, altSvc);
+        }
       } finally {
         payload.readerIndex(idx);
       }

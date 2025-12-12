@@ -16,10 +16,10 @@ package io.vertx.core.http.impl;
 public class AltSvcEvent {
 
   public final Origin origin;
-  public final String value;
+  public final AltSvc altSvc;
 
-  public AltSvcEvent(Origin origin, String value) {
+  public AltSvcEvent(Origin origin, AltSvc altSvc) {
     this.origin = origin;
-    this.value = value;
+    this.altSvc = altSvc;
   }
 }
