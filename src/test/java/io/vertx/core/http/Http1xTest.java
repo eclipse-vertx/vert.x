@@ -2615,6 +2615,21 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testClientInvalidHttpMessage() throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/a\rb"))
+      .compose(HttpClientRequest::send)
+      .onFailure(err -> {
+        assertEquals(IllegalArgumentException.class, err.getClass());
+        testComplete();
+      });
+    await();
+  }
+
+  @Test
   public void testClientMaxInitialLineLengthOption() {
 
     String longParam = TestUtils.randomAlphaString(5000);
