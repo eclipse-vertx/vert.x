@@ -371,13 +371,14 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testClientReset() throws Exception {
-    waitFor(3);
+    waitFor(2);
     disableThreadChecks();
     QuicServer server = QuicServer.create(vertx, serverOptions());
     server.handler(conn -> {
       conn.streamHandler(stream -> {
-        stream.exceptionHandler(reset -> {
-          complete();
+        stream.resetHandler(code -> {
+          assertEquals(4L, (long)code);
+          stream.end();
         });
         stream.closeHandler(v -> {
           complete();
@@ -492,7 +493,7 @@ public class QuicServerTest extends VertxTestBase {
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
-          stream.reset(0).onComplete(onSuccess2(v -> complete()));
+          stream.reset(4).onComplete(onSuccess2(v -> complete()));
         });
       });
     });
@@ -502,7 +503,10 @@ public class QuicServerTest extends VertxTestBase {
       client = new QuicTestClient(new NioEventLoopGroup(1));
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
-      stream.resetHandler(() -> complete());
+      stream.resetHandler(code -> {
+        assertEquals(4, code);
+        complete();
+      });
       stream.create();
       stream.write("ping");
       await();
