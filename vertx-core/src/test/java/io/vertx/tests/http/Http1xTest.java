@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -2468,19 +2469,33 @@ public class Http1xTest extends HttpTest {
         fail();
       });
     startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient();
-    client
-      .request(new RequestOptions(requestOptions).setURI("/?ab c=1"))
-      .onComplete(onSuccess(req -> req
-        .send()
-        .onComplete(onSuccess(resp -> {
-          assertEquals(400, resp.statusCode());
-          resp.request().connection().closeHandler(v -> {
-            testComplete();
-          });
-        }))));
-    await();
+    NetClient client = vertx.createNetClient();
+    try {
+      NetSocket connection = client.connect(testAddress).await();
+      Future<Buffer> fut = connection.collect(Collectors.reducing(Buffer.buffer(), Buffer::appendBuffer));
+      connection.write(Buffer.buffer("GET /?ab\rc=1 HTTP/1.1\r\n"));
+      String res = fut.await().toString();
+      String expected = "HTTP/1.0 400 ";
+      assertEquals(expected, res.substring(0, expected.length()));
+    } finally {
+      client.close().await();
+    }
+  }
+
+  @Test
+  public void testClientInvalidHttpMessage() throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    try {
+      client
+        .request(new RequestOptions(requestOptions).setURI("/a\rb"))
+        .compose(HttpClientRequest::send)
+        .await();
+      fail();
+    } catch (IllegalArgumentException expected) {
+    }
   }
 
   @Test
