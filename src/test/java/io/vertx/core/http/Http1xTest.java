@@ -2594,20 +2594,23 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testServerInvalidHttpMessage() {
+  public void testServerInvalidHttpMessage() throws Exception {
+    waitFor(2);
+    NetClient client = vertx.createNetClient();
     server.requestHandler(req -> {
-        fail();
-      }).listen(testAddress, onSuccess(res -> {
-      vertx.createHttpClient()
-        .request(new RequestOptions(requestOptions).setURI("/?ab c=1"))
-        .compose(HttpClientRequest::send)
-        .onComplete(onSuccess(resp -> {
-          assertEquals(400, resp.statusCode());
-          resp.request().connection().closeHandler(v -> {
-            testComplete();
-          });
-        }));
-      }));
+      fail();
+    });
+    startServer(testAddress);
+    client.connect(testAddress).onSuccess(so -> {
+      so.write("GET /?ab\rc=1 HTTP/1.1\r\n").onSuccess(v -> complete());
+      Buffer response = Buffer.buffer();
+      so.handler(response::appendBuffer);
+      so.endHandler(v -> {
+        String expected = "HTTP/1.0 400 ";
+        assertEquals(expected, response.toString().substring(0, expected.length()));
+        complete();
+      });
+    });
     await();
   }
 
