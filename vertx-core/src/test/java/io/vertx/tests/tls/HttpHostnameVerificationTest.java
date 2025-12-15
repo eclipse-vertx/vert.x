@@ -26,7 +26,10 @@ public class HttpHostnameVerificationTest extends VertxTestBase {
   protected VertxOptions getOptions() {
     return new VertxOptions(super.getOptions())
       .setAddressResolverOptions(new AddressResolverOptions()
-        .setHostsValue(Buffer.buffer("127.0.0.1 example.com\n")));
+        .setHostsValue(Buffer.buffer(
+          "127.0.0.1 localhost\n" +
+          "127.0.0.1 example.com\n"
+        )));
   }
 
   @Test
