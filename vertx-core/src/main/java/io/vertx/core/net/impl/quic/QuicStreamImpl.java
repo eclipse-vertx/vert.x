@@ -14,14 +14,12 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
-import io.netty.handler.codec.quic.QuicException;
-import io.netty.handler.codec.quic.QuicStreamChannel;
-import io.netty.handler.codec.quic.QuicStreamFrame;
-import io.netty.handler.codec.quic.QuicStreamType;
+import io.netty.handler.codec.quic.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
@@ -30,6 +28,8 @@ import io.vertx.core.net.impl.SocketBase;
 import io.vertx.core.net.QuicConnection;
 import io.vertx.core.net.QuicStream;
 import io.vertx.core.spi.metrics.NetworkMetrics;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,7 +42,8 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   private final NetworkMetrics<?> streamMetrics;
   private final boolean bidirectional;
   private final boolean localCreated;
-  private Handler<Integer> resetHandler;
+  private boolean resetReceived;
+  private Handler<Long> resetHandler;
   private Handler<IdleStateEvent> idleHandler;
 
   public QuicStreamImpl(QuicConnection connection, ContextInternal context, QuicStreamChannel channel, NetworkMetrics<?> streamMetrics, ChannelHandlerContext chctx) {
@@ -67,7 +68,7 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   }
 
   @Override
-  public QuicStream resetHandler(@Nullable Handler<Integer> handler) {
+  public QuicStream resetHandler(@Nullable Handler<Long> handler) {
     this.resetHandler = handler;
     return this;
   }
@@ -117,7 +118,14 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
-        ChannelFuture shutdownPromise = channel.shutdownOutput();
+        ChannelFuture shutdownPromise;
+        if (resetReceived) {
+          // Work-around to close the channel: Netty does not (yet) record track of the reset and will
+          // not close the channel, that is the channel state does not reflect the actual QUIC stream state
+          shutdownPromise = channel.close();
+        } else {
+          shutdownPromise = channel.shutdownOutput();
+        }
         shutdownPromise.addListener(promise);
       }
       @Override
@@ -151,10 +159,12 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   protected boolean handleException(Throwable t) {
     if (t instanceof QuicException) {
       QuicException quicException = (QuicException) t;
-      if (quicException.error() == null && "STREAM_RESET".equals(quicException.getMessage())) {
-        Handler<Integer> handler = resetHandler;
+      if (quicException instanceof QuicStreamResetException) {
+        QuicStreamResetException reset = (QuicStreamResetException)quicException;
+        resetReceived = true;
+        Handler<Long> handler = resetHandler;
         if (handler != null) {
-          context.emit(0, handler);
+          context.emit(reset.applicationProtocolCode(), handler);
           return false;
         }
       }

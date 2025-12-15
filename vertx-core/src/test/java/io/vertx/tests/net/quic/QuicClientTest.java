@@ -145,7 +145,7 @@ public class QuicClientTest extends VertxTestBase {
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
-          stream.reset(0).onComplete(onSuccess2(v -> complete()));
+          stream.reset(4).onComplete(onSuccess2(v -> complete()));
         });
         stream.endHandler(v -> {
           complete();
@@ -158,7 +158,11 @@ public class QuicClientTest extends VertxTestBase {
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStream stream = connection.openStream().await();
 
-    stream.exceptionHandler(t -> complete());
+    stream.resetHandler(code -> {
+      assertEquals(4L, (long)code);
+      complete();
+      stream.end();
+    });
     stream.closeHandler(v -> complete());
 
     stream.write("ping");
@@ -174,6 +178,7 @@ public class QuicClientTest extends VertxTestBase {
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.resetHandler(code -> {
+          assertEquals(10L, (long)code);
           vertx.setTimer(20, id -> {
             stream.end(Buffer.buffer("done"));
           });

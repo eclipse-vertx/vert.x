@@ -55,7 +55,7 @@ public interface QuicStream extends Socket {
    * @param handler the handler
    * @return this instance of a stream
    */
-  QuicStream resetHandler(@Nullable Handler<Integer> handler);
+  QuicStream resetHandler(@Nullable Handler<Long> handler);
 
   /**
    * Abruptly terminate the sending part of the stream with the specified application protocol {@code error} code

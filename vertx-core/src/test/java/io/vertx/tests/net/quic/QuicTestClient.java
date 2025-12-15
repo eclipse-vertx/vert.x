@@ -24,14 +24,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.handler.codec.quic.QuicChannel;
-import io.netty.handler.codec.quic.QuicClientCodecBuilder;
-import io.netty.handler.codec.quic.QuicConnectionCloseEvent;
-import io.netty.handler.codec.quic.QuicException;
-import io.netty.handler.codec.quic.QuicSslContext;
-import io.netty.handler.codec.quic.QuicSslContextBuilder;
-import io.netty.handler.codec.quic.QuicStreamChannel;
-import io.netty.handler.codec.quic.QuicStreamType;
+import io.netty.handler.codec.quic.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Handler;
@@ -42,6 +35,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 
 /**
  * Minimal Quic client for testing Vert.x QuicServer
@@ -187,7 +182,7 @@ public class QuicTestClient {
     QuicStreamChannel streamChannel;
     Consumer<byte[]> handler;
     Runnable closeHandler;
-    Runnable resetHandler;
+    LongConsumer resetHandler;
     Consumer<Exception> exceptionHandler;
 
     private Stream(Connection connection) {
@@ -236,7 +231,7 @@ public class QuicTestClient {
       return this;
     }
 
-    public Stream resetHandler(Runnable handler) {
+    public Stream resetHandler(LongConsumer handler) {
       resetHandler = handler;
       return this;
     }
@@ -276,10 +271,11 @@ public class QuicTestClient {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
       if (cause instanceof QuicException) {
         QuicException quicCause = (QuicException) cause;
-        if (quicCause.error() == null && "STREAM_RESET".equals(quicCause.getMessage())) {
-          Runnable handler = resetHandler;
+        if (quicCause instanceof QuicStreamResetException) {
+          QuicStreamResetException reset = (QuicStreamResetException)quicCause;
+          LongConsumer handler = resetHandler;
           if (handler != null) {
-            resetHandler.run();
+            resetHandler.accept(reset.applicationProtocolCode());
             return;
           }
         }
