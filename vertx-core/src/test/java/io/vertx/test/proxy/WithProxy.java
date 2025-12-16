@@ -22,6 +22,6 @@ public @interface WithProxy {
 
   ProxyKind kind();
 
-  String[] localhosts() default "";
+  String[] localhosts() default {};
 
 }
