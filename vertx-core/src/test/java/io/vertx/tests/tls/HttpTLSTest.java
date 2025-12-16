@@ -1554,7 +1554,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
   }
 
-  @WithProxy(kind = ProxyKind.HTTP, localhosts = "host2.com")
+  @WithProxy(kind = ProxyKind.HTTP, localhosts = { "localhost", "host2.com"})
   @Test
   // Access https server via connect proxy
   public void testHttpsProxyWithSNI() throws Exception {
@@ -1615,7 +1615,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testProxy(ProxyType.SOCKS5);
   }
 
-  @WithProxy(kind = ProxyKind.SOCKS5, localhosts = "host2.com")
+  @WithProxy(kind = ProxyKind.SOCKS5, localhosts = { "localhost", "host2.com" })
   @Test
   // Access https server via socks5 proxy
   public void testHttpsSocksWithSNI() throws Exception {

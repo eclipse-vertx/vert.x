@@ -139,7 +139,7 @@ public class Http1xProxyTest extends HttpTestBase {
     testNonProxyHosts(Collections.singletonList("www1.example1.com"), "www1.example1.com", false);
   }
 
-  @WithProxy(kind = ProxyKind.HTTP, localhosts = "www2.example1.com")
+  @WithProxy(kind = ProxyKind.HTTP, localhosts = {"localhost", "www2.example1.com"})
   @Test
   public void testNonProxyHosts2() throws Exception {
     testNonProxyHosts(Collections.singletonList("www1.example1.com"), "www2.example1.com", true);
