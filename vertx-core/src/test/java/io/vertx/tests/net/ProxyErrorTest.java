@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.test.fakedns.MockDnsServer;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -28,7 +29,6 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.test.fakedns.FakeDNSServer;
 
 /**
  * Test all kinds of errors raised by the proxy
@@ -40,12 +40,12 @@ public class ProxyErrorTest extends VertxTestBase {
 
   private HttpProxy proxy = null;
 
-  private FakeDNSServer dnsServer;
+  private MockDnsServer dnsServer;
   private InetSocketAddress dnsServerAddress;
 
   @Override
   public void setUp() throws Exception {
-    dnsServer = new FakeDNSServer().testLookupNonExisting();
+    dnsServer = new MockDnsServer().testLookupNonExisting();
     dnsServer.start();
     dnsServerAddress = dnsServer.localAddress();
     super.setUp();

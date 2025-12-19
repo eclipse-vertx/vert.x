@@ -1,5 +1,7 @@
 package io.vertx.tests.endpoint;
 
+import io.netty.handler.codec.dns.DnsRecord;
+import io.netty.handler.codec.dns.DnsRecordType;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.AddressResolverOptions;
@@ -9,11 +11,7 @@ import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.fakedns.FakeDNSServer;
-import org.apache.directory.server.dns.messages.RecordClass;
-import org.apache.directory.server.dns.messages.RecordType;
-import org.apache.directory.server.dns.messages.ResourceRecord;
-import org.apache.directory.server.dns.store.DnsAttribute;
+import io.vertx.test.fakedns.MockDnsServer;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -22,7 +20,7 @@ import java.util.*;
 public class DnsResolverTest extends VertxTestBase {
 
   private String nameToResolve = TestUtils.randomAlphaString(8) + ".com";
-  private FakeDNSServer dnsServer;
+  private MockDnsServer dnsServer;
   private EndpointResolver<SocketAddress, SocketAddress, List<SocketAddress>, List<SocketAddress>> resolver;
 
   @Override
@@ -33,37 +31,41 @@ public class DnsResolverTest extends VertxTestBase {
   }
 
   public void setUp() throws Exception {
-    dnsServer = new FakeDNSServer();
+    dnsServer = new MockDnsServer();
     dnsServer.start();
     dnsServer.store(questionRecord -> {
-      Set<ResourceRecord> set = new LinkedHashSet<>();
-      if (nameToResolve.equals(questionRecord.getDomainName())) {
+      Set<DnsRecord> set = new LinkedHashSet<>();
+      if (nameToResolve.equals(questionRecord.name())) {
         for (int i = 0;i < 2;i++) {
           String ip = "127.0.0." + (i + 1);
-          set.add(new ResourceRecord() {
+          set.add(new DnsRecord() {
             @Override
-            public String getDomainName() {
+            public String name() {
               return nameToResolve;
             }
+
             @Override
-            public RecordType getRecordType() {
-              return RecordType.A;
+            public DnsRecordType type() {
+              return DnsRecordType.A;
             }
+
             @Override
-            public RecordClass getRecordClass() {
-              return RecordClass.IN;
+            public int dnsClass() {
+              return 1;
             }
+
             @Override
-            public int getTimeToLive() {
+            public long timeToLive() {
               return 100;
             }
-            @Override
+
+            /*@Override
             public String get(String id) {
               if (id.equals(DnsAttribute.IP_ADDRESS)) {
                 return ip;
               }
               return null;
-            }
+            }*/
           });
         }
       }

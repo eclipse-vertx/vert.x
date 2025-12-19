@@ -11,6 +11,7 @@
 
 package io.vertx.tests.dns;
 
+import io.netty.handler.codec.dns.DnsMessage;
 import io.netty.resolver.dns.DnsNameResolverTimeoutException;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
@@ -21,10 +22,9 @@ import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.fakedns.FakeDNSServer;
+import io.vertx.test.fakedns.MockDnsServer;
+import io.vertx.test.fakedns.MockDnsServer.RecordStore;
 import io.vertx.test.netty.TestLoggerFactory;
-import org.apache.directory.server.dns.messages.DnsMessage;
-import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -42,24 +42,25 @@ import static io.vertx.test.core.TestUtils.assertNullPointerException;
  */
 public class DNSTest extends VertxTestBase {
 
-  private FakeDNSServer dnsServer;
+  private MockDnsServer mockDnsServer;
 
   @Override
   public void setUp() throws Exception {
-    dnsServer = new FakeDNSServer();
-    dnsServer.start();
+    mockDnsServer = new MockDnsServer();
+    mockDnsServer.start();
+
     super.setUp();
   }
 
   @Override
   protected void tearDown() throws Exception {
-    dnsServer.stop();
+    mockDnsServer.stop();
     super.tearDown();
   }
 
   @Test
   public void testIllegalArguments() throws Exception {
-    dnsServer.testResolveAAAA("::1");
+    mockDnsServer.testResolveAAAA("::1");
     DnsClient dns = prepareDns();
 
     assertNullPointerException(() -> dns.lookup(null));
@@ -87,10 +88,11 @@ public class DNSTest extends VertxTestBase {
 
   private void testDefaultDnsClient(Function<Vertx, DnsClient> clientProvider) throws Exception {
     final String ip = "10.0.0.1";
-    dnsServer.testLookup4(ip);
+    //dnsServer.testLookup4(ip);
+    mockDnsServer.testLookup4(ip);
     VertxOptions vertxOptions = new VertxOptions();
-    InetSocketAddress fakeServerAddress = dnsServer.localAddress();
-    vertxOptions.getAddressResolverOptions().addServer(fakeServerAddress.getHostString() + ":" + fakeServerAddress.getPort());
+    InetSocketAddress mockDnsAddress = mockDnsServer.localAddress();
+    vertxOptions.getAddressResolverOptions().addServer(mockDnsAddress.getHostString() + ":" + mockDnsAddress.getPort());
     Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
     DnsClient dnsClient = clientProvider.apply(vertxWithFakeDns);
 
@@ -107,7 +109,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolveA() throws Exception {
     final String ip = "10.0.0.1";
-    dnsServer.testResolveA(ip);
+    mockDnsServer.testResolveA(ip);
     DnsClient dns = prepareDns();
 
     dns
@@ -135,7 +137,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolveAIpV6() throws Exception {
     final String ip = "10.0.0.1";
-    dnsServer.testResolveA(ip).ipAddress("::1");
+    mockDnsServer.testResolveA(ip).ipAddress("::1");
     // force the fake dns server to Ipv6
     DnsClient dns = prepareDns();
     dns
@@ -151,7 +153,7 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testResolveAAAA() throws Exception {
-    dnsServer.testResolveAAAA("::1");
+    mockDnsServer.testResolveAAAA("::1");
     DnsClient dns = prepareDns();
 
     dns
@@ -169,7 +171,7 @@ public class DNSTest extends VertxTestBase {
   public void testResolveMX() throws Exception {
     final String mxRecord = "mail.vertx.io";
     final int prio = 10;
-    dnsServer.testResolveMX(prio, mxRecord);
+    mockDnsServer.testResolveMX(prio, mxRecord);
     DnsClient dns = prepareDns();
 
     dns
@@ -189,7 +191,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolveTXT() throws Exception {
     final String txt = "vertx is awesome";
-    dnsServer.testResolveTXT(txt);
+    mockDnsServer.testResolveTXT(txt);
     DnsClient dns = prepareDns();
     dns
       .resolveTXT("vertx.io")
@@ -205,7 +207,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolveNS2() throws Exception {
     final String ns = "ns.vertx.io";
-    dnsServer.testResolveNS(ns);
+    mockDnsServer.testResolveNS(ns);
     DnsClient dns = prepareDns();
 
     dns
@@ -222,7 +224,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolveCNAME() throws Exception {
     final String cname = "cname.vertx.io";
-    dnsServer.testResolveCNAME(cname);
+    mockDnsServer.testResolveCNAME(cname);
     DnsClient dns = prepareDns();
 
     dns
@@ -241,7 +243,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolvePTR() throws Exception {
     final String ptr = "ptr.vertx.io";
-    dnsServer.testResolvePTR(ptr);
+    mockDnsServer.testResolvePTR(ptr);
     DnsClient dns = prepareDns();
 
     dns
@@ -259,7 +261,7 @@ public class DNSTest extends VertxTestBase {
     final int weight = 1;
     final int port = 80;
 
-    dnsServer.testResolveSRV("_svc._tcp.vertx.io", priority, weight, port, "svc.vertx.io");
+    mockDnsServer.testResolveSRV("_svc._tcp.vertx.io", priority, weight, port, "svc.vertx.io");
     DnsClient dns = prepareDns();
 
     dns
@@ -287,7 +289,7 @@ public class DNSTest extends VertxTestBase {
     final int weight = 1;
     final int port = 80;
 
-    dnsServer.testResolveSRV2(priority, weight, port, "_svc._tcp.vertx.io");
+    mockDnsServer.testResolveSRV2(priority, weight, port, "_svc._tcp.vertx.io");
     DnsClient dns = prepareDns();
 
     dns
@@ -324,13 +326,13 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testLookup4() throws Exception {
     final String ip = "10.0.0.1";
-    dnsServer.testLookup4(ip);
+    mockDnsServer.testLookup4(ip);
     DnsClient dns = prepareDns();
     dns
       .lookup4("vertx.io")
       .onComplete(onSuccess(result -> {
         assertEquals(ip, result);
-        DnsMessage msg = dnsServer.pollMessage();
+        DnsMessage msg = mockDnsServer.pollMessage();
         assertTrue(msg.isRecursionDesired());
         testComplete();
       }));
@@ -339,7 +341,7 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testLookup6() throws Exception {
-    dnsServer.testLookup6("::1");
+    mockDnsServer.testLookup6("::1");
     DnsClient dns = prepareDns();
 
     dns
@@ -354,7 +356,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testLookupWithARecord() throws Exception {
     String ip = "10.0.0.1";
-    dnsServer.testLookup4(ip);
+    mockDnsServer.testLookup4(ip);
     DnsClient dns = prepareDns();
 
     dns
@@ -368,7 +370,7 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testLookupWithAAAARecord() throws Exception {
-    dnsServer.testLookup6("::1");
+    mockDnsServer.testLookup6("::1");
     DnsClient dns = prepareDns();
 
     dns
@@ -399,7 +401,7 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testLookupNonExisting() throws Exception {
-    dnsServer.testLookupNonExisting();
+    mockDnsServer.testLookupNonExisting();
     DnsClient dns = prepareDns();
     dns
       .lookup("gfegjegjf.sg1")
@@ -411,7 +413,7 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testReverseLookupIpv4() throws Exception {
-    dnsServer.testReverseLookup("1.0.0.10.in-addr.arpa");
+    mockDnsServer.testReverseLookup("1.0.0.10.in-addr.arpa");
     DnsClient dns = prepareDns();
 
     dns
@@ -426,7 +428,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testReverseLookupIpv6() throws Exception {
     String address = "::1";
-    dnsServer.testReverseLookup("1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.in-addr.arpa");
+    mockDnsServer.testReverseLookup("1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.in-addr.arpa");
     DnsClient dns = prepareDns();
 
     dns
@@ -442,7 +444,7 @@ public class DNSTest extends VertxTestBase {
   public void testLookup4CNAME() throws Exception {
     final String cname = "cname.vertx.io";
     final String ip = "10.0.0.1";
-    dnsServer.testLookup4CNAME(cname, ip);
+    mockDnsServer.testLookup4CNAME(cname, ip);
     DnsClient dns = prepareDns();
 
     dns
@@ -457,7 +459,7 @@ public class DNSTest extends VertxTestBase {
   @Test
   public void testResolveMXWhenDNSRepliesWithDNAMERecord() throws Exception {
     final DnsClient dns = prepareDns();
-    dnsServer.testResolveDNAME("mail.vertx.io");
+    mockDnsServer.testResolveDNAME("mail.vertx.io");
     dns.resolveMX("vertx.io")
       .onComplete(onSuccess(lst -> {
         assertEquals(Collections.emptyList(), lst);
@@ -468,7 +470,7 @@ public class DNSTest extends VertxTestBase {
 
   private TestLoggerFactory testLogging(DnsClientOptions options) {
     final String ip = "10.0.0.1";
-    dnsServer.testResolveA(ip);
+    mockDnsServer.testResolveA(ip);
     return TestUtils.testLogging(() -> {
       try {
         prepareDns(options)
@@ -497,7 +499,7 @@ public class DNSTest extends VertxTestBase {
   public void testRecursionDesired() throws Exception {
     final String ip = "10.0.0.1";
 
-    dnsServer.testResolveA(ip);
+    mockDnsServer.testResolveA(ip);
     DnsClient dns = prepareDns(new DnsClientOptions().setRecursionDesired(true));
     dns
       .resolveA("vertx.io")
@@ -505,7 +507,7 @@ public class DNSTest extends VertxTestBase {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals(ip, result.get(0));
-        DnsMessage msg = dnsServer.pollMessage();
+        DnsMessage msg = mockDnsServer.pollMessage();
         assertTrue(msg.isRecursionDesired());
         testComplete();
       }));
@@ -516,7 +518,7 @@ public class DNSTest extends VertxTestBase {
   public void testRecursionNotDesired() throws Exception {
     final String ip = "10.0.0.1";
 
-    dnsServer.testResolveA(ip);
+    mockDnsServer.testResolveA(ip);
     DnsClient dns = prepareDns(new DnsClientOptions().setRecursionDesired(false));
     dns
       .resolveA("vertx.io")
@@ -524,7 +526,7 @@ public class DNSTest extends VertxTestBase {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals(ip, result.get(0));
-        DnsMessage msg = dnsServer.pollMessage();
+        DnsMessage msg = mockDnsServer.pollMessage();
         assertFalse(msg.isRecursionDesired());
         testComplete();
       }));
@@ -536,10 +538,10 @@ public class DNSTest extends VertxTestBase {
     disableThreadChecks();
     waitFor(2);
     String ip = "10.0.0.1";
-    RecordStore store = dnsServer.testResolveA(ip).store();
+    RecordStore store = mockDnsServer.testResolveA(ip).store();
     CountDownLatch latch1 = new CountDownLatch(1);
     CountDownLatch latch2 = new CountDownLatch(1);
-    dnsServer.store(question -> {
+    mockDnsServer.store(question -> {
       latch1.countDown();
       try {
         awaitLatch(latch2);
@@ -569,12 +571,11 @@ public class DNSTest extends VertxTestBase {
     vertx.createDnsClient(new DnsClientOptions().setPort(53).setHost("::1"));
   }
 
-  private DnsClient prepareDns() throws Exception {
+  private DnsClient prepareDns() {
     return prepareDns(new DnsClientOptions().setQueryTimeout(15000));
   }
 
-  private DnsClient prepareDns(DnsClientOptions options) throws Exception {
-    InetSocketAddress addr = dnsServer.localAddress();
-    return vertx.createDnsClient(new DnsClientOptions(options).setPort(addr.getPort()).setHost(addr.getAddress().getHostAddress()));
+  private DnsClient prepareDns(DnsClientOptions options) {
+    return vertx.createDnsClient(new DnsClientOptions(options).setPort(MockDnsServer.PORT).setHost(MockDnsServer.IP_ADDRESS));
   }
 }

@@ -14,11 +14,6 @@ open module io.vertx.core.tests {
   requires java.management;
   requires java.logging;
 
-  requires static apacheds.protocol.dns;
-  requires static apacheds.i18n;
-  requires static mina.core;
-  requires static apacheds.protocol.shared;
-
   requires static org.slf4j;
   requires static org.apache.logging.log4j.core;
 
@@ -42,6 +37,7 @@ open module io.vertx.core.tests {
   requires io.netty.resolver.dns;
   requires io.netty.handler.proxy;
   requires io.netty.codec.http3;
+  requires io.netty.codec.dns;
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 
