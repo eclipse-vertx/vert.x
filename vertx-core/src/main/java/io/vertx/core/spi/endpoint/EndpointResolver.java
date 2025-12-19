@@ -15,6 +15,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * Endpoint resolver Service Provider Interface (SPI).
  *
@@ -50,8 +53,8 @@ public interface EndpointResolver<A extends Address, S, D, E> {
    * @param server the endpoint
    * @return the properties as a JSON object
    */
-  default JsonObject propertiesOf(S server) {
-    return new JsonObject();
+  default Map<String, String> propertiesOf(S server) {
+    return Collections.emptyMap();
   }
 
   /**

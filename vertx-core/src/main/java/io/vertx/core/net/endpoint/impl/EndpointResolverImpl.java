@@ -23,10 +23,7 @@ import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
@@ -233,6 +230,10 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     @Override
     public String key() {
       return key;
+    }
+    @Override
+    public Map<String, String> properties() {
+      return endpointResolver.propertiesOf(endpoint);
     }
     @Override
     public Object unwrap() {
