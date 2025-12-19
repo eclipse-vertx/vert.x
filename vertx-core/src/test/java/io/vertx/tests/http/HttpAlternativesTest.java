@@ -22,7 +22,6 @@ import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.tls.Cert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -79,7 +78,7 @@ public class HttpAlternativesTest extends VertxTestBase {
 
   @Test
   public void testFollowH2Protocol() {
-    testH2Protocol("h2=\"host2.com:4044\"", "host2.com:4044");
+    testH2Protocol("h2=\"localhost:4044\"", "localhost:4044");
   }
 
   @Test

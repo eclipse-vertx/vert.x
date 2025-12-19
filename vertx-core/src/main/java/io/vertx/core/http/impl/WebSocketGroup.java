@@ -93,7 +93,7 @@ class WebSocketGroup extends ManagedResource {
     } else {
       eventLoopContext = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     }
-    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext, server, authority, connectParams, maxLifetimeMillis, clientMetrics);
+    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext, server, authority, connectParams, clientMetrics);
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
         HttpClientConnection c = ar.result();

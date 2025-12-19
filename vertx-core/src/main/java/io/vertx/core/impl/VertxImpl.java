@@ -33,6 +33,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
+import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;
@@ -433,7 +434,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
     HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(o) : null;
     NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
-    Http1xOrH2ChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, o, metrics);
+    Http1xOrH2ChannelConnector channelConnector = Http1xOrH2ChannelConnector.create(tcpClient, new HttpClientConfig(o), metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
 

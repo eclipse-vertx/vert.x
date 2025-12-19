@@ -12,8 +12,15 @@ package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.TcpOptions;
+import io.vertx.core.net.impl.NetClientConfig;
 import io.vertx.core.spi.metrics.TransportMetrics;
+
+import java.time.Duration;
+import java.util.ArrayList;
 
 /**
  * A builder to configure NetClient plugins.
@@ -21,12 +28,42 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 public class NetClientBuilder {
 
   private VertxInternal vertx;
-  private NetClientOptions options;
+  private NetClientConfig config;
   private TransportMetrics metrics;
+  private String localAddress;
+  private boolean registerWriteHandler;
+
+  public NetClientBuilder(VertxInternal vertx, NetClientConfig config) {
+    this.vertx = vertx;
+    this.config = config;
+    this.localAddress = null;
+    this.registerWriteHandler = false;
+  }
 
   public NetClientBuilder(VertxInternal vertx, NetClientOptions options) {
+
+    NetClientConfig cfg = new NetClientConfig();
+
+    cfg.setConnectTimeout(Duration.ofMillis(options.getConnectTimeout()));
+    cfg.setMetricsName(options.getMetricsName());
+    cfg.setNonProxyHosts(options.getNonProxyHosts() != null ? new ArrayList<>(options.getNonProxyHosts()) : null);
+    cfg.setProxyOptions(options.getProxyOptions() != null ? new ProxyOptions(options.getProxyOptions()) : null);
+    cfg.setReconnectAttempts(options.getReconnectAttempts());
+    cfg.setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
+    cfg.setSslOptions(options.getSslOptions() != null ? new ClientSSLOptions(options.getSslOptions()) : null);
+    cfg.setTransportOptions(new TcpOptions(options.getTransportOptions()));
+    cfg.setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
+    cfg.setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
+    cfg.setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
+    cfg.setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
+    cfg.setLogActivity(options.getLogActivity());
+    cfg.setActivityLogDataFormat(options.getActivityLogDataFormat());
+    cfg.setSsl(options.isSsl());
+
     this.vertx = vertx;
-    this.options = options;
+    this.config = cfg;
+    this.localAddress = options.getLocalAddress();
+    this.registerWriteHandler = options.isRegisterWriteHandler();
   }
 
   public NetClientBuilder metrics(TransportMetrics metrics) {
@@ -35,6 +72,6 @@ public class NetClientBuilder {
   }
 
   public NetClientInternal build() {
-    return new NetClientImpl(vertx, metrics, options);
+    return new NetClientImpl(vertx, metrics, config, registerWriteHandler, localAddress);
   }
 }

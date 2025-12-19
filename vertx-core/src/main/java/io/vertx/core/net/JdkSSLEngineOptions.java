@@ -77,7 +77,11 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
 
   @Override
   public JdkSSLEngineOptions copy() {
-    return new JdkSSLEngineOptions(this);
+    if (getClass() == JdkSSLEngineOptions.class) {
+      return new JdkSSLEngineOptions(this);
+    } else {
+      return this;
+    }
   }
 
   @Override

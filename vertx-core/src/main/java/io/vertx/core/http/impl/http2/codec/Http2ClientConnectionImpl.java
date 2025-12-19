@@ -17,8 +17,10 @@ import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
@@ -28,6 +30,7 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -35,10 +38,12 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
   private final TransportMetrics<?> transportMetrics;
-  private final HttpClientOptions options;
+  private final Http2ClientConfig config;
+  private final TracingPolicy tracingPolicy;
+  private final boolean useDecompression;
   private final ClientMetrics clientMetrics;
   private final HostAndPort authority;
-  private final long lifetimeEvictionTimestamp;
+  private final long creationTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private Handler<AltSvcEvent> alternativeServicesHandler;
@@ -51,14 +56,17 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                             VertxHttp2ConnectionHandler connHandler,
                             HttpClientMetrics transportMetrics,
                             ClientMetrics clientMetrics,
-                            HttpClientOptions options,
-                            long maxLifetime) {
+                            Http2ClientConfig config,
+                            TracingPolicy tracingPolicy,
+                            boolean useDecompression) {
     super(context, connHandler);
     this.clientMetrics = clientMetrics;
     this.transportMetrics = transportMetrics;
-    this.options = options;
+    this.config = config;
+    this.tracingPolicy = tracingPolicy;
+    this.useDecompression = useDecompression;
     this.authority = authority;
-    this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
+    this.creationTimestamp = System.currentTimeMillis();
     this.handler = connHandler;
   }
 
@@ -96,8 +104,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public long concurrency() {
-    long concurrency = remoteSettings().getMaxConcurrentStreams();
-    long http2MaxConcurrency = options.getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : options.getHttp2MultiplexingLimit();
+    long concurrency = remoteSettings().getLongOrDefault(Http2Settings.MAX_CONCURRENT_STREAMS);
+    long http2MaxConcurrency = config.getMultiplexingLimit() <= 0 ? Long.MAX_VALUE : config.getMultiplexingLimit();
     if (http2MaxConcurrency > 0) {
       concurrency = Math.min(concurrency, http2MaxConcurrency);
     }
@@ -143,7 +151,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    int limit = options.getHttp2MultiplexingLimit();
+    int limit = config.getMultiplexingLimit();
     if (limit > 0) {
       concurrency = Math.min(concurrency, limit);
     }
@@ -161,8 +169,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public HttpClientStream upgradeStream(Object metric, Object trace, ContextInternal context) {
     Http2Stream nettyStream = handler.connection().stream(1);
-    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, options.getTracingPolicy(),
-      options.isDecompressionSupported(), transportMetrics, clientMetrics, isWritable(1));
+    Http2ClientStream s = Http2ClientStream.create(nettyStream.id(), this, context, tracingPolicy,
+      useDecompression, transportMetrics, clientMetrics, isWritable(1));
     s.upgrade(metric, trace);
     nettyStream.setProperty(streamKey, s);
     return s.unwrap();
@@ -184,15 +192,15 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     return Http2ClientStream.create(
       this,
       context,
-      options.getTracingPolicy(),
-      options.isDecompressionSupported(),
+      tracingPolicy,
+      useDecompression,
       transportMetrics,
       clientMetrics());
   }
 
   private void recycle() {
-    int timeout = options.getHttp2KeepAliveTimeout();
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : Long.MAX_VALUE;
+    long timeoutMillis = config.getKeepAliveTimeout() == null ? 0 : config.getKeepAliveTimeout().toMillis();
+    expirationTimestamp = timeoutMillis > 0 ? System.currentTimeMillis() + timeoutMillis : Long.MAX_VALUE;
   }
 
   @Override
@@ -203,13 +211,17 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   public boolean isValid() {
-    long now = System.currentTimeMillis();
-    return now <= expirationTimestamp && now <= lifetimeEvictionTimestamp;
+    return System.currentTimeMillis() <= expirationTimestamp;
   }
 
   @Override
   public long lastResponseReceivedTimestamp() {
     return 0L;
+  }
+
+  @Override
+  public long creationTimestamp() {
+    return creationTimestamp;
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
@@ -240,7 +252,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     if (stream != null) {
       Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
 //      Http2ClientStreamImpl pushStream = new Http2ClientStreamImpl(this, context, client.options.getTracingPolicy(), client.options.isDecompressionSupported(), clientMetrics());
-      Http2ClientStream s = Http2ClientStream.create(this, context, options.getTracingPolicy(), options.isDecompressionSupported(), transportMetrics, clientMetrics);
+      Http2ClientStream s = Http2ClientStream.create(this, context, tracingPolicy, useDecompression, transportMetrics, clientMetrics);
 //      pushStream.init(s);
 //      pushStream.stream = s;
       promisedStream.setProperty(streamKey, s);
@@ -293,28 +305,30 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public static VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> createHttp2ConnectionHandler(
-    HttpClientOptions options,
+    Http2ClientConfig config,
+    TracingPolicy tracingPolicy,
+    boolean useDecompression,
+    boolean logActivity,
     HttpClientMetrics clientMetrics,
     ClientMetrics metrics,
     ContextInternal context,
     boolean upgrade,
     Object socketMetric,
-    HostAndPort authority,
-    long maxLifetime) {
+    HostAndPort authority) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnectionImpl>()
       .server(false)
-      .useDecompression(options.isDecompressionSupported())
+      .useDecompression(useDecompression)
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
-      .initialSettings(options.getInitialSettings())
+      .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, clientMetrics, metrics, options, maxLifetime);
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, clientMetrics, metrics, config, tracingPolicy, useDecompression);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);
         }
         return conn;
       })
-      .logEnabled(options.getLogActivity())
+      .logEnabled(logActivity)
       .build();
     handler.addHandler(conn -> {
       if (metrics != null) {

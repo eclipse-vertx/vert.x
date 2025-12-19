@@ -11,7 +11,6 @@
 package io.vertx.tests.net.quic;
 
 import io.netty.channel.ConnectTimeoutException;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.Future;
@@ -27,7 +26,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +48,7 @@ public class QuicClientTest extends VertxTestBase {
     options.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
     options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidirectionalLocal(1000000L);
+    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
     return options;
   }
 
@@ -329,7 +330,7 @@ public class QuicClientTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
     QuicServerOptions options = serverOptions();
-    options.setIdleTimeout(Duration.ofMillis(100));
+    options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
@@ -338,7 +339,7 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
     client.close();
-    client = QuicClient.create(vertx, clientOptions().setIdleTimeout(Duration.ofMillis(100)));
+    client = QuicClient.create(vertx, clientOptions().setStreamIdleTimeout(Duration.ofMillis(100)));
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStream stream = connection.openStream().await();
@@ -380,5 +381,18 @@ public class QuicClientTest extends VertxTestBase {
       connectOptions).await();
     connection.close().await();
     assertEquals("host2.com", serverName.get());
+  }
+
+  @Test
+  public void testSocketAddressResolution() throws UnknownHostException {
+    server.handler(conn -> {
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    String doesNotResolve = TestUtils.randomAlphaString(32);
+    SocketAddress addr = SocketAddress.inetSocketAddress(new InetSocketAddress(Inet4Address.getByAddress(doesNotResolve, NetUtil.LOCALHOST4.getAddress()), 9999));
+    QuicConnection connection = client.connect(addr).await();
+    assertEquals(doesNotResolve, connection.remoteAddress().hostName());
+    connection.close().await();
   }
 }

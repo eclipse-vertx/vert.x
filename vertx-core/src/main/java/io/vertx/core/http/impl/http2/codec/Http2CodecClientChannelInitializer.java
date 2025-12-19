@@ -16,7 +16,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
@@ -30,6 +30,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -39,23 +40,29 @@ import static io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection.SEND_B
 public class Http2CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
   private final HttpClientMetrics clientMetrics;
-  private final HttpClientOptions options;
+  private final Http2ClientConfig config;
+  private final TracingPolicy tracingPolicy;
+  private final boolean useDecompression;
+  private final boolean logActivity;
 
-  public Http2CodecClientChannelInitializer(HttpClientOptions options, HttpClientMetrics clientMetrics) {
-    this.options = options;
+  public Http2CodecClientChannelInitializer(Http2ClientConfig config, TracingPolicy tracingPolicy, boolean useDecompression, boolean logActivity, HttpClientMetrics clientMetrics) {
+    this.config = config;
+    this.tracingPolicy = tracingPolicy;
+    this.useDecompression = useDecompression;
     this.clientMetrics = clientMetrics;
+    this.logActivity = logActivity;
   }
 
   @Override
-  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics) {
-    return new CodecChannelUpgrade(clientMetrics, metrics, conn.metric(), options, maxLifetimeMillis);
+  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, ClientMetrics<?, ?, ?> metrics) {
+    return new CodecChannelUpgrade(clientMetrics, metrics, conn.metric(), config, tracingPolicy, useDecompression, logActivity);
   }
 
   @Override
-  public void http2Connected(ContextInternal context, HostAndPort authority, Object metric, long maxLifetimeMillis, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise) {
+  public void http2Connected(ContextInternal context, HostAndPort authority, Object metric, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(options, clientMetrics, metrics, context, false, metric, authority, maxLifetimeMillis);
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity, clientMetrics, metrics, context, false, metric, authority);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
@@ -78,19 +85,25 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
   public static class CodecChannelUpgrade implements Http2UpgradeClientConnection.Http2ChannelUpgrade {
 
     private final HttpClientMetrics clientMetrics;
-    private final HttpClientOptions options;
+    private final Http2ClientConfig config;
+    private final TracingPolicy tracingPolicy;
+    private final boolean useDecompression;
+    private final boolean logActivity;
     private final ClientMetrics metrics;
     private final Object connectionMetric;
-    private final long maxLifetime;
 
     public CodecChannelUpgrade(HttpClientMetrics clientMetrics,
                                ClientMetrics metrics,
                                Object connectionMetric,
-                               HttpClientOptions options,
-                               long maxLifetime) {
+                               Http2ClientConfig config,
+                               TracingPolicy tracingPolicy,
+                               boolean useDecompression,
+                               boolean logActivity) {
       this.metrics = metrics;
-      this.options = options;
-      this.maxLifetime = maxLifetime;
+      this.config = config;
+      this.tracingPolicy = tracingPolicy;
+      this.useDecompression = useDecompression;
+      this.logActivity = logActivity;
       this.clientMetrics = clientMetrics;
       this.connectionMetric = connectionMetric;
     }
@@ -99,7 +112,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
                         Buffer content,
                         boolean end,
                         Channel channel,
-                        long maxLifetimeMillis, ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
+                        ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
       ChannelPipeline pipeline = channel.pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
 
@@ -138,20 +151,23 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
         }
       }
 
-      VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(options.getInitialSettings()) {
+      VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(config.getInitialSettings()) {
         @Override
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
           VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(
-            options,
+            config,
+            tracingPolicy,
+            useDecompression,
+            logActivity,
             CodecChannelUpgrade.this.clientMetrics,
             metrics,
             upgradingStream.context(),
             true,
             connectionMetric,
-            request.authority,
-            maxLifetime);
+            request.authority
+          );
           channel.pipeline().addLast(handler);
           handler.connectFuture().addListener(future -> {
             if (!future.isSuccess()) {
@@ -171,7 +187,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
           handler.clientUpgrade(ctx);
         }
       };
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, options.getHttp2UpgradeMaxContentLength()) {
+      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, config.getUpgradeMaxContentLength()) {
 
         private long bufferedSize = 0;
         private Deque<Object> buffered = new ArrayDeque<>();

@@ -62,18 +62,23 @@ public class QuicServerOptions extends QuicEndpointOptions {
   }
 
   @Override
-  public QuicServerOptions setIdleTimeout(Duration idleTimeout) {
-    return (QuicServerOptions) super.setIdleTimeout(idleTimeout);
+  public QuicServerOptions setStreamIdleTimeout(Duration idleTimeout) {
+    return (QuicServerOptions) super.setStreamIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicServerOptions setReadIdleTimeout(Duration idleTimeout) {
-    return (QuicServerOptions) super.setReadIdleTimeout(idleTimeout);
+  public QuicServerOptions setStreamReadIdleTimeout(Duration idleTimeout) {
+    return (QuicServerOptions) super.setStreamReadIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicServerOptions setWriteIdleTimeout(Duration idleTimeout) {
-    return (QuicServerOptions) super.setWriteIdleTimeout(idleTimeout);
+  public QuicServerOptions setStreamWriteIdleTimeout(Duration idleTimeout) {
+    return (QuicServerOptions) super.setStreamWriteIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public QuicServerOptions setStreamLogging(NetworkLogging config) {
+    return (QuicServerOptions) super.setStreamLogging(config);
   }
 
   @Override

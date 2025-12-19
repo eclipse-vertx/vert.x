@@ -348,6 +348,8 @@ public class QuicTestClient {
           }
         })
         .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+//        .maxAckDelay(10, TimeUnit.MILLISECONDS)
+        .activeMigration(false)
         .initialMaxData(10000000)
         // As we don't want to support remote initiated streams just setup the limit for local initiated
         // streams in this example.

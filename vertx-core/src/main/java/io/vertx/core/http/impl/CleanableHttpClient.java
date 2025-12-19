@@ -12,12 +12,8 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
-import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnectOptions;
-import io.vertx.core.http.RequestOptions;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
@@ -109,6 +105,11 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public HttpChannelConnector channelConnector() {
     return delegate.channelConnector();
+  }
+
+  @Override
+  public HttpClientOptions options() {
+    return delegate.options();
   }
 
   @Override

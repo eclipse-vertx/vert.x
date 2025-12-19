@@ -12,8 +12,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.json.annotations.JsonGen;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
 
@@ -59,10 +57,6 @@ public abstract class NetworkOptions {
    */
   public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.HEX_DUMP;
 
-  private int sendBufferSize;
-  private int receiveBufferSize;
-  private int trafficClass;
-  private boolean reuseAddress;
   private boolean logActivity;
   private ByteBufFormat activityLogDataFormat;
 
@@ -70,10 +64,6 @@ public abstract class NetworkOptions {
    * Default constructor
    */
   public NetworkOptions() {
-    sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
-    receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
-    reuseAddress = DEFAULT_REUSE_ADDRESS;
-    trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
     activityLogDataFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
   }
@@ -84,10 +74,6 @@ public abstract class NetworkOptions {
    * @param other  the options to copy
    */
   public NetworkOptions(NetworkOptions other) {
-    this.sendBufferSize = other.getSendBufferSize();
-    this.receiveBufferSize = other.getReceiveBufferSize();
-    this.reuseAddress = other.isReuseAddress();
-    this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
     this.activityLogDataFormat = other.activityLogDataFormat;
   }
@@ -113,9 +99,7 @@ public abstract class NetworkOptions {
    *
    * @return the send buffer size
    */
-  public int getSendBufferSize() {
-    return sendBufferSize;
-  }
+  public abstract int getSendBufferSize();
 
   /**
    * Set the TCP send buffer size
@@ -123,20 +107,14 @@ public abstract class NetworkOptions {
    * @param sendBufferSize  the buffers size, in bytes
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setSendBufferSize(int sendBufferSize) {
-    Arguments.require(sendBufferSize > 0  || sendBufferSize == DEFAULT_SEND_BUFFER_SIZE, "sendBufferSize must be > 0");
-    this.sendBufferSize = sendBufferSize;
-    return this;
-  }
+  public abstract NetworkOptions setSendBufferSize(int sendBufferSize);
 
   /**
    * Return the TCP receive buffer size, in bytes
    *
    * @return the receive buffer size
    */
-  public int getReceiveBufferSize() {
-    return receiveBufferSize;
-  }
+  public abstract int getReceiveBufferSize();
 
   /**
    * Set the TCP receive buffer size
@@ -144,35 +122,24 @@ public abstract class NetworkOptions {
    * @param receiveBufferSize  the buffers size, in bytes
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setReceiveBufferSize(int receiveBufferSize) {
-    Arguments.require(receiveBufferSize > 0 || receiveBufferSize == DEFAULT_RECEIVE_BUFFER_SIZE, "receiveBufferSize must be > 0");
-    this.receiveBufferSize = receiveBufferSize;
-    return this;
-  }
+  public abstract NetworkOptions setReceiveBufferSize(int receiveBufferSize);
 
   /**
    * @return  the value of reuse address
    */
-  public boolean isReuseAddress() {
-    return reuseAddress;
-  }
+  public abstract boolean isReuseAddress();
 
   /**
    * Set the value of reuse address
    * @param reuseAddress  the value of reuse address
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setReuseAddress(boolean reuseAddress) {
-    this.reuseAddress = reuseAddress;
-    return this;
-  }
+  public abstract NetworkOptions setReuseAddress(boolean reuseAddress);
 
   /**
    * @return  the value of traffic class
    */
-  public int getTrafficClass() {
-    return trafficClass;
-  }
+  public abstract int getTrafficClass();
 
   /**
    * Set the value of traffic class
@@ -180,11 +147,7 @@ public abstract class NetworkOptions {
    * @param trafficClass  the value of traffic class
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setTrafficClass(int trafficClass) {
-    Arguments.requireInRange(trafficClass, DEFAULT_TRAFFIC_CLASS, 255, "trafficClass tc must be 0 <= tc <= 255");
-    this.trafficClass = trafficClass;
-    return this;
-  }
+  public abstract NetworkOptions setTrafficClass(int trafficClass);
 
   /**
    * @return true when network activity logging is enabled
