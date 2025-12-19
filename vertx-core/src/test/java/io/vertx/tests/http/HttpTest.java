@@ -6260,7 +6260,7 @@ public abstract class HttpTest extends SimpleHttpTest {
       MockDnsServer.a("vertx.io", 100, "127.0.0.2")
       ));
     server.start();
-    Thread.sleep(100);
+
     AddressResolverOptions resolverOptions = new AddressResolverOptions()
       .addServer(server.localAddress().getAddress().getHostAddress() + ":" + server.localAddress().getPort());
     Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
