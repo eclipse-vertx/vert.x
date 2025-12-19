@@ -18,6 +18,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static io.vertx.core.net.endpoint.LoadBalancer.*;
 import static org.junit.Assert.assertEquals;
@@ -35,6 +36,10 @@ public class LoadBalancingTest {
       @Override
       public String key() {
         return "";
+      }
+      @Override
+      public Map<String, String> properties() {
+        return Map.of();
       }
       @Override
       public Object unwrap() {

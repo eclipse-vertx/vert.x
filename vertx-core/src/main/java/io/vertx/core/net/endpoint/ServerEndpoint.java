@@ -15,6 +15,9 @@ import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.SocketAddress;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * A physical server of an endpoint.
  *
@@ -33,6 +36,8 @@ public interface ServerEndpoint {
    * @return the server socket address
    */
   SocketAddress address();
+
+  Map<String, String> properties();
 
   /**
    * Initiate a request/response interaction with the endpoint represented by this node, the returned interaction gathers statistics.
