@@ -202,20 +202,16 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    if (goAwayStatus == null) {
-      StreamPriority streamPriority = new StreamPriority()
-        .setDependency(streamDependency)
-        .setWeight(weight)
-        .setExclusive(exclusive);
-      onHeadersRead(streamId, headers, streamPriority, endOfStream);
-    }
+    StreamPriority streamPriority = new StreamPriority()
+      .setDependency(streamDependency)
+      .setWeight(weight)
+      .setExclusive(exclusive);
+    onHeadersRead(streamId, headers, streamPriority, endOfStream);
   }
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
-    if (goAwayStatus == null) {
-      onHeadersRead(streamId, headers, null, endOfStream);
-    }
+    onHeadersRead(streamId, headers, null, endOfStream);
   }
 
   protected abstract void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream);
