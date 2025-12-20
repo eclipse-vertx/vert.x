@@ -1070,6 +1070,52 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testServerGracefulShutdownBeforeHeaderSent() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().shutdown();
+      req.response().end("OK");
+    });
+    startServer(testAddress);
+
+    client.request(requestOptions).compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .andThen(resp -> {
+        if (resp.succeeded()) {
+          testComplete();
+        } else {
+          fail(resp.cause());
+        }
+      });
+
+    await();
+  }
+
+  @Test
+  public void testGoAwayErrorBeforeHeaderSent() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().goAway(100);
+      req.response().end("OK");
+    });
+    startServer(testAddress);
+
+    client.request(requestOptions).compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .andThen(resp -> {
+        if (resp.succeeded()) {
+          testComplete();
+        } else {
+          fail(resp.cause());
+        }
+      });
+
+    await();
+  }
+
+  @Test
   public void testReceivingGoAwayDiscardsTheConnection() throws Exception {
     AtomicInteger reqCount = new AtomicInteger();
     Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
