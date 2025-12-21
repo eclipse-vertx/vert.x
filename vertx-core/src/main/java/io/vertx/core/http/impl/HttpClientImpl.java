@@ -23,9 +23,8 @@ import io.vertx.core.internal.pool.ConnectionPool;
 import io.vertx.core.internal.pool.Lease;
 import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.net.*;
-import io.vertx.core.net.endpoint.Endpoint;
-import io.vertx.core.net.endpoint.EndpointResolver;
-import io.vertx.core.net.endpoint.ServerInteraction;
+import io.vertx.core.net.endpoint.*;
+import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -57,6 +56,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final long maxLifetime;
   private final Transport transport;
   private final EndpointResolverInternal resolver;
+  private final EndpointResolverInternal originResolver;
 
   HttpClientImpl(VertxInternal vertx,
                  EndpointResolver resolver,
@@ -70,6 +70,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
     this.transport = transport;
     this.resolver = (EndpointResolverInternal) resolver;
+    this.originResolver = new EndpointResolverImpl<>(vertx, new OriginEndpointResolver<>(vertx), LoadBalancer.ROUND_ROBIN, 10_000);
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
@@ -129,7 +130,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(Transport transport) {
+  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(Endpoint endpoint, Transport transport) {
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
@@ -307,7 +308,41 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       authority = null;
     }
     ClientSSLOptions sslOptions = sslOptions(transport.verifyHost, request, transport.sslOptions);
-    return doRequest(transport, request.getRoutingKey(), method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions, request.getProxyOptions());
+    if (server instanceof SocketAddress) {
+      SocketAddress serverSocketAddress = (SocketAddress) server;
+      ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
+      if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
+        return doRequestDirectly(method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
+          sslOptions, authority, connectTimeout);
+      }
+    }
+    return doRequest(transport, request.getRoutingKey(), method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions);
+  }
+
+  private Future<HttpClientRequest> doRequestDirectly(
+    HttpMethod httpMethod,
+    String requestURI,
+    MultiMap headers,
+    String traceOperation,
+    long idleTimeout,
+    boolean followRedirects,
+    ProxyOptions proxyOptions, SocketAddress server, boolean useSSL, ClientSSLOptions sslOptions,
+                                 HostAndPort authority, long connectTimeout) {
+    ContextInternal streamCtx = vertx.getOrCreateContext();
+    EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, server, authority);
+    Future<ConnectionObtainedResult> fut2 = resourceManager.withResourceAsync(key, httpEndpointProvider(null, transport), (endpoint, created) -> {
+      Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, transport.protocol, connectTimeout);
+      return fut.compose(lease -> {
+        HttpClientConnection conn = lease.get();
+        return conn.createStream(streamCtx).map(stream -> {
+          stream.closeHandler(v -> {
+            lease.recycle();
+          });
+          return new ConnectionObtainedResult(stream, lease);
+        });
+      });
+    });
+    return wrap(httpMethod, requestURI, headers, traceOperation, idleTimeout, followRedirects, proxyOptions, fut2);
   }
 
   private Future<HttpClientRequest> doRequest(
@@ -323,91 +358,126 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     long connectTimeout,
     long idleTimeout,
     Boolean followRedirects,
-    ClientSSLOptions sslOptions,
-    ProxyOptions proxyConfig) {
-    ContextInternal streamCtx = vertx.getOrCreateContext();
-    Future<ConnectionObtainedResult> future;
-    if (resolver != null) {
-      PromiseInternal<Endpoint> promise = vertx.promise();
-      resolver.lookupEndpoint(server, promise);
-      future = promise.future()
-        .map(endpoint -> endpoint.selectServer(routingKey))
-        .compose(lookup -> {
-        SocketAddress address = lookup.address();
-        ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, address);
-        EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
-        return resourceManager.withResourceAsync(key, httpEndpointProvider(transport), (endpoint, created) -> {
-          Future<Lease<HttpClientConnection>> fut2 = endpoint.requestConnection(streamCtx, transport.protocol, connectTimeout);
-          if (fut2 == null) {
-            return null;
-          } else {
-            ServerInteraction endpointRequest = lookup.newInteraction();
-            return fut2.andThen(ar -> {
-              if (ar.failed()) {
-                endpointRequest.reportFailure(ar.cause());
-              }
-            }).compose(lease -> {
-              HttpClientConnection conn = lease.get();
-              return conn.createStream(streamCtx).map(stream -> {
-                HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
-                wrapped.closeHandler(v -> lease.recycle());
-                return new ConnectionObtainedResult(proxyOptions, wrapped, lease);
-              });
-            });
-          }
-        });
-      });
-    } else if (server instanceof SocketAddress) {
-      ProxyOptions proxyOptions = computeProxyOptions(proxyConfig, (SocketAddress) server);
-      EndpointKey key = new EndpointKey(useSSL, sslOptions, proxyOptions, (SocketAddress) server, authority);
-      future = resourceManager.withResourceAsync(key, httpEndpointProvider(transport), (endpoint, created) -> {
-        Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, transport.protocol, connectTimeout);
-        if (fut == null) {
-          return null;
-        } else {
-          return fut.compose(lease -> {
-            HttpClientConnection conn = lease.get();
-            return conn.createStream(streamCtx).map(stream -> {
-              stream.closeHandler(v -> {
-                lease.recycle();
-              });
-              return new ConnectionObtainedResult(proxyOptions, stream, lease);
-            });
-          });
-        }
-      });
+    ClientSSLOptions sslOptions) {
+    if (server instanceof SocketAddress && (resolver == null || !resolver.resolves(server))) {
+      SocketAddress serverSocketAddress = (SocketAddress) server;
+      return doRequest(
+        originResolver,
+        transport,
+        routingKey,
+        method,
+        authority,
+        new Origin(useSSL ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port()),
+        useSSL,
+        requestURI,
+        headers,
+        traceOperation,
+        connectTimeout,
+        idleTimeout,
+        followRedirects,
+        sslOptions
+      );
     } else {
-      future = streamCtx.failedFuture("Cannot resolve address " + server);
-    }
-    if (future == null) {
-      return streamCtx.failedFuture("Cannot resolve address " + server);
-    } else {
-      return future.map(res -> {
-        RequestOptions options = new RequestOptions();
-        options.setMethod(method);
-        options.setHeaders(headers);
-        options.setURI(requestURI);
-        options.setProxyOptions(res.proxyOptions);
-        options.setIdleTimeout(idleTimeout);
-        options.setFollowRedirects(followRedirects);
-        options.setTraceOperation(traceOperation);
-        HttpClientStream stream = res.stream;
-        HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
-        stream.closeHandler(v -> {
-          res.lease.recycle();
-          request.handleClosed();
-        });
-        return request;
-      });
+      return doRequest(
+        resolver,
+        transport,
+        routingKey,
+        method,
+        authority,
+        server,
+        useSSL,
+        requestURI,
+        headers,
+        traceOperation,
+        connectTimeout,
+        idleTimeout,
+        followRedirects,
+        sslOptions
+      );
     }
   }
 
+  private Future<HttpClientRequest> doRequest(
+    EndpointResolverInternal resolver,
+    Transport transport,
+    String routingKey,
+    HttpMethod method,
+    HostAndPort authority,
+    Address server,
+    boolean useSSL,
+    String requestURI,
+    MultiMap headers,
+    String traceOperation,
+    long connectTimeout,
+    long idleTimeout,
+    Boolean followRedirects,
+    ClientSSLOptions sslOptions) {
+    ContextInternal streamCtx = vertx.getOrCreateContext();
+    Future<ConnectionObtainedResult> future;
+    PromiseInternal<Endpoint> promise = vertx.promise();
+    resolver.lookupEndpoint(server, promise);
+    future = promise.future()
+      .compose(endpoint -> {
+        ServerEndpoint lookup = endpoint.selectServer(routingKey);
+        SocketAddress address = lookup.address();
+        EndpointKey key = new EndpointKey(useSSL, sslOptions, null, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
+        return resourceManager.withResourceAsync(key, httpEndpointProvider(endpoint, transport), (e, created) -> {
+          Future<Lease<HttpClientConnection>> fut2 = e.requestConnection(streamCtx, transport.protocol, connectTimeout);
+          ServerInteraction endpointRequest = lookup.newInteraction();
+          return fut2.andThen(ar -> {
+            if (ar.failed()) {
+              endpointRequest.reportFailure(ar.cause());
+            }
+          }).compose(lease -> {
+            HttpClientConnection conn = lease.get();
+            return conn.createStream(streamCtx).map(stream -> {
+              HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
+              wrapped.closeHandler(v -> lease.recycle());
+              return new ConnectionObtainedResult(wrapped, lease);
+            });
+          });
+        });
+      });
+    if (future == null) {
+      // I think this is not possible - so remove it
+      return streamCtx.failedFuture("Cannot resolve address " + server);
+    } else {
+      return wrap(method, requestURI, headers, traceOperation, idleTimeout, followRedirects, null, future);
+    }
+  }
+
+  private Future<HttpClientRequest> wrap(HttpMethod method,
+                                         String requestURI,
+                                         MultiMap headers,
+                                         String traceOperation,
+                                         long idleTimeout,
+                                         Boolean followRedirects,
+                                         ProxyOptions proxyOptions,
+                                         Future<ConnectionObtainedResult> future) {
+    return future.map(res -> {
+      RequestOptions options = new RequestOptions();
+      options.setMethod(method);
+      options.setHeaders(headers);
+      options.setURI(requestURI);
+      options.setProxyOptions(proxyOptions);
+      options.setIdleTimeout(idleTimeout);
+      options.setFollowRedirects(followRedirects);
+      options.setTraceOperation(traceOperation);
+      HttpClientStream stream = res.stream;
+      HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
+      stream.closeHandler(v -> {
+        res.lease.recycle();
+        request.handleClosed();
+      });
+      return request;
+    });
+  }
+
+
   private static class ConnectionObtainedResult {
-    private final ProxyOptions proxyOptions;
     private final HttpClientStream stream;
     private final Lease<HttpClientConnection> lease;
-    public ConnectionObtainedResult(ProxyOptions proxyOptions, HttpClientStream stream, Lease<HttpClientConnection> lease) {
-      this.proxyOptions = proxyOptions;
+    public ConnectionObtainedResult(HttpClientStream stream, Lease<HttpClientConnection> lease) {
       this.stream = stream;
       this.lease = lease;
     }

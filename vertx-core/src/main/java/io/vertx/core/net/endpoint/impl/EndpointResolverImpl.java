@@ -55,6 +55,11 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     this.expirationMillis = expirationMillis;
   }
 
+  @Override
+  public boolean resolves(Address address) {
+    return endpointResolver.tryCast(address) != null;
+  }
+
   /**
    * Trigger the expiration check, this removes unused entries.
    */
