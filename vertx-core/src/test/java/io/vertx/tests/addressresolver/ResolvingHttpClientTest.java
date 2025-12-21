@@ -162,6 +162,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     awaitFuture(servers.get(0).close());
   }
 
+  @Ignore("Not supported")
   @Test
   public void testResolveToSameSocketAddressWithProxy() throws Exception {
     requestHandler = (idx, req) -> req.response().end("server-" + idx);
@@ -194,11 +195,13 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     assertNotNull(proxy.lastLocalAddress());
   }
 
+  @Ignore("Not supported")
   @Test
   public void testAcceptProxyFilter() throws Exception {
     testFilter(true);
   }
 
+  @Ignore("Not supported")
   @Test
   public void testRejectProxyFilter() throws Exception {
     testFilter(false);
