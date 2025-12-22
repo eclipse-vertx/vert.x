@@ -66,9 +66,9 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     });
   }
 
-  private Function<Vertx, HttpServer> serverFactory;
-  private Function<Vertx, HttpClientAgent> clientFactory;
-  private Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
+  private final Function<Vertx, HttpServer> serverFactory;
+  private final Function<Vertx, HttpClientAgent> clientFactory;
+  private final Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
 
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
                                    Function<Vertx, HttpClientAgent> clientFactory,
@@ -78,19 +78,13 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     this.nonTrafficShapedServerFactory = nonTrafficShapedServerFactory;
   }
 
-  @Before
+  @Override
   public void setUp() throws Exception {
     super.setUp();
+    server.close().await();
     server = serverFactory.apply(vertx);
+    client.close().await();
     client = clientFactory.apply(vertx);
-  }
-
-  @After
-  public void after() throws InterruptedException
-  {
-    CountDownLatch waitForClose = new CountDownLatch(1);
-    vertx.close().onComplete(onSuccess(resp -> waitForClose.countDown()));
-    awaitLatch(waitForClose);
   }
 
   @Test
