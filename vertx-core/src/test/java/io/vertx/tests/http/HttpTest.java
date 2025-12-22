@@ -11,6 +11,7 @@
 
 package io.vertx.tests.http;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.compression.DecompressionException;
@@ -4779,45 +4780,48 @@ public abstract class HttpTest extends SimpleHttpTest {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     CompletableFuture<Void> closeSocket = new CompletableFuture<>();
-    vertx.createNetServer(new NetServerOptions().setPort(1235).setHost("localhost")).connectHandler(socket -> {
-      socket.handler(socket::write);
-      closeSocket.thenAccept(v -> {
-        socket.close();
-      });
-    }).listen().onComplete(onSuccess(netServer -> {
-      server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(1235, "localhost").onComplete(onSuccess(dst -> {
+    NetServer netServer = vertx.createNetServer(new NetServerOptions().setPort(0).setHost("localhost"))
+      .connectHandler(socket -> {
+        socket.handler(socket::write);
+        closeSocket.thenAccept(v -> {
+          socket.close();
+        });
+      }).listen().await();
+    // Declare netClient in the main thread to avoid having it randomly garbage collected just after it created the connection
+    NetClient netClient = vertx.createNetClient(new NetClientOptions());
 
-          req.response().setStatusCode(sc);
-          req.response().setStatusMessage("Connection established");
+    server.requestHandler(req -> {
+      netClient.connect(netServer.actualPort(), "localhost").onComplete(onSuccess(dst -> {
 
-          // Now create a NetSocket
-          req.toNetSocket().onComplete(onSuccess(src -> {
-            // Create pumps which echo stuff
-            src.pipeTo(dst);
-            dst.pipeTo(src);
+        req.response().setStatusCode(sc);
+        req.response().setStatusMessage("Connection established");
+
+        // Now create a NetSocket
+        req.toNetSocket().onComplete(onSuccess(src -> {
+          // Create pumps which echo stuff
+          src.pipeTo(dst);
+          dst.pipeTo(src);
+        }));
+      }));
+    });
+    server.listen(testAddress).onComplete(onSuccess(s -> {
+      client.request(options).onComplete(onSuccess(req -> {
+        req
+          .connect().onComplete(onSuccess(resp -> {
+            assertEquals(sc, resp.statusCode());
+            NetSocket socket = resp.netSocket();
+            socket.handler(buff -> {
+              received.appendBuffer(buff);
+              if (received.length() == buffer.length()) {
+                closeSocket.complete(null);
+              }
+            });
+            socket.closeHandler(v -> {
+              assertEquals(ByteBufUtil.hexDump(buffer.getBytes()), ByteBufUtil.hexDump(received.getBytes()));
+              testComplete();
+            });
+            socket.write(buffer);
           }));
-        }));
-      });
-      server.listen(testAddress).onComplete(onSuccess(s -> {
-        client.request(options).onComplete(onSuccess(req -> {
-          req
-            .connect().onComplete(onSuccess(resp -> {
-              assertEquals(sc, resp.statusCode());
-              NetSocket socket = resp.netSocket();
-              socket.handler(buff -> {
-                received.appendBuffer(buff);
-                if (received.length() == buffer.length()) {
-                  closeSocket.complete(null);
-                }
-              });
-              socket.closeHandler(v -> {
-                assertEquals(buffer, received);
-                testComplete();
-              });
-              socket.write(buffer);
-            }));
-        }));
       }));
     }));
 
