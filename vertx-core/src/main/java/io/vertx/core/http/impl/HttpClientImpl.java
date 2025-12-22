@@ -419,6 +419,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     future = promise.future()
       .compose(endpoint -> {
         ServerEndpoint lookup = endpoint.selectServer(routingKey);
+        if (lookup == null) {
+          throw new IllegalStateException("No results for " + server);
+        }
         SocketAddress address = lookup.address();
         EndpointKey key = new EndpointKey(useSSL, sslOptions, null, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
         return resourceManager.withResourceAsync(key, httpEndpointProvider(endpoint, transport), (e, created) -> {

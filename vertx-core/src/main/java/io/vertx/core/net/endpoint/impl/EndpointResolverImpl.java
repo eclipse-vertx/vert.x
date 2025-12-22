@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A resolver for endpoints.
@@ -83,40 +84,41 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   }
 
   private class EndpointImpl implements io.vertx.core.net.endpoint.Endpoint {
+
     private final AtomicLong lastAccessed;
     private final A address;
     private final S state;
+
     public EndpointImpl(A address, AtomicLong lastAccessed, S state) {
       this.state = state;
       this.address = address;
       this.lastAccessed = lastAccessed;
     }
+
     @Override
     public List<ServerEndpoint> servers() {
       return endpointResolver.endpoint(state).servers;
     }
-    public void close() {
-      endpointResolver.dispose(state);
-    }
-    private ServerEndpoint selectEndpoint(S state, String routingKey) {
+
+    public ServerEndpoint selectServer(Predicate<ServerEndpoint> filter, String key) {
       ListOfServers listOfServers = endpointResolver.endpoint(state);
-      int idx;
-      if (routingKey == null) {
-        idx = listOfServers.selector.select();
-      } else {
-        idx = listOfServers.selector.select(routingKey);
+      EndpointResolverImpl.View view = listOfServers.views.get(filter);
+      if (view == null) {
+        List<ServerEndpoint> l = new ArrayList<>(listOfServers.servers.size());
+        for (ServerEndpoint s : listOfServers.servers) {
+          if (filter.test(s)) {
+            l.add(s);
+          }
+        }
+        ServerSelector selector = loadBalancer.selector(l);
+        view = new EndpointResolverImpl.View(l,  selector);
+        listOfServers.views.put(filter, view);
       }
-      if (idx >= 0 && idx < listOfServers.servers.size()) {
-        return listOfServers.servers.get(idx);
-      }
-      return null;
+      return view.selectEndpoint(key);
     }
-    public ServerEndpoint selectServer(String key) {
-      ServerEndpoint endpoint = selectEndpoint(state, key);
-      if (endpoint == null) {
-        throw new IllegalStateException("No results for " + address );
-      }
-      return endpoint;
+
+    private void close() {
+      endpointResolver.dispose(state);
     }
   }
 
@@ -204,17 +206,46 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     return sFuture.endpoint;
   }
 
-  private static class ListOfServers implements Iterable<ServerEndpoint> {
-    final List<ServerEndpoint> servers;
-    final ServerSelector selector;
-    private ListOfServers(List<ServerEndpoint> servers, ServerSelector selector) {
+  private static class View {
+
+    private List<ServerEndpoint> servers;
+    private ServerSelector selector;
+
+    View(List<ServerEndpoint> servers, ServerSelector selector) {
       this.servers = servers;
       this.selector = selector;
     }
+
+    private ServerEndpoint selectEndpoint(String routingKey) {
+      int idx;
+      if (routingKey == null) {
+        idx = selector.select();
+      } else {
+        idx = selector.select(routingKey);
+      }
+      if (idx >= 0 && idx < servers.size()) {
+        return servers.get(idx);
+      }
+      return null;
+    }
+  }
+
+  private static class ListOfServers implements Iterable<ServerEndpoint> {
+
+    // Put stuff here I think ...
+    final List<ServerEndpoint> servers;
+    final Map<Predicate<ServerEndpoint>, View> views;
+
+    private ListOfServers(List<ServerEndpoint> servers) {
+      this.servers = servers;
+      this.views = new HashMap<>();
+    }
+
     @Override
     public Iterator<ServerEndpoint> iterator() {
       return servers.iterator();
     }
+
     @Override
     public String toString() {
       return servers.toString();
@@ -289,29 +320,34 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private Future<EndpointImpl> resolve(A address) {
     AtomicLong lastAccessed = new AtomicLong(System.currentTimeMillis());
     EndpointBuilder<ListOfServers, N> builder = new EndpointBuilder<>() {
+
       @Override
       public EndpointBuilder<ListOfServers, N> addServer(N server, String key) {
         List<ServerEndpoint> list = new ArrayList<>();
         InteractionMetrics<?> metrics = loadBalancer.newMetrics();
         list.add(new ServerEndpointImpl(lastAccessed, key, server, metrics));
         return new EndpointBuilder<>() {
+
           @Override
           public EndpointBuilder<ListOfServers, N> addServer(N server, String key) {
             InteractionMetrics<?> metrics = loadBalancer.newMetrics();
             list.add(new ServerEndpointImpl(lastAccessed, key, server, metrics));
             return this;
           }
+
           @Override
           public ListOfServers build() {
-            return new ListOfServers(list, loadBalancer.selector(list));
+            return new ListOfServers(list);
           }
         };
       }
+
       @Override
       public ListOfServers build() {
-        return new ListOfServers(Collections.emptyList(), () -> -1);
+        return new ListOfServers(Collections.emptyList());
       }
     };
+
     return endpointResolver
       .resolve(address, builder)
       .map(s -> new EndpointImpl(address, lastAccessed, s));
