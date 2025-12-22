@@ -1,5 +1,6 @@
 package io.vertx.tests.net;
 
+import io.vertx.core.net.impl.UriParser;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
@@ -12,56 +13,173 @@ public class HostAndPortTest {
 
   @Test
   public void testParseIPLiteral() {
-    Assert.assertEquals(-1, HostAndPortImpl.parseIPLiteral("", 0, 0));
-    assertEquals(-1, HostAndPortImpl.parseIPLiteral("[", 0, 1));
-    assertEquals(-1, HostAndPortImpl.parseIPLiteral("[]", 0, 2));
-    assertEquals(3, HostAndPortImpl.parseIPLiteral("[0]", 0, 3));
-    assertEquals(-1, HostAndPortImpl.parseIPLiteral("[0", 0, 2));
+    Assert.assertEquals(-1, UriParser.parseIPLiteral("", 0, 0));
+    assertEquals(-1, UriParser.parseIPLiteral("[", 0, 1));
+    assertEquals(-1, UriParser.parseIPLiteral("[]", 0, 2));
+    assertEquals(4, UriParser.parseIPLiteral("[::]", 0, 4));
+    assertEquals(-1, UriParser.parseIPLiteral("[::", 0, 3));
   }
 
   @Test
   public void testParseDecOctet() {
-    assertEquals(-1, HostAndPortImpl.parseDecOctet("", 0, 0));
-    assertEquals(1, HostAndPortImpl.parseDecOctet("0", 0, 1));
-    assertEquals(1, HostAndPortImpl.parseDecOctet("9", 0, 1));
-    assertEquals(1, HostAndPortImpl.parseDecOctet("01", 0, 2));
-    assertEquals(2, HostAndPortImpl.parseDecOctet("19", 0, 2));
-    assertEquals(3, HostAndPortImpl.parseDecOctet("192", 0, 3));
-    assertEquals(3, HostAndPortImpl.parseDecOctet("1234", 0, 4));
-    assertEquals(-1, HostAndPortImpl.parseDecOctet("256", 0, 3));
+    assertEquals(-1, UriParser.parseDecOctet("", 0, 0));
+    assertEquals(1, UriParser.parseDecOctet("0", 0, 1));
+    assertEquals(1, UriParser.parseDecOctet("9", 0, 1));
+    assertEquals(1, UriParser.parseDecOctet("01", 0, 2));
+    assertEquals(2, UriParser.parseDecOctet("19", 0, 2));
+    assertEquals(3, UriParser.parseDecOctet("192", 0, 3));
+    assertEquals(3, UriParser.parseDecOctet("1234", 0, 4));
+    assertEquals(-1, UriParser.parseDecOctet("256", 0, 3));
   }
 
   @Test
   public void testParseIPV4Address() {
-    assertEquals(-1, HostAndPortImpl.parseIPv4Address("0.0.0", 0, 5));
-    assertEquals(-1, HostAndPortImpl.parseIPv4Address("0.0.0#0", 0, 7));
-    assertEquals(7, HostAndPortImpl.parseIPv4Address("0.0.0.0", 0, 7));
-    assertEquals(11, HostAndPortImpl.parseIPv4Address("192.168.0.0", 0, 11));
-    assertEquals(-1, HostAndPortImpl.parseIPv4Address("011.168.0.0", 0, 11));
-    assertEquals(-1, HostAndPortImpl.parseIPv4Address("10.0.0.1.nip.io", 0, 15));
-    assertEquals(-1, HostAndPortImpl.parseIPv4Address("10.0.0.1.nip.io", 0, 9));
-    assertEquals(8, HostAndPortImpl.parseIPv4Address("10.0.0.1.nip.io", 0, 8));
-    assertEquals(-1, HostAndPortImpl.parseIPv4Address("10.0.0.1:", 0, 9));
-    assertEquals(8, HostAndPortImpl.parseIPv4Address("10.0.0.1:0", 0, 10));
+    assertEquals(-1, UriParser.parseIPv4Address("0.0.0", 0, 5));
+    assertEquals(-1, UriParser.parseIPv4Address("0.0.0#0", 0, 7));
+    assertEquals(7, UriParser.parseIPv4Address("0.0.0.0", 0, 7));
+    assertEquals(11, UriParser.parseIPv4Address("192.168.0.0", 0, 11));
+    assertEquals(-1, UriParser.parseIPv4Address("011.168.0.0", 0, 11));
+    assertEquals(-1, UriParser.parseIPv4Address("10.0.0.1.nip.io", 0, 15));
+    assertEquals(-1, UriParser.parseIPv4Address("10.0.0.1.nip.io", 0, 9));
+    assertEquals(8, UriParser.parseIPv4Address("10.0.0.1.nip.io", 0, 8));
+    assertEquals(-1, UriParser.parseIPv4Address("10.0.0.1:", 0, 9));
+    assertEquals(8, UriParser.parseIPv4Address("10.0.0.1:0", 0, 10));
   }
 
   @Test
   public void testParseRegName() {
-    assertEquals(5, HostAndPortImpl.parseRegName("abcdef", 0, 5));
-    assertEquals(5, HostAndPortImpl.parseRegName("abcdef:1234", 0, 5));
-    assertEquals(11, HostAndPortImpl.parseRegName("example.com", 0, 11));
-    assertEquals(14, HostAndPortImpl.parseRegName("example-fr.com", 0, 14));
-    assertEquals(15, HostAndPortImpl.parseRegName("10.0.0.1.nip.io", 0, 15));
+    assertEquals(5, UriParser.parseRegName("abcdef", 0, 5));
+    assertEquals(5, UriParser.parseRegName("abcdef:1234", 0, 5));
+    assertEquals(11, UriParser.parseRegName("example.com", 0, 11));
+    assertEquals(14, UriParser.parseRegName("example-fr.com", 0, 14));
+    assertEquals(15, UriParser.parseRegName("10.0.0.1.nip.io", 0, 15));
+  }
+
+  @Test
+  public void testParseIPvFuture() {
+    assertEquals(6, UriParser.parseIPvFuture("v123.a", 0, 6));
+    assertEquals(6, UriParser.parseIPvFuture("v123.:", 0, 6));
+    assertEquals(6, UriParser.parseIPvFuture("v123.!", 0, 6));
+  }
+
+  @Test
+  public void testParseIPv6Address() {
+    // Rule 1
+    assertIPv6Address("0:1:2:3:4:5:1.1.1.1");
+    assertIPv6Address("0:1:2:3:4:5:7:8");
+    // Rule 2
+    assertIPv6Address("::0:1:2:3:4:1.1.1.1");
+    assertIPv6Address("::0:1:2:3:4:5:6");
+    // Rule 3
+    assertIPv6Address("0::0:1:2:3:1.1.1.1");
+    assertIPv6Address("0::0:1:2:3:4:5");
+    assertIPv6Address("::0:1:2:3:1.1.1.1");
+    assertIPv6Address("::0:1:2:3:4:5");
+    // Rule 4
+    assertIPv6Address("0:1::0:1:2:1.1.1.1");
+    assertIPv6Address("0:1::0:1:2:3:4");
+    assertIPv6Address("0::0:1:2:1.1.1.1");
+    assertIPv6Address("0::0:1:2:3:4");
+    assertIPv6Address("::0:1:2:1.1.1.1");
+    assertIPv6Address("::0:1:2:3:4");
+    // Rule 5
+    assertIPv6Address("0:1:2::0:1:1.1.1.1");
+    assertIPv6Address("0:1:2::0:1:2:3");
+    assertIPv6Address("0:1::0:1:1.1.1.1");
+    assertIPv6Address("0:1::0:1:2:3");
+    assertIPv6Address("0::0:1:1.1.1.1");
+    assertIPv6Address("0::0:1:2:3");
+    assertIPv6Address("::0:1:1.1.1.1");
+    assertIPv6Address("::0:1:2:3");
+    // Rule 6
+    assertIPv6Address("0:1:2:3::0:1.1.1.1");
+    assertIPv6Address("0:1:2:3::0:1:2");
+    assertIPv6Address("0:1:2::0:1.1.1.1");
+    assertIPv6Address("0:1:2::0:1:2");
+    assertIPv6Address("0:1::0:1.1.1.1");
+    assertIPv6Address("0:1::0:1:2");
+    assertIPv6Address("0::0:1.1.1.1");
+    assertIPv6Address("0::0:1:2");
+    assertIPv6Address("::0:1.1.1.1");
+    assertIPv6Address("::0:1:2");
+    // Rule 7
+    assertIPv6Address("0:1:2:3:4::1.1.1.1");
+    assertIPv6Address("0:1:2:3:4::0:1");
+    assertIPv6Address("0:1:2:3::1.1.1.1");
+    assertIPv6Address("0:1:2:3::0:1");
+    assertIPv6Address("0:1:2::1.1.1.1");
+    assertIPv6Address("0:1:2::0:1");
+    assertIPv6Address("0:1::1.1.1.1");
+    assertIPv6Address("0:1::0:1");
+    assertIPv6Address("0::1.1.1.1");
+    assertIPv6Address("0::0:1");
+    assertIPv6Address("::1.1.1.1");
+    assertIPv6Address("::0:1");
+    // Rule 8
+    assertIPv6Address("0:1:2:3:4:5::0");
+    assertIPv6Address("0:1:2:3:4::0");
+    assertIPv6Address("0:1:2:3::0");
+    assertIPv6Address("0:1:2::0");
+    assertIPv6Address("0:1::0");
+    assertIPv6Address("0::0");
+    assertIPv6Address("::0");
+    // Rule 9
+    assertIPv6Address("0:1:2:3:4:5:6::");
+    assertIPv6Address("0:1:2:3:4:5::");
+    assertIPv6Address("0:1:2:3:4::");
+    assertIPv6Address("0:1:2:3::");
+    assertIPv6Address("0:1:2::");
+    assertIPv6Address("0:1::");
+    assertIPv6Address("0::");
+    assertIPv6Address("::");
+  }
+
+  private void assertIPv6Address(String address) {
+    int len = UriParser.parseIPv6Address(address, 0, address.length());
+    assertEquals(len, address.length());
   }
 
   @Test
   public void testParseHost() {
-    assertEquals(14, HostAndPortImpl.parseHost("example-fr.com", 0, 14));
-    assertEquals(5, HostAndPortImpl.parseHost("[0::]", 0, 5));
-    assertEquals(7, HostAndPortImpl.parseHost("0.0.0.0", 0, 7));
-    assertEquals(8, HostAndPortImpl.parseHost("10.0.0.1.nip.io", 0, 8));
-    assertEquals(15, HostAndPortImpl.parseHost("10.0.0.1.nip.io", 0, 15));
-    assertEquals(8, HostAndPortImpl.parseHost("10.0.0.1:8080", 0, 15));
+    assertEquals(14, UriParser.parseHost("example-fr.com", 0, 14));
+    assertEquals(5, UriParser.parseHost("[0::]", 0, 5));
+    assertEquals(7, UriParser.parseHost("0.0.0.0", 0, 7));
+    assertEquals(8, UriParser.parseHost("10.0.0.1.nip.io", 0, 8));
+    assertEquals(15, UriParser.parseHost("10.0.0.1.nip.io", 0, 15));
+    assertEquals(8, UriParser.parseHost("10.0.0.1:8080", 0, 15));
+  }
+
+  @Test
+  public void testParseH16() {
+    assertEquals(-1, UriParser.parseH16("", 0, 0));
+    assertEquals(-1, UriParser.parseH16("Z", 0, 1));
+    for (int i = 0;i < 0xFFFF;i++) {
+      String s = Integer.toHexString(i);
+      assertEquals(s.length(), UriParser.parseH16(s, 0, s.length()));
+    }
+    assertEquals(4, UriParser.parseH16("FFFFF", 0, 5));
+  }
+
+  @Test
+  public void testParseDoubleColon() {
+    assertEquals(2, UriParser._parseDoubleColon("::", 0, 2));
+    assertEquals(-1, UriParser._parseDoubleColon(":", 0, 1));
+    assertEquals(-1, UriParser._parseDoubleColon(":a", 0, 2));
+  }
+
+  @Test
+  public void testParseH16ColonH16() {
+    assertEquals(3, UriParser._parseH16ColonH16("0:0", 0, 3));
+    assertEquals(-1, UriParser._parseH16ColonH16("0:", 0, 2));
+    assertEquals(6, UriParser._parseH16ColonH16("0:FFFF", 0, 6));
+  }
+
+  @Test
+  public void testParseLs32() {
+    assertEquals(3, UriParser.parseLs32("0:0", 0, 3));
+    assertEquals(6, UriParser.parseLs32("0:FFFF", 0, 6));
+    assertEquals(7, UriParser.parseLs32("0.0.0.0", 0, 7));
+    assertEquals(11, UriParser.parseLs32("192.168.0.1", 0, 11));
   }
 
   @Test

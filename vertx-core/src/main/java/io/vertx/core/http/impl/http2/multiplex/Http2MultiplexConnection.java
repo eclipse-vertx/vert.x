@@ -39,7 +39,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.AltSvc;
+import io.vertx.core.http.impl.AltSvcEvent;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.Origin;
 import io.vertx.core.http.impl.http2.Http2Stream;
@@ -126,12 +126,12 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   private void receiveUnknownFrame(StreamChannel channel, int streamId, int type, int flags, ByteBuf content) {
     if (type == 0xA) {
-      AltSvc altSvc = HttpUtils.parseAltSvcFrame(content);
-      if (altSvc != null) {
+      AltSvcEvent altSvcEvt = HttpUtils.parseAltSvcFrame(content);
+      if (altSvcEvt != null) {
         if (streamId == 0) {
           // Assume the event contains an origin
         } else if (channel == null) {
-          altSvc = null;
+          altSvcEvt = null;
         } else {
           String scheme = channel.stream.scheme();
           HostAndPort authority = channel.stream.authority();
@@ -148,11 +148,11 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
           }
           if (port > 0) {
             String host = authority.host();
-            altSvc = new AltSvc(new Origin(scheme, host, port), altSvc.value);
+            altSvcEvt = new AltSvcEvent(new Origin(scheme, host, port), altSvcEvt.altSvc);
           }
         }
-        if (altSvc != null && altSvc.origin != null) {
-          onAltSvc(altSvc);
+        if (altSvcEvt != null && altSvcEvt.origin != null) {
+          onAltSvc(altSvcEvt);
         }
       }
     }
@@ -167,7 +167,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
     channel.stream.onReset(code);
   }
 
-  void onAltSvc(AltSvc event) {
+  void onAltSvc(AltSvcEvent event) {
   }
 
   void onWritabilityChanged(int streamId) {

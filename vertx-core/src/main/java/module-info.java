@@ -128,5 +128,6 @@ module io.vertx.core {
   exports io.vertx.core.net.impl.quic to io.vertx.core.tests;
   exports io.vertx.core.http.impl.http1x to io.vertx.core.tests;
   exports io.vertx.core.http.impl.observability to io.vertx.core.tests;
+  exports io.vertx.core.net.endpoint.impl;
 
 }

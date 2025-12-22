@@ -10,13 +10,13 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.Address;
 import io.vertx.core.net.HostAndPort;
 
 import java.nio.charset.StandardCharsets;
 
-public class Origin {
+public class Origin implements Address {
 
   public static Origin fromASCII(String s) {
     int idx = s.indexOf("://");
