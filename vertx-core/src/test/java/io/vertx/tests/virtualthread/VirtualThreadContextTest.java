@@ -37,7 +37,7 @@ public class VirtualThreadContextTest extends VertxTestBase {
 
   VertxInternal vertx;
 
-  @Before
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     vertx = (VertxInternal) super.vertx;
