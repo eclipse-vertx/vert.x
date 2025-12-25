@@ -49,7 +49,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
   private SocketAddress testAddress;
   private NetClient client = null;
 
-  @Before
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
