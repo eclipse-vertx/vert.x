@@ -51,7 +51,7 @@ public class NetBandwidthLimitingTest extends VertxTestBase {
   private NetClient client = null;
   private final List<NetServer> servers = Collections.synchronizedList(new ArrayList<>());
 
-  @Before
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     if (USE_DOMAIN_SOCKETS) {
