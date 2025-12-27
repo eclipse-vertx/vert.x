@@ -213,28 +213,26 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
       public void start(Promise<Void> startPromise) throws Exception
       {
         HttpServer testServer = serverFactory.apply(vertx);
-        servers.add(testServer);
         testServer.requestHandler(HANDLERS.getFile(sampleF))
                   .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(res -> {
                     if (res.succeeded()) {
+                      servers.add(testServer);
                       // Apply traffic shaping options after the server has started
                       TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
                                                                       .setInboundGlobalBandwidth(INBOUND_LIMIT)
                                                                       .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
 
                       List<Promise<Void>> promises = new ArrayList<>();
-                      for (int i = 0; i < numEventLoops; i++) {
-                        servers.forEach(s -> {
-                          Promise<Void> promise = Promise.promise();
-                          try {
-                            s.updateTrafficShapingOptions(updatedTrafficOptions);
-                            promise.complete();
-                          } catch (Exception e) {
-                            promise.fail(e);
-                          }
-                          promises.add(promise);
-                        });
-                      }
+                      servers.forEach(s -> {
+                        Promise<Void> promise = Promise.promise();
+                        try {
+                          s.updateTrafficShapingOptions(updatedTrafficOptions);
+                          promise.complete();
+                        } catch (Exception e) {
+                          promise.fail(e);
+                        }
+                        promises.add(promise);
+                      });
                       // Ensure all traffic shaping updates complete before resolving the startPromise
                       Future.all(promises.stream().map(Promise::future).collect(Collectors.toList()))
                             .onSuccess(v -> startPromise.complete())
