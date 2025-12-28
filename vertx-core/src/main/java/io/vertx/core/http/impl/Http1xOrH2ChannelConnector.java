@@ -157,13 +157,13 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
         }
       } else {
         applyHttp1xConnectionOptions(ch.pipeline());
-        http1xConnected(options.getProtocolVersion(), server, authority, true, context, metric, maxLifetimeMillis, ch, metrics, promise);
+        http1xConnected(params.protocol, server, authority, true, context, metric, maxLifetimeMillis, ch, metrics, promise);
       }
     } else {
-      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+      if (params.protocol == HttpVersion.HTTP_2) {
         if (options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
-          http1xConnected(options.getProtocolVersion(), server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
+          http1xConnected(params.protocol, server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
         } else {
           applyHttp2ConnectionOptions(pipeline);
           Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
@@ -171,7 +171,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
         }
       } else {
         applyHttp1xConnectionOptions(pipeline);
-        http1xConnected(options.getProtocolVersion(), server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
+        http1xConnected(params.protocol, server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
       }
     }
     return promise.future();
@@ -179,7 +179,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
 
   public Future<HttpClientConnection> httpConnect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics) {
 
-    if (!options.isUseAlpn() && params.ssl && this.options.getProtocolVersion() == HttpVersion.HTTP_2) {
+    if (!options.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
       return context.failedFuture("Must enable ALPN when using H2");
     }
 
