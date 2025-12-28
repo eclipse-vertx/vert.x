@@ -43,6 +43,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import java.net.StandardSocketOptions;
 import java.nio.channels.DatagramChannel;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -125,7 +126,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
-    Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(true);
+    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+    Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(applicationProtocols);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {

@@ -182,7 +182,6 @@ public class SslContextManager {
       useWorkerPool,
       clientAuth,
       hostnameVerificationAlgorithm,
-      sslOptions.getApplicationLayerProtocols(),
       sslOptions.getEnabledCipherSuites(),
       sslOptions.getEnabledSecureTransportProtocols(),
       config.keyManagerFactory,

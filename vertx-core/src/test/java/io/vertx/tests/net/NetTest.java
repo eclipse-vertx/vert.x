@@ -2010,6 +2010,44 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testTLSSelectApplicationProtocol() throws Exception {
+    List<String> protocols = List.of("protocol1", "protocol2");
+    waitFor(protocols.size());
+    server.close();
+    NetServerOptions serverOptions = new NetServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+      .setUseAlpn(true);
+    serverOptions.getSslOptions().setApplicationLayerProtocols(protocols);
+    server = vertx.createNetServer(serverOptions);
+    server.connectHandler(conn -> {
+      Buffer buffer = Buffer.buffer();
+      conn.handler(buffer::appendBuffer);
+      conn.endHandler(v -> {
+        assertEquals(conn.applicationLayerProtocol(), buffer.toString());
+        complete();
+      });
+    });
+    startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustAll(true)
+      .setHostnameVerificationAlgorithm("")
+      .setUseAlpn(true);
+    for (String protocol : protocols) {
+      NetSocket connection = client.connect(new ConnectOptions()
+        .setHost("localhost")
+        .setSsl(true)
+        .setSslOptions(sslOptions.copy().setApplicationLayerProtocols(List.of(protocol)))
+        .setPort(1234)
+      ).await();
+      connection.end(Buffer.buffer(protocol));
+    }
+    await();
+
+
+  }
+
+  @Test
   // Need to:
   // sudo sysctl -w net.core.somaxconn=10000
   // sudo sysctl -w net.ipv4.tcp_max_syn_backlog=10000

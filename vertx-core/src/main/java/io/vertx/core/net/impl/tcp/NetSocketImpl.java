@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -33,6 +34,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.impl.SocketBase;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -45,7 +47,6 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
   private final SSLOptions sslOptions;
   private final SocketAddress remoteAddress;
   private final TransportMetrics<?> metrics;
-  private final String negotiatedApplicationLayerProtocol;
   private MessageConsumer registration;
 
   public NetSocketImpl(ContextInternal context,
@@ -54,7 +55,7 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
                        SSLOptions sslOptions,
                        TransportMetrics<?> metrics,
                        boolean registerWriteHandler) {
-    this(context, channel, null, sslContextManager, sslOptions, metrics, null, registerWriteHandler);
+    this(context, channel, null, sslContextManager, sslOptions, metrics, registerWriteHandler);
   }
 
   public NetSocketImpl(ContextInternal context,
@@ -63,7 +64,6 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
                        SslContextManager sslContextManager,
                        SSLOptions sslOptions,
                        TransportMetrics<?> metrics,
-                       String negotiatedApplicationLayerProtocol,
                        boolean registerWriteHandler) {
     super(context, channel);
     this.sslContextManager = sslContextManager;
@@ -71,7 +71,6 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
     this.writeHandlerID = registerWriteHandler ? "__vertx.net." + UUID.randomUUID() : null;
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
-    this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
   }
 
   void registerEventBusHandler() {
@@ -119,6 +118,12 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
     } else if (remoteAddress == null && !(sslOptions instanceof ServerSSLOptions)) {
       return context.failedFuture("Server socket upgrade must use ServerSSLOptions");
     }
+    List<String> applicationProtocols;
+    if (sslOptions.isUseAlpn()) {
+      applicationProtocols = sslOptions.getApplicationLayerProtocols();
+    } else {
+      applicationProtocols = null;
+    }
     if (chctx.pipeline().get("ssl") == null) {
       doPause();
       Future<SslChannelProvider> f;
@@ -142,9 +147,9 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
               ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, sslOptions.isUseAlpn(), clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, applicationProtocols, clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
             } else {
-              sslHandler = provider.createServerHandler(sslOptions.isUseAlpn(), sslOptions.getSslHandshakeTimeout(),
+              sslHandler = provider.createServerHandler(applicationProtocols, sslOptions.getSslHandshakeTimeout(),
                 sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
             }
             chctx.pipeline().addFirst("ssl", sslHandler);
@@ -165,7 +170,12 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
 
   @Override
   public String applicationLayerProtocol() {
-    return negotiatedApplicationLayerProtocol;
+    SslHandler handler = channel.pipeline().get(SslHandler.class);
+    if (handler != null) {
+      return handler.engine().getApplicationProtocol();
+    } else {
+      return null;
+    }
   }
 
   @Override

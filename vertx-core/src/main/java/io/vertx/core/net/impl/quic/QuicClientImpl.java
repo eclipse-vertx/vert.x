@@ -33,6 +33,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -68,11 +69,12 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
+    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
         Attribute<SslContextProvider> attr = q.attr(SSL_CONTEXT_PROVIDER_KEY);
         SslContextProvider sslContextProvider = attr.get();
-        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, true);
+        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, applicationProtocols);
         return sslContext.newEngine(q.alloc());
       })
       .maxIdleTimeout(5000, TimeUnit.MILLISECONDS));

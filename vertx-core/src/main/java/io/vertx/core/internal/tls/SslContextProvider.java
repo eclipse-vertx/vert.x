@@ -37,32 +37,24 @@ public class SslContextProvider {
 
   private static final List<String> VALID_PROTOCOLS = List.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1", "SSLv3", "SSLv2Hello", "DTLSv1.2", "DTLSv1.0");
 
-  private static int idx(boolean useAlpn) {
-    return useAlpn ? 0 : 1;
-  }
-
   private final boolean useWorkerPool;
   private final Supplier<SslContextFactory> provider;
   private final Set<String> enabledProtocols;
   private final List<CRL> crls;
   private final ClientAuth clientAuth;
   private final Set<String> enabledCipherSuites;
-  private final List<String> applicationProtocols;
   private final String endpointIdentificationAlgorithm;
   private final KeyManagerFactory keyManagerFactory;
   private final TrustManagerFactory trustManagerFactory;
   private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
   private final Function<String, TrustManager[]> trustManagerMapper;
 
-  private final SslContext[] sslContexts = new SslContext[2];
-  private final Map<String, SslContext>[] sslContextMaps = new Map[]{
-    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
-  };
+  private Map<String, SslContext> sslContexts = new ConcurrentHashMap<>();
+  private final Map<String, SslContext> sslContextMaps = new ConcurrentHashMap<>();
 
   public SslContextProvider(boolean useWorkerPool,
                             ClientAuth clientAuth,
                             String endpointIdentificationAlgorithm,
-                            List<String> applicationProtocols,
                             Set<String> enabledCipherSuites,
                             Set<String> enabledProtocols,
                             KeyManagerFactory keyManagerFactory,
@@ -80,7 +72,6 @@ public class SslContextProvider {
     this.provider = provider;
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
-    this.applicationProtocols = applicationProtocols;
     this.enabledCipherSuites = enabledCipherSuites;
     this.enabledProtocols = enabledProtocols;
     this.keyManagerFactory = keyManagerFactory;
@@ -95,14 +86,14 @@ public class SslContextProvider {
   }
 
   public int sniEntrySize() {
-    return sslContextMaps[0].size() + sslContextMaps[1].size();
+    return sslContextMaps.size();
   }
 
   public SslContext createContext(boolean server,
                                        KeyManagerFactory keyManagerFactory,
                                        TrustManager[] trustManagers,
                                        String serverName,
-                                       boolean useAlpn) {
+                                       List<String> applicationProtocols) {
     if (keyManagerFactory == null) {
       keyManagerFactory = defaultKeyManagerFactory();
     }
@@ -110,53 +101,63 @@ public class SslContextProvider {
       trustManagers = defaultTrustManagers();
     }
     if (server) {
-      return createServerContext(keyManagerFactory, trustManagers, serverName, useAlpn);
+      return createServerContext(keyManagerFactory, trustManagers, serverName, applicationProtocols);
     } else {
-      return createClientContext(keyManagerFactory, trustManagers, serverName, useAlpn);
+      return createClientContext(keyManagerFactory, trustManagers, serverName, applicationProtocols);
     }
   }
 
-  public SslContext sslClientContext(String serverName, boolean useAlpn) {
+  public SslContext sslClientContext(String serverName, List<String> applicationProtocols) {
     try {
-      return sslContext(serverName, useAlpn, false);
+      return sslContext(serverName, applicationProtocols, false);
     } catch (Exception e) {
       throw new VertxException(e);
     }
   }
 
-  public SslContext sslContext(String serverName, boolean useAlpn, boolean server) throws Exception {
-    int idx = idx(useAlpn);
+  public SslContext sslContext(String serverName, List<String> applicationProtocols, boolean server) throws Exception {
     if (serverName != null) {
       KeyManagerFactory kmf = resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
-        return sslContextMaps[idx].computeIfAbsent(serverName, s -> createContext(server, kmf, trustManagers, s, useAlpn));
+        return sslContextMaps.computeIfAbsent(serverName, s -> createContext(server, kmf, trustManagers, s, applicationProtocols));
       }
     }
-    if (sslContexts[idx] == null) {
-      SslContext context = createContext(server, null, null, serverName, useAlpn);
-      sslContexts[idx] = context;
+    String alpnKey;
+    if (applicationProtocols == null) {
+      alpnKey = "";
+    } else {
+      StringBuilder builder = new StringBuilder();
+      builder.append('(');
+      for (int i = 0; i < applicationProtocols.size();i++) {
+        if (i > 0) {
+          builder.append(',');
+        }
+        builder.append(applicationProtocols.get(i));
+      }
+      builder.append(')');
+      alpnKey = builder.toString();
     }
-    return sslContexts[idx];
+    SslContext context = sslContexts.get(alpnKey);
+    if (context == null) {
+      context = createContext(server, null, null, serverName, applicationProtocols);
+      sslContexts.putIfAbsent(alpnKey, context);
+    }
+    return context;
   }
 
-  public SslContext sslServerContext(boolean useAlpn) {
+  public SslContext sslServerContext(List<String> applicationProtocols) {
     try {
-      return sslContext(null, useAlpn, true);
+      return sslContext(null, applicationProtocols, true);
     } catch (Exception e) {
       throw new VertxException(e);
     }
   }
 
-  /**
-   *
-   * @param useAlpn
-   * @return
-   */
-  public Mapping<? super String, ? extends SslContext> serverNameMapping(boolean useAlpn) {
+  public Mapping<? super String, ? extends SslContext> serverNameMapping(List<String> applicationProtocols) {
     return (Mapping<String, SslContext>) serverName -> {
       try {
-        return sslContext(serverName, useAlpn, true);
+        return sslContext(serverName, applicationProtocols, true);
       } catch (Exception e) {
         // Log this
         return null;
@@ -169,12 +170,12 @@ public class SslContextProvider {
    *
    * @return the {@link AsyncMapping}
    */
-  public AsyncMapping<? super String, ? extends SslContext> serverNameAsyncMapping(Executor workerPool, boolean useAlpn) {
+  public AsyncMapping<? super String, ? extends SslContext> serverNameAsyncMapping(Executor workerPool, List<String> applicationProtocols) {
     return (AsyncMapping<String, SslContext>) (serverName, promise) -> {
       workerPool.execute(() -> {
         SslContext sslContext;
         try {
-          sslContext = sslContext(serverName, useAlpn, true);
+          sslContext = sslContext(serverName, applicationProtocols, true);
         } catch (Exception e) {
           promise.setFailure(e);
           return;
@@ -185,21 +186,21 @@ public class SslContextProvider {
     };
   }
 
-  public SslContext createContext(boolean server, boolean useAlpn) {
-    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, useAlpn);
+  public SslContext createContext(boolean server, List<String> applicationProtocols) {
+    return createContext(server, defaultKeyManagerFactory(), defaultTrustManagers(), null, applicationProtocols);
   }
 
   public SslContext createClientContext(
     KeyManagerFactory keyManagerFactory,
     TrustManager[] trustManagers,
     String serverName,
-    boolean useAlpn) {
+    List<String> applicationProtocols) {
     try {
       SslContextFactory factory = provider.get()
-        .useAlpn(useAlpn)
         .forClient(serverName, endpointIdentificationAlgorithm)
         .enabledProtocols(enabledProtocols)
         .enabledCipherSuites(enabledCipherSuites)
+        .useAlpn(applicationProtocols != null)
         .applicationProtocols(applicationProtocols);
       if (keyManagerFactory != null) {
         factory.keyMananagerFactory(keyManagerFactory);
@@ -217,13 +218,13 @@ public class SslContextProvider {
   public SslContext createServerContext(KeyManagerFactory keyManagerFactory,
                                         TrustManager[] trustManagers,
                                         String serverName,
-                                        boolean useAlpn) {
+                                        List<String> applicationProtocols) {
     try {
       SslContextFactory factory = provider.get()
-        .useAlpn(useAlpn)
         .forServer(SslContextManager.CLIENT_AUTH_MAPPING.get(clientAuth))
         .enabledProtocols(enabledProtocols)
         .enabledCipherSuites(enabledCipherSuites)
+        .useAlpn(applicationProtocols != null)
         .applicationProtocols(applicationProtocols);
       if (keyManagerFactory != null) {
         factory.keyMananagerFactory(keyManagerFactory);

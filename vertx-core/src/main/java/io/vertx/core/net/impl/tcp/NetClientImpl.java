@@ -305,7 +305,6 @@ class NetClientImpl implements NetClientInternal {
         connectHandler,
         captured,
         connectOptions.isSsl(),
-        channelProvider.applicationProtocol(),
         registerWriteHandlers));
       io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(
         remoteAddress,
@@ -368,7 +367,6 @@ class NetClientImpl implements NetClientInternal {
                          Promise<NetSocket> connectHandler,
                          SocketAddress remoteAddress,
                          boolean ssl,
-                         String applicationLayerProtocol,
                          boolean registerWriteHandlers) {
     channelGroup.add(ch);
     initChannel(ch.pipeline(), ssl);
@@ -379,7 +377,6 @@ class NetClientImpl implements NetClientInternal {
       sslContextManager,
       sslOptions,
       metrics,
-      applicationLayerProtocol,
       registerWriteHandlers));
     handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
