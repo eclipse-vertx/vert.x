@@ -12,7 +12,6 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
@@ -130,7 +129,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     }
   }
 
-  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, HttpVersion protocol, long timeout) {
+  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, long timeout) {
     Promise<Lease<HttpClientConnection>> promise = ctx.promise();
     Future<Lease<HttpClientConnection>> fut = promise.future();
     // ctx.workerPool() -> not sure we want that in a pool

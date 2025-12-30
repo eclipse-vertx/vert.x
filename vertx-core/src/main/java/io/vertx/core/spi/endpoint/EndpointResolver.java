@@ -53,7 +53,7 @@ public interface EndpointResolver<A extends Address, S, D, E> {
    * @param server the endpoint
    * @return the properties as a JSON object
    */
-  default Map<String, String> propertiesOf(S server) {
+  default Map<String, ?> propertiesOf(S server) {
     return Collections.emptyMap();
   }
 

@@ -114,7 +114,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co.getSslOptions()
     );
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,
-      co.getProxyOptions(), co.getNonProxyHosts(), transport);
+      co.getProxyOptions(), co.getNonProxyHosts(), transport, co.getFollowAlternativeServices());
   }
 
   private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {

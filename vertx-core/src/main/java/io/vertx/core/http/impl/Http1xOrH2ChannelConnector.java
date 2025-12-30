@@ -66,15 +66,6 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     if (!options.isKeepAlive() && options.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
-    List<HttpVersion> alpnVersions = options.getAlpnVersions();
-    if (alpnVersions == null || alpnVersions.isEmpty()) {
-      if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-        options.setAlpnVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
-      } else {
-        options.setAlpnVersions(List.of(options.getProtocolVersion()));
-      }
-    }
-
     this.clientMetrics = clientMetrics;
     this.options = options;
     this.netClient = netClient;
@@ -115,7 +106,16 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     connectOptions.setSsl(params.ssl);
     if (params.ssl) {
       if (params.sslOptions != null) {
-        connectOptions.setSslOptions(params.sslOptions.copy().setUseAlpn(options.isUseAlpn()));
+        ClientSSLOptions copy = params.sslOptions.copy();
+        if (options.isUseAlpn()) {
+          copy.setUseAlpn(true);
+          if (params.protocol == HttpVersion.HTTP_2) {
+            copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
+          } else {
+            copy.setApplicationLayerProtocols(List.of(options.getProtocolVersion().alpnName()));
+          }
+        }
+        connectOptions.setSslOptions(copy);
       } else {
         connectOptions.setSslOptions(new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS"));
       }

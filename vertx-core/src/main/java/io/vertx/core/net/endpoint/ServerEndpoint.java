@@ -37,7 +37,8 @@ public interface ServerEndpoint {
    */
   SocketAddress address();
 
-  Map<String, String> properties();
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Map<String, ?> properties();
 
   boolean isAvailable();
 

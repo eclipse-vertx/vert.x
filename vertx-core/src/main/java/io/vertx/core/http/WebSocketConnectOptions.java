@@ -261,8 +261,8 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   @Override
-  public WebSocketConnectOptions setProtocol(HttpVersion protocol) {
-    return (WebSocketConnectOptions) super.setProtocol(protocol);
+  public WebSocketConnectOptions setProtocolVersion(HttpVersion protocolVersion) {
+    return (WebSocketConnectOptions) super.setProtocolVersion(protocolVersion);
   }
 
   @Override

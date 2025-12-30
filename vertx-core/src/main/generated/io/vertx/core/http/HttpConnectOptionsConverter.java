@@ -12,9 +12,9 @@ public class HttpConnectOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpConnectOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "protocol":
+        case "protocolVersion":
           if (member.getValue() instanceof String) {
-            obj.setProtocol(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
+            obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
           }
           break;
         case "proxyOptions":
@@ -56,8 +56,8 @@ public class HttpConnectOptionsConverter {
   }
 
    static void toJson(HttpConnectOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getProtocol() != null) {
-      json.put("protocol", obj.getProtocol().name());
+    if (obj.getProtocolVersion() != null) {
+      json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     if (obj.getProxyOptions() != null) {
       json.put("proxyOptions", obj.getProxyOptions().toJson());

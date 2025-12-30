@@ -33,9 +33,9 @@ import java.net.URL;
 public class HttpConnectOptions {
 
   /**
-   * The default value for protocol = {@code null}
+   * The default value for protocol version = {@code null}
    */
-  public static final HttpVersion DEFAULT_PROTOCOL = null;
+  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = null;
 
   /**
    * The default value for proxy options = {@code null}
@@ -67,7 +67,7 @@ public class HttpConnectOptions {
    */
   public static final long DEFAULT_CONNECT_TIMEOUT = -1L;
 
-  private HttpVersion protocol;
+  private HttpVersion protocolVersion;
   private ProxyOptions proxyOptions;
   private Address server;
   private String host;
@@ -90,7 +90,7 @@ public class HttpConnectOptions {
    */
   public HttpConnectOptions(HttpConnectOptions other) {
     init();
-    setProtocol(other.protocol);
+    setProtocolVersion(other.protocolVersion);
     setProxyOptions(other.proxyOptions);
     setServer(other.server);
     setHost(other.host);
@@ -115,7 +115,7 @@ public class HttpConnectOptions {
   }
 
   protected void init() {
-    protocol = DEFAULT_PROTOCOL;
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     proxyOptions = DEFAULT_PROXY_OPTIONS;
     server = DEFAULT_SERVER;
     host = DEFAULT_HOST;
@@ -128,18 +128,18 @@ public class HttpConnectOptions {
   /**
    * @return the connection desired protocol or {@code null} to use the default agent configured protocol
    */
-  public HttpVersion getProtocol() {
-    return protocol;
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
   }
 
   /**
    * Set the desired HTTP protocol version for this connection.
    *
-   * @param protocol the desired protocol version
+   * @param protocolVersion the desired protocol version
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpConnectOptions setProtocol(HttpVersion protocol) {
-    this.protocol = protocol;
+  public HttpConnectOptions setProtocolVersion(HttpVersion protocolVersion) {
+    this.protocolVersion = protocolVersion;
     return this;
   }
 

@@ -161,8 +161,8 @@ public class RequestOptions extends HttpConnectOptions {
   }
 
   @Override
-  public RequestOptions setProtocol(HttpVersion protocol) {
-    return (RequestOptions) super.setProtocol(protocol);
+  public RequestOptions setProtocolVersion(HttpVersion protocolVersion) {
+    return (RequestOptions) super.setProtocolVersion(protocolVersion);
   }
 
   public RequestOptions setProxyOptions(ProxyOptions proxyOptions) {

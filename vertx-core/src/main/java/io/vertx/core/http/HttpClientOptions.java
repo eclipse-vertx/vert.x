@@ -13,7 +13,6 @@ package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
@@ -164,6 +163,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
+  /**
+   * Follow alternative service server advertisements = {@code false}
+   */
+  public static final boolean DEFAULT_FOLLOW_ALTERNATIVE_SERVICES = false;
+
   private boolean verifyHost = true;
   private boolean keepAlive;
   private int keepAliveTimeout;
@@ -193,6 +197,8 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   private boolean shared;
   private String name;
+
+  private boolean followAlternativeServices;
 
   /**
    * Default constructor
@@ -296,6 +302,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+    followAlternativeServices = DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
   }
 
   @Override
@@ -1067,6 +1074,27 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setName(String name) {
     Objects.requireNonNull(name, "Client name cannot be null");
     this.name = name;
+    return this;
+  }
+
+  /**
+   * @return whether the client follows alternative services advertisements
+   */
+  public boolean getFollowAlternativeServices() {
+    return followAlternativeServices;
+  }
+
+  /**
+   * <p>Configure whether the client follows alternative services advertisements, the default
+   * setting does not.</p>
+   *
+   * <p>Setting this to true, instructs the client to use most appropriate alternative services advertised by
+   * HTTP servers.</p>
+   *
+   * @param followAlternativeServices the config value
+   */
+  public HttpClientOptions setFollowAlternativeServices(boolean followAlternativeServices) {
+    this.followAlternativeServices = followAlternativeServices;
     return this;
   }
 }

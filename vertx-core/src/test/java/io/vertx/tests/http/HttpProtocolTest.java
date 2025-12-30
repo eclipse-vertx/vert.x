@@ -57,7 +57,7 @@ public class HttpProtocolTest extends HttpTestBase {
     startServer(testAddress);
 
     for (int i = 0;i < 8;i++) {
-      String protocol = client.request(new RequestOptions(requestOptions).setProtocol(HttpVersion.HTTP_2))
+      String protocol = client.request(new RequestOptions(requestOptions).setProtocolVersion(HttpVersion.HTTP_2))
         .compose(request -> request
           .send()
           .expecting(HttpResponseExpectation.SC_OK)

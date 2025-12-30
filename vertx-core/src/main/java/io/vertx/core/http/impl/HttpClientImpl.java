@@ -33,11 +33,14 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import static io.vertx.core.http.impl.OriginEndpoint.ALPN_KEY;
+import static io.vertx.core.http.impl.OriginEndpoint.AUTHORITY_KEY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -56,7 +59,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final long maxLifetime;
   private final Transport transport;
   private final EndpointResolverInternal resolver;
+  private final OriginResolver<Object> originEndpoints;
   private final EndpointResolverInternal originResolver;
+  private final boolean followAlternativeServices;
 
   HttpClientImpl(VertxInternal vertx,
                  EndpointResolver resolver,
@@ -65,16 +70,19 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  PoolOptions poolOptions,
                  ProxyOptions defaultProxyOptions,
                  List<String> nonProxyHosts,
-                 Transport transport) {
+                 Transport transport,
+                 boolean followAlternativeServices) {
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
+    this.originEndpoints = new OriginResolver<>(vertx);
     this.transport = transport;
     this.resolver = (EndpointResolverInternal) resolver;
-    this.originResolver = new EndpointResolverImpl<>(vertx, new OriginEndpointResolver<>(vertx), LoadBalancer.ROUND_ROBIN, 10_000);
+    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, LoadBalancer.ROUND_ROBIN, 10_000);
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
     this.redirectHandler = redirectHandler != null ? redirectHandler : DEFAULT_REDIRECT_HANDLER;
+    this.followAlternativeServices = followAlternativeServices;
     int eventLoopSize = poolOptions.getEventLoopSize();
     if (eventLoopSize > 0) {
       ContextInternal[] eventLoops = new ContextInternal[eventLoopSize];
@@ -82,12 +90,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         eventLoops[i] = vertx.createEventLoopContext();
       }
       AtomicInteger idx = new AtomicInteger();
-      contextProvider = ctx -> {
+      this.contextProvider = ctx -> {
         int i = idx.getAndIncrement();
         return eventLoops[i % eventLoopSize];
       };
     } else {
-      contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
+      this.contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
     }
 
     // Init time
@@ -130,11 +138,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(Endpoint endpoint, Transport transport) {
+  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(boolean resolveOrigin, Transport transport) {
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
-      ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.server, maxPoolSize) : null;
-      PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("http", key.server.toString(), maxPoolSize) : null;
+      SocketAddress address = SocketAddress.inetSocketAddress(key.authority.port(), key.authority.host());
+      ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(address, maxPoolSize) : null;
+      PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("http", key.authority.toString(), maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
@@ -152,7 +161,21 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       };
       return new SharedHttpClientConnectionGroup(
         clientMetrics,
-        transport.connectHandler,
+        connection -> {
+          if (transport.connectHandler != null) {
+            transport.connectHandler.handle(connection);
+          }
+          if (resolveOrigin) {
+            ((HttpClientConnection)connection).alternativeServicesHandler(evt -> {
+              AltSvc altSvc = evt.altSvc;
+              if (altSvc instanceof AltSvc.Clear) {
+                originEndpoints.clearAlternatives(evt.origin);
+              } else if (altSvc instanceof AltSvc.ListOfValue) {
+                originEndpoints.updateAlternatives(evt.origin, (AltSvc.ListOfValue)altSvc);
+              }
+            });
+          }
+        },
         p,
         poolMetrics,
         key.authority,
@@ -223,7 +246,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       throw new IllegalArgumentException("Only socket address are currently supported");
     }
-    HttpVersion protocol = connect.getProtocol();
+    HttpVersion protocol = connect.getProtocolVersion();
     if (protocol == null) {
       protocol = transport.defaultProtocol;
     }
@@ -306,20 +329,34 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     } else {
       authority = null;
     }
-    HttpVersion protocol = request.getProtocol();
-    if (protocol == null) {
-      protocol = transport.defaultProtocol;
+    HttpVersion protocolVersion = request.getProtocolVersion();
+    if (protocolVersion == null) {
+      protocolVersion = transport.defaultProtocol;
     }
     ClientSSLOptions sslOptions = sslOptions(transport.verifyHost, request, transport.sslOptions);
     if (server instanceof SocketAddress) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);
       if (proxyOptions != null || serverSocketAddress.isDomainSocket()) {
-        return doRequestDirectly(protocol, method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
+        return doRequestDirectly(protocolVersion, method, requestURI, headers, request.getTraceOperation(), idleTimeout, followRedirects, proxyOptions, serverSocketAddress, useSSL,
           sslOptions, authority, connectTimeout);
       }
     }
-    return doRequest(transport, protocol, request.getRoutingKey(), method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), connectTimeout, idleTimeout, followRedirects, sslOptions);
+    HttpProtocol protocol;
+    switch (protocolVersion) {
+      case HTTP_1_0:
+        protocol = HttpProtocol.HTTP_1_0;
+        break;
+      case HTTP_1_1:
+        protocol = HttpProtocol.HTTP_1_1;
+        break;
+      case HTTP_2:
+        protocol = useSSL ? HttpProtocol.H2 : HttpProtocol.H2C;
+        break;
+      default:
+        throw new AssertionError();
+    }
+    return doRequest(transport, protocol, method, authority, server, useSSL, requestURI, headers, request.getTraceOperation(), request.getRoutingKey(), connectTimeout, idleTimeout, followRedirects, sslOptions);
   }
 
   private Future<HttpClientRequest> doRequestDirectly(
@@ -334,15 +371,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                                  HostAndPort authority, long connectTimeout) {
     ContextInternal streamCtx = vertx.getOrCreateContext();
     EndpointKey key = new EndpointKey(useSSL, protocol, sslOptions, proxyOptions, server, authority);
-    Future<ConnectionObtainedResult> fut2 = resourceManager.withResourceAsync(key, httpEndpointProvider(null, transport), (endpoint, created) -> {
-      Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, protocol, connectTimeout);
+    Future<ConnectionObtainedResult> fut2 = resourceManager.withResourceAsync(key, httpEndpointProvider(false, transport), (endpoint, created) -> {
+      Future<Lease<HttpClientConnection>> fut = endpoint.requestConnection(streamCtx, connectTimeout);
       return fut.compose(lease -> {
         HttpClientConnection conn = lease.get();
         return conn.createStream(streamCtx).map(stream -> {
           stream.closeHandler(v -> {
             lease.recycle();
           });
-          return new ConnectionObtainedResult(stream, lease);
+          return new ConnectionObtainedResult(stream, lease, null);
         });
       });
     });
@@ -351,8 +388,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private Future<HttpClientRequest> doRequest(
     Transport transport,
-    HttpVersion protocol,
-    String routingKey,
+    HttpProtocol protocol,
     HttpMethod method,
     HostAndPort authority,
     Address server,
@@ -360,6 +396,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI,
     MultiMap headers,
     String traceOperation,
+    String routingKey,
     long connectTimeout,
     long idleTimeout,
     Boolean followRedirects,
@@ -370,7 +407,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         originResolver,
         transport,
         protocol,
-        routingKey,
         method,
         authority,
         new Origin(useSSL ? "https" : "http", serverSocketAddress.host(), serverSocketAddress.port()),
@@ -378,6 +414,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         requestURI,
         headers,
         traceOperation,
+        routingKey,
         connectTimeout,
         idleTimeout,
         followRedirects,
@@ -388,7 +425,6 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         resolver,
         transport,
         protocol,
-        routingKey,
         method,
         authority,
         server,
@@ -396,6 +432,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         requestURI,
         headers,
         traceOperation,
+        routingKey,
         connectTimeout,
         idleTimeout,
         followRedirects,
@@ -407,8 +444,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private Future<HttpClientRequest> doRequest(
     EndpointResolverInternal resolver,
     Transport transport,
-    HttpVersion protocol,
-    String routingKey,
+    HttpProtocol protocol_,
     HttpMethod method,
     HostAndPort authority,
     Address server,
@@ -416,6 +452,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     String requestURI,
     MultiMap headers,
     String traceOperation,
+    String routingKey,
     long connectTimeout,
     long idleTimeout,
     Boolean followRedirects,
@@ -426,15 +463,39 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     resolver.lookupEndpoint(server, promise);
     future = promise.future()
       .compose(endpoint -> {
-        ServerEndpoint lookup = endpoint.selectServer(routingKey);
-        if (lookup == null) {
+        ServerEndpoint lookup;
+        HttpProtocol protocol;
+        Origin originServer;
+        // For HTTPS we must handle SNI to consider an alternative
+        HostAndPort altUsed;
+        if (followAlternativeServices && server instanceof Origin && ("http".equals((originServer = (Origin)server).scheme) || originServer.host.indexOf('.') > 0)) {
+          lookup = endpoint.selectServer(s -> {
+            Map<String, ?> properties = s.properties();
+            String alpn = (String)properties.get(ALPN_KEY);
+            return alpn != null && protocol_ == HttpProtocol.fromId(alpn);
+          });
+          protocol = protocol_;
+          if (lookup == null) {
+            altUsed = null;
+            lookup = endpoint.selectServer();
+          } else {
+            Map<String, ?> props = lookup.properties();
+            altUsed = (HostAndPort) props.get(AUTHORITY_KEY);
+          }
+        } else {
+          protocol = protocol_;
+          lookup = endpoint.selectServer(routingKey);
+          altUsed = null;
+        }
+        ServerEndpoint lookup2 = lookup;
+        if (lookup2 == null) {
           throw new IllegalStateException("No results for " + server);
         }
-        SocketAddress address = lookup.address();
-        EndpointKey key = new EndpointKey(useSSL, protocol, sslOptions, null, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
-        return resourceManager.withResourceAsync(key, httpEndpointProvider(endpoint, transport), (e, created) -> {
-          Future<Lease<HttpClientConnection>> fut2 = e.requestConnection(streamCtx, protocol, connectTimeout);
-          ServerInteraction endpointRequest = lookup.newInteraction();
+        SocketAddress address = lookup2.address();
+        EndpointKey key = new EndpointKey(useSSL, protocol.version(), sslOptions, null, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
+        return resourceManager.withResourceAsync(key, httpEndpointProvider(followAlternativeServices, transport), (e, created) -> {
+          Future<Lease<HttpClientConnection>> fut2 = e.requestConnection(streamCtx, connectTimeout);
+          ServerInteraction endpointRequest = lookup2.newInteraction();
           return fut2.andThen(ar -> {
             if (ar.failed()) {
               endpointRequest.reportFailure(ar.cause());
@@ -444,7 +505,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
             return conn.createStream(streamCtx).map(stream -> {
               HttpClientStream wrapped = new StatisticsGatheringHttpClientStream(stream, endpointRequest);
               wrapped.closeHandler(v -> lease.recycle());
-              return new ConnectionObtainedResult(wrapped, lease);
+              return new ConnectionObtainedResult(wrapped, lease, altUsed);
             });
           });
         });
@@ -476,6 +537,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       options.setTraceOperation(traceOperation);
       HttpClientStream stream = res.stream;
       HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
+      if (res.alternative != null) {
+        String altUsedValue;
+        int defaultPort = stream.connection().isSsl() ? 443 : 80;
+        if (res.alternative.port() == defaultPort) {
+          altUsedValue = res.alternative.host();
+        } else {
+          altUsedValue = res.alternative.toString();
+        }
+        request.putHeader(HttpHeaders.ALT_USED, altUsedValue);
+      }
       stream.closeHandler(v -> {
         res.lease.recycle();
         request.handleClosed();
@@ -488,9 +559,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private static class ConnectionObtainedResult {
     private final HttpClientStream stream;
     private final Lease<HttpClientConnection> lease;
-    public ConnectionObtainedResult(HttpClientStream stream, Lease<HttpClientConnection> lease) {
+    private final HostAndPort alternative;
+    public ConnectionObtainedResult(HttpClientStream stream, Lease<HttpClientConnection> lease, HostAndPort alternative) {
       this.stream = stream;
       this.lease = lease;
+      this.alternative = alternative;
     }
   }
 

@@ -13,6 +13,8 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.VertxGen;
 
+import java.util.List;
+
 /**
  * Represents the version of the HTTP protocol.
  *
@@ -20,32 +22,70 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpVersion {
-  HTTP_1_0("http/1.0"), HTTP_1_1("http/1.1"), HTTP_2("h2");
+
+  HTTP_1_0("http/1.0", List.of(HttpProtocol.HTTP_1_0)),
+  HTTP_1_1("http/1.1", List.of(HttpProtocol.HTTP_1_1)),
+  HTTP_2("h2", List.of(HttpProtocol.H2, HttpProtocol.H2C));
 
   private final String alpnName;
+  private final List<HttpProtocol> protocols;
 
-  HttpVersion(String alpnName) {
+  HttpVersion(String alpnName, List<HttpProtocol> protocols) {
     this.alpnName = alpnName;
+    this.protocols = protocols;
   }
 
   /**
-   * @return the protocol name for Application-Layer Protocol Negotiation (ALPN).
+   * @return the protocol name for Application-Layer Protocol Negotiation (ALPN) of the secured version of this protocol version.
    */
   public String alpnName() {
     return alpnName;
   }
 
-  public static HttpVersion fromAlpnName(String alpnName) {
-    switch (alpnName) {
+  /**
+   * @return the associated Application-Layer Protocol Negotiation (ALPN) protocols.
+   */
+  public List<HttpProtocol> protocols() {
+    return protocols;
+  }
+
+  /**
+   * Provides the version of the given protocol {@code id}
+   *
+   * @param id the protocol id
+   * @return the version of {@code null} when no id is matching
+   */
+  public static HttpVersion fromAlpnName(String id) {
+    switch (id) {
       case "http/1.0":
         return HTTP_1_0;
       case "http/1.1":
         return HTTP_1_1;
       case "h2":
+      case "h2c":
         return HTTP_2;
       default:
         return null;
     }
   }
 
+  /**
+   * Provides the version of the given protocol {@code id}
+   *
+   * @param id the protocol id
+   * @return the version of {@code null} when no id is matching
+   */
+  public static HttpVersion fromProtocol(HttpProtocol protocol) {
+    switch (protocol) {
+      case HTTP_1_0:
+        return HTTP_1_0;
+      case HTTP_1_1:
+        return HTTP_1_1;
+      case H2:
+      case H2C:
+        return HTTP_2;
+      default:
+        return null;
+    }
+  }
 }

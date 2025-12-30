@@ -22,6 +22,7 @@ import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
+import java.net.ConnectException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -181,7 +182,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final BiFunction<ManagedEndpoint, Boolean, Result> fn = (endpoint, created) -> new Result(endpoint.endpoint, endpoint, created);
 
   private ManagedEndpoint resolveAddress(A address) {
-    Result sFuture = endpointManager.withResource2(address, provider, managedEndpoint -> {
+    Result sFuture = endpointManager.withResource(address, provider, managedEndpoint -> {
       Future<EndpointImpl> fut = managedEndpoint.endpoint;
       if (fut.succeeded()) {
         EndpointImpl endpoint = fut.result();
@@ -293,7 +294,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       return connectFailures.get() == 0;
     }
     @Override
-    public Map<String, String> properties() {
+    public Map<String, ?> properties() {
       return endpointResolver.propertiesOf(endpoint);
     }
     @Override
@@ -334,7 +335,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
         }
         @Override
         public void reportFailure(Throwable failure) {
-          if (!connected) {
+          if (!connected && failure instanceof ConnectException) {
             connectFailures.incrementAndGet();
           }
           metrics.reportFailure(metric, failure);
