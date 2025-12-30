@@ -39,6 +39,8 @@ public interface ServerEndpoint {
 
   Map<String, String> properties();
 
+  boolean isAvailable();
+
   /**
    * Initiate a request/response interaction with the endpoint represented by this node, the returned interaction gathers statistics.
    *

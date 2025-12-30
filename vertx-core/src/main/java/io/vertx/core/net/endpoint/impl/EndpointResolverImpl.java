@@ -12,7 +12,6 @@ package io.vertx.core.net.endpoint.impl;
 
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.endpoint.*;
 import io.vertx.core.internal.VertxInternal;
@@ -24,7 +23,9 @@ import io.vertx.core.spi.endpoint.EndpointResolver;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -102,19 +103,15 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
     public ServerEndpoint selectServer(Predicate<ServerEndpoint> filter, String key) {
       ListOfServers listOfServers = endpointResolver.endpoint(state);
-      EndpointResolverImpl.View view = listOfServers.views.get(filter);
-      if (view == null) {
-        List<ServerEndpoint> l = new ArrayList<>(listOfServers.servers.size());
-        for (ServerEndpoint s : listOfServers.servers) {
-          if (filter.test(s)) {
-            l.add(s);
-          }
-        }
-        ServerSelector selector = loadBalancer.selector(l);
-        view = new EndpointResolverImpl.View(l,  selector);
-        listOfServers.views.put(filter, view);
+      EndpointResolverImpl.View view = listOfServers.viewOf(loadBalancer, filter);
+      ServerEndpoint selected = view.selectEndpoint(key);
+      if (selected != null && !selected.isAvailable()) {
+        // Rebuild views
+        listOfServers.views.clear();
+        view = listOfServers.viewOf(loadBalancer, filter);
+        selected = view.selectEndpoint(key);
       }
-      return view.selectEndpoint(key);
+      return selected;
     }
 
     private void close() {
@@ -126,7 +123,6 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
     private final Future<EndpointImpl> endpoint;
     private final AtomicBoolean disposed = new AtomicBoolean();
-    private boolean valid;
 
     public ManagedEndpoint(Future<EndpointImpl> endpoint) {
       super();
@@ -238,7 +234,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
     private ListOfServers(List<ServerEndpoint> servers) {
       this.servers = servers;
-      this.views = new HashMap<>();
+      this.views = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -250,6 +246,22 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     public String toString() {
       return servers.toString();
     }
+
+    View viewOf(LoadBalancer loadBalancer, Predicate<ServerEndpoint> filter) {
+      EndpointResolverImpl.View view = views.get(filter);
+      if (view == null) {
+        List<ServerEndpoint> l = new ArrayList<>(servers.size());
+        for (ServerEndpoint s : servers) {
+          if (s.isAvailable() && filter.test(s)) {
+            l.add(s);
+          }
+        }
+        ServerSelector selector = loadBalancer.selector(l);
+        view = new EndpointResolverImpl.View(l,  selector);
+        views.put(filter, view);
+      }
+      return view;
+    }
   }
 
   public class ServerEndpointImpl implements ServerEndpoint {
@@ -257,15 +269,21 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     final String key;
     final N endpoint;
     final InteractionMetrics<?> metrics;
+    final AtomicInteger connectFailures;
     public ServerEndpointImpl(AtomicLong lastAccessed, String key, N endpoint, InteractionMetrics<?> metrics) {
       this.lastAccessed = lastAccessed;
       this.key = key;
       this.endpoint = endpoint;
       this.metrics = metrics;
+      this.connectFailures = new AtomicInteger();
     }
     @Override
     public String key() {
       return key;
+    }
+    @Override
+    public boolean isAvailable() {
+      return connectFailures.get() == 0;
     }
     @Override
     public Map<String, String> properties() {
@@ -289,8 +307,10 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       InteractionMetrics metrics = this.metrics;
       Object metric = metrics.initiateRequest();
       return new ServerInteraction() {
+        boolean connected;
         @Override
         public void reportRequestBegin() {
+          connected = true;
           metrics.reportRequestBegin(metric);
         }
         @Override
@@ -307,6 +327,9 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
         }
         @Override
         public void reportFailure(Throwable failure) {
+          if (!connected) {
+            connectFailures.incrementAndGet();
+          }
           metrics.reportFailure(metric, failure);
         }
       };

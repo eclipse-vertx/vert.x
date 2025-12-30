@@ -15,11 +15,13 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.ServerEndpoint;
+import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.*;
 import org.junit.Test;
 
+import java.net.ConnectException;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -84,5 +86,19 @@ public class EndpointResolverTest extends VertxTestBase {
     assertEquals(addr4, endpoint.selectServer(odd).address());
     assertEquals(addr2, endpoint.selectServer(odd).address());
     assertEquals(addr4, endpoint.selectServer(odd).address());
+  }
+
+  @Test
+  public void testServerInvalidation() {
+    fakeResolver.registerAddress("example.com", List.of(addr1, addr2, addr3, addr4));
+    EndpointResolverImpl<FakeState, FakeAddress, FakeServerEndpoint> resolver = new EndpointResolverImpl<>((VertxInternal) vertx, fakeResolver, LoadBalancer.FIRST, 5000);
+    Endpoint endpoint = resolver.resolveEndpoint(new FakeAddress("example.com")).await();
+    ServerEndpoint server = endpoint.selectServer();
+    assertEquals(addr1, server.address());
+    ServerInteraction interaction = server.newInteraction();
+    interaction.reportFailure(new ConnectException());
+    System.out.println(endpoint.servers());
+    server = endpoint.selectServer();
+    assertEquals(addr2, server.address());
   }
 }

@@ -51,6 +51,10 @@ public class LoadBalancingCornerCasesTest {
         return Map.of();
       }
       @Override
+      public boolean isAvailable() {
+        return true;
+      }
+      @Override
       public String key() {
         return "";
       }

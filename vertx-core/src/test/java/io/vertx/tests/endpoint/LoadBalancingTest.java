@@ -42,6 +42,10 @@ public class LoadBalancingTest {
         return Map.of();
       }
       @Override
+      public boolean isAvailable() {
+        return true;
+      }
+      @Override
       public Object unwrap() {
         return null;
       }
