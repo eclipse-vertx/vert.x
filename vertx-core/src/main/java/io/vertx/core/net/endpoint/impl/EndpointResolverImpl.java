@@ -181,14 +181,21 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final BiFunction<ManagedEndpoint, Boolean, Result> fn = (endpoint, created) -> new Result(endpoint.endpoint, endpoint, created);
 
   private ManagedEndpoint resolveAddress(A address) {
-    Result sFuture = endpointManager.withResource(address, provider, managedEndpoint -> {
+    Result sFuture = endpointManager.withResource2(address, provider, managedEndpoint -> {
       Future<EndpointImpl> fut = managedEndpoint.endpoint;
       if (fut.succeeded()) {
         EndpointImpl endpoint = fut.result();
-        return endpointResolver.isValid(endpoint.state);
-      } else {
-        return true;
+        if (!endpointResolver.isValid(endpoint.state)) {
+          Future<S> refresh = endpointResolver.refresh(address, endpoint.state);
+          if (refresh != null) {
+            return new ManagedEndpoint(refresh.map(s -> new EndpointImpl(address, endpoint.lastAccessed, s)));
+          } else {
+            // todo: should cleanup .... ????
+            return null;
+          }
+        }
       }
+      return managedEndpoint;
     }, fn);
     if (sFuture.created) {
       sFuture.fut.onFailure(err -> {

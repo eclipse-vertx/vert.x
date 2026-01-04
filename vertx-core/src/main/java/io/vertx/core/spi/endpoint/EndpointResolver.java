@@ -83,6 +83,16 @@ public interface EndpointResolver<A extends Address, S, D, E> {
   boolean isValid(D state);
 
   /**
+   *
+   * @param address
+   * @param state
+   * @return
+   */
+  default Future<D> refresh(A address, D state) {
+    return null;
+  }
+
+  /**
    * Dispose the state.
    *
    * @param data the state
