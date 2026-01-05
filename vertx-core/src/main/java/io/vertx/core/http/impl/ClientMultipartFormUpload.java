@@ -146,7 +146,9 @@ public class ClientMultipartFormUpload implements ReadStream<Buffer> {
         return;
       }
     }
-    handler.handle(item);
+    if (handler != null) {
+      handler.handle(item);
+    }
   }
 
   public void pump() {

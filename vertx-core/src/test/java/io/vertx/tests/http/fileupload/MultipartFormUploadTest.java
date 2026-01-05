@@ -52,7 +52,7 @@ public class MultipartFormUploadTest extends HttpTestBase {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    vertx = (VertxInternal) Vertx.vertx();
+    vertx = (VertxInternal) super.vertx;
   }
 
   @Test
@@ -136,5 +136,6 @@ public class MultipartFormUploadTest extends HttpTestBase {
         fail(e);
       }
     });
+    await();
   }
 }

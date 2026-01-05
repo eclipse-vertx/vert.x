@@ -24,6 +24,7 @@ import java.security.spec.ECPrivateKeySpec;
 import java.util.Base64;
 
 import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
+import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ import io.vertx.test.core.TestUtils;
  * Verifies behavior of {@link PrivateKeyParser}.
  *
  */
-public class PrivateKeyParserTest {
+public class PrivateKeyParserTest extends VertxTestBase {
 
   /**
    * Verifies that the parser correctly identifies a
@@ -92,7 +93,6 @@ public class PrivateKeyParserTest {
   public void testGetECKeySpecSucceedsForDEREncodedECPrivateKey() throws GeneralSecurityException {
 
     Assume.assumeTrue("ECC is not supported by VM's security providers", TestUtils.isECCSupportedByVM());
-    Vertx vertx = Vertx.vertx();
     String b = vertx.fileSystem().readFileBlocking("tls/server-key-ec-pkcs1.pem")
         .toString(StandardCharsets.US_ASCII)
         .replaceAll("-----BEGIN EC PRIVATE KEY-----", "")

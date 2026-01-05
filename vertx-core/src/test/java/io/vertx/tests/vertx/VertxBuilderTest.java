@@ -13,23 +13,24 @@ package io.vertx.tests.vertx;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import io.vertx.test.faketracer.FakeTracer;
 import org.junit.Test;
 
-public class VertxBuilderTest  extends AsyncTestBase {
+public class VertxBuilderTest extends VertxTestBase {
 
   @Test
   public void testTracerFactoryDoesNotRequireOptions() {
     FakeTracer tracer = new FakeTracer();
-    Vertx vertx = Vertx.builder().withTracer(options -> tracer).build();
+    Vertx vertx = vertx(() -> Vertx.builder().withTracer(options -> tracer).build());
     assertEquals(tracer, ((VertxInternal)vertx).tracer());
   }
 
   @Test
   public void testMetricsFactoryDoesNotRequireOptions() {
     FakeVertxMetrics metrics = new FakeVertxMetrics();
-    Vertx vertx = Vertx.builder().withMetrics(options -> metrics).build();
+    Vertx vertx = vertx(() -> Vertx.builder().withMetrics(options -> metrics).build());
     assertEquals(metrics, ((VertxInternal)vertx).metrics());
   }
 }
