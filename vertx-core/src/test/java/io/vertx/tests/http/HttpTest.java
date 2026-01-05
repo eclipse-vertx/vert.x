@@ -24,12 +24,12 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.CleanableHttpClient;
-import io.vertx.core.http.impl.HttpClientImpl;
-import io.vertx.core.http.impl.HttpServerImpl;
-import io.vertx.core.http.impl.ServerCookie;
+import io.vertx.core.http.HttpClientConnection;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.Repeat;
@@ -6461,4 +6461,43 @@ public abstract class HttpTest extends SimpleHttpTest {
       .await();
   }
 
+  @Test
+  public void testResolverKeepAlive() throws Exception {
+    client.close();
+    client = ((HttpClientBuilderInternal)httpClientBuilder()
+      .with(new PoolOptions().setCleanerPeriod(50)))
+      .resolverTtl(Duration.ofMillis(50))
+      .build();
+    server.requestHandler(request -> {
+      request.response().end();
+    });
+    startServer(testAddress);
+    // Create a connection to the server first (warm-up) before
+    // we test the origin resolver
+    client.request(requestOptions)
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
+    long now = System.currentTimeMillis();
+    vertx.setPeriodic(1, id -> {
+      if (System.currentTimeMillis() - now > 500) {
+        vertx.cancelTimer(id);
+      }
+      client.request(requestOptions)
+        .compose(request -> request
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::end));
+    });
+    EndpointResolverInternal originResolver = ((HttpClientInternal) client).originResolver();
+    assertWaitUntil(() -> originResolver.size() == 1);
+    long abc = System.currentTimeMillis();
+    assertWaitUntil(() -> originResolver.size() == 0);
+    long delta = System.currentTimeMillis() - abc;
+    System.out.println(delta);
+    assertTrue(delta >= 500);
+    assertTrue(delta <= 1000);
+  }
 }

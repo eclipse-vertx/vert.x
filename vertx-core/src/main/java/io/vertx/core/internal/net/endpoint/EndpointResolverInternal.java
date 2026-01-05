@@ -40,5 +40,10 @@ public interface EndpointResolverInternal extends EndpointResolver {
    */
   void checkExpired();
 
+  /**
+   * @return the number of entries held by the resolver
+   */
+  int size();
+
 
 }

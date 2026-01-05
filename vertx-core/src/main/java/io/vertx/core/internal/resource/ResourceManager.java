@@ -137,4 +137,11 @@ public class ResourceManager<K, R extends ManagedResource> {
       status.set(4);
     }
   }
+
+  /**
+   * @return number of resources held by the manager
+   */
+  public int size() {
+    return resources.size();
+  }
 }

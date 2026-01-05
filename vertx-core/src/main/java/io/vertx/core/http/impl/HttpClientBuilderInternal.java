@@ -19,6 +19,7 @@ import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import java.time.Duration;
 import java.util.function.Function;
 
 public final class HttpClientBuilderInternal implements HttpClientBuilder {
@@ -30,9 +31,11 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private AddressResolver<?> addressResolver;
   private LoadBalancer loadBalancer;
+  private Duration resolverKeepAlive;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
     this.vertx = vertx;
+    this.resolverKeepAlive = Duration.ofSeconds(10);
   }
 
   @Override
@@ -68,6 +71,14 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   @Override
   public HttpClientBuilder withLoadBalancer(LoadBalancer loadBalancer) {
     this.loadBalancer = loadBalancer;
+    return this;
+  }
+
+  public HttpClientBuilderInternal resolverTtl(Duration ttl) {
+    if (ttl.isNegative() || ttl.isZero()) {
+      throw new IllegalArgumentException("Invalid TTL");
+    }
+    this.resolverKeepAlive = ttl;
     return this;
   }
 
@@ -109,7 +120,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co.getSslOptions()
     );
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,
-      co.getProxyOptions(), co.getNonProxyHosts(), transport, loadBalancer, co.getFollowAlternativeServices());
+      co.getProxyOptions(), co.getNonProxyHosts(), transport, loadBalancer, co.getFollowAlternativeServices(), resolverKeepAlive);
   }
 
   private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {

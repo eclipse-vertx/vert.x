@@ -43,9 +43,9 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private final LoadBalancer loadBalancer;
   private final EndpointResolver<A, N, S, ListOfServers> endpointResolver;
   private final ResourceManager<A, ManagedEndpoint> endpointManager;
-  private final long expirationMillis;
+  private final long keepAliveMillis;
 
-  public EndpointResolverImpl(VertxInternal vertx, EndpointResolver<A, N, S, ?> endpointResolver, LoadBalancer loadBalancer, long expirationMillis) {
+  public EndpointResolverImpl(VertxInternal vertx, EndpointResolver<A, N, S, ?> endpointResolver, LoadBalancer loadBalancer, long keepAliveMillis) {
 
     if (loadBalancer == null) {
       loadBalancer = LoadBalancer.ROUND_ROBIN;
@@ -55,7 +55,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     this.loadBalancer = loadBalancer;
     this.endpointResolver = (EndpointResolver<A, N, S, ListOfServers>) endpointResolver;
     this.endpointManager = new ResourceManager<>();
-    this.expirationMillis = expirationMillis;
+    this.keepAliveMillis = keepAliveMillis;
   }
 
   @Override
@@ -68,6 +68,11 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
    */
   public void checkExpired() {
     endpointManager.checkExpired();
+  }
+
+  @Override
+  public int size() {
+    return endpointManager.size();
   }
 
   @Override
@@ -139,7 +144,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
 
     @Override
     protected void checkExpired() {
-      if (endpoint.succeeded() && expirationMillis > 0 && System.currentTimeMillis() - endpoint.result().lastAccessed.get() >= expirationMillis) {
+      if (endpoint.succeeded() && keepAliveMillis > 0 && System.currentTimeMillis() - endpoint.result().lastAccessed.get() >= keepAliveMillis) {
         if (disposed.compareAndSet(false, true)) {
           decRefCount();
         }
@@ -179,7 +184,17 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     return endpoint;
   };
 
-  private final BiFunction<ManagedEndpoint, Boolean, Result> fn = (endpoint, created) -> new Result(endpoint.endpoint, endpoint, created);
+  private final BiFunction<ManagedEndpoint, Boolean, Result> fn = (endpoint, created) -> {
+    Result result = new Result(endpoint.endpoint, endpoint, created);
+    if (created) {
+      endpoint.endpoint.andThen(ar -> {
+        if (ar.succeeded()) {
+          ar.result().lastAccessed.set(System.currentTimeMillis());
+        }
+      });
+    }
+    return result;
+  };
 
   private ManagedEndpoint resolveAddress(A address) {
     Result sFuture = endpointManager.withResource(address, provider, managedEndpoint -> {

@@ -72,7 +72,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  List<String> nonProxyHosts,
                  Transport transport,
                  LoadBalancer loadBalancer,
-                 boolean followAlternativeServices) {
+                 boolean followAlternativeServices,
+                 Duration resolverKeepAlive) {
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
     boolean resolveAll = loadBalancer != null;
@@ -80,7 +81,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.originEndpoints = new OriginResolver<>(vertx, resolveAll);
     this.transport = transport;
     this.resolver = (EndpointResolverInternal) resolver;
-    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, 10_000);
+    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, resolverKeepAlive.toMillis());
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
@@ -129,12 +130,21 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
+  public EndpointResolverInternal originResolver() {
+    return originResolver;
+  }
+
+  public EndpointResolverInternal resolver() {
+    return resolver;
+  }
+;
   protected void checkExpired(Handler<Long> checker) {
     synchronized (this) {
       if (!closeSequence.started()) {
         timerID = vertx.setTimer(poolOptions.getCleanerPeriod(), checker);
       }
     }
+    originResolver.checkExpired();
     resourceManager.checkExpired();
     if (resolver != null) {
       resolver.checkExpired();
