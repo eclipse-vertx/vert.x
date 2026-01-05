@@ -348,7 +348,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   private void testCaching(boolean enabled) throws Exception {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(enabled)));
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(enabled)));
     File tmp = File.createTempFile("vertx", ".bin");
     tmp.deleteOnExit();
     URL url = tmp.toURI().toURL();

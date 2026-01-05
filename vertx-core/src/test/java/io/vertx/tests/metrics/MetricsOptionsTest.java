@@ -66,8 +66,7 @@ public class MetricsOptionsTest extends VertxTestBase {
 
   @Test
   public void testMetricsEnabledWithoutConfig() {
-    vertx.close();
-    vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)));
+    Vertx vertx = vertx(() -> Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true))));
     VertxMetrics metrics = ((VertxInternal) vertx).metrics();
     assertNull(metrics);
   }
@@ -76,12 +75,11 @@ public class MetricsOptionsTest extends VertxTestBase {
   public void testSetMetricsInstance() {
     VertxMetrics metrics = new VertxMetrics() {
     };
-    vertx.close();
-    vertx = Vertx
+    Vertx vertx = vertx(() -> Vertx
       .builder()
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(new SimpleVertxMetricsFactory<>(metrics))
-      .build();
+      .build());
     assertSame(metrics, ((VertxInternal) vertx).metrics());
   }
 }

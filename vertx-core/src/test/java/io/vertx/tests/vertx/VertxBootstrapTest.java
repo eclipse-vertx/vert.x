@@ -55,7 +55,11 @@ public class VertxBootstrapTest {
   public void testCreate() {
     VertxBootstrap factory = VertxBootstrap.create().init();
     Vertx vertx = factory.init().vertx();
-    assertNotNull(vertx);
+    try {
+      assertNotNull(vertx);
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test
@@ -72,8 +76,12 @@ public class VertxBootstrapTest {
       }
     });
     Vertx vertx = fut.get(10, TimeUnit.SECONDS);
-    assertNotNull(vertx);
-    assertNotNull(((VertxInternal)vertx).clusterManager());
+    try {
+      assertNotNull(vertx);
+      assertNotNull(((VertxInternal)vertx).clusterManager());
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test
@@ -85,7 +93,11 @@ public class VertxBootstrapTest {
       factory.metricsFactory(options -> metrics);
       factory.init();
       Vertx vertx = factory.vertx();
-      assertSame(metrics, ((VertxInternal)vertx).metrics());
+      try {
+        assertSame(metrics, ((VertxInternal)vertx).metrics());
+      } finally {
+        vertx.close().await();
+      }
     });
   }
 
@@ -113,7 +125,11 @@ public class VertxBootstrapTest {
       factory.tracerFactory(options -> tracer);
       factory.init();
       Vertx vertx = factory.vertx();
-      assertSame(tracer, ((VertxInternal)vertx).getOrCreateContext().tracer());
+      try {
+        assertSame(tracer, ((VertxInternal)vertx).getOrCreateContext().tracer());
+      } finally {
+        vertx.close().await();
+      }
     });
   }
 
@@ -149,7 +165,11 @@ public class VertxBootstrapTest {
       });
     });
     Vertx vertx = res.get(10, TimeUnit.SECONDS);
-    assertSame(clusterManager, ((VertxInternal)vertx).clusterManager());
+    try {
+      assertSame(clusterManager, ((VertxInternal)vertx).clusterManager());
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test
@@ -161,7 +181,11 @@ public class VertxBootstrapTest {
     factory.transport(override);
     factory.init();
     Vertx vertx = factory.vertx();
-    assertSame(override, ((VertxInternal)vertx).transport());
+    try {
+      assertSame(override, ((VertxInternal)vertx).transport());
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test

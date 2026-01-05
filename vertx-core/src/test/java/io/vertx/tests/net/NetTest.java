@@ -1960,14 +1960,14 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenDomainSocketAddressNative() throws Exception {
-    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    VertxInternal vx = (VertxInternal)vertx(() -> Vertx.vertx(new VertxOptions().setPreferNativeTransport(true)));
     assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
     testListenDomainSocketAddress(vx);
   }
 
   @Test
   public void testListenDomainSocketAddressJdk() throws Exception {
-    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(false));
+    VertxInternal vx = (VertxInternal)vertx(() -> Vertx.vertx(new VertxOptions().setPreferNativeTransport(false)));
     assumeFalse("Native transport must not be enabled", vx.isNativeTransportEnabled());
     testListenDomainSocketAddress(vx);
   }
