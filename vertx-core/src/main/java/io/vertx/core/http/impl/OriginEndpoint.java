@@ -27,16 +27,22 @@ public class OriginEndpoint<L> {
 
   final Origin origin;
   final OriginServer primary;
+  final List<OriginServer> primaries;
   final EndpointBuilder<L, OriginServer> builder;
   final L list;
   List<OriginAlternative> alternatives;
   private volatile boolean valid;
 
   OriginEndpoint(Origin origin, OriginServer primary, EndpointBuilder<L, OriginServer> builder, List<OriginAlternative> alternatives) {
+    this(origin, List.of(primary), builder, alternatives);
+  }
 
-    L list = refresh(builder, primary, alternatives);
+  OriginEndpoint(Origin origin, List<OriginServer> primaries, EndpointBuilder<L, OriginServer> builder, List<OriginAlternative> alternatives) {
 
-    this.primary = primary;
+    L list = refresh(builder, primaries, alternatives);
+
+    this.primary = primaries.get(0);
+    this.primaries = primaries;
     this.origin = origin;
     this.builder = builder;
     this.alternatives = alternatives;
@@ -44,8 +50,10 @@ public class OriginEndpoint<L> {
     this.valid = true;
   }
 
-  private L refresh(EndpointBuilder<L, OriginServer> builder, OriginServer primary, List<OriginAlternative> alternatives) {
-    builder = builder.addServer(primary);
+  private L refresh(EndpointBuilder<L, OriginServer> builder, List<OriginServer> primaries, List<OriginAlternative> alternatives) {
+    for (OriginServer primary : primaries) {
+      builder = builder.addServer(primary);
+    }
     for (OriginAlternative entry : alternatives) {
       builder.addServer(new OriginServer(entry.protocol, entry.authority, entry.socketAddress));
     }

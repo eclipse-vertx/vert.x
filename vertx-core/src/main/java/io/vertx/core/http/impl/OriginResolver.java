@@ -14,6 +14,7 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -21,6 +22,7 @@ import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.core.spi.endpoint.EndpointResolver;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -37,10 +39,12 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
 
   private final VertxInternal vertx;
   private final ConcurrentMap<Origin, OriginEndpoint<L>> endpoints;
+  private final boolean resolveAll;
 
-  public OriginResolver(VertxInternal vertx) {
+  public OriginResolver(VertxInternal vertx, boolean resolveAll) {
     this.vertx = vertx;
     this.endpoints = new ConcurrentHashMap<>();
+    this.resolveAll = resolveAll;
   }
 
   public void clearAlternatives(Origin origin) {
@@ -79,15 +83,31 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
 
   @Override
   public Future<OriginEndpoint<L>> resolve(Origin address, EndpointBuilder<L, OriginServer> builder) {
-    return vertx
-      .nameResolver()
-      .resolve(address.host)
-      .map(addr -> {
-        OriginServer primary = new OriginServer(null, HostAndPort.authority(address.host, address.port), SocketAddress.inetSocketAddress(address.port, addr.getHostAddress()));
-        OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyList());
-        endpoints.put(address, endpoint);
-        return endpoint;
-      });
+    NameResolver resolver = vertx
+      .nameResolver();
+    HostAndPort authority = HostAndPort.authority(address.host, address.port);
+    if (resolveAll) {
+      return resolver
+        .resolveAll(address.host)
+        .map(res -> {
+          List<OriginServer> primary = new ArrayList<>(res.size());
+          for (InetSocketAddress addr : res) {
+            primary.add(new OriginServer(null, authority, SocketAddress.inetSocketAddress(address.port, addr.getAddress().getHostAddress())));
+          }
+          OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyList());
+          endpoints.put(address, endpoint);
+          return endpoint;
+        });
+    } else {
+      return resolver
+        .resolve(address.host)
+        .map(addr -> {
+          OriginServer primary = new OriginServer(null, authority, SocketAddress.inetSocketAddress(address.port, addr.getHostAddress()));
+          OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyList());
+          endpoints.put(address, endpoint);
+          return endpoint;
+        });
+    }
   }
 
   @Override

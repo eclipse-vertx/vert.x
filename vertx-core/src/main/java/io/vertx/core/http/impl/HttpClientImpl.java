@@ -71,13 +71,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  ProxyOptions defaultProxyOptions,
                  List<String> nonProxyHosts,
                  Transport transport,
+                 LoadBalancer loadBalancer,
                  boolean followAlternativeServices) {
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
-    this.originEndpoints = new OriginResolver<>(vertx);
+    boolean resolveAll = loadBalancer != null;
+
+    this.originEndpoints = new OriginResolver<>(vertx, resolveAll);
     this.transport = transport;
     this.resolver = (EndpointResolverInternal) resolver;
-    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, LoadBalancer.ROUND_ROBIN, 10_000);
+    this.originResolver = new EndpointResolverImpl<>(vertx, originEndpoints, resolveAll ? loadBalancer : LoadBalancer.FIRST, 10_000);
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
