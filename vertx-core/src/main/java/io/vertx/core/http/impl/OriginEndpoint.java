@@ -21,22 +21,26 @@ import java.util.*;
  */
 public class OriginEndpoint<L> {
 
+  final long timestamp;
   final Origin origin;
   final OriginServer primary;
   final List<OriginServer> primaries;
   final EndpointBuilder<L, OriginServer> builder;
   final L list;
-  List<OriginAlternative> alternatives;
+  private final Map<OriginAlternative, OriginServer> alternatives;
+
+  Map<OriginAlternative, Long> update;
   private volatile boolean valid;
 
-  OriginEndpoint(Origin origin, OriginServer primary, EndpointBuilder<L, OriginServer> builder, List<OriginAlternative> alternatives) {
+  OriginEndpoint(Origin origin, OriginServer primary, EndpointBuilder<L, OriginServer> builder, Map<OriginAlternative, OriginServer> alternatives) {
     this(origin, List.of(primary), builder, alternatives);
   }
 
-  OriginEndpoint(Origin origin, List<OriginServer> primaries, EndpointBuilder<L, OriginServer> builder, List<OriginAlternative> alternatives) {
+  OriginEndpoint(Origin origin, List<OriginServer> primaries, EndpointBuilder<L, OriginServer> builder, Map<OriginAlternative, OriginServer> alternatives) {
 
     L list = refresh(builder, primaries, alternatives);
 
+    this.timestamp = System.currentTimeMillis();
     this.primary = primaries.get(0);
     this.primaries = primaries;
     this.origin = origin;
@@ -46,12 +50,12 @@ public class OriginEndpoint<L> {
     this.valid = true;
   }
 
-  private L refresh(EndpointBuilder<L, OriginServer> builder, List<OriginServer> primaries, List<OriginAlternative> alternatives) {
+  private L refresh(EndpointBuilder<L, OriginServer> builder, List<OriginServer> primaries, Map<OriginAlternative, OriginServer> alternatives) {
     for (OriginServer primary : primaries) {
       builder = builder.addServer(primary);
     }
-    for (OriginAlternative entry : alternatives) {
-      builder.addServer(new OriginServer(entry.protocol, entry.authority, entry.socketAddress));
+    for (OriginServer alternativeServer : alternatives.values()) {
+      builder.addServer(alternativeServer);
     }
     return builder.build();
   }
@@ -59,8 +63,8 @@ public class OriginEndpoint<L> {
   boolean validate() {
     if (valid) {
       long now = System.currentTimeMillis();
-      for (OriginAlternative alternative : alternatives) {
-        if (now >= alternative.expirationTimestamp) {
+      for (OriginServer alternative : alternatives.values()) {
+        if (now >= timestamp + alternative.maxAge * 1000) {
           valid = false;
           return false;
         }
@@ -70,13 +74,14 @@ public class OriginEndpoint<L> {
   }
 
   void clearAlternatives() {
-    alternatives = Collections.emptyList();
-    valid = false;
+    update = Collections.emptyMap();
+    valid = alternatives.isEmpty();
   }
 
   void updateAlternatives(AltSvc.ListOfValue altSvc) {
     long now = System.currentTimeMillis();
-    List<OriginAlternative> list = new ArrayList<>();
+    Map<OriginAlternative, Long> list = new LinkedHashMap<>();
+    boolean valid = true;
     for (AltSvc.Value altSvcValue : altSvc) {
       HttpProtocol protocol = HttpProtocol.fromId(altSvcValue.protocolId());
       if (protocol != null) {
@@ -91,11 +96,32 @@ public class OriginEndpoint<L> {
         } else {
           maxAge = 24 * 3600;
         }
-        OriginAlternative alternative = new OriginAlternative(protocol, altSvcValue.altAuthority(), null, now + maxAge * 1000);
-        list.add(alternative);
+        HostAndPort altAuthority = altSvcValue.altAuthority();
+        if (altAuthority.host().isEmpty()) {
+          altAuthority = HostAndPort.create(primary.authority.host(), altAuthority.port());
+        }
+        OriginAlternative alternative = new OriginAlternative(protocol, altAuthority);
+        valid &= alternatives.containsKey(alternative);
+        if (valid) {
+          // We consider alternative is still fresh when the expiration timestamp computed
+          // with the new max age divided by two is older than the current expiration timestamp
+          // this caches the alternative entry
+          long alternativeCachedExpiration = timestamp + alternatives.get(alternative).maxAge * 1000;
+          long value = now + maxAge * 1000 / 2;
+          valid = (value < alternativeCachedExpiration);
+        }
+        list.put(alternative, maxAge);
       }
     }
-    alternatives = list;
-    valid = false;
+    if (valid) {
+      // 1. check now we don't have extra unwanted keys
+      for (OriginAlternative alternative : alternatives.keySet()) {
+        valid &= list.containsKey(alternative);
+      }
+    }
+    if (!valid) {
+      this.update = list;
+      this.valid = false;
+    }
   }
 }

@@ -14,6 +14,9 @@ import io.vertx.core.http.HttpProtocol;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
+import java.time.Duration;
+import java.util.Objects;
+
 /**
  * An alternative of an origin.
  */
@@ -21,13 +24,23 @@ class OriginAlternative {
 
   final HttpProtocol protocol;
   final HostAndPort authority;
-  final SocketAddress socketAddress;
-  final long expirationTimestamp;
 
-  OriginAlternative(HttpProtocol protocol, HostAndPort authority, SocketAddress socketAddress, long expirationTimestamp) {
+  OriginAlternative(HttpProtocol protocol, HostAndPort authority) {
     this.protocol = protocol;
     this.authority = authority;
-    this.socketAddress = socketAddress;
-    this.expirationTimestamp = expirationTimestamp;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(protocol, authority);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof OriginAlternative) {
+      OriginAlternative that = (OriginAlternative) obj;
+      return protocol == that.protocol && authority.equals(that.authority);
+    }
+    return false;
   }
 }

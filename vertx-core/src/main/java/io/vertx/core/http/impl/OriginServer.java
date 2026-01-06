@@ -22,15 +22,17 @@ public class OriginServer {
   public final HttpProtocol protocol; // null <=> unknown
   public final HostAndPort authority; // the alt-authority field
   public final SocketAddress address; // the server socket address
+  public final long maxAge;
 
-  public OriginServer(HttpProtocol protocol, HostAndPort authority, SocketAddress address) {
+  public OriginServer(HttpProtocol protocol, HostAndPort authority, SocketAddress address, long maxAge) {
     this.protocol = protocol;
     this.authority = authority;
     this.address = address;
+    this.maxAge = maxAge;
   }
 
   @Override
   public String toString() {
-    return "OriginServer[protocol=" + protocol + ",authority=" + authority + ",address=" + address + "]";
+    return "OriginServer[protocol=" + protocol + ",authority=" + authority + ",address=" + address + ",maxAge=" + maxAge + "]";
   }
 }

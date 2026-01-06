@@ -80,9 +80,9 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
         .map(res -> {
           List<OriginServer> primary = new ArrayList<>(res.size());
           for (InetSocketAddress addr : res) {
-            primary.add(new OriginServer(null, authority, SocketAddress.inetSocketAddress(address.port, addr.getAddress().getHostAddress())));
+            primary.add(new OriginServer(null, authority, SocketAddress.inetSocketAddress(address.port, addr.getAddress().getHostAddress()), Long.MAX_VALUE));
           }
-          OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyList());
+          OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyMap());
           endpoints.put(address, endpoint);
           return endpoint;
         });
@@ -90,8 +90,8 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
       return resolver
         .resolve(address.host)
         .map(addr -> {
-          OriginServer primary = new OriginServer(null, authority, SocketAddress.inetSocketAddress(address.port, addr.getHostAddress()));
-          OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyList());
+          OriginServer primary = new OriginServer(null, authority, SocketAddress.inetSocketAddress(address.port, addr.getHostAddress()), Long.MAX_VALUE);
+          OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyMap());
           endpoints.put(address, endpoint);
           return endpoint;
         });
@@ -111,24 +111,29 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
   @Override
   public Future<OriginEndpoint<L>> refresh(Origin address, OriginEndpoint<L> state) {
 
-    class Resolution {
-      String host;
-      List<OriginAlternative> alternatives = new ArrayList<>();
+    Map<OriginAlternative, Long> update = state.update;
+    if (update == null || update.isEmpty()) {
+      endpoints.remove(address, state);
+      return null;
     }
 
-    long now = System.currentTimeMillis();
-    List<OriginAlternative> resolved = new ArrayList<>();
+    class Resolution {
+      String host;
+      Map<OriginAlternative, Long> alternatives = new LinkedHashMap<>();
+    }
+
+    // Maintain order
+    Map<OriginAlternative, OriginServer> alternatives = new LinkedHashMap<>();
     Map<String, Resolution> hosts = new HashMap<>();
-    for (OriginAlternative alternative : state.alternatives) {
-      if (now >= alternative.expirationTimestamp) {
-        continue;
-      }
-      if (alternative.authority.host().isEmpty()) {
-        resolved.add(new OriginAlternative(
+    for (Map.Entry<OriginAlternative, Long> entry : update.entrySet()) {
+      // Already resolved
+      OriginAlternative alternative = entry.getKey();
+      long maxAge = entry.getValue();
+      if (alternative.authority.host().equals(address.host)) {
+        alternative = new OriginAlternative(
           alternative.protocol,
-          HostAndPort.authority(address.host, alternative.authority.port()),
-          SocketAddress.inetSocketAddress(alternative.authority.port(), state.primary.address.host()),
-          alternative.expirationTimestamp));
+          HostAndPort.authority(address.host, alternative.authority.port()));
+        alternatives.put(alternative, new OriginServer(alternative.protocol, alternative.authority, SocketAddress.inetSocketAddress(alternative.authority.port(), state.primary.address.host()), maxAge));
       } else {
         Resolution resolution = hosts.get(alternative.authority.host());
         if (resolution == null) {
@@ -136,12 +141,14 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
           resolution.host = alternative.authority.host();
           hosts.put(alternative.authority.host(), resolution);
         }
-        resolution.alternatives.add(alternative);
+        resolution.alternatives.put(alternative, maxAge);
       }
     }
     int size = hosts.size();
     if (size == 0) {
-      return Future.succeededFuture(new OriginEndpoint<>(address, state.primary, state.builder, resolved));
+      OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, state.primary, state.builder, alternatives);
+      endpoints.put(address, endpoint);
+      return Future.succeededFuture(endpoint);
     }
 
     List<Resolution> resolutions = new ArrayList<>(hosts.values());
@@ -159,18 +166,18 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
         for (int i = 0;i < size;i++) {
           Resolution r = resolutions.get(i);
           Future<InetAddress> f = list.get(i);
-          for (OriginAlternative alternative : r.alternatives) {
+          for (Map.Entry<OriginAlternative, Long> entry : r.alternatives.entrySet()) {
             if (f.succeeded()) {
-              resolved.add(new OriginAlternative(
-                alternative.protocol,
-                alternative.authority,
-                SocketAddress.inetSocketAddress(alternative.authority.port(), f.result().getHostAddress()),
-                alternative.expirationTimestamp
-              ));
+              OriginAlternative alternative = entry.getKey();
+              long maxAge = entry.getValue();
+              alternatives.put(alternative, new OriginServer(alternative.protocol, alternative.authority, SocketAddress.inetSocketAddress(alternative.authority.port(), f.result().getHostAddress()), maxAge));
             }
           }
         }
-        promise.complete(new OriginEndpoint<>(address, state.primary, state.builder, resolved));
+
+        OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, state.primary, state.builder, alternatives);
+        endpoints.put(address, endpoint);
+        promise.complete(endpoint);
       }
     };
     for (Future<InetAddress> f : list) {
@@ -181,7 +188,7 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
 
   @Override
   public void dispose(OriginEndpoint<L> data) {
-    endpoints.remove(data.origin);
+    endpoints.remove(data.origin, data);
   }
 
   @Override

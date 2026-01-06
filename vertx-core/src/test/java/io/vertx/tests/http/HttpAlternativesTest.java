@@ -14,17 +14,24 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.Origin;
+import io.vertx.core.internal.http.HttpClientInternal;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.tls.Cert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.ConnectException;
 import java.security.cert.CertificateException;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -347,5 +354,52 @@ public class HttpAlternativesTest extends VertxTestBase {
         .compose(HttpClientResponse::body)
       ).await();
     assertEquals("host2.com:8080", body.toString());
+  }
+
+  @Test
+  public void testAlternativeCaching1() throws Exception {
+    // Test that we maintain the information although the server will an advertisement on each request
+    int times = testAlternativeCaching("h2=\"host2.com:4044\"", 5, 0L);
+    assertEquals(1, times);
+  }
+
+  @Test
+  public void testAlternativeCaching2() throws Exception {
+    // Test that we refresh information when expiration time is short and the server provides identical advertisements
+    int times = testAlternativeCaching("h2=\"host2.com:4044\";ma=1", 5, 1000L);
+    assertEquals(5, times);
+  }
+
+  private int testAlternativeCaching(String altSvc, int num, long sleepTime) throws Exception {
+    startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
+      .accept(request -> {
+        assertNull(request.getHeader(HttpHeaders.ALT_USED));
+        assertEquals("host2.com", request.connection().indicatedServerName());
+        request
+          .response()
+          .putHeader(HttpHeaders.ALT_SVC, altSvc)
+          .end(request.authority().toString(false));
+      });
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
+      .compose(request -> request
+        .send()
+        .compose(HttpClientResponse::body)
+      ).await();
+    EndpointResolverInternal resolver = ((HttpClientInternal) client).originResolver();
+    Map<Endpoint, Endpoint> map = new IdentityHashMap<>();
+    for (int i = 0;i < num;i++) {
+      body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
+        .compose(request -> request
+          .send()
+          .compose(HttpClientResponse::body)
+        ).await();
+      Endpoint endpoint = resolver.resolveEndpoint(new Origin("https", "host2.com", 4043)).await();
+      map.put(endpoint, endpoint);
+      if (sleepTime > 0) {
+        Thread.sleep(sleepTime);
+      }
+    }
+    return map.size();
   }
 }
