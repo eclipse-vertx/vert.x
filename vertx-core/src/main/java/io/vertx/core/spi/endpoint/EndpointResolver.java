@@ -11,12 +11,8 @@
 package io.vertx.core.spi.endpoint;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Endpoint resolver Service Provider Interface (SPI).
@@ -46,16 +42,6 @@ public interface EndpointResolver<A extends Address, S, D, E> {
    * @return the server socket address
    */
   SocketAddress addressOf(S server);
-
-  /**
-   * Returns the known properties of a given {@code server}.
-   *
-   * @param server the endpoint
-   * @return the properties as a JSON object
-   */
-  default Map<String, ?> propertiesOf(S server) {
-    return Collections.emptyMap();
-  }
 
   /**
    * Resolve an address to the resolver state for this name.

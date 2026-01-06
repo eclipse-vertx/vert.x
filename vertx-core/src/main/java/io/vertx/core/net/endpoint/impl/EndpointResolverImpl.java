@@ -309,10 +309,6 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
       return connectFailures.get() == 0;
     }
     @Override
-    public Map<String, ?> properties() {
-      return endpointResolver.propertiesOf(endpoint);
-    }
-    @Override
     public Object unwrap() {
       return endpoint;
     }

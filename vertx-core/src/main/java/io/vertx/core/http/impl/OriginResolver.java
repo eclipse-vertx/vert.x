@@ -28,8 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.core.http.impl.OriginEndpoint.*;
-
 /**
  * A resolver for origins.
  *
@@ -69,16 +67,6 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
   @Override
   public SocketAddress addressOf(OriginServer server) {
     return server.address != null ? server.address : null;
-  }
-
-  @Override
-  public Map<String, ?> propertiesOf(OriginServer server) {
-    // Should we cache that on OriginServer ?????
-    if (server.protocol != null) {
-      return Map.of(ALPN_KEY, server.protocol.id(), AUTHORITY_KEY, server.authority, ADDR_RESOLVED, server.address != null);
-    } else {
-      return Map.of(AUTHORITY_KEY, server.authority, ADDR_RESOLVED, server.address != null);
-    }
   }
 
   @Override

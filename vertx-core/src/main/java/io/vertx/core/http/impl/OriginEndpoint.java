@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.http.HttpProtocol;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 
 import java.util.*;
@@ -19,11 +20,6 @@ import java.util.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class OriginEndpoint<L> {
-
-  // Should we move these to the address resolver thing ? most likely ...
-  public static final String ALPN_KEY = "alpn";
-  public static final String AUTHORITY_KEY = "auth";
-  public static final String ADDR_RESOLVED = "resolved";
 
   final Origin origin;
   final OriginServer primary;

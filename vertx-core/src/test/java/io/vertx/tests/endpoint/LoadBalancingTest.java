@@ -38,10 +38,6 @@ public class LoadBalancingTest {
         return "";
       }
       @Override
-      public Map<String, String> properties() {
-        return Map.of();
-      }
-      @Override
       public boolean isAvailable() {
         return true;
       }

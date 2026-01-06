@@ -47,10 +47,6 @@ public class LoadBalancingCornerCasesTest {
         return null;
       }
       @Override
-      public Map<String, String> properties() {
-        return Map.of();
-      }
-      @Override
       public boolean isAvailable() {
         return true;
       }

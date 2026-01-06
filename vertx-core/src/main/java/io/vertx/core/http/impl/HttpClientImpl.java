@@ -33,14 +33,11 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static io.vertx.core.http.impl.OriginEndpoint.ALPN_KEY;
-import static io.vertx.core.http.impl.OriginEndpoint.AUTHORITY_KEY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -483,17 +480,16 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         HostAndPort altUsed;
         if (followAlternativeServices && server instanceof Origin && ("https".equals((originServer = (Origin)server).scheme) && originServer.host.indexOf('.') > 0)) {
           lookup = endpoint.selectServer(s -> {
-            Map<String, ?> properties = s.properties();
-            String alpn = (String)properties.get(ALPN_KEY);
-            return alpn != null && protocol_ == HttpProtocol.fromId(alpn);
+            OriginServer unwrap = (OriginServer) s.unwrap();
+            return protocol_ == unwrap.protocol;
           });
           protocol = protocol_;
           if (lookup == null) {
             altUsed = null;
             lookup = endpoint.selectServer();
           } else {
-            Map<String, ?> props = lookup.properties();
-            altUsed = (HostAndPort) props.get(AUTHORITY_KEY);
+            OriginServer unwrap = (OriginServer) lookup.unwrap();
+            altUsed = unwrap.authority;
           }
         } else {
           protocol = protocol_;
