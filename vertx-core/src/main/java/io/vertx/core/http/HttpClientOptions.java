@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
@@ -1080,6 +1081,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * @return whether the client follows alternative services advertisements
    */
+  @Unstable
   public boolean getFollowAlternativeServices() {
     return followAlternativeServices;
   }
