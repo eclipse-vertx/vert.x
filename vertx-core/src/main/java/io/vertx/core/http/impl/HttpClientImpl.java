@@ -481,7 +481,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         Origin originServer;
         // For HTTPS we must handle SNI to consider an alternative
         HostAndPort altUsed;
-        if (followAlternativeServices && server instanceof Origin && ("http".equals((originServer = (Origin)server).scheme) || originServer.host.indexOf('.') > 0)) {
+        if (followAlternativeServices && server instanceof Origin && ("https".equals((originServer = (Origin)server).scheme) && originServer.host.indexOf('.') > 0)) {
           lookup = endpoint.selectServer(s -> {
             Map<String, ?> properties = s.properties();
             String alpn = (String)properties.get(ALPN_KEY);
@@ -506,7 +506,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         }
         SocketAddress address = lookup2.address();
         EndpointKey key = new EndpointKey(useSSL, protocol.version(), sslOptions, null, address, authority != null ? authority : HostAndPort.create(address.host(), address.port()));
-        return resourceManager.withResourceAsync(key, httpEndpointProvider(followAlternativeServices, transport), (e, created) -> {
+        return resourceManager.withResourceAsync(key, httpEndpointProvider(followAlternativeServices && useSSL, transport), (e, created) -> {
           Future<Lease<HttpClientConnection>> fut2 = e.requestConnection(streamCtx, connectTimeout);
           ServerInteraction endpointRequest = lookup2.newInteraction();
           return fut2.andThen(ar -> {
