@@ -72,38 +72,6 @@ public class HttpAlternativesTest extends VertxTestBase {
   }
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-//    http1xServer = vertx.createHttpServer(new HttpServerOptions()
-//      .setSsl(true)
-//      .setUseAlpn(true)
-//      .setSni(true)
-//      .setAlpnVersions(List.of(HttpVersion.HTTP_1_1))
-//      .setKeyCertOptions(Cert.SNI_JKS.get()));
-//    http1xServer.requestHandler(request -> {
-//      Handler<HttpServerRequest> handler = http1xHandler;
-//      if (handler != null) {
-//        handler.handle(request);
-//      }
-//    });
-//    http1xServer.listen(4043).await();
-//    http2Server = vertx.createHttpServer(new HttpServerOptions()
-//      .setSsl(true)
-//      .setSsl(true)
-//      .setUseAlpn(true)
-//      .setSni(true)
-//      .setAlpnVersions(List.of(HttpVersion.HTTP_2))
-//      .setKeyCertOptions(Cert.SNI_JKS.get()));
-//    http2Server.requestHandler(request -> {
-//      Handler<HttpServerRequest> handler = http2Handler;
-//      if (handler != null) {
-//        handler.handle(request);
-//      }
-//    });
-//    http2Server.listen(4044).await();
-  }
-
-  @Override
   protected void tearDown() throws Exception {
     super.tearDown();
     client = null;
