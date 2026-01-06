@@ -1093,6 +1093,9 @@ public class HttpClientOptions extends ClientOptionsBase {
    * <p>Setting this to true, instructs the client to use most appropriate alternative services advertised by
    * HTTP servers.</p>
    *
+   * <p>The client only follows alternative services it can trust for a given origin, in practice this means
+   * this only the {@code https} scheme is supported and alternatives handshake uses the alternative origin.</p>
+   *
    * @param followAlternativeServices the config value
    */
   public HttpClientOptions setFollowAlternativeServices(boolean followAlternativeServices) {
