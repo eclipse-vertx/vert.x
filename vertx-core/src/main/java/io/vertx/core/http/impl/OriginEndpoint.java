@@ -86,7 +86,8 @@ public class OriginEndpoint<L> {
     boolean valid = true;
     for (AltSvc.Value altSvcValue : altSvc) {
       HttpProtocol protocol = HttpProtocol.fromId(altSvcValue.protocolId());
-      if (protocol != null) {
+      // We only care about those protocols
+      if (protocol == HttpProtocol.HTTP_1_1 || protocol == HttpProtocol.H2) {
         long maxAge;
         String ma = altSvcValue.parameters().get("ma");
         if (ma != null) {
