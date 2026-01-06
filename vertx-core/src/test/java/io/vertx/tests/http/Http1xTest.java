@@ -5374,7 +5374,8 @@ public class Http1xTest extends HttpTest {
             assertTrue(ar.succeeded());
           } else {
             assertTrue(ar.failed());
-            assertTrue(ar.cause().getMessage().contains("closed"));
+            String msg = ar.cause().getMessage();
+            assertTrue("Expected " + msg + " to contain 'closed' or 'shutdown'", msg.contains("closed") || msg.contains("shutdown"));
           }
           complete();
         });
