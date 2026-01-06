@@ -15,6 +15,8 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 /**
+ * An origin server.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class OriginServer {

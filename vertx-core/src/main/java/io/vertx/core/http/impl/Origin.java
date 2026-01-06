@@ -18,6 +18,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
+ * An origin is the triplet (scheme,host,port) described by <a href="https://datatracker.ietf.org/doc/html/rfc6454">The Web Origin Concept</a>.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Origin implements Address {

@@ -17,6 +17,8 @@ import io.vertx.core.spi.endpoint.EndpointBuilder;
 import java.util.*;
 
 /**
+ * An endpoint for a given origin
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class OriginEndpoint<L> {

@@ -31,6 +31,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A resolver for origins.
  *
+ * <p>This class resolves {@link Origin} address to {@link OriginEndpoint}, an endpoint maintains
+ *
+ * <ul>
+ *   <li>a primary {@link OriginServer} obtained from DNS resolution and for which we cannot really make an assumption on
+ *  the HTTP protocol it can handle (although it is TCP based).</li>
+ *  <li>a list of {@link OriginServer} alternatives for which the HTTP protocol is determined by the alternative services discovery</li>
+ * </ul>
+ *
+ * <p>The initial resolution uses the classic A/AAAA DNS resolution and thus initially an origin endpoint
+ * is the list of DNS resolved socket addresses.</p>
+ *
+ * <p>When the client considers a connection could send alt-svc events, it sets an alt-svc event handler on the
+ * connection and relays those events to the origin resolver: an origin endpoint is looked up and when the endpoint is
+ * found, it is updated with the alternative services and potentially considered stale.</p>
+ *
+ * <p>When an origin endpoint is stale, the resolver updates it on the next resolver lookup, the DNS resolver is then
+ * used to obtain the alternative services addresses and keep only the ones we can DNS resolve.</p>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer, OriginEndpoint<L>, L> {
