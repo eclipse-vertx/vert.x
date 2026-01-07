@@ -456,6 +456,12 @@ public interface HttpHeaders {
   CharSequence ALT_SVC = HttpHeaderNames.ALT_SVC;
 
   /**
+   * Alt-used header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence ALT_USED = AsciiString.cached("alt-used");
+
+  /**
    * HTTP/2 {@code :path} pseudo header
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

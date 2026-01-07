@@ -11,7 +11,6 @@
 package io.vertx.core.spi.endpoint;
 
 import io.vertx.core.Future;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
 
@@ -45,16 +44,6 @@ public interface EndpointResolver<A extends Address, S, D, E> {
   SocketAddress addressOf(S server);
 
   /**
-   * Returns the known properties of a given {@code server}.
-   *
-   * @param server the endpoint
-   * @return the properties as a JSON object
-   */
-  default JsonObject propertiesOf(S server) {
-    return new JsonObject();
-  }
-
-  /**
    * Resolve an address to the resolver state for this name.
    *
    * @param address the address to resolve
@@ -78,6 +67,16 @@ public interface EndpointResolver<A extends Address, S, D, E> {
    * @return the state validity
    */
   boolean isValid(D state);
+
+  /**
+   *
+   * @param address
+   * @param state
+   * @return
+   */
+  default Future<D> refresh(A address, D state) {
+    return null;
+  }
 
   /**
    * Dispose the state.

@@ -57,11 +57,7 @@ public class MappingResolverTest extends VertxTestBase {
     FakeAddress lookup = new FakeAddress("svc");
     mapping = addr -> null;
     Endpoint endpoint = awaitFuture(endpointResolver.resolveEndpoint(lookup));
-    try {
-      endpoint.selectServer();
-      fail();
-    } catch (IllegalStateException ignore) {
-    }
+    assertNull(endpoint.selectServer());
   }
 
   @Test

@@ -11,6 +11,7 @@
 
 package io.vertx.benchmarks;
 
+import io.vertx.core.net.impl.UriParser;
 import io.vertx.core.net.impl.HostAndPortImpl;
 import org.openjdk.jmh.annotations.*;
 
@@ -35,13 +36,13 @@ public class HostAndPortBenchmark {
    @Benchmark
    public int parseIPv4Address() {
       String host =  this.host;
-      return HostAndPortImpl.parseIPv4Address(host, 0, host.length());
+      return UriParser.parseIPv4Address(host, 0, host.length());
    }
 
    @Benchmark
    public int parseHost() {
       String host =  this.host;
-      return HostAndPortImpl.parseHost(host, 0, host.length());
+      return UriParser.parseHost(host, 0, host.length());
    }
 
    @Benchmark

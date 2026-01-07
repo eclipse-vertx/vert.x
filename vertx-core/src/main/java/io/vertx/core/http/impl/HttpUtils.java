@@ -20,7 +20,6 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -34,6 +33,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.RFC3986;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.HostAndPortImpl;
+import io.vertx.core.net.impl.UriParser;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -937,7 +937,7 @@ public final class HttpUtils {
 
   public static boolean isValidHostAuthority(String host) {
     int len = host.length();
-    return HostAndPortImpl.parseHost(host, 0, len) == len;
+    return UriParser.parseHost(host, 0, len) == len;
   }
 
   public static boolean canUpgradeToWebSocket(HttpServerRequest req) {
@@ -1014,7 +1014,7 @@ public final class HttpUtils {
       .collect(Collectors.toList());
   }
 
-  public static AltSvc parseAltSvcFrame(ByteBuf payload) {
+  public static AltSvcEvent parseAltSvcFrame(ByteBuf payload) {
     if (payload.readableBytes() >= 2) {
       int idx = payload.readerIndex();
       try {
@@ -1039,7 +1039,10 @@ public final class HttpUtils {
           origin = null;
         }
         String value = payload.readString(payload.readableBytes(), StandardCharsets.US_ASCII);
-        return new AltSvc(origin, value);
+        AltSvc altSvc;
+        if (value != null && (altSvc = AltSvc.parseAltSvc(value)) != null) {
+          return new AltSvcEvent(origin, altSvc);
+        }
       } finally {
         payload.readerIndex(idx);
       }

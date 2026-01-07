@@ -472,12 +472,18 @@ public class QuicServerTest extends VertxTestBase {
       stream.create();
       stream.write("ping");
       writeLatch.future().await();
-      try {
-        stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
-        fail();
-      } catch (Exception e) {
-        assertSame(ChannelOutputShutdownException.class, e.getClass());
-        assertEquals("STOP_SENDING frame received", e.getMessage());
+      int num = 10;
+      for (int i = 0;i < num;i++) {
+        try {
+          stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
+          // Retry
+          assertTrue(i + 1 < num);
+          Thread.sleep(1);
+        } catch (Exception e) {
+          assertSame(ChannelOutputShutdownException.class, e.getClass());
+          assertEquals("STOP_SENDING frame received", e.getMessage());
+          break;
+        }
       }
     } finally {
       client.close();

@@ -10,13 +10,19 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.Address;
 import io.vertx.core.net.HostAndPort;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
-public class Origin {
+/**
+ * An origin is the triplet (scheme,host,port) described by <a href="https://datatracker.ietf.org/doc/html/rfc6454">The Web Origin Concept</a>.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+public class Origin implements Address {
 
   public static Origin fromASCII(String s) {
     int idx = s.indexOf("://");
@@ -77,5 +83,19 @@ public class Origin {
       buffer.appendString(Integer.toString(port));
     }
     return buffer;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof Origin) {
+      Origin that = (Origin) obj;
+      return scheme.equals(that.scheme) && host.equals(that.host) && port == that.port;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(scheme, host, port);
   }
 }

@@ -160,14 +160,17 @@ public class RequestOptions extends HttpConnectOptions {
     traceOperation = null;
   }
 
+  @Override
+  public RequestOptions setProtocolVersion(HttpVersion protocolVersion) {
+    return (RequestOptions) super.setProtocolVersion(protocolVersion);
+  }
+
   public RequestOptions setProxyOptions(ProxyOptions proxyOptions) {
-    super.setProxyOptions(proxyOptions);
-    return this;
+    return (RequestOptions) super.setProxyOptions(proxyOptions);
   }
 
   public RequestOptions setServer(Address server) {
-    super.setServer(server);
-    return this;
+    return (RequestOptions) super.setServer(server);
   }
 
   /**
