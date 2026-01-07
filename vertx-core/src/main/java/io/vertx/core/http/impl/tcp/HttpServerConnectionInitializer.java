@@ -67,6 +67,7 @@ public class HttpServerConnectionInitializer {
   private final boolean handle100ContinueAutomatically;
   private final int maxFormAttributeSize;
   private final int maxFormFields;
+  private final int maxQueryParams;
   private final int maxFormBufferedBytes;
   private final Http1ServerConfig http1Config;
   private final Http2ServerConfig http2Config;
@@ -92,6 +93,7 @@ public class HttpServerConnectionInitializer {
                                   boolean handle100ContinueAutomatically,
                                   int maxFormAttributeSize,
                                   int maxFormFields,
+                                  int maxQueryParams,
                                   int maxFormBufferedBytes,
                                   Http1ServerConfig http1Config,
                                   Http2ServerConfig http2Config,
@@ -154,6 +156,7 @@ public class HttpServerConnectionInitializer {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
+    this.maxQueryParams = maxQueryParams;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.http1Config = http1Config;
     this.http2Config = http2Config;
@@ -297,6 +300,7 @@ public class HttpServerConnectionInitializer {
         sslContextManager,
         maxFormAttributeSize,
         maxFormFields,
+        maxQueryParams,
         maxFormBufferedBytes,
         http1Config,
         registerWebSocketWriteHandlers,

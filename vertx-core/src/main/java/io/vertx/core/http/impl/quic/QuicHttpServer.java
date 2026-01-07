@@ -132,6 +132,7 @@ public class QuicHttpServer implements HttpServerInternal {
     private final boolean handle100ContinueAutomatically;
     private final int maxFormAttributeSize;
     private final int maxFormFields;
+    private final int maxQueryParams;
     private final int maxFormBufferedSize;
     private final Http3Settings localSettings;
 
@@ -142,6 +143,7 @@ public class QuicHttpServer implements HttpServerInternal {
                              boolean handle100ContinueAutomatically,
                              int maxFormAttributeSize,
                              int maxFormFields,
+                             int maxQueryParams,
                              int maxFormBufferedSize,
                              Http3Settings localSettings) {
       this.transport = transport;
@@ -151,6 +153,7 @@ public class QuicHttpServer implements HttpServerInternal {
       this.handle100ContinueAutomatically = handle100ContinueAutomatically;
       this.maxFormAttributeSize = maxFormAttributeSize;
       this.maxFormFields = maxFormFields;
+      this.maxQueryParams = maxQueryParams;
       this.maxFormBufferedSize = maxFormBufferedSize;
       this.localSettings = localSettings;
     }
@@ -170,7 +173,7 @@ public class QuicHttpServer implements HttpServerInternal {
       http3Connection.streamHandler(stream -> {
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
           handle100ContinueAutomatically, maxFormAttributeSize,
-          maxFormFields, maxFormBufferedSize, serverOrigin);
+          maxFormFields, maxFormBufferedSize, maxQueryParams, serverOrigin);
         request.init();
       });
 
@@ -221,7 +224,8 @@ public class QuicHttpServer implements HttpServerInternal {
     }
 
     quicServer.handler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
-      config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
+      config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(),
+      config.getMaxFormFields(), config.getMaxQueryParams(),
       config.getMaxFormBufferedBytes(), http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings()));
     return quicServer
       .bind(current, address)

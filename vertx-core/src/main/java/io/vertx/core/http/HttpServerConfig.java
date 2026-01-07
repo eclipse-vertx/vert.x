@@ -62,6 +62,7 @@ public class HttpServerConfig {
   private int maxFormAttributeSize;
   private int maxFormFields;
   private int maxFormBufferedBytes;
+  private int maxQueryParams;
   private boolean handle100ContinueAutomatically;
   private ServerSSLOptions sslOptions;
   private boolean strictThreadMode;
@@ -91,6 +92,7 @@ public class HttpServerConfig {
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
+    this.maxQueryParams = options.getMaxQueryParams();
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.sslOptions = options.getSslOptions() != null ? new ServerSSLOptions(options.getSslOptions()) : null;
     this.strictThreadMode = options.getStrictThreadMode();
@@ -367,6 +369,13 @@ public class HttpServerConfig {
    */
   public int getMaxFormFields() {
     return maxFormFields;
+  }
+
+  /**
+   * @return Returns the maximum number of query params
+   */
+  public int getMaxQueryParams() {
+    return maxQueryParams;
   }
 
   /**

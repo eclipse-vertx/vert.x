@@ -102,6 +102,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_FORM_BUFFERED_SIZE = 1024;
 
   /**
+   * Default max number of query params = 1024
+   */
+  public static final int DEFAULT_MAX_QUERY_PARAMS = 1024;
+
+  /**
    * Default value of whether 100-Continue should be handled automatically = {@code false}
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
@@ -209,6 +214,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxFormAttributeSize;
   private int maxFormFields;
   private int maxFormBufferedBytes;
+  private int maxQueryParams;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
   private WebSocketServerConfig webSocketConfig;
@@ -239,6 +245,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxFormAttributeSize = other.getMaxFormAttributeSize();
     this.maxFormFields = other.getMaxFormFields();
     this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
+    this.maxQueryParams = other.getMaxQueryParams();
     this.compressionLevel = other.getCompressionLevel();
     this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
@@ -278,6 +285,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
+    maxQueryParams = DEFAULT_MAX_QUERY_PARAMS;
     strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
     compression = new HttpCompressionConfig();
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
@@ -842,6 +850,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setMaxFormBufferedBytes(int maxFormBufferedBytes) {
     this.maxFormBufferedBytes = maxFormBufferedBytes;
+    return this;
+  }
+
+  /**
+   * @return Returns the maximum number of query params
+   */
+  public int getMaxQueryParams() {
+    return maxQueryParams;
+  }
+
+  /**
+   * Set the maximum number of query params
+   *
+   * @param maxQueryParams the new maximum
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxQueryParams(int maxQueryParams) {
+    this.maxQueryParams = maxQueryParams;
     return this;
   }
 
