@@ -167,7 +167,8 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
         assertEquals(origin.host, evt.origin.host);
         assertEquals(origin.port, evt.origin.port);
       } else {
-        assertEquals("http", evt.origin.scheme);
+        String expectedScheme = connection.isSsl() ? "https" : "http";
+        assertEquals(expectedScheme, evt.origin.scheme);
         assertEquals(testAddress.host(), evt.origin.host);
         assertEquals(testAddress.port(), evt.origin.port);
       }
