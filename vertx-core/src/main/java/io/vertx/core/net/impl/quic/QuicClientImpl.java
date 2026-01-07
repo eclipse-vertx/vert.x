@@ -36,7 +36,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -45,6 +44,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   public static final QuicConnectOptions DEFAULT_CONNECT_OPTIONS = new QuicConnectOptions();
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
+  private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
 
   public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientOptions options) {
     return new QuicClientImpl(vertx, metricsProvider, new QuicClientOptions(options));
@@ -72,10 +72,15 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
-        Attribute<SslContextProvider> attr = q.attr(SSL_CONTEXT_PROVIDER_KEY);
-        SslContextProvider sslContextProvider = attr.get();
+        SslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
         QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, applicationProtocols);
-        return sslContext.newEngine(q.alloc());
+        if (q.hasAttr(SSL_SERVER_NAME_KEY)) {
+          Attribute<HostAndPort> serverName = q.attr(SSL_SERVER_NAME_KEY);
+          HostAndPort peer = serverName.get();
+          return sslContext.newEngine(q.alloc(), peer.host(), peer.port());
+        } else {
+          return sslContext.newEngine(q.alloc());
+        }
       })
       .maxIdleTimeout(5000, TimeUnit.MILLISECONDS));
   }
@@ -93,6 +98,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       sslOptions = options.getSslOptions();
     }
     Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
+    String serverName = connectOptions.getServerName();
     return fut.compose(sslContextProvider -> {
       Duration connectTimeout = connectOptions.getTimeout();
       if (connectTimeout == null) {
@@ -102,11 +108,12 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       if (qlogConfig == null) {
         qlogConfig = options.getQLogConfig();
       }
-      return connect(address, qlogConfig, context, connectTimeout, sslContextProvider);
+      return connect(address, serverName, qlogConfig, context, connectTimeout, sslContextProvider);
     });
   }
 
   private Future<QuicConnection> connect(SocketAddress address,
+                                         String serverName,
                                          QLogConfig qLogConfig,
                                          ContextInternal context,
                                          Duration connectTimeout,
@@ -129,6 +136,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         }
       })
       .remoteAddress(new InetSocketAddress(address.host(), address.port()));
+    if (serverName != null && !serverName.isEmpty()) {
+      bootstrap.attr(SSL_SERVER_NAME_KEY, HostAndPort.authority(serverName, address.port()));
+    }
     if (qLogConfig != null) {
       bootstrap.option(QuicChannelOption.QLOG, new QLogConfiguration(qLogConfig.getPath(), qLogConfig.getTitle(), qLogConfig.getDescription()));
     }

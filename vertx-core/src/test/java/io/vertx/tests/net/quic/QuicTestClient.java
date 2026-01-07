@@ -26,6 +26,8 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.quic.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Handler;
 
@@ -35,13 +37,17 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
 /**
  * Minimal Quic client for testing Vert.x QuicServer
  */
 public class QuicTestClient {
+
+  /**
+   * Host SNI value;
+   */
+  private static final AttributeKey<String> SNI_ATTRIBUTE = AttributeKey.newInstance("server-name");
 
   public class Connection extends ChannelDuplexHandler {
 
@@ -51,6 +57,7 @@ public class QuicTestClient {
     private QuicConnectionCloseEvent closeEvent;
     private Consumer<Stream> handler;
     private Consumer<byte[]> datagramHandler;
+    private String serverName;
 
     public Connection(Channel channel) {
       this.channel = Objects.requireNonNull(channel);
@@ -71,6 +78,11 @@ public class QuicTestClient {
 
     public boolean closeApplicationClose() {
       return closeEvent.isApplicationClose();
+    }
+
+    public Connection serverName(String serverName) {
+      this.serverName = serverName;
+      return this;
     }
 
     public Stream newStream() {
@@ -100,6 +112,9 @@ public class QuicTestClient {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
       quicChannel = (QuicChannel) ctx.channel();
+      if (serverName != null) {
+        quicChannel.attr(SNI_ATTRIBUTE).set(serverName);
+      }
     }
 
     @Override
@@ -324,7 +339,14 @@ public class QuicTestClient {
         applicationProtocols("test-protocol").build();
 
       ChannelHandler codec = new QuicClientCodecBuilder()
-        .sslContext(context)
+        .sslEngineProvider(c -> {
+          if (c.hasAttr(SNI_ATTRIBUTE)) {
+            Attribute<String> serverName = c.attr(SNI_ATTRIBUTE);
+            return context.newEngine(c.alloc(), serverName.get(), 9999);
+          } else {
+            return context.newEngine(c.alloc());
+          }
+        })
         .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
         .initialMaxData(10000000)
         // As we don't want to support remote initiated streams just setup the limit for local initiated

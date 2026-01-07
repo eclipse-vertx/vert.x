@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
 
@@ -357,5 +358,27 @@ public class QuicClientTest extends VertxTestBase {
     });
     stream.write("ping").await();
     await();
+  }
+
+  @Test
+  public void testServerNameIndication() {
+    QuicServerOptions options = serverOptions();
+    options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
+    server = QuicServer.create(vertx, options);
+    AtomicReference<String> serverName = new AtomicReference<>();
+    server.handler(conn -> {
+      serverName.set(conn.indicatedServerName());
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnectOptions connectOptions = new QuicConnectOptions()
+      .setServerName("host2.com")
+      .setSslOptions(new ClientSSLOptions()
+        .setTrustAll(true)
+        .setApplicationLayerProtocols(List.of("test-protocol")));
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"),
+      connectOptions).await();
+    connection.close().await();
+    assertEquals("host2.com", serverName.get());
   }
 }
