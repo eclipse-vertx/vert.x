@@ -263,6 +263,50 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @Override
+  public int getSendBufferSize() {
+    return transportOptions.getSendBufferSize();
+  }
+
+  @Override
+  public TCPSSLOptions setSendBufferSize(int sendBufferSize) {
+    transportOptions.setSendBufferSize(sendBufferSize);
+    return this;
+  }
+
+  @Override
+  public int getReceiveBufferSize() {
+    return transportOptions.getReceiveBufferSize();
+  }
+
+  @Override
+  public TCPSSLOptions setReceiveBufferSize(int receiveBufferSize) {
+    transportOptions.setReceiveBufferSize(receiveBufferSize);
+    return this;
+  }
+
+  @Override
+  public boolean isReuseAddress() {
+    return transportOptions.isReuseAddress();
+  }
+
+  @Override
+  public TCPSSLOptions setReuseAddress(boolean reuseAddress) {
+    transportOptions.setReuseAddress(reuseAddress);
+    return this;
+  }
+
+  @Override
+  public int getTrafficClass() {
+    return transportOptions.getTrafficClass();
+  }
+
+  @Override
+  public TCPSSLOptions setTrafficClass(int trafficClass) {
+    transportOptions.setTrafficClass(trafficClass);
+    return this;
+  }
+
+  @Override
   public boolean isReusePort() {
     return transportOptions.isReusePort();
   }
@@ -753,31 +797,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   @Override
   public TCPSSLOptions setLogActivity(boolean logEnabled) {
     return (TCPSSLOptions) super.setLogActivity(logEnabled);
-  }
-
-  @Override
-  public TCPSSLOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    return (TCPSSLOptions) super.setActivityLogDataFormat(activityLogDataFormat);
-  }
-
-  @Override
-  public TCPSSLOptions setSendBufferSize(int sendBufferSize) {
-    return (TCPSSLOptions) super.setSendBufferSize(sendBufferSize);
-  }
-
-  @Override
-  public TCPSSLOptions setReceiveBufferSize(int receiveBufferSize) {
-    return (TCPSSLOptions) super.setReceiveBufferSize(receiveBufferSize);
-  }
-
-  @Override
-  public TCPSSLOptions setReuseAddress(boolean reuseAddress) {
-    return (TCPSSLOptions) super.setReuseAddress(reuseAddress);
-  }
-
-  @Override
-  public TCPSSLOptions setTrafficClass(int trafficClass) {
-    return (TCPSSLOptions) super.setTrafficClass(trafficClass);
   }
 
 }
