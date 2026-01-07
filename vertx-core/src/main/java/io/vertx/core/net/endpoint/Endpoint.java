@@ -10,14 +10,22 @@
  */
 package io.vertx.core.net.endpoint;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 @Unstable
 @VertxGen
 public interface Endpoint {
+
+  /**
+   * The default view, accepting any server.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Predicate<ServerEndpoint> DEFAULT_VIEW = server -> true;
 
   /**
    * The servers capable of serving requests for this endpoint.
@@ -30,7 +38,17 @@ public interface Endpoint {
    * @return the selected server
    */
   default ServerEndpoint selectServer() {
-    return selectServer(null);
+    return selectServer(DEFAULT_VIEW);
+  }
+
+  /**
+   * Select a server.
+   *
+   * @return the selected server
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default ServerEndpoint selectServer(Predicate<ServerEndpoint> filter) {
+    return selectServer(filter, null);
   }
 
   /**
@@ -39,6 +57,18 @@ public interface Endpoint {
    * @param key the routing key
    * @return the selected server
    */
-  ServerEndpoint selectServer(String key);
+  default ServerEndpoint selectServer(String key) {
+    return selectServer(DEFAULT_VIEW, key);
+  }
+
+  /**
+   * Select a node, using a routing {@code key}
+   *
+   * @param key the routing key
+   * @param filter the view filter
+   * @return the selected server
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  ServerEndpoint selectServer(Predicate<ServerEndpoint> filter, String key);
 
 }

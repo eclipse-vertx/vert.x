@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
@@ -19,17 +20,23 @@ import java.util.Objects;
 
 public final class EndpointKey {
 
+  // Todo : that should become a scheme ???
   final boolean ssl;
+  final HttpVersion protocol;
   final SocketAddress server;
   final HostAndPort authority;
   final ProxyOptions proxyOptions;
   final ClientSSLOptions sslOptions;
 
-  public EndpointKey(boolean ssl, ClientSSLOptions sslOptions, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
+  public EndpointKey(boolean ssl, HttpVersion protocol, ClientSSLOptions sslOptions, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
+    if (protocol == null) {
+      throw new NullPointerException("No null protocol");
+    }
     if (server == null) {
       throw new NullPointerException("No null server address");
     }
     this.ssl = ssl;
+    this.protocol = protocol;
     this.sslOptions = sslOptions;
     this.proxyOptions = proxyOptions;
     this.authority = authority;
@@ -43,7 +50,7 @@ public final class EndpointKey {
     }
     if (o instanceof EndpointKey) {
       EndpointKey that = (EndpointKey) o;
-      return ssl == that.ssl && server.equals(that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
+      return ssl == that.ssl && protocol == that.protocol && server.equals(that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
     }
     return false;
   }
@@ -51,6 +58,7 @@ public final class EndpointKey {
   @Override
   public int hashCode() {
     int result = ssl ? 1 : 0;
+    result = 31 * result + protocol.hashCode();
     result = 31 * result + server.hashCode();
     if (authority != null) {
       result = 31 * result + authority.hashCode();

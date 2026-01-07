@@ -10,9 +10,9 @@
  */
 package io.vertx.tests.http.connection;
 
-import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.AltSvc;
 import io.vertx.core.http.impl.Origin;
 import io.vertx.core.http.impl.http2.Http2Connection;
 import io.vertx.core.internal.buffer.BufferInternal;
@@ -133,7 +133,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
   }
 
   void testAlternateServiceHandler(Origin origin) throws Exception {
-    String expected = "Alt-Svc: h2=\":443\"; ma=2592000;";
+    String expected = "h2=\"192.168.0.1:443\"; ma=2592000";
     server.requestHandler(request -> {
       HttpServerResponse response = request.response();
       if (request.version() == HttpVersion.HTTP_2) {
@@ -159,19 +159,26 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     });
     startServer(testAddress);
     HttpClientConnection connection = client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).await();
-    ((io.vertx.core.http.impl.UnpooledHttpClientConnection)connection).unwrap().alternativeServicesHandler(altSvc -> {
-      assertNotNull(altSvc);
-      assertNotNull(altSvc.origin);
+    ((io.vertx.core.http.impl.UnpooledHttpClientConnection)connection).unwrap().alternativeServicesHandler(evt -> {
+      assertNotNull(evt);
+      assertNotNull(evt.origin);
       if (origin != null) {
-        assertEquals(origin.scheme, altSvc.origin.scheme);
-        assertEquals(origin.host, altSvc.origin.host);
-        assertEquals(origin.port, altSvc.origin.port);
+        assertEquals(origin.scheme, evt.origin.scheme);
+        assertEquals(origin.host, evt.origin.host);
+        assertEquals(origin.port, evt.origin.port);
       } else {
-        assertEquals("http", altSvc.origin.scheme);
-        assertEquals(testAddress.host(), altSvc.origin.host);
-        assertEquals(testAddress.port(), altSvc.origin.port);
+        assertEquals("http", evt.origin.scheme);
+        assertEquals(testAddress.host(), evt.origin.host);
+        assertEquals(testAddress.port(), evt.origin.port);
       }
-      assertEquals(expected, altSvc.value);
+      assertEquals(AltSvc.ListOfValue.class, evt.altSvc.getClass());
+      AltSvc.ListOfValue list = (AltSvc.ListOfValue)evt.altSvc;
+      assertEquals(1, list.size());
+      AltSvc.Value value = list.get(0);
+      assertEquals("h2", value.protocolId());
+      assertEquals("192.168.0.1", value.altAuthority().host());
+      assertEquals(443, value.altAuthority().port());
+      assertEquals("2592000", value.parameters().get("ma"));
       testComplete();
     });
     Buffer response = connection

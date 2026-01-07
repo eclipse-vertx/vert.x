@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -31,12 +32,16 @@ public class ResourceManagerTest extends VertxTestBase {
 
   private static final Object TEST_KEY = new Object();
 
-  public Future<Resource> getResource(ContextInternal ctx, ResourceManager<Object, TestResource> mgr, Function<Object, TestResource> provider, Object key) {
+  public Future<Resource> getResource(ContextInternal ctx, ResourceManager<Object, AsyncResource> mgr, Function<Object, AsyncResource> provider, Object key) {
     return mgr.withResourceAsync(key, provider, (endpoint, created) -> endpoint.acquire(ctx, 0L));
   }
 
-  static abstract class TestResource extends ManagedResource {
+  static abstract class AsyncResource extends ManagedResource {
     public abstract Future<Resource> acquire(ContextInternal ctx, long timeout);
+  }
+
+  static abstract class SyncResource extends ManagedResource {
+    public abstract Resource acquire();
   }
 
   @Test
@@ -53,7 +58,7 @@ public class ResourceManagerTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     Resource result = new Resource();
     Throwable failure = new Throwable();
-    Function<Object, TestResource> provider = key -> new TestResource() {
+    Function<Object, AsyncResource> provider = key -> new AsyncResource() {
       @Override
       public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
         incRefCount();
@@ -64,7 +69,7 @@ public class ResourceManagerTest extends VertxTestBase {
         }
       }
     };
-    ResourceManager<Object, TestResource> mgr = new ResourceManager<>();
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
     getResource(ctx, mgr, provider, TEST_KEY).onComplete(ar -> {
       if (ar.succeeded()) {
         assertTrue(success);
@@ -76,6 +81,39 @@ public class ResourceManagerTest extends VertxTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testRevalidate() {
+    Resource expected1 = new Resource();
+    Resource expected2 = new Resource();
+    ResourceManager<Object, SyncResource> mgr = new ResourceManager<>();
+    SyncResource mr1 = new SyncResource() {
+      @Override
+      public Resource acquire() {
+        return expected1;
+      }
+    };
+    SyncResource mr2 = new SyncResource() {
+      @Override
+      public Resource acquire() {
+        return expected2;
+      }
+    };
+    BiFunction<SyncResource, Boolean, Resource> extractor = (resource, created) -> resource.acquire();
+    Function<Object, SyncResource> failer = key -> {
+      throw new UnsupportedOperationException();
+    };
+    Resource res = mgr.withResource(TEST_KEY, key -> mr1, Function.identity(), extractor);
+    assertSame(expected1, res);
+    res = mgr.withResource(TEST_KEY, failer, Function.identity(), extractor);
+    assertSame(expected1, res);
+    res = mgr.withResource(TEST_KEY, failer, Function.identity(), extractor);
+    assertSame(expected1, res);
+    res = mgr.withResource(TEST_KEY, failer, mr -> mr2, extractor);
+    assertSame(expected2, res);
+    res = mgr.withResource(TEST_KEY, failer, Function.identity(), extractor);
+    assertSame(expected2, res);
   }
 
   @Test
@@ -93,7 +131,7 @@ public class ResourceManagerTest extends VertxTestBase {
     Resource expected = new Resource();
     AtomicReference<Runnable> postCheck = new AtomicReference<>();
     boolean[] disposed = new boolean[1];
-    Function<Object, TestResource> provider = key -> new TestResource() {
+    Function<Object, AsyncResource> provider = key -> new AsyncResource() {
       @Override
       public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
         incRefCount();
@@ -119,7 +157,7 @@ public class ResourceManagerTest extends VertxTestBase {
         disposed[0] = true;
       }
     };
-    ResourceManager<Object, TestResource> mgr = new ResourceManager<>();
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
     getResource(ctx, mgr, provider, TEST_KEY).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
       postCheck.get().run();
@@ -132,7 +170,7 @@ public class ResourceManagerTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     Resource expected = new Resource();
     boolean[] disposed = new boolean[1];
-    Function<Object, TestResource> provider = key -> new TestResource() {
+    Function<Object, AsyncResource> provider = key -> new AsyncResource() {
       @Override
       public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
         incRefCount();
@@ -149,7 +187,7 @@ public class ResourceManagerTest extends VertxTestBase {
         decRefCount();
       }
     };
-    ResourceManager<Object, TestResource> mgr = new ResourceManager<>();
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
     CountDownLatch latch = new CountDownLatch(1);
     getResource(ctx, mgr, provider, TEST_KEY).onComplete(onSuccess(conn -> {
       assertEquals(expected, conn);
@@ -167,7 +205,7 @@ public class ResourceManagerTest extends VertxTestBase {
     Resource expected = new Resource();
     boolean[] disposed = new boolean[1];
     AtomicReference<Runnable> adder = new AtomicReference<>();
-    Function<Object, TestResource> provider = (key) -> new TestResource() {
+    Function<Object, AsyncResource> provider = (key) -> new AsyncResource() {
       @Override
       public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
         adder.set(() -> {
@@ -176,7 +214,7 @@ public class ResourceManagerTest extends VertxTestBase {
         return ctx1.promise();
       }
     };
-    ResourceManager<Object, TestResource> mgr = new ResourceManager<>();
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
     getResource(ctx, mgr, provider, TEST_KEY).onComplete(onSuccess(conn -> {
     }));
     waitUntil(() -> adder.get() != null);
@@ -189,10 +227,10 @@ public class ResourceManagerTest extends VertxTestBase {
   public void testConcurrentDispose() throws Exception {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     ConcurrentLinkedQueue<AtomicBoolean> disposals = new ConcurrentLinkedQueue<>();
-    Function<Object, TestResource> provider = key -> {
+    Function<Object, AsyncResource> provider = key -> {
       AtomicBoolean disposed = new AtomicBoolean();
       disposals.add(disposed);
-      return new TestResource() {
+      return new AsyncResource() {
         @Override
         public Future<Resource> acquire(ContextInternal ctx1, long timeout) {
           if (disposed.get()) {
@@ -213,7 +251,7 @@ public class ResourceManagerTest extends VertxTestBase {
         }
       };
     };
-    ResourceManager<Object, TestResource> mgr = new ResourceManager<>();
+    ResourceManager<Object, AsyncResource> mgr = new ResourceManager<>();
     int num = 100000;
     int concurrency = 4;
     CountDownLatch[] latches = new CountDownLatch[concurrency];

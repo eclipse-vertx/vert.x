@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NameResolver implements AddressResolver<SocketAddress> {
+public class NameResolver {
 
   private static final Logger log = LoggerFactory.getLogger(NameResolver.class);
 
@@ -69,11 +69,6 @@ public class NameResolver implements AddressResolver<SocketAddress> {
     return new AddressResolverOptions(options);
   }
 
-  @Override
-  public EndpointResolver<SocketAddress, ?, ?, ?> endpointResolver(Vertx vertx) {
-    return new Impl();
-  }
-
   /**
    * Resolve an address (e.g. {@code vertx.io} into the first found A (IPv4) or AAAA (IPv6) record.
    *
@@ -91,6 +86,14 @@ public class NameResolver implements AddressResolver<SocketAddress> {
   public io.netty.util.concurrent.Future<InetSocketAddress> resolve(EventLoop eventLoop, String hostname) {
     io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolver(eventLoop);
     return resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
+  }
+
+  public Future<List<InetSocketAddress>> resolveAll(String hostname) {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    io.netty.util.concurrent.Future<List<InetSocketAddress>> fut = resolveAll(context.nettyEventLoop(), hostname);
+    PromiseInternal<List<InetSocketAddress>> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
   }
 
   public void resolveAll(String hostname, Handler<AsyncResult<List<InetSocketAddress>>> resultHandler) {
@@ -177,54 +180,6 @@ public class NameResolver implements AddressResolver<SocketAddress> {
       }
     }
     return false;
-  }
-
-  class Impl<L> implements EndpointResolver<SocketAddress, SocketAddress, L, L> {
-    @Override
-    public SocketAddress tryCast(Address address) {
-      return address instanceof SocketAddress ? (SocketAddress) address : null;
-    }
-
-    @Override
-    public SocketAddress addressOf(SocketAddress server) {
-      return server;
-    }
-
-    @Override
-    public Future<L> resolve(SocketAddress address, EndpointBuilder<L, SocketAddress> builder) {
-      Promise<L> promise = Promise.promise();
-      resolveAll(address.host(), ar -> {
-        EndpointBuilder<L, SocketAddress> builder2 = builder;
-        if (ar.succeeded()) {
-          for (InetSocketAddress addr : ar.result()) {
-            builder2 = builder2.addServer(SocketAddress.inetSocketAddress(address.port(), addr.getAddress().getHostAddress()));
-          }
-          promise.complete(builder2.build());
-        } else {
-          promise.fail(ar.cause());
-        }
-      });
-      return promise.future();
-    }
-
-    @Override
-    public L endpoint(L state) {
-      return state;
-    }
-
-    @Override
-    public boolean isValid(L state) {
-      // NEED EXPIRATION
-      return true;
-    }
-
-    @Override
-    public void dispose(L data) {
-    }
-
-    @Override
-    public void close() {
-    }
   }
 
   public static class ResolverOptions {

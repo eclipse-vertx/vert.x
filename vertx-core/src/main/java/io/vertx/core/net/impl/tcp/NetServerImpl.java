@@ -64,6 +64,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -230,8 +231,14 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
       if (options.isSsl()) {
+        List<String> applicationProtocols;
+        if (options.isUseAlpn()) {
+          applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+        } else {
+          applicationProtocols = null;
+        }
         SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(options.isUseAlpn(), options.getSslHandshakeTimeout(),
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(applicationProtocols, options.getSslHandshakeTimeout(),
           options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));

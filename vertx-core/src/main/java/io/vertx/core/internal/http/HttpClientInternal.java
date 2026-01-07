@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.util.function.Function;
@@ -45,6 +46,10 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
       return null;
     }
   }
+
+  EndpointResolverInternal originResolver();
+
+  EndpointResolverInternal resolver();
 
   Future<Void> closeFuture();
 

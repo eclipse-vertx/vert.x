@@ -122,6 +122,11 @@ public interface LoadBalancer {
   }
 
   /**
+   * Load balancing policy that returns the first server.
+   */
+  LoadBalancer FIRST = (NoMetricsLoadBalancer) servers -> () -> servers.isEmpty() ? -1 : 0;
+
+  /**
    * Create a stateful endpoint selector.
    *
    * @param listOfServers the list of servers

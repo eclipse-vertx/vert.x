@@ -88,16 +88,13 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     HostAndPort peer = HostAndPort.create(host, port);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
     ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), connectOptions, defaultSslOptions);
-    EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), sslOptions, proxyOptions, addr, peer);
+    EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), HttpVersion.HTTP_1_1, sslOptions, proxyOptions, addr, peer);
     // todo: cache
     Function<EndpointKey, WebSocketGroup> provider = (key_) -> {
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
-      HttpConnectParams params = new HttpConnectParams();
-      params.sslOptions = sslOptions;
-      params.proxyOptions = key_.proxyOptions;
-      params.ssl = key_.ssl;
+      HttpConnectParams params = new HttpConnectParams(HttpVersion.HTTP_1_1, sslOptions, key_.proxyOptions, key_.ssl);
       return new WebSocketGroup(key_.server, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM

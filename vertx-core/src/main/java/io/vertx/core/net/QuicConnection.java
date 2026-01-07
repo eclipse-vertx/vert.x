@@ -144,6 +144,11 @@ public interface QuicConnection {
   String applicationLayerProtocol();
 
   /**
+   * @return the server name indicated during the TLS handshake
+   */
+  String indicatedServerName();
+
+  /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is
    *         not SSL.
    * @see javax.net.ssl.SSLSession

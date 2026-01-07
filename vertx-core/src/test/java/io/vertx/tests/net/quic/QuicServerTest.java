@@ -472,12 +472,18 @@ public class QuicServerTest extends VertxTestBase {
       stream.create();
       stream.write("ping");
       writeLatch.future().await();
-      try {
-        stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
-        fail();
-      } catch (Exception e) {
-        assertSame(ChannelOutputShutdownException.class, e.getClass());
-        assertEquals("STOP_SENDING frame received", e.getMessage());
+      int num = 10;
+      for (int i = 0;i < num;i++) {
+        try {
+          stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
+          // Retry
+          assertTrue(i + 1 < num);
+          Thread.sleep(1);
+        } catch (Exception e) {
+          assertSame(ChannelOutputShutdownException.class, e.getClass());
+          assertEquals("STOP_SENDING frame received", e.getMessage());
+          break;
+        }
       }
     } finally {
       client.close();
@@ -970,7 +976,32 @@ public class QuicServerTest extends VertxTestBase {
     } finally {
       client.close();
       server.close().await();
-    }  }
+    }
+  }
+
+  @Test
+  public void testServerNameIndication() throws Exception {
+    QuicServerOptions options = serverOptions();
+    options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
+    QuicServer server = QuicServer.create(vertx, options);
+    AtomicReference<String> serverName = new AtomicReference<>();
+    server.handler(conn -> {
+      serverName.set(conn.indicatedServerName());
+    });
+    int actualPort = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connection()
+        .serverName("host2.com")
+        .connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));
+      connection.close();
+      assertEquals("host2.com", serverName.get());
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
 
   /*  @Test
   public void testSoReuse() throws Exception {

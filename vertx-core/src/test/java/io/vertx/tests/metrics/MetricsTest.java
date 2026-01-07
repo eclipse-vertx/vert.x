@@ -693,39 +693,41 @@ public class MetricsTest extends VertxTestBase {
         responsesLatch.countDown();
       });
     }
-    FakePoolMetrics queueMetrics = FakePoolMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT);
+    String authority = "localhost:" + HttpTestBase.DEFAULT_HTTP_PORT;
+    assertWaitUntil(() -> FakePoolMetrics.getMetrics(authority) != null);
+    FakePoolMetrics queueMetrics = FakePoolMetrics.getMetrics(authority);
     assertWaitUntil(() -> requests.size() == 5);
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(Collections.singleton(authority), clientMetrics.endpoints());
     assertEquals(0, queueMetrics.pending());
-    assertEquals(5, (int)clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(5, (int)clientMetrics.connectionCount(authority));
     for (int i = 0;i < 8;i++) {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
       }));
     }
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
-    assertEquals(8, queueMetrics.pending());
-    assertEquals(5, (int)clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(Collections.singleton(authority), clientMetrics.endpoints());
+    assertWaitUntil(() -> queueMetrics.pending() == 8);
+    assertEquals(5, (int)clientMetrics.connectionCount(authority));
     ArrayList<Runnable> copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
     awaitLatch(responsesLatch);
     assertWaitUntil(() -> requests.size() == 5);
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(Collections.singleton(authority), clientMetrics.endpoints());
     assertEquals(3, queueMetrics.pending());
-    assertEquals(5, (int)clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+    assertEquals(5, (int)clientMetrics.connectionCount(authority));
     copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
     assertWaitUntil(() -> requests.size() == 3);
-    assertEquals(Collections.singleton("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT), clientMetrics.endpoints());
+    assertEquals(Collections.singleton(authority), clientMetrics.endpoints());
     assertEquals(0, queueMetrics.pending());
-    assertWaitUntil(() -> clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == 3);
+    assertWaitUntil(() -> clientMetrics.connectionCount(authority) == 3);
     copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);
-    assertWaitUntil(() -> clientMetrics.connectionCount("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT) == null);
+    assertWaitUntil(() -> clientMetrics.connectionCount(authority) == null);
   }
 
   @Test
