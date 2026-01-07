@@ -2344,6 +2344,48 @@ public abstract class HttpTest extends SimpleHttpTest {
     assertNull(respHeaders.get("transfer-encoding"));
   }
 
+  @Test
+  public void testMaxQueryParams() {
+    testMaxQueryParams(HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS);
+  }
+
+  @Test
+  public void testMaxQueryParamsOption() {
+    testMaxQueryParams(HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS * 2);
+  }
+
+  private void testMaxQueryParams(Integer maxQueryParams) {
+    MultiMap params = TestUtils.randomMultiMap(HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS + 10);
+    String query = generateQueryString(params, ';');
+
+    vertx.createHttpServer(new HttpServerOptions().setMaxQueryParams(maxQueryParams).setMaxInitialLineLength(Integer.MAX_VALUE))
+      .requestHandler(req -> {
+        assertEquals(query, req.query());
+        if (maxQueryParams > HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS) {
+          assertEquals(params.size(), req.params().size());
+        } else {
+          assertEquals(HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS, req.params().size());
+          req.response().setStatusCode(414);
+        }
+        req.response().end();
+      }).listen(testAddress).onComplete(onSuccess(res -> {
+        client.close();
+        client = vertx.createHttpClient(new HttpClientOptions());
+        client
+          .request(new RequestOptions(requestOptions).setURI("some-uri/?" + query))
+          .compose(req -> req.send().compose(resp -> {
+            if (maxQueryParams > HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS) {
+              assertEquals(200, resp.statusCode());
+            } else {
+              assertEquals(414, resp.statusCode());
+            }
+            return resp.end();
+          }))
+          .onComplete(onSuccess(v -> testComplete()));
+      }));
+    await();
+  }
+
   protected MultiMap checkEmptyHttpResponse(HttpMethod method, int sc, MultiMap reqHeaders) throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();

@@ -64,6 +64,7 @@ public class HttpServerConfig {
   private int maxFormAttributeSize;
   private int maxFormFields;
   private int maxFormBufferedBytes;
+  private int maxQueryParams;
   private boolean handle100ContinueAutomatically;
   private boolean strictThreadMode;
   private ObservabilityConfig observabilityConfig;
@@ -123,6 +124,7 @@ public class HttpServerConfig {
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
+    this.maxQueryParams = options.getMaxQueryParams();
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.strictThreadMode = options.getStrictThreadMode();
     this.observabilityConfig = observabilityConfig;
@@ -142,6 +144,7 @@ public class HttpServerConfig {
     this.maxFormAttributeSize = HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
+    this.maxQueryParams = HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
     this.observabilityConfig = null;
@@ -164,6 +167,7 @@ public class HttpServerConfig {
     this.maxFormAttributeSize = other.maxFormAttributeSize;
     this.maxFormFields = other.maxFormFields;
     this.maxFormBufferedBytes = other.maxFormBufferedBytes;
+    this.maxQueryParams = other.maxQueryParams;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.strictThreadMode = other.strictThreadMode;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
@@ -403,6 +407,24 @@ public class HttpServerConfig {
    */
   public int getMaxFormFields() {
     return maxFormFields;
+  }
+
+  /**
+   * @return Returns the maximum number of query params
+   */
+  public int getMaxQueryParams() {
+    return maxQueryParams;
+  }
+
+  /**
+   * Set the maximum number of query params
+   *
+   * @param maxQueryParams the new maximum
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setMaxQueryParams(int maxQueryParams) {
+    this.maxQueryParams = maxQueryParams;
+    return this;
   }
 
   /**

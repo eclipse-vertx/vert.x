@@ -253,6 +253,7 @@ public class TcpHttpServer implements HttpServerInternal {
         config.isHandle100ContinueAutomatically(),
         config.getMaxFormAttributeSize(),
         config.getMaxFormFields(),
+        config.getMaxQueryParams(),
         config.getMaxFormBufferedBytes(),
         http1Config,
         http2Config,
