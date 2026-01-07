@@ -976,7 +976,32 @@ public class QuicServerTest extends VertxTestBase {
     } finally {
       client.close();
       server.close().await();
-    }  }
+    }
+  }
+
+  @Test
+  public void testServerNameIndication() throws Exception {
+    QuicServerOptions options = serverOptions();
+    options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
+    QuicServer server = QuicServer.create(vertx, options);
+    AtomicReference<String> serverName = new AtomicReference<>();
+    server.handler(conn -> {
+      serverName.set(conn.indicatedServerName());
+    });
+    int actualPort = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connection()
+        .serverName("host2.com")
+        .connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));
+      connection.close();
+      assertEquals("host2.com", serverName.get());
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
 
   /*  @Test
   public void testSoReuse() throws Exception {

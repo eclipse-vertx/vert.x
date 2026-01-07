@@ -16,9 +16,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicConnectionCloseEvent;
 import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.handler.ssl.SniCompletionEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.QuicConnectionClose;
@@ -27,7 +29,6 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
-import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -101,7 +102,13 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    if (evt instanceof QuicConnectionCloseEvent) {
+    if (evt instanceof SniCompletionEvent) {
+      SniCompletionEvent sniEvent = (SniCompletionEvent)evt;
+      String serverName = sniEvent.hostname();
+      if (serverName != null) {
+        ctx.channel().attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).set(serverName);
+      }
+    } else if (evt instanceof QuicConnectionCloseEvent) {
       QuicConnectionCloseEvent closeEvent = (QuicConnectionCloseEvent) evt;
       handleClosed(closeEvent);
     } else if (evt instanceof ShutdownEvent) {
