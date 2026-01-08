@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.config.Http1ClientConfig;
 import io.vertx.core.http.impl.config.Http2ClientConfig;
+import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
@@ -60,26 +61,21 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
 public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
 
   public static Http1xOrH2ChannelConnector create(NetClientInternal netClient,
-                                    HttpClientOptions options,
+                                    HttpClientConfig config,
                                     HttpClientMetrics clientMetrics) {
     return new Http1xOrH2ChannelConnector(netClient,
-      options.getTracingPolicy(),
-      options.isDecompressionSupported(),
-      options.getLogActivity(),
-      options.getActivityLogDataFormat(),
-      options.isForceSni(),
-      options.getProtocolVersion(),
-      options.getHttp1Config(),
-      options.getHttp2Config(),
-      Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()),
-      Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()),
-      Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()),
-      clientMetrics) {
-      @Override
-      public HttpClientOptions options() {
-        return options;
-      }
-    };
+      config.getTracingPolicy(),
+      config.isDecompressionSupported(),
+      config.getLogActivity(),
+      config.getActivityLogDataFormat(),
+      config.isForceSni(),
+      config.getProtocolVersion(),
+      config.getHttp1Config(),
+      config.getHttp2Config(),
+      config.getIdleTimeout(),
+      config.getReadIdleTimeout(),
+      config.getWriteIdleTimeout(),
+      clientMetrics);
   }
 
   private final TracingPolicy tracingPolicy;
@@ -122,18 +118,14 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     this.defaultProtocol = defaultProtocol;
     this.http1Config = http1Config;
     this.http2Config = http2Config;
-    this.idleTimeout = idleTimeout;
-    this.readIdleTimeout = readIdleTimeout;
-    this.writeIdleTimeout = writeIdleTimeout;
+    this.idleTimeout = idleTimeout != null ? idleTimeout : Duration.ofMillis(0);
+    this.readIdleTimeout = readIdleTimeout != null ? readIdleTimeout : Duration.ofMillis(0);
+    this.writeIdleTimeout = writeIdleTimeout != null ? writeIdleTimeout : Duration.ofMillis(0);
     this.netClient = netClient;
   }
 
   public NetClientInternal netClient() {
     return netClient;
-  }
-
-  public HttpClientOptions options() {
-    throw new UnsupportedOperationException();
   }
 
   private Http2ClientChannelInitializer http2Initializer() {

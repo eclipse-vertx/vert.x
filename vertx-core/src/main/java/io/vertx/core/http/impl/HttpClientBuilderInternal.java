@@ -5,6 +5,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -12,14 +13,17 @@ import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.net.endpoint.EndpointResolver;
+import io.vertx.core.net.impl.NetClientConfig;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.function.Function;
 
 public final class HttpClientBuilderInternal implements HttpClientBuilder {
@@ -102,25 +106,44 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private HttpClientImpl createHttpClientImpl(EndpointResolver resolver,
                                               Handler<HttpConnection> connectionHandler,
                                               Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
-                                              HttpClientOptions co,
+                                              HttpClientOptions co2,
                                               LoadBalancer loadBalancer,
                                               PoolOptions po) {
-    HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
-    HttpChannelConnector channelConnector = Http1xOrH2ChannelConnector.create(tcpClient, co, metrics);
+    HttpClientConfig config = new HttpClientConfig(co2);
+    HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co2) : null;
+    NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig(config)).metrics(metrics).build();
+    HttpChannelConnector channelConnector = Http1xOrH2ChannelConnector.create(tcpClient, config, metrics);
     HttpClientImpl.Transport transport = new HttpClientImpl.Transport(
       connectionHandler,
       channelConnector,
-      co.isVerifyHost(),
-      co.isSsl(),
-      co.getDefaultHost(),
-      co.getDefaultPort(),
-      co.getMaxRedirects(),
-      co.getProtocolVersion(),
-      co.getSslOptions()
+      config.isVerifyHost(),
+      config.isSsl(),
+      config.getDefaultHost(),
+      config.getDefaultPort(),
+      config.getMaxRedirects(),
+      config.getProtocolVersion(),
+      config.getSslOptions()
     );
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,
-      co.getProxyOptions(), co.getNonProxyHosts(), transport, loadBalancer, co.getFollowAlternativeServices(), resolverKeepAlive);
+      config.getProxyOptions(), config.getNonProxyHosts(), transport, loadBalancer, config.getFollowAlternativeServices(), resolverKeepAlive);
+  }
+
+  private static NetClientConfig netClientConfig(HttpClientConfig httpConfig) {
+    NetClientConfig config = new NetClientConfig();
+    config.setTransportOptions(httpConfig.getTransportOptions());
+    config.setSslOptions(httpConfig.getSslOptions() != null ? httpConfig.getSslOptions() : null);
+    config.setSslEngineOptions(httpConfig.getSslEngineOptions() != null ? httpConfig.getSslEngineOptions().copy() : null);
+    config.setConnectTimeout(httpConfig.getConnectTimeout());
+    config.setMetricsName(httpConfig.getMetricsName());
+    config.setProxyOptions(null);
+    config.setNonProxyHosts(httpConfig.getNonProxyHosts() != null ? new ArrayList<>(httpConfig.getNonProxyHosts()) : null);
+    config.setIdleTimeout(httpConfig.getIdleTimeout());
+    config.setReadIdleTimeout(httpConfig.getReadIdleTimeout());
+    config.setWriteIdleTimeout(httpConfig.getWriteIdleTimeout());
+    config.setLogActivity(httpConfig.getLogActivity());
+    config.setActivityLogDataFormat(httpConfig.getActivityLogDataFormat());
+    config.setSsl(httpConfig.isSsl());
+    return config;
   }
 
   private Handler<HttpConnection> connectionHandler(HttpClientOptions options) {

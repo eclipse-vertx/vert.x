@@ -82,6 +82,7 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public NetClientOptions(ClientOptionsBase other) {
     super(other);
+    init();
   }
 
   /**
