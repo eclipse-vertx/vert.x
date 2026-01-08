@@ -121,7 +121,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       config.getDefaultHost(),
       config.getDefaultPort(),
       config.getMaxRedirects(),
-      config.getProtocolVersion(),
+      co2.getProtocolVersion(),
       config.getSslOptions()
     );
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,

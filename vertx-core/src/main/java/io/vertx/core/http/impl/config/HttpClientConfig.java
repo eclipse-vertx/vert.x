@@ -49,7 +49,6 @@ public class HttpClientConfig {
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
-  private HttpVersion protocolVersion;
   private int maxRedirects;
   private boolean forceSni;
   private TracingPolicy tracingPolicy;
@@ -71,13 +70,12 @@ public class HttpClientConfig {
     this.logActivity = NetworkOptions.DEFAULT_LOG_ENABLED;
     this.activityLogDataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
-    this.http1Config = new Http1ClientConfig();
-    this.http2Config = new Http2ClientConfig();
+    this.http1Config = null;
+    this.http2Config = null;
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
     this.decompressionSupported = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
-    this.protocolVersion = HttpClientOptions.DEFAULT_PROTOCOL_VERSION;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
     this.forceSni = HttpClientOptions.DEFAULT_FORCE_SNI;
     this.tracingPolicy = HttpClientOptions.DEFAULT_TRACING_POLICY;
@@ -100,13 +98,12 @@ public class HttpClientConfig {
     this.logActivity = other.logActivity;
     this.activityLogDataFormat = other.activityLogDataFormat;
     this.ssl = other.ssl;
-    this.http1Config = new Http1ClientConfig(other.http1Config);
-    this.http2Config = new Http2ClientConfig(other.http2Config);
+    this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
+    this.http2Config = other.http2Config != null ? new Http2ClientConfig(other.http2Config) : null;
     this.verifyHost = other.isVerifyHost();
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
-    this.protocolVersion = other.protocolVersion;
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
     this.tracingPolicy = other.tracingPolicy;
@@ -135,7 +132,6 @@ public class HttpClientConfig {
     this.decompressionSupported = other.isDecompressionSupported();
     this.defaultHost = other.getDefaultHost();
     this.defaultPort = other.getDefaultPort();
-    this.protocolVersion = other.getProtocolVersion();
     this.maxRedirects = other.getMaxRedirects();
     this.forceSni = other.isForceSni();
     this.tracingPolicy = other.getTracingPolicy();
@@ -423,10 +419,32 @@ public class HttpClientConfig {
   }
 
   /**
+   * Set the HTTP/1.x configuration to use
+   *
+   * @param config the config
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setHttp1Config(Http1ClientConfig config) {
+    this.http1Config = config;
+    return this;
+  }
+
+  /**
    * @return the configuration specific to the HTTP/2 protocol.
    */
   public Http2ClientConfig getHttp2Config() {
     return http2Config;
+  }
+
+  /**
+   * Set the HTTP/2 configuration to use
+   *
+   * @param config the config
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setHttp2Config(Http2ClientConfig config) {
+    this.http2Config = config;
+    return this;
   }
 
   /**
@@ -502,29 +520,6 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setDefaultPort(int defaultPort) {
     this.defaultPort = defaultPort;
-    return this;
-  }
-
-  /**
-   * Get the protocol version.
-   *
-   * @return the protocol version
-   */
-  public HttpVersion getProtocolVersion() {
-    return protocolVersion;
-  }
-
-  /**
-   * Set the protocol version.
-   *
-   * @param protocolVersion the protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setProtocolVersion(HttpVersion protocolVersion) {
-    if (protocolVersion == null) {
-      throw new IllegalArgumentException("protocolVersion must not be null");
-    }
-    this.protocolVersion = protocolVersion;
     return this;
   }
 
