@@ -28,7 +28,16 @@ public interface HttpRequestHead {
   String uri();
 
   /**
-   * @return The path part of the uri. For example {@code /somepath/somemorepath/someresource.foo}
+   * Returns the path component of the HTTP request URI.
+   * <p>
+   * This is the raw, non-normalized path as received from the client.
+   * It may contain duplicated separators or traversal segments such as {@code ".."}.
+   * <p>
+   * For security-sensitive logic (for example access control, routing or
+   * filesystem checks), applications should prefer using a normalized path
+   * provided by the framework instead of relying on this raw value.
+   *
+   * @return the raw path component of the request URI
    */
   @Nullable
   String path();
