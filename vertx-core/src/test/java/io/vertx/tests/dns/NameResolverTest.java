@@ -866,7 +866,7 @@ public class NameResolverTest extends VertxTestBase {
 
     List<String> expectedIPAddresses = Arrays.asList("127.0.0.2", "127.0.0.3");
 
-    //dnsServer.addRecordsToStore( "fakeAddress.com", expectedIPAddresses.toArray(new String[0]));
+    dnsServer.addRecordsToStore( "fakeAddress.com", expectedIPAddresses.toArray(new String[0]));
 
     NameResolver resolver = new NameResolver(vertx, getAddressResolverOptions());
 
@@ -960,7 +960,7 @@ public class NameResolverTest extends VertxTestBase {
 
   private void testAddressSelection(AddressResolverOptions options, int expected) throws Exception {
 
-    //dnsServer.addRecordsToStore("vertx.io", "127.0.0.1", "127.0.0.2");
+    dnsServer.addRecordsToStore("vertx.io", "127.0.0.1", "127.0.0.2");
 
     NameResolver resolver = new NameResolver(vertx, options);
     Set<String> resolved = Collections.synchronizedSet(new HashSet<>());

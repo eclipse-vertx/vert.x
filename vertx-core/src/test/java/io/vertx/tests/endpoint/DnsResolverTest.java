@@ -20,7 +20,6 @@ public class DnsResolverTest extends VertxTestBase {
 
   private String nameToResolve = TestUtils.randomAlphaString(8) + ".com";
   private MockDnsServer dnsServer;
-  private EndpointResolver<SocketAddress, SocketAddress, List<SocketAddress>, List<SocketAddress>> resolver;
 
   @Override
   protected VertxOptions getOptions() {
@@ -35,7 +34,7 @@ public class DnsResolverTest extends VertxTestBase {
     dnsServer.store(questionRecord -> {
       Set<DnsRecord> set = new LinkedHashSet<>();
       if (nameToResolve.equals(questionRecord.name())) {
-        for (int i = 0;i < 2;i++) {
+        for (int i = 0; i < 2; i++) {
           String ip = "127.0.0." + (i + 1);
           set.add(new DnsRecord() {
             @Override

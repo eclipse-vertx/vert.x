@@ -83,7 +83,6 @@ public class MockDnsServer {
                 if (store != null) {
                   Collection<DnsRecord> records = store.getRecords((DnsQuestion) dnsRecord);
                   if (records != null) {
-                    System.out.println(records.size());
                     for (DnsRecord record : records) {
                       response.addRecord(DnsSection.ANSWER, record);
                     }
@@ -351,5 +350,57 @@ public class MockDnsServer {
   public interface RecordStore {
 
     Collection<DnsRecord> getRecords(DnsQuestion question) throws UnknownHostException;
+  }
+
+  public static class VertxResourceRecord extends DefaultDnsRawRecord {
+
+    private final String ipAddress;
+    private final String domainName;
+
+    public VertxResourceRecord(String name, String ipAddress) throws UnknownHostException {
+      super(name, DnsRecordType.A, DnsRecord.CLASS_IN, 100, Unpooled.copiedBuffer(InetAddress.getByName(ipAddress).getAddress()));
+      this.domainName = name;
+      this.ipAddress = ipAddress;
+    }
+
+    @Override
+    public String name() {
+      return domainName;
+    }
+
+    @Override
+    public DnsRecordType type() {
+      return DnsRecordType.A;
+    }
+
+    @Override
+    public int dnsClass() {
+      return DnsRecord.CLASS_IN;
+    }
+
+    @Override
+    public long timeToLive() {
+      return 100;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return super.equals(obj) && Objects.equals(((VertxResourceRecord) obj).ipAddress, this.ipAddress);
+    }
+  }
+
+  public void addRecordsToStore(String domainName, String... entries) {
+    Set<DnsRecord> records = new LinkedHashSet<>();
+    Function<String, DnsRecord> createRecord = ipAddress -> {
+      try {
+        return new VertxResourceRecord(domainName, ipAddress);
+      } catch (UnknownHostException e) {
+        throw new RuntimeException(e);
+      }
+    };
+    for (String e : entries) {
+      records.add(createRecord.apply(e));
+    }
+    store(x -> records);
   }
 }
