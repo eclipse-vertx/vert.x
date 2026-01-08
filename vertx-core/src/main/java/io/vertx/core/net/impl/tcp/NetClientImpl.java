@@ -30,6 +30,7 @@ import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;
+import io.vertx.core.net.impl.NetClientConfig;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.Metrics;
@@ -37,6 +38,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -48,21 +50,27 @@ import java.util.function.Predicate;
 class NetClientImpl implements NetClientInternal {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
-  protected final int idleTimeout;
-  protected final int readIdleTimeout;
-  protected final int writeIdleTimeout;
-  private final TimeUnit idleTimeoutUnit;
+  protected final Duration idleTimeout;
+  protected final Duration readIdleTimeout;
+  protected final Duration writeIdleTimeout;
   protected final boolean logEnabled;
 
   private final VertxInternal vertx;
-  private final NetClientOptions options;
+  private final NetClientConfig options;
+  private final TcpOptions transportOptions;
+  private final boolean registerWriteHandler;
+  private final String localAddress;
   private final SslContextManager sslContextManager;
   private volatile ClientSSLOptions sslOptions;
   public final ConnectionGroup channelGroup;
   private final TransportMetrics metrics;
   private final Predicate<SocketAddress> proxyFilter;
 
-  public NetClientImpl(VertxInternal vertx, TransportMetrics metrics, NetClientOptions options) {
+  public NetClientImpl(VertxInternal vertx,
+                       TransportMetrics metrics,
+                       NetClientConfig options,
+                       boolean registerWriteHandler,
+                       String localAddress) {
 
     this.vertx = vertx;
     this.channelGroup = new ConnectionGroup(vertx.acceptorEventLoopGroup().next()) {
@@ -71,16 +79,18 @@ class NetClientImpl implements NetClientInternal {
         NetClientImpl.this.handleClose(completion);
       }
     };
-    this.options = new NetClientOptions(options);
-    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
+    this.options = options;
+    this.registerWriteHandler = registerWriteHandler;
+    this.localAddress = localAddress;
+    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
     this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
-    this.idleTimeout = options.getIdleTimeout();
-    this.readIdleTimeout = options.getReadIdleTimeout();
-    this.writeIdleTimeout = options.getWriteIdleTimeout();
-    this.idleTimeoutUnit = options.getIdleTimeoutUnit();
+    this.idleTimeout = options.getIdleTimeout() != null ? options.getIdleTimeout() : Duration.ofMillis(0L);
+    this.readIdleTimeout = options.getReadIdleTimeout() != null ? options.getReadIdleTimeout() : Duration.ofMillis(0L);
+    this.writeIdleTimeout = options.getWriteIdleTimeout() != null ? options.getWriteIdleTimeout() : Duration.ofMillis(0L);
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.sslOptions = options.getSslOptions();
+    this.transportOptions = options.getTransportOptions();
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
@@ -91,8 +101,8 @@ class NetClientImpl implements NetClientInternal {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
-    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, idleTimeoutUnit));
+    if (idleTimeout.toMillis() > 0 || readIdleTimeout.toMillis() > 0 || writeIdleTimeout.toMillis() > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout.toMillis(), writeIdleTimeout.toMillis(), idleTimeout.toMillis(), TimeUnit.MILLISECONDS));
     }
   }
 
@@ -133,7 +143,7 @@ class NetClientImpl implements NetClientInternal {
   public Future<NetSocket> connect(ConnectOptions connectOptions) {
     ContextInternal context = vertx.getOrCreateContext();
     Promise<NetSocket> promise = context.promise();
-    connectInternal(connectOptions, options.isRegisterWriteHandler(), promise, context, options.getReconnectAttempts());
+    connectInternal(connectOptions, registerWriteHandler, promise, context, options.getReconnectAttempts());
     return promise.future();
   }
 
@@ -255,9 +265,8 @@ class NetClientImpl implements NetClientInternal {
 
       int connectTimeout = connectOptions.getTimeout();
       if (connectTimeout < 0) {
-        connectTimeout = options.getConnectTimeout();
+        connectTimeout = (int)options.getConnectTimeout().toMillis();
       }
-      String localAddress = options.getLocalAddress();
       boolean domainSocket = remoteAddress.isDomainSocket();
 
       // Transport specific TCP configuration
@@ -268,18 +277,18 @@ class NetClientImpl implements NetClientInternal {
       }
 
       //
-      if (options.getSendBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+      if (transportOptions.getSendBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_SNDBUF, transportOptions.getSendBufferSize());
       }
       if (!domainSocket) {
-        bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+        bootstrap.option(ChannelOption.SO_REUSEADDR, transportOptions.isReuseAddress());
       }
-      if (options.getTrafficClass() != -1) {
-        bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
+      if (transportOptions.getTrafficClass() != -1) {
+        bootstrap.option(ChannelOption.IP_TOS, transportOptions.getTrafficClass());
       }
-      if (options.getReceiveBufferSize() != -1) {
-        bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+      if (transportOptions.getReceiveBufferSize() != -1) {
+        bootstrap.option(ChannelOption.SO_RCVBUF, transportOptions.getReceiveBufferSize());
+        bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(transportOptions.getReceiveBufferSize()));
       }
       bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, connectTimeout);
 
@@ -321,7 +330,7 @@ class NetClientImpl implements NetClientInternal {
             context.emit(v -> {
               log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
               //Set a timer to retry connection
-              vertx.setTimer(options.getReconnectInterval(), tid ->
+              vertx.setTimer(options.getReconnectInterval().toMillis(), tid ->
                 connectInternal(
                   connectOptions,
                   registerWriteHandlers,
