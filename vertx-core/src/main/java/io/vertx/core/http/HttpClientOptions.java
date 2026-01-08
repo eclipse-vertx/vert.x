@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -500,7 +501,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the keep alive timeout value in seconds for HTTP/2 connections
    */
   public int getHttp2KeepAliveTimeout() {
-    return http2Config.getKeepAliveTimeout();
+    return http2Config.getKeepAliveTimeout() == null ? 0 : (int)http2Config.getKeepAliveTimeout().toSeconds();
   }
 
   /**
@@ -514,7 +515,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2KeepAliveTimeout(int keepAliveTimeout) {
-    http2Config.setKeepAliveTimeout(keepAliveTimeout);
+    http2Config.setKeepAliveTimeout(keepAliveTimeout == 0 ? null : Duration.ofSeconds(keepAliveTimeout));
     return this;
   }
 
@@ -581,7 +582,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the keep alive timeout value in seconds for HTTP/1.x connections
    */
   public int getKeepAliveTimeout() {
-    return http1Config.getKeepAliveTimeout();
+    return http1Config.getKeepAliveTimeout() == null ? 0 : (int)http1Config.getKeepAliveTimeout().toSeconds();
   }
 
   /**
@@ -595,7 +596,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setKeepAliveTimeout(int keepAliveTimeout) {
-    http1Config.setKeepAliveTimeout(keepAliveTimeout);
+    http1Config.setKeepAliveTimeout(keepAliveTimeout == 0 ? null : Duration.ofSeconds(keepAliveTimeout));
     return this;
   }
 

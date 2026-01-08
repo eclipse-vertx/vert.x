@@ -133,7 +133,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
       return new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(http2Config.getInitialSettings()),
         clientMetrics,
-        TimeUnit.SECONDS.toMillis(http2Config.getKeepAliveTimeout()),
+        http2Config.getKeepAliveTimeout() == null ? 0 : http2Config.getKeepAliveTimeout().toMillis(),
         http2Config.getMultiplexingLimit(),
         useDecompression,
         logActivity);
