@@ -17,6 +17,8 @@ import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
@@ -260,6 +262,14 @@ public class HttpClientOptions extends ClientOptionsBase {
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
     followAlternativeServices = DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
+  }
+
+  public Http1ClientConfig getHttp1Config() {
+    return http1Config;
+  }
+
+  public Http2ClientConfig getHttp2Config() {
+    return http2Config;
   }
 
   @Override

@@ -8,7 +8,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http;
+package io.vertx.core.http.impl.config;
+
+import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpClientOptions;
 
 /**
  * HTTP/2 client configuration.

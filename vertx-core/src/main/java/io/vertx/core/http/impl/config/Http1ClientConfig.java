@@ -8,8 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http;
+package io.vertx.core.http.impl.config;
 
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.Arguments;
 
 /**
@@ -17,7 +18,7 @@ import io.vertx.core.impl.Arguments;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class Http1ClientConfig {
+public class Http1ClientConfig {
 
   private boolean keepAlive;
   private int keepAliveTimeout;
@@ -28,7 +29,7 @@ class Http1ClientConfig {
   private int maxHeaderSize;
   private int decoderInitialBufferSize;
 
-  Http1ClientConfig() {
+  public Http1ClientConfig() {
     keepAlive = HttpClientOptions.DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = HttpClientOptions.DEFAULT_KEEP_ALIVE_TIMEOUT;
     pipelining = HttpClientOptions.DEFAULT_PIPELINING;
@@ -39,7 +40,7 @@ class Http1ClientConfig {
     decoderInitialBufferSize = HttpClientOptions.DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
   }
 
-  Http1ClientConfig(Http1ClientConfig other) {
+  public Http1ClientConfig(Http1ClientConfig other) {
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
     this.pipelining = other.isPipelining();
