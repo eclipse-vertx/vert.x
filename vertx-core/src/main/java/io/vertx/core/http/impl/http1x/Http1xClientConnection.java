@@ -39,6 +39,7 @@ import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpRequestHead;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.WebSocketConnectionImpl;
@@ -59,6 +60,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.net.URI;
 import java.time.Duration;
@@ -77,7 +79,9 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
   private final HttpClientMetrics clientMetrics;
-  private final HttpClientOptions options;
+  private final Http1ClientConfig config;
+  private final TracingPolicy tracingPolicy;
+  private final boolean useDecompression;
   private final boolean ssl;
   private final SocketAddress server;
   private final HostAndPort authority;
@@ -104,7 +108,9 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   public Http1xClientConnection(HttpVersion version,
                          HttpClientMetrics clientMetrics,
-                         HttpClientOptions options,
+                         Http1ClientConfig config,
+                         TracingPolicy tracingPolicy,
+                         boolean useDecompression,
                          ChannelHandlerContext chctx,
                          boolean ssl,
                          SocketAddress server,
@@ -114,14 +120,16 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
                          long maxLifetime) {
     super(context, chctx);
     this.clientMetrics = clientMetrics;
-    this.options = options;
+    this.config = config;
+    this.tracingPolicy = tracingPolicy;
+    this.useDecompression = useDecompression;
     this.ssl = ssl;
     this.server = server;
     this.authority = authority;
     this.metrics = metrics;
     this.version = version;
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
-    this.keepAliveTimeout = options.getKeepAliveTimeout();
+    this.keepAliveTimeout = config.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     this.pending = new ArrayDeque<>();
     this.inflight = new ArrayDeque<>();
@@ -163,7 +171,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
 
   @Override
   public long concurrency() {
-    return options.isPipelining() ? options.getPipeliningLimit() : 1;
+    return config.isPipelining() ? config.getPipeliningLimit() : 1;
   }
 
   @Override
@@ -210,14 +218,14 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     if (chunked) {
       HttpUtil.setTransferEncodingChunked(request, true);
     }
-    if (options.isDecompressionSupported() && request.headers().get(ACCEPT_ENCODING) == null) {
+    if (useDecompression && request.headers().get(ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
       CharSequence acceptEncoding = determineCompressionAcceptEncoding();
       request.headers().set(ACCEPT_ENCODING, acceptEncoding);
     }
-    if (!options.isKeepAlive() && options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+    if (!config.isKeepAlive() && version == io.vertx.core.http.HttpVersion.HTTP_1_1) {
       request.headers().set(CONNECTION, CLOSE);
-    } else if (options.isKeepAlive() && options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+    } else if (config.isKeepAlive() && version == io.vertx.core.http.HttpVersion.HTTP_1_0) {
       request.headers().set(CONNECTION, KEEP_ALIVE);
     }
     if (end) {
@@ -279,7 +287,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         if (operation == null) {
           operation = request.method.name();
         }
-        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), new ObservableRequest(request), operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, tracingPolicy, new ObservableRequest(request), operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
     write(nettyRequest, false, promise);
@@ -966,7 +974,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
         String responseConnectionHeader = response.headers.get(HttpHeaderNames.CONNECTION);
         String requestConnectionHeader = request.headers != null ? request.headers.get(HttpHeaderNames.CONNECTION) : null;
         // We don't need to protect against concurrent changes on forceClose as it only goes from false -> true
-        boolean close = !options.isKeepAlive();
+        boolean close = !config.isKeepAlive();
         if (HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(responseConnectionHeader) || HttpHeaderValues.CLOSE.contentEqualsIgnoreCase(requestConnectionHeader)) {
           // In all cases, if we have a close connection option then we SHOULD NOT treat the connection as persistent
           close = true;

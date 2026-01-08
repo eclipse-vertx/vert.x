@@ -16,6 +16,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContentDecompressor;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -24,6 +25,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
@@ -39,6 +42,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -55,19 +59,72 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  */
 public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
 
-  private final HttpClientOptions options;
+  public static Http1xOrH2ChannelConnector create(NetClientInternal netClient,
+                                    HttpClientOptions options,
+                                    HttpClientMetrics clientMetrics) {
+    return new Http1xOrH2ChannelConnector(netClient,
+      options.getTracingPolicy(),
+      options.isDecompressionSupported(),
+      options.getLogActivity(),
+      options.getActivityLogDataFormat(),
+      options.isForceSni(),
+      options.getProtocolVersion(),
+      options.getHttp1Config(),
+      options.getHttp2Config(),
+      Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()),
+      Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()),
+      Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()),
+      clientMetrics) {
+      @Override
+      public HttpClientOptions options() {
+        return options;
+      }
+    };
+  }
+
+  private final TracingPolicy tracingPolicy;
+  private final boolean useDecompression;
+  private final boolean logActivity;
+  private final ByteBufFormat logFormat;
+  private final boolean forceSni;
+  private final HttpVersion defaultProtocol;
+  private final Http1ClientConfig http1Config;
+  private final Http2ClientConfig http2Config;
+  private final Duration idleTimeout;
+  private final Duration readIdleTimeout;
+  private final Duration writeIdleTimeout;
   private final HttpClientMetrics clientMetrics;
   private final NetClientInternal netClient;
 
   public Http1xOrH2ChannelConnector(NetClientInternal netClient,
-                                    HttpClientOptions options,
+                                    TracingPolicy tracingPolicy,
+                                    boolean useDecompression,
+                                    boolean logActivity,
+                                    ByteBufFormat logFormat,
+                                    boolean forceSni,
+                                    HttpVersion defaultProtocol,
+                                    Http1ClientConfig http1Config,
+                                    Http2ClientConfig http2Config,
+                                    Duration idleTimeout,
+                                    Duration readIdleTimeout,
+                                    Duration writeIdleTimeout,
                                     HttpClientMetrics clientMetrics) {
 
-    if (!options.isKeepAlive() && options.isPipelining()) {
+    if (!http1Config.isKeepAlive() && http1Config.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     this.clientMetrics = clientMetrics;
-    this.options = options;
+    this.tracingPolicy = tracingPolicy;
+    this.useDecompression = useDecompression;
+    this.logActivity = logActivity;
+    this.logFormat = logFormat;
+    this.forceSni = forceSni;
+    this.defaultProtocol = defaultProtocol;
+    this.http1Config = http1Config;
+    this.http2Config = http2Config;
+    this.idleTimeout = idleTimeout;
+    this.readIdleTimeout = readIdleTimeout;
+    this.writeIdleTimeout = writeIdleTimeout;
     this.netClient = netClient;
   }
 
@@ -76,20 +133,20 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
   }
 
   public HttpClientOptions options() {
-    return options;
+    throw new UnsupportedOperationException();
   }
 
   private Http2ClientChannelInitializer http2Initializer() {
-    if (options.getHttp2MultiplexImplementation()) {
+    if (http2Config.getMultiplexImplementation()) {
       return new Http2MultiplexClientChannelInitializer(
-        HttpUtils.fromVertxSettings(options.getInitialSettings()),
+        HttpUtils.fromVertxSettings(http2Config.getInitialSettings()),
         clientMetrics,
-        TimeUnit.SECONDS.toMillis(options.getHttp2KeepAliveTimeout()),
-        options.getHttp2MultiplexingLimit(),
-        options.isDecompressionSupported(),
-        options.getLogActivity());
+        TimeUnit.SECONDS.toMillis(http2Config.getKeepAliveTimeout()),
+        http2Config.getMultiplexingLimit(),
+        useDecompression,
+        logActivity);
     } else {
-      return new Http2CodecClientChannelInitializer(options, clientMetrics);
+      return new Http2CodecClientChannelInitializer(http2Config, tracingPolicy, useDecompression, logActivity, clientMetrics);
     }
   }
 
@@ -99,7 +156,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     if (authority != null) {
       connectOptions.setHost(authority.host());
       connectOptions.setPort(authority.port());
-      if (params.ssl && options.isForceSni()) {
+      if (params.ssl && forceSni) {
         connectOptions.setSniServerName(authority.host());
       }
     }
@@ -107,12 +164,12 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     if (params.ssl) {
       if (params.sslOptions != null) {
         ClientSSLOptions copy = params.sslOptions.copy();
-        if (options.isUseAlpn()) {
+        if (params.sslOptions.isUseAlpn()) {
           copy.setUseAlpn(true);
           if (params.protocol == HttpVersion.HTTP_2) {
             copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
           } else {
-            copy.setApplicationLayerProtocols(List.of(options.getProtocolVersion().alpnName()));
+            copy.setApplicationLayerProtocols(List.of(defaultProtocol.alpnName()));
           }
         }
         connectOptions.setSslOptions(copy);
@@ -144,7 +201,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     Channel ch = so.channelHandlerContext().channel();
     if (params.ssl) {
       String protocol = so.applicationLayerProtocol();
-      if (options.isUseAlpn()) {
+      if (params.sslOptions != null && params.sslOptions.isUseAlpn()) {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
@@ -161,7 +218,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
       }
     } else {
       if (params.protocol == HttpVersion.HTTP_2) {
-        if (options.isHttp2ClearTextUpgrade()) {
+        if (http2Config.isClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
           http1xConnected(params.protocol, server, authority, false, context, metric, maxLifetimeMillis, ch, metrics, promise);
         } else {
@@ -179,7 +236,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
 
   public Future<HttpClientConnection> httpConnect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics) {
 
-    if (!options.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
+    if (params.sslOptions != null && !params.sslOptions.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
       return context.failedFuture("Must enable ALPN when using H2");
     }
 
@@ -193,32 +250,32 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
-    int idleTimeout = options.getIdleTimeout();
-    int readIdleTimeout = options.getReadIdleTimeout();
-    int writeIdleTimeout = options.getWriteIdleTimeout();
+    long idleTimeout = this.idleTimeout.toMillis();
+    long readIdleTimeout = this.readIdleTimeout.toMillis();
+    long writeIdleTimeout = this.writeIdleTimeout.toMillis();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
     }
   }
 
   private void applyHttp1xConnectionOptions(ChannelPipeline pipeline) {
-    int idleTimeout = options.getIdleTimeout();
-    int readIdleTimeout = options.getReadIdleTimeout();
-    int writeIdleTimeout = options.getWriteIdleTimeout();
+    long idleTimeout = this.idleTimeout.toMillis();
+    long readIdleTimeout = this.readIdleTimeout.toMillis();
+    long writeIdleTimeout = this.writeIdleTimeout.toMillis();
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
     }
-    if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    if (logActivity) {
+      pipeline.addLast("logging", new LoggingHandler(logFormat));
     }
     pipeline.addLast("codec", new HttpClientCodec(
-      options.getMaxInitialLineLength(),
-      options.getMaxHeaderSize(),
-      options.getMaxChunkSize(),
+      http1Config.getMaxInitialLineLength(),
+      http1Config.getMaxHeaderSize(),
+      http1Config.getMaxChunkSize(),
       false,
       !HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION,
-      options.getDecoderInitialBufferSize()));
-    if (options.isDecompressionSupported()) {
+      http1Config.getDecoderInitialBufferSize()));
+    if (useDecompression) {
       pipeline.addLast("inflater", new HttpContentDecompressor(false));
     }
   }
@@ -232,9 +289,9 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
                                long maxLifetimeMillis, Channel ch,
                                ClientMetrics<?, ?, ?> metrics,
                                Promise<HttpClientConnection> future) {
-    boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
+    boolean upgrade = version == HttpVersion.HTTP_2 && http2Config.isClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
-      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, clientMetrics, options, chctx, ssl, server, authority, context, metrics, maxLifetimeMillis);
+      Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, clientMetrics, http1Config, tracingPolicy, useDecompression, chctx, ssl, server, authority, context, metrics, maxLifetimeMillis);
       if (clientMetrics != null) {
         conn.metric(socketMetric);
         clientMetrics.endpointConnected(metrics);
@@ -245,7 +302,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
       if (upgrade) {
         Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
         Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade= http2ChannelInitializer.channelUpgrade(conn, maxLifetimeMillis, metrics);
-        boolean preflightRequest = options.isHttp2ClearTextUpgradeWithPreflightRequest();
+        boolean preflightRequest = http2Config.isClearTextUpgradeWithPreflightRequest();
         if (preflightRequest) {
           Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(conn, maxLifetimeMillis, metrics, channelUpgrade);
           conn2.concurrencyChangeHandler(concurrency -> {

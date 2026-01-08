@@ -107,7 +107,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
                                               PoolOptions po) {
     HttpClientMetrics<?, ?, ?> metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
     NetClientInternal tcpClient = new NetClientBuilder(vertx, new NetClientOptions(co).setProxyOptions(null)).metrics(metrics).build();
-    HttpChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, co, metrics);
+    HttpChannelConnector channelConnector = Http1xOrH2ChannelConnector.create(tcpClient, co, metrics);
     HttpClientImpl.Transport transport = new HttpClientImpl.Transport(
       connectionHandler,
       channelConnector,

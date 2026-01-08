@@ -433,7 +433,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
     HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(o) : null;
     NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
-    Http1xOrH2ChannelConnector channelConnector = new Http1xOrH2ChannelConnector(tcpClient, o, metrics);
+    Http1xOrH2ChannelConnector channelConnector = Http1xOrH2ChannelConnector.create(tcpClient, o, metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
 
