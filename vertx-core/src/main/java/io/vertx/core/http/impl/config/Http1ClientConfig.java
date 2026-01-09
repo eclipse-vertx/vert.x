@@ -13,6 +13,8 @@ package io.vertx.core.http.impl.config;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.Arguments;
 
+import java.time.Duration;
+
 /**
  * HTTP/1.x client configuration.
  *
@@ -21,7 +23,7 @@ import io.vertx.core.impl.Arguments;
 public class Http1ClientConfig {
 
   private boolean keepAlive;
-  private int keepAliveTimeout;
+  private Duration keepAliveTimeout;
   private int pipeliningLimit;
   private boolean pipelining;
   private int maxChunkSize;
@@ -31,7 +33,7 @@ public class Http1ClientConfig {
 
   public Http1ClientConfig() {
     keepAlive = HttpClientOptions.DEFAULT_KEEP_ALIVE;
-    keepAliveTimeout = HttpClientOptions.DEFAULT_KEEP_ALIVE_TIMEOUT;
+    keepAliveTimeout = Duration.ofSeconds(HttpClientOptions.DEFAULT_KEEP_ALIVE_TIMEOUT);
     pipelining = HttpClientOptions.DEFAULT_PIPELINING;
     pipeliningLimit = HttpClientOptions.DEFAULT_PIPELINING_LIMIT;
     maxChunkSize = HttpClientOptions.DEFAULT_MAX_CHUNK_SIZE;
@@ -75,23 +77,23 @@ public class Http1ClientConfig {
   /**
    * @return the keep alive timeout value in seconds for HTTP/1.x connections
    */
-  public int getKeepAliveTimeout() {
+  public Duration getKeepAliveTimeout() {
     return keepAliveTimeout;
   }
 
   /**
-   * Set the keep alive timeout for HTTP/1.x, in seconds.
+   * Set the keep alive timeout for HTTP/1.x.
    * <p/>
    * This value determines how long a connection remains unused in the pool before being evicted and closed.
    * <p/>
-   * A timeout of {@code 0} means there is no timeout.
+   * A timeout of {@code null} means there is no timeout.
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public Http1ClientConfig setKeepAliveTimeout(int keepAliveTimeout) {
-    if (keepAliveTimeout < 0) {
-      throw new IllegalArgumentException("keepAliveTimeout must be >= 0");
+  public Http1ClientConfig setKeepAliveTimeout(Duration keepAliveTimeout) {
+    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative() || keepAliveTimeout.isZero())) {
+      throw new IllegalArgumentException("keepAliveTimeout must be > 0");
     }
     this.keepAliveTimeout = keepAliveTimeout;
     return this;

@@ -13,6 +13,8 @@ package io.vertx.core.http.impl.config;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClientOptions;
 
+import java.time.Duration;
+
 /**
  * HTTP/2 client configuration.
  *
@@ -22,7 +24,7 @@ public class Http2ClientConfig {
 
   private int multiplexingLimit;
   private int connectionWindowSize;
-  private int keepAliveTimeout;
+  private Duration keepAliveTimeout;
   private int upgradeMaxContentLength;
   private boolean multiplexImplementation;
   private Http2Settings initialSettings;
@@ -32,7 +34,7 @@ public class Http2ClientConfig {
   public Http2ClientConfig() {
     multiplexingLimit = HttpClientOptions.DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     connectionWindowSize = HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
-    keepAliveTimeout = HttpClientOptions.DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
+    keepAliveTimeout = Duration.ofSeconds(HttpClientOptions.DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT);
     upgradeMaxContentLength = HttpClientOptions.DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH;
     multiplexImplementation = HttpClientOptions.DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
     initialSettings = new Http2Settings();
@@ -103,22 +105,22 @@ public class Http2ClientConfig {
   /**
    * @return the keep alive timeout value in seconds for HTTP/2 connections
    */
-  public int getKeepAliveTimeout() {
+  public Duration getKeepAliveTimeout() {
     return keepAliveTimeout;
   }
 
   /**
-   * Set the keep alive timeout for HTTP/2 connections, in seconds.
+   * Set the keep alive timeout for HTTP/2 connections.
    * <p/>
    * This value determines how long a connection remains unused in the pool before being evicted and closed.
    * <p/>
-   * A timeout of {@code 0} means there is no timeout.
+   * A timeout of {@code null} means there is no timeout.
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public Http2ClientConfig setKeepAliveTimeout(int keepAliveTimeout) {
-    if (keepAliveTimeout < 0) {
+  public Http2ClientConfig setKeepAliveTimeout(Duration keepAliveTimeout) {
+    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative() || keepAliveTimeout.isZero())) {
       throw new IllegalArgumentException("HTTP/2 keepAliveTimeout must be >= 0");
     }
     this.keepAliveTimeout = keepAliveTimeout;

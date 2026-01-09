@@ -129,7 +129,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     this.metrics = metrics;
     this.version = version;
     this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
-    this.keepAliveTimeout = config.getKeepAliveTimeout();
+    this.keepAliveTimeout = config.getKeepAliveTimeout() == null ? 0 : (int)config.getKeepAliveTimeout().toSeconds();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     this.pending = new ArrayDeque<>();
     this.inflight = new ArrayDeque<>();

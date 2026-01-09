@@ -199,8 +199,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   private void recycle() {
-    int timeout = config.getKeepAliveTimeout();
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : Long.MAX_VALUE;
+    long timeoutMillis = config.getKeepAliveTimeout() == null ? 0 : config.getKeepAliveTimeout().toMillis();
+    expirationTimestamp = timeoutMillis > 0 ? System.currentTimeMillis() + timeoutMillis : Long.MAX_VALUE;
   }
 
   @Override

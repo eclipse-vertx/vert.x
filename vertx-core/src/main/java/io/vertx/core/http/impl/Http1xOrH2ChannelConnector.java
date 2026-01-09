@@ -69,7 +69,6 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
       config.getLogActivity(),
       config.getActivityLogDataFormat(),
       config.isForceSni(),
-      config.getProtocolVersion(),
       config.getHttp1Config(),
       config.getHttp2Config(),
       config.getIdleTimeout(),
@@ -83,7 +82,6 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
   private final boolean logActivity;
   private final ByteBufFormat logFormat;
   private final boolean forceSni;
-  private final HttpVersion defaultProtocol;
   private final Http1ClientConfig http1Config;
   private final Http2ClientConfig http2Config;
   private final Duration idleTimeout;
@@ -98,7 +96,6 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
                                     boolean logActivity,
                                     ByteBufFormat logFormat,
                                     boolean forceSni,
-                                    HttpVersion defaultProtocol,
                                     Http1ClientConfig http1Config,
                                     Http2ClientConfig http2Config,
                                     Duration idleTimeout,
@@ -115,7 +112,6 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     this.logActivity = logActivity;
     this.logFormat = logFormat;
     this.forceSni = forceSni;
-    this.defaultProtocol = defaultProtocol;
     this.http1Config = http1Config;
     this.http2Config = http2Config;
     this.idleTimeout = idleTimeout != null ? idleTimeout : Duration.ofMillis(0);
@@ -133,7 +129,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
       return new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(http2Config.getInitialSettings()),
         clientMetrics,
-        TimeUnit.SECONDS.toMillis(http2Config.getKeepAliveTimeout()),
+        http2Config.getKeepAliveTimeout() == null ? 0 : http2Config.getKeepAliveTimeout().toMillis(),
         http2Config.getMultiplexingLimit(),
         useDecompression,
         logActivity);
@@ -161,7 +157,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
           if (params.protocol == HttpVersion.HTTP_2) {
             copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
           } else {
-            copy.setApplicationLayerProtocols(List.of(defaultProtocol.alpnName()));
+            copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_1_1.alpnName()));
           }
         }
         connectOptions.setSslOptions(copy);
