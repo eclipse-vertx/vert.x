@@ -29,7 +29,7 @@ import java.util.Objects;
  */
 public class HttpClientConfig {
 
-  private TcpOptions transportOptions;
+  private TcpOptions tcpOptions;
   private ClientSSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
   private Duration connectTimeout;
@@ -58,7 +58,7 @@ public class HttpClientConfig {
   private boolean followAlternativeServices;
 
   public HttpClientConfig() {
-    this.transportOptions = new TcpOptions();
+    this.tcpOptions = new TcpOptions();
     this.sslOptions = null;
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
@@ -87,7 +87,7 @@ public class HttpClientConfig {
   }
 
   public HttpClientConfig(HttpClientConfig other) {
-    this.transportOptions = other.transportOptions != null ? new TcpOptions(other.transportOptions) : null;
+    this.tcpOptions = other.tcpOptions != null ? new TcpOptions(other.tcpOptions) : null;
     this.sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.connectTimeout = other.connectTimeout;
@@ -116,7 +116,7 @@ public class HttpClientConfig {
   }
 
   public HttpClientConfig(HttpClientOptions other) {
-    this.transportOptions = new TcpOptions(other.getTransportOptions());
+    this.tcpOptions = new TcpOptions(other.getTransportOptions());
     this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
     this.sslEngineOptions = other.getSslEngineOptions() != null ? other.getSslEngineOptions().copy() : null;
     this.connectTimeout = Duration.ofMillis(other.getConnectTimeout());
@@ -147,18 +147,18 @@ public class HttpClientConfig {
   /**
    * @return the client TCP transport options
    */
-  public TcpOptions getTransportOptions() {
-    return transportOptions;
+  public TcpOptions getTcpOptions() {
+    return tcpOptions;
   }
 
   /**
    * Set the client TCP transport options.
    *
-   * @param transportOptions the transport options
+   * @param tcpOptions the transport options
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setTransportOptions(TcpOptions transportOptions) {
-    this.transportOptions = transportOptions;
+  public HttpClientConfig setTcpOptions(TcpOptions tcpOptions) {
+    this.tcpOptions = tcpOptions;
     return this;
   }
 
