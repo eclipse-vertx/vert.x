@@ -62,10 +62,11 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private Handler<Void> graceHandler;
   private QuicConnectionClose closePayload;
   private final NetworkMetrics<?> streamMetrics;
+  private final SocketAddress remoteAddress;
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
                             long readIdleTimeout,  long writeIdleTimeout, QuicChannel channel,
-                            ChannelHandlerContext chctx) {
+                            SocketAddress remoteAddress, ChannelHandlerContext chctx) {
     super(context, chctx);
     this.channel = channel;
     this.metrics = metrics;
@@ -73,6 +74,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.readIdleTimeout = readIdleTimeout;
     this.writeIdleTimeout = writeIdleTimeout;
     this.context = context;
+    this.remoteAddress = remoteAddress;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
       @Override
       protected void handleShutdown(Duration timeout, Completable<Void> completion) {
@@ -291,5 +293,10 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   @Override
   public QuicConnectionClose closePayload() {
     return closePayload;
+  }
+
+  @Override
+  protected SocketAddress channelRemoteAddress() {
+    return remoteAddress;
   }
 }
