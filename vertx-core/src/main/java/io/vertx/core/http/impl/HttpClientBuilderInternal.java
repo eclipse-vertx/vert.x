@@ -12,8 +12,6 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpChannelConnector;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
@@ -125,7 +123,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       config.getSslOptions()
     );
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,
-      config.getProxyOptions(), config.getNonProxyHosts(), transport, loadBalancer, config.getFollowAlternativeServices(), resolverKeepAlive);
+      config.getProxyOptions(), config.getNonProxyHosts(), transport, loadBalancer, config.getFollowAlternativeServices(), resolverKeepAlive) {
+      @Override
+      public HttpClientOptions options() {
+        return co2;
+      }
+    };
   }
 
   private static NetClientConfig netClientConfig(HttpClientConfig httpConfig) {
