@@ -21,6 +21,7 @@ import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.NetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.Future;
@@ -57,6 +58,7 @@ import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -4686,5 +4688,51 @@ public class NetTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testConnectWithResolvedSocketAddress() throws Exception {
+    testConnectWithResolvedSocketAddress(false);
+  }
+
+  @Test
+  public void testTlsConnectWithResolvedSocketAddress() throws Exception {
+    testConnectWithResolvedSocketAddress(true);
+  }
+
+  private void testConnectWithResolvedSocketAddress(boolean ssl) throws Exception {
+    Assume.assumeFalse(USE_DOMAIN_SOCKETS);
+    AtomicInteger connects = new AtomicInteger();
+    if (ssl) {
+      server.close();
+      server = vertx().createNetServer(new NetServerOptions()
+        .setSsl(true)
+        .setSni(true)
+        .setKeyCertOptions(Cert.SNI_JKS.get())
+      );
+    }
+    server.connectHandler(so -> {
+      if (ssl) {
+        assertEquals("host2.com", so.indicatedServerName());
+      }
+      connects.incrementAndGet();
+    });
+    startServer();
+    String doesNotResolve = randomAlphaString(32);
+    InetSocketAddress isa = new InetSocketAddress(Inet4Address.getByAddress(doesNotResolve, NetUtil.LOCALHOST4.getAddress()), 1234);
+    ConnectOptions connect = new ConnectOptions()
+      .setRemoteAddress(SocketAddress.inetSocketAddress(isa))
+      .setSniServerName("host2.com");
+    if (ssl) {
+      connect.setSsl(true);
+      connect.setSslOptions(new ClientSSLOptions()
+        .setTrustOptions(Trust.SNI_JKS_HOST2.get())
+        .setHostnameVerificationAlgorithm(""));
+    }
+    NetSocket socket = client.connect(connect).await();
+    SocketAddress remove = socket.remoteAddress();
+    assertEquals(doesNotResolve, remove.hostName());
+    assertEquals("127.0.0.1", remove.hostAddress());
+    assertWaitUntil(() -> connects.get() == 1);
   }
 }

@@ -418,7 +418,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicReference<String> requestBeginCalled = new AtomicReference();
     AtomicBoolean responseEndCalled = new AtomicBoolean();
-    AtomicBoolean socketConnectedCalled = new AtomicBoolean();
+    AtomicReference<SocketAddress> socketConnectedCalled = new AtomicReference<>();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
@@ -447,7 +447,7 @@ public class MetricsContextTest extends VertxTestBase {
           }
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
-            socketConnectedCalled.set(true);
+            socketConnectedCalled.set(remoteAddress);
             return null;
           }
           @Override
@@ -496,7 +496,9 @@ public class MetricsContextTest extends VertxTestBase {
             close.onComplete(v2 -> {
               assertEquals("/the-uri", requestBeginCalled.get());
               assertTrue(responseEndCalled.get());
-              assertTrue(socketConnectedCalled.get());
+              assertEquals("localhost", socketConnectedCalled.get().hostName());
+              assertEquals(8080, socketConnectedCalled.get().port());
+              assertEquals("127.0.0.1", socketConnectedCalled.get().hostAddress());
               assertTrue(socketDisconnectedCalled.get());
               assertTrue(bytesReadCalled.get());
               assertTrue(bytesWrittenCalled.get());
@@ -713,7 +715,7 @@ public class MetricsContextTest extends VertxTestBase {
   private void testNetClient(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
-    AtomicBoolean socketConnectedCalled = new AtomicBoolean();
+    AtomicReference<SocketAddress> socketConnectedCalled = new AtomicReference<>();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
@@ -724,7 +726,7 @@ public class MetricsContextTest extends VertxTestBase {
         return new TCPMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
-            socketConnectedCalled.set(true);
+            socketConnectedCalled.set(remoteAddress);
             return null;
           }
           @Override
@@ -766,7 +768,7 @@ public class MetricsContextTest extends VertxTestBase {
           so.closeHandler(v -> {
             assertTrue(bytesReadCalled.get());
             assertTrue(bytesWrittenCalled.get());
-            assertTrue(socketConnectedCalled.get());
+            assertEquals(SocketAddress.inetSocketAddress(1234, "localhost"), socketConnectedCalled.get());
             assertTrue(socketDisconnectedCalled.get());
             TestUtils.executeInVanillaVertxThread(() -> {
               client.close();
