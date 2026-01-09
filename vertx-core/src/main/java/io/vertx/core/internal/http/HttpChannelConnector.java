@@ -32,7 +32,6 @@ public interface HttpChannelConnector {
                                            SocketAddress server,
                                            HostAndPort authority,
                                            HttpConnectParams params,
-                                           long maxLifetimeMillis,
                                            ClientMetrics<?, ?, ?> metrics);
 
   Future<Void> shutdown(Duration timeout);

@@ -45,7 +45,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   private final long maxConcurrency;
   private final long keepAliveTimeoutMillis;
   private boolean evicted;
-  private final long lifetimeEvictionTimestampMillis;
+  private final long creationTimestamp;
   private long expirationTimestampMillis;
 
   public Http2MultiplexClientConnection(Http2MultiplexHandler handler,
@@ -56,7 +56,6 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
                                         HostAndPort authority,
                                         int maxConcurrency,
                                         long keepAliveTimeoutMillis,
-                                        long maxLifetimeMillis,
                                         boolean decompressionSupported,
                                         Promise<HttpClientConnection> completion) {
     super(handler, transportMetrics, chctx, context);
@@ -67,9 +66,9 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     this.concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
     this.maxConcurrency = maxConcurrency < 0 ? Long.MAX_VALUE : maxConcurrency;
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
-    this.lifetimeEvictionTimestampMillis = maxLifetimeMillis > 0 ? System.currentTimeMillis() + maxLifetimeMillis : Long.MAX_VALUE;
     this.evicted = false;
     this.decompressionSupported = decompressionSupported;
+    this.creationTimestamp = System.currentTimeMillis();
   }
 
   @Override
@@ -185,13 +184,17 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public boolean isValid() {
-    long now = System.currentTimeMillis();
-    return now <= expirationTimestampMillis && now <= lifetimeEvictionTimestampMillis;
+    return System.currentTimeMillis() <= expirationTimestampMillis;
   }
 
   @Override
   public long lastResponseReceivedTimestamp() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public long creationTimestamp() {
+    return creationTimestamp;
   }
 
   @Override

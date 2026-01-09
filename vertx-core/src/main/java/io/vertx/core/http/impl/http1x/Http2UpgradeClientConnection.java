@@ -48,7 +48,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
 
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
-  private final long maxLifetimeMillis;
   private final Http2ChannelUpgrade upgrade;
   private final ClientMetrics<?, ?, ?> metrics;
   private io.vertx.core.http.impl.HttpClientConnection current;
@@ -65,9 +64,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private Handler<AltSvcEvent> alternativeServicesHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
-  public Http2UpgradeClientConnection(Http1xClientConnection connection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
+  public Http2UpgradeClientConnection(Http1xClientConnection connection, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
     this.current = connection;
-    this.maxLifetimeMillis = maxLifetimeMillis;
     this.upgrade = upgrade;
     this.metrics = metrics;
   }
@@ -109,6 +107,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   @Override
   public long lastResponseReceivedTimestamp() {
     return current.lastResponseReceivedTimestamp();
+  }
+
+  @Override
+  public long creationTimestamp() {
+    return current.creationTimestamp();
   }
 
   private static class DelegatingStream implements HttpClientStream {
@@ -352,7 +355,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private final Http2ChannelUpgrade upgrade;
     private final HttpClientStream upgradingStream;
     private final Http2UpgradeClientConnection upgradedConnection;
-    private final long maxLifetimeMillis;
     private final ClientMetrics<?, ?, ?> metrics;
     private HttpClientStream upgradedStream;
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
@@ -368,8 +370,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private Handler<HttpFrame> unknownFrameHandler;
     private Handler<Void> closeHandler;
 
-    UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, long maxLifetimeMillis, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade, Http1xClientConnection upgradingConnection) {
-      this.maxLifetimeMillis = maxLifetimeMillis;
+    UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade, Http1xClientConnection upgradingConnection) {
       this.upgradedConnection = upgradedConnection;
       this.upgradingConnection = upgradingConnection;
       this.upgradingStream = stream;
@@ -412,7 +413,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
         }
       };
       upgrade.upgrade(upgradingStream, request, buf, end,
-        upgradingConnection.channelHandlerContext().channel(), maxLifetimeMillis, metrics, blah);
+        upgradingConnection.channelHandlerContext().channel(), metrics, blah);
       PromiseInternal<Void> promise = upgradingStream.context().promise();
       writeHead(request, chunked, buf, end, priority, connect, promise);
       return promise.future();
@@ -713,7 +714,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     if (current instanceof Http1xClientConnection && !upgradeProcessed) {
       return current
         .createStream(context)
-        .map(stream -> new UpgradingStream(stream, this, maxLifetimeMillis, metrics, upgrade, (Http1xClientConnection) current));
+        .map(stream -> new UpgradingStream(stream, this, metrics, upgrade, (Http1xClientConnection) current));
     } else {
       return current
         .createStream(context)
@@ -936,7 +937,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
                  Buffer content,
                  boolean end,
                  Channel channel,
-                 long maxLifetimeMillis,
                  ClientMetrics<?, ?, ?> clientMetrics, UpgradeResult result);
   }
 }

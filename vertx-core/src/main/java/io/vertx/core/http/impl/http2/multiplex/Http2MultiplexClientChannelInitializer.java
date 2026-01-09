@@ -59,8 +59,8 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
   }
 
   @Override
-  public void http2Connected(ContextInternal context, HostAndPort authority, Object connectionMetric, long maxLifetimeMillis, Channel channel, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise) {
-    Http2MultiplexConnectionFactory connectionFactory = connectionFactory(context, authority, connectionMetric, maxLifetimeMillis, metrics, promise);
+  public void http2Connected(ContextInternal context, HostAndPort authority, Object connectionMetric, Channel channel, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise) {
+    Http2MultiplexConnectionFactory connectionFactory = connectionFactory(context, authority, connectionMetric, metrics, promise);
     io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler = new io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler(channel, context, connectionFactory, initialSettings);
     Http2FrameCodec http2FrameCodec = new Http2CustomFrameCodecBuilder(null, decompressionSupported).server(false)
       .initialSettings(initialSettings)
@@ -73,15 +73,14 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
   }
 
   @Override
-  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, long maxLifetimeMillis, ClientMetrics<?, ?, ?> clientMetrics) {
+  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics) {
     return new MultiplexChannelUpgrade(conn.metric());
   }
 
-  Http2MultiplexConnectionFactory connectionFactory(ContextInternal context, HostAndPort authority, Object connectionMetric, long maxLifetimeMillis, ClientMetrics<?, ?, ?> clientMetrics, Promise<HttpClientConnection> promise) {
+  Http2MultiplexConnectionFactory connectionFactory(ContextInternal context, HostAndPort authority, Object connectionMetric, ClientMetrics<?, ?, ?> clientMetrics, Promise<HttpClientConnection> promise) {
     return (handler, chctx) -> {
       Http2MultiplexClientConnection connection = new Http2MultiplexClientConnection(handler, chctx, context, clientMetrics, tcpMetrics, authority, multiplexingLimit,
         keepAliveTimeoutMillis,
-        maxLifetimeMillis,
         decompressionSupported,
         promise);
       connection.metric(connectionMetric);
@@ -103,7 +102,6 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
                         Buffer content,
                         boolean end,
                         Channel channel,
-                        long maxLifetimeMillis,
                         ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
       ChannelPipeline pipeline = channel.pipeline();
       HttpClientCodec clientCodec = pipeline.get(HttpClientCodec.class);
@@ -114,7 +112,7 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
         .build();
       ContextInternal context = upgradingStream.context();
       PromiseInternal<HttpClientConnection> p = context.promise();
-      Http2MultiplexConnectionFactory connectionFactory = connectionFactory(context, request.authority, connectionMetric, maxLifetimeMillis, clientMetrics, p);
+      Http2MultiplexConnectionFactory connectionFactory = connectionFactory(context, request.authority, connectionMetric, clientMetrics, p);
       io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler = new io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler(
         channel,
         context,

@@ -205,7 +205,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
       return connector
-        .httpConnect(context, owner.server, owner.authority, connectParams, maxLifetimeMillis, owner.clientMetrics)
+        .httpConnect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
         .map(connection -> {
           connection.evictionHandler(v -> {
             owner.dispose(connection);
@@ -226,12 +226,12 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
 
     @Override
     public boolean isValid(HttpClientConnection connection) {
-      return connection.isValid();
+      return connection.isValid() && (maxLifetimeMillis == 0L || (System.currentTimeMillis() - connection.creationTimestamp()) <= maxLifetimeMillis);
     }
 
     void checkExpired() {
       pool
-        .evict(conn -> !conn.isValid(), (lst, err) -> {
+        .evict(c -> !isValid(c), (lst, err) -> {
           if (err == null) {
             lst.forEach(HttpConnection::close);
           }
