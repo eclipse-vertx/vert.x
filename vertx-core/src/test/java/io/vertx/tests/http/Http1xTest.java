@@ -5341,7 +5341,8 @@ public class Http1xTest extends HttpTest {
         if (val == 0) {
           assertEquals("Connection was closed", err.getMessage());
         } else {
-          assertTrue("Expected " + err.getMessage() + " to contain with <closed>", err.getMessage().contains("closed"));
+          assertTrue("Expected " + err.getMessage() + " to contain with <closed> instead of \""
+            + err.getMessage() +  "\"", err.getMessage().contains("closed"));
         }
         complete();
       }));
