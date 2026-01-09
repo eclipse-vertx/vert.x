@@ -43,6 +43,7 @@ public class HttpClientConfig {
   private ByteBufFormat activityLogDataFormat;
   private boolean ssl;
 
+  private HttpVersion defaultProtocolVersion;
   private Http1ClientConfig http1Config;
   private Http2ClientConfig http2Config;
   private boolean verifyHost;
@@ -70,6 +71,7 @@ public class HttpClientConfig {
     this.logActivity = NetworkOptions.DEFAULT_LOG_ENABLED;
     this.activityLogDataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
+    this.defaultProtocolVersion = null;
     this.http1Config = null;
     this.http2Config = null;
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
@@ -98,6 +100,7 @@ public class HttpClientConfig {
     this.logActivity = other.logActivity;
     this.activityLogDataFormat = other.activityLogDataFormat;
     this.ssl = other.ssl;
+    this.defaultProtocolVersion = other.defaultProtocolVersion;
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ClientConfig(other.http2Config) : null;
     this.verifyHost = other.isVerifyHost();
@@ -126,6 +129,7 @@ public class HttpClientConfig {
     this.logActivity = other.getLogActivity();
     this.activityLogDataFormat = other.getActivityLogDataFormat();
     this.ssl = other.isSsl();
+    this.defaultProtocolVersion = other.getProtocolVersion();
     this.http1Config = other.getHttp1Config();
     this.http2Config = other.getHttp2Config();
     this.verifyHost = other.isVerifyHost();
@@ -408,6 +412,24 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setSsl(boolean ssl) {
     this.ssl = ssl;
+    return this;
+  }
+
+  /**
+   * @return the default protocol version
+   */
+  public HttpVersion getDefaultProtocolVersion() {
+    return defaultProtocolVersion;
+  }
+
+  /**
+   * Set the default protocol version.
+   *
+   * @param protocolVersion the protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setDefaultProtocolVersion(HttpVersion protocolVersion) {
+    this.defaultProtocolVersion = protocolVersion;
     return this;
   }
 
