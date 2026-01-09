@@ -26,12 +26,12 @@ import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
-import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -112,7 +112,19 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     });
   }
 
-  private Future<QuicConnection> connect(SocketAddress address,
+  private Future<QuicConnection> connect(SocketAddress remoteAddress,
+                                         String serverName,
+                                         QLogConfig qLogConfig,
+                                         ContextInternal context,
+                                         Duration connectTimeout,
+                                         SslContextProvider sslContextProvider) {
+    NameResolver resolver = vertx.nameResolver();
+    Future<java.net.SocketAddress> f = resolver.resolve(remoteAddress);
+    return f.compose(res -> connect(remoteAddress, res, serverName, qLogConfig, context, connectTimeout, sslContextProvider));
+  }
+
+  private Future<QuicConnection> connect(SocketAddress remoteAddress,
+                                         java.net.SocketAddress resolvedAddress,
                                          String serverName,
                                          QLogConfig qLogConfig,
                                          ContextInternal context,
@@ -131,13 +143,13 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getIdleTimeout(),
-            options.getReadIdleTimeout(), options.getWriteIdleTimeout(), promise::tryComplete);
+            options.getReadIdleTimeout(), options.getWriteIdleTimeout(), remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })
-      .remoteAddress(new InetSocketAddress(address.host(), address.port()));
+      .remoteAddress(resolvedAddress);
     if (serverName != null && !serverName.isEmpty()) {
-      bootstrap.attr(SSL_SERVER_NAME_KEY, HostAndPort.authority(serverName, address.port()));
+      bootstrap.attr(SSL_SERVER_NAME_KEY, HostAndPort.authority(serverName, remoteAddress.port()));
     }
     if (qLogConfig != null) {
       bootstrap.option(QuicChannelOption.QLOG, new QLogConfiguration(qLogConfig.getPath(), qLogConfig.getTitle(), qLogConfig.getDescription()));
