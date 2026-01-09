@@ -133,7 +133,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   private static NetClientConfig netClientConfig(HttpClientConfig httpConfig) {
     NetClientConfig config = new NetClientConfig();
-    config.setTransportOptions(httpConfig.getTransportOptions());
+    config.setTransportOptions(httpConfig.getTcpOptions());
     config.setSslOptions(httpConfig.getSslOptions() != null ? httpConfig.getSslOptions() : null);
     config.setSslEngineOptions(httpConfig.getSslEngineOptions() != null ? httpConfig.getSslEngineOptions().copy() : null);
     config.setConnectTimeout(httpConfig.getConnectTimeout());
