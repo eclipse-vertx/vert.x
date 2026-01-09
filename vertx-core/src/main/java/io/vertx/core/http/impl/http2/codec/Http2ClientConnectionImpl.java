@@ -42,7 +42,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   private final boolean useDecompression;
   private final ClientMetrics clientMetrics;
   private final HostAndPort authority;
-  private final long lifetimeEvictionTimestamp;
+  private final long creationTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private Handler<AltSvcEvent> alternativeServicesHandler;
@@ -57,8 +57,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                             ClientMetrics clientMetrics,
                             Http2ClientConfig config,
                             TracingPolicy tracingPolicy,
-                            boolean useDecompression,
-                            long maxLifetime) {
+                            boolean useDecompression) {
     super(context, connHandler);
     this.clientMetrics = clientMetrics;
     this.transportMetrics = transportMetrics;
@@ -66,7 +65,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     this.tracingPolicy = tracingPolicy;
     this.useDecompression = useDecompression;
     this.authority = authority;
-    this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
+    this.creationTimestamp = System.currentTimeMillis();
     this.handler = connHandler;
   }
 
@@ -211,13 +210,17 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   public boolean isValid() {
-    long now = System.currentTimeMillis();
-    return now <= expirationTimestamp && now <= lifetimeEvictionTimestamp;
+    return System.currentTimeMillis() <= expirationTimestamp;
   }
 
   @Override
   public long lastResponseReceivedTimestamp() {
     return 0L;
+  }
+
+  @Override
+  public long creationTimestamp() {
+    return creationTimestamp;
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
@@ -310,15 +313,14 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     ContextInternal context,
     boolean upgrade,
     Object socketMetric,
-    HostAndPort authority,
-    long maxLifetime) {
+    HostAndPort authority) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnectionImpl>()
       .server(false)
       .useDecompression(useDecompression)
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, clientMetrics, metrics, config, tracingPolicy, useDecompression, maxLifetime);
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, clientMetrics, metrics, config, tracingPolicy, useDecompression);
         if (metrics != null) {
           Object m = socketMetric;
           conn.metric(m);

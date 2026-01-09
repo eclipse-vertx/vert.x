@@ -87,7 +87,6 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private final HostAndPort authority;
   public final ClientMetrics metrics;
   private final HttpVersion version;
-  private final long lifetimeEvictionTimestamp;
 
   private final Deque<Stream> pending;
   private final Deque<Stream> inflight;
@@ -104,6 +103,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   private int seq = 1;
   private Deque<WebSocketFrame> pendingFrames;
 
+  private long creationTimestamp;
   private long lastResponseReceivedTimestamp;
 
   public Http1xClientConnection(HttpVersion version,
@@ -116,8 +116,7 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
                          SocketAddress server,
                          HostAndPort authority,
                          ContextInternal context,
-                         ClientMetrics metrics,
-                         long maxLifetime) {
+                         ClientMetrics metrics) {
     super(context, chctx);
     this.clientMetrics = clientMetrics;
     this.config = config;
@@ -128,11 +127,11 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
     this.authority = authority;
     this.metrics = metrics;
     this.version = version;
-    this.lifetimeEvictionTimestamp = maxLifetime > 0 ? System.currentTimeMillis() + maxLifetime : Long.MAX_VALUE;
     this.keepAliveTimeout = config.getKeepAliveTimeout() == null ? 0 : (int)config.getKeepAliveTimeout().toSeconds();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     this.pending = new ArrayDeque<>();
     this.inflight = new ArrayDeque<>();
+    this.creationTimestamp = System.currentTimeMillis();
   }
 
   @Override
@@ -1356,9 +1355,13 @@ public class Http1xClientConnection extends Http1xConnection implements io.vertx
   }
 
   @Override
+  public long creationTimestamp() {
+    return creationTimestamp;
+  }
+
+  @Override
   public boolean isValid() {
-    long now = System.currentTimeMillis();
-    return now <= expirationTimestamp && now <= lifetimeEvictionTimestamp;
+    return System.currentTimeMillis() <= expirationTimestamp;
   }
 
   /**
