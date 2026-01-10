@@ -183,7 +183,14 @@ public class MockDnsServer {
 
   public static RecordStore A_store(Function<String, String> entries) {
     return questionRecord -> {
-      String res = entries.apply(questionRecord.name());
+
+      //Normalize the name by stripping the trailing dot
+      String normalizedName = questionRecord.name().endsWith(".")
+        ? questionRecord.name().substring(0, questionRecord.name().length() - 1)
+        : questionRecord.name();
+
+
+      String res = entries.apply(normalizedName);
       if (res != null) {
         return Collections.singleton(a(questionRecord.name(), 100, res));
       }
