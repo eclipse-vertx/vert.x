@@ -67,6 +67,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     this.authority = authority;
     this.creationTimestamp = System.currentTimeMillis();
     this.handler = connHandler;
+    // Ensure that the expirationTimestamp is initialized
+    recycle();
   }
 
   @Override
@@ -204,8 +206,9 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   void onStreamClosed(Http2Stream s) {
-    super.onStreamClosed(s);
+    // Prepare this connection for returning as onStreamClosed() will return it to the pool.
     recycle();
+    super.onStreamClosed(s);
   }
 
   @Override
