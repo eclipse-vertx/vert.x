@@ -47,22 +47,24 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private Handler<QuicConnection> handler;
   private QuicChannel channel;
   private QuicConnectionImpl connection;
+  private SocketAddress remoteAddress;
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
-                               Duration readIdleTimeout, Duration writeIdleTimeout, Handler<QuicConnection> handler) {
+                               Duration readIdleTimeout, Duration writeIdleTimeout, SocketAddress remoteAddress, Handler<QuicConnection> handler) {
     this.context = context;
     this.metrics = metrics;
     this.idleTimeout = timeoutMillis(idleTimeout);
     this.readIdleTimeout = timeoutMillis(readIdleTimeout);
     this.writeIdleTimeout = timeoutMillis(writeIdleTimeout);
     this.handler = handler;
+    this.remoteAddress = remoteAddress;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     QuicChannel ch = (QuicChannel) ctx.channel();
     channel = ch;
-    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, ch, ctx);
+    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, ch, remoteAddress, ctx);
     if (ch.isActive()) {
       activate();
     }

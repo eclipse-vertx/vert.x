@@ -10,6 +10,8 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.core.impl.Arguments;
+
 import static io.vertx.core.net.TCPSSLOptions.DEFAULT_SO_LINGER;
 
 /**
@@ -17,6 +19,10 @@ import static io.vertx.core.net.TCPSSLOptions.DEFAULT_SO_LINGER;
  */
 public class TcpOptions extends TransportOptions {
 
+  private int sendBufferSize;
+  private int receiveBufferSize;
+  private int trafficClass;
+  private boolean reuseAddress;
   private boolean reusePort;
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
@@ -32,6 +38,10 @@ public class TcpOptions extends TransportOptions {
 
   public TcpOptions(TcpOptions other) {
     init();
+    this.sendBufferSize = other.getSendBufferSize();
+    this.receiveBufferSize = other.getReceiveBufferSize();
+    this.reuseAddress = other.isReuseAddress();
+    this.trafficClass = other.getTrafficClass();
     this.reusePort = other.isReusePort();
     this.tcpNoDelay = other.isTcpNoDelay();
     this.tcpKeepAlive = other.isTcpKeepAlive();
@@ -43,6 +53,10 @@ public class TcpOptions extends TransportOptions {
   }
 
   void init() {
+    sendBufferSize = NetworkOptions.DEFAULT_SEND_BUFFER_SIZE;
+    receiveBufferSize = NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE;
+    reuseAddress = NetworkOptions.DEFAULT_REUSE_ADDRESS;
+    trafficClass = NetworkOptions.DEFAULT_TRAFFIC_CLASS;
     reusePort = NetworkOptions.DEFAULT_REUSE_PORT;
     tcpNoDelay = TCPSSLOptions.DEFAULT_TCP_NO_DELAY;
     tcpKeepAlive = TCPSSLOptions.DEFAULT_TCP_KEEP_ALIVE;
@@ -56,6 +70,84 @@ public class TcpOptions extends TransportOptions {
   @Override
   protected TcpOptions copy() {
     return new TcpOptions(this);
+  }
+
+  /**
+   * Return the TCP send buffer size, in bytes.
+   *
+   * @return the send buffer size
+   */
+  public int getSendBufferSize() {
+    return sendBufferSize;
+  }
+
+  /**
+   * Set the TCP send buffer size
+   *
+   * @param sendBufferSize  the buffers size, in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpOptions setSendBufferSize(int sendBufferSize) {
+    Arguments.require(sendBufferSize > 0  || sendBufferSize == NetworkOptions.DEFAULT_SEND_BUFFER_SIZE, "sendBufferSize must be > 0");
+    this.sendBufferSize = sendBufferSize;
+    return this;
+  }
+
+  /**
+   * Return the TCP receive buffer size, in bytes
+   *
+   * @return the receive buffer size
+   */
+  public int getReceiveBufferSize() {
+    return receiveBufferSize;
+  }
+
+  /**
+   * Set the TCP receive buffer size
+   *
+   * @param receiveBufferSize  the buffers size, in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpOptions setReceiveBufferSize(int receiveBufferSize) {
+    Arguments.require(receiveBufferSize > 0 || receiveBufferSize == NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE, "receiveBufferSize must be > 0");
+    this.receiveBufferSize = receiveBufferSize;
+    return this;
+  }
+
+  /**
+   * @return  the value of reuse address
+   */
+  public boolean isReuseAddress() {
+    return reuseAddress;
+  }
+
+  /**
+   * Set the value of reuse address
+   * @param reuseAddress  the value of reuse address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpOptions setReuseAddress(boolean reuseAddress) {
+    this.reuseAddress = reuseAddress;
+    return this;
+  }
+
+  /**
+   * @return  the value of traffic class
+   */
+  public int getTrafficClass() {
+    return trafficClass;
+  }
+
+  /**
+   * Set the value of traffic class
+   *
+   * @param trafficClass  the value of traffic class
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpOptions setTrafficClass(int trafficClass) {
+    Arguments.requireInRange(trafficClass, NetworkOptions.DEFAULT_TRAFFIC_CLASS, 255, "trafficClass tc must be 0 <= tc <= 255");
+    this.trafficClass = trafficClass;
+    return this;
   }
 
   /**

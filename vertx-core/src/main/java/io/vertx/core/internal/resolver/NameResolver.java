@@ -12,15 +12,16 @@
 package io.vertx.core.internal.resolver;
 
 import io.netty.channel.EventLoop;
+import io.netty.resolver.AddressResolver;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.Address;
-import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.core.spi.dns.AddressResolverProvider;
@@ -51,7 +52,7 @@ public class NameResolver {
   private static final boolean DEFAULT_ROTATE = false;
 
   private final AddressResolverOptions options;
-  private final Vertx vertx;
+  private final VertxInternal vertx;
   private final AddressResolverGroup<InetSocketAddress> resolverGroup;
   private final AddressResolverProvider provider;
 
@@ -59,7 +60,7 @@ public class NameResolver {
     this.options = options;
     this.provider = AddressResolverProvider.factory(vertx, options);
     this.resolverGroup = provider.resolver(options);
-    this.vertx = vertx;
+    this.vertx = (VertxInternal) vertx;
   }
 
   /**
@@ -76,11 +77,25 @@ public class NameResolver {
    * @return a future notified with the result
    */
   public Future<InetAddress> resolve(String hostname) {
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     io.netty.util.concurrent.Future<InetSocketAddress> fut = resolve(context.nettyEventLoop(), hostname);
     PromiseInternal<InetSocketAddress> promise = context.promise();
     fut.addListener(promise);
     return promise.map(InetSocketAddress::getAddress);
+  }
+
+  public Future<java.net.SocketAddress> resolve(SocketAddress address) {
+    ContextInternal context = vertx.getOrCreateContext();
+    AddressResolver<InetSocketAddress> resolver = resolver(context.nettyEventLoop());
+    java.net.SocketAddress addr = vertx.transport().convert(address);
+    if (resolver.isResolved(addr)) {
+      return context.succeededFuture(addr);
+    } else {
+      io.netty.util.concurrent.Future<InetSocketAddress> f = resolver.resolve(addr);
+      PromiseInternal<java.net.SocketAddress> p = context.promise();
+      f.addListener(p);
+      return p.future();
+    }
   }
 
   public io.netty.util.concurrent.Future<InetSocketAddress> resolve(EventLoop eventLoop, String hostname) {
@@ -89,7 +104,7 @@ public class NameResolver {
   }
 
   public Future<List<InetSocketAddress>> resolveAll(String hostname) {
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal context = vertx.getOrCreateContext();
     io.netty.util.concurrent.Future<List<InetSocketAddress>> fut = resolveAll(context.nettyEventLoop(), hostname);
     PromiseInternal<List<InetSocketAddress>> promise = context.promise();
     fut.addListener(promise);

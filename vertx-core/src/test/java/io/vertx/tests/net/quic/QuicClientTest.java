@@ -27,7 +27,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.net.Inet4Address;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -380,5 +382,18 @@ public class QuicClientTest extends VertxTestBase {
       connectOptions).await();
     connection.close().await();
     assertEquals("host2.com", serverName.get());
+  }
+
+  @Test
+  public void testSocketAddressResolution() throws UnknownHostException {
+    server.handler(conn -> {
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    String doesNotResolve = TestUtils.randomAlphaString(32);
+    SocketAddress addr = SocketAddress.inetSocketAddress(new InetSocketAddress(Inet4Address.getByAddress(doesNotResolve, NetUtil.LOCALHOST4.getAddress()), 9999));
+    QuicConnection connection = client.connect(addr).await();
+    assertEquals(doesNotResolve, connection.remoteAddress().hostName());
+    connection.close().await();
   }
 }

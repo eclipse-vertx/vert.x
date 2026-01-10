@@ -112,4 +112,6 @@ public interface HttpClientConnection extends HttpConnection {
    */
   long lastResponseReceivedTimestamp();
 
+  long creationTimestamp();
+
 }

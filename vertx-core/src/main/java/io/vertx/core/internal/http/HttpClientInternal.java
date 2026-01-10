@@ -38,13 +38,7 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
   // Should not be here but currently necessary for WebClient
   @Deprecated(forRemoval = true)
   default HttpClientOptions options() {
-    HttpChannelConnector connector = channelConnector();
-    if (connector instanceof Http1xOrH2ChannelConnector) {
-      Http1xOrH2ChannelConnector http1xOrH2ChannelConnector = (Http1xOrH2ChannelConnector)connector;
-      return http1xOrH2ChannelConnector.options();
-    } else {
-      return null;
-    }
+    return null;
   }
 
   EndpointResolverInternal originResolver();

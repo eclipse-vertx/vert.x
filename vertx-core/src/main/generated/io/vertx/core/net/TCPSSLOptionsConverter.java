@@ -12,6 +12,16 @@ public class TCPSSLOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, TCPSSLOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "logActivity":
+          if (member.getValue() instanceof Boolean) {
+            obj.setLogActivity((Boolean)member.getValue());
+          }
+          break;
+        case "activityLogDataFormat":
+          if (member.getValue() instanceof String) {
+            obj.setActivityLogDataFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
+          }
+          break;
         case "sendBufferSize":
           if (member.getValue() instanceof Number) {
             obj.setSendBufferSize(((Number)member.getValue()).intValue());
@@ -30,16 +40,6 @@ public class TCPSSLOptionsConverter {
         case "trafficClass":
           if (member.getValue() instanceof Number) {
             obj.setTrafficClass(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "logActivity":
-          if (member.getValue() instanceof Boolean) {
-            obj.setLogActivity((Boolean)member.getValue());
-          }
-          break;
-        case "activityLogDataFormat":
-          if (member.getValue() instanceof String) {
-            obj.setActivityLogDataFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
           }
           break;
         case "reusePort":
@@ -165,14 +165,14 @@ public class TCPSSLOptionsConverter {
   }
 
    static void toJson(TCPSSLOptions obj, java.util.Map<String, Object> json) {
-    json.put("sendBufferSize", obj.getSendBufferSize());
-    json.put("receiveBufferSize", obj.getReceiveBufferSize());
-    json.put("reuseAddress", obj.isReuseAddress());
-    json.put("trafficClass", obj.getTrafficClass());
     json.put("logActivity", obj.getLogActivity());
     if (obj.getActivityLogDataFormat() != null) {
       json.put("activityLogDataFormat", obj.getActivityLogDataFormat().name());
     }
+    json.put("sendBufferSize", obj.getSendBufferSize());
+    json.put("receiveBufferSize", obj.getReceiveBufferSize());
+    json.put("reuseAddress", obj.isReuseAddress());
+    json.put("trafficClass", obj.getTrafficClass());
     json.put("reusePort", obj.isReusePort());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());

@@ -338,7 +338,7 @@ public abstract class ConnectionBase {
     return null;
   }
 
-  private SocketAddress channelRemoteAddress() {
+  protected SocketAddress channelRemoteAddress() {
     java.net.SocketAddress addr;
     if (channel instanceof QuicChannel) {
       addr = ((QuicChannel)channel).remoteSocketAddress();
