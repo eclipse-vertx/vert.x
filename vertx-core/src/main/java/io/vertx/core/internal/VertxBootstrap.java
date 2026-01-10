@@ -14,10 +14,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxBootstrapImpl;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
@@ -124,17 +121,17 @@ public interface VertxBootstrap {
   VertxBootstrap executorServiceFactory(ExecutorServiceFactory factory);
 
   /**
-   * @return the {@code VertxThreadFactory} to use
-   */
-  VertxThreadFactory threadFactory();
-
-  /**
-   * Set the {@code VertxThreadFactory} instance to use.
+   * Set the {@code ThreadFactoryProvider} instance to use.
    *
-   * @param factory the metrics
+   * @param provider the provider
    * @return this builder instance
    */
-  VertxBootstrap threadFactory(VertxThreadFactory factory);
+  VertxBootstrap threadFactoryProvider(ThreadFactoryProvider provider);
+
+  /**
+   * @return the bootstrap thread factory provider
+   */
+  ThreadFactoryProvider threadFactoryProvider();
 
   /**
    * @return the transport to use
