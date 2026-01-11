@@ -19,6 +19,7 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
@@ -86,7 +87,12 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpClientBuilder httpClientBuilder() {
+  public HttpServer createHttpServer(Http3ServerOptions options) {
+    return delegate.createHttpServer(options);
+  }
+
+  @Override
+  public HttpClientBuilderInternal httpClientBuilder() {
     return delegate.httpClientBuilder();
   }
 

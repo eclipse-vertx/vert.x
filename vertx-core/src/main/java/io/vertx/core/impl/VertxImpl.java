@@ -34,6 +34,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.impl.http3.Http3Server;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;
@@ -401,6 +402,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public HttpServer createHttpServer(Http3ServerOptions options) {
+    return new Http3Server(this, options);
+  }
+
+  @Override
   public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
     HttpClientOptions o = new HttpClientOptions(options);
     o.setDefaultHost(options.getDefaultHost());
@@ -439,7 +445,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpClientBuilder httpClientBuilder() {
+  public HttpClientBuilderInternal httpClientBuilder() {
     return new HttpClientBuilderInternal(this);
   }
 

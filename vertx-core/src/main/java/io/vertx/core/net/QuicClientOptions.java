@@ -40,6 +40,11 @@ public class QuicClientOptions extends QuicEndpointOptions {
   }
 
   @Override
+  public QuicClientOptions setTransportOptions(QuicOptions transportOptions) {
+    return (QuicClientOptions) super.setTransportOptions(transportOptions);
+  }
+
+  @Override
   public QuicClientOptions setQLogConfig(QLogConfig qLogConfig) {
     return (QuicClientOptions) super.setQLogConfig(qLogConfig);
   }
@@ -72,6 +77,11 @@ public class QuicClientOptions extends QuicEndpointOptions {
   @Override
   public ClientSSLOptions getSslOptions() {
     return (ClientSSLOptions) super.getSslOptions();
+  }
+
+  public QuicClientOptions setSslOptions(ClientSSLOptions sslOptions) {
+    super.setSslOptions(sslOptions);
+    return this;
   }
 
   @Override
