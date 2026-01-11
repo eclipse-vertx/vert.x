@@ -11,7 +11,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.json.JsonObject;
 
 import java.time.Duration;
 
@@ -30,6 +29,7 @@ public abstract class QuicEndpointOptions {
   private Duration streamIdleTimeout;
   private Duration streamReadIdleTimeout;
   private Duration streamWriteIdleTimeout;
+  private NetworkLogging streamLogging;
 
   public QuicEndpointOptions() {
     this.transportOptions = new QuicOptions();
@@ -46,10 +46,7 @@ public abstract class QuicEndpointOptions {
     this.streamIdleTimeout = other.streamIdleTimeout;
     this.streamReadIdleTimeout = other.streamReadIdleTimeout;
     this.streamWriteIdleTimeout = other.streamWriteIdleTimeout;
-  }
-
-  public QuicEndpointOptions(JsonObject json) {
-    throw new UnsupportedOperationException();
+    this.streamLogging = other.streamLogging != null ? new NetworkLogging(other.streamLogging) : null;
   }
 
   /**
@@ -182,5 +179,23 @@ public abstract class QuicEndpointOptions {
    */
   public Duration getStreamWriteIdleTimeout() {
     return streamWriteIdleTimeout;
+  }
+
+  /**
+   * @return the stream network logging config, {@code null} means disabled
+   */
+  public NetworkLogging getStreamLogging() {
+    return streamLogging;
+  }
+
+  /**
+   * Configure the per stream networking logging: Netty's stream pipeline is configured for logging on Netty's logger.
+   *
+   * @param config the stream network logging config, {@code null} means disabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicEndpointOptions setStreamLogging(NetworkLogging config) {
+    this.streamLogging = config;
+    return this;
   }
 }

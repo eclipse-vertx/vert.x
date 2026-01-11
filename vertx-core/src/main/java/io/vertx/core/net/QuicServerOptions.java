@@ -77,6 +77,11 @@ public class QuicServerOptions extends QuicEndpointOptions {
   }
 
   @Override
+  public QuicServerOptions setStreamLogging(NetworkLogging config) {
+    return (QuicServerOptions) super.setStreamLogging(config);
+  }
+
+  @Override
   public ServerSSLOptions getSslOptions() {
     return (ServerSSLOptions) super.getSslOptions();
   }

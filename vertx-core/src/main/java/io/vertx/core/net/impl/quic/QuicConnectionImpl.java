@@ -16,6 +16,8 @@ import io.netty.channel.*;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamType;
+import io.netty.handler.logging.ByteBufFormat;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Completable;
@@ -54,6 +56,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final long idleTimeout;
   private final long readIdleTimeout;
   private final long writeIdleTimeout;
+  private final ByteBufFormat activityLogging;
   private final ConnectionGroup streamGroup;
   private Function<ContextInternal, ContextInternal> streamContextProvider;
   private Handler<QuicStream> handler;
@@ -65,7 +68,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final SocketAddress remoteAddress;
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
-                            long readIdleTimeout,  long writeIdleTimeout, QuicChannel channel,
+                            long readIdleTimeout,  long writeIdleTimeout, ByteBufFormat activityLogging, QuicChannel channel,
                             SocketAddress remoteAddress, ChannelHandlerContext chctx) {
     super(context, chctx);
     this.channel = channel;
@@ -73,6 +76,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.idleTimeout = idleTimeout;
     this.readIdleTimeout = readIdleTimeout;
     this.writeIdleTimeout = writeIdleTimeout;
+    this.activityLogging = activityLogging;
     this.context = context;
     this.remoteAddress = remoteAddress;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
@@ -127,9 +131,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       streamGroup.add(streamChannel);
     }
     ChannelPipeline pipeline = streamChannel.pipeline();
-    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
-    }
+    configureStreamChannelPipeline(pipeline);
     Function<ContextInternal, ContextInternal> provider = streamContextProvider;
     ContextInternal streamContext;
     if (provider != null) {
@@ -242,9 +244,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;
     ChannelInitializer<QuicStreamChannel> initializer = initializerProvider.apply(ch -> {
       ChannelPipeline pipeline = ch.pipeline();
-      if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-        pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
-      }
+      configureStreamChannelPipeline(pipeline);
       pipeline.addLast("handler", handler);
       streamGroup.add(ch);
     });
@@ -255,6 +255,15 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       }
     });
     return promise.future();
+  }
+
+  private void configureStreamChannelPipeline(ChannelPipeline pipeline) {
+    if (activityLogging != null) {
+      pipeline.addLast("logging", new LoggingHandler(activityLogging));
+    }
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
+    }
   }
 
   @Override

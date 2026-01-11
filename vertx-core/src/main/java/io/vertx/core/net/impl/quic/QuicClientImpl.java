@@ -20,6 +20,7 @@ import io.netty.handler.codec.quic.QuicChannelOption;
 import io.netty.handler.codec.quic.QuicClientCodecBuilder;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.vertx.core.Future;
@@ -142,8 +143,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
+          ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
-            options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), remoteAddress, promise::tryComplete);
+            options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })

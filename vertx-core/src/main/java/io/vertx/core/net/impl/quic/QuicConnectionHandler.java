@@ -16,6 +16,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicConnectionCloseEvent;
 import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.ssl.SniCompletionEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -44,18 +45,21 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private final long idleTimeout;
   private final long readIdleTimeout;
   private final long writeIdleTimeout;
+  private final ByteBufFormat activityLogging;
   private Handler<QuicConnection> handler;
   private QuicChannel channel;
   private QuicConnectionImpl connection;
   private SocketAddress remoteAddress;
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
-                               Duration readIdleTimeout, Duration writeIdleTimeout, SocketAddress remoteAddress, Handler<QuicConnection> handler) {
+                               Duration readIdleTimeout, Duration writeIdleTimeout, ByteBufFormat activityLogging,
+                               SocketAddress remoteAddress, Handler<QuicConnection> handler) {
     this.context = context;
     this.metrics = metrics;
     this.idleTimeout = timeoutMillis(idleTimeout);
     this.readIdleTimeout = timeoutMillis(readIdleTimeout);
     this.writeIdleTimeout = timeoutMillis(writeIdleTimeout);
+    this.activityLogging = activityLogging;
     this.handler = handler;
     this.remoteAddress = remoteAddress;
   }
@@ -64,7 +68,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   public void handlerAdded(ChannelHandlerContext ctx) {
     QuicChannel ch = (QuicChannel) ctx.channel();
     channel = ch;
-    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, ch, remoteAddress, ctx);
+    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging, ch, remoteAddress, ctx);
     if (ch.isActive()) {
       activate();
     }
