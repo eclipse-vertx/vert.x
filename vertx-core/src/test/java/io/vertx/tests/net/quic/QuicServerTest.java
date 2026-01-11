@@ -19,12 +19,10 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -44,7 +42,6 @@ import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -907,7 +904,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
     QuicServerOptions options = serverOptions();
-    options.setIdleTimeout(Duration.ofMillis(100));
+    options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
@@ -945,7 +942,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testStreamIdleHandler() throws Exception {
     int numEvents = 10;
     QuicServerOptions options = serverOptions();
-    options.setIdleTimeout(Duration.ofMillis(100));
+    options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
