@@ -23,7 +23,9 @@ import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,16 +102,16 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testConnect() throws Exception {
-    testConnect(9999);
+    testConnect(serverOptions(), 9999);
   }
 
   @Test
   public void testConnectRandomPort() throws Exception {
-    testConnect(0);
+    testConnect(serverOptions(), 0);
   }
 
-  private void testConnect(int port) throws Exception {
-    QuicServer server = QuicServer.create(vertx, serverOptions());
+  private void testConnect(QuicServerOptions options,  int port) throws Exception {
+    QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       assertEquals("test-protocol", conn.applicationLayerProtocol());
 
@@ -998,6 +1000,18 @@ public class QuicServerTest extends VertxTestBase {
       client.close();
       server.close().await();
     }
+  }
+
+  @Test
+  public void testServerLogging() throws Exception {
+    TestLoggerFactory fact = TestUtils.testLogging(() -> {
+      try {
+        testConnect(serverOptions().setStreamLogging(new NetworkLogging()), 9999);
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    assertTrue(fact.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
   /*  @Test

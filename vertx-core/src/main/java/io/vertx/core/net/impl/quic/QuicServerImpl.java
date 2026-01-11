@@ -25,6 +25,7 @@ import io.netty.handler.codec.quic.QuicServerCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.codec.quic.QuicTokenHandler;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Mapping;
 import io.netty.util.internal.PlatformDependent;
@@ -155,9 +156,10 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
+                ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
                 QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
-                  options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), vertx.transport().convert(channel.remoteSocketAddress()),
-                  QuicServerImpl.this.handler);
+                  options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging,
+                  vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);
               }
