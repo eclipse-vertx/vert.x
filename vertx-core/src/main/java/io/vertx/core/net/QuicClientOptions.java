@@ -11,7 +11,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.net.impl.quic.QuicClientImpl;
 
 import java.time.Duration;
 
@@ -51,18 +50,18 @@ public class QuicClientOptions extends QuicEndpointOptions {
   }
 
   @Override
-  public QuicClientOptions setIdleTimeout(Duration idleTimeout) {
-    return (QuicClientOptions) super.setIdleTimeout(idleTimeout);
+  public QuicClientOptions setStreamIdleTimeout(Duration idleTimeout) {
+    return (QuicClientOptions) super.setStreamIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientOptions setReadIdleTimeout(Duration idleTimeout) {
-    return (QuicClientOptions) super.setReadIdleTimeout(idleTimeout);
+  public QuicClientOptions setStreamReadIdleTimeout(Duration idleTimeout) {
+    return (QuicClientOptions) super.setStreamReadIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientOptions setWriteIdleTimeout(Duration idleTimeout) {
-    return (QuicClientOptions) super.setWriteIdleTimeout(idleTimeout);
+  public QuicClientOptions setStreamWriteIdleTimeout(Duration idleTimeout) {
+    return (QuicClientOptions) super.setStreamWriteIdleTimeout(idleTimeout);
   }
 
   @Override

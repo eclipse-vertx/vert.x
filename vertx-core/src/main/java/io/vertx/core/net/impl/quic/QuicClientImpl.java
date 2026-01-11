@@ -142,8 +142,8 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
-          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getIdleTimeout(),
-            options.getReadIdleTimeout(), options.getWriteIdleTimeout(), remoteAddress, promise::tryComplete);
+          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
+            options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })

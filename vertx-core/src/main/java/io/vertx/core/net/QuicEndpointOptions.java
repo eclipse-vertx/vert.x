@@ -14,7 +14,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Config operations of a Quic endpoint.
@@ -28,9 +27,9 @@ public abstract class QuicEndpointOptions {
   private SSLOptions sslOptions;
   private QLogConfig qlogConfig;
   private String keyLogFile;
-  private Duration idleTimeout;
-  private Duration readIdleTimeout;
-  private Duration writeIdleTimeout;
+  private Duration streamIdleTimeout;
+  private Duration streamReadIdleTimeout;
+  private Duration streamWriteIdleTimeout;
 
   public QuicEndpointOptions() {
     this.transportOptions = new QuicOptions();
@@ -44,9 +43,9 @@ public abstract class QuicEndpointOptions {
     this.sslOptions = other.sslOptions.copy();
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
-    this.idleTimeout = other.idleTimeout;
-    this.readIdleTimeout = other.readIdleTimeout;
-    this.writeIdleTimeout = other.writeIdleTimeout;
+    this.streamIdleTimeout = other.streamIdleTimeout;
+    this.streamReadIdleTimeout = other.streamReadIdleTimeout;
+    this.streamWriteIdleTimeout = other.streamWriteIdleTimeout;
   }
 
   public QuicEndpointOptions(JsonObject json) {
@@ -120,69 +119,68 @@ public abstract class QuicEndpointOptions {
   }
 
   /**
-   * Set the idle timeout, {@code null} means don't timeout.
+   * Set the stream idle timeout, {@code null} means don't time out.
    * This determines if a stream will timeout and be closed if no data is received nor sent within the timeout.
    *
    * @param idleTimeout  the idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointOptions setStreamIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
-      throw new IllegalArgumentException("idleTimeout must be >= 0");
+      throw new IllegalArgumentException("streamIdleTimeout must be >= 0");
     }
-    this.idleTimeout = idleTimeout;
+    this.streamIdleTimeout = idleTimeout;
     return this;
   }
 
   /**
    * @return the idle timeout applied to each stream
    */
-  public Duration getIdleTimeout() {
-    return idleTimeout;
+  public Duration getStreamIdleTimeout() {
+    return streamIdleTimeout;
   }
 
   /**
-   * Set the read idle timeout, {@code null} means don't timeout.
+   * Set the stream read idle timeout, {@code null} means don't time out.
    * This determines if a stream will timeout and be closed if no data is received within the timeout.
    *
    * @param idleTimeout  the read idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setReadIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointOptions setStreamReadIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
-      throw new IllegalArgumentException("readIdleTimeout must be >= 0");
+      throw new IllegalArgumentException("streamReadIdleTimeout must be >= 0");
     }
-    this.readIdleTimeout = idleTimeout;
+    this.streamReadIdleTimeout = idleTimeout;
     return this;
   }
 
   /**
    * @return the read idle timeout applied to each stream
    */
-  public Duration getReadIdleTimeout() {
-    return readIdleTimeout;
+  public Duration getStreamReadIdleTimeout() {
+    return streamReadIdleTimeout;
   }
 
   /**
-   * Set the write idle timeout, {@code null} means don't timeout.
+   * Set the stream write idle timeout, {@code null} means don't time out.
    * This determines if a stream will timeout and be closed if no data is sent within the timeout.
    *
    * @param idleTimeout  the write idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setWriteIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointOptions setStreamWriteIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
-      throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
+      throw new IllegalArgumentException("streamWriteIdleTimeout must be >= 0");
     }
-    this.writeIdleTimeout = idleTimeout;
+    this.streamWriteIdleTimeout = idleTimeout;
     return this;
   }
 
   /**
    * @return the write idle timeout applied to each stream
    */
-  public Duration getWriteIdleTimeout() {
-    return writeIdleTimeout;
+  public Duration getStreamWriteIdleTimeout() {
+    return streamWriteIdleTimeout;
   }
-
 }
