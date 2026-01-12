@@ -16,6 +16,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamType;
+import io.netty.handler.codec.quic.QuicTransportParameters;
 import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -29,13 +30,10 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.net.impl.VertxHandler;
-import io.vertx.core.net.QuicConnectionClose;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicStream;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
@@ -66,6 +64,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private QuicConnectionClose closePayload;
   private final NetworkMetrics<?> streamMetrics;
   private final SocketAddress remoteAddress;
+  private QuicTransportParams transportParams;
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
                             long readIdleTimeout,  long writeIdleTimeout, ByteBufFormat activityLogging, QuicChannel channel,
@@ -297,6 +296,19 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   public String applicationLayerProtocol() {
     SSLEngine engine = channel.sslEngine();
     return engine.getApplicationProtocol();
+  }
+
+  @Override
+  public QuicTransportParams transportParams() {
+    QuicTransportParams params = transportParams;
+    if (params == null) {
+      QuicTransportParameters delegate = channel.peerTransportParameters();
+      if (delegate != null) {
+        params = new QuicTransportParamsImpl(delegate);
+        transportParams = params;
+      }
+    }
+    return transportParams;
   }
 
   @Override

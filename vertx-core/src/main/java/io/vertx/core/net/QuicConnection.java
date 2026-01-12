@@ -149,6 +149,11 @@ public interface QuicConnection {
   String indicatedServerName();
 
   /**
+   * @return the transport parameters
+   */
+  QuicTransportParams transportParams();
+
+  /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is
    *         not SSL.
    * @see javax.net.ssl.SSLSession
