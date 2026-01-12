@@ -11,6 +11,7 @@
 
 package io.vertx.tests.http;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.test.core.TestUtils;
@@ -27,7 +28,7 @@ import static org.junit.Assert.*;
 public class Http2SettingsTest {
 
   long[] min = { 0, 0, 0, 0, 0x4000, 0 };
-  long[] max = { 0xFFFFFFFFL, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Integer.MAX_VALUE };
+  long[] max = { 0xFFFFFFFFL, 1, 0xFFFFFFFFL, Integer.MAX_VALUE, 0xFFFFFF, Http2CodecUtil.MAX_HEADER_LIST_SIZE };
 
   @Test
   public void testSettingsMin() {
@@ -46,7 +47,7 @@ public class Http2SettingsTest {
   }
 
   @Test
-  public void testSettinsMax() {
+  public void testSettingsMax() {
     for (int i = 1;i <= 6;i++) {
       try {
         new Http2Settings().set(i, max[i - 1] + 1);

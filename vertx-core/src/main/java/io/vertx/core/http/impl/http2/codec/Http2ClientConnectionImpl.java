@@ -17,6 +17,7 @@ import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.config.Http2ClientConfig;
@@ -103,7 +104,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public long concurrency() {
-    long concurrency = remoteSettings().getMaxConcurrentStreams();
+    long concurrency = remoteSettings().getLongOrDefault(Http2Settings.MAX_CONCURRENT_STREAMS);
     long http2MaxConcurrency = config.getMultiplexingLimit() <= 0 ? Long.MAX_VALUE : config.getMultiplexingLimit();
     if (http2MaxConcurrency > 0) {
       concurrency = Math.min(concurrency, http2MaxConcurrency);

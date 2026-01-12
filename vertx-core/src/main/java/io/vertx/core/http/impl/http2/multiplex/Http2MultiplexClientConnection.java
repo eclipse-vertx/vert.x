@@ -19,6 +19,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.AltSvcEvent;
 import io.vertx.core.http.impl.HttpClientConnection;
@@ -89,8 +90,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     expirationTimestampMillis = keepAliveTimeoutMillis > 0 ? System.currentTimeMillis() + keepAliveTimeoutMillis : Long.MAX_VALUE;
   }
 
-  private long actualConcurrency(Http2Settings settings) {
-    return Math.min(settings.getMaxConcurrentStreams(), maxConcurrency);
+  private long actualConcurrency(HttpSettings settings) {
+    return Math.min(settings.getLongOrDefault(Http2Settings.MAX_CONCURRENT_STREAMS), maxConcurrency);
   }
 
   void onInitialSettingsSent() {
@@ -105,7 +106,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  void onSettings(Http2Settings settings) {
+  void onSettings(HttpSettings settings) {
     long newConcurrency = actualConcurrency(settings);
     if (newConcurrency != concurrency) {
       Handler<Long> handler = concurrencyChangeHandler;

@@ -65,7 +65,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   private final Deque<Promise<Buffer>> pendingPingAcks;
   private boolean initialSettingsReceived;
   private int windowSize;
-  private Handler<Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteSettingsHandler;
   private Handler<Void> shutdownHandler;
   private Handler<GoAway> goAwayHandler;
   private Handler<Buffer> pingHandler;
@@ -307,9 +307,9 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
+  public Future<Void> updateSettings(HttpSettings settings) {
     PromiseInternal<Void> promise = context.promise();
-    handler.writeSettings(HttpUtils.fromVertxSettings(settings), promise);
+    handler.writeSettings(HttpUtils.fromVertxSettings((Http2Settings) settings), promise);
     return promise.future();
   }
 
@@ -320,7 +320,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   }
 
   @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+  public HttpConnection remoteSettingsHandler(Handler<HttpSettings> handler) {
     this.remoteSettingsHandler = handler;
     return this;
   }
@@ -387,8 +387,8 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   void onInitialSettingsReceived(Http2Settings settings) {
   }
 
-  void onSettings(Http2Settings settings) {
-    Handler<Http2Settings> handler = remoteSettingsHandler;
+  void onSettings(HttpSettings settings) {
+    Handler<HttpSettings> handler = remoteSettingsHandler;
     if (handler != null) {
       context.emit(settings, handler);
     }
