@@ -62,7 +62,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private Handler<Object> invalidMessageHandler;
   private Handler<Long> concurrencyChangeHandler;
   private Handler<AltSvcEvent> alternativeServicesHandler;
-  private Handler<Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteSettingsHandler;
 
   public Http2UpgradeClientConnection(Http1xClientConnection connection, ClientMetrics<?, ?, ?> metrics, Http2ChannelUpgrade upgrade) {
     this.current = connection;
@@ -728,7 +728,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   @Override
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+  public HttpConnection remoteSettingsHandler(Handler<HttpSettings> handler) {
     if (current instanceof Http1xClientConnection) {
       remoteSettingsHandler = handler;
     } else {
@@ -837,17 +837,17 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
+  public Future<Void> updateSettings(HttpSettings settings) {
     return current.updateSettings(settings);
   }
 
   @Override
-  public Http2Settings settings() {
+  public HttpSettings settings() {
     return current.settings();
   }
 
   @Override
-  public Http2Settings remoteSettings() {
+  public HttpSettings remoteSettings() {
     return current.remoteSettings();
   }
 

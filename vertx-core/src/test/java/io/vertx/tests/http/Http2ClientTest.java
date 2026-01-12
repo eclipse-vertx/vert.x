@@ -27,6 +27,7 @@ import io.netty.util.AsciiString;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Http2Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
@@ -74,14 +75,14 @@ public class Http2ClientTest extends Http2TestBase {
         req.response().end();
       });
     }).connectionHandler(conn -> {
-      io.vertx.core.http.Http2Settings initialRemoteSettings = conn.remoteSettings();
-      assertEquals(initialSettings.isPushEnabled(), initialRemoteSettings.isPushEnabled());
-      assertEquals(initialSettings.getMaxHeaderListSize(), initialRemoteSettings.getMaxHeaderListSize());
-      assertEquals(initialSettings.getMaxFrameSize(), initialRemoteSettings.getMaxFrameSize());
-      assertEquals(initialSettings.getInitialWindowSize(), initialRemoteSettings.getInitialWindowSize());
+      HttpSettings initialRemoteSettings = conn.remoteSettings();
+      assertEquals(initialSettings.isPushEnabled(), initialRemoteSettings.get(Http2Settings.ENABLE_PUSH));
+      assertEquals(initialSettings.getMaxHeaderListSize(), (long)initialRemoteSettings.get(Http2Settings.MAX_HEADER_LIST_SIZE));
+      assertEquals(initialSettings.getMaxFrameSize(), (int)initialRemoteSettings.get(Http2Settings.MAX_FRAME_SIZE));
+      assertEquals(initialSettings.getInitialWindowSize(), (int)initialRemoteSettings.get(Http2Settings.INITIAL_WINDOW_SIZE));
       // assertEquals(Math.min(initialSettings.getMaxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
       // assertEquals(initialSettings.getHeaderTableSize(), initialRemoteSettings.getHeaderTableSize());
-      assertEquals(initialSettings.get('\u0007'), initialRemoteSettings.get(7));
+      assertEquals(initialSettings.get('\u0007'), ((Http2Settings)initialRemoteSettings).get(7));
       Context ctx = Vertx.currentContext();
       conn.remoteSettingsHandler(settings -> {
         assertOnIOContext(ctx);
@@ -89,13 +90,13 @@ public class Http2ClientTest extends Http2TestBase {
           case 0:
             // find out why it fails sometimes ...
             // assertEquals(updatedSettings.pushEnabled(), settings.getEnablePush());
-            assertEquals(updatedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
-            assertEquals(updatedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
-            assertEquals(updatedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
+            assertEquals(updatedSettings.getMaxHeaderListSize(), (long)settings.get(Http2Settings.MAX_HEADER_LIST_SIZE));
+            assertEquals(updatedSettings.getMaxFrameSize(), (int)settings.get(Http2Settings.MAX_FRAME_SIZE));
+            assertEquals(updatedSettings.getInitialWindowSize(), (int)settings.get(Http2Settings.INITIAL_WINDOW_SIZE));
             // find out why it fails sometimes ...
             // assertEquals(Math.min(updatedSettings.maxConcurrentStreams(), Integer.MAX_VALUE), settings.getMaxConcurrentStreams());
             // assertEquals(updatedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
-            assertEquals(updatedSettings.get('\u0007'), settings.get(7));
+            assertEquals(updatedSettings.get('\u0007'), ((Http2Settings)settings).get(7));
             complete();
             break;
           default:
@@ -167,12 +168,12 @@ public class Http2ClientTest extends Http2TestBase {
         conn.remoteSettingsHandler(settings -> {
           switch (count.getAndIncrement()) {
             case 0:
-              assertEquals(expectedSettings.getMaxHeaderListSize(), settings.getMaxHeaderListSize());
-              assertEquals(expectedSettings.getMaxFrameSize(), settings.getMaxFrameSize());
-              assertEquals(expectedSettings.getInitialWindowSize(), settings.getInitialWindowSize());
-              assertEquals(expectedSettings.getMaxConcurrentStreams(), settings.getMaxConcurrentStreams());
-              assertEquals(expectedSettings.getHeaderTableSize(), settings.getHeaderTableSize());
-              assertEquals(expectedSettings.get('\u0007'), settings.get(7));
+              assertEquals(expectedSettings.getMaxHeaderListSize(), (long)settings.get(Http2Settings.MAX_HEADER_LIST_SIZE));
+              assertEquals(expectedSettings.getMaxFrameSize(), (int)settings.get(Http2Settings.MAX_FRAME_SIZE));
+              assertEquals(expectedSettings.getInitialWindowSize(), (int)settings.get(Http2Settings.INITIAL_WINDOW_SIZE));
+              assertEquals(expectedSettings.getMaxConcurrentStreams(), (long)settings.get(Http2Settings.MAX_CONCURRENT_STREAMS));
+              assertEquals(expectedSettings.getHeaderTableSize(), (long)settings.get(Http2Settings.HEADER_TABLE_SIZE));
+              assertEquals(expectedSettings.get('\u0007'), ((Http2Settings)settings).get(7));
               complete();
               break;
           }
@@ -203,7 +204,7 @@ public class Http2ClientTest extends Http2TestBase {
         if (useReduced.compareAndSet(false, true)) {
           continuation = continuation.compose(v -> {
             HttpConnection conn = req.connection();
-            return conn.updateSettings(new io.vertx.core.http.Http2Settings(conn.settings()).setMaxConcurrentStreams(reduced));
+            return conn.updateSettings(conn.settings().copy().set(Http2Settings.MAX_CONCURRENT_STREAMS, (long)reduced));
           });
         }
         continuation.onComplete(onSuccess(v -> {
@@ -637,7 +638,7 @@ public class Http2ClientTest extends Http2TestBase {
     client = vertx.httpClientBuilder()
       .with(clientOptions)
       .withConnectHandler(conn -> {
-        assertEquals(max == null ? 0xFFFFFFFFL : max, conn.remoteSettings().getMaxConcurrentStreams());
+        assertEquals(max == null ? 0xFFFFFFFFL : max, (long)conn.remoteSettings().get(Http2Settings.MAX_CONCURRENT_STREAMS));
         latch.countDown();
       })
       .build();

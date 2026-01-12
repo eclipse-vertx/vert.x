@@ -186,6 +186,11 @@ public final class Http2Settings extends HttpSettings {
   }
 
   @Override
+  public Http2Settings copy() {
+    return new Http2Settings(this);
+  }
+
+  @Override
   HttpVersion version() {
     return HttpVersion.HTTP_2;
   }
@@ -194,7 +199,7 @@ public final class Http2Settings extends HttpSettings {
    * @return the {@literal SETTINGS_HEADER_TABLE_SIZE} HTTP/2 setting
    */
   public long getHeaderTableSize() {
-    return getValueOrDefault(HEADER_TABLE_SIZE);
+    return getOrDefault(HEADER_TABLE_SIZE);
   }
 
   /**
@@ -204,7 +209,7 @@ public final class Http2Settings extends HttpSettings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setHeaderTableSize(long headerTableSize) {
-    setRaw(HEADER_TABLE_SIZE, headerTableSize);
+    setLong(HEADER_TABLE_SIZE, headerTableSize);
     return this;
   }
 
@@ -212,7 +217,7 @@ public final class Http2Settings extends HttpSettings {
    * @return the {@literal SETTINGS_ENABLE_PUSH} HTTP/2 setting
    */
   public boolean isPushEnabled() {
-    return getValueOrDefault(ENABLE_PUSH);
+    return getOrDefault(ENABLE_PUSH);
   }
 
   /**
@@ -222,14 +227,14 @@ public final class Http2Settings extends HttpSettings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setPushEnabled(boolean pushEnabled) {
-    return setValue(ENABLE_PUSH, pushEnabled);
+    return set(ENABLE_PUSH, pushEnabled);
   }
 
   /**
    * @return the {@literal SETTINGS_MAX_CONCURRENT_STREAMS} HTTP/2 setting
    */
   public long getMaxConcurrentStreams() {
-    return getValueOrDefault(MAX_CONCURRENT_STREAMS);
+    return getOrDefault(MAX_CONCURRENT_STREAMS);
   }
 
   /**
@@ -239,14 +244,14 @@ public final class Http2Settings extends HttpSettings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setMaxConcurrentStreams(long maxConcurrentStreams) {
-    return setRaw(MAX_CONCURRENT_STREAMS, maxConcurrentStreams);
+    return setLong(MAX_CONCURRENT_STREAMS, maxConcurrentStreams);
   }
 
   /**
    * @return the {@literal SETTINGS_INITIAL_WINDOW_SIZE} HTTP/2 setting
    */
   public int getInitialWindowSize() {
-    return getValueOrDefault(INITIAL_WINDOW_SIZE);
+    return getOrDefault(INITIAL_WINDOW_SIZE);
   }
 
   /**
@@ -256,14 +261,14 @@ public final class Http2Settings extends HttpSettings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setInitialWindowSize(int initialWindowSize) {
-    return setValue(INITIAL_WINDOW_SIZE, initialWindowSize);
+    return set(INITIAL_WINDOW_SIZE, initialWindowSize);
   }
 
   /**
    * @return the {@literal SETTINGS_MAX_FRAME_SIZE} HTTP/2 setting
    */
   public int getMaxFrameSize() {
-    return getValueOrDefault(MAX_FRAME_SIZE);
+    return getOrDefault(MAX_FRAME_SIZE);
   }
 
   /**
@@ -273,14 +278,14 @@ public final class Http2Settings extends HttpSettings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setMaxFrameSize(int maxFrameSize) {
-    return setValue(MAX_FRAME_SIZE, maxFrameSize);
+    return set(MAX_FRAME_SIZE, maxFrameSize);
   }
 
   /**
    * @return the {@literal SETTINGS_MAX_HEADER_LIST_SIZE} HTTP/2 setting
    */
   public long getMaxHeaderListSize() {
-    return getValueOrDefault(MAX_HEADER_LIST_SIZE);
+    return getOrDefault(MAX_HEADER_LIST_SIZE);
   }
 
   /**
@@ -290,7 +295,7 @@ public final class Http2Settings extends HttpSettings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setMaxHeaderListSize(long maxHeaderListSize) {
-    return setValue(MAX_HEADER_LIST_SIZE, maxHeaderListSize);
+    return set(MAX_HEADER_LIST_SIZE, maxHeaderListSize);
   }
 
   /**
@@ -323,17 +328,17 @@ public final class Http2Settings extends HttpSettings {
     // Use static array
     switch (id) {
       case 1:
-        return getRawOrDefault(HEADER_TABLE_SIZE);
+        return getLongOrDefault(HEADER_TABLE_SIZE);
       case 2:
-        return getRawOrDefault(ENABLE_PUSH);
+        return getLongOrDefault(ENABLE_PUSH);
       case 3:
-        return getRawOrDefault(MAX_CONCURRENT_STREAMS);
+        return getLongOrDefault(MAX_CONCURRENT_STREAMS);
       case 4:
-        return getRawOrDefault(INITIAL_WINDOW_SIZE);
+        return getLongOrDefault(INITIAL_WINDOW_SIZE);
       case 5:
-        return getRawOrDefault(MAX_FRAME_SIZE);
+        return getLongOrDefault(MAX_FRAME_SIZE);
       case 6:
-        return getRawOrDefault(MAX_HEADER_LIST_SIZE);
+        return getLongOrDefault(MAX_HEADER_LIST_SIZE);
       default:
         return extraSettings != null ? extraSettings.get(id) : null;
     }
@@ -351,22 +356,22 @@ public final class Http2Settings extends HttpSettings {
     Arguments.require(value >= 0L && value <= 0xFFFFFFFFL, "Setting value must me an unsigned 32-bit value");
     switch (id) {
       case 1:
-        setRaw(HEADER_TABLE_SIZE, value);
+        setLong(HEADER_TABLE_SIZE, value);
         break;
       case 2:
-        setRaw(ENABLE_PUSH, value);
+        setLong(ENABLE_PUSH, value);
         break;
       case 3:
-        setRaw(MAX_CONCURRENT_STREAMS, value);
+        setLong(MAX_CONCURRENT_STREAMS, value);
         break;
       case 4:
-        setRaw(INITIAL_WINDOW_SIZE, value);
+        setLong(INITIAL_WINDOW_SIZE, value);
         break;
       case 5:
-        setRaw(MAX_FRAME_SIZE, value);
+        setLong(MAX_FRAME_SIZE, value);
         break;
       case 6:
-        setRaw(MAX_HEADER_LIST_SIZE, value);
+        setLong(MAX_HEADER_LIST_SIZE, value);
         break;
       default:
         if (extraSettings == null) {
@@ -378,13 +383,13 @@ public final class Http2Settings extends HttpSettings {
   }
 
   @Override
-  public <T> Http2Settings setValue(HttpSetting<T> setting, T value) {
-    return (Http2Settings)super.setValue(setting, value);
+  public <T> Http2Settings set(HttpSetting<T> setting, T value) {
+    return (Http2Settings)super.set(setting, value);
   }
 
   @Override
-  public Http2Settings setRaw(HttpSetting<?> setting, long value) {
-    return (Http2Settings)super.setRaw(setting, value);
+  public Http2Settings setLong(HttpSetting<?> setting, long value) {
+    return (Http2Settings)super.setLong(setting, value);
   }
 
   @Override

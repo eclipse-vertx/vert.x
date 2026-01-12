@@ -169,7 +169,7 @@ public interface HttpConnection {
   /**
    * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x
    */
-  Http2Settings settings();
+  HttpSettings settings();
 
   /**
    * Send to the remote endpoint an update of this endpoint settings
@@ -181,15 +181,15 @@ public interface HttpConnection {
    * @param settings the new settings
    * @return a future completed when the settings have been acknowledged by the remote endpoint
    */
-  Future<Void> updateSettings(Http2Settings settings);
+  Future<Void> updateSettings(HttpSettings settings);
 
   /**
    * @return the current remote endpoint settings for this connection - this is not implemented for HTTP/1.x
    */
-  Http2Settings remoteSettings();
+  HttpSettings remoteSettings();
 
   /**
-   * Set an handler that is called when remote endpoint {@link Http2Settings} are updated.
+   * Set an handler that is called when remote endpoint {@link HttpSettings} are updated.
    * <p/>
    * This is not implemented for HTTP/1.x.
    *
@@ -197,7 +197,7 @@ public interface HttpConnection {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler);
+  HttpConnection remoteSettingsHandler(Handler<HttpSettings> handler);
 
   /**
    * Send a {@literal PING} frame to the remote endpoint.

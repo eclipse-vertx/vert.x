@@ -34,6 +34,8 @@ public abstract class HttpSettings {
     this.values = Arrays.copyOf(other.values, other.values.length);
   }
 
+  public abstract HttpSettings copy();
+
   /**
    * @return the HTTP version defining the settings (which defines the implicit schema).
    */
