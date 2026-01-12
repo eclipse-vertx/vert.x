@@ -114,7 +114,17 @@ public class QuicServerTest extends VertxTestBase {
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       assertEquals("test-protocol", conn.applicationLayerProtocol());
-
+      QuicTransportParams params = conn.transportParams();
+      assertEquals(10000000L, params.initialMaxData());
+      assertEquals(1000000L, params.initialMaxStreamDataBidiLocal());
+      assertEquals(1000000L, params.initialMaxStreamDataBidiRemote());
+      assertEquals(1000000L, params.initialMaxStreamDataUni());
+      assertEquals(100L, params.initialMaxStreamsBidi());
+      assertEquals(100L, params.initialMaxStreamsUni());
+      assertEquals(5000L, params.maxIdleTimeout().toMillis());
+      // Does not seem to work
+//      assertTrue(params.disableActiveMigration());
+//      assertEquals(2L, params.maxAckDelay().toMillis());
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
           stream.write(buff);
