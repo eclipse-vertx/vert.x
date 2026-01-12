@@ -63,12 +63,12 @@ public class QuicServerTest extends VertxTestBase {
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
     options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidirectionalLocal(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidirectionalRemote(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataUnidirectional(1000000L);
-    options.getTransportOptions().setInitialMaxStreamsBidirectional(100L);
-    options.getTransportOptions().setInitialMaxStreamsUnidirectional(100L);
-    options.getTransportOptions().setActiveMigration(true);
+    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
+    options.getTransportOptions().setInitialMaxStreamDataBidiRemote(1000000L);
+    options.getTransportOptions().setInitialMaxStreamDataUni(1000000L);
+    options.getTransportOptions().setInitialMaxStreamsBidi(100L);
+    options.getTransportOptions().setInitialMaxStreamsUni(100L);
+    options.getTransportOptions().setDisableActiveMigration(true);
 
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");

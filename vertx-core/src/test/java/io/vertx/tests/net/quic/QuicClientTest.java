@@ -48,7 +48,7 @@ public class QuicClientTest extends VertxTestBase {
     options.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
     options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidirectionalLocal(1000000L);
+    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
     return options;
   }
 

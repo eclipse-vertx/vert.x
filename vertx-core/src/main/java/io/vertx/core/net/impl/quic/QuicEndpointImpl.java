@@ -45,7 +45,6 @@ import java.util.EnumMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -161,12 +160,12 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   void initQuicCodecBuilder(QuicCodecBuilder<?> codecBuilder, TransportMetrics<?> metrics) throws Exception {
     QuicOptions transportOptions = options.getTransportOptions();
     codecBuilder.initialMaxData(transportOptions.getInitialMaxData());
-    codecBuilder.initialMaxStreamDataBidirectionalLocal(transportOptions.getInitialMaxStreamDataBidirectionalLocal());
-    codecBuilder.initialMaxStreamDataBidirectionalRemote(transportOptions.getInitialMaxStreamDataBidirectionalRemote());
-    codecBuilder.initialMaxStreamsBidirectional(transportOptions.getInitialMaxStreamsBidirectional());
-    codecBuilder.initialMaxStreamsUnidirectional(transportOptions.getInitialMaxStreamsUnidirectional());
-    codecBuilder.initialMaxStreamDataUnidirectional(transportOptions.getInitialMaxStreamDataUnidirectional());
-    codecBuilder.activeMigration(transportOptions.getActiveMigration());
+    codecBuilder.initialMaxStreamDataBidirectionalLocal(transportOptions.getInitialMaxStreamDataBidiLocal());
+    codecBuilder.initialMaxStreamDataBidirectionalRemote(transportOptions.getInitialMaxStreamDataBidiRemote());
+    codecBuilder.initialMaxStreamsBidirectional(transportOptions.getInitialMaxStreamsBidi());
+    codecBuilder.initialMaxStreamsUnidirectional(transportOptions.getInitialMaxStreamsUni());
+    codecBuilder.initialMaxStreamDataUnidirectional(transportOptions.getInitialMaxStreamDataUni());
+    codecBuilder.activeMigration(!transportOptions.getDisableActiveMigration());
     if (transportOptions.getMaxIdleTimeout() != null) {
       codecBuilder.maxIdleTimeout(transportOptions.getMaxIdleTimeout().toMillis(), TimeUnit.MILLISECONDS);
     }
