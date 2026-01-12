@@ -18,8 +18,10 @@ import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.LongConsumer;
 
 /**
  * HTTP2 settings, the settings is initialized with the default HTTP/2 values.<p>
@@ -31,7 +33,7 @@ import java.util.Map;
  */
 @DataObject
 @JsonGen(publicConverter = false)
-public class Http2Settings {
+public final class Http2Settings extends HttpSettings {
 
   /**
    * Default HTTP/2 spec value for {@link #getHeaderTableSize} : {@code 4096}
@@ -68,24 +70,98 @@ public class Http2Settings {
    */
   public static final Map<Integer, Long> DEFAULT_EXTRA_SETTINGS = null;
 
-  private long headerTableSize;
-  private boolean pushEnabled;
-  private long maxConcurrentStreams;
-  private int initialWindowSize;
-  private int maxFrameSize;
-  private long maxHeaderListSize;
+  /**
+   * HTTP/2 {@code HEADER_TABLE_SIZE} setting
+   */
+  public static final HttpSetting<Long> HEADER_TABLE_SIZE;
+
+  /**
+   * HTTP/2 {@code HEADER_TABLE_SIZE} setting
+   */
+  public static final HttpSetting<Boolean> ENABLE_PUSH;
+
+  /**
+   * HTTP/2 {@code MAX_CONCURRENT_STREAMS} setting
+   */
+  public static final HttpSetting<Long> MAX_CONCURRENT_STREAMS;
+
+  /**
+   * HTTP/2 {@code INITIAL_WINDOW_SIZE} setting
+   */
+  public static final HttpSetting<Integer> INITIAL_WINDOW_SIZE;
+
+  /**
+   * HTTP/2 {@code MAX_FRAME_SIZE} setting
+   */
+  public static final HttpSetting<Integer> MAX_FRAME_SIZE;
+
+  /**
+   * HTTP/2 {@code MAX_HEADER_LIST_SIZE} setting
+   */
+  public static final HttpSetting<Long> MAX_HEADER_LIST_SIZE;
+
+  static {
+
+    EnumSet<HttpVersion> baseVersions = EnumSet.of(HttpVersion.HTTP_2);
+
+    LongConsumer headerTableSizeValidator = value -> {
+      Arguments.require(value >= Http2CodecUtil.MIN_HEADER_TABLE_SIZE,
+        "headerTableSize must be >= " + Http2CodecUtil.MIN_HEADER_TABLE_SIZE);
+      Arguments.require(value <= Http2CodecUtil.MAX_HEADER_TABLE_SIZE,
+        "headerTableSize must be <= " + Http2CodecUtil.MAX_HEADER_TABLE_SIZE);
+    };
+    HEADER_TABLE_SIZE = new HttpSetting<>(0x01, "HEADER_TABLE_SIZE", 4096L,
+      val -> val, val -> val, headerTableSizeValidator, baseVersions);
+
+    LongConsumer enablePushValidator = value -> {
+      Arguments.require(value == 0 || value == 1, "enablePush must be 0 or 1");
+    };
+    ENABLE_PUSH = new HttpSetting<>(0x02, "ENABLE_PUSH", true,
+      val -> val == null ? 1L : (val ? 1 : 0), val -> val == 1L, enablePushValidator, baseVersions);
+
+    LongConsumer maxConcurrentStreamsValidator = value -> {
+      Arguments.require(value >= Http2CodecUtil.MIN_CONCURRENT_STREAMS,
+        "value must be >= " + Http2CodecUtil.MIN_CONCURRENT_STREAMS);
+      Arguments.require(value <= Http2CodecUtil.MAX_CONCURRENT_STREAMS,
+        "value must be <= " + Http2CodecUtil.MAX_CONCURRENT_STREAMS);
+    };
+    MAX_CONCURRENT_STREAMS = new HttpSetting<>(0x03, "MAX_CONCURRENT_STREAMS", 0xFFFFFFFFL,
+      val -> val, val -> val, maxConcurrentStreamsValidator, baseVersions);
+
+    LongConsumer initialWindowSizeValidator = value -> {
+      Arguments.require(value >= Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE,
+        "value must be >= " + Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE);
+      Arguments.require(value <= Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE,
+        "value must be <= " + Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE);
+    };
+    INITIAL_WINDOW_SIZE = new HttpSetting<>(0x04, "INITIAL_WINDOW_SIZE", 65535,
+      val -> val, val -> (int)val, initialWindowSizeValidator, baseVersions);
+
+    LongConsumer maxFrameSizeValidator = value -> {
+      Arguments.require(value >= Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND,
+        "value must be >= " + Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
+      Arguments.require(value <= Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND,
+        "value must be <= " + Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND);
+    };
+    MAX_FRAME_SIZE = new HttpSetting<>(0x05, "MAX_FRAME_SIZE", 16384,
+      val -> val, val -> (int)val, maxFrameSizeValidator, baseVersions);
+
+    LongConsumer maxHeaderListSizeValidator = value -> {
+      Arguments.require(value >= Http2CodecUtil.MIN_HEADER_LIST_SIZE,
+        "maxHeaderListSize must be >= " + Http2CodecUtil.MIN_HEADER_LIST_SIZE);
+      Arguments.require(value <= Http2CodecUtil.MAX_HEADER_LIST_SIZE, "value must be <= " + Http2CodecUtil.MAX_HEADER_LIST_SIZE);
+    };
+    MAX_HEADER_LIST_SIZE = new HttpSetting<>(0x06, "MAX_HEADER_LIST_SIZE", 8192L,
+      val -> val, val -> val, maxHeaderListSizeValidator, baseVersions);
+  }
+
   private Map<Integer, Long> extraSettings;
 
   /**
    * Default constructor
    */
   public Http2Settings() {
-    headerTableSize = DEFAULT_HEADER_TABLE_SIZE;
-    pushEnabled = DEFAULT_ENABLE_PUSH;
-    maxConcurrentStreams = DEFAULT_MAX_CONCURRENT_STREAMS;
-    initialWindowSize = DEFAULT_INITIAL_WINDOW_SIZE;
-    maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
-    maxHeaderListSize = DEFAULT_MAX_HEADER_LIST_SIZE;
+    super(7);
     extraSettings = DEFAULT_EXTRA_SETTINGS;
   }
 
@@ -105,20 +181,20 @@ public class Http2Settings {
    * @param other the settings to copy
    */
   public Http2Settings(Http2Settings other) {
-    headerTableSize = other.headerTableSize;
-    pushEnabled = other.pushEnabled;
-    maxConcurrentStreams = other.maxConcurrentStreams;
-    initialWindowSize = other.initialWindowSize;
-    maxFrameSize = other.maxFrameSize;
-    maxHeaderListSize = other.maxHeaderListSize;
+    super(other);
     extraSettings = other.extraSettings != null ? new HashMap<>(other.extraSettings) : null;
+  }
+
+  @Override
+  HttpVersion version() {
+    return HttpVersion.HTTP_2;
   }
 
   /**
    * @return the {@literal SETTINGS_HEADER_TABLE_SIZE} HTTP/2 setting
    */
   public long getHeaderTableSize() {
-    return headerTableSize;
+    return getValueOrDefault(HEADER_TABLE_SIZE);
   }
 
   /**
@@ -128,11 +204,7 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setHeaderTableSize(long headerTableSize) {
-    Arguments.require(headerTableSize >= Http2CodecUtil.MIN_HEADER_TABLE_SIZE,
-        "headerTableSize must be >= " + Http2CodecUtil.MIN_HEADER_TABLE_SIZE);
-    Arguments.require(headerTableSize <= Http2CodecUtil.MAX_HEADER_TABLE_SIZE,
-        "headerTableSize must be <= " + Http2CodecUtil.MAX_HEADER_TABLE_SIZE);
-    this.headerTableSize = headerTableSize;
+    setRaw(HEADER_TABLE_SIZE, headerTableSize);
     return this;
   }
 
@@ -140,7 +212,7 @@ public class Http2Settings {
    * @return the {@literal SETTINGS_ENABLE_PUSH} HTTP/2 setting
    */
   public boolean isPushEnabled() {
-    return pushEnabled;
+    return getValueOrDefault(ENABLE_PUSH);
   }
 
   /**
@@ -150,15 +222,14 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setPushEnabled(boolean pushEnabled) {
-    this.pushEnabled = pushEnabled;
-    return this;
+    return setValue(ENABLE_PUSH, pushEnabled);
   }
 
   /**
    * @return the {@literal SETTINGS_MAX_CONCURRENT_STREAMS} HTTP/2 setting
    */
   public long getMaxConcurrentStreams() {
-    return maxConcurrentStreams;
+    return getValueOrDefault(MAX_CONCURRENT_STREAMS);
   }
 
   /**
@@ -168,19 +239,14 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setMaxConcurrentStreams(long maxConcurrentStreams) {
-    Arguments.require(maxConcurrentStreams >= Http2CodecUtil.MIN_CONCURRENT_STREAMS,
-        "maxConcurrentStreams must be >= " + Http2CodecUtil.MIN_CONCURRENT_STREAMS);
-    Arguments.require(maxConcurrentStreams <= Http2CodecUtil.MAX_CONCURRENT_STREAMS,
-        "maxConcurrentStreams must be < " + Http2CodecUtil.MAX_CONCURRENT_STREAMS);
-    this.maxConcurrentStreams = maxConcurrentStreams;
-    return this;
+    return setRaw(MAX_CONCURRENT_STREAMS, maxConcurrentStreams);
   }
 
   /**
    * @return the {@literal SETTINGS_INITIAL_WINDOW_SIZE} HTTP/2 setting
    */
   public int getInitialWindowSize() {
-    return initialWindowSize;
+    return getValueOrDefault(INITIAL_WINDOW_SIZE);
   }
 
   /**
@@ -190,17 +256,14 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setInitialWindowSize(int initialWindowSize) {
-    Arguments.require(initialWindowSize >= Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE,
-        "initialWindowSize must be >= " + Http2CodecUtil.MIN_INITIAL_WINDOW_SIZE);
-    this.initialWindowSize = initialWindowSize;
-    return this;
+    return setValue(INITIAL_WINDOW_SIZE, initialWindowSize);
   }
 
   /**
    * @return the {@literal SETTINGS_MAX_FRAME_SIZE} HTTP/2 setting
    */
   public int getMaxFrameSize() {
-    return maxFrameSize;
+    return getValueOrDefault(MAX_FRAME_SIZE);
   }
 
   /**
@@ -210,19 +273,14 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setMaxFrameSize(int maxFrameSize) {
-    Arguments.require(maxFrameSize >= Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND,
-        "maxFrameSize must be >= " + Http2CodecUtil.MAX_FRAME_SIZE_LOWER_BOUND);
-    Arguments.require(maxFrameSize <= Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND,
-        "maxFrameSize must be <= " + Http2CodecUtil.MAX_FRAME_SIZE_UPPER_BOUND);
-    this.maxFrameSize = maxFrameSize;
-    return this;
+    return setValue(MAX_FRAME_SIZE, maxFrameSize);
   }
 
   /**
    * @return the {@literal SETTINGS_MAX_HEADER_LIST_SIZE} HTTP/2 setting
    */
   public long getMaxHeaderListSize() {
-    return maxHeaderListSize;
+    return getValueOrDefault(MAX_HEADER_LIST_SIZE);
   }
 
   /**
@@ -232,11 +290,7 @@ public class Http2Settings {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2Settings setMaxHeaderListSize(long maxHeaderListSize) {
-    Arguments.require(maxHeaderListSize >= 0, "maxHeaderListSize must be >= 0");
-    Arguments.require(maxHeaderListSize >= Http2CodecUtil.MIN_HEADER_LIST_SIZE,
-        "maxHeaderListSize must be >= " + Http2CodecUtil.MIN_HEADER_LIST_SIZE);
-    this.maxHeaderListSize = maxHeaderListSize;
-    return this;
+    return setValue(MAX_HEADER_LIST_SIZE, maxHeaderListSize);
   }
 
   /**
@@ -266,19 +320,20 @@ public class Http2Settings {
    * @return the setting value
    */
   public Long get(int id) {
+    // Use static array
     switch (id) {
       case 1:
-        return headerTableSize;
+        return getRawOrDefault(HEADER_TABLE_SIZE);
       case 2:
-        return pushEnabled ? 1L : 0L;
+        return getRawOrDefault(ENABLE_PUSH);
       case 3:
-        return maxConcurrentStreams;
+        return getRawOrDefault(MAX_CONCURRENT_STREAMS);
       case 4:
-        return (long)initialWindowSize;
+        return getRawOrDefault(INITIAL_WINDOW_SIZE);
       case 5:
-        return (long)maxFrameSize;
+        return getRawOrDefault(MAX_FRAME_SIZE);
       case 6:
-        return (long)maxHeaderListSize;
+        return getRawOrDefault(MAX_HEADER_LIST_SIZE);
       default:
         return extraSettings != null ? extraSettings.get(id) : null;
     }
@@ -296,24 +351,22 @@ public class Http2Settings {
     Arguments.require(value >= 0L && value <= 0xFFFFFFFFL, "Setting value must me an unsigned 32-bit value");
     switch (id) {
       case 1:
-        setHeaderTableSize(value);
+        setRaw(HEADER_TABLE_SIZE, value);
         break;
       case 2:
-        Arguments.require(value == 0 || value == 1, "enablePush must be 0 or 1");
-        setPushEnabled(value == 1);
+        setRaw(ENABLE_PUSH, value);
         break;
       case 3:
-        setMaxConcurrentStreams(value);
+        setRaw(MAX_CONCURRENT_STREAMS, value);
         break;
       case 4:
-        setInitialWindowSize((int) value);
+        setRaw(INITIAL_WINDOW_SIZE, value);
         break;
       case 5:
-        setMaxFrameSize((int) value);
+        setRaw(MAX_FRAME_SIZE, value);
         break;
       case 6:
-        Arguments.require(value <= Integer.MAX_VALUE, "maxHeaderListSize must be <= " + Integer.MAX_VALUE);
-        setMaxHeaderListSize((int) value);
+        setRaw(MAX_HEADER_LIST_SIZE, value);
         break;
       default:
         if (extraSettings == null) {
@@ -325,29 +378,43 @@ public class Http2Settings {
   }
 
   @Override
+  public <T> Http2Settings setValue(HttpSetting<T> setting, T value) {
+    return (Http2Settings)super.setValue(setting, value);
+  }
+
+  @Override
+  public Http2Settings setRaw(HttpSetting<?> setting, long value) {
+    return (Http2Settings)super.setRaw(setting, value);
+  }
+
+  @Override
   public boolean equals(Object o) {
+
+    // Reimplement in super class
+
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
     Http2Settings that = (Http2Settings) o;
 
-    if (headerTableSize != that.headerTableSize) return false;
-    if (pushEnabled != that.pushEnabled) return false;
-    if (maxConcurrentStreams != that.maxConcurrentStreams) return false;
-    if (initialWindowSize != that.initialWindowSize) return false;
-    if (maxFrameSize != that.maxFrameSize) return false;
-    if (maxHeaderListSize != that.maxHeaderListSize) return false;
+    if (getHeaderTableSize() != that.getHeaderTableSize()) return false;
+    if (isPushEnabled() != that.isPushEnabled()) return false;
+    if (getMaxConcurrentStreams() != that.getMaxConcurrentStreams()) return false;
+    if (getInitialWindowSize() != that.getInitialWindowSize()) return false;
+    if (getMaxFrameSize() != that.getMaxFrameSize()) return false;
+    if (getMaxHeaderListSize() != that.getMaxHeaderListSize()) return false;
     return true;
   }
 
   @Override
   public int hashCode() {
+    long headerTableSize = getHeaderTableSize();
     int result = (int) (headerTableSize ^ (headerTableSize >>> 32));
-    result = 31 * result + (pushEnabled ? 1 : 0);
-    result = 31 * result + (int) (maxConcurrentStreams ^ (maxConcurrentStreams >>> 32));
-    result = 31 * result + initialWindowSize;
-    result = 31 * result + maxFrameSize;
-    result = 31 * result + (int) (maxHeaderListSize ^ (maxHeaderListSize >>> 32));
+    result = 31 * result + (isPushEnabled() ? 1 : 0);
+    result = 31 * result + (int) (getMaxConcurrentStreams() ^ (getMaxConcurrentStreams() >>> 32));
+    result = 31 * result + getInitialWindowSize();
+    result = 31 * result + getMaxFrameSize();
+    result = 31 * result + (int) (getMaxHeaderListSize() ^ (getMaxHeaderListSize() >>> 32));
     return result;
   }
 
