@@ -59,6 +59,16 @@ public class FakeAddressResolver<B> implements AddressResolver<FakeAddress>, End
   }
 
   @Override
+  public boolean isAvailable(FakeServerEndpoint endpoint) {
+    return endpoint.available;
+  }
+
+  @Override
+  public void reportFailure(FakeServerEndpoint endpoint, Throwable failure) {
+    endpoint.available = false;
+  }
+
+  @Override
   public boolean isValid(FakeState<B> state) {
     FakeRegistration registration = map.get(state.name);
     return state.registration == registration;

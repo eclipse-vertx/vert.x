@@ -292,13 +292,11 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     final String key;
     final N endpoint;
     final InteractionMetrics<?> metrics;
-    final AtomicInteger connectFailures;
     public ServerEndpointImpl(AtomicLong lastAccessed, String key, N endpoint, InteractionMetrics<?> metrics) {
       this.lastAccessed = lastAccessed;
       this.key = key;
       this.endpoint = endpoint;
       this.metrics = metrics;
-      this.connectFailures = new AtomicInteger();
     }
     @Override
     public String key() {
@@ -306,7 +304,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     }
     @Override
     public boolean isAvailable() {
-      return connectFailures.get() == 0;
+      return endpointResolver.isAvailable(endpoint);
     }
     @Override
     public Object unwrap() {
@@ -347,7 +345,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
         @Override
         public void reportFailure(Throwable failure) {
           if (!connected && failure instanceof ConnectException) {
-            connectFailures.incrementAndGet();
+            endpointResolver.reportFailure(endpoint, failure);
           }
           metrics.reportFailure(metric, failure);
         }
