@@ -170,6 +170,30 @@ public class SLF4JLogDelegateTest {
     assertTrue(result.contains("java.lang.IllegalStateException"));
   }
 
+  @Test
+  public void testNullMessage() {
+    class Exc extends RuntimeException {
+      public Exc(String msg) {
+        super(msg, null, false, false);
+      }
+    }
+    String result = record(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn(null);
+    });
+    assertTrue(result.contains("<missing-log-message>"));
+    result = record(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn(null, new Exc("the-msg"));
+    });
+    assertTrue(result.contains("the-msg"));
+    result = record(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn(null, new Exc(null));
+    });
+    assertTrue(result.contains("<missing-log-message>"));
+  }
+
   private void withStream(PrintStream stream, Runnable runnable) {
     PrintStream prev = System.out;
     System.setOut(stream);
