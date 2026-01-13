@@ -66,8 +66,8 @@ public abstract class HttpSettings {
     if (!setting.versions.contains(version)) {
       throw new IllegalArgumentException("Invalid setting");
     }
-    long value = getLongOrDefault(setting);
-    return setting.from.convert(value);
+    Long value = getLong(setting);
+    return value != null ? setting.from.convert(value) : null;
   }
 
   /**
