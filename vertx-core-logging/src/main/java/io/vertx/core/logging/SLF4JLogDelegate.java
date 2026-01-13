@@ -16,6 +16,8 @@ import io.vertx.core.spi.logging.LogDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.vertx.core.logging.JULLogDelegate.logMessage;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -59,56 +61,52 @@ public class SLF4JLogDelegate implements LogDelegate {
 
   @Override
   public void error(final Object message) {
-    logger.error(valueOf(message));
+    logger.error(logMessage(message));
   }
 
   @Override
   public void error(final Object message, final Throwable t) {
-    logger.error(valueOf(message), t);
+    logger.error(logMessage(message, t), t);
   }
 
   @Override
   public void warn(final Object message) {
-    logger.warn(valueOf(message));
+    logger.warn(logMessage(message));
   }
 
   @Override
   public void warn(final Object message, final Throwable t) {
-    logger.warn(valueOf(message), t);
+    logger.warn(logMessage(message, t), t);
   }
 
   @Override
   public void info(final Object message) {
-    logger.info(valueOf(message));
+    logger.info(logMessage(message));
   }
 
   @Override
   public void info(final Object message, final Throwable t) {
-    logger.info(valueOf(message), t);
+    logger.info(logMessage(message, t), t);
   }
 
   @Override
   public void debug(final Object message) {
-    logger.debug(valueOf(message));
+    logger.debug(logMessage(message));
   }
 
   @Override
   public void debug(final Object message, final Throwable t) {
-    logger.debug(valueOf(message), t);
+    logger.debug(logMessage(message), t);
   }
 
   @Override
   public void trace(final Object message) {
-    logger.trace(valueOf(message));
+    logger.trace(logMessage(message));
   }
 
   @Override
   public void trace(final Object message, final Throwable t) {
-    logger.trace(valueOf(message), t);
-  }
-
-  private static String valueOf(Object message) {
-    return message == null ? "NULL" : message.toString();
+    logger.trace(logMessage(message), t);
   }
 
   @Override
