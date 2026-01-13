@@ -344,11 +344,11 @@ public class Http2ServerTest extends Http2TestBase {
         conn.updateSettings(expectedSettings).onComplete(onSuccess(ar -> {
           assertSame(ctx, Vertx.currentContext());
           HttpSettings ackedSettings = conn.settings();
-          assertEquals(expectedSettings.getMaxHeaderListSize(), (long)ackedSettings.get(io.vertx.core.http.Http2Settings.MAX_HEADER_LIST_SIZE));
-          assertEquals(expectedSettings.getMaxFrameSize(), (int)ackedSettings.get(io.vertx.core.http.Http2Settings.MAX_FRAME_SIZE));
-          assertEquals(expectedSettings.getInitialWindowSize(), (int)ackedSettings.get(io.vertx.core.http.Http2Settings.INITIAL_WINDOW_SIZE));
-          assertEquals(expectedSettings.getMaxConcurrentStreams(), (long)ackedSettings.get(io.vertx.core.http.Http2Settings.MAX_CONCURRENT_STREAMS));
-          assertEquals(expectedSettings.getHeaderTableSize(),  (long)ackedSettings.get(io.vertx.core.http.Http2Settings.HEADER_TABLE_SIZE));
+          assertEquals(expectedSettings.getMaxHeaderListSize(), (long)ackedSettings.getOrDefault(io.vertx.core.http.Http2Settings.MAX_HEADER_LIST_SIZE));
+          assertEquals(expectedSettings.getMaxFrameSize(), (int)ackedSettings.getOrDefault(io.vertx.core.http.Http2Settings.MAX_FRAME_SIZE));
+          assertEquals(expectedSettings.getInitialWindowSize(), (int)ackedSettings.getOrDefault(io.vertx.core.http.Http2Settings.INITIAL_WINDOW_SIZE));
+          assertEquals(expectedSettings.getMaxConcurrentStreams(), (long)ackedSettings.getOrDefault(io.vertx.core.http.Http2Settings.MAX_CONCURRENT_STREAMS));
+          assertEquals(expectedSettings.getHeaderTableSize(),  (long)ackedSettings.getOrDefault(io.vertx.core.http.Http2Settings.HEADER_TABLE_SIZE));
           assertEquals(expectedSettings.get('\u0007'), ((io.vertx.core.http.Http2Settings)ackedSettings).get(7));
           complete();
         }));
