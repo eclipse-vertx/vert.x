@@ -12,7 +12,6 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
@@ -130,7 +129,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     }
   }
 
-  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, HttpVersion protocol, long timeout) {
+  public Future<Lease<HttpClientConnection>> requestConnection(ContextInternal ctx, long timeout) {
     Promise<Lease<HttpClientConnection>> promise = ctx.promise();
     Future<Lease<HttpClientConnection>> fut = promise.future();
     // ctx.workerPool() -> not sure we want that in a pool
@@ -206,7 +205,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
       return connector
-        .httpConnect(context, owner.server, owner.authority, connectParams, maxLifetimeMillis, owner.clientMetrics)
+        .httpConnect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
         .map(connection -> {
           connection.evictionHandler(v -> {
             owner.dispose(connection);
@@ -227,12 +226,12 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
 
     @Override
     public boolean isValid(HttpClientConnection connection) {
-      return connection.isValid();
+      return connection.isValid() && (maxLifetimeMillis == 0L || (System.currentTimeMillis() - connection.creationTimestamp()) <= maxLifetimeMillis);
     }
 
     void checkExpired() {
       pool
-        .evict(conn -> !conn.isValid(), (lst, err) -> {
+        .evict(c -> !isValid(c), (lst, err) -> {
           if (err == null) {
             lst.forEach(HttpConnection::close);
           }

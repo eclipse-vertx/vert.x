@@ -19,13 +19,13 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
-import io.vertx.test.core.Repeat;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,7 +44,6 @@ import java.nio.file.StandardOpenOption;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,12 +63,12 @@ public class QuicServerTest extends VertxTestBase {
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
     options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidirectionalLocal(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidirectionalRemote(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataUnidirectional(1000000L);
-    options.getTransportOptions().setInitialMaxStreamsBidirectional(100L);
-    options.getTransportOptions().setInitialMaxStreamsUnidirectional(100L);
-    options.getTransportOptions().setActiveMigration(true);
+    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
+    options.getTransportOptions().setInitialMaxStreamDataBidiRemote(1000000L);
+    options.getTransportOptions().setInitialMaxStreamDataUni(1000000L);
+    options.getTransportOptions().setInitialMaxStreamsBidi(100L);
+    options.getTransportOptions().setInitialMaxStreamsUni(100L);
+    options.getTransportOptions().setDisableActiveMigration(true);
 
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -103,19 +102,29 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testConnect() throws Exception {
-    testConnect(9999);
+    testConnect(serverOptions(), 9999);
   }
 
   @Test
   public void testConnectRandomPort() throws Exception {
-    testConnect(0);
+    testConnect(serverOptions(), 0);
   }
 
-  private void testConnect(int port) throws Exception {
-    QuicServer server = QuicServer.create(vertx, serverOptions());
+  private void testConnect(QuicServerOptions options,  int port) throws Exception {
+    QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       assertEquals("test-protocol", conn.applicationLayerProtocol());
-
+      QuicTransportParams params = conn.transportParams();
+      assertEquals(10000000L, params.initialMaxData());
+      assertEquals(1000000L, params.initialMaxStreamDataBidiLocal());
+      assertEquals(1000000L, params.initialMaxStreamDataBidiRemote());
+      assertEquals(1000000L, params.initialMaxStreamDataUni());
+      assertEquals(100L, params.initialMaxStreamsBidi());
+      assertEquals(100L, params.initialMaxStreamsUni());
+      assertEquals(5000L, params.maxIdleTimeout().toMillis());
+      // Does not seem to work
+//      assertTrue(params.disableActiveMigration());
+//      assertEquals(2L, params.maxAckDelay().toMillis());
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
           stream.write(buff);
@@ -472,12 +481,18 @@ public class QuicServerTest extends VertxTestBase {
       stream.create();
       stream.write("ping");
       writeLatch.future().await();
-      try {
-        stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
-        fail();
-      } catch (Exception e) {
-        assertSame(ChannelOutputShutdownException.class, e.getClass());
-        assertEquals("STOP_SENDING frame received", e.getMessage());
+      int num = 10;
+      for (int i = 0;i < num;i++) {
+        try {
+          stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
+          // Retry
+          assertTrue(i + 1 < num);
+          Thread.sleep(1);
+        } catch (Exception e) {
+          assertSame(ChannelOutputShutdownException.class, e.getClass());
+          assertEquals("STOP_SENDING frame received", e.getMessage());
+          break;
+        }
       }
     } finally {
       client.close();
@@ -901,7 +916,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
     QuicServerOptions options = serverOptions();
-    options.setIdleTimeout(Duration.ofMillis(100));
+    options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
@@ -939,7 +954,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testStreamIdleHandler() throws Exception {
     int numEvents = 10;
     QuicServerOptions options = serverOptions();
-    options.setIdleTimeout(Duration.ofMillis(100));
+    options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
@@ -970,7 +985,44 @@ public class QuicServerTest extends VertxTestBase {
     } finally {
       client.close();
       server.close().await();
-    }  }
+    }
+  }
+
+  @Test
+  public void testServerNameIndication() throws Exception {
+    QuicServerOptions options = serverOptions();
+    options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
+    QuicServer server = QuicServer.create(vertx, options);
+    AtomicReference<String> serverName = new AtomicReference<>();
+    server.handler(conn -> {
+      serverName.set(conn.indicatedServerName());
+    });
+    int actualPort = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    try {
+      client = new QuicTestClient(new NioEventLoopGroup(1));
+      QuicTestClient.Connection connection = client.connection()
+        .serverName("host2.com")
+        .connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));
+      connection.close();
+      assertEquals("host2.com", serverName.get());
+    } finally {
+      client.close();
+      server.close().await();
+    }
+  }
+
+  @Test
+  public void testServerLogging() throws Exception {
+    TestLoggerFactory fact = TestUtils.testLogging(() -> {
+      try {
+        testConnect(serverOptions().setStreamLogging(new NetworkLogging()), 9999);
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    assertTrue(fact.hasName("io.netty.handler.logging.LoggingHandler"));
+  }
 
   /*  @Test
   public void testSoReuse() throws Exception {

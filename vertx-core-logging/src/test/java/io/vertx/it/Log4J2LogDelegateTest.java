@@ -111,4 +111,27 @@ public class Log4J2LogDelegateTest {
     assertTrue(result.contains(".run:"));
   }
 
+  @Test
+  public void testNullMessage() {
+    class Exc extends RuntimeException {
+      public Exc(String msg) {
+        super(msg, null, false, false);
+      }
+    }
+    String result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn(null);
+    });
+    assertTrue(result.contains("<missing-log-message>"));
+    result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn(null, new Exc("the-msg"));
+    });
+    assertTrue(result.contains("the-msg"));
+    result = recording.execute(() -> {
+      Logger logger = LoggerFactory.getLogger("my-jul-logger");
+      logger.warn(null, new Exc(null));
+    });
+    assertTrue(result.contains("<missing-log-message>"));
+  }
 }

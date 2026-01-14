@@ -3051,12 +3051,14 @@ public class Http1xTest extends HttpTest {
       client.close();
       // There might be a race between the request write and the request reset
       // so we do it on the context thread to avoid it
-      vertx.runOnContext(v -> {
+      Context ctx = ((VertxInternal)vertx).createEventLoopContext();
+      ctx.runOnContext(v -> {
         client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(keepAlive).setPipelining(pipelined), new PoolOptions().setHttp1MaxSize(1));
         client.request(new RequestOptions(requestOptions).setMethod(PUT))
           .onComplete(onSuccess(req -> {
             req.response().onComplete(onFailure(err -> {
             }));
+            assertWaitUntil(() -> numReq.get() == 1);
             req.reset().onComplete(onSuccess(v2 -> {
               client.request(new RequestOptions(requestOptions).setURI("some-uri"))
                 .compose(HttpClientRequest::send)
@@ -5346,7 +5348,8 @@ public class Http1xTest extends HttpTest {
         if (val == 0) {
           assertEquals("Connection was closed", err.getMessage());
         } else {
-          assertTrue("Expected " + err.getMessage() + " to contain with <closed>", err.getMessage().contains("closed"));
+          assertTrue("Expected " + err.getMessage() + " to contain with <closed> or be <Resource manager shutdown> instead of \""
+            + err.getMessage() +  "\"", err.getMessage().contains("closed") || err.getMessage().equals("Resource manager shutdown"));
         }
         complete();
       }));
@@ -5379,7 +5382,8 @@ public class Http1xTest extends HttpTest {
             assertTrue(ar.succeeded());
           } else {
             assertTrue(ar.failed());
-            assertTrue(ar.cause().getMessage().contains("closed"));
+            String msg = ar.cause().getMessage();
+            assertTrue("Expected " + msg + " to contain 'closed' or 'shutdown'", msg.contains("closed") || msg.contains("shutdown"));
           }
           complete();
         });

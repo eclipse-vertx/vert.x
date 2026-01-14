@@ -96,7 +96,11 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
 
   @Override
   public OpenSSLEngineOptions copy() {
-    return new OpenSSLEngineOptions(this);
+    if (getClass() == OpenSSLEngineOptions.class) {
+      return new OpenSSLEngineOptions(this);
+    } else {
+      return this;
+    }
   }
 
   @Override

@@ -131,23 +131,23 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
   }
 
   @Override
-  public Http2Settings settings() {
+  public HttpSettings settings() {
     return actual.settings();
   }
 
   @Override
-  public Future<Void> updateSettings(Http2Settings settings) {
+  public Future<Void> updateSettings(HttpSettings settings) {
     return actual.updateSettings(settings);
   }
 
   @Override
-  public Http2Settings remoteSettings() {
+  public HttpSettings remoteSettings() {
     return actual.remoteSettings();
   }
 
   @Override
   @Fluent
-  public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) {
+  public HttpConnection remoteSettingsHandler(Handler<HttpSettings> handler) {
     return actual.remoteSettingsHandler(handler);
   }
 

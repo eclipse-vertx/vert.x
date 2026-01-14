@@ -26,7 +26,6 @@ import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -41,7 +40,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -348,9 +346,9 @@ public class Http2Test extends HttpTest {
     client = vertx.httpClientBuilder()
       .with(Http2TestBase.createHttp2ClientOptions())
       .withConnectHandler(conn -> {
-        assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+        assertEquals(0L, (long)conn.remoteSettings().get(Http2Settings.MAX_CONCURRENT_STREAMS));
         conn.remoteSettingsHandler(settings -> {
-          assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+          assertEquals(10L, (long)conn.remoteSettings().get(Http2Settings.MAX_CONCURRENT_STREAMS));
           complete();
         });
       })
@@ -372,7 +370,7 @@ public class Http2Test extends HttpTest {
     client.request(new RequestOptions(requestOptions).setTimeout(10000))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
-        assertEquals(Integer.MAX_VALUE, resp.request().connection().remoteSettings().getMaxHeaderListSize());
+        assertEquals(Integer.MAX_VALUE, (long)resp.request().connection().remoteSettings().get(Http2Settings.MAX_HEADER_LIST_SIZE));
         testComplete();
       }));
     await();

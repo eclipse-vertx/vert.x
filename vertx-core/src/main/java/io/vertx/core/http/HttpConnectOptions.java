@@ -33,6 +33,11 @@ import java.net.URL;
 public class HttpConnectOptions {
 
   /**
+   * The default value for protocol version = {@code null}
+   */
+  public static final HttpVersion DEFAULT_PROTOCOL_VERSION = null;
+
+  /**
    * The default value for proxy options = {@code null}
    */
   public static final ProxyOptions DEFAULT_PROXY_OPTIONS = null;
@@ -62,6 +67,7 @@ public class HttpConnectOptions {
    */
   public static final long DEFAULT_CONNECT_TIMEOUT = -1L;
 
+  private HttpVersion protocolVersion;
   private ProxyOptions proxyOptions;
   private Address server;
   private String host;
@@ -84,6 +90,7 @@ public class HttpConnectOptions {
    */
   public HttpConnectOptions(HttpConnectOptions other) {
     init();
+    setProtocolVersion(other.protocolVersion);
     setProxyOptions(other.proxyOptions);
     setServer(other.server);
     setHost(other.host);
@@ -108,6 +115,7 @@ public class HttpConnectOptions {
   }
 
   protected void init() {
+    protocolVersion = DEFAULT_PROTOCOL_VERSION;
     proxyOptions = DEFAULT_PROXY_OPTIONS;
     server = DEFAULT_SERVER;
     host = DEFAULT_HOST;
@@ -115,6 +123,24 @@ public class HttpConnectOptions {
     ssl = DEFAULT_SSL;
     sslOptions = null;
     connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+  }
+
+  /**
+   * @return the connection desired protocol or {@code null} to use the default agent configured protocol
+   */
+  public HttpVersion getProtocolVersion() {
+    return protocolVersion;
+  }
+
+  /**
+   * Set the desired HTTP protocol version for this connection.
+   *
+   * @param protocolVersion the desired protocol version
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpConnectOptions setProtocolVersion(HttpVersion protocolVersion) {
+    this.protocolVersion = protocolVersion;
+    return this;
   }
 
   /**

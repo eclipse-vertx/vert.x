@@ -30,6 +30,8 @@ public interface EndpointResolverInternal extends EndpointResolver {
     return new EndpointResolverImpl<>(vertx, endpointResolver, loadBalancer, expirationMillis);
   }
 
+  boolean resolves(Address address);
+
   void lookupEndpoint(Address address, Completable<Endpoint> promise);
 
   /**
@@ -37,6 +39,11 @@ public interface EndpointResolverInternal extends EndpointResolver {
    * or refreshes.
    */
   void checkExpired();
+
+  /**
+   * @return the number of entries held by the resolver
+   */
+  int size();
 
 
 }

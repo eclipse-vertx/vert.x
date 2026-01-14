@@ -12,11 +12,6 @@ public class DatagramSocketOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DatagramSocketOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "reuseAddress":
-          if (member.getValue() instanceof Boolean) {
-            obj.setReuseAddress((Boolean)member.getValue());
-          }
-          break;
         case "logActivity":
           if (member.getValue() instanceof Boolean) {
             obj.setLogActivity((Boolean)member.getValue());
@@ -40,6 +35,11 @@ public class DatagramSocketOptionsConverter {
         case "receiveBufferSize":
           if (member.getValue() instanceof Number) {
             obj.setReceiveBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "reuseAddress":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReuseAddress((Boolean)member.getValue());
           }
           break;
         case "trafficClass":
@@ -81,7 +81,6 @@ public class DatagramSocketOptionsConverter {
   }
 
    static void toJson(DatagramSocketOptions obj, java.util.Map<String, Object> json) {
-    json.put("reuseAddress", obj.isReuseAddress());
     json.put("logActivity", obj.getLogActivity());
     if (obj.getActivityLogDataFormat() != null) {
       json.put("activityLogDataFormat", obj.getActivityLogDataFormat().name());
@@ -89,6 +88,7 @@ public class DatagramSocketOptionsConverter {
     json.put("reusePort", obj.isReusePort());
     json.put("sendBufferSize", obj.getSendBufferSize());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
+    json.put("reuseAddress", obj.isReuseAddress());
     json.put("trafficClass", obj.getTrafficClass());
     json.put("broadcast", obj.isBroadcast());
     json.put("loopbackModeDisabled", obj.isLoopbackModeDisabled());

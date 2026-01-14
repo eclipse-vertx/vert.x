@@ -207,8 +207,20 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     Assume.assumeFalse(Utils.isWindows());
     AtomicReference<Throwable> exception = new AtomicReference<>();
-    // There is no server running, should fail to connect
-    client.request(new RequestOptions().setPort(5000).setIdleTimeout(800))
+    NetServer server = vertx
+      .createNetServer()
+      .connectHandler(so -> {})
+      .listen(0)
+      .await();
+    int port;
+    try {
+      port = server.actualPort();
+    } finally {
+      server
+        .close()
+        .await();
+    }
+    client.request(new RequestOptions().setPort(port).setIdleTimeout(800))
       .onComplete(onFailure(exception::set));
     vertx.setTimer(1500, id -> {
       assertNotNull("Expected an exception to be set", exception.get());

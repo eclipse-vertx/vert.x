@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.Http1xOrH2ChannelConnector;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.util.function.Function;
@@ -37,14 +38,12 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
   // Should not be here but currently necessary for WebClient
   @Deprecated(forRemoval = true)
   default HttpClientOptions options() {
-    HttpChannelConnector connector = channelConnector();
-    if (connector instanceof Http1xOrH2ChannelConnector) {
-      Http1xOrH2ChannelConnector http1xOrH2ChannelConnector = (Http1xOrH2ChannelConnector)connector;
-      return http1xOrH2ChannelConnector.options();
-    } else {
-      return null;
-    }
+    return null;
   }
+
+  EndpointResolverInternal originResolver();
+
+  EndpointResolverInternal resolver();
 
   Future<Void> closeFuture();
 

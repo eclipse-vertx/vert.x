@@ -626,10 +626,7 @@ public class Http1xProxyTest extends HttpTestBase {
     Duration delay = Duration.ofSeconds(1);
     proxy.successDelayMillis(delay);
 
-    ProxyOptions proxyOptions = new ProxyOptions()
-      .setType(proxy.type())
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(proxy.port())
+    ProxyOptions proxyOptions = proxy.options()
       .setConnectTimeout(shouldTimeout ? delay.dividedBy(2) : delay.multipliedBy(2));
     HttpClientOptions clientOptions = createBaseClientOptions()
       .setSsl(true)

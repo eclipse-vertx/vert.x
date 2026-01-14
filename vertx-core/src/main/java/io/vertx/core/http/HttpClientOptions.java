@@ -13,15 +13,17 @@ package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.impl.Arguments;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -164,35 +166,27 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
-  private boolean verifyHost = true;
-  private boolean keepAlive;
-  private int keepAliveTimeout;
-  private int pipeliningLimit;
-  private boolean pipelining;
-  private int http2MultiplexingLimit;
-  private int http2ConnectionWindowSize;
-  private int http2KeepAliveTimeout;
-  private int http2UpgradeMaxContentLength;
-  private boolean http2MultiplexImplementation;
+  /**
+   * Follow alternative service server advertisements = {@code false}
+   */
+  public static final boolean DEFAULT_FOLLOW_ALTERNATIVE_SERVICES = false;
 
+  private Http1ClientConfig http1Config;
+  private Http2ClientConfig http2Config;
+  private boolean verifyHost;
   private boolean decompressionSupported;
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
-  private int maxChunkSize;
-  private int maxInitialLineLength;
-  private int maxHeaderSize;
-  private Http2Settings initialSettings;
-  private boolean http2ClearTextUpgrade;
-  private boolean http2ClearTextUpgradeWithPreflightRequest;
   private int maxRedirects;
   private boolean forceSni;
-  private int decoderInitialBufferSize;
 
   private TracingPolicy tracingPolicy;
 
   private boolean shared;
   private String name;
+
+  private boolean followAlternativeServices;
 
   /**
    * Default constructor
@@ -219,29 +213,15 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions(HttpClientOptions other) {
     super(other);
+    this.http1Config = new Http1ClientConfig(other.http1Config);
+    this.http2Config = new Http2ClientConfig(other.http2Config);
     this.verifyHost = other.isVerifyHost();
-    this.keepAlive = other.isKeepAlive();
-    this.keepAliveTimeout = other.getKeepAliveTimeout();
-    this.pipelining = other.isPipelining();
-    this.pipeliningLimit = other.getPipeliningLimit();
-    this.http2MultiplexingLimit = other.http2MultiplexingLimit;
-    this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
-    this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
-    this.http2UpgradeMaxContentLength = other.getHttp2UpgradeMaxContentLength();
-    this.http2MultiplexImplementation = other.getHttp2MultiplexImplementation();
     this.decompressionSupported = other.decompressionSupported;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
-    this.maxChunkSize = other.maxChunkSize;
-    this.maxInitialLineLength = other.getMaxInitialLineLength();
-    this.maxHeaderSize = other.getMaxHeaderSize();
-    this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
-    this.http2ClearTextUpgrade = other.http2ClearTextUpgrade;
-    this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
-    this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
@@ -270,32 +250,27 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   private void init() {
+    http1Config = new Http1ClientConfig();
+    http2Config = new Http2ClientConfig();
     verifyHost = DEFAULT_VERIFY_HOST;
-    keepAlive = DEFAULT_KEEP_ALIVE;
-    keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
-    pipelining = DEFAULT_PIPELINING;
-    pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
-    http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
-    http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
-    http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
-    http2UpgradeMaxContentLength = DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH;
-    http2MultiplexImplementation = DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
-    maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
-    maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
-    maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    initialSettings = new Http2Settings();
-    http2ClearTextUpgrade = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE;
-    http2ClearTextUpgradeWithPreflightRequest = DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
     forceSni = DEFAULT_FORCE_SNI;
-    decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
+    followAlternativeServices = DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
+  }
+
+  public Http1ClientConfig getHttp1Config() {
+    return http1Config;
+  }
+
+  public Http2ClientConfig getHttp2Config() {
+    return http2Config;
   }
 
   @Override
@@ -481,7 +456,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * the value sent by the server
    */
   public int getHttp2MultiplexingLimit() {
-    return http2MultiplexingLimit;
+    return http2Config.getMultiplexingLimit();
   }
 
   /**
@@ -496,10 +471,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2MultiplexingLimit(int limit) {
-    if (limit == 0 || limit < -1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
-    }
-    this.http2MultiplexingLimit = limit;
+    http2Config.setMultiplexingLimit(limit);
     return this;
   }
 
@@ -507,7 +479,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the default HTTP/2 connection window size
    */
   public int getHttp2ConnectionWindowSize() {
-    return http2ConnectionWindowSize;
+    return http2Config.getConnectionWindowSize();
   }
 
   /**
@@ -521,7 +493,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2ConnectionWindowSize(int http2ConnectionWindowSize) {
-    this.http2ConnectionWindowSize = http2ConnectionWindowSize;
+    http2Config.setConnectionWindowSize(http2ConnectionWindowSize);
     return this;
   }
 
@@ -529,7 +501,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the keep alive timeout value in seconds for HTTP/2 connections
    */
   public int getHttp2KeepAliveTimeout() {
-    return http2KeepAliveTimeout;
+    return http2Config.getKeepAliveTimeout() == null ? 0 : (int)http2Config.getKeepAliveTimeout().toSeconds();
   }
 
   /**
@@ -543,10 +515,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2KeepAliveTimeout(int keepAliveTimeout) {
-    if (keepAliveTimeout < 0) {
-      throw new IllegalArgumentException("HTTP/2 keepAliveTimeout must be >= 0");
-    }
-    this.http2KeepAliveTimeout = keepAliveTimeout;
+    http2Config.setKeepAliveTimeout(keepAliveTimeout == 0 ? null : Duration.ofSeconds(keepAliveTimeout));
     return this;
   }
 
@@ -554,20 +523,20 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the HTTP/2 upgrade maximum length of the aggregated content in bytes
    */
   public int getHttp2UpgradeMaxContentLength() {
-    return http2UpgradeMaxContentLength;
+    return http2Config.getUpgradeMaxContentLength();
   }
 
   /**
    * Set the HTTP/2 upgrade maximum length of the aggregated content in bytes.
-   * This is only taken into account when {@link HttpClientOptions#http2ClearTextUpgradeWithPreflightRequest} is set to {@code false} (which is the default).
-   * When {@link HttpClientOptions#http2ClearTextUpgradeWithPreflightRequest} is {@code true}, then the client makes a preflight OPTIONS request
+   * This is only taken into account when {@link HttpClientOptions#isHttp2ClearTextUpgradeWithPreflightRequest)} is set to {@code false} (which is the default).
+   * When {@link HttpClientOptions#isHttp2ClearTextUpgradeWithPreflightRequest} is {@code true}, then the client makes a preflight OPTIONS request
    * and the upgrade will not send a body, voiding the requirements.
    *
    * @param http2UpgradeMaxContentLength the length, in bytes
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2UpgradeMaxContentLength(int http2UpgradeMaxContentLength) {
-    this.http2UpgradeMaxContentLength = http2UpgradeMaxContentLength;
+    http2Config.setUpgradeMaxContentLength(http2UpgradeMaxContentLength);
     return this;
   }
 
@@ -575,7 +544,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return whether to use the HTTP/2 implementation based on multiplexed channel
    */
   public boolean getHttp2MultiplexImplementation() {
-    return http2MultiplexImplementation;
+    return http2Config.getMultiplexImplementation();
   }
 
   /**
@@ -585,7 +554,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2MultiplexImplementation(boolean http2MultiplexImplementation) {
-    this.http2MultiplexImplementation = http2MultiplexImplementation;
+    http2Config.setMultiplexImplementation(http2MultiplexImplementation);
     return this;
   }
 
@@ -595,7 +564,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return {@code true} if enabled
    */
   public boolean isKeepAlive() {
-    return keepAlive;
+    return http1Config.isKeepAlive();
   }
 
   /**
@@ -605,7 +574,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setKeepAlive(boolean keepAlive) {
-    this.keepAlive = keepAlive;
+    http1Config.setKeepAlive(keepAlive);
     return this;
   }
 
@@ -613,7 +582,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the keep alive timeout value in seconds for HTTP/1.x connections
    */
   public int getKeepAliveTimeout() {
-    return keepAliveTimeout;
+    return http1Config.getKeepAliveTimeout() == null ? 0 : (int)http1Config.getKeepAliveTimeout().toSeconds();
   }
 
   /**
@@ -627,10 +596,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setKeepAliveTimeout(int keepAliveTimeout) {
-    if (keepAliveTimeout < 0) {
-      throw new IllegalArgumentException("keepAliveTimeout must be >= 0");
-    }
-    this.keepAliveTimeout = keepAliveTimeout;
+    http1Config.setKeepAliveTimeout(keepAliveTimeout == 0 ? null : Duration.ofSeconds(keepAliveTimeout));
     return this;
   }
 
@@ -640,7 +606,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return {@code true} if pipe-lining is enabled
    */
   public boolean isPipelining() {
-    return pipelining;
+    return http1Config.isPipelining();
   }
 
   /**
@@ -650,7 +616,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setPipelining(boolean pipelining) {
-    this.pipelining = pipelining;
+    http1Config.setPipelining(pipelining);
     return this;
   }
 
@@ -658,7 +624,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the limit of pending requests a pipe-lined HTTP/1 connection can send
    */
   public int getPipeliningLimit() {
-    return pipeliningLimit;
+    return http1Config.getPipeliningLimit();
   }
 
   /**
@@ -668,10 +634,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setPipeliningLimit(int limit) {
-    if (limit < 1) {
-      throw new IllegalArgumentException("pipeliningLimit must be > 0");
-    }
-    this.pipeliningLimit = limit;
+    http1Config.setPipeliningLimit(limit);
     return this;
   }
 
@@ -780,7 +743,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxChunkSize(int maxChunkSize) {
-    this.maxChunkSize = maxChunkSize;
+    http1Config.setMaxChunkSize(maxChunkSize);
     return this;
   }
 
@@ -789,14 +752,14 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the maximum HTTP chunk size
    */
   public int getMaxChunkSize() {
-    return maxChunkSize;
+    return http1Config.getMaxChunkSize();
   }
 
   /**
    * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
-    return maxInitialLineLength;
+    return http1Config.getMaxInitialLineLength();
   }
 
   /**
@@ -806,7 +769,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxInitialLineLength(int maxInitialLineLength) {
-    this.maxInitialLineLength = maxInitialLineLength;
+    http1Config.setMaxInitialLineLength(maxInitialLineLength);
     return this;
   }
 
@@ -814,7 +777,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
-    return maxHeaderSize;
+    return http1Config.getMaxHeaderSize();
   }
 
   /**
@@ -824,7 +787,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxHeaderSize(int maxHeaderSize) {
-    this.maxHeaderSize = maxHeaderSize;
+    http1Config.setMaxHeaderSize(maxHeaderSize);
     return this;
   }
 
@@ -832,7 +795,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return the initial HTTP/2 connection settings
    */
   public Http2Settings getInitialSettings() {
-    return initialSettings;
+    return http2Config.getInitialSettings();
   }
 
   /**
@@ -842,7 +805,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setInitialSettings(Http2Settings settings) {
-    this.initialSettings = settings;
+    http2Config.setInitialSettings(settings);
     return this;
   }
 
@@ -891,7 +854,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return {@code true} when an <i>h2c</i> connection is established using an HTTP/1.1 upgrade request, {@code false} when directly
    */
   public boolean isHttp2ClearTextUpgrade() {
-    return http2ClearTextUpgrade;
+    return http2Config.isClearTextUpgrade();
   }
 
   /**
@@ -902,7 +865,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2ClearTextUpgrade(boolean value) {
-    this.http2ClearTextUpgrade = value;
+    http2Config.setClearTextUpgrade(value);
     return this;
   }
 
@@ -911,7 +874,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    *         a preflight {@code OPTIONS} request to the origin server to establish the <i>h2c</i> connection
    */
   public boolean isHttp2ClearTextUpgradeWithPreflightRequest() {
-    return http2ClearTextUpgradeWithPreflightRequest;
+    return http2Config.isClearTextUpgradeWithPreflightRequest();
   }
 
   /**
@@ -922,7 +885,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setHttp2ClearTextUpgradeWithPreflightRequest(boolean value) {
-    this.http2ClearTextUpgradeWithPreflightRequest = value;
+    http2Config.setClearTextUpgradeWithPreflightRequest(value);
     return this;
   }
 
@@ -999,7 +962,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * @return the initial buffer size for the HTTP decoder
    */
-  public int getDecoderInitialBufferSize() { return decoderInitialBufferSize; }
+  public int getDecoderInitialBufferSize() {
+    return http1Config.getDecoderInitialBufferSize();
+  }
 
   /**
    * set to {@code initialBufferSizeHttpDecoder} the initial buffer of the HttpDecoder.
@@ -1008,8 +973,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setDecoderInitialBufferSize(int decoderInitialBufferSize) {
-    Arguments.require(decoderInitialBufferSize > 0, "initialBufferSizeHttpDecoder must be > 0");
-    this.decoderInitialBufferSize = decoderInitialBufferSize;
+    http1Config.setDecoderInitialBufferSize(decoderInitialBufferSize);
     return this;
   }
 
@@ -1067,6 +1031,31 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setName(String name) {
     Objects.requireNonNull(name, "Client name cannot be null");
     this.name = name;
+    return this;
+  }
+
+  /**
+   * @return whether the client follows alternative services advertisements
+   */
+  @Unstable
+  public boolean getFollowAlternativeServices() {
+    return followAlternativeServices;
+  }
+
+  /**
+   * <p>Configure whether the client follows alternative services advertisements, the default
+   * setting does not.</p>
+   *
+   * <p>Setting this to true, instructs the client to use most appropriate alternative services advertised by
+   * HTTP servers.</p>
+   *
+   * <p>The client only follows alternative services it can trust for a given origin, in practice this means
+   * this only the {@code https} scheme is supported and alternatives handshake uses the alternative origin.</p>
+   *
+   * @param followAlternativeServices the config value
+   */
+  public HttpClientOptions setFollowAlternativeServices(boolean followAlternativeServices) {
+    this.followAlternativeServices = followAlternativeServices;
     return this;
   }
 }

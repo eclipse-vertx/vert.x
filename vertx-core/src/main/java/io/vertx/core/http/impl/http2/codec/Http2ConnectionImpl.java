@@ -28,15 +28,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.http2.Http2Connection;
 import io.vertx.core.http.impl.http2.Http2Stream;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
-import io.vertx.core.http.GoAway;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.StreamPriority;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -66,7 +63,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   private final VertxHttp2ConnectionHandler handler;
   protected final io.netty.handler.codec.http2.Http2Connection.PropertyKey streamKey;
   private boolean shutdown;
-  private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
+  private Handler<HttpSettings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings;
@@ -226,7 +223,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
     boolean changed;
-    Handler<io.vertx.core.http.Http2Settings> handler;
+    Handler<HttpSettings> handler;
     synchronized (this) {
       Long val = settings.maxConcurrentStreams();
       if (val != null) {
@@ -390,24 +387,24 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public synchronized HttpConnection remoteSettingsHandler(Handler<io.vertx.core.http.Http2Settings> handler) {
+  public synchronized HttpConnection remoteSettingsHandler(Handler<HttpSettings> handler) {
     remoteSettingsHandler = handler;
     return this;
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings remoteSettings() {
+  public synchronized HttpSettings remoteSettings() {
     return HttpUtils.toVertxSettings(remoteSettings);
   }
 
   @Override
-  public synchronized io.vertx.core.http.Http2Settings settings() {
+  public synchronized HttpSettings settings() {
     return HttpUtils.toVertxSettings(localSettings);
   }
 
   @Override
-  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    return updateSettings(HttpUtils.fromVertxSettings(settings));
+  public Future<Void> updateSettings(HttpSettings settings) {
+    return updateSettings(HttpUtils.fromVertxSettings((io.vertx.core.http.Http2Settings)settings));
   }
 
   protected Future<Void> updateSettings(Http2Settings settingsUpdate) {

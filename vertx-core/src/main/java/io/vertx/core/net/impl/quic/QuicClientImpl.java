@@ -20,22 +20,23 @@ import io.netty.handler.codec.quic.QuicChannelOption;
 import io.netty.handler.codec.quic.QuicClientCodecBuilder;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
-import java.net.InetSocketAddress;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -44,6 +45,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   public static final QuicConnectOptions DEFAULT_CONNECT_OPTIONS = new QuicConnectOptions();
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
+  private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
 
   public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientOptions options) {
     return new QuicClientImpl(vertx, metricsProvider, new QuicClientOptions(options));
@@ -68,12 +70,18 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
+    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
-        Attribute<SslContextProvider> attr = q.attr(SSL_CONTEXT_PROVIDER_KEY);
-        SslContextProvider sslContextProvider = attr.get();
-        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, true);
-        return sslContext.newEngine(q.alloc());
+        SslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
+        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, applicationProtocols);
+        if (q.hasAttr(SSL_SERVER_NAME_KEY)) {
+          Attribute<HostAndPort> serverName = q.attr(SSL_SERVER_NAME_KEY);
+          HostAndPort peer = serverName.get();
+          return sslContext.newEngine(q.alloc(), peer.host(), peer.port());
+        } else {
+          return sslContext.newEngine(q.alloc());
+        }
       })
       .maxIdleTimeout(5000, TimeUnit.MILLISECONDS));
   }
@@ -91,6 +99,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       sslOptions = options.getSslOptions();
     }
     Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
+    String serverName = connectOptions.getServerName();
     return fut.compose(sslContextProvider -> {
       Duration connectTimeout = connectOptions.getTimeout();
       if (connectTimeout == null) {
@@ -100,11 +109,24 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       if (qlogConfig == null) {
         qlogConfig = options.getQLogConfig();
       }
-      return connect(address, qlogConfig, context, connectTimeout, sslContextProvider);
+      return connect(address, serverName, qlogConfig, context, connectTimeout, sslContextProvider);
     });
   }
 
-  private Future<QuicConnection> connect(SocketAddress address,
+  private Future<QuicConnection> connect(SocketAddress remoteAddress,
+                                         String serverName,
+                                         QLogConfig qLogConfig,
+                                         ContextInternal context,
+                                         Duration connectTimeout,
+                                         SslContextProvider sslContextProvider) {
+    NameResolver resolver = vertx.nameResolver();
+    Future<java.net.SocketAddress> f = resolver.resolve(remoteAddress);
+    return f.compose(res -> connect(remoteAddress, res, serverName, qLogConfig, context, connectTimeout, sslContextProvider));
+  }
+
+  private Future<QuicConnection> connect(SocketAddress remoteAddress,
+                                         java.net.SocketAddress resolvedAddress,
+                                         String serverName,
                                          QLogConfig qLogConfig,
                                          ContextInternal context,
                                          Duration connectTimeout,
@@ -121,12 +143,16 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
-          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getIdleTimeout(),
-            options.getReadIdleTimeout(), options.getWriteIdleTimeout(), promise::tryComplete);
+          ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
+          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
+            options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })
-      .remoteAddress(new InetSocketAddress(address.host(), address.port()));
+      .remoteAddress(resolvedAddress);
+    if (serverName != null && !serverName.isEmpty()) {
+      bootstrap.attr(SSL_SERVER_NAME_KEY, HostAndPort.authority(serverName, remoteAddress.port()));
+    }
     if (qLogConfig != null) {
       bootstrap.option(QuicChannelOption.QLOG, new QLogConfiguration(qLogConfig.getPath(), qLogConfig.getTitle(), qLogConfig.getDescription()));
     }

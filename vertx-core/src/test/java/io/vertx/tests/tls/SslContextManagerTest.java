@@ -46,7 +46,7 @@ public class SslContextManagerTest extends VertxTestBase {
     helper
       .buildSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_JKS.get()).setTrustOptions(Trust.SERVER_JKS.get()), null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        SslContext ctx = provider.createContext(false, false);
+        SslContext ctx = provider.createContext(false, null);
         assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(ctx.cipherSuites()));
         testComplete();
     }));
@@ -58,7 +58,7 @@ public class SslContextManagerTest extends VertxTestBase {
     Set<String> expected = OpenSsl.availableOpenSslCipherSuites();
     SslContextManager helper = new SslContextManager(new OpenSSLEngineOptions());
     helper.buildSslContextProvider(new SSLOptions().setKeyCertOptions(Cert.CLIENT_PEM.get()).setTrustOptions(Trust.SERVER_PEM.get()), null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext()).onComplete(onSuccess(provider -> {
-      SslContext ctx = provider.createContext(false, false);
+      SslContext ctx = provider.createContext(false, null);
       assertEquals(expected, new HashSet<>(ctx.cipherSuites()));
       testComplete();
     }));
@@ -92,7 +92,7 @@ public class SslContextManagerTest extends VertxTestBase {
     defaultHelper
       .buildSslContextProvider(sslOptions, null, ClientAuth.NONE, false, (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(provider -> {
-        SslContext ctx = provider.createContext(true, false);
+        SslContext ctx = provider.createContext(true, null);
 
         SSLSessionContext sslSessionContext = ctx.sessionContext();
         assertTrue(sslSessionContext instanceof OpenSslServerSessionContext);
@@ -202,6 +202,6 @@ public class SslContextManagerTest extends VertxTestBase {
   }
 
   public SSLEngine createEngine(SslContextProvider provider) {
-    return provider.createContext(false, false).newEngine(ByteBufAllocator.DEFAULT);
+    return provider.createContext(false, null).newEngine(ByteBufAllocator.DEFAULT);
   }
 }

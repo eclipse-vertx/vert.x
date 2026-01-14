@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl.http2.multiplex;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.*;
@@ -20,8 +19,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
+import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.AltSvc;
+import io.vertx.core.http.impl.AltSvcEvent;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
@@ -33,8 +33,6 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import static io.vertx.core.http.HttpHeaders.ALT_SVC;
-
 public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
   private final boolean decompressionSupported;
@@ -43,12 +41,12 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   private Promise<HttpClientConnection> completion;
   private long concurrency;
   private Handler<Long> concurrencyChangeHandler;
-  private Handler<AltSvc> alternativeServicesHandler;
+  private Handler<AltSvcEvent> alternativeServicesHandler;
   private Handler<Void> evictionHandler;
   private final long maxConcurrency;
   private final long keepAliveTimeoutMillis;
   private boolean evicted;
-  private final long lifetimeEvictionTimestampMillis;
+  private final long creationTimestamp;
   private long expirationTimestampMillis;
 
   public Http2MultiplexClientConnection(Http2MultiplexHandler handler,
@@ -59,7 +57,6 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
                                         HostAndPort authority,
                                         int maxConcurrency,
                                         long keepAliveTimeoutMillis,
-                                        long maxLifetimeMillis,
                                         boolean decompressionSupported,
                                         Promise<HttpClientConnection> completion) {
     super(handler, transportMetrics, chctx, context);
@@ -70,9 +67,9 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     this.concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
     this.maxConcurrency = maxConcurrency < 0 ? Long.MAX_VALUE : maxConcurrency;
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
-    this.lifetimeEvictionTimestampMillis = maxLifetimeMillis > 0 ? System.currentTimeMillis() + maxLifetimeMillis : Long.MAX_VALUE;
     this.evicted = false;
     this.decompressionSupported = decompressionSupported;
+    this.creationTimestamp = System.currentTimeMillis();
   }
 
   @Override
@@ -93,8 +90,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
     expirationTimestampMillis = keepAliveTimeoutMillis > 0 ? System.currentTimeMillis() + keepAliveTimeoutMillis : Long.MAX_VALUE;
   }
 
-  private long actualConcurrency(Http2Settings settings) {
-    return Math.min(settings.getMaxConcurrentStreams(), maxConcurrency);
+  private long actualConcurrency(HttpSettings settings) {
+    return Math.min(settings.getLongOrDefault(Http2Settings.MAX_CONCURRENT_STREAMS), maxConcurrency);
   }
 
   void onInitialSettingsSent() {
@@ -109,7 +106,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  void onSettings(Http2Settings settings) {
+  void onSettings(HttpSettings settings) {
     long newConcurrency = actualConcurrency(settings);
     if (newConcurrency != concurrency) {
       Handler<Long> handler = concurrencyChangeHandler;
@@ -175,7 +172,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  public HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
+  public HttpClientConnection alternativeServicesHandler(Handler<AltSvcEvent> handler) {
     alternativeServicesHandler = handler;
     return this;
   }
@@ -188,13 +185,17 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
   @Override
   public boolean isValid() {
-    long now = System.currentTimeMillis();
-    return now <= expirationTimestampMillis && now <= lifetimeEvictionTimestampMillis;
+    return System.currentTimeMillis() <= expirationTimestampMillis;
   }
 
   @Override
   public long lastResponseReceivedTimestamp() {
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public long creationTimestamp() {
+    return creationTimestamp;
   }
 
   @Override
@@ -213,8 +214,8 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   }
 
   @Override
-  void onAltSvc(AltSvc event) {
-    Handler<AltSvc> handler = alternativeServicesHandler;
+  void onAltSvc(AltSvcEvent event) {
+    Handler<AltSvcEvent> handler = alternativeServicesHandler;
     if (handler != null) {
       context.emit(event, handler);
     }

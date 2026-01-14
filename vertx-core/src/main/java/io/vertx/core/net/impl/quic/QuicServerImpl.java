@@ -25,6 +25,7 @@ import io.netty.handler.codec.quic.QuicServerCodecBuilder;
 import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.codec.quic.QuicTokenHandler;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Mapping;
 import io.netty.util.internal.PlatformDependent;
@@ -43,6 +44,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import java.net.StandardSocketOptions;
 import java.nio.channels.DatagramChannel;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -125,7 +127,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
-    Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(true);
+    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+    Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(applicationProtocols);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {
@@ -153,8 +156,10 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
-                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getIdleTimeout(),
-                  options.getReadIdleTimeout(), options.getWriteIdleTimeout(), QuicServerImpl.this.handler);
+                ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
+                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
+                  options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging,
+                  vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);
               }

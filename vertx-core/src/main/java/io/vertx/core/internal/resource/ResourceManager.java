@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * The resource manager associates an arbitrary {@code <K>} key with a reference counted resource, it also tracks all
@@ -60,52 +59,31 @@ public class ResourceManager<K, R extends ManagedResource> {
    * @param function the function to apply on the endpoint
    * @return the value returned by the function when applied on the resolved endpoint.
    */
-  public <T> T withResource(K key, Function<K, R> provider, BiFunction<R, Boolean, T> function) {
+  public <T> T withResource(K key, Function<K, R> provider, Function<R, R> checker, BiFunction<R, Boolean, T> function) {
     checkStatus();
     ManagedResource[] ref = new ManagedResource[1];
     while (true) {
       ref[0] = null;
-      R resource = resources.computeIfAbsent(key, k -> {
-        R r = provider.apply(key);
-        r.cleaner = () -> resources.remove(key, ref[0]);
-        ref[0] = r;
-        return r;
-      });
-      if (resource.before()) {
-        T value = function.apply(resource, resource == ref[0]);
-        resource.after();
-        return value;
-      }
-    }
-  }
-
-  /**
-   * Resolve the couple {@code key} as an endpoint, the {@code function} is then applied on this endpoint and the value returned.
-   *
-   * @param key the endpoint key
-   * @param function the function to apply on the endpoint
-   * @return the value returned by the function when applied on the resolved endpoint.
-   */
-  public <T> T withResource(K key, Function<K, R> provider, Predicate<R> checker, BiFunction<R, Boolean, T> function) {
-    checkStatus();
-    ManagedResource[] ref = new ManagedResource[1];
-    while (true) {
-      ref[0] = null;
-      R endpoint = resources.compute(key, (k, prev) -> {
-        if (prev != null && checker.test(prev)) {
-          return prev;
-        }
+      R entry = resources.compute(key, (k, prev) -> {
+        R res;
         if (prev != null) {
-          // Do we need to do anything else ????
+          R next = checker.apply(prev);
+          if (next == prev) {
+            return prev;
+          } else if (next == null) {
+            res = provider.apply(key);
+          } else {
+            res = next;
+          }
+        } else {
+          res = provider.apply(key);
         }
-        R ep = provider.apply(key);
-        ep.cleaner = () -> resources.remove(key, ref[0]);
-        ref[0] = ep;
-        return ep;
+        res.cleaner = () -> resources.remove(key, res);
+        ref[0] = res;
+        return res;
       });
-      if (endpoint.before()) {
-        T value = function.apply(endpoint, endpoint == ref[0]);
-        endpoint.after();
+      T value = function.apply(entry, entry == ref[0]);
+      if (value != null) {
         return value;
       }
     }
@@ -118,24 +96,12 @@ public class ResourceManager<K, R extends ManagedResource> {
    * @return the future resolved with the resource
    */
   public <T> Future<T> withResourceAsync(K key, Function<K, R> provider, BiFunction<R, Boolean, Future<T>> function) {
-    checkStatus();
-    ManagedResource[] ref = new ManagedResource[1];
-    while (true) {
-      ref[0] = null;
-      R endpoint = resources.computeIfAbsent(key, k -> {
-        R ep = provider.apply(key);
-        ep.cleaner = () -> resources.remove(key, ref[0]);
-        ref[0] = ep;
-        return ep;
-      });
-      if (endpoint.before()) {
-        return function
-          .apply(endpoint, endpoint == ref[0])
-          .andThen(ar -> {
-          endpoint.after();
-        });
+    return withResource(key, provider, Function.identity(), (res, created) -> {
+      if (res.before()) {
+        return function.apply(res, created).andThen(ar -> res.after());
       }
-    }
+      return null;
+    });
   }
 
   private void checkStatus() {
@@ -170,5 +136,12 @@ public class ResourceManager<K, R extends ManagedResource> {
       }
       status.set(4);
     }
+  }
+
+  /**
+   * @return number of resources held by the manager
+   */
+  public int size() {
+    return resources.size();
   }
 }

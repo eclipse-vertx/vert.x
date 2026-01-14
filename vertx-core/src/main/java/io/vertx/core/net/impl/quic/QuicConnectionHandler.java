@@ -16,9 +16,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicConnectionCloseEvent;
 import io.netty.handler.codec.quic.QuicStreamChannel;
+import io.netty.handler.logging.ByteBufFormat;
+import io.netty.handler.ssl.SniCompletionEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.QuicConnectionClose;
@@ -27,7 +30,6 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
-import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -43,25 +45,30 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private final long idleTimeout;
   private final long readIdleTimeout;
   private final long writeIdleTimeout;
+  private final ByteBufFormat activityLogging;
   private Handler<QuicConnection> handler;
   private QuicChannel channel;
   private QuicConnectionImpl connection;
+  private SocketAddress remoteAddress;
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
-                               Duration readIdleTimeout, Duration writeIdleTimeout, Handler<QuicConnection> handler) {
+                               Duration readIdleTimeout, Duration writeIdleTimeout, ByteBufFormat activityLogging,
+                               SocketAddress remoteAddress, Handler<QuicConnection> handler) {
     this.context = context;
     this.metrics = metrics;
     this.idleTimeout = timeoutMillis(idleTimeout);
     this.readIdleTimeout = timeoutMillis(readIdleTimeout);
     this.writeIdleTimeout = timeoutMillis(writeIdleTimeout);
+    this.activityLogging = activityLogging;
     this.handler = handler;
+    this.remoteAddress = remoteAddress;
   }
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     QuicChannel ch = (QuicChannel) ctx.channel();
     channel = ch;
-    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, ch, ctx);
+    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging, ch, remoteAddress, ctx);
     if (ch.isActive()) {
       activate();
     }
@@ -101,7 +108,13 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    if (evt instanceof QuicConnectionCloseEvent) {
+    if (evt instanceof SniCompletionEvent) {
+      SniCompletionEvent sniEvent = (SniCompletionEvent)evt;
+      String serverName = sniEvent.hostname();
+      if (serverName != null) {
+        ctx.channel().attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).set(serverName);
+      }
+    } else if (evt instanceof QuicConnectionCloseEvent) {
       QuicConnectionCloseEvent closeEvent = (QuicConnectionCloseEvent) evt;
       handleClosed(closeEvent);
     } else if (evt instanceof ShutdownEvent) {

@@ -24,8 +24,8 @@ import io.vertx.core.spi.metrics.ClientMetrics;
  */
 public interface Http2ClientChannelInitializer {
 
-  void http2Connected(ContextInternal context, HostAndPort authority, Object metric, long maxLifetimeMillis, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise);
+  void http2Connected(ContextInternal context, HostAndPort authority, Object metric, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise);
 
-  Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, long maxLifetimeMillis, ClientMetrics<?, ?, ?> clientMetrics);
+  Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics);
 
 }

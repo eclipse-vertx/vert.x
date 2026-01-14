@@ -81,7 +81,7 @@ public interface HttpClientConnection extends HttpConnection {
    * @param handler
    * @return
    */
-  default HttpClientConnection alternativeServicesHandler(Handler<AltSvc> handler) {
+  default HttpClientConnection alternativeServicesHandler(Handler<AltSvcEvent> handler) {
     return this;
   }
 
@@ -111,5 +111,7 @@ public interface HttpClientConnection extends HttpConnection {
    * @return the timestamp of the last received response - this is used for LIFO connection pooling
    */
   long lastResponseReceivedTimestamp();
+
+  long creationTimestamp();
 
 }

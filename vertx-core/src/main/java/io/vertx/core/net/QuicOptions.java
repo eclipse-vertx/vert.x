@@ -25,7 +25,7 @@ public class QuicOptions extends TransportOptions {
   public static final long DEFAULT_MAX_STREAMS_DATA_UNI = 0L;
   public static final long DEFAULT_MAX_STREAMS_DATA_BIDI = 0L;
   public static final long DEFAULT_MAX_STREAM_DATA_UNI = 0L;
-  public static final boolean DEFAULT_ACTIVE_MIGRATION = false;
+  public static final boolean DEFAULT_DISABLE_ACTIVE_MIGRATION = true;
   public static final Duration DEFAULT_MAX_IDLE_TIMEOUT = null;
   public static final boolean DEFAULT_ENABLE_DATAGRAMS = false;
   public static final int DEFAULT_DATAGRAM_SEND_QUEUE_LENGTH = 128;
@@ -38,12 +38,12 @@ public class QuicOptions extends TransportOptions {
   public static final int DEFAULT_INITIAL_CONGESTION_WINDOW_PACKETS = 10;
 
   private long initialMaxData = DEFAULT_MAX_INITIAL_DATA;
-  private long initialMaxStreamDataBidirectionalLocal = DEFAULT_MAX_STREAM_DATA_BIDI_LOCAL;
-  private long initialMaxStreamDataBidirectionalRemote = DEFAULT_MAX_STREAM_DATA_BIDI_REMOTE;
-  private long initialMaxStreamDataUnidirectional = DEFAULT_MAX_STREAMS_DATA_UNI;
-  private long initialMaxStreamsBidirectional = DEFAULT_MAX_STREAMS_DATA_BIDI;
-  private long initialMaxStreamsUnidirectional = DEFAULT_MAX_STREAM_DATA_UNI;
-  private boolean activeMigration = DEFAULT_ACTIVE_MIGRATION;
+  private long initialMaxStreamDataBidiLocal = DEFAULT_MAX_STREAM_DATA_BIDI_LOCAL;
+  private long initialMaxStreamDataBidiRemote = DEFAULT_MAX_STREAM_DATA_BIDI_REMOTE;
+  private long initialMaxStreamDataUni = DEFAULT_MAX_STREAMS_DATA_UNI;
+  private long initialMaxStreamsBidi = DEFAULT_MAX_STREAMS_DATA_BIDI;
+  private long initialMaxStreamsUni = DEFAULT_MAX_STREAM_DATA_UNI;
+  private boolean disableActiveMigration = DEFAULT_DISABLE_ACTIVE_MIGRATION;
   private Duration maxIdleTimeout = DEFAULT_MAX_IDLE_TIMEOUT;
   private boolean enableDatagrams = DEFAULT_ENABLE_DATAGRAMS;
   private int datagramSendQueueLength = DEFAULT_DATAGRAM_SEND_QUEUE_LENGTH;
@@ -60,12 +60,12 @@ public class QuicOptions extends TransportOptions {
 
   public QuicOptions(QuicOptions other) {
     this.initialMaxData = other.initialMaxData;
-    this.initialMaxStreamDataBidirectionalLocal = other.initialMaxStreamDataBidirectionalLocal;
-    this.initialMaxStreamDataBidirectionalRemote = other.initialMaxStreamDataBidirectionalRemote;
-    this.initialMaxStreamsBidirectional = other.initialMaxStreamsBidirectional;
-    this.initialMaxStreamsUnidirectional = other.initialMaxStreamsUnidirectional;
-    this.initialMaxStreamDataUnidirectional = other.initialMaxStreamDataUnidirectional;
-    this.activeMigration = other.activeMigration;
+    this.initialMaxStreamDataBidiLocal = other.initialMaxStreamDataBidiLocal;
+    this.initialMaxStreamDataBidiRemote = other.initialMaxStreamDataBidiRemote;
+    this.initialMaxStreamsBidi = other.initialMaxStreamsBidi;
+    this.initialMaxStreamsUni = other.initialMaxStreamsUni;
+    this.initialMaxStreamDataUni = other.initialMaxStreamDataUni;
+    this.disableActiveMigration = other.disableActiveMigration;
     this.maxIdleTimeout = other.maxIdleTimeout;
     this.enableDatagrams = other.enableDatagrams;
     this.datagramSendQueueLength = other.datagramSendQueueLength;
@@ -112,73 +112,73 @@ public class QuicOptions extends TransportOptions {
   }
 
   /**
-   * @return the {@code initialMaxStreamDataBidirectionalLocal } parameter value
-   * @see #setInitialMaxStreamDataBidirectionalLocal(long)
+   * @return the {@code initialMaxStreamDataBidiLocal } parameter value
+   * @see #setInitialMaxStreamDataBidiLocal(long)
    */
-  public long getInitialMaxStreamDataBidirectionalLocal() {
-    return initialMaxStreamDataBidirectionalLocal;
+  public long getInitialMaxStreamDataBidiLocal() {
+    return initialMaxStreamDataBidiLocal;
   }
 
   /**
-   * <p>Set the {@code initialMaxStreamDataBidirectionalLocal} transport parameter.</p>
+   * <p>Set the {@code initialMaxStreamDataBidiLocal} transport parameter.</p>
    *
-   * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataBidirectionalLocal} bytes of incoming stream data
+   * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataBidiLocal} bytes of incoming stream data
    * to be buffered for each locally-initiated bidirectional stream (that is, data that is not yet read by the application) and will
    * allow more data to be received as the buffer is consumed by the application.</p>
    *
    * <p>The default value is {@code 0}.</p>
    *
-   * @param initialMaxStreamDataBidirectionalLocal the value to set
+   * @param initialMaxStreamDataBidiLocal the value to set
    * @return this instance
    */
-  public QuicOptions setInitialMaxStreamDataBidirectionalLocal(long initialMaxStreamDataBidirectionalLocal) {
-    if (initialMaxStreamDataBidirectionalLocal < 0) {
-      throw new IllegalArgumentException("initialMaxStreamDataBidirectionalLocal must be >= 0");
+  public QuicOptions setInitialMaxStreamDataBidiLocal(long initialMaxStreamDataBidiLocal) {
+    if (initialMaxStreamDataBidiLocal < 0) {
+      throw new IllegalArgumentException("initialMaxStreamDataBidilLocal must be >= 0");
     }
-    this.initialMaxStreamDataBidirectionalLocal = initialMaxStreamDataBidirectionalLocal;
+    this.initialMaxStreamDataBidiLocal = initialMaxStreamDataBidiLocal;
     return this;
   }
 
   /**
-   * @return the {@code initialMaxStreamDataBidirectionalRemote } parameter value
-   * @see #setInitialMaxStreamDataBidirectionalRemote(long)
+   * @return the {@code initialMaxStreamDataBidiRemote } parameter value
+   * @see #setInitialMaxStreamDataBidiRemote(long)
    */
-  public long getInitialMaxStreamDataBidirectionalRemote() {
-    return initialMaxStreamDataBidirectionalRemote;
+  public long getInitialMaxStreamDataBidiRemote() {
+    return initialMaxStreamDataBidiRemote;
   }
 
   /**
-   * <p>Set the {@code initialMaxStreamDataBidirectionalRemote} transport parameter.</p>
+   * <p>Set the {@code initialMaxStreamDataBidiRemote} transport parameter.</p>
    *
-   * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataBidirectionalRemote} bytes of incoming
+   * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataBidiRemote} bytes of incoming
    * stream data to be buffered for each remotely-initiated bidirectional stream (that is, data that is not yet read by the application)
    * and will allow more data to be received as the buffer is consumed by the application.</p>
    *
    * <p>The default value is {@code 0}.</p>
    *
-   * @param initialMaxStreamDataBidirectionalRemote the value to set
+   * @param initialMaxStreamDataBidiRemote the value to set
    * @return this instance
    */
-  public QuicOptions setInitialMaxStreamDataBidirectionalRemote(long initialMaxStreamDataBidirectionalRemote) {
-    if (initialMaxStreamDataBidirectionalRemote < 0) {
-      throw new IllegalArgumentException("initialMaxStreamDataBidirectionalRemote must be >= 0");
+  public QuicOptions setInitialMaxStreamDataBidiRemote(long initialMaxStreamDataBidiRemote) {
+    if (initialMaxStreamDataBidiRemote < 0) {
+      throw new IllegalArgumentException("initialMaxStreamDataBidiRemote must be >= 0");
     }
-    this.initialMaxStreamDataBidirectionalRemote = initialMaxStreamDataBidirectionalRemote;
+    this.initialMaxStreamDataBidiRemote = initialMaxStreamDataBidiRemote;
     return this;
   }
 
   /**
-   * @return the {@code initialMaxStreamsBidirectional } parameter value
-   * @see #setInitialMaxStreamsBidirectional(long)
+   * @return the {@code initialMaxStreamsBidi } parameter value
+   * @see #setInitialMaxStreamsBidi(long)
    */
-  public long getInitialMaxStreamsBidirectional() {
-    return initialMaxStreamsBidirectional;
+  public long getInitialMaxStreamsBidi() {
+    return initialMaxStreamsBidi;
   }
 
   /**
-   * <p>Set the {@code setInitialMaxStreamsBidirectional} transport parameter.</p>
+   * <p>Set the {@code setInitialMaxStreamsBidi} transport parameter.</p>
    *
-   * <p>When set to a non-zero value it will only allow {@code initialMaxStreamsBidirectional} number of concurrent
+   * <p>When set to a non-zero value it will only allow {@code initialMaxStreamsBidi} number of concurrent
    * remotely-initiated bidirectional streams to be open at any given time and will increase the limit
    * automatically as streams are completed.</p>
    *
@@ -188,29 +188,29 @@ public class QuicOptions extends TransportOptions {
    *
    * <p>The default value is {@code 0}.</p>
    *
-   * @param initialMaxStreamsBidirectional the value to set
+   * @param initialMaxStreamsBidi the value to set
    * @return this instance
    */
-  public QuicOptions setInitialMaxStreamsBidirectional(long initialMaxStreamsBidirectional) {
-    if (initialMaxStreamsBidirectional < 0) {
-      throw new IllegalArgumentException("initialMaxStreamsBidirectional must be >= 0");
+  public QuicOptions setInitialMaxStreamsBidi(long initialMaxStreamsBidi) {
+    if (initialMaxStreamsBidi < 0) {
+      throw new IllegalArgumentException("initialMaxStreamsBidi must be >= 0");
     }
-    this.initialMaxStreamsBidirectional = initialMaxStreamsBidirectional;
+    this.initialMaxStreamsBidi = initialMaxStreamsBidi;
     return this;
   }
 
   /**
-   * @return the {@code initialMaxStreamsUnidirectional } parameter value
-   * @see #setInitialMaxStreamsUnidirectional(long)
+   * @return the {@code initialMaxStreamsUni } parameter value
+   * @see #setInitialMaxStreamsUni(long)
    */
-  public long getInitialMaxStreamsUnidirectional() {
-    return initialMaxStreamsUnidirectional;
+  public long getInitialMaxStreamsUni() {
+    return initialMaxStreamsUni;
   }
 
   /**
-   * <p>Sets the {@code initialMaxStreamsUnidirectional} transport parameter.</p>
+   * <p>Sets the {@code initialMaxStreamsUni} transport parameter.</p>
    *
-   * <p>When set to a non-zero value it will only allow {@code initialMaxStreamsUnidirectional} number of concurrent
+   * <p>When set to a non-zero value it will only allow {@code initialMaxStreamsUni} number of concurrent
    * remotely-initiated unidirectional streams to be open at any given time and will increase the limit automatically
    * as streams are completed.</p>
    *
@@ -219,51 +219,51 @@ public class QuicOptions extends TransportOptions {
    *
    * <p>The default value is {@code 0}.</p>
    *
-   * @param initialMaxStreamsUnidirectional the value to set
+   * @param initialMaxStreamsUni the value to set
    * @return this instance
    */
-  public QuicOptions setInitialMaxStreamsUnidirectional(long initialMaxStreamsUnidirectional) {
-    if (initialMaxStreamsUnidirectional < 0) {
-      throw new IllegalArgumentException("initialMaxStreamsUnidirectional must be >= 0");
+  public QuicOptions setInitialMaxStreamsUni(long initialMaxStreamsUni) {
+    if (initialMaxStreamsUni < 0) {
+      throw new IllegalArgumentException("initialMaxStreamsUni must be >= 0");
     }
-    this.initialMaxStreamsUnidirectional = initialMaxStreamsUnidirectional;
+    this.initialMaxStreamsUni = initialMaxStreamsUni;
     return this;
   }
 
   /**
-   * @return the {@code initialMaxStreamDataUnidirectional } parameter value
-   * @see #setInitialMaxStreamDataUnidirectional(long)
+   * @return the {@code initialMaxStreamDataUni } parameter value
+   * @see #setInitialMaxStreamDataUni(long)
    */
-  public long getInitialMaxStreamDataUnidirectional() {
-    return initialMaxStreamDataUnidirectional;
+  public long getInitialMaxStreamDataUni() {
+    return initialMaxStreamDataUni;
   }
 
   /**
-   * <p>Sets the {@code initialMaxStreamDataUnidirectional} transport parameter.</p>
+   * <p>Sets the {@code initialMaxStreamDataUni} transport parameter.</p>
    *
-   * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataUnidirectional} bytes of incoming
+   * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataUni} bytes of incoming
    * stream data to be buffered for each unidirectional stream (that is, data that is not yet read by the application) and
    * will allow more data to be received as the buffer is consumed by the application.</p>
    *
    * <p>The default value is {@code 0}.</p>
    *
-   * @param initialMaxStreamDataUnidirectional the value to set
+   * @param initialMaxStreamDataUni the value to set
    * @return this instance
    */
-  public QuicOptions setInitialMaxStreamDataUnidirectional(long initialMaxStreamDataUnidirectional) {
-    if (initialMaxStreamDataUnidirectional < 0) {
-      throw new IllegalArgumentException("initialMaxStreamDataUnidirectional must be >= 0");
+  public QuicOptions setInitialMaxStreamDataUni(long initialMaxStreamDataUni) {
+    if (initialMaxStreamDataUni < 0) {
+      throw new IllegalArgumentException("initialMaxStreamDataUni must be >= 0");
     }
-    this.initialMaxStreamDataUnidirectional = initialMaxStreamDataUnidirectional;
+    this.initialMaxStreamDataUni = initialMaxStreamDataUni;
     return this;
   }
 
   /**
    * @return the {@code activeMigration } parameter value
-   * @see #setActiveMigration(boolean)
+   * @see #setDisableActiveMigration(boolean)
    */
-  public boolean getActiveMigration() {
-    return activeMigration;
+  public boolean getDisableActiveMigration() {
+    return disableActiveMigration;
   }
 
   /**
@@ -271,11 +271,11 @@ public class QuicOptions extends TransportOptions {
    *
    * <p>The default value is {@code false}.</p>
    *
-   * @param activeMigration the value to set
+   * @param disableActiveMigration the value to set
    * @return this instance
    */
-  public QuicOptions setActiveMigration(boolean activeMigration) {
-    this.activeMigration = activeMigration;
+  public QuicOptions setDisableActiveMigration(boolean disableActiveMigration) {
+    this.disableActiveMigration = disableActiveMigration;
     return this;
   }
 
