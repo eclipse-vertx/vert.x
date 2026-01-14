@@ -406,16 +406,12 @@ public final class HttpUtils {
         // preserve last slash
         i += 3;
         int pos = obuf.lastIndexOf("/");
-        if (pos != -1) {
-          obuf.delete(pos, obuf.length());
-        }
+        obuf.setLength(pos == -1 ? 0 : pos);
       } else if (matches(path, i, "/..", true)) {
         path = "/";
         i = 0;
         int pos = obuf.lastIndexOf("/");
-        if (pos != -1) {
-          obuf.delete(pos, obuf.length());
-        }
+        obuf.setLength(pos == -1 ? 0 : pos);
       } else if (matches(path, i, ".", true) || matches(path, i, "..", true)) {
         break;
       } else {
