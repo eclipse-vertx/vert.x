@@ -18,7 +18,7 @@ import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.http.impl.websocket.WebSocketImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
+import io.vertx.core.internal.http.HttpTransport;
 import io.vertx.core.internal.resource.ManagedResource;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -52,7 +52,7 @@ class WebSocketGroup extends ManagedResource {
   private final WebSocketClientOptions options;
   private final HttpConnectParams connectParams;
   private final int maxPoolSize;
-  private final HttpChannelConnector connector;
+  private final HttpTransport connector;
   private final HostAndPort authority;
   private final long maxLifetimeMillis;
   private final Deque<Waiter> waiters;
@@ -61,7 +61,7 @@ class WebSocketGroup extends ManagedResource {
   private final PoolMetrics poolMetrics;
 
   WebSocketGroup(SocketAddress server, ClientMetrics clientMetrics, PoolMetrics poolMetrics, WebSocketClientOptions options, int maxPoolSize,
-                 HttpChannelConnector connector, HttpConnectParams connectParams, HostAndPort authority, long maxLifetimeMillis) {
+                 HttpTransport connector, HttpConnectParams connectParams, HostAndPort authority, long maxLifetimeMillis) {
     super();
     this.server = server;
     this.options = options;
@@ -93,7 +93,7 @@ class WebSocketGroup extends ManagedResource {
     } else {
       eventLoopContext = ctx.toBuilder().withThreadingModel(ThreadingModel.EVENT_LOOP).build();
     }
-    Future<HttpClientConnection> fut = connector.httpConnect(eventLoopContext, server, authority, connectParams, clientMetrics);
+    Future<HttpClientConnection> fut = connector.connect(eventLoopContext, server, authority, connectParams, clientMetrics);
     fut.onComplete(ar -> {
       if (ar.succeeded()) {
         HttpClientConnection c = ar.result();

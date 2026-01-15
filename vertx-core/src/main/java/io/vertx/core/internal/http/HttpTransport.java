@@ -22,17 +22,17 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import java.time.Duration;
 
 /**
- * Performs the channel configuration and connection according to the client options and the protocol version.
+ * The HTTP transport.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpChannelConnector {
+public interface HttpTransport {
 
-  Future<HttpClientConnection> httpConnect(ContextInternal context,
-                                           SocketAddress server,
-                                           HostAndPort authority,
-                                           HttpConnectParams params,
-                                           ClientMetrics<?, ?, ?> metrics);
+  Future<HttpClientConnection> connect(ContextInternal context,
+                                       SocketAddress server,
+                                       HostAndPort authority,
+                                       HttpConnectParams params,
+                                       ClientMetrics<?, ?, ?> metrics);
 
   Future<Void> shutdown(Duration timeout);
 

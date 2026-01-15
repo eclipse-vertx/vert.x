@@ -19,7 +19,7 @@ import io.vertx.core.http.impl.websocket.ClientWebSocketImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
+import io.vertx.core.internal.http.HttpTransport;
 import io.vertx.core.internal.resource.ResourceManager;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
@@ -37,7 +37,7 @@ import java.util.function.Function;
 
 public class WebSocketClientImpl extends HttpClientBase implements WebSocketClient {
 
-  private final HttpChannelConnector connector;
+  private final HttpTransport connector;
   private final WebSocketClientOptions options;
   private final ResourceManager<EndpointKey, WebSocketGroup> webSocketCM;
   private volatile ClientSSLOptions defaultSslOptions;
@@ -45,7 +45,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
   public WebSocketClientImpl(VertxInternal vertx,
                              HttpClientOptions options,
                              WebSocketClientOptions wsOptions,
-                             HttpChannelConnector connector,
+                             HttpTransport connector,
                              HttpClientMetrics<?, ?, ?> metrics) {
     super(vertx, metrics, options.getProxyOptions(), options.getNonProxyHosts());
 
