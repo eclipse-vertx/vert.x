@@ -198,7 +198,7 @@ public class VertxBootstrapTest {
       }
     };
     factory
-      .threadFactory(tf)
+      .threadFactoryProvider(tf.provider())
       .executorServiceFactory(new CustomExecutorServiceFactory())
       .init()
       .vertx()
