@@ -20,7 +20,7 @@ import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.spi.cluster.NodeListener;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
-import io.vertx.test.fakedns.FakeDNSServer;
+import io.vertx.test.fakedns.MockDnsServer;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -39,7 +39,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
 
   @Test
   public void testEventBusStartFailure() throws Exception {
-    FakeDNSServer dnsServer = new FakeDNSServer().testResolveASameServer("127.0.0.1");
+    MockDnsServer dnsServer = new MockDnsServer().testResolveASameServer("127.0.0.1");
     dnsServer.start();
     try {
       InetSocketAddress dnsServerAddress = dnsServer.localAddress();
