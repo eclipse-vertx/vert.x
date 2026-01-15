@@ -5,7 +5,6 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.config.Http1ClientConfig;
 import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
@@ -29,7 +28,8 @@ import java.util.function.Function;
 public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   private final VertxInternal vertx;
-  private HttpClientConfig clientOptions;
+  private HttpClientConfig clientConfig;
+  private HttpClientOptions clientOptions; // To be removed
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
@@ -43,19 +43,21 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   public HttpClientBuilder with(HttpClientConfig options) {
-    this.clientOptions = new HttpClientConfig(options);
+    this.clientConfig = new HttpClientConfig(options);
     return this;
   }
 
   @Override
   public HttpClientBuilder with(HttpClientOptions options) {
-    this.clientOptions = new HttpClientConfig(options);
+    this.clientConfig = new HttpClientConfig(options);
+    this.clientOptions = options;
     return this;
   }
 
   @Override
   public HttpClientBuilder with(Http3ClientOptions options) {
-    this.clientOptions = new HttpClientConfig(options);
+    this.clientConfig = new HttpClientConfig(options);
+    this.clientOptions = null;
     return this;
   }
 
@@ -122,10 +124,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     boolean followAlternativeServices;
     ProxyOptions proxyOptions;
     List<String> nonProxyHosts;
-    if (clientOptions != null) {
-      proxyOptions = clientOptions.getProxyOptions();
-      nonProxyHosts = clientOptions.getNonProxyHosts();
-      followAlternativeServices = clientOptions.getFollowAlternativeServices();
+    if (clientConfig != null) {
+      proxyOptions = clientConfig.getProxyOptions();
+      nonProxyHosts = clientConfig.getNonProxyHosts();
+      followAlternativeServices = clientConfig.getFollowAlternativeServices();
     } else {
       proxyOptions = null;
       nonProxyHosts = null;
@@ -133,11 +135,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     }
     PoolOptions po;
     po = poolOptions != null ? poolOptions : new PoolOptions();
+    HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
     return new HttpClientImpl(vertx, resolver, redirectHandler, metrics, po,
       proxyOptions, nonProxyHosts, loadBalancer, followAlternativeServices, resolverKeepAlive, config, quicTransport) {
       @Override
       public HttpClientOptions options() {
-        return null;
+        return options == null ? new HttpClientOptions() : new HttpClientOptions(options);
       }
     };
   }
@@ -184,7 +187,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   @Override
   public HttpClientAgent build() {
 
-    HttpClientConfig co = clientOptions;
+    HttpClientConfig co = clientConfig;
     if (co == null) {
       // We assume default client configuration
       co = new HttpClientConfig(new HttpClientOptions());
