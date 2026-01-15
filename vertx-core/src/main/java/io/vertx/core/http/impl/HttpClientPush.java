@@ -48,7 +48,7 @@ public class HttpClientPush implements HttpRequest {
   }
 
   @Override
-  public int id() {
+  public long id() {
     return stream.id();
   }
 

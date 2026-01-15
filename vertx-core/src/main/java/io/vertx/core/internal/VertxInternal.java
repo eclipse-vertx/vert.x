@@ -14,7 +14,10 @@ package io.vertx.core.internal;
 
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
+import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.impl.*;
+import io.vertx.core.impl.future.FailedFuture;
+import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
@@ -77,20 +80,39 @@ public interface VertxInternal extends Vertx {
    *         if that handler is already an instance of {@code PromiseInternal}
    */
   default <T> PromiseInternal<T> promise(Completable<T> p) {
-    if (p instanceof PromiseInternal) {
-      PromiseInternal<T> promise = (PromiseInternal<T>) p;
-      if (promise.context() != null) {
-        return promise;
-      }
-    }
-    PromiseInternal<T> promise = promise();
-    promise.future().onComplete(p);
-    return promise;
+    return getOrCreateContext().promise(p);
+  }
+
+  /**
+   * @return an empty succeeded {@link Future} associated with this context
+   */
+  default <T> Future<T> succeededFuture() {
+    return getOrCreateContext().succeededFuture();
+  }
+
+  /**
+   * @return a succeeded {@link Future} of the {@code result} associated with this context
+   */
+  default <T> Future<T> succeededFuture(T result) {
+    return getOrCreateContext().succeededFuture(result);
+  }
+
+  /**
+   * @return a {@link Future} failed with the {@code failure} associated with this context
+   */
+  default <T> Future<T> failedFuture(Throwable failure) {
+    return getOrCreateContext().failedFuture(failure);
+  }
+
+  /**
+   * @return a {@link Future} failed with the {@code message} associated with this context
+   */
+  default <T> Future<T> failedFuture(String message) {
+    return getOrCreateContext().failedFuture(message);
   }
 
   default void runOnContext(Handler<Void> task) {
-    ContextInternal context = getOrCreateContext();
-    context.runOnContext(task);
+    getOrCreateContext().runOnContext(task);
   }
 
   NetServerInternal createNetServer(NetServerOptions options);
@@ -119,6 +141,8 @@ public interface VertxInternal extends Vertx {
   Cleaner cleaner();
 
   <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier);
+
+  HttpClientBuilderInternal httpClientBuilder();
 
   /**
    * Get the current context

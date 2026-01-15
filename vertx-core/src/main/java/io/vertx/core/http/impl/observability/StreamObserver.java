@@ -79,8 +79,8 @@ public abstract class StreamObserver {
     if (observableRequest == null) {
       observableRequest = new HttpRequest() {
         @Override
-        public int id() {
-          return 1;
+        public long id() {
+          return 1L;
         }
 
         @Override

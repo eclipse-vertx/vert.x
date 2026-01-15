@@ -99,7 +99,7 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
         .map(res -> {
           List<OriginServer> primary = new ArrayList<>(res.size());
           for (InetSocketAddress addr : res) {
-            primary.add(new OriginServer(null, authority, SocketAddress.inetSocketAddress(new InetSocketAddress(addr.getAddress(), address.port)), Long.MAX_VALUE));
+            primary.add(new OriginServer(true, null, authority, SocketAddress.inetSocketAddress(new InetSocketAddress(addr.getAddress(), address.port)), Long.MAX_VALUE));
           }
           OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyMap());
           endpoints.put(address, endpoint);
@@ -109,7 +109,7 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
       return resolver
         .resolve(address.host)
         .map(addr -> {
-          OriginServer primary = new OriginServer(null, authority, SocketAddress.inetSocketAddress(new InetSocketAddress(addr, address.port)), Long.MAX_VALUE);
+          OriginServer primary = new OriginServer(true,null, authority, SocketAddress.inetSocketAddress(new InetSocketAddress(addr, address.port)), Long.MAX_VALUE);
           OriginEndpoint<L> endpoint = new OriginEndpoint<>(address, primary, builder, Collections.emptyMap());
           endpoints.put(address, endpoint);
           return endpoint;
@@ -125,6 +125,16 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
   @Override
   public boolean isValid(OriginEndpoint<L> state) {
     return state.validate();
+  }
+
+  @Override
+  public boolean isAvailable(OriginServer endpoint) {
+    return endpoint.primary || endpoint.connectFailures.get() == 0;
+  }
+
+  @Override
+  public void reportFailure(OriginServer endpoint, Throwable failure) {
+    endpoint.connectFailures.incrementAndGet();
   }
 
   @Override
@@ -153,6 +163,7 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
           alternative.protocol,
           HostAndPort.authority(address.host, alternative.authority.port()));
         alternatives.put(alternative, new OriginServer(
+          false,
           alternative.protocol,
           alternative.authority,
           SocketAddress.inetSocketAddress(new InetSocketAddress(((SocketAddressImpl)state.primary.address).ipAddress(), alternative.authority.port())),
@@ -195,6 +206,7 @@ public class OriginResolver<L> implements EndpointResolver<Origin, OriginServer,
               long maxAge = entry.getValue();
               alternatives.put(alternative,
                 new OriginServer(
+                  false,
                   alternative.protocol,
                   alternative.authority,
                   SocketAddress.inetSocketAddress(new InetSocketAddress(f.result(), alternative.authority.port())),

@@ -14,9 +14,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.http.impl.Origin;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
+import io.vertx.core.http.impl.config.Http3ClientConfig;
+import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.test.core.VertxTestBase;
@@ -34,6 +40,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static io.vertx.core.http.impl.HttpUtils.writeAltSvc;
 
 public class HttpAlternativesTest extends VertxTestBase {
 
@@ -54,19 +64,35 @@ public class HttpAlternativesTest extends VertxTestBase {
 
   private Consumer<Handler<HttpServerRequest>> startServer(int port, Cert<? extends KeyCertOptions> cert, HttpVersion... versions) {
     AtomicReference<Handler<HttpServerRequest>> handler = new AtomicReference<>();
-    HttpServer server = vertx.createHttpServer(new HttpServerOptions()
-      .setSsl(true)
-      .setUseAlpn(true)
-      .setSni(true)
-      .setAlpnVersions(List.of(versions))
-      .setKeyCertOptions(cert.get()));
-    server.requestHandler(request -> {
-      Handler<HttpServerRequest> h = handler.get();
-      if (h != null) {
-        h.handle(request);
-      }
-    });
-    server.listen(port).await();
+    List<HttpVersion> tcpVersions = Stream.of(versions).filter(v -> v != HttpVersion.HTTP_3).collect(Collectors.toList());
+    List<HttpVersion> quicVersions = Stream.of(versions).filter(v -> v == HttpVersion.HTTP_3).collect(Collectors.toList());
+    if (!tcpVersions.isEmpty()) {
+      HttpServer server = vertx.createHttpServer(new HttpServerOptions()
+        .setSsl(true)
+        .setUseAlpn(true)
+        .setSni(true)
+        .setAlpnVersions(tcpVersions)
+        .setKeyCertOptions(cert.get()));
+      server.requestHandler(request -> {
+        Handler<HttpServerRequest> h = handler.get();
+        if (h != null) {
+          h.handle(request);
+        }
+      });
+      server.listen(port).await();
+    }
+    if (!quicVersions.isEmpty()) {
+      Http3ServerOptions options = new Http3ServerOptions();
+      options.getSslOptions().setKeyCertOptions(cert.get());
+      HttpServer server = vertx.createHttpServer(options);
+      server.requestHandler(request -> {
+        Handler<HttpServerRequest> h = handler.get();
+        if (h != null) {
+          h.handle(request);
+        }
+      });
+      server.listen(port).await();
+    }
     return handler::set;
   }
 
@@ -77,18 +103,38 @@ public class HttpAlternativesTest extends VertxTestBase {
   }
 
   @Test
-  public void testFollowH2Protocol() {
-    testH2Protocol("h2=\"localhost:4044\"", "localhost:4044");
+  public void testHttp1ToHttp2Protocol() {
+    testFollowProtocol(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, "h2=\"localhost:4044\"", "localhost:4044");
   }
 
   @Test
-  public void testFollowH2ProtocolSameHost() {
-    testH2Protocol("h2=\":4044\"", "host2.com:4044");
+  public void testHttp1ToHttp2ProtocolSameHost() {
+    testFollowProtocol(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, "h2=\":4044\"", "host2.com:4044");
+  }
+
+  @Test
+  public void testHttp1ToHttp3Protocol() {
+    testFollowProtocol(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3, "h3=\"host2.com:4044\"", "host2.com:4044");
+  }
+
+  @Test
+  public void testHttp1ToHttp3ProtocolSameHost() {
+    testFollowProtocol(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3, "h3=\":4044\"", "host2.com:4044");
+  }
+
+  @Test
+  public void testHttp2ToHttp3Protocol() {
+    testFollowProtocol(HttpVersion.HTTP_2, HttpVersion.HTTP_3, "h3=\"host2.com:4044\"", "host2.com:4044");
+  }
+
+  @Test
+  public void testHttp2ToHttp3ProtocolSameHost() {
+    testFollowProtocol(HttpVersion.HTTP_2, HttpVersion.HTTP_3, "h3=\":4044\"", "host2.com:4044");
   }
 
   @Test
   public void testExpiration() throws Exception {
-    testH2Protocol("h2=\"host2.com:4044\";ma=1", "host2.com:4044");
+    testFollowProtocol(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, "h2=\"host2.com:4044\";ma=1", "host2.com:4044");
     Thread.sleep(1500);
     Buffer body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_2).setPort(4043).setURI("/"))
       .compose(request -> request
@@ -116,7 +162,7 @@ public class HttpAlternativesTest extends VertxTestBase {
 
   private void testInvalidation(String altSvcInvalidator) {
     AtomicReference<String> altSvc = new AtomicReference<>("h2=\"host2.com:4044\"");
-    testH2Protocol(altSvc::get, "host2.com:4044");
+    testFollowProtocol(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, altSvc::get, "host2.com:4044");
     altSvc.set(altSvcInvalidator);
     Buffer body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_1_1).setPort(4043).setURI("/"))
       .compose(request -> request
@@ -132,21 +178,19 @@ public class HttpAlternativesTest extends VertxTestBase {
     }
   }
 
-  private void testH2Protocol(String advertisement, String expectedAltUsed) {
-    testH2Protocol(() -> advertisement, expectedAltUsed);
+  private void testFollowProtocol(HttpVersion initialProtocol, HttpVersion upgradedProtocol, String advertisement, String expectedAltUsed) {
+    testFollowProtocol(initialProtocol, upgradedProtocol, () -> advertisement, expectedAltUsed);
   }
 
-  private void testH2Protocol(Supplier<String> advertisement, String expectedAltUsed) {
-    startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
+  private void testFollowProtocol(HttpVersion initialProtocol, HttpVersion upgradedProtocol, Supplier<String> advertisement, String expectedAltUsed) {
+    startServer(4043, Cert.SNI_JKS, initialProtocol)
       .accept(request -> {
         assertNull(request.getHeader(HttpHeaders.ALT_USED));
         assertEquals("host2.com", request.connection().indicatedServerName());
-        request
-          .response()
-          .putHeader(HttpHeaders.ALT_SVC, advertisement.get())
+        writeAltSvc(request, advertisement.get())
           .end(request.authority().toString(false));
       });
-    startServer(4044, Cert.SNI_JKS, HttpVersion.HTTP_2)
+    startServer(4044, Cert.SNI_JKS, upgradedProtocol)
       .accept(request -> {
         assertEquals(expectedAltUsed, request.getHeader(HttpHeaders.ALT_USED));
         assertEquals("host2.com", request.connection().indicatedServerName());
@@ -154,18 +198,28 @@ public class HttpAlternativesTest extends VertxTestBase {
           .response()
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder())
+      .with(new HttpClientConfig()
+        .setFollowAlternativeServices(true)
+        .setSsl(true)
+        .setSslOptions(new ClientSSLOptions().setTrustAll(true).setUseAlpn(true))
+        .setDefaultProtocolVersion(initialProtocol)
+        .setHttp1Config(new Http1ClientConfig())
+        .setHttp2Config(new Http2ClientConfig())
+        .setHttp3Config(new Http3ClientConfig())
+      )
+      .build();
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
-        .expecting(response -> request.version() == HttpVersion.HTTP_1_1)
+        .expecting(response -> request.version() == initialProtocol)
         .compose(HttpClientResponse::body)
       ).await();
     assertEquals("host2.com:4043", body.toString());
-    body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_2).setPort(4043).setURI("/"))
+    body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(upgradedProtocol).setPort(4043).setURI("/"))
       .compose(request -> request
         .send()
-        .expecting(response -> request.version() == HttpVersion.HTTP_2)
+        .expecting(response -> request.version() == upgradedProtocol)
         .compose(HttpClientResponse::body)
       ).await();
     assertEquals("host2.com:4043", body.toString());

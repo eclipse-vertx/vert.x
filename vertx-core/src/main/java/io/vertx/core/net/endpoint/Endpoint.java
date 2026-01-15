@@ -24,7 +24,7 @@ public interface Endpoint {
   /**
    * The default view, accepting any server.
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   Predicate<ServerEndpoint> DEFAULT_VIEW = server -> true;
 
   /**
@@ -46,7 +46,7 @@ public interface Endpoint {
    *
    * @return the selected server
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   default ServerEndpoint selectServer(Predicate<ServerEndpoint> filter) {
     return selectServer(filter, null);
   }
@@ -68,7 +68,7 @@ public interface Endpoint {
    * @param filter the view filter
    * @return the selected server
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   ServerEndpoint selectServer(Predicate<ServerEndpoint> filter, String key);
 
 }

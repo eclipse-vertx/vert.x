@@ -544,7 +544,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * @return the id of the stream of this response, {@literal -1} for HTTP/1.x
    */
-  int streamId();
+  long streamId();
 
   /**
    * Like {@link #push(HttpMethod, HostAndPort, String, MultiMap)} with no headers.

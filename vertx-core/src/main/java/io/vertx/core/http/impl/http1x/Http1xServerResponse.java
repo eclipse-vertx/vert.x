@@ -772,8 +772,8 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public int streamId() {
-    return -1;
+  public long streamId() {
+    return -1L;
   }
 
   @Override

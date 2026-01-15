@@ -200,8 +200,8 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
-  public int id() {
-    return 0;
+  public long id() {
+    return 0L;
   }
 
   @Override

@@ -75,7 +75,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
   }
 
   @Override
-  public int streamId() {
+  public long streamId() {
     return stream.id();
   }
 

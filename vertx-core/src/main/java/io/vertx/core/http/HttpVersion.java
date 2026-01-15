@@ -25,7 +25,8 @@ public enum HttpVersion {
 
   HTTP_1_0("http/1.0", List.of(HttpProtocol.HTTP_1_0)),
   HTTP_1_1("http/1.1", List.of(HttpProtocol.HTTP_1_1)),
-  HTTP_2("h2", List.of(HttpProtocol.H2, HttpProtocol.H2C));
+  HTTP_2("h2", List.of(HttpProtocol.H2, HttpProtocol.H2C)),
+  HTTP_3("h3", List.of(HttpProtocol.H3));
 
   private final String alpnName;
   private final List<HttpProtocol> protocols;
@@ -84,6 +85,8 @@ public enum HttpVersion {
       case H2:
       case H2C:
         return HTTP_2;
+      case H3:
+        return HTTP_3;
       default:
         return null;
     }

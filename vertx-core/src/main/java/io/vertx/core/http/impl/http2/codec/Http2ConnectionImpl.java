@@ -485,7 +485,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   public boolean isWritable(Http2Stream stream) {
-    io.netty.handler.codec.http2.Http2Stream s = handler.connection().stream(stream.id());
+    io.netty.handler.codec.http2.Http2Stream s = handler.connection().stream((int)stream.id());
     return this.handler.encoder().flowController().isWritable(s);
   }
 

@@ -4,9 +4,11 @@ import io.vertx.core.net.SocketAddress;
 
 public class FakeServerEndpoint {
 
+  boolean available;
   final SocketAddress socketAddress;
 
   FakeServerEndpoint(SocketAddress socketAddress) {
+    this.available = true;
     this.socketAddress = socketAddress;
   }
 

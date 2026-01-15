@@ -1692,7 +1692,7 @@ public class Http2ServerTest extends Http2TestBase {
           assertTrue(done.get());
         });
         ctx.runOnContext(v1 -> {
-          conn.goAway(0, first.get().response().streamId());
+          conn.goAway(0, (int)first.get().response().streamId());
           vertx.setTimer(300, timerID -> {
             assertEquals(1, status.getAndIncrement());
             done.set(true);
@@ -1743,7 +1743,7 @@ public class Http2ServerTest extends Http2TestBase {
           assertEquals(1, status.get());
           complete();
         });
-        conn.goAway(2, first.get().response().streamId());
+        conn.goAway(2, (int)first.get().response().streamId());
       }
     };
     testServerSendGoAway(requestHandler, 2);

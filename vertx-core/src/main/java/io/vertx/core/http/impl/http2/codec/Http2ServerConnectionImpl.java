@@ -170,7 +170,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       concurrentStreams++;
       Pending pending = next.getValue();
       Http2ServerStream stream = pending.stream;
-      if (!isWritable(stream.id())) {
+      if (!isWritable((int)stream.id())) {
         stream.onWritabilityChanged();
       }
       pending.promise.complete(stream);
