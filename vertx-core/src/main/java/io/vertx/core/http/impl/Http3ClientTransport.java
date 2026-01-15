@@ -13,20 +13,18 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http3.Http3;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.http.Http3ClientOptions;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3ClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -36,7 +34,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
-public class Http3ChannelConnector implements HttpChannelConnector {
+public class Http3ClientTransport implements HttpClientTransport {
 
   private final VertxInternal vertx;
   private final HttpClientMetrics<?, ?, ?> clientMetrics;
@@ -46,7 +44,7 @@ public class Http3ChannelConnector implements HttpChannelConnector {
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public Http3ChannelConnector(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics,  HttpClientConfig options) {
+  public Http3ClientTransport(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig options) {
 
     ClientSSLOptions sslOptions = options.getSslOptions()
       .copy()
@@ -83,7 +81,7 @@ public class Http3ChannelConnector implements HttpChannelConnector {
   }
 
   @Override
-  public Future<HttpClientConnection> httpConnect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
+  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
 
     lock.lock();
     Future<QuicClient> fut = clientFuture;

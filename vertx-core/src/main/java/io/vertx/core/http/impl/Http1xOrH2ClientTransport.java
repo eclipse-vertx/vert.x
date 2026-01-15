@@ -34,7 +34,7 @@ import io.vertx.core.http.impl.http2.codec.Http2CodecClientChannelInitializer;
 import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
@@ -57,12 +57,12 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
+public class Http1xOrH2ClientTransport implements HttpClientTransport {
 
-  public static Http1xOrH2ChannelConnector create(NetClientInternal netClient,
-                                    HttpClientConfig config,
-                                    HttpClientMetrics clientMetrics) {
-    return new Http1xOrH2ChannelConnector(netClient,
+  public static Http1xOrH2ClientTransport create(NetClientInternal netClient,
+                                                 HttpClientConfig config,
+                                                 HttpClientMetrics clientMetrics) {
+    return new Http1xOrH2ClientTransport(netClient,
       config.getTracingPolicy(),
       config.isDecompressionSupported(),
       config.getLogActivity(),
@@ -89,18 +89,18 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
   private final HttpClientMetrics clientMetrics;
   private final NetClientInternal netClient;
 
-  public Http1xOrH2ChannelConnector(NetClientInternal netClient,
-                                    TracingPolicy tracingPolicy,
-                                    boolean useDecompression,
-                                    boolean logActivity,
-                                    ByteBufFormat logFormat,
-                                    boolean forceSni,
-                                    Http1ClientConfig http1Config,
-                                    Http2ClientConfig http2Config,
-                                    Duration idleTimeout,
-                                    Duration readIdleTimeout,
-                                    Duration writeIdleTimeout,
-                                    HttpClientMetrics clientMetrics) {
+  public Http1xOrH2ClientTransport(NetClientInternal netClient,
+                                   TracingPolicy tracingPolicy,
+                                   boolean useDecompression,
+                                   boolean logActivity,
+                                   ByteBufFormat logFormat,
+                                   boolean forceSni,
+                                   Http1ClientConfig http1Config,
+                                   Http2ClientConfig http2Config,
+                                   Duration idleTimeout,
+                                   Duration readIdleTimeout,
+                                   Duration writeIdleTimeout,
+                                   HttpClientMetrics clientMetrics) {
 
     if (!http1Config.isKeepAlive() && http1Config.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
@@ -221,7 +221,7 @@ public class Http1xOrH2ChannelConnector implements HttpChannelConnector {
     return promise.future();
   }
 
-  public Future<HttpClientConnection> httpConnect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
+  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
 
     if (params.sslOptions != null && !params.sslOptions.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
       return context.failedFuture("Must enable ALPN when using H2");

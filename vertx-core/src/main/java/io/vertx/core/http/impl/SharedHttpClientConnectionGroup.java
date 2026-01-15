@@ -15,7 +15,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
-import io.vertx.core.internal.http.HttpChannelConnector;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.pool.ConnectResult;
 import io.vertx.core.internal.pool.ConnectionPool;
 import io.vertx.core.internal.pool.PoolConnection;
@@ -175,14 +175,14 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
   static class Pool implements PoolConnector<HttpClientConnection> {
 
     private final SharedHttpClientConnectionGroup owner;
-    private final HttpChannelConnector connector;
+    private final HttpClientTransport connector;
     private final long maxLifetimeMillis;
     private final HttpConnectParams connectParams;
     private final ConnectionPool<HttpClientConnection> pool;
     private final int poolKind;
 
     Pool(SharedHttpClientConnectionGroup owner,
-                HttpChannelConnector connector,
+                HttpClientTransport connector,
                 int queueMaxSize,
                 int http1MaxSize,
                 int http2MaxSize,
@@ -205,7 +205,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
       return connector
-        .httpConnect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
+        .connect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
         .map(connection -> {
           connection.evictionHandler(v -> {
             owner.dispose(connection);

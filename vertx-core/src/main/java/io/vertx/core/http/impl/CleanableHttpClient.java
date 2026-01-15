@@ -15,7 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpChannelConnector;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.ClientSSLOptions;
@@ -103,7 +103,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public HttpChannelConnector channelConnector() {
+  public HttpClientTransport channelConnector() {
     return delegate.channelConnector();
   }
 
