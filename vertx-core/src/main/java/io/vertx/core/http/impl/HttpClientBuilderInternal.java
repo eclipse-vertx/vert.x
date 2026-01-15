@@ -239,7 +239,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       }
       NetClientConfig netClientConfig = netClientConfig(co);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null)).metrics(metrics).build();
-      transport = Http1XOrH2ClientTransport.create(tcpClient, co, metrics);
+      transport = Http1xOrH2ClientTransport.create(tcpClient, co, metrics);
     } else {
       resolver = null;
       transport = null;

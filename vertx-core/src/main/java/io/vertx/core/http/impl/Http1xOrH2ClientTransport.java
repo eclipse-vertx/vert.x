@@ -57,12 +57,12 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http1XOrH2ClientTransport implements HttpClientTransport {
+public class Http1xOrH2ClientTransport implements HttpClientTransport {
 
-  public static Http1XOrH2ClientTransport create(NetClientInternal netClient,
+  public static Http1xOrH2ClientTransport create(NetClientInternal netClient,
                                                  HttpClientConfig config,
                                                  HttpClientMetrics clientMetrics) {
-    return new Http1XOrH2ClientTransport(netClient,
+    return new Http1xOrH2ClientTransport(netClient,
       config.getTracingPolicy(),
       config.isDecompressionSupported(),
       config.getLogActivity(),
@@ -89,7 +89,7 @@ public class Http1XOrH2ClientTransport implements HttpClientTransport {
   private final HttpClientMetrics clientMetrics;
   private final NetClientInternal netClient;
 
-  public Http1XOrH2ClientTransport(NetClientInternal netClient,
+  public Http1xOrH2ClientTransport(NetClientInternal netClient,
                                    TracingPolicy tracingPolicy,
                                    boolean useDecompression,
                                    boolean logActivity,
