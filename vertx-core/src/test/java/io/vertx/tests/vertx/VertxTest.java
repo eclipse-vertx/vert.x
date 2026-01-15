@@ -16,7 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
-import io.vertx.core.http.impl.Http1XOrH2Transport;
+import io.vertx.core.http.impl.Http1XOrH2ClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
@@ -166,7 +166,7 @@ public class VertxTest extends AsyncTestBase {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onSuccess(req -> {
         req.send();
       });
-      Http1XOrH2Transport channelConnector = (Http1XOrH2Transport)(((CleanableHttpClient) client).delegate).channelConnector();
+      Http1XOrH2ClientTransport channelConnector = (Http1XOrH2ClientTransport)(((CleanableHttpClient) client).delegate).channelConnector();
       NetClientInternal netClient = channelConnector.netClient();
       netClient.closeFuture().onComplete(ar -> {
         closed2.set(true);

@@ -22,11 +22,11 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import java.time.Duration;
 
 /**
- * The HTTP transport.
+ * The HTTP client transport.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpTransport {
+public interface HttpClientTransport {
 
   Future<HttpClientConnection> connect(ContextInternal context,
                                        SocketAddress server,

@@ -16,7 +16,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpTransport;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.internal.pool.ConnectionPool;
@@ -55,8 +55,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private long timerID;
   private final Function<ContextInternal, ContextInternal> contextProvider;
   private final long maxLifetime;
-  private final HttpTransport tcpTransport;
-  private final HttpTransport quicTransport;
+  private final HttpClientTransport tcpTransport;
+  private final HttpClientTransport quicTransport;
   private final EndpointResolverInternal resolver;
   private final OriginResolver<Object> originEndpoints;
   private final EndpointResolverInternal originResolver;
@@ -88,8 +88,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  HttpVersion defaultProtocol,
                  ClientSSLOptions sslOptions,
                  Handler<HttpConnection> connectHandler,
-                 HttpTransport tcpTransport,
-                 HttpTransport quicTransport) {
+                 HttpClientTransport tcpTransport,
+                 HttpClientTransport quicTransport) {
     super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
 
     if (sslOptions != null) {
@@ -180,7 +180,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(boolean resolveOrigin, HttpTransport transport) {
+  private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(boolean resolveOrigin, HttpClientTransport transport) {
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       SocketAddress address = SocketAddress.inetSocketAddress(key.authority.port(), key.authority.host());
@@ -226,7 +226,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public HttpTransport channelConnector() {
+  public HttpClientTransport channelConnector() {
     return tcpTransport;
   }
 
@@ -273,14 +273,14 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   @Override
   public Future<io.vertx.core.http.HttpClientConnection> connect(HttpConnectOptions connect) {
-    HttpTransport transport = tcpTransport;
+    HttpClientTransport transport = tcpTransport;
     if (transport == null) {
       transport = quicTransport;
     }
     return connect(transport, connect);
   }
 
-  private Future<io.vertx.core.http.HttpClientConnection> connect(HttpTransport transport, HttpConnectOptions connect) {
+  private Future<io.vertx.core.http.HttpClientConnection> connect(HttpClientTransport transport, HttpConnectOptions connect) {
     Address addr = connect.getServer();
     Integer port = connect.getPort();
     String host = connect.getHost();
@@ -329,7 +329,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   @Override
   public Future<HttpClientRequest> request(RequestOptions request) {
     HttpVersion version = request.getProtocolVersion();
-    HttpTransport transport;
+    HttpClientTransport transport;
     if (version == null) {
       if (tcpTransport != null) {
         transport = tcpTransport;
@@ -384,7 +384,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return doRequest(transport, addr, port, host, request);
   }
 
-  private Future<HttpClientRequest> doRequest(HttpTransport transport, Address server, Integer port, String host, RequestOptions request) {
+  private Future<HttpClientRequest> doRequest(HttpClientTransport transport, Address server, Integer port, String host, RequestOptions request) {
     if (server == null) {
       throw new NullPointerException();
     }
@@ -459,7 +459,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   private Future<HttpClientRequest> doRequestDirectly(
-    HttpTransport transport,
+    HttpClientTransport transport,
     HttpVersion protocol,
     HttpMethod httpMethod,
     String requestURI,
@@ -487,7 +487,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   private Future<HttpClientRequest> doRequest(
-    HttpTransport transport,
+    HttpClientTransport transport,
     HttpProtocol protocol,
     HttpMethod method,
     HostAndPort authority,
@@ -543,7 +543,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
 
   private Future<HttpClientRequest> doRequest(
     EndpointResolverInternal resolver,
-    HttpTransport transport,
+    HttpClientTransport transport,
     HttpProtocol protocol_,
     HttpMethod method,
     HostAndPort authority,

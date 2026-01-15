@@ -18,7 +18,7 @@ import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3ClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpTransport;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
@@ -34,7 +34,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
-public class Http3Transport implements HttpTransport {
+public class Http3ClientTransport implements HttpClientTransport {
 
   private final VertxInternal vertx;
   private final HttpClientMetrics<?, ?, ?> clientMetrics;
@@ -44,7 +44,7 @@ public class Http3Transport implements HttpTransport {
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public Http3Transport(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig options) {
+  public Http3ClientTransport(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig options) {
 
     ClientSSLOptions sslOptions = options.getSslOptions()
       .copy()

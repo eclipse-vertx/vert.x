@@ -32,7 +32,7 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
 
   Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
-  HttpTransport channelConnector();
+  HttpClientTransport channelConnector();
 
   // Should not be here but currently necessary for WebClient
   @Deprecated(forRemoval = true)

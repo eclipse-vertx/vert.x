@@ -9,7 +9,7 @@ import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.http.HttpTransport;
+import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.ProxyOptions;
@@ -121,8 +121,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
                                               HttpClientMetrics<?, ?, ?> metrics,
                                               EndpointResolver resolver,
                                               Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
-                                              HttpTransport tcpTransport,
-                                              HttpTransport quicTransport) {
+                                              HttpClientTransport tcpTransport,
+                                              HttpClientTransport quicTransport) {
     boolean followAlternativeServices;
     ProxyOptions proxyOptions;
     List<String> nonProxyHosts;
@@ -217,17 +217,17 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co = new HttpClientConfig(new HttpClientOptions());
     }
 
-    HttpTransport quicTransport;
+    HttpClientTransport quicTransport;
     HttpClientMetrics<?, ?, ?> metrics;
     if (co.getHttp3Config() != null) {
       metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(new HttpClientOptions()) : null;
-      quicTransport = new Http3Transport(vertx, metrics, co);
+      quicTransport = new Http3ClientTransport(vertx, metrics, co);
     } else {
       quicTransport = null;
       metrics = null;
     }
 
-    HttpTransport transport;
+    HttpClientTransport transport;
     String shared;
     EndpointResolver resolver;
     if (co.getHttp1Config() != null && co.getHttp2Config() != null) {
@@ -239,7 +239,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       }
       NetClientConfig netClientConfig = netClientConfig(co);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null)).metrics(metrics).build();
-      transport = Http1XOrH2Transport.create(tcpClient, co, metrics);
+      transport = Http1XOrH2ClientTransport.create(tcpClient, co, metrics);
     } else {
       resolver = null;
       transport = null;
