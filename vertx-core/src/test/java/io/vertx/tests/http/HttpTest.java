@@ -34,16 +34,13 @@ import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.fakedns.FakeDNSServer;
+import io.vertx.test.fakedns.MockDnsServer;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.SimpleHttpTest;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.tests.http.http3.Http3Test;
-import org.apache.directory.server.dns.messages.RecordClass;
-import org.apache.directory.server.dns.messages.RecordType;
-import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Test;
 
 import java.io.*;
@@ -65,7 +62,6 @@ import java.util.stream.IntStream;
 import static io.vertx.core.http.HttpMethod.*;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -6265,14 +6261,13 @@ public abstract class HttpTest extends SimpleHttpTest {
   }
 
   private void testDnsClientSideLoadBalancing(boolean enabled) throws Exception {
-    FakeDNSServer server = new FakeDNSServer();
-    server.store(question -> new HashSet<>(Arrays.asList(
-      new FakeDNSServer.Record("vertx.io", RecordType.A, RecordClass.IN, 100)
-        .set(DnsAttribute.IP_ADDRESS, "127.0.0.1"),
-      new FakeDNSServer.Record("vertx.io", RecordType.A, RecordClass.IN, 100)
-        .set(DnsAttribute.IP_ADDRESS, "127.0.0.2")
-      )));
+    MockDnsServer server = new MockDnsServer();
+    server.store(question -> List.of(
+      MockDnsServer.a("vertx.io", 100, "127.0.0.1"),
+      MockDnsServer.a("vertx.io", 100, "127.0.0.2")
+      ));
     server.start();
+
     AddressResolverOptions resolverOptions = new AddressResolverOptions()
       .addServer(server.localAddress().getAddress().getHostAddress() + ":" + server.localAddress().getPort());
     Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
