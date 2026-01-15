@@ -686,16 +686,4 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
     return request;
   }
-
-  /**
-   * Transport encapsulate settings and services for a given transport (TCP or QUIC)
-   */
-  static class Transport {
-
-    private final HttpTransport connector;
-
-    Transport(HttpTransport connector) {
-      this.connector = connector;
-    }
-  }
 }
