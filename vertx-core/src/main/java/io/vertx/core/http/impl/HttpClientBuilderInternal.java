@@ -5,6 +5,9 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.config.Http1ClientConfig;
+import io.vertx.core.http.impl.config.Http2ClientConfig;
+import io.vertx.core.http.impl.config.Http3ClientConfig;
 import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
@@ -219,7 +222,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
     HttpClientTransport quicTransport;
     HttpClientMetrics<?, ?, ?> metrics;
-    if (co.getHttp3Config() != null) {
+    if (co.getSupportedVersions().contains(HttpVersion.HTTP_3)) {
       metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(new HttpClientOptions()) : null;
       quicTransport = new Http3ClientTransport(vertx, metrics, co);
     } else {
@@ -230,7 +233,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     HttpClientTransport transport;
     String shared;
     EndpointResolver resolver;
-    if (co.getHttp1Config() != null && co.getHttp2Config() != null) {
+    List<HttpVersion> supportedVersions = co.getSupportedVersions();
+    if (supportedVersions.contains(HttpVersion.HTTP_1_0) || supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_2)) {
       resolver = endpointResolver(co);
       shared = co.isShared() ? co.getName() : null;
       if (metrics == null && vertx.metrics() != null) {
@@ -239,7 +243,20 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       }
       NetClientConfig netClientConfig = netClientConfig(co);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null)).metrics(metrics).build();
-      transport = Http1xOrH2ClientTransport.create(tcpClient, co, metrics);
+      transport = new Http1xOrH2ClientTransport(
+        tcpClient,
+        co.getTracingPolicy(),
+        co.isDecompressionSupported(),
+        co.getLogActivity(),
+        co.getActivityLogDataFormat(),
+        co.isForceSni(),
+        supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_1_0) ? (co.getHttp1Config() != null ? co.getHttp1Config() : new Http1ClientConfig()) : null,
+        supportedVersions.contains(HttpVersion.HTTP_2) ? (co.getHttp2Config() != null ? co.getHttp2Config() : new Http2ClientConfig()) : null,
+        co.getIdleTimeout(),
+        co.getReadIdleTimeout(),
+        co.getWriteIdleTimeout(),
+        metrics
+      );
     } else {
       resolver = null;
       transport = null;

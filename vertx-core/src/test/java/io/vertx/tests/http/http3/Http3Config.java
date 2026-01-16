@@ -12,7 +12,7 @@ package io.vertx.tests.http.http3;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.net.QuicClientAddressValidation;
+import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpServerConfig;
@@ -20,6 +20,7 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
 import java.time.Duration;
+import java.util.List;
 
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_PORT;
@@ -105,7 +106,8 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpClientConfig forClient() {
-    Http3ClientOptions options = new Http3ClientOptions();
+    io.vertx.core.http.impl.config.HttpClientConfig options = new io.vertx.core.http.impl.config.HttpClientConfig();
+    options.setSupportedVersions(List.of(HttpVersion.HTTP_3));
     options.setDefaultHost(host);
     options.setDefaultPort(port);
     options.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
@@ -130,17 +132,17 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientConfig setIdleTimeout(Duration timeout) {
-        options.setStreamIdleTimeout(timeout);
+        options.setIdleTimeout(timeout);
         return this;
       }
       @Override
       public HttpClientConfig setKeepAliveTimeout(Duration timeout) {
-        options.setKeepAliveTimeout(timeout.toMillis() > 0 ? timeout : null);
+        options.getHttp3Config().setKeepAliveTimeout(timeout.toMillis() > 0 ? timeout : null);
         return this;
       }
       @Override
       public HttpClientBuilder builder(Vertx vertx) {
-        return vertx.httpClientBuilder().with(options);
+        return ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(options);
       }
     };
   }

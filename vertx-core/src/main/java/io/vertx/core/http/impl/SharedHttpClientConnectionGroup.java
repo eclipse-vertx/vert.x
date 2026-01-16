@@ -29,6 +29,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -192,7 +193,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
                 Function<ContextInternal,
                 ContextInternal> contextProvider) {
       this.owner = owner;
-      this.connector = connector;
+      this.connector = Objects.requireNonNull(connector);
       this.maxLifetimeMillis = maxLifetimeMillis;
       this.connectParams = connectParams;
       this.poolKind = initialPoolKind;

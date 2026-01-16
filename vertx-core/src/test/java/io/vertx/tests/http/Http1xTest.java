@@ -1793,8 +1793,8 @@ public class Http1xTest extends HttpTest {
 
     server.listen(testAddress).onComplete(onSuccess(s -> {
       client.close();
-      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0).setKeepAlive(true));
-      client.request(requestOptions)
+      client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true));
+      client.request(new RequestOptions(requestOptions).setProtocolVersion(HttpVersion.HTTP_1_0))
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
@@ -1820,8 +1820,8 @@ public class Http1xTest extends HttpTest {
 
     server.listen(testAddress).onComplete(onSuccess(s -> {
       client.close();
-      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0).setKeepAlive(false));
-      client.request(requestOptions)
+      client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false));
+      client.request(new RequestOptions(requestOptions).setProtocolVersion(HttpVersion.HTTP_1_0))
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
@@ -3878,8 +3878,8 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_0));
-    client.request(requestOptions)
+    client = vertx.createHttpClient();
+    client.request(new RequestOptions(requestOptions).setProtocolVersion(HttpVersion.HTTP_1_0))
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         assertNull(resp.getHeader("Content-Length"));

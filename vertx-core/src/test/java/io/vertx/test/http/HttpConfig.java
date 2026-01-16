@@ -241,4 +241,35 @@ public interface HttpConfig {
         .setHttp2MultiplexImplementation(multiplex);
     }
   }
+
+  class H2C extends Http2 {
+
+    public static HttpConfig CODEC = new H2C(false);
+    public static HttpConfig MULTIPLEX = new H2C(true);
+
+    public H2C(boolean multiplex) {
+      super(multiplex);
+    }
+
+    public H2C(boolean multiplex, String host, int port) {
+      super(multiplex, host, port);
+    }
+
+    @Override
+    public HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex) {
+      return new HttpServerOptions()
+        .setHost(host)
+        .setPort(port)
+        .setHttp2MultiplexImplementation(multiplex);
+    }
+
+    @Override
+    public HttpClientOptions createBaseClientOptions(int port, String host, boolean multiplex) {
+      return new HttpClientOptions()
+        .setProtocolVersion(HttpVersion.HTTP_2)
+        .setDefaultHost(host)
+        .setDefaultPort(port)
+        .setHttp2MultiplexImplementation(multiplex);
+    }
+  }
 }

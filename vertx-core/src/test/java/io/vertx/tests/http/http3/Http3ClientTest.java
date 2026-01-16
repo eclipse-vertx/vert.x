@@ -1,20 +1,20 @@
 package io.vertx.tests.http.http3;
 
 import io.netty.handler.codec.http3.Http3ErrorCode;
-import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpClientBuilderInternal;
+import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,7 +24,7 @@ public class Http3ClientTest extends VertxTestBase {
 
   private Http3ServerOptions serverOptions;
   private HttpServer server;
-  private Http3ClientOptions clientOptions;
+  private HttpClientConfig clientConfig;
   private HttpClientAgent client;
 
   @Override
@@ -34,11 +34,11 @@ public class Http3ClientTest extends VertxTestBase {
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");
-    clientOptions = new Http3ClientOptions();
-    clientOptions.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    clientOptions.getSslOptions().setHostnameVerificationAlgorithm("");
+    clientConfig = new io.vertx.core.http.impl.config.HttpClientConfig();
+    clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
+    clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
-    client = vertx.createHttpClient(clientOptions);
+    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(clientConfig).build();
   }
 
   @Override
@@ -414,13 +414,13 @@ public class Http3ClientTest extends VertxTestBase {
     server.listen(8443, "localhost").await();
 
     client.close();
-    client = vertx.createHttpClient(new Http3ClientOptions(clientOptions)
-      .setInitialSettings(new Http3Settings()
-        .setMaxFieldSectionSize(1024)
-        .setQPackBlockedStreams(1024)
-        .setQPackMaxTableCapacity(1024)
-      )
+    HttpClientConfig config = new HttpClientConfig(clientConfig);
+    config.getHttp3Config().setInitialSettings(new Http3Settings()
+      .setMaxFieldSectionSize(1024)
+      .setQPackBlockedStreams(1024)
+      .setQPackMaxTableCapacity(1024)
     );
+    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(config).build();
 
     HttpClientConnection connection = client.connect(new HttpConnectOptions()
       .setHost("localhost")

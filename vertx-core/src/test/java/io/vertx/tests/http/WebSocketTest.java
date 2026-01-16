@@ -2928,7 +2928,7 @@ public class WebSocketTest extends VertxTestBase {
     testServerWebSocketHandshakeWithNonPersistentConnection(HttpVersion.HTTP_1_1);
   }
 
-  private void testServerWebSocketHandshakeWithNonPersistentConnection(HttpVersion  version) {
+  private void testServerWebSocketHandshakeWithNonPersistentConnection(HttpVersion version) {
     server = vertx.createHttpServer();
     AtomicBoolean webSocketClose = new AtomicBoolean();
     server.webSocketHandler(ws -> {

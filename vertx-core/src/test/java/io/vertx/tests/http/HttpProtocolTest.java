@@ -11,14 +11,20 @@
 package io.vertx.tests.http;
 
 import io.vertx.core.http.*;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class HttpProtocolTest extends HttpTestBase {
+public class HttpProtocolTest extends SimpleHttpTest {
+
+  public HttpProtocolTest() {
+    super(HttpConfig.Http1x.DEFAULT);
+  }
 
   @Test
   public void testDefaultProtocol() throws Exception {
@@ -44,7 +50,7 @@ public class HttpProtocolTest extends HttpTestBase {
   @Test
   public void testUnsupportedProtocol() throws Exception {
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setHttp2ClearTextEnabled(false));
+    server = vertx.createHttpServer(new HttpServerOptions().setHttp2ClearTextEnabled(false));
     testProtocols("HTTP_1_1");
   }
 
