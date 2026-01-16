@@ -1,0 +1,2 @@
+# Those files are auto-generated, and will always have LF line endings when re-generated locally
+**/generated/**/*.java text=auto eol=lf
