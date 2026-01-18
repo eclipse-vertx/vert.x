@@ -57,18 +57,18 @@ public class IoUringTransport implements Transport {
 
   @Override
   public boolean supportsDomainSockets() {
-    return false;
+    return true;
   }
 
   @Override
   public boolean supportFileRegion() {
-    return false;
+    return IoUring.isSpliceSupported();
   }
 
   @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
-      throw new IllegalArgumentException("Domain socket not supported by IOUring transport");
+      return new DomainSocketAddress(address.path());
     }
     return Transport.super.convert(address);
   }
@@ -109,7 +109,7 @@ public class IoUringTransport implements Transport {
   @Override
   public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
     if (domainSocket) {
-      throw new IllegalArgumentException();
+      return IoUringDomainSocketChannel::new;
     }
     return IoUringSocketChannel::new;
   }
@@ -117,7 +117,7 @@ public class IoUringTransport implements Transport {
   @Override
   public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
     if (domainSocket) {
-      throw new IllegalArgumentException();
+      return IoUringServerDomainSocketChannel::new;
     }
     return IoUringServerSocketChannel::new;
   }
@@ -130,30 +130,26 @@ public class IoUringTransport implements Transport {
 
   @Override
   public void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
-    if (domainSocket) {
-      throw new IllegalArgumentException();
+    if (!domainSocket) {
+      bootstrap.option(IoUringChannelOption.SO_REUSEPORT, options.isReusePort());
+      if (options.isTcpFastOpen()) {
+        bootstrap.option(IoUringChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
+      }
+      bootstrap.childOption(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
+      bootstrap.childOption(IoUringChannelOption.TCP_CORK, options.isTcpCork());
     }
-    bootstrap.option(IoUringChannelOption.SO_REUSEPORT, options.isReusePort());
-    if (options.isTcpFastOpen()) {
-      bootstrap.option(IoUringChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
-    }
-    bootstrap.childOption(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
-    bootstrap.childOption(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-    bootstrap.childOption(IoUringChannelOption.TCP_CORK, options.isTcpCork());
-    Transport.super.configure(options, false, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
   public void configure(TcpConfig options, boolean domainSocket, Bootstrap bootstrap) {
-    if (domainSocket) {
-      throw new IllegalArgumentException();
+    if (!domainSocket) {
+      if (options.isTcpFastOpen()) {
+        bootstrap.option(IoUringChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
+      }
+      bootstrap.option(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
+      bootstrap.option(IoUringChannelOption.TCP_CORK, options.isTcpCork());
     }
-    if (options.isTcpFastOpen()) {
-      bootstrap.option(IoUringChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
-    }
-    bootstrap.option(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
-    bootstrap.option(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-    bootstrap.option(IoUringChannelOption.TCP_CORK, options.isTcpCork());
-    Transport.super.configure(options, false, bootstrap);
+    Transport.super.configure(options, domainSocket, bootstrap);
   }
 }
