@@ -39,6 +39,7 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 /**
@@ -209,18 +210,28 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
             if (idle != null) {
               ch.pipeline().remove(idle);
             }
-            configurePipeline(future.getNow(), sslChannelProvider);
+            try {
+              configurePipeline(future.getNow(), sslChannelProvider);
+            } catch (Exception e) {
+              log.error(e.getMessage()+ ", now closing the channel");
+              ch.close();
+            }
           } else {
             //No need to close the channel.HAProxyMessageDecoder already did
             handleException(future.cause());
           }
         });
       } else {
-        configurePipeline(ch, sslChannelProvider);
+        try {
+          configurePipeline(ch, sslChannelProvider);
+        } catch (Exception e) {
+          log.error(e.getMessage()+ ", now closing the channel");
+          ch.close();
+        }
       }
     }
 
-    private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
+    private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) throws Exception{
       if (options.isSsl()) {
         ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();

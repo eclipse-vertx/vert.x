@@ -69,6 +69,11 @@ public class SSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
+        case "useHybrid":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseHybrid((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -103,5 +108,6 @@ public class SSLOptionsConverter {
       json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("useHybrid", obj.isUseHybrid());
   }
 }
