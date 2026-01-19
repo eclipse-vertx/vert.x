@@ -18,6 +18,7 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.channel.uring.*;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.net.TcpConfig;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.transport.Transport;
@@ -28,6 +29,8 @@ import java.net.SocketAddress;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class IoUringTransport implements Transport {
+
+  private static final boolean DISABLE_SENDFILE = SysProps.DISABLE_IO_URING_SENDFILE.getBoolean();
 
   private static volatile int pendingFastOpenRequestsThreshold = 256;
 
@@ -62,7 +65,7 @@ public class IoUringTransport implements Transport {
 
   @Override
   public boolean supportFileRegion() {
-    return IoUring.isSpliceSupported();
+    return IoUring.isSpliceSupported() && !DISABLE_SENDFILE;
   }
 
   @Override
