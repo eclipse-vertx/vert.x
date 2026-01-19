@@ -116,6 +116,17 @@ public enum SysProps {
   JACKSON_DEFAULT_READ_MAX_NAME_LEN("vertx.jackson.defaultReadMaxNameLength"),
   JACKSON_DEFAULT_READ_MAX_TOKEN_COUNT("vertx.jackson.defaultMaxTokenCount"),
 
+  /**
+   * Disable {@code sendfile} support for the io_uring transport.
+   * <p>
+   * When this system property is set to {@code true}, Vert.x will avoid using the
+   * io_uring splice path.
+   * <p>
+   * This is useful because io_uring splice can be slower than the
+   * epoll {@code sendfile} in some workloads.
+   * See <a href="https://github.com/netty/netty/issues/15747">Netty issue 15747</a>.
+   */
+  DISABLE_IO_URING_SENDFILE("vertx.disableIoUringSendfile"),
   ;
 
   public final String name;
