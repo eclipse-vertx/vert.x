@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.eventbus.impl.clustered.DefaultNodeSelector;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
@@ -22,18 +23,16 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Bootstrap implementation.
@@ -53,7 +52,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private NodeSelector clusterNodeSelector;
   private VertxTracerFactory tracerFactory;
   private VertxTracer tracer;
-  private VertxThreadFactory threadFactory;
+  private ThreadFactoryProvider threadFactoryProvider;
   private ExecutorServiceFactory executorServiceFactory;
   private VertxMetricsFactory metricsFactory;
   private VertxMetrics metrics;
@@ -199,12 +198,23 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   }
 
   public VertxThreadFactory threadFactory() {
-    return threadFactory;
+    throw new UnsupportedOperationException();
   }
 
   public VertxBootstrapImpl threadFactory(VertxThreadFactory factory) {
-    this.threadFactory = factory;
+    this.threadFactoryProvider = factory.provider();
     return this;
+  }
+
+  @Override
+  public VertxBootstrap threadFactoryProvider(ThreadFactoryProvider provider) {
+    this.threadFactoryProvider = provider;
+    return this;
+  }
+
+  @Override
+  public ThreadFactoryProvider threadFactoryProvider() {
+    return threadFactoryProvider;
   }
 
   public ExecutorServiceFactory executorServiceFactory() {
@@ -237,7 +247,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       tr,
       transportUnavailabilityCause,
       fileResolver,
-      threadFactory,
+      threadFactoryProvider,
       executorServiceFactory,
       eventExecutorProvider,
       enableShadowContext);
@@ -316,10 +326,10 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   }
 
   private void initThreadFactory() {
-    if (threadFactory != null) {
+    if (threadFactoryProvider != null) {
       return;
     }
-    threadFactory = VertxThreadFactory.INSTANCE;
+    threadFactoryProvider = VertxThreadFactory.INSTANCE.provider();
   }
 
   private void initExecutorServiceFactory() {
