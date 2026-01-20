@@ -47,15 +47,14 @@ public class ServiceHelper {
   @Deprecated
   public static <T> List<T> loadFactories(Class<T> clazz, ClassLoader classLoader) {
     ServiceLoader<T> factories;
-    if (classLoader != null) {
-      factories = ServiceLoader.load(clazz, classLoader);
-    } else {
-      // this is equivalent to:
-      // ServiceLoader.load(clazz, TCCL);
-      factories = ServiceLoader.load(clazz);
+
+    if (classLoader == null) {
+      classLoader = Thread.currentThread().getContextClassLoader();
     }
+    factories = ServiceLoader.load(clazz, classLoader);
     List<T> list = loadFactories(factories);
-    if (list.isEmpty()) {
+
+    if (list.isEmpty() && classLoader != ServiceHelper.class.getClassLoader()) {
       // By default ServiceLoader.load uses the TCCL, this may not be enough in environment dealing with
       // classloaders differently such as OSGi. So we should try to use the  classloader having loaded this
       // class. In OSGi it would be the bundle exposing vert.x and so have access to all its classes.
