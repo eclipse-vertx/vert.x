@@ -50,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -2370,6 +2371,27 @@ public class Http2ClientTest extends Http2TestBase {
       client.request(requestOptions).onComplete(onFailure(err -> {
         assertEquals(err, ConnectionBase.CLOSED_EXCEPTION);
         testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testResponseBodyWithDelay() throws Exception {
+    String expected = TestUtils.randomAlphaString(100);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.end(expected);
+    });
+    startServer();
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        vertx.timer(100, TimeUnit.MILLISECONDS).andThen(h ->
+          resp.body().onComplete(onSuccess(body -> {
+            assertEquals(expected, body.toString());
+            testComplete();
+          }))
+        );
       }));
     }));
     await();
