@@ -28,9 +28,11 @@ public class HttpEventHandler {
   private Buffer body;
   private Promise<Buffer> bodyPromise;
   private Promise<Void> endPromise;
+  private boolean ended;
 
   public HttpEventHandler(ContextInternal context) {
     this.context = context;
+    this.body = Buffer.buffer();
   }
 
   public void chunkHandler(Handler<Buffer> handler) {
@@ -56,9 +58,11 @@ public class HttpEventHandler {
   }
 
   public Future<Buffer> body() {
-    if (body == null) {
-      body = Buffer.buffer();
+    if (bodyPromise == null) {
       bodyPromise = context.promise();
+      if (ended) {
+        bodyPromise.tryComplete(body);
+      }
     }
     return bodyPromise.future();
   }
@@ -66,11 +70,15 @@ public class HttpEventHandler {
   public Future<Void> end() {
     if (endPromise == null) {
       endPromise = context.promise();
+      if (ended) {
+        endPromise.tryComplete();
+      }
     }
     return endPromise.future();
   }
 
   public void handleEnd() {
+    ended = true;
     Handler<Void> handler = endHandler;
     if (handler != null) {
       context.dispatch(handler);
