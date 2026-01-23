@@ -15,21 +15,21 @@ package io.vertx.core.internal;
 import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
-import io.vertx.core.impl.*;
-import io.vertx.core.impl.future.FailedFuture;
-import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.impl.logic.AsyncLogicImpl;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
+import io.vertx.core.logic.AsyncLogic;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.tcp.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.spi.context.storage.ContextLocal;
-import io.vertx.core.spi.transport.Transport;
+import io.vertx.core.net.impl.tcp.NetServerInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.transport.Transport;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
@@ -77,7 +77,7 @@ public interface VertxInternal extends Vertx {
 
   /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()} or the {@code handler}
-   *         if that handler is already an instance of {@code PromiseInternal}
+   *   if that handler is already an instance of {@code PromiseInternal}
    */
   default <T> PromiseInternal<T> promise(Completable<T> p) {
     return getOrCreateContext().promise(p);
@@ -146,6 +146,7 @@ public interface VertxInternal extends Vertx {
 
   /**
    * Get the current context
+   *
    * @return the context
    */
   ContextInternal getContext();

@@ -20,22 +20,24 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
+import io.vertx.core.impl.logic.AsyncLogicImpl;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
+import io.vertx.core.logic.AsyncLogic;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.tcp.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.spi.context.storage.ContextLocal;
-import io.vertx.core.spi.transport.Transport;
+import io.vertx.core.net.impl.tcp.NetServerInternal;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.transport.Transport;
 
 import java.lang.ref.Cleaner;
 import java.util.List;
@@ -48,16 +50,17 @@ import java.util.function.Supplier;
 
 /**
  * A wrapper class that delegates all method calls to the {@link #delegate} instance.
- *
+ * <p>
  * Implementing the {@link Vertx} interface is not encouraged however if that is necessary, implementations
  * should favor extending this class to ensure minimum breakage when new methods are added to the interace.
- *
+ * <p>
  * The delegate instance can be accessed using protected final {@link #delegate} field, any method of the {@code Vertx}
  * interface can be overridden.
  */
 public abstract class VertxWrapper implements VertxInternal {
 
   protected final VertxInternal delegate;
+  private final AsyncLogic asyncLogicInstance = new AsyncLogicImpl(this);
 
   protected VertxWrapper(VertxInternal delegate) {
     if (delegate == null) {
@@ -369,5 +372,10 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public boolean isMetricsEnabled() {
     return delegate.isMetricsEnabled();
+  }
+
+  @Override
+  public final AsyncLogic asyncLogic() {
+    return asyncLogicInstance;
   }
 }

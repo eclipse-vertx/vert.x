@@ -16,61 +16,64 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.internal.ThreadExecutorMap;
-import io.vertx.core.Future;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
+import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.impl.FileSystemImpl;
+import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.Http1xOrH2ClientTransport;
 import io.vertx.core.http.impl.config.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3Server;
-import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
+import io.vertx.core.impl.deployment.DefaultDeploymentManager;
+import io.vertx.core.impl.logic.AsyncLogicImpl;
+import io.vertx.core.impl.transports.NioTransport;
+import io.vertx.core.impl.verticle.VerticleManager;
+import io.vertx.core.internal.*;
 import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
-import io.vertx.core.impl.verticle.VerticleManager;
-import io.vertx.core.internal.*;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
-import io.vertx.core.net.*;
-import io.vertx.core.net.impl.*;
-import io.vertx.core.impl.transports.NioTransport;
+import io.vertx.core.logic.AsyncLogic;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.net.impl.tcp.NetServerInternal;
-import io.vertx.core.spi.context.executor.EventExecutorProvider;
-import io.vertx.core.spi.context.storage.AccessMode;
-import io.vertx.core.spi.context.storage.ContextLocal;
-import io.vertx.core.spi.file.FileResolver;
-import io.vertx.core.file.impl.FileSystemImpl;
-import io.vertx.core.file.impl.WindowsFileSystem;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
-import io.vertx.core.dns.impl.DnsAddressResolverProvider;
-import io.vertx.core.spi.metrics.*;
-import io.vertx.core.spi.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.eventbus.impl.clustered.NodeSelector;
+import io.vertx.core.spi.context.executor.EventExecutorProvider;
+import io.vertx.core.spi.context.storage.AccessMode;
+import io.vertx.core.spi.context.storage.ContextLocal;
+import io.vertx.core.spi.file.FileResolver;
+import io.vertx.core.spi.metrics.*;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.transport.Transport;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,52 +96,35 @@ import java.util.stream.Collectors;
  */
 public class VertxImpl implements VertxInternal, MetricsProvider {
 
-  private static String version;
-
-  /**
-   * Default shared cleaner for Vert.x
-   */
-  private static final Cleaner cleaner = Cleaner.create();
-
   /**
    * Context dispatch info for context running with non vertx threads (Loom).
    */
   static final ThreadLocal<ContextDispatch> nonVertxContextDispatch = new ThreadLocal<>();
+  static final Object[] EMPTY_CONTEXT_LOCALS = new Object[0];
+  /**
+   * Default shared cleaner for Vert.x
+   */
+  private static final Cleaner cleaner = Cleaner.create();
   // We need to initialize nonVertxContextDispatch before log because log may use the context on startup.
   // https://github.com/eclipse-vertx/vert.x/issues/4611
-
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
-
-  static final Object[] EMPTY_CONTEXT_LOCALS = new Object[0];
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
-
-  // Not cached for graalvm
-  private static ThreadFactory virtualThreadFactory() {
-    try {
-      Class<?> builderClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder");
-      Class<?> ofVirtualClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder$OfVirtual");
-      Method ofVirtualMethod = Thread.class.getDeclaredMethod("ofVirtual");
-      Object builder = ofVirtualMethod.invoke(null);
-      Method nameMethod = ofVirtualClass.getDeclaredMethod("name", String.class, long.class);
-      Method factoryMethod = builderClass.getDeclaredMethod("factory");
-      builder = nameMethod.invoke(builder, "vert.x-virtual-thread-", 0L);
-      return (ThreadFactory) factoryMethod.invoke(builder);
-    } catch (Exception e) {
-      return null;
-    }
-  }
+  private static String version;
 
   static {
     // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
     // Supports both the default netty leak detection system property and the deprecated one
     if (System.getProperty("io.netty.leakDetection.level") == null &&
-        System.getProperty("io.netty.leakDetectionLevel") == null) {
+      System.getProperty("io.netty.leakDetectionLevel") == null) {
       ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     }
   }
 
+  final WorkerPool workerPool;
+  final WorkerPool internalWorkerPool;
+  final WorkerPool virtualThreadWorkerPool;
   private final FileSystem fileSystem = getFileSystem();
   private final SharedData sharedData;
   private final VertxMetrics metrics;
@@ -153,9 +139,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
   private final ContextLocal<?>[] contextLocals;
   private final List<ContextLocal<?>> contextLocalsList;
-  final WorkerPool workerPool;
-  final WorkerPool internalWorkerPool;
-  final WorkerPool virtualThreadWorkerPool;
   private final VertxThreadFactory threadFactory;
   private final ExecutorServiceFactory executorServiceFactory;
   private final ThreadFactory eventLoopThreadFactory;
@@ -166,9 +149,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NameResolver nameResolver;
   private final AddressResolverOptions addressResolverOptions;
   private final EventBusInternal eventBus;
-  private volatile HAManager haManager;
-  private boolean closed;
-  private volatile Handler<Throwable> exceptionHandler;
   private final int defaultWorkerPoolSize;
   private final long maxWorkerExecTime;
   private final TimeUnit maxWorkerExecTimeUnit;
@@ -182,6 +162,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
   private final boolean shadowContext;
+  private final AsyncLogic asyncLogicInstance = new AsyncLogicImpl(this);
+  private volatile HAManager haManager;
+  private boolean closed;
+  private volatile Handler<Throwable> exceptionHandler;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, Throwable transportUnavailabilityCause,
@@ -249,6 +233,55 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.verticleManager = new VerticleManager(this, DefaultDeploymentManager.log, deploymentManager);
     this.eventExecutorProvider = eventExecutorProvider;
     this.shadowContext = enableShadowContext;
+  }
+
+  // Not cached for graalvm
+  private static ThreadFactory virtualThreadFactory() {
+    try {
+      Class<?> builderClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder");
+      Class<?> ofVirtualClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder$OfVirtual");
+      Method ofVirtualMethod = Thread.class.getDeclaredMethod("ofVirtual");
+      Object builder = ofVirtualMethod.invoke(null);
+      Method nameMethod = ofVirtualClass.getDeclaredMethod("name", String.class, long.class);
+      Method factoryMethod = builderClass.getDeclaredMethod("factory");
+      builder = nameMethod.invoke(builder, "vert.x-virtual-thread-", 0L);
+      return (ThreadFactory) factoryMethod.invoke(builder);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public static ContextInternal currentContext(Thread thread) {
+    if (thread instanceof VertxThread) {
+      return ((VertxThread) thread).context();
+    } else {
+      ContextDispatch current = nonVertxContextDispatch.get();
+      if (current != null) {
+        return current.context;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Reads the version from the {@code vertx-version.txt} file.
+   *
+   * @return the version
+   */
+  public static String version() {
+    if (version != null) {
+      return version;
+    }
+    try (InputStream is = VertxImpl.class.getClassLoader().getResourceAsStream("META-INF/vertx/vertx-version.txt")) {
+      if (is == null) {
+        throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
+      }
+      try (Scanner scanner = new Scanner(is, StandardCharsets.UTF_8).useDelimiter("\\A")) {
+        return version = scanner.hasNext() ? scanner.next().trim() : "";
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException(e.getMessage());
+    }
   }
 
   void init() {
@@ -439,7 +472,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
     HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(o) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
+    NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics)
+                                                                                                           .build();
     Http1xOrH2ClientTransport channelConnector = Http1xOrH2ClientTransport.create(tcpClient, new HttpClientConfig(o), metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
@@ -481,18 +515,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return acceptorEventLoopGroup;
   }
 
-  public static ContextInternal currentContext(Thread thread) {
-    if (thread instanceof VertxThread) {
-      return ((VertxThread) thread).context();
-    } else {
-      ContextDispatch current = nonVertxContextDispatch.get();
-      if (current != null) {
-        return current.context;
-      }
-    }
-    return null;
-  }
-
   public ContextInternal getOrCreateContext() {
     Thread thread = Thread.currentThread();
     ContextInternal ctx = getContext(thread);
@@ -516,7 +538,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private ContextInternal createContext(Thread thread) {
     if (thread instanceof VertxThread && ((VertxThread) thread).owner == this) {
-      if (((VertxThread)thread).isWorker()) {
+      if (((VertxThread) thread).isWorker()) {
         return createContext(ThreadingModel.WORKER, eventLoopGroup.next(), workerPool, null);
       } else {
         io.netty.util.concurrent.EventExecutor eventLoop = ThreadExecutorMap.currentExecutor();
@@ -529,13 +551,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       EventExecutor eventExecutor = null;
       if (eventExecutorProvider != null) {
         java.util.concurrent.Executor executor = eventExecutorProvider.eventExecutorFor(thread);
-        if (executor != null)  {
+        if (executor != null) {
           eventExecutor = new EventExecutor() {
             final ThreadLocal<Boolean> inThread = new ThreadLocal<>();
+
             @Override
             public boolean inThread() {
               return inThread.get() != null;
             }
+
             @Override
             public void execute(Runnable command) {
               executor.execute(() -> {
@@ -551,9 +575,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
       }
       if (eventExecutor != null) {
-        ctx = createContext(ThreadingModel.EXTERNAL, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.EXTERNAL, eventLoopExecutor, eventExecutor, workerPool, closeFuture, null, Thread.currentThread()
+                                                                                                                            .getContextClassLoader());
       } else {
-        ctx = createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, Thread.currentThread().getContextClassLoader());
+        ctx = createContext(ThreadingModel.EVENT_LOOP, eventLoop, workerPool, Thread.currentThread()
+                                                                                    .getContextClassLoader());
       }
       return ctx;
     }
@@ -678,19 +704,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       InetSocketAddress address = provider.nameServerAddresses().get(0);
       // provide the host and port
       options = new DnsClientOptions(options)
-      .setHost(address.getAddress().getHostAddress())
-      .setPort(address.getPort());
+        .setHost(address.getAddress().getHostAddress())
+        .setPort(address.getPort());
     }
     return new DnsClientImpl(this, options);
   }
 
   private long scheduleTimeout(ContextInternal context,
-                              boolean periodic,
-                              long initialDelay,
-                              long delay,
-                              TimeUnit timeUnit,
-                              boolean addCloseHook,
-                              Handler<Long> handler) {
+                               boolean periodic,
+                               long initialDelay,
+                               long delay,
+                               TimeUnit timeUnit,
+                               boolean addCloseHook,
+                               Handler<Long> handler) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
@@ -713,11 +739,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public long scheduleTimeout(ContextInternal context,
-                                              boolean periodic,
-                                              long delay,
-                                              TimeUnit timeUnit,
-                                              boolean addCloseHook,
-                                              Handler<Long> handler) {
+                              boolean periodic,
+                              long delay,
+                              TimeUnit timeUnit,
+                              boolean addCloseHook,
+                              Handler<Long> handler) {
     return scheduleTimeout(context, periodic, delay, delay, timeUnit, addCloseHook, handler);
   }
 
@@ -842,7 +868,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
       Deployment deployment;
       try {
-        deployment = DefaultDeployment.deployment(this, log, options, v -> "java:" + v.getClass().getName(), cl, supplier);
+        deployment = DefaultDeployment.deployment(this, log, options, v -> "java:" + v.getClass()
+                                                                                      .getName(), cl, supplier);
       } catch (Exception e) {
         return currentContext.failedFuture(e);
       }
@@ -999,6 +1026,266 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return deploymentManager;
   }
 
+  @Override
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name) {
+    return createSharedWorkerExecutor(name, defaultWorkerPoolSize);
+  }
+
+  @Override
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize) {
+    return createSharedWorkerExecutor(name, poolSize, maxWorkerExecTime);
+  }
+
+  @Override
+  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
+    return createSharedWorkerExecutor(name, poolSize, maxExecuteTime, maxWorkerExecTimeUnit);
+  }
+
+  @Override
+  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    CloseFuture execCf = new CloseFuture();
+    WorkerPool sharedWorkerPool = createSharedWorkerPool(execCf, name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+    CloseFuture parentCf = resolveCloseFuture();
+    parentCf.add(execCf);
+    return new WorkerExecutorImpl(this, cleaner, sharedWorkerPool);
+  }
+
+  public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    return createSharedWorkerPool(new CloseFuture(), name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+  }
+
+  private synchronized WorkerPool createSharedWorkerPool(CloseFuture closeFuture, String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    if (poolSize < 1) {
+      throw new IllegalArgumentException("poolSize must be > 0");
+    }
+    if (maxExecuteTime < 1) {
+      throw new IllegalArgumentException("maxExecuteTime must be > 0");
+    }
+    WorkerPool shared = createSharedResource("__vertx.shared.workerPools", name, closeFuture, cf -> {
+      ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
+      ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
+      PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
+      WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
+      cf.add(completion -> {
+        pool.close();
+        completion.succeed();
+      });
+      return pool;
+    });
+    return new WorkerPool(shared.executor(), shared.metrics()) {
+      @Override
+      public void close() {
+        closeFuture.close();
+      }
+    };
+  }
+
+  @Override
+  public WorkerPool wrapWorkerPool(ExecutorService executor) {
+    PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", null, -1) : null;
+    return new WorkerPool(executor, workerMetrics);
+  }
+
+  private ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
+    AtomicInteger threadCount = new AtomicInteger(0);
+    return runnable -> {
+      VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
+      thread.owner = VertxImpl.this;
+      checker.registerThread(thread, thread.info);
+      if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
+        thread.setDaemon(useDaemonThread);
+      }
+      return thread;
+    };
+  }
+
+  @Override
+  public Vertx exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<Throwable> exceptionHandler() {
+    return exceptionHandler;
+  }
+
+  @Override
+  public AsyncLogic asyncLogic() {
+    return asyncLogicInstance;
+  }
+
+  @Override
+  public CloseFuture closeFuture() {
+    return closeFuture;
+  }
+
+  @Override
+  public VertxTracer tracer() {
+    return tracer;
+  }
+
+  @Override
+  public void addCloseHook(Closeable hook) {
+    closeFuture.add(hook);
+  }
+
+  @Override
+  public void removeCloseHook(Closeable hook) {
+    closeFuture.remove(hook);
+  }
+
+  @Override
+  public boolean isVirtualThreadAvailable() {
+    return virtualThreadExecutor != null;
+  }
+
+  private CloseFuture resolveCloseFuture() {
+    ContextInternal context = getContext();
+    return context != null ? context.closeFuture() : closeFuture;
+  }
+
+  /**
+   * Execute the {@code task} disabling the thread-local association for the duration
+   * of the execution. {@link Vertx#currentContext()} will return {@code null},
+   *
+   * @param task the task to execute
+   * @throws IllegalStateException if the current thread is not a Vertx thread
+   */
+  void executeIsolated(Handler<Void> task) {
+    if (Thread.currentThread() instanceof VertxThread) {
+      ContextInternal prev = beginDispatch(null);
+      try {
+        task.handle(null);
+      } finally {
+        endDispatch(prev);
+      }
+    } else {
+      task.handle(null);
+    }
+  }
+
+  /**
+   * Begin the emission of a context event.
+   * <p>
+   * This is a low level interface that should not be used, instead
+   * {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
+   * shall be used.
+   *
+   * @param context the context on which the event is emitted on
+   * @return the current context that shall be restored
+   */
+  ContextInternal beginDispatch(ContextInternal context) {
+    Thread thread = Thread.currentThread();
+    ContextInternal prev;
+    if (thread instanceof VertxThread) {
+      VertxThread vertxThread = (VertxThread) thread;
+      prev = vertxThread.context;
+      if (!ContextImpl.DISABLE_TIMINGS) {
+        vertxThread.executeStart();
+      }
+      vertxThread.context = context;
+      if (!disableTCCL) {
+        if (prev == null) {
+          vertxThread.topLevelTCCL = Thread.currentThread().getContextClassLoader();
+        }
+        if (context != null) {
+          thread.setContextClassLoader(context.classLoader());
+        }
+      }
+    } else {
+      prev = beginDispatch2(thread, context);
+    }
+    return prev;
+  }
+
+  private ContextInternal beginDispatch2(Thread thread, ContextInternal context) {
+    ContextDispatch current = nonVertxContextDispatch.get();
+    ContextInternal prev;
+    if (current != null) {
+      prev = current.context;
+    } else {
+      current = new ContextDispatch();
+      nonVertxContextDispatch.set(current);
+      prev = null;
+    }
+    current.context = context;
+    if (!disableTCCL) {
+      if (prev == null) {
+        current.topLevelTCCL = Thread.currentThread().getContextClassLoader();
+      }
+      thread.setContextClassLoader(context.classLoader());
+    }
+    return prev;
+  }
+
+  /**
+   * End the emission of a context task.
+   * <p>
+   * This is a low level interface that should not be used, instead
+   * {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
+   * shall be used.
+   *
+   * @param prev the previous context thread to restore, might be {@code null}
+   */
+  void endDispatch(ContextInternal prev) {
+    Thread thread = Thread.currentThread();
+    if (thread instanceof VertxThread) {
+      VertxThread vertxThread = (VertxThread) thread;
+      vertxThread.context = prev;
+      if (!disableTCCL) {
+        ClassLoader tccl;
+        if (prev == null) {
+          tccl = vertxThread.topLevelTCCL;
+          vertxThread.topLevelTCCL = null;
+        } else {
+          tccl = prev.classLoader();
+        }
+        Thread.currentThread().setContextClassLoader(tccl);
+      }
+      if (!ContextImpl.DISABLE_TIMINGS) {
+        vertxThread.executeEnd();
+      }
+    } else {
+      endDispatch2(prev);
+    }
+  }
+
+  private void endDispatch2(ContextInternal prev) {
+    ClassLoader tccl;
+    ContextDispatch current = nonVertxContextDispatch.get();
+    if (prev != null) {
+      current.context = prev;
+      tccl = prev.classLoader();
+    } else {
+      nonVertxContextDispatch.remove();
+      tccl = current.topLevelTCCL;
+    }
+    if (!disableTCCL) {
+      Thread.currentThread().setContextClassLoader(tccl);
+    }
+  }
+
+  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
+  }
+
+  void duplicate(ContextBase src, ContextBase dst) {
+    for (int i = 0; i < contextLocals.length; i++) {
+      ContextLocalImpl<?> contextLocal = (ContextLocalImpl<?>) contextLocals[i];
+      Object local = AccessMode.CONCURRENT.get(src.locals, i);
+      if (local != null) {
+        local = ((Function) contextLocal.duplicator).apply(local);
+      }
+      AccessMode.CONCURRENT.put(dst.locals, i, local);
+    }
+  }
+
+  static class ContextDispatch {
+    ContextInternal context;
+    ClassLoader topLevelTCCL;
+  }
+
   /**
    * Timers are stored in the {@link #timeouts} map at creation time.
    * <p/>
@@ -1061,7 +1348,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     private boolean tryCancel() {
-      if  (disposed.compareAndSet(false, true)) {
+      if (disposed.compareAndSet(false, true)) {
         timeouts.remove(id);
         future.cancel(false);
         return true;
@@ -1074,279 +1361,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     public void close(Completable<Void> completion) {
       tryCancel();
       completion.succeed();
-    }
-  }
-
-  @Override
-  public WorkerExecutorImpl createSharedWorkerExecutor(String name) {
-    return createSharedWorkerExecutor(name, defaultWorkerPoolSize);
-  }
-
-  @Override
-  public WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize) {
-    return createSharedWorkerExecutor(name, poolSize, maxWorkerExecTime);
-  }
-
-  @Override
-  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
-    return createSharedWorkerExecutor(name, poolSize, maxExecuteTime, maxWorkerExecTimeUnit);
-  }
-
-  @Override
-  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    CloseFuture execCf = new CloseFuture();
-    WorkerPool sharedWorkerPool = createSharedWorkerPool(execCf, name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-    CloseFuture parentCf = resolveCloseFuture();
-    parentCf.add(execCf);
-    return new WorkerExecutorImpl(this, cleaner, sharedWorkerPool);
-  }
-
-  public WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    return createSharedWorkerPool(new CloseFuture(), name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-  }
-
-  private synchronized WorkerPool createSharedWorkerPool(CloseFuture closeFuture, String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    if (poolSize < 1) {
-      throw new IllegalArgumentException("poolSize must be > 0");
-    }
-    if (maxExecuteTime < 1) {
-      throw new IllegalArgumentException("maxExecuteTime must be > 0");
-    }
-    WorkerPool shared = createSharedResource("__vertx.shared.workerPools", name, closeFuture, cf -> {
-      ThreadFactory workerThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
-      ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
-      PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
-      WorkerPool pool = new WorkerPool(workerExec, workerMetrics);
-      cf.add(completion -> {
-        pool.close();
-        completion.succeed();
-      });
-      return pool;
-    });
-    return new WorkerPool(shared.executor(), shared.metrics()) {
-      @Override
-      public void close() {
-        closeFuture.close();
-      }
-    };
-  }
-
-  @Override
-  public WorkerPool wrapWorkerPool(ExecutorService executor) {
-    PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics( "worker", null, -1) : null;
-    return new WorkerPool(executor, workerMetrics);
-  }
-
-  private ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
-    AtomicInteger threadCount = new AtomicInteger(0);
-    return runnable -> {
-      VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
-      thread.owner = VertxImpl.this;
-      checker.registerThread(thread, thread.info);
-      if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
-        thread.setDaemon(useDaemonThread);
-      }
-      return thread;
-    };
-  }
-
-  @Override
-  public Vertx exceptionHandler(Handler<Throwable> handler) {
-    exceptionHandler = handler;
-    return this;
-  }
-
-  @Override
-  public Handler<Throwable> exceptionHandler() {
-    return exceptionHandler;
-  }
-
-  @Override
-  public CloseFuture closeFuture() {
-    return closeFuture;
-  }
-
-  @Override
-  public VertxTracer tracer() {
-    return tracer;
-  }
-
-  @Override
-  public void addCloseHook(Closeable hook) {
-    closeFuture.add(hook);
-  }
-
-  @Override
-  public void removeCloseHook(Closeable hook) {
-    closeFuture.remove(hook);
-  }
-
-  @Override
-  public boolean isVirtualThreadAvailable() {
-    return virtualThreadExecutor != null;
-  }
-
-  private CloseFuture resolveCloseFuture() {
-    ContextInternal context = getContext();
-    return context != null ? context.closeFuture() : closeFuture;
-  }
-
-  /**
-   * Execute the {@code task} disabling the thread-local association for the duration
-   * of the execution. {@link Vertx#currentContext()} will return {@code null},
-   * @param task the task to execute
-   * @throws IllegalStateException if the current thread is not a Vertx thread
-   */
-  void executeIsolated(Handler<Void> task) {
-    if (Thread.currentThread() instanceof VertxThread) {
-      ContextInternal prev = beginDispatch(null);
-      try {
-        task.handle(null);
-      } finally {
-        endDispatch(prev);
-      }
-    } else {
-      task.handle(null);
-    }
-  }
-
-  static class ContextDispatch {
-    ContextInternal context;
-    ClassLoader topLevelTCCL;
-  }
-
-  /**
-   * Begin the emission of a context event.
-   * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
-   * shall be used.
-   *
-   * @param context the context on which the event is emitted on
-   * @return the current context that shall be restored
-   */
-  ContextInternal beginDispatch(ContextInternal context) {
-    Thread thread = Thread.currentThread();
-    ContextInternal prev;
-    if (thread instanceof VertxThread) {
-      VertxThread vertxThread = (VertxThread) thread;
-      prev = vertxThread.context;
-      if (!ContextImpl.DISABLE_TIMINGS) {
-        vertxThread.executeStart();
-      }
-      vertxThread.context = context;
-      if (!disableTCCL) {
-        if (prev == null) {
-          vertxThread.topLevelTCCL = Thread.currentThread().getContextClassLoader();
-        }
-        if (context != null) {
-          thread.setContextClassLoader(context.classLoader());
-        }
-      }
-    } else {
-      prev = beginDispatch2(thread, context);
-    }
-    return prev;
-  }
-
-  private ContextInternal beginDispatch2(Thread thread, ContextInternal context) {
-    ContextDispatch current = nonVertxContextDispatch.get();
-    ContextInternal prev;
-    if (current != null) {
-      prev = current.context;
-    } else {
-      current = new ContextDispatch();
-      nonVertxContextDispatch.set(current);
-      prev = null;
-    }
-    current.context = context;
-    if (!disableTCCL) {
-      if (prev == null) {
-        current.topLevelTCCL = Thread.currentThread().getContextClassLoader();
-      }
-      thread.setContextClassLoader(context.classLoader());
-    }
-    return prev;
-  }
-
-  /**
-   * End the emission of a context task.
-   * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
-   * shall be used.
-   *
-   * @param prev the previous context thread to restore, might be {@code null}
-   */
-  void endDispatch(ContextInternal prev) {
-    Thread thread = Thread.currentThread();
-    if (thread instanceof VertxThread) {
-      VertxThread vertxThread = (VertxThread) thread;
-      vertxThread.context = prev;
-      if (!disableTCCL) {
-        ClassLoader tccl;
-        if (prev == null) {
-          tccl = vertxThread.topLevelTCCL;
-          vertxThread.topLevelTCCL = null;
-        } else {
-          tccl = prev.classLoader();
-        }
-        Thread.currentThread().setContextClassLoader(tccl);
-      }
-      if (!ContextImpl.DISABLE_TIMINGS) {
-        vertxThread.executeEnd();
-      }
-    } else {
-      endDispatch2(prev);
-    }
-  }
-
-  private void endDispatch2(ContextInternal prev) {
-    ClassLoader tccl;
-    ContextDispatch current = nonVertxContextDispatch.get();
-    if (prev != null) {
-      current.context = prev;
-      tccl = prev.classLoader();
-    } else {
-      nonVertxContextDispatch.remove();
-      tccl = current.topLevelTCCL;
-    }
-    if (!disableTCCL) {
-      Thread.currentThread().setContextClassLoader(tccl);
-    }
-  }
-
-  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
-  }
-
-  void duplicate(ContextBase src, ContextBase dst) {
-    for (int i = 0;i < contextLocals.length;i++) {
-      ContextLocalImpl<?> contextLocal = (ContextLocalImpl<?>) contextLocals[i];
-      Object local = AccessMode.CONCURRENT.get(src.locals, i);
-      if (local != null) {
-        local = ((Function)contextLocal.duplicator).apply(local);
-      }
-      AccessMode.CONCURRENT.put(dst.locals, i, local);
-    }
-  }
-
-  /**
-   * Reads the version from the {@code vertx-version.txt} file.
-   *
-   * @return the version
-   */
-  public static String version() {
-    if (version != null) {
-      return version;
-    }
-    try (InputStream is = VertxImpl.class.getClassLoader().getResourceAsStream("META-INF/vertx/vertx-version.txt")) {
-      if (is == null) {
-        throw new IllegalStateException("Cannot find vertx-version.txt on classpath");
-      }
-      try (Scanner scanner = new Scanner(is, StandardCharsets.UTF_8).useDelimiter("\\A")) {
-        return version = scanner.hasNext() ? scanner.next().trim() : "";
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException(e.getMessage());
     }
   }
 }

@@ -16,14 +16,14 @@ import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
+import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
+import io.vertx.core.logic.AsyncLogic;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -82,31 +82,37 @@ public interface Vertx extends Measured {
       private VertxMetricsFactory metricsFactory;
       private VertxTracerFactory tracerFactory;
       private Transport transport;
+
       @Override
       public io.vertx.core.VertxBuilder with(VertxOptions options) {
         this.options = options;
         return this;
       }
+
       @Override
       public io.vertx.core.VertxBuilder withMetrics(VertxMetricsFactory factory) {
         this.metricsFactory = factory;
         return this;
       }
+
       @Override
       public io.vertx.core.VertxBuilder withTracer(VertxTracerFactory factory) {
         this.tracerFactory = factory;
         return this;
       }
+
       @Override
       public io.vertx.core.VertxBuilder withClusterManager(ClusterManager clusterManager) {
         this.clusterManager = clusterManager;
         return this;
       }
+
       @Override
       public VertxBuilder withTransport(Transport transport) {
         this.transport = transport;
         return this;
       }
+
       private VertxBootstrap bootstrap() {
         VertxBootstrap bootstrap = VertxBootstrap.create();
         if (options != null) {
@@ -124,12 +130,14 @@ public interface Vertx extends Measured {
         bootstrap.transport(tr.implementation());
         return bootstrap;
       }
+
       @Override
       public Vertx build() {
         return bootstrap()
           .init()
           .vertx();
       }
+
       @Override
       public Future<Vertx> buildClustered() {
         return bootstrap()
@@ -152,7 +160,7 @@ public interface Vertx extends Measured {
   /**
    * Creates a non clustered instance using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the instance
    */
   static Vertx vertx(VertxOptions options) {
@@ -164,7 +172,7 @@ public interface Vertx extends Measured {
    * <p>
    * The instance is created asynchronously and the returned future is completed with the result when it is ready.
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return a future completed with the clustered vertx
    */
   static Future<Vertx> clusteredVertx(VertxOptions options) {
@@ -190,7 +198,7 @@ public interface Vertx extends Measured {
   /**
    * Create a TCP/SSL server using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the server
    */
   NetServer createNetServer(NetServerOptions options);
@@ -207,7 +215,7 @@ public interface Vertx extends Measured {
   /**
    * Create a TCP/SSL client using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the client
    */
   NetClient createNetClient(NetClientOptions options);
@@ -224,7 +232,7 @@ public interface Vertx extends Measured {
   /**
    * Create an HTTP/HTTPS server using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the server
    */
   HttpServer createHttpServer(HttpServerOptions options);
@@ -232,7 +240,7 @@ public interface Vertx extends Measured {
   /**
    * Create an HTTP3 client using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the server
    */
   default HttpClientAgent createHttpClient(Http3ClientOptions options) {
@@ -242,7 +250,7 @@ public interface Vertx extends Measured {
   /**
    * Create an HTTP3 server using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the server
    */
   HttpServer createHttpServer(Http3ServerOptions options);
@@ -268,7 +276,7 @@ public interface Vertx extends Measured {
   /**
    * Create a WebSocket client using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the client
    */
   WebSocketClient createWebSocketClient(WebSocketClientOptions options);
@@ -277,15 +285,16 @@ public interface Vertx extends Measured {
    * Provide a builder for {@link HttpClient}, it can be used to configure advanced
    * HTTP client settings like a redirect handler or a connection handler.
    * <p>
-   * Example usage: {@code HttpClient client = vertx.httpClientBuilder().with(options).withConnectHandler(conn -> ...).build()}
+   * Example usage:
+   * {@code HttpClient client = vertx.httpClientBuilder().with(options).withConnectHandler(conn -> ...).build()}
    */
   HttpClientBuilder httpClientBuilder();
 
   /**
    * Create a HTTP/HTTPS client using the specified client and pool options
    *
-   * @param clientOptions  the client options to use
-   * @param poolOptions  the pool options to use
+   * @param clientOptions the client options to use
+   * @param poolOptions   the pool options to use
    * @return the client
    */
   default HttpClientAgent createHttpClient(HttpClientOptions clientOptions, PoolOptions poolOptions) {
@@ -295,7 +304,7 @@ public interface Vertx extends Measured {
   /**
    * Create a HTTP/HTTPS client using the specified client options
    *
-   * @param clientOptions  the options to use
+   * @param clientOptions the options to use
    * @return the client
    */
   default HttpClientAgent createHttpClient(HttpClientOptions clientOptions) {
@@ -305,7 +314,7 @@ public interface Vertx extends Measured {
   /**
    * Create a HTTP/HTTPS client using the specified pool options
    *
-   * @param poolOptions  the pool options to use
+   * @param poolOptions the pool options to use
    * @return the client
    */
   default HttpClientAgent createHttpClient(PoolOptions poolOptions) {
@@ -324,7 +333,7 @@ public interface Vertx extends Measured {
   /**
    * Create a datagram socket using the specified options
    *
-   * @param options  the options to use
+   * @param options the options to use
    * @return the socket
    */
   DatagramSocket createDatagramSocket(DatagramSocketOptions options);
@@ -355,11 +364,12 @@ public interface Vertx extends Measured {
   EventBus eventBus();
 
   /**
-   * Create a DNS client to connect to a DNS server at the specified host and port, with the default query timeout (5 seconds)
+   * Create a DNS client to connect to a DNS server at the specified host and port, with the default query timeout (5
+   * seconds)
    * <p/>
    *
-   * @param port  the port
-   * @param host  the host
+   * @param port the port
+   * @param host the host
    * @return the DNS client
    */
   DnsClient createDnsClient(int port, String host);
@@ -367,7 +377,8 @@ public interface Vertx extends Measured {
   /**
    * Create a DNS client to connect to the DNS server configured by {@link VertxOptions#getAddressResolverOptions()}
    * <p>
-   * DNS client takes the first configured resolver address provided by {@link DnsAddressResolverProvider#nameServerAddresses()}}
+   * DNS client takes the first configured resolver address provided by
+   * {@link DnsAddressResolverProvider#nameServerAddresses()}}
    *
    * @return the DNS client
    */
@@ -398,11 +409,12 @@ public interface Vertx extends Measured {
 
   /**
    * Create a timer task configured with the specified {@code delay}, when the timeout fires the timer future
-   * is succeeded, when the timeout is cancelled the timer future is failed with a {@link java.util.concurrent.CancellationException}
+   * is succeeded, when the timeout is cancelled the timer future is failed with a
+   * {@link java.util.concurrent.CancellationException}
    * instance.
    *
    * @param delay the delay
-   * @param unit the delay unit
+   * @param unit  the delay unit
    * @return the timer object
    */
   default Timer timer(long delay, TimeUnit unit) {
@@ -414,8 +426,8 @@ public interface Vertx extends Measured {
    * Set a one-shot timer to fire after {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    *
-   * @param delay  the delay in milliseconds, after which the timer will fire
-   * @param handler  the handler that will be called with the timer ID when the timer fires
+   * @param delay   the delay in milliseconds, after which the timer will fire
+   * @param handler the handler that will be called with the timer ID when the timer fires
    * @return the unique ID of the timer
    */
   long setTimer(long delay, Handler<Long> handler);
@@ -424,8 +436,8 @@ public interface Vertx extends Measured {
    * Set a periodic timer to fire every {@code delay} milliseconds, at which point {@code handler} will be called with
    * the id of the timer.
    *
-   * @param delay  the delay in milliseconds, after which the timer will fire
-   * @param handler  the handler that will be called with the timer ID when the timer fires
+   * @param delay   the delay in milliseconds, after which the timer will fire
+   * @param handler the handler that will be called with the timer ID when the timer fires
    * @return the unique ID of the timer
    */
   default long setPeriodic(long delay, Handler<Long> handler) {
@@ -433,12 +445,13 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Set a periodic timer to fire every {@code delay} milliseconds with initial delay, at which point {@code handler} will be called with
+   * Set a periodic timer to fire every {@code delay} milliseconds with initial delay, at which point {@code handler}
+   * will be called with
    * the id of the timer.
    *
    * @param initialDelay the initial delay in milliseconds
-   * @param delay the delay in milliseconds, after which the timer will fire
-   * @param handler the handler that will be called with the timer ID when the timer fires
+   * @param delay        the delay in milliseconds, after which the timer will fire
+   * @param handler      the handler that will be called with the timer ID when the timer fires
    * @return the unique ID of the timer
    */
   long setPeriodic(long initialDelay, long delay, Handler<Long> handler);
@@ -446,7 +459,7 @@ public interface Vertx extends Measured {
   /**
    * Cancels the timer with the specified {@code id}.
    *
-   * @param id  The id of the timer to cancel
+   * @param id The id of the timer to cancel
    * @return true if the timer was successfully cancelled, or false if the timer does not exist.
    */
   boolean cancelTimer(long id);
@@ -482,7 +495,7 @@ public interface Vertx extends Measured {
    * <p>
    * This deployment ID can subsequently be used to undeploy the verticle.
    *
-   * @param verticle  the verticle instance to deploy.
+   * @param verticle the verticle instance to deploy.
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
@@ -494,7 +507,7 @@ public interface Vertx extends Measured {
    * Like {@link #deployVerticle(Deployable)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
    * deployment.
    *
-   * @param verticle  the verticle instance to deploy
+   * @param verticle the verticle instance to deploy
    * @param options  the deployment options.
    * @return a future completed with the result
    */
@@ -504,7 +517,8 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking the
+   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking
+   * the
    * {@code verticleSupplier}.
    * <p>
    * The supplier will be invoked as many times as {@link DeploymentOptions#getInstances()}.
@@ -518,8 +532,10 @@ public interface Vertx extends Measured {
   Future<String> deployVerticle(Supplier<? extends Deployable> supplier, DeploymentOptions options);
 
   /**
-   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking the
+   * Like {@link #deployVerticle(Deployable, DeploymentOptions)} but {@link Deployable} instance is created by invoking
+   * the
    * default constructor of {@code verticleClass}.
+   *
    * @return a future completed with the result
    */
   @GenIgnore
@@ -537,7 +553,7 @@ public interface Vertx extends Measured {
    * <p>
    * This deployment ID can subsequently be used to undeploy the verticle.
    *
-   * @param name  the name.
+   * @param name the name.
    * @return a future completed with the result
    */
   default Future<String> deployVerticle(String name) {
@@ -548,8 +564,8 @@ public interface Vertx extends Measured {
    * Like {@link #deployVerticle(Deployable)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
    * deployment.
    *
-   * @param name  the name
-   * @param options  the deployment options.
+   * @param name    the name
+   * @param options the deployment options.
    * @return a future completed with the result
    */
   Future<String> deployVerticle(String name, DeploymentOptions options);
@@ -559,7 +575,7 @@ public interface Vertx extends Measured {
    * <p>
    * The actual undeployment happens asynchronously and may not complete until after the method has returned.
    *
-   * @param deploymentID  the deployment ID
+   * @param deploymentID the deployment ID
    * @return a future completed with the result
    */
   Future<Void> undeploy(String deploymentID);
@@ -607,13 +623,15 @@ public interface Vertx extends Measured {
    * <p>
    * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
    * <p>
-   * The returned future will be completed with the result on the original context (i.e. on the original event loop of the caller)
+   * The returned future will be completed with the result on the original context (i.e. on the original event loop of
+   * the caller)
    * or failed when the handler throws an exception.
    * <p>
    * In the {@code blockingCodeHandler} the current context remains the original context and therefore any task
    * scheduled in the {@code blockingCodeHandler} will be executed on this context and not on the worker thread.
    * <p>
-   * The blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+   * The blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking
+   * operations
    * or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
    * <p>
    * When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
@@ -622,11 +640,13 @@ public interface Vertx extends Measured {
    * Long blocking operations should use a dedicated thread managed by the application, which can interact with
    * verticles using the event-bus or {@link Context#runOnContext(Handler)}
    *
-   * @param blockingCodeHandler  handler representing the blocking code to run
-   * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
-   *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
-   *                 guarantees
-   * @param <T> the type of the result
+   * @param blockingCodeHandler handler representing the blocking code to run
+   * @param ordered             if true then if executeBlocking is called several times on the same context, the
+   *                            executions
+   *                            for that context will be executed serially, not in parallel. if false then they will be
+   *                            no ordering
+   *                            guarantees
+   * @param <T>                 the type of the result
    * @return a future completed when the blocking code is complete
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
@@ -644,33 +664,37 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Like {@link #createSharedWorkerExecutor(String, int)} but with the {@link VertxOptions#setWorkerPoolSize} {@code poolSize}.
+   * Like {@link #createSharedWorkerExecutor(String, int)} but with the {@link VertxOptions#setWorkerPoolSize}
+   * {@code poolSize}.
    */
   WorkerExecutor createSharedWorkerExecutor(String name);
 
   /**
-   * Like {@link #createSharedWorkerExecutor(String, int, long)} but with the {@link VertxOptions#setMaxWorkerExecuteTime} {@code maxExecuteTime}.
+   * Like {@link #createSharedWorkerExecutor(String, int, long)} but with the
+   * {@link VertxOptions#setMaxWorkerExecuteTime} {@code maxExecuteTime}.
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize);
 
   /**
-   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the {@link VertxOptions#setMaxWorkerExecuteTimeUnit(TimeUnit)} {@code maxExecuteTimeUnit}.
+   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the
+   * {@link VertxOptions#setMaxWorkerExecuteTimeUnit(TimeUnit)} {@code maxExecuteTimeUnit}.
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 
   /**
    * Create a named worker executor, the executor should be closed when it's not needed anymore to release
    * resources.<p/>
-   *
+   * <p>
    * This method can be called mutiple times with the same {@code name}. Executors with the same name will share
-   * the same worker pool. The worker pool size , max execute time and unit of max execute time are set when the worker pool is created and
+   * the same worker pool. The worker pool size , max execute time and unit of max execute time are set when the worker
+   * pool is created and
    * won't change after.<p>
-   *
+   * <p>
    * The worker pool is released when all the {@link WorkerExecutor} sharing the same name are closed.
    *
-   * @param name the name of the worker executor
-   * @param poolSize the size of the pool
-   * @param maxExecuteTime the value of max worker execute time
+   * @param name               the name of the worker executor
+   * @param poolSize           the size of the pool
+   * @param maxExecuteTime     the value of max worker execute time
    * @param maxExecuteTimeUnit the value of unit of max worker execute time
    * @return the named worker executor
    */
@@ -683,7 +707,8 @@ public interface Vertx extends Measured {
   boolean isNativeTransportEnabled();
 
   /**
-   * @return the error (if any) that cause the unavailability of native transport when {@link #isNativeTransportEnabled()}  returns {@code false}.
+   * @return the error (if any) that cause the unavailability of native transport when
+   *   {@link #isNativeTransportEnabled()}  returns {@code false}.
    */
   @CacheReturn
   Throwable unavailableNativeTransportCause();
@@ -701,5 +726,8 @@ public interface Vertx extends Measured {
    * @return the current default exception handler
    */
   @GenIgnore
-  @Nullable Handler<Throwable> exceptionHandler();
+  @Nullable
+  Handler<Throwable> exceptionHandler();
+
+  AsyncLogic asyncLogic();
 }

@@ -67,6 +67,7 @@ module io.vertx.core {
   exports io.vertx.core.spi;
   exports io.vertx.core.file;
   exports io.vertx.core.transport;
+  exports io.vertx.core.logic;
 
   // SPI
 
