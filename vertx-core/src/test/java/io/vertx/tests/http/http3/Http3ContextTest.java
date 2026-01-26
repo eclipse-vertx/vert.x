@@ -13,9 +13,8 @@ package io.vertx.tests.http.http3;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.http.impl.HttpServerConnection;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.LinuxOrOsx;
@@ -43,7 +42,7 @@ public class Http3ContextTest extends VertxTestBase {
     clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
     clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
-    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(clientConfig).build();
+    client = vertx.createHttpClient(clientConfig);
   }
 
   @Override

@@ -13,10 +13,7 @@ package io.vertx.test.fakemetrics;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.http.Http3ClientOptions;
-import io.vertx.core.http.Http3ServerOptions;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
@@ -71,7 +68,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(Http3ClientOptions options) {
+  public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientConfig options) {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 

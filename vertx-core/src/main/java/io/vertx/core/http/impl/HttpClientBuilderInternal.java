@@ -5,10 +5,9 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.config.Http1ClientConfig;
-import io.vertx.core.http.impl.config.Http2ClientConfig;
-import io.vertx.core.http.impl.config.Http3ClientConfig;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.Http1ClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -46,8 +45,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     this.resolverKeepAlive = Duration.ofSeconds(10);
   }
 
-  public HttpClientBuilder with(HttpClientConfig options) {
-    this.clientConfig = new HttpClientConfig(options);
+  public HttpClientBuilder with(HttpClientConfig config) {
+    this.clientConfig = new HttpClientConfig(config);
     return this;
   }
 

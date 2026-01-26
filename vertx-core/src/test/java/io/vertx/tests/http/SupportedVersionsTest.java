@@ -12,9 +12,8 @@ package io.vertx.tests.http;
 
 import io.vertx.core.VertxException;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
-import io.vertx.core.http.impl.config.Http2ClientConfig;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -262,7 +261,7 @@ public class SupportedVersionsTest extends VertxTestBase {
         clientConfig.setDefaultPort(quicServer.actualPort());
       }
     }
-    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(clientConfig).build();
+    client = vertx.createHttpClient(clientConfig);
     return client.request(new RequestOptions().setHost("localhost"))
       .compose(request -> request
         .send()

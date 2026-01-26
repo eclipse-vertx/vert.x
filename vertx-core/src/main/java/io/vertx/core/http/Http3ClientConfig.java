@@ -8,10 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.config;
+package io.vertx.core.http;
 
-import io.vertx.core.http.Http3Settings;
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
@@ -20,6 +19,7 @@ import java.time.Duration;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@DataObject
 public class Http3ClientConfig {
 
   private Duration keepAliveTimeout;

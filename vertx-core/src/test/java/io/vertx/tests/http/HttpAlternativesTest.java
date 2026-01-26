@@ -14,12 +14,11 @@ import io.vertx.core.Handler;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.http.impl.Origin;
-import io.vertx.core.http.impl.config.Http1ClientConfig;
-import io.vertx.core.http.impl.config.Http2ClientConfig;
-import io.vertx.core.http.impl.config.Http3ClientConfig;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.Http1ClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
+import io.vertx.core.http.Http3ClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.ClientSSLOptions;
@@ -198,8 +197,7 @@ public class HttpAlternativesTest extends VertxTestBase {
           .response()
           .end(request.authority().toString(false));
       });
-    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder())
-      .with(new HttpClientConfig()
+    client = vertx.createHttpClient((new HttpClientConfig()
         .setFollowAlternativeServices(true)
         .setSsl(true)
         .setSslOptions(new ClientSSLOptions().setTrustAll(true).setUseAlpn(true))
@@ -207,8 +205,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .setHttp1Config(new Http1ClientConfig())
         .setHttp2Config(new Http2ClientConfig())
         .setHttp3Config(new Http3ClientConfig())
-      )
-      .build();
+      ));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()

@@ -96,7 +96,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Version of {@link #createHttpClientMetrics(HttpClientOptions)} for HTTP/3
    */
-  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(Http3ClientOptions options) {
+  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientConfig config) {
     return null;
   }
 

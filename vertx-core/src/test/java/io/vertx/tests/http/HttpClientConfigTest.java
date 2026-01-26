@@ -11,8 +11,7 @@
 package io.vertx.tests.http;
 
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import org.junit.Test;
 
 import java.util.List;

@@ -293,6 +293,16 @@ public interface Vertx extends Measured {
   }
 
   /**
+   * Create an HTTP/HTTPS client using the specified config
+   *
+   * @param config  the config to use
+   * @return the server
+   */
+  default HttpClientAgent createHttpClient(HttpClientConfig config) {
+    return httpClientBuilder().with(config).build();
+  }
+
+  /**
    * Create a HTTP/HTTPS client using the specified client options
    *
    * @param clientOptions  the options to use

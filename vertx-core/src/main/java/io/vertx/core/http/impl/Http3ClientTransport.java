@@ -14,7 +14,7 @@ import io.netty.handler.codec.http3.Http3;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.Http3Settings;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3ClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;

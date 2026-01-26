@@ -33,7 +33,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.Http1xOrH2ClientTransport;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3Server;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;

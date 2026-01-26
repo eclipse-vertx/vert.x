@@ -5,8 +5,7 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -34,11 +33,11 @@ public class Http3ClientTest extends VertxTestBase {
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");
-    clientConfig = new io.vertx.core.http.impl.config.HttpClientConfig();
+    clientConfig = new HttpClientConfig();
     clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
     clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
-    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(clientConfig).build();
+    client = vertx.createHttpClient(clientConfig);
   }
 
   @Override
@@ -420,7 +419,7 @@ public class Http3ClientTest extends VertxTestBase {
       .setQPackBlockedStreams(1024)
       .setQPackMaxTableCapacity(1024)
     );
-    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(config).build();
+    client = vertx.createHttpClient(config);
 
     HttpClientConnection connection = client.connect(new HttpConnectOptions()
       .setHost("localhost")

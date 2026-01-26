@@ -13,8 +13,7 @@ package io.vertx.tests.http.http3;
 import io.vertx.core.Completable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
@@ -43,7 +42,7 @@ public class Http3FlowControlTest extends VertxTestBase {
     clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
     clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
-    client = ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(clientConfig).build();
+    client = vertx.createHttpClient(clientConfig);
   }
 
   @Override

@@ -12,7 +12,6 @@ package io.vertx.tests.http.http3;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpServerConfig;
@@ -106,7 +105,7 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpClientConfig forClient() {
-    io.vertx.core.http.impl.config.HttpClientConfig options = new io.vertx.core.http.impl.config.HttpClientConfig();
+    io.vertx.core.http.HttpClientConfig options = new io.vertx.core.http.HttpClientConfig();
     options.setSupportedVersions(List.of(HttpVersion.HTTP_3));
     options.setDefaultHost(host);
     options.setDefaultPort(port);
@@ -142,7 +141,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientBuilder builder(Vertx vertx) {
-        return ((HttpClientBuilderInternal)vertx.httpClientBuilder()).with(options);
+        return vertx.httpClientBuilder().with(options);
       }
     };
   }

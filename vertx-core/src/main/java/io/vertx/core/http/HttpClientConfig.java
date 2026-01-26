@@ -8,13 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.config;
+package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Unstable;
-import io.vertx.core.http.Http3ClientOptions;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -24,10 +22,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Configuration of a {@link NetClient}
+ * Configuration of a {@link HttpClient}
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@DataObject
 public class HttpClientConfig {
 
   private static List<HttpVersion> toSupportedVersion(HttpVersion version) {

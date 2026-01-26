@@ -11,7 +11,6 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.http.impl.config.Http3ClientConfig;
 import io.vertx.core.net.*;
 
 import java.time.Duration;
