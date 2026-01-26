@@ -58,13 +58,6 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder with(Http3ClientOptions options) {
-    this.clientConfig = new HttpClientConfig(options);
-    this.clientOptions = null;
-    return this;
-  }
-
-  @Override
   public HttpClientBuilder with(PoolOptions options) {
     this.poolOptions = options;
     return this;

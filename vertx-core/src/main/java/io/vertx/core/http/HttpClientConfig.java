@@ -167,29 +167,6 @@ public class HttpClientConfig {
     this.followAlternativeServices = other.getFollowAlternativeServices();
   }
 
-  public HttpClientConfig(Http3ClientOptions other) {
-
-    Http3ClientConfig config = new Http3ClientConfig();
-    config.setKeepAliveTimeout(other.getKeepAliveTimeout());
-    config.setInitialSettings(other.getInitialSettings());
-
-    this.quicOptions = new QuicOptions(other.getTransportOptions());
-    this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
-    this.connectTimeout = other.getConnectTimeout();
-    this.metricsName = other.getMetricsName();
-    this.idleTimeout = other.getStreamIdleTimeout();
-    this.readIdleTimeout = other.getStreamReadIdleTimeout();
-    this.writeIdleTimeout = other.getStreamWriteIdleTimeout();
-    this.verifyHost = other.isVerifyHost();
-    this.defaultHost = other.getDefaultHost();
-    this.defaultPort = other.getDefaultPort();
-    this.maxRedirects = other.getMaxRedirects();
-    this.supportedVersions = new ArrayList<>(List.of(HttpVersion.HTTP_3));
-    this.http1Config = null;
-    this.http2Config = null;
-    this.http3Config = config;
-  }
-
   /**
    * @return the client TCP transport options
    */

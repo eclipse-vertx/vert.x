@@ -45,14 +45,6 @@ public interface HttpClientBuilder {
   HttpClientBuilder with(HttpClientConfig config);
 
   /**
-   * Configure the client options.
-   * @param options the client options
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  HttpClientBuilder with(Http3ClientOptions options);
-
-  /**
    * Configure the client with the given pool {@code options}.
    * @param options the pool options
    * @return a reference to this, so the API can be used fluently

@@ -20,7 +20,6 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxImpl;
-import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
@@ -228,16 +227,6 @@ public interface Vertx extends Measured {
    * @return the server
    */
   HttpServer createHttpServer(HttpServerOptions options);
-
-  /**
-   * Create an HTTP3 client using the specified options
-   *
-   * @param options  the options to use
-   * @return the server
-   */
-  default HttpClientAgent createHttpClient(Http3ClientOptions options) {
-    return httpClientBuilder().with(options).build();
-  }
 
   /**
    * Create an HTTP3 server using the specified options
