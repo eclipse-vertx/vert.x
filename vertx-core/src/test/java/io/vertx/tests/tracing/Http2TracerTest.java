@@ -14,9 +14,7 @@ import io.vertx.test.http.HttpConfig;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.vertx.tests.http.Http2TestBase;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.faketracer.FakeTracer;
@@ -32,7 +30,7 @@ public class Http2TracerTest extends HttpTracerTestBase {
   }
 
   protected Http2TracerTest(boolean multiplex) {
-    super(new HttpConfig.Http2(multiplex));
+    super(new HttpConfig.H2(multiplex));
   }
 
   @Test

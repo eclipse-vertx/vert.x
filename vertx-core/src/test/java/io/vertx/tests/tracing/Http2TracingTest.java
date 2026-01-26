@@ -19,6 +19,6 @@ public class Http2TracingTest extends HttpTracingTestBase {
   }
 
   protected Http2TracingTest(boolean multiplex) {
-    super(new HttpConfig.Http2(multiplex));
+    super(new HttpConfig.H2(multiplex));
   }
 }

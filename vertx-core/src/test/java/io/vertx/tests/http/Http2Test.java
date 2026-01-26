@@ -55,7 +55,7 @@ public class Http2Test extends HttpTest {
   }
 
   protected Http2Test(boolean multiplex) {
-    super(new HttpConfig.Http2(multiplex));
+    super(new HttpConfig.H2(multiplex));
   }
 
   @Test

@@ -12,12 +12,9 @@ package io.vertx.test.http;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.tests.http.Http2TestBase;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.vertx.test.http.HttpTestBase.*;
@@ -153,7 +150,7 @@ public interface HttpConfig {
       this.host = host;
     }
 
-    protected Http1x() {
+    private Http1x() {
       this(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
     }
 
@@ -178,20 +175,17 @@ public interface HttpConfig {
     }
   }
 
-  class Http2 extends Http1xOr2Config {
-
-    public static HttpConfig CODEC = new HttpConfig.Http2(false);
-    public static HttpConfig MULTIPLEX = new HttpConfig.Http2(true);
+  abstract class Http2 extends Http1xOr2Config {
 
     private final boolean multiplex;
     private final int port;
     private final String host;
 
-    public Http2(boolean multiplex) {
+    Http2(boolean multiplex) {
       this(multiplex, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
     }
 
-    public Http2(boolean multiplex, String host, int port) {
+    Http2(boolean multiplex, String host, int port) {
       this.multiplex = multiplex;
       this.port = port;
       this.host = host;
@@ -207,14 +201,40 @@ public interface HttpConfig {
       return host;
     }
 
+    abstract HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex);
+    abstract HttpClientOptions createBaseClientOptions(int port, String host, boolean multiplex);
+
     @Override
     public HttpServerOptions createBaseServerOptions() {
-      return Http2TestBase.createHttp2ServerOptions(port, host)
-        .setHttp2MultiplexImplementation(multiplex);
+      return createBaseServerOptions(port, host, multiplex);
     }
 
     @Override
     public HttpClientOptions createBaseClientOptions() {
+      return createBaseClientOptions(port, host, multiplex);
+    }
+  }
+
+  class H2 extends Http2 {
+
+    public static HttpConfig CODEC = new H2(false);
+    public static HttpConfig MULTIPLEX = new H2(true);
+
+    public H2(boolean multiplex) {
+      super(multiplex);
+    }
+
+    public H2(boolean multiplex, String host, int port) {
+      super(multiplex, host, port);
+    }
+
+    @Override
+    public HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex) {
+      return Http2TestBase.createHttp2ServerOptions(port, host).setHttp2MultiplexImplementation(multiplex);
+    }
+
+    @Override
+    public HttpClientOptions createBaseClientOptions(int port, String host, boolean multiplex) {
       return Http2TestBase.createHttp2ClientOptions()
         .setDefaultPort(port)
         .setDefaultHost(host)
