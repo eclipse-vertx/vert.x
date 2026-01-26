@@ -18,6 +18,7 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.dns.*;
+import io.netty.util.internal.PlatformDependent;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -41,6 +42,7 @@ public class MockDnsServer {
   private String ipAddress = IP_ADDRESS;
   private int port = PORT;
 
+  private EventLoopGroup eventLoopGroup;
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
   public MockDnsServer() {
@@ -70,9 +72,12 @@ public class MockDnsServer {
   }
 
   public void start() throws Exception {
-    CompletableFuture<Void> latch = new CompletableFuture<>();
+    if (this.eventLoopGroup != null) {
+      throw new IllegalStateException();
+    }
+    EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
     Bootstrap bootstrap = new Bootstrap()
-      .group(new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory()))
+      .group(eventLoopGroup)
       .channel(NioDatagramChannel.class)
       .handler(new ChannelInitializer<DatagramChannel>() {
         @Override
@@ -103,43 +108,31 @@ public class MockDnsServer {
             });
         }
       });
-    channel = bootstrap.bind(ipAddress, port).addListener((ChannelFuture f) -> {
-        if (f.isSuccess()) {
-          latch.complete(null);
-        } else {
-          latch.completeExceptionally(f.cause());
-        }
-      })
-      .channel();
-    try {
-      latch.get(3, TimeUnit.SECONDS);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof Exception) {
-        throw (Exception) cause;
-      } else {
-        throw e;
-      }
+    ChannelFuture fut = bootstrap.bind(ipAddress, port).sync();
+    if (fut.isSuccess()) {
+      this.channel = fut.channel();
+      this.eventLoopGroup = eventLoopGroup;
+    } else {
+      eventLoopGroup.shutdownGracefully().await();
+      PlatformDependent.throwException(fut.cause());
     }
   }
 
   public void stop() throws Exception {
-    CompletableFuture<Void> latch = new CompletableFuture<>();
-    channel.close().addListener(fut -> latch.complete(null));
-    try {
-      latch.get(3, TimeUnit.SECONDS);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof Exception) {
-        throw (Exception) cause;
-      } else {
-        throw e;
-      }
+    Channel channel = this.channel;
+    this.channel = null;
+    if (channel != null) {
+      channel.close().sync();
+    }
+    EventLoopGroup eventLoopGroup = this.eventLoopGroup;
+    this.eventLoopGroup = null;
+    if (eventLoopGroup != null) {
+      eventLoopGroup.shutdownGracefully(2, 2, TimeUnit.MILLISECONDS).sync();
     }
   }
 
   public static DnsRecord a(String domainName, int ttl, String ip) {
-    byte[] address = null;
+    byte[] address;
     try {
       address = InetAddress.getByName(ip).getAddress();
     } catch (UnknownHostException e) {
@@ -149,7 +142,7 @@ public class MockDnsServer {
   }
 
   public static DnsRecord aaaa(String domainName, int ttl, String ip) {
-    byte[] address = null;
+    byte[] address;
     try {
       address = InetAddress.getByName(ip).getAddress();
     } catch (UnknownHostException e) {
