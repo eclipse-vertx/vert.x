@@ -47,16 +47,16 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
   private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
 
-  public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientOptions options) {
-    return new QuicClientImpl(vertx, metricsProvider, new QuicClientOptions(options));
+  public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientConfig options) {
+    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(options));
   }
 
-  private final QuicClientOptions options;
+  private final QuicClientConfig options;
   private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
-  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicClientOptions options) {
+  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                        QuicClientConfig options) {
     super(vertx, metricsProvider, options);
     this.options = options;
   }

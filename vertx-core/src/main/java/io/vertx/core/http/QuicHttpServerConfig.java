@@ -12,7 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http3.Http3;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.net.QuicServerOptions;
+import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
 
 import java.time.Duration;
@@ -26,8 +26,8 @@ import java.util.Arrays;
 @DataObject
 public class QuicHttpServerConfig extends HttpServerConfig {
 
-  private static QuicServerOptions httpEndpointQuicConfig() {
-    QuicServerOptions config = new QuicServerOptions();
+  private static QuicServerConfig httpEndpointQuicConfig() {
+    QuicServerConfig config = new QuicServerConfig();
     config.getSslOptions().setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     config.getTransportOptions().setInitialMaxData(10000000L);
     config.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
@@ -50,7 +50,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
 
   private int port;
   private String host;
-  private QuicServerOptions endpointConfig;
+  private QuicServerConfig endpointConfig;
   private Http3ServerConfig http3Config;
 
   public QuicHttpServerConfig() {
@@ -67,7 +67,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
 
     this.port = other.port;
     this.host = other.host;
-    this.endpointConfig = other.endpointConfig != null ? new QuicServerOptions(other.endpointConfig) : httpEndpointQuicConfig();
+    this.endpointConfig = other.endpointConfig != null ? new QuicServerConfig(other.endpointConfig) : httpEndpointQuicConfig();
     this.http3Config = other.http3Config != null ? new Http3ServerConfig(other.http3Config) : new Http3ServerConfig();
   }
 
@@ -134,7 +134,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
     return this;
   }
 
-  public QuicServerOptions getEndpointConfig() {
+  public QuicServerConfig getEndpointConfig() {
     return endpointConfig;
   }
 

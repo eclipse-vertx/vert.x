@@ -58,8 +58,8 @@ public class QuicServerTest extends VertxTestBase {
 
   private PfxOptions macKey;
 
-  static QuicServerOptions serverOptions() {
-    QuicServerOptions options = new QuicServerOptions();
+  static QuicServerConfig serverOptions() {
+    QuicServerConfig options = new QuicServerConfig();
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
     options.getTransportOptions().setInitialMaxData(10000000L);
@@ -110,7 +110,7 @@ public class QuicServerTest extends VertxTestBase {
     testConnect(serverOptions(), 0);
   }
 
-  private void testConnect(QuicServerOptions options,  int port) throws Exception {
+  private void testConnect(QuicServerConfig options, int port) throws Exception {
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
       assertEquals("test-protocol", conn.applicationLayerProtocol());
@@ -576,7 +576,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testSendDatagram() throws Exception {
     disableThreadChecks();
     waitFor(2);
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.getTransportOptions().setEnableDatagrams(true);
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
@@ -601,7 +601,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testReceiveDatagram() throws Exception {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.getTransportOptions().setEnableDatagrams(true);
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
@@ -625,7 +625,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testMaxIdleTimeout() throws Exception {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.getTransportOptions().setMaxIdleTimeout(Duration.ofMillis(1000));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
@@ -650,7 +650,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testInvalidPrivateKey() {
-    QuicServerOptions options = serverOptions()
+    QuicServerConfig options = serverOptions()
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey.copy().setPassword("incorrect"))
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
@@ -667,7 +667,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testInvalidKeyConf() {
-    QuicServerOptions options = serverOptions()
+    QuicServerConfig options = serverOptions()
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(new KeyCertOptions() {
       @Override
@@ -700,12 +700,12 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testInvalidTokenTimeWindow() {
     try {
-      new QuicServerOptions().setClientAddressValidationTimeWindow(null);
+      new QuicServerConfig().setClientAddressValidationTimeWindow(null);
       fail();
     } catch (NullPointerException ignore) {
     }
     try {
-      new QuicServerOptions().setClientAddressValidationTimeWindow(Duration.ofMillis(-10));
+      new QuicServerConfig().setClientAddressValidationTimeWindow(Duration.ofMillis(-10));
       fail();
     } catch (IllegalArgumentException ignore) {
     }
@@ -749,7 +749,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testTokenExpiration() throws Exception {
-    QuicServerOptions options = serverOptions()
+    QuicServerConfig options = serverOptions()
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey)
       .setClientAddressValidationTimeWindow(Duration.ofMillis(10));
@@ -783,7 +783,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testInvalidToken() throws Exception {
-    QuicServerOptions options = serverOptions()
+    QuicServerConfig options = serverOptions()
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey)
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
@@ -915,7 +915,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testStreamIdleTimeout() throws Exception {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
@@ -953,7 +953,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleHandler() throws Exception {
     int numEvents = 10;
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
@@ -990,7 +990,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testServerNameIndication() throws Exception {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
     QuicServer server = QuicServer.create(vertx, options);
     AtomicReference<String> serverName = new AtomicReference<>();

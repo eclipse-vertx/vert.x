@@ -16,12 +16,12 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Config operations of a Quic endpoint.
+ * Configuration of a Quic client.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
-public abstract class QuicEndpointOptions {
+public abstract class QuicEndpointConfig {
 
   private QuicOptions transportOptions;
   private SSLOptions sslOptions;
@@ -32,11 +32,11 @@ public abstract class QuicEndpointOptions {
   private Duration streamWriteIdleTimeout;
   private NetworkLogging streamLogging;
 
-  public QuicEndpointOptions() {
+  public QuicEndpointConfig() {
     this.transportOptions = new QuicOptions();
   }
 
-  public QuicEndpointOptions(QuicEndpointOptions other) {
+  public QuicEndpointConfig(QuicEndpointConfig other) {
 
     QLogConfig qLogConfig = other.qlogConfig;
 
@@ -57,7 +57,7 @@ public abstract class QuicEndpointOptions {
     return transportOptions;
   }
 
-  public QuicEndpointOptions setTransportOptions(QuicOptions transportOptions) {
+  public QuicEndpointConfig setTransportOptions(QuicOptions transportOptions) {
     this.transportOptions = Objects.requireNonNull(transportOptions);
     return this;
   }
@@ -95,7 +95,7 @@ public abstract class QuicEndpointOptions {
    * @param qLogConfig the qlog config
    * @return this exact object instance
    */
-  public QuicEndpointOptions setQLogConfig(QLogConfig qLogConfig) {
+  public QuicEndpointConfig setQLogConfig(QLogConfig qLogConfig) {
     this.qlogConfig = qLogConfig;
     return this;
   }
@@ -120,7 +120,7 @@ public abstract class QuicEndpointOptions {
    * @param keyLogFile the path to the key log file
    * @return this exact object instance
    */
-  public QuicEndpointOptions setKeyLogFile(String keyLogFile) {
+  public QuicEndpointConfig setKeyLogFile(String keyLogFile) {
     this.keyLogFile = keyLogFile;
     return this;
   }
@@ -132,7 +132,7 @@ public abstract class QuicEndpointOptions {
    * @param idleTimeout  the idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setStreamIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointConfig setStreamIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("streamIdleTimeout must be >= 0");
     }
@@ -154,7 +154,7 @@ public abstract class QuicEndpointOptions {
    * @param idleTimeout  the read idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setStreamReadIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointConfig setStreamReadIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("streamReadIdleTimeout must be >= 0");
     }
@@ -176,7 +176,7 @@ public abstract class QuicEndpointOptions {
    * @param idleTimeout  the write idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setStreamWriteIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointConfig setStreamWriteIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("streamWriteIdleTimeout must be >= 0");
     }
@@ -204,7 +204,7 @@ public abstract class QuicEndpointOptions {
    * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointOptions setStreamLogging(NetworkLogging config) {
+  public QuicEndpointConfig setStreamLogging(NetworkLogging config) {
     this.streamLogging = config;
     return this;
   }

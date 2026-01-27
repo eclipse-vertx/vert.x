@@ -44,9 +44,9 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicClientOptions;
+import io.vertx.core.net.QuicClientConfig;
 import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicServerOptions;
+import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.impl.quic.QuicConnectionHandler;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
@@ -68,7 +68,7 @@ public class QuicApplicationTest extends VertxTestBase {
     // HTTP/3
     byte[] content = "Hello World!\r\n".getBytes(CharsetUtil.US_ASCII);
 
-    QuicServerOptions serverOptions = serverOptions();
+    QuicServerConfig serverOptions = serverOptions();
     ServerSSLOptions serverSslOptions = serverOptions.getSslOptions();
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     serverOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
@@ -112,7 +112,7 @@ public class QuicApplicationTest extends VertxTestBase {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
-    QuicClientOptions clientOptions = clientOptions();
+    QuicClientConfig clientOptions = clientOptions();
     ClientSSLOptions clientSslOptions = clientOptions.getSslOptions();
     clientSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     clientOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
@@ -166,7 +166,7 @@ public class QuicApplicationTest extends VertxTestBase {
   @Test
   public void testStreamLevel() {
     // HTTP/1.1
-    QuicServerOptions serverOptions = serverOptions();
+    QuicServerConfig serverOptions = serverOptions();
     ServerSSLOptions serverSslOptions = serverOptions.getSslOptions();
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     serverOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
@@ -192,7 +192,7 @@ public class QuicApplicationTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicClientOptions clientOptions = clientOptions();
+    QuicClientConfig clientOptions = clientOptions();
     ClientSSLOptions clientSslOptions = clientOptions.getSslOptions();
     clientSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     clientOptions.getTransportOptions().setInitialMaxStreamsUni(3L);

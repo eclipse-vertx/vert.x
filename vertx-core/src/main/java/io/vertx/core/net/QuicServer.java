@@ -37,10 +37,10 @@ public interface QuicServer extends QuicEndpoint {
    * @param options the server configuration options
    * @return the server
    */
-  static QuicServer create(Vertx vertx, QuicServerOptions options) {
+  static QuicServer create(Vertx vertx, QuicServerConfig options) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
-    BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
+    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
     if (metrics != null) {
       metricsProvider = metrics::createQuicEndpointMetrics;
     } else {

@@ -43,8 +43,8 @@ import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
 @RunWith(LinuxOrOsx.class)
 public class QuicClientTest extends VertxTestBase {
 
-  static QuicClientOptions clientOptions() {
-    QuicClientOptions options = new QuicClientOptions();
+  static QuicClientConfig clientOptions() {
+    QuicClientConfig options = new QuicClientConfig();
     options.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
     options.getTransportOptions().setInitialMaxData(10000000L);
@@ -88,7 +88,7 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testClientSSLOverride() {
-    QuicServerOptions serverOptions = serverOptions();
+    QuicServerConfig serverOptions = serverOptions();
     serverOptions.getSslOptions().setKeyCertOptions(Cert.CLIENT_JKS.get());
     // server.close();
     server = QuicServer.create(vertx, serverOptions);
@@ -107,7 +107,7 @@ public class QuicClientTest extends VertxTestBase {
     } catch (Exception e) {
       assertSame(SSLHandshakeException.class, e.getClass());
     }
-    QuicClientOptions clientOptions = clientOptions();
+    QuicClientConfig clientOptions = clientOptions();
     clientOptions.getSslOptions().setTrustOptions(Trust.CLIENT_JKS.get());
     QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(clientOptions.getSslOptions());
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
@@ -329,7 +329,7 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testStreamIdleTimeout() throws Exception {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options);
     server.handler(conn -> {
@@ -363,7 +363,7 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testServerNameIndication() {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
     server = QuicServer.create(vertx, options);
     AtomicReference<String> serverName = new AtomicReference<>();

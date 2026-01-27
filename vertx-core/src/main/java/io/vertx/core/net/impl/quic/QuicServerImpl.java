@@ -57,17 +57,17 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   public static final String QUIC_SERVER_MAP_KEY = "__vertx.shared.quicServers";
 
-  public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                                      QuicServerOptions options) {
-    return new QuicServerImpl(vertx, metricsProvider, new QuicServerOptions(options));
+  public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                                      QuicServerConfig options) {
+    return new QuicServerImpl(vertx, metricsProvider, new QuicServerConfig(options));
   }
 
-  private final QuicServerOptions options;
+  private final QuicServerConfig options;
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
-  public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicServerOptions options) {
+  public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                        QuicServerConfig options) {
     super(vertx, metricsProvider, options);
     this.options = options;
   }

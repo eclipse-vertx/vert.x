@@ -59,10 +59,10 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     CC_MAP.put(QuicCongestionControlAlgorithm.BBR, io.netty.handler.codec.quic.QuicCongestionControlAlgorithm.BBR);
   }
 
-  private final QuicEndpointOptions options;
+  private final QuicEndpointConfig options;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
-  protected final BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
+  protected final BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
   private TransportMetrics<?> metrics;
   private Channel channel;
   protected ConnectionGroup connectionGroup;
@@ -70,8 +70,8 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private ContextInternal context;
 
   public QuicEndpointImpl(VertxInternal vertx,
-                          BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                          QuicEndpointOptions options) {
+                          BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                          QuicEndpointConfig options) {
 
     String keyLogFilePath = options.getKeyLogFile();
     File keylogFile;

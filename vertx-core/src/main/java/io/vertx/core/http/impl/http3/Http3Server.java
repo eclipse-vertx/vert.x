@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http.impl.http3;
 
-import io.netty.handler.codec.http3.*;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
@@ -19,13 +18,11 @@ import io.vertx.core.http.impl.HttpServerRequestImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
-import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.spi.metrics.*;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -37,7 +34,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
   private final VertxInternal vertx;
   private final QuicHttpServerConfig config;
   private final Http3ServerConfig http3Config;
-  private final QuicServerOptions endpointConfig;
+  private final QuicServerConfig endpointConfig;
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
   private QuicServer quicServer;
@@ -47,7 +44,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
     this.vertx = vertx;
     this.config = new QuicHttpServerConfig(config);
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
-    this.endpointConfig = config.getEndpointConfig() != null ? config.getEndpointConfig() : new QuicServerOptions();
+    this.endpointConfig = config.getEndpointConfig() != null ? config.getEndpointConfig() : new QuicServerConfig();
     this.actualPort = 0;
   }
 
@@ -190,7 +187,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
     Handler<HttpServerRequest> requestHandler;
     Handler<HttpConnection> connectionHandler;
 
-    BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
+    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
     VertxMetrics metrics = vertx.metrics();
     if (metrics != null) {
       metricsProvider = (quicEndpointOptions, socketAddress) -> metrics

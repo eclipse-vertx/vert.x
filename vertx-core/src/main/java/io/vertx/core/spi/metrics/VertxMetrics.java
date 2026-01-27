@@ -17,7 +17,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.*;
-import io.vertx.core.net.QuicEndpointOptions;
+import io.vertx.core.net.QuicEndpointConfig;
 
 /**
  * The main Vert.x metrics SPI which Vert.x will use internally. This interface serves two purposes, one
@@ -140,7 +140,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
+  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig options, SocketAddress localAddress) {
     return null;
   }
 

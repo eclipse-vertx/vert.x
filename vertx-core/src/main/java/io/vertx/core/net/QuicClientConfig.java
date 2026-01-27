@@ -15,12 +15,12 @@ import io.vertx.codegen.annotations.DataObject;
 import java.time.Duration;
 
 /**
- * Config operations of a Quic client.
+ * Configuration of a Quic client.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
-public class QuicClientOptions extends QuicEndpointOptions {
+public class QuicClientConfig extends QuicEndpointConfig {
 
   /**
    * The default value of connect timeout = 60 seconds
@@ -29,49 +29,49 @@ public class QuicClientOptions extends QuicEndpointOptions {
 
   private Duration connectTimeout;
 
-  public QuicClientOptions() {
+  public QuicClientConfig() {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
   }
 
-  public QuicClientOptions(QuicClientOptions other) {
+  public QuicClientConfig(QuicClientConfig other) {
     super(other);
 
     this.connectTimeout = other.connectTimeout;
   }
 
   @Override
-  public QuicClientOptions setTransportOptions(QuicOptions transportOptions) {
-    return (QuicClientOptions) super.setTransportOptions(transportOptions);
+  public QuicClientConfig setTransportOptions(QuicOptions transportOptions) {
+    return (QuicClientConfig) super.setTransportOptions(transportOptions);
   }
 
   @Override
-  public QuicClientOptions setQLogConfig(QLogConfig qLogConfig) {
-    return (QuicClientOptions) super.setQLogConfig(qLogConfig);
+  public QuicClientConfig setQLogConfig(QLogConfig qLogConfig) {
+    return (QuicClientConfig) super.setQLogConfig(qLogConfig);
   }
 
   @Override
-  public QuicClientOptions setKeyLogFile(String keyLogFile) {
-    return (QuicClientOptions) super.setKeyLogFile(keyLogFile);
+  public QuicClientConfig setKeyLogFile(String keyLogFile) {
+    return (QuicClientConfig) super.setKeyLogFile(keyLogFile);
   }
 
   @Override
-  public QuicClientOptions setStreamIdleTimeout(Duration idleTimeout) {
-    return (QuicClientOptions) super.setStreamIdleTimeout(idleTimeout);
+  public QuicClientConfig setStreamIdleTimeout(Duration idleTimeout) {
+    return (QuicClientConfig) super.setStreamIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientOptions setStreamReadIdleTimeout(Duration idleTimeout) {
-    return (QuicClientOptions) super.setStreamReadIdleTimeout(idleTimeout);
+  public QuicClientConfig setStreamReadIdleTimeout(Duration idleTimeout) {
+    return (QuicClientConfig) super.setStreamReadIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientOptions setStreamWriteIdleTimeout(Duration idleTimeout) {
-    return (QuicClientOptions) super.setStreamWriteIdleTimeout(idleTimeout);
+  public QuicClientConfig setStreamWriteIdleTimeout(Duration idleTimeout) {
+    return (QuicClientConfig) super.setStreamWriteIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientOptions setStreamLogging(NetworkLogging config) {
-    return (QuicClientOptions) super.setStreamLogging(config);
+  public QuicClientConfig setStreamLogging(NetworkLogging config) {
+    return (QuicClientConfig) super.setStreamLogging(config);
   }
 
   @Override
@@ -79,7 +79,7 @@ public class QuicClientOptions extends QuicEndpointOptions {
     return (ClientSSLOptions) super.getSslOptions();
   }
 
-  public QuicClientOptions setSslOptions(ClientSSLOptions sslOptions) {
+  public QuicClientConfig setSslOptions(ClientSSLOptions sslOptions) {
     super.setSslOptions(sslOptions);
     return this;
   }
@@ -102,7 +102,7 @@ public class QuicClientOptions extends QuicEndpointOptions {
    * @param connectTimeout  connect timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicClientOptions setConnectTimeout(Duration connectTimeout) {
+  public QuicClientConfig setConnectTimeout(Duration connectTimeout) {
     if (connectTimeout.isNegative()) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
     }

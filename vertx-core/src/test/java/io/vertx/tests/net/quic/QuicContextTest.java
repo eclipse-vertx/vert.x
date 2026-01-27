@@ -38,8 +38,8 @@ public class QuicContextTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    QuicServerOptions serverOptions = serverOptions();
-    QuicClientOptions clientOptions = clientOptions();
+    QuicServerConfig serverOptions = serverOptions();
+    QuicClientConfig clientOptions = clientOptions();
     serverOptions.getTransportOptions().setEnableDatagrams(true);
     clientOptions.getTransportOptions().setEnableDatagrams(true);
     server = QuicServer.create(vertx, serverOptions);

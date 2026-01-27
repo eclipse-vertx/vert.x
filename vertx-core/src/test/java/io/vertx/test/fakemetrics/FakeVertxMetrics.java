@@ -18,7 +18,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QuicEndpointOptions;
+import io.vertx.core.net.QuicEndpointConfig;
 import io.vertx.core.spi.metrics.*;
 
 /**
@@ -81,7 +81,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointOptions options, SocketAddress localAddress) {
+  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig options, SocketAddress localAddress) {
     return new FakeQuicEndpointMetrics();
   }
 

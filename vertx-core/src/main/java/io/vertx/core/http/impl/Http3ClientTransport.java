@@ -40,7 +40,7 @@ public class Http3ClientTransport implements HttpClientTransport {
   private final HttpClientMetrics<?, ?, ?> clientMetrics;
   private final Lock lock;
   private Future<QuicClient> clientFuture;
-  private final QuicClientOptions quicClientOptions;
+  private final QuicClientConfig quicClientOptions;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
@@ -59,7 +59,7 @@ public class Http3ClientTransport implements HttpClientTransport {
     transportOptions.setInitialMaxStreamsBidi(100L);
     transportOptions.setInitialMaxStreamsUni(100L);
 
-    QuicClientOptions quicClientOptions = new QuicClientOptions();
+    QuicClientConfig quicClientOptions = new QuicClientConfig();
     quicClientOptions.setTransportOptions(transportOptions);
     quicClientOptions.setConnectTimeout(options.getConnectTimeout());
     quicClientOptions.setSslOptions(sslOptions);
@@ -86,7 +86,7 @@ public class Http3ClientTransport implements HttpClientTransport {
     lock.lock();
     Future<QuicClient> fut = clientFuture;
     if (fut == null) {
-      BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
+      BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
       if (clientMetrics != null) {
         metricsProvider = (quicEndpointOptions, socketAddress) -> clientMetrics;
       } else {
