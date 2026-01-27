@@ -20,19 +20,16 @@ import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Represents options used by an {@link io.vertx.core.http.HttpServer} instance
@@ -209,38 +206,18 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
+  private Http1ServerConfig http1Config;
+  private Http2ServerConfig http2Config;
+  private WebSocketServerConfig webSocketConfig;
   private boolean compressionSupported;
   private int compressionLevel;
   private HttpCompressionOptions compression;
-  private int maxWebSocketFrameSize;
-  private int maxWebSocketMessageSize;
-  private List<String> webSocketSubProtocols;
   private boolean handle100ContinueAutomatically;
-  private int maxChunkSize;
-  private int maxInitialLineLength;
-  private int maxHeaderSize;
-  private int maxFormAttributeSize;
-  private int maxFormFields;
-  private int maxFormBufferedBytes;
-  private Http2Settings initialSettings;
-  private boolean http2ClearTextEnabled;
-  private int http2ConnectionWindowSize;
   private boolean decompressionSupported;
-  private boolean acceptUnmaskedFrames;
-  private int decoderInitialBufferSize;
-  private boolean perFrameWebSocketCompressionSupported;
-  private boolean perMessageWebSocketCompressionSupported;
-  private int webSocketCompressionLevel;
-  private boolean webSocketAllowServerNoContext;
-  private boolean webSocketPreferredClientNoContext;
-  private int webSocketClosingTimeout;
   private TracingPolicy tracingPolicy;
   private boolean registerWebSocketWriteHandlers;
-  private int http2RstFloodMaxRstFramePerWindow;
-  private int http2RstFloodWindowDuration;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
   private boolean strictThreadMode;
-  private boolean http2MultiplexImplementation;
 
   /**
    * Default constructor
@@ -261,35 +238,15 @@ public class HttpServerOptions extends NetServerOptions {
     this.compressionSupported = other.isCompressionSupported();
     this.compressionLevel = other.getCompressionLevel();
     this.compression = other.compression != null ? new HttpCompressionOptions(other.compression) : new HttpCompressionOptions();
-    this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
-    this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
-    this.webSocketSubProtocols = other.webSocketSubProtocols != null ? new ArrayList<>(other.webSocketSubProtocols) : null;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
-    this.maxChunkSize = other.getMaxChunkSize();
-    this.maxInitialLineLength = other.getMaxInitialLineLength();
-    this.maxHeaderSize = other.getMaxHeaderSize();
-    this.maxFormAttributeSize = other.getMaxFormAttributeSize();
-    this.maxFormFields = other.getMaxFormFields();
-    this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
-    this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
-    this.http2ClearTextEnabled = other.http2ClearTextEnabled;
-    this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
+    this.http1Config = new Http1ServerConfig(other.http1Config);
+    this.http2Config = new Http2ServerConfig(other.http2Config);
+    this.webSocketConfig = new WebSocketServerConfig(other.webSocketConfig);
     this.decompressionSupported = other.isDecompressionSupported();
-    this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
-    this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.perFrameWebSocketCompressionSupported = other.perFrameWebSocketCompressionSupported;
-    this.perMessageWebSocketCompressionSupported = other.perMessageWebSocketCompressionSupported;
-    this.webSocketCompressionLevel = other.webSocketCompressionLevel;
-    this.webSocketPreferredClientNoContext = other.webSocketPreferredClientNoContext;
-    this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
-    this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
     this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
-    this.http2RstFloodMaxRstFramePerWindow = other.http2RstFloodMaxRstFramePerWindow;
-    this.http2RstFloodWindowDuration = other.http2RstFloodWindowDuration;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
     this.strictThreadMode = other.strictThreadMode;
-    this.http2MultiplexImplementation = other.http2MultiplexImplementation;
   }
 
   /**
@@ -319,33 +276,14 @@ public class HttpServerOptions extends NetServerOptions {
     strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     compression = new HttpCompressionOptions();
-    maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
-    maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
-    maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
-    maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
-    maxFormFields = DEFAULT_MAX_FORM_FIELDS;
-    maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
-    initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
-    http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
-    http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
+    http1Config = new Http1ServerConfig();
+    http2Config = new Http2ServerConfig();
+    webSocketConfig = new WebSocketServerConfig();
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
-    acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
-    decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
-    perFrameWebSocketCompressionSupported = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
-    perMessageWebSocketCompressionSupported = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
-    webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
-    webSocketPreferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
-    webSocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
-    webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
-    http2RstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
-    http2RstFloodWindowDuration = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
-    http2MultiplexImplementation = DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
   }
 
   /**
@@ -355,6 +293,27 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions copy() {
     return new HttpServerOptions(this);
+  }
+
+  /**
+   * @return the configuration specific to the HTTP/1.x protocol.
+   */
+  public Http1ServerConfig getHttp1Config() {
+    return http1Config;
+  }
+
+  /**
+   * @return the configuration specific to the HTTP/2 protocol.
+   */
+  public Http2ServerConfig getHttp2Config() {
+    return http2Config;
+  }
+
+  /**
+   * @return the configuration specific to the WebSocket protocol.
+   */
+  public WebSocketServerConfig getWebSocketConfig() {
+    return webSocketConfig;
   }
 
   @Override
@@ -677,7 +636,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   public boolean isAcceptUnmaskedFrames() {
-    return acceptUnmaskedFrames;
+    return webSocketConfig.isAcceptUnmaskedFrames();
   }
 
   /**
@@ -689,7 +648,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setAcceptUnmaskedFrames(boolean acceptUnmaskedFrames) {
-    this.acceptUnmaskedFrames = acceptUnmaskedFrames;
+    webSocketConfig.setAcceptUnmaskedFrames(acceptUnmaskedFrames);
     return this;
   }
 
@@ -697,7 +656,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the maximum WebSocket frame size
    */
   public int getMaxWebSocketFrameSize() {
-    return maxWebSocketFrameSize;
+    return webSocketConfig.getMaxFrameSize();
   }
 
   /**
@@ -707,7 +666,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxWebSocketFrameSize(int maxWebSocketFrameSize) {
-    this.maxWebSocketFrameSize = maxWebSocketFrameSize;
+    webSocketConfig.setMaxFrameSize(maxWebSocketFrameSize);
     return this;
   }
 
@@ -715,7 +674,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return  the maximum WebSocket message size
    */
   public int getMaxWebSocketMessageSize() {
-    return maxWebSocketMessageSize;
+    return webSocketConfig.getMaxMessageSize();
   }
 
   /**
@@ -725,7 +684,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxWebSocketMessageSize(int maxWebSocketMessageSize) {
-    this.maxWebSocketMessageSize = maxWebSocketMessageSize;
+    webSocketConfig.setMaxMessageSize(maxWebSocketMessageSize);
     return this;
   }
 
@@ -736,11 +695,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions addWebSocketSubProtocol(String subProtocol) {
-    Objects.requireNonNull(subProtocol, "Cannot add a null WebSocket sub-protocol");
-    if (webSocketSubProtocols == null) {
-      webSocketSubProtocols = new ArrayList<>();
-    }
-    webSocketSubProtocols.add(subProtocol);
+    webSocketConfig.addWebSocketSubProtocol(subProtocol);
     return this;
   }
   /**
@@ -750,7 +705,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketSubProtocols(List<String> subProtocols) {
-    webSocketSubProtocols = subProtocols;
+    webSocketConfig.setSubProtocols(subProtocols);
     return this;
   }
 
@@ -758,7 +713,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Get the WebSocket list of sub-protocol
    */
   public List<String> getWebSocketSubProtocols() {
-    return webSocketSubProtocols;
+    return webSocketConfig.getSubProtocols();
   }
 
   /**
@@ -785,7 +740,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxChunkSize(int maxChunkSize) {
-    this.maxChunkSize = maxChunkSize;
+    http1Config.setMaxChunkSize(maxChunkSize);
     return this;
   }
 
@@ -793,7 +748,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the maximum HTTP chunk size that {@link HttpServerRequest#handler(Handler)} will receive
    */
   public int getMaxChunkSize() {
-    return maxChunkSize;
+    return http1Config.getMaxChunkSize();
   }
 
 
@@ -801,7 +756,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the maximum length of the initial line for HTTP/1.x (e.g. {@code "GET / HTTP/1.0"})
    */
   public int getMaxInitialLineLength() {
-    return maxInitialLineLength;
+    return http1Config.getMaxInitialLineLength();
   }
 
   /**
@@ -811,7 +766,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxInitialLineLength(int maxInitialLineLength) {
-    this.maxInitialLineLength = maxInitialLineLength;
+    http1Config.setMaxInitialLineLength(maxInitialLineLength);
     return this;
   }
 
@@ -819,7 +774,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum length of all headers for HTTP/1.x
    */
   public int getMaxHeaderSize() {
-    return maxHeaderSize;
+    return http1Config.getMaxHeaderSize();
   }
 
   /**
@@ -829,7 +784,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxHeaderSize(int maxHeaderSize) {
-    this.maxHeaderSize = maxHeaderSize;
+    http1Config.setMaxHeaderSize(maxHeaderSize);
     return this;
   }
 
@@ -837,7 +792,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum size of a form attribute
    */
   public int getMaxFormAttributeSize() {
-    return maxFormAttributeSize;
+    return http1Config.getMaxFormAttributeSize();
   }
 
   /**
@@ -847,7 +802,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxFormAttributeSize(int maxSize) {
-    this.maxFormAttributeSize = maxSize;
+    http1Config.setMaxFormAttributeSize(maxSize);
     return this;
   }
 
@@ -855,7 +810,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum number of form fields
    */
   public int getMaxFormFields() {
-    return maxFormFields;
+    return http1Config.getMaxFormFields();
   }
 
   /**
@@ -865,7 +820,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxFormFields(int maxFormFields) {
-    this.maxFormFields = maxFormFields;
+    http1Config.setMaxFormFields(maxFormFields);
     return this;
   }
 
@@ -873,7 +828,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum number of bytes a server can buffer when decoding a form
    */
   public int getMaxFormBufferedBytes() {
-    return maxFormBufferedBytes;
+    return http1Config.getMaxFormBufferedBytes();
   }
 
   /**
@@ -883,7 +838,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxFormBufferedBytes(int maxFormBufferedBytes) {
-    this.maxFormBufferedBytes = maxFormBufferedBytes;
+    http1Config.setMaxFormBufferedBytes(maxFormBufferedBytes);
     return this;
   }
 
@@ -891,7 +846,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the initial HTTP/2 connection settings
    */
   public Http2Settings getInitialSettings() {
-    return initialSettings;
+    return http2Config.getInitialSettings();
   }
 
   /**
@@ -901,7 +856,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setInitialSettings(Http2Settings settings) {
-    this.initialSettings = settings;
+    http2Config.setInitialSettings(settings);
     return this;
   }
 
@@ -933,7 +888,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return whether the server accepts HTTP/2 over clear text connections
    */
   public boolean isHttp2ClearTextEnabled() {
-    return http2ClearTextEnabled;
+    return http2Config.isClearTextEnabled();
   }
 
   /**
@@ -943,7 +898,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setHttp2ClearTextEnabled(boolean http2ClearTextEnabled) {
-    this.http2ClearTextEnabled = http2ClearTextEnabled;
+    http2Config.setClearTextEnabled(http2ClearTextEnabled);
     return this;
   }
 
@@ -951,7 +906,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the default HTTP/2 connection window size
    */
   public int getHttp2ConnectionWindowSize() {
-    return http2ConnectionWindowSize;
+    return http2Config.getConnectionWindowSize();
   }
 
   /**
@@ -965,7 +920,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setHttp2ConnectionWindowSize(int http2ConnectionWindowSize) {
-    this.http2ConnectionWindowSize = http2ConnectionWindowSize;
+    http2Config.setConnectionWindowSize(http2ConnectionWindowSize);
     return this;
   }
 
@@ -1020,7 +975,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * @return the initial buffer size for the HTTP decoder
    */
-  public int getDecoderInitialBufferSize() { return decoderInitialBufferSize; }
+  public int getDecoderInitialBufferSize() { return http1Config.getDecoderInitialBufferSize(); }
 
   /**
    * Set the initial buffer size for the HTTP decoder
@@ -1028,8 +983,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setDecoderInitialBufferSize(int decoderInitialBufferSize) {
-    Arguments.require(decoderInitialBufferSize > 0, "initialBufferSizeHttpDecoder must be > 0");
-    this.decoderInitialBufferSize = decoderInitialBufferSize;
+    http1Config.setDecoderInitialBufferSize(decoderInitialBufferSize);
     return this;
   }
 
@@ -1040,7 +994,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setPerFrameWebSocketCompressionSupported(boolean supported) {
-    this.perFrameWebSocketCompressionSupported = supported;
+    webSocketConfig.setPerFrameCompressionSupported(supported);
     return this;
   }
 
@@ -1050,7 +1004,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the http server will accept the per-frame deflate compression extension
    */
   public boolean getPerFrameWebSocketCompressionSupported() {
-    return this.perFrameWebSocketCompressionSupported;
+    return this.webSocketConfig.getPerFrameCompressionSupported();
   }
 
   /**
@@ -1060,7 +1014,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setPerMessageWebSocketCompressionSupported(boolean supported) {
-    this.perMessageWebSocketCompressionSupported = supported;
+    webSocketConfig.setPerMessageCompressionSupported(supported);
     return this;
   }
 
@@ -1070,7 +1024,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the http server will accept the per-message deflate compression extension
    */
   public boolean getPerMessageWebSocketCompressionSupported() {
-    return this.perMessageWebSocketCompressionSupported;
+    return webSocketConfig.getPerMessageCompressionSupported();
   }
 
   /**
@@ -1080,7 +1034,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketCompressionLevel(int compressionLevel) {
-    this.webSocketCompressionLevel = compressionLevel;
+    webSocketConfig.setCompressionLevel(compressionLevel);
     return this;
   }
 
@@ -1088,7 +1042,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the current WebSocket deflate compression level
    */
   public int getWebSocketCompressionLevel() {
-    return this.webSocketCompressionLevel;
+    return webSocketConfig.getCompressionLevel();
   }
 
   /**
@@ -1099,7 +1053,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketAllowServerNoContext(boolean accept) {
-    this.webSocketAllowServerNoContext = accept;
+    webSocketConfig.setAllowServerNoContext(accept);
     return this;
   }
 
@@ -1108,7 +1062,7 @@ public class HttpServerOptions extends NetServerOptions {
    * deflate compression extension offered by the client
    */
   public boolean getWebSocketAllowServerNoContext() {
-    return this.webSocketAllowServerNoContext;
+    return webSocketConfig.getAllowServerNoContext();
   }
 
   /**
@@ -1119,7 +1073,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketPreferredClientNoContext(boolean accept) {
-    this.webSocketPreferredClientNoContext = accept;
+    webSocketConfig.setPreferredClientNoContext(accept);
     return this;
   }
 
@@ -1128,14 +1082,14 @@ public class HttpServerOptions extends NetServerOptions {
    * deflate compression extension offered by the client
    */
   public boolean getWebSocketPreferredClientNoContext() {
-    return this.webSocketPreferredClientNoContext;
+    return webSocketConfig.getPreferredClientNoContext();
   }
 
   /**
    * @return the amount of time (in seconds) a client WebSocket will wait until it closes TCP connection after receiving a close frame
    */
   public int getWebSocketClosingTimeout() {
-    return webSocketClosingTimeout;
+    return (int)webSocketConfig.getClosingTimeout().toSeconds();
   }
 
   /**
@@ -1155,7 +1109,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketClosingTimeout(int webSocketClosingTimeout) {
-    this.webSocketClosingTimeout = webSocketClosingTimeout;
+    webSocketConfig.setClosingTimeout(Duration.ofSeconds(webSocketClosingTimeout));
     return this;
   }
 
@@ -1224,7 +1178,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the max number of RST frame allowed per time window
    */
   public int getHttp2RstFloodMaxRstFramePerWindow() {
-    return http2RstFloodMaxRstFramePerWindow;
+    return http2Config.getRstFloodMaxRstFramePerWindow();
   }
 
   /**
@@ -1235,7 +1189,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setHttp2RstFloodMaxRstFramePerWindow(int http2RstFloodMaxRstFramePerWindow) {
-    this.http2RstFloodMaxRstFramePerWindow = http2RstFloodMaxRstFramePerWindow;
+    http2Config.setRstFloodMaxRstFramePerWindow(http2RstFloodMaxRstFramePerWindow);
     return this;
   }
 
@@ -1243,7 +1197,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return the duration of the time window when checking the max number of RST frames.
    */
   public int getHttp2RstFloodWindowDuration() {
-    return http2RstFloodWindowDuration;
+    return (int)http2Config.getRstFloodWindowDuration().get(http2RstFloodWindowDurationTimeUnit.toChronoUnit());
   }
 
   /**
@@ -1254,7 +1208,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setHttp2RstFloodWindowDuration(int http2RstFloodWindowDuration) {
-    this.http2RstFloodWindowDuration = http2RstFloodWindowDuration;
+    http2Config.setRstFloodWindowDuration(Duration.of(http2RstFloodWindowDuration, http2RstFloodWindowDurationTimeUnit.toChronoUnit()));
     return this;
   }
 
@@ -1277,7 +1231,9 @@ public class HttpServerOptions extends NetServerOptions {
     if (http2RstFloodWindowDurationTimeUnit == null) {
       throw new NullPointerException();
     }
+    Duration tmp = http2Config.getRstFloodWindowDuration();
     this.http2RstFloodWindowDurationTimeUnit = http2RstFloodWindowDurationTimeUnit;
+    http2Config.setRstFloodWindowDuration(tmp);
     return this;
   }
 
@@ -1314,7 +1270,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return whether to use the HTTP/2 implementation based on multiplexed channel
    */
   public boolean getHttp2MultiplexImplementation() {
-    return http2MultiplexImplementation;
+    return http2Config.getMultiplexImplementation();
   }
 
   /**
@@ -1324,7 +1280,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setHttp2MultiplexImplementation(boolean http2MultiplexImplementation) {
-    this.http2MultiplexImplementation = http2MultiplexImplementation;
+    http2Config.setMultiplexImplementation(http2MultiplexImplementation);
     return this;
   }
 }
