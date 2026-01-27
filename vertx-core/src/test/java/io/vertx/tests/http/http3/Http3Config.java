@@ -64,7 +64,7 @@ public class Http3Config implements HttpConfig {
         throw new UnsupportedOperationException();
       }
       @Override
-      public HttpServerConfig setCompression(HttpCompressionOptions compression) {
+      public HttpServerConfig setCompression(HttpCompressionConfig compression) {
         throw new UnsupportedOperationException();
       }
       @Override

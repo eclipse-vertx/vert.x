@@ -61,8 +61,12 @@ public class HttpServerConnectionInitializer {
   private final boolean useCompression;
   private final boolean useDecompression;
   private final boolean handle100ContinueAutomatically;
+  private final int maxFormAttributeSize;
+  private final int maxFormFields;
+  private final int maxFormBufferedBytes;
   private final Http1ServerConfig http1Config;
   private final Http2ServerConfig http2Config;
+  private final boolean registerWebSocketWriteHandlers;
   private final WebSocketServerConfig webSocketConfig;
   private final CompressionManager compressionManager;
   private final ServerSSLOptions sslOptions;
@@ -82,8 +86,12 @@ public class HttpServerConnectionInitializer {
                                   CompressionOptions[] compressionOptions,
                                   int compressionContentSizeThreshold,
                                   boolean handle100ContinueAutomatically,
+                                  int maxFormAttributeSize,
+                                  int maxFormFields,
+                                  int maxFormBufferedBytes,
                                   Http1ServerConfig http1Config,
                                   Http2ServerConfig http2Config,
+                                  boolean registerWebSocketWriteHandlers,
                                   WebSocketServerConfig webSocketConfig,
                                   ServerSSLOptions sslOptions,
                                   String serverOrigin,
@@ -136,6 +144,9 @@ public class HttpServerConnectionInitializer {
     this.useDecompression = useDecompression;
     this.serverOrigin = serverOrigin;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.http1Config = http1Config;
     this.http2Config = http2Config;
     this.disableH2C = !http2Config.isClearTextEnabled();
@@ -145,6 +156,7 @@ public class HttpServerConnectionInitializer {
     this.compressionManager = compressionManager;
     this.strictThreadMode = strictThreadMode;
     this.sslOptions = sslOptions;
+    this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
     this.tracingPolicy = tracingPolicy;
     this.compressionContentSizeThreshold = compressionContentSizeThreshold;
@@ -274,7 +286,11 @@ public class HttpServerConnectionInitializer {
         handle100ContinueAutomatically,
         sslOptions,
         sslContextManager,
+        maxFormAttributeSize,
+        maxFormFields,
+        maxFormBufferedBytes,
         http1Config,
+        registerWebSocketWriteHandlers,
         webSocketConfig,
         chctx,
         context,

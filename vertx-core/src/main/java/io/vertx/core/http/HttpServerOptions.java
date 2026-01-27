@@ -206,14 +206,15 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
+  private int maxFormAttributeSize;
+  private int maxFormFields;
+  private int maxFormBufferedBytes;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
   private WebSocketServerConfig webSocketConfig;
-  private boolean compressionSupported;
   private int compressionLevel;
-  private HttpCompressionOptions compression;
+  private HttpCompressionConfig compression;
   private boolean handle100ContinueAutomatically;
-  private boolean decompressionSupported;
   private TracingPolicy tracingPolicy;
   private boolean registerWebSocketWriteHandlers;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
@@ -235,14 +236,15 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions(HttpServerOptions other) {
     super(other);
-    this.compressionSupported = other.isCompressionSupported();
+    this.maxFormAttributeSize = other.getMaxFormAttributeSize();
+    this.maxFormFields = other.getMaxFormFields();
+    this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
     this.compressionLevel = other.getCompressionLevel();
-    this.compression = other.compression != null ? new HttpCompressionOptions(other.compression) : new HttpCompressionOptions();
+    this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.http1Config = new Http1ServerConfig(other.http1Config);
     this.http2Config = new Http2ServerConfig(other.http2Config);
     this.webSocketConfig = new WebSocketServerConfig(other.webSocketConfig);
-    this.decompressionSupported = other.isDecompressionSupported();
     this.tracingPolicy = other.tracingPolicy;
     this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
@@ -273,14 +275,15 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   private void init() {
+    maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
+    maxFormFields = DEFAULT_MAX_FORM_FIELDS;
+    maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
-    compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
-    compression = new HttpCompressionOptions();
+    compression = new HttpCompressionConfig();
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     http1Config = new Http1ServerConfig();
     http2Config = new Http2ServerConfig();
     webSocketConfig = new WebSocketServerConfig();
-    decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
@@ -513,7 +516,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the server supports gzip/deflate compression
    */
   public boolean isCompressionSupported() {
-    return compressionSupported;
+    return compression.isCompressionEnabled();
   }
 
   /**
@@ -524,14 +527,14 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setCompressionSupported(boolean compressionSupported) {
-    this.compressionSupported = compressionSupported;
+    compression.setCompressionEnabled(compressionSupported);
     return this;
   }
 
   /**
    * @return the compression configuration
    */
-  public HttpCompressionOptions getCompression() {
+  public HttpCompressionConfig getCompression() {
     return compression;
   }
 
@@ -541,8 +544,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @param compression the new configuration
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setCompression(HttpCompressionOptions compression) {
-    this.compression = compression == null ? new HttpCompressionOptions() : compression;
+  public HttpServerOptions setCompression(HttpCompressionConfig compression) {
+    this.compression = compression == null ? new HttpCompressionConfig() : compression;
     return this;
   }
 
@@ -792,7 +795,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum size of a form attribute
    */
   public int getMaxFormAttributeSize() {
-    return http1Config.getMaxFormAttributeSize();
+    return maxFormAttributeSize;
   }
 
   /**
@@ -802,7 +805,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxFormAttributeSize(int maxSize) {
-    http1Config.setMaxFormAttributeSize(maxSize);
+    this.maxFormAttributeSize = maxSize;
     return this;
   }
 
@@ -810,7 +813,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum number of form fields
    */
   public int getMaxFormFields() {
-    return http1Config.getMaxFormFields();
+    return maxFormFields;
   }
 
   /**
@@ -820,7 +823,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxFormFields(int maxFormFields) {
-    http1Config.setMaxFormFields(maxFormFields);
+    this.maxFormFields = maxFormFields;
     return this;
   }
 
@@ -828,7 +831,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return Returns the maximum number of bytes a server can buffer when decoding a form
    */
   public int getMaxFormBufferedBytes() {
-    return http1Config.getMaxFormBufferedBytes();
+    return maxFormBufferedBytes;
   }
 
   /**
@@ -838,7 +841,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setMaxFormBufferedBytes(int maxFormBufferedBytes) {
-    http1Config.setMaxFormBufferedBytes(maxFormBufferedBytes);
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
     return this;
   }
 
@@ -958,7 +961,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the server supports decompression
    */
   public boolean isDecompressionSupported() {
-    return decompressionSupported;
+    return compression.isDecompressionEnabled();
   }
 
   /**
@@ -968,7 +971,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setDecompressionSupported(boolean decompressionSupported) {
-    this.decompressionSupported = decompressionSupported;
+    compression.setDecompressionEnabled(decompressionSupported);
     return this;
   }
 
@@ -1242,7 +1245,7 @@ public class HttpServerOptions extends NetServerOptions {
    */
   @GenIgnore
   public boolean isFileRegionEnabled() {
-    return !compressionSupported;
+    return !isCompressionSupported();
   }
 
   /**

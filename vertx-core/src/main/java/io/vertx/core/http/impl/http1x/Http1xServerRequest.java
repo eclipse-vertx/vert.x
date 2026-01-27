@@ -511,10 +511,9 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
           NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
-          Http1ServerConfig options = conn.serverConfig();
-          factory.setMaxLimit(options.getMaxFormAttributeSize());
-          int maxFields = options.getMaxFormFields();
-          int maxBufferedBytes = options.getMaxFormBufferedBytes();
+          factory.setMaxLimit(conn.maxFormAttributeSize());
+          int maxFields = conn.maxFormFields();
+          int maxBufferedBytes = conn.maxFormBufferedBytes();
           decoder = new HttpPostRequestDecoder(factory, request, HttpConstants.DEFAULT_CHARSET, maxFields, maxBufferedBytes);
         }
       } else {

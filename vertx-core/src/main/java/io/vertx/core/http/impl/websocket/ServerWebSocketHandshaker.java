@@ -53,12 +53,17 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
   private final Http1xServerRequest request;
   private final WebSocketServerConfig options;
   private final WebSocketServerHandshaker handshaker;
+  private final boolean registerWebSocketWriteHandlers;
   private boolean done;
 
-  public ServerWebSocketHandshaker(Http1xServerRequest request, WebSocketServerHandshaker handshaker, WebSocketServerConfig options) {
+  public ServerWebSocketHandshaker(Http1xServerRequest request,
+                                   WebSocketServerHandshaker handshaker,
+                                   WebSocketServerConfig options,
+                                   boolean registerWebSocketWriteHandlers) {
     super(request.context());
     this.request = request;
     this.handshaker = handshaker;
+    this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.options = options;
   }
 
@@ -186,7 +191,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
         request,
         options.getMaxFrameSize(),
         options.getMaxMessageSize(),
-        false);
+        registerWebSocketWriteHandlers);
       String subprotocol = handshaker.selectedSubprotocol();
       webSocket.subProtocol(subprotocol);
       webSocketConn.webSocket(webSocket);

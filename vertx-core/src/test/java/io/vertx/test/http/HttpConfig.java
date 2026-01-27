@@ -89,10 +89,10 @@ public interface HttpConfig {
           return this;
         }
         @Override
-        public HttpServerConfig setCompression(HttpCompressionOptions compression) {
+        public HttpServerConfig setCompression(HttpCompressionConfig compression) {
           if (compression != null) {
-            options.setCompressionSupported(true);
             options.setCompression(compression);
+            options.setCompressionSupported(true);
           } else {
             options.setCompressionSupported(false);
             options.setCompression(null);

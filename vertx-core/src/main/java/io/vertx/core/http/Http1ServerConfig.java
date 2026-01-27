@@ -17,18 +17,12 @@ public class Http1ServerConfig {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
-  private int maxFormAttributeSize;
-  private int maxFormFields;
-  private int maxFormBufferedBytes;
   private int decoderInitialBufferSize;
 
   public Http1ServerConfig() {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
-    maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
-    maxFormFields = DEFAULT_MAX_FORM_FIELDS;
-    maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
   }
 
@@ -36,9 +30,6 @@ public class Http1ServerConfig {
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
-    this.maxFormAttributeSize = other.getMaxFormAttributeSize();
-    this.maxFormFields = other.getMaxFormFields();
-    this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
   }
 
@@ -94,60 +85,6 @@ public class Http1ServerConfig {
    */
   public Http1ServerConfig setMaxHeaderSize(int maxHeaderSize) {
     this.maxHeaderSize = maxHeaderSize;
-    return this;
-  }
-
-  /**
-   * @return Returns the maximum size of a form attribute
-   */
-  public int getMaxFormAttributeSize() {
-    return maxFormAttributeSize;
-  }
-
-  /**
-   * Set the maximum size of a form attribute. Set to {@code -1} to allow unlimited length
-   *
-   * @param maxSize the new maximum size
-   * @return a reference to this, so the API can be used fluently
-   */
-  public Http1ServerConfig setMaxFormAttributeSize(int maxSize) {
-    this.maxFormAttributeSize = maxSize;
-    return this;
-  }
-
-  /**
-   * @return Returns the maximum number of form fields
-   */
-  public int getMaxFormFields() {
-    return maxFormFields;
-  }
-
-  /**
-   * Set the maximum number of fields of a form. Set to {@code -1} to allow unlimited number of attributes
-   *
-   * @param maxFormFields the new maximum
-   * @return a reference to this, so the API can be used fluently
-   */
-  public Http1ServerConfig setMaxFormFields(int maxFormFields) {
-    this.maxFormFields = maxFormFields;
-    return this;
-  }
-
-  /**
-   * @return Returns the maximum number of bytes a server can buffer when decoding a form
-   */
-  public int getMaxFormBufferedBytes() {
-    return maxFormBufferedBytes;
-  }
-
-  /**
-   * Set the maximum number of bytes a server can buffer when decoding a form. Set to {@code -1} to allow unlimited length
-   *
-   * @param maxFormBufferedBytes the new maximum
-   * @return a reference to this, so the API can be used fluently
-   */
-  public Http1ServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes) {
-    this.maxFormBufferedBytes = maxFormBufferedBytes;
     return this;
   }
 

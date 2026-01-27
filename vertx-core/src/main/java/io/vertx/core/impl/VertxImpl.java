@@ -395,7 +395,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new HttpServerImpl(this, serverOptions);
+    return new HttpServerImpl(this, new TcpHttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
   }
 
   @Override

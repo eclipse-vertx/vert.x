@@ -75,7 +75,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private final Supplier<ContextInternal> streamContextSupplier;
   private final TracingPolicy tracingPolicy;
   private final boolean eagerCreateRequestQueue;
+  private final int maxFormAttributeSize;
+  private final int maxFormFields;
+  private final int maxFormBufferedBytes;
   private final Http1ServerConfig serverConfig;
+  private final boolean registerWebSocketWriteHandlers;
   private final WebSocketServerConfig webSocketConfig;
   private final ServerSSLOptions sslOptions;
 
@@ -96,7 +100,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
                                 boolean handle100ContinueAutomatically,
                                 ServerSSLOptions sslOptions,
                                 SslContextManager sslContextManager,
+                                int maxFormAttributeSize,
+                                int maxFormFields,
+                                int maxFormBufferedBytes,
                                 Http1ServerConfig serverConfig,
+                                boolean registerWebSocketWriteHandlers,
                                 WebSocketServerConfig webSocketConfig,
                                 ChannelHandlerContext chctx,
                                 ContextInternal context,
@@ -106,7 +114,11 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     super(context, chctx, strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP);
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.serverConfig = serverConfig;
+    this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
     this.sslContextManager = sslContextManager;
     this.metrics = metrics;
@@ -118,8 +130,16 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
     this.sslOptions = sslOptions;
   }
 
-  Http1ServerConfig serverConfig() {
-    return serverConfig;
+  int maxFormAttributeSize() {
+    return maxFormAttributeSize;
+  }
+
+  int maxFormFields() {
+    return maxFormFields;
+  }
+
+  int maxFormBufferedBytes() {
+    return maxFormBufferedBytes;
   }
 
   @Override
@@ -326,7 +346,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
           promise.fail(e);
           return;
         }
-        promise.complete(new ServerWebSocketHandshaker(request, handshaker, webSocketConfig));
+        promise.complete(new ServerWebSocketHandshaker(request, handshaker, webSocketConfig, registerWebSocketWriteHandlers));
       }
     });
   }

@@ -45,16 +45,16 @@ public class Http1xCompressionThresholdTest extends HttpCompressionTestBase {
   }
 
   @Override
-  protected Optional<HttpCompressionOptions> serverCompressionConfig() {
+  protected Optional<HttpCompressionConfig> serverCompressionConfig() {
     GzipOptions compressor = StandardCompressionOptions.gzip(6, StandardCompressionOptions.gzip().windowBits(), StandardCompressionOptions.gzip().memLevel());
-    return Optional.of(new HttpCompressionOptions().addCompressor(compressor));
+    return Optional.of(new HttpCompressionConfig().addCompressor(compressor));
   }
 
   @Test
   public void testServerCompressionBelowThreshold() throws Exception {
     // set compression threshold to be greater than the content string size so it WILL NOT be compressed
     HttpServerConfig httpServerOptions = config.forServer();
-    httpServerOptions.setCompression(new HttpCompressionOptions()
+    httpServerOptions.setCompression(new HttpCompressionConfig()
       .addCompressor(CompressionConfig.gzip(6).compressor)
       .setContentSizeThreshold(COMPRESS_TEST_STRING.length() * 2)
     );
@@ -76,7 +76,7 @@ public class Http1xCompressionThresholdTest extends HttpCompressionTestBase {
   public void testServerCompressionAboveThreshold() throws Exception {
     // set compression threshold to be less than the content string size so it WILL be compressed
     HttpServerConfig config = this.config.forServer();
-    config.setCompression(new HttpCompressionOptions()
+    config.setCompression(new HttpCompressionConfig()
       .addCompressor(CompressionConfig.gzip(6).compressor)
       .setContentSizeThreshold(COMPRESS_TEST_STRING.length() / 2)
     );
