@@ -35,6 +35,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -47,7 +48,8 @@ import java.util.function.Supplier;
  */
 public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements HttpServerConnection, Http2ServerConnection {
 
-  private final HttpServerOptions options;
+//  private final HttpServerOptions options;
+  private final TracingPolicy tracingPolicy;
   private final HttpServerMetrics<?, ?, ?> metrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
@@ -62,11 +64,11 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     Supplier<ContextInternal> streamContextSupplier,
     VertxHttp2ConnectionHandler connHandler,
     Function<String, String> encodingDetector,
-    HttpServerOptions options,
+    TracingPolicy tracingPolicy,
     HttpServerMetrics metrics) {
     super(context, connHandler);
 
-    this.options = options;
+    this.tracingPolicy = tracingPolicy;
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
@@ -109,7 +111,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
       metrics,
       metric(),
       streamContextSupplier.get(),
-      options.getTracingPolicy()
+      tracingPolicy
     );
   }
 
@@ -233,7 +235,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
             new HttpRequestHeaders(headers_),
             method,
             path,
-            options.getTracingPolicy(),
+            tracingPolicy,
             promisedStreamId);
           promisedStream.setProperty(streamKey, vertxStream);
           int maxConcurrentStreams = handler.maxConcurrentStreams();

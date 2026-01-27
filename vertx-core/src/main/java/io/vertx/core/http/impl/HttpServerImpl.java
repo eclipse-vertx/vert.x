@@ -11,6 +11,8 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.compression.CompressionOptions;
+import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.CloseSequence;
@@ -24,6 +26,7 @@ import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -185,6 +188,14 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .build();
     }
+    CompressionOptions[] compressionOptions;
+    List<CompressionOptions> compressors = options.getCompression().getCompressors();
+    if (compressors == null) {
+      int compressionLevel = options.getCompressionLevel();
+      compressionOptions = new CompressionOptions[] { StandardCompressionOptions.gzip(compressionLevel, 15, 8), StandardCompressionOptions.deflate(compressionLevel, 15, 8) };
+    } else {
+      compressionOptions = compressors.toArray(new CompressionOptions[0]);
+    }
     NetServerInternal server = new NetServerBuilder(vertx, new NetServerConfig(tcpOptions))
       .fileRegionEnabled(tcpOptions.isFileRegionEnabled())
       .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(options, addr))
@@ -207,13 +218,24 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         webSocketHandhakeHandler,
         connectionHandler,
         exceptionHandler,
-        options.getHttp2ConnectionWindowSize());
+        options.getHttp2Config().getConnectionWindowSize());
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),
+        options.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP,
         streamContextSupplier,
         this,
-        options,
+        options.isCompressionSupported(),
+        options.isDecompressionSupported(),
+        options.getTracingPolicy(),
+        options.getLogActivity(),
+        compressionOptions,
+        options.getCompression().getContentSizeThreshold(),
+        options.isHandle100ContinueAutomatically(),
+        options.getHttp1Config(),
+        options.getHttp2Config(),
+        options.getWebSocketConfig(),
+        options.isSsl() ? options.getSslOptions() : null,
         serverOrigin,
         handler,
         exceptionHandler,

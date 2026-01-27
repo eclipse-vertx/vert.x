@@ -35,6 +35,7 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.Http1ServerConfig;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -44,6 +45,7 @@ import io.vertx.core.http.impl.http1x.VertxHttpResponseEncoder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.tracing.TracingPolicy;
 import org.openjdk.jmh.annotations.*;
 
 import java.text.DateFormat;
@@ -203,9 +205,8 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
   @Setup
   public void setup() {
     vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setDisableTCCL(true));
-    HttpServerOptions options = new HttpServerOptions().setStrictThreadMode(true);
     vertxChannel = new EmbeddedChannel(
-        new VertxHttpRequestDecoder(options),
+        new VertxHttpRequestDecoder(new Http1ServerConfig()),
         new VertxHttpResponseEncoder());
     vertxChannel.config().setAllocator(new Alloc());
 
@@ -229,11 +230,16 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
       Http1xServerConnection conn = new Http1xServerConnection(
         ThreadingModel.EVENT_LOOP,
         () -> context,
-              null,
-        options,
+        true,
+        false,
+        null,
+        null,
+        new Http1ServerConfig(),
+        null,
         chctx,
         context,
         "localhost",
+        TracingPolicy.PROPAGATE,
         null);
       conn.handler(app);
       return conn;
@@ -241,11 +247,11 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     vertxChannel.pipeline().addLast("handler", handler);
 
     nettyChannel = new EmbeddedChannel(new HttpRequestDecoder(
-        options.getMaxInitialLineLength(),
-        options.getMaxHeaderSize(),
-        options.getMaxChunkSize(),
+      HttpServerOptions.DEFAULT_MAX_INITIAL_LINE_LENGTH,
+      HttpServerOptions.DEFAULT_MAX_HEADER_SIZE,
+      HttpServerOptions.DEFAULT_MAX_CHUNK_SIZE,
         false,
-        options.getDecoderInitialBufferSize()) {
+      HttpServerOptions.DEFAULT_DECODER_INITIAL_BUFFER_SIZE) {
       @Override
       protected boolean isContentAlwaysEmpty(HttpMessage msg) {
         return false;
