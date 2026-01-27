@@ -158,7 +158,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
    * @param config the config
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicHttpServerConfig setHttp1Config(Http3ServerConfig config) {
+  public QuicHttpServerConfig setHttp3Config(Http3ServerConfig config) {
     this.http3Config = config;
     return this;
   }
