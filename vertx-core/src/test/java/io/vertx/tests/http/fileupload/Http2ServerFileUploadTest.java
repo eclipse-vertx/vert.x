@@ -21,6 +21,6 @@ public class Http2ServerFileUploadTest extends HttpServerFileUploadTest {
   }
 
   protected Http2ServerFileUploadTest(boolean multiplex) {
-    super(new HttpConfig.Http2(multiplex));
+    super(new HttpConfig.H2(multiplex));
   }
 }

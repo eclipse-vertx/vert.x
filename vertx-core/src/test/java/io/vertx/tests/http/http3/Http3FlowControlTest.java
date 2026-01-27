@@ -11,9 +11,9 @@
 package io.vertx.tests.http.http3;
 
 import io.vertx.core.Completable;
-import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
@@ -23,14 +23,14 @@ import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CyclicBarrier;
 
 @RunWith(LinuxOrOsx.class)
 public class Http3FlowControlTest extends VertxTestBase {
 
   private HttpServer server;
-  private Http3ClientOptions clientOptions;
+  private HttpClientConfig clientConfig;
   private HttpClientAgent client;
 
   @Override
@@ -38,11 +38,11 @@ public class Http3FlowControlTest extends VertxTestBase {
     super.setUp();
     Http3ServerOptions serverOptions = new Http3ServerOptions();
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
-    clientOptions = new Http3ClientOptions();
-    clientOptions.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    clientOptions.getSslOptions().setHostnameVerificationAlgorithm("");
+    clientConfig = new HttpClientConfig();
+    clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
+    clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
-    client = vertx.createHttpClient(clientOptions);
+    client = vertx.createHttpClient(clientConfig);
   }
 
   @Override

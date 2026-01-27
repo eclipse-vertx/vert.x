@@ -8,13 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.config;
+package io.vertx.core.http;
 
 import io.netty.handler.logging.ByteBufFormat;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Unstable;
-import io.vertx.core.http.Http3ClientOptions;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -24,11 +22,27 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Configuration of a {@link NetClient}
+ * Configuration of a {@link HttpClient}
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@DataObject
 public class HttpClientConfig {
+
+  private static List<HttpVersion> toSupportedVersion(HttpVersion version) {
+    switch (version) {
+      case HTTP_1_0:
+        return List.of(HttpVersion.HTTP_1_0);
+      case HTTP_1_1:
+        return List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+      case HTTP_2:
+        return List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
+      default:
+        throw new IllegalArgumentException();
+    }
+  }
+
+  public static final List<HttpVersion> DEFAULT_SUPPORTED_VERSIONS = List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
 
   private TcpOptions tcpOptions;
   private QuicOptions quicOptions;
@@ -45,7 +59,7 @@ public class HttpClientConfig {
   private ByteBufFormat activityLogDataFormat;
   private boolean ssl;
 
-  private HttpVersion defaultProtocolVersion;
+  private List<HttpVersion> supportedVersions;
   private Http1ClientConfig http1Config;
   private Http2ClientConfig http2Config;
   private Http3ClientConfig http3Config;
@@ -63,7 +77,7 @@ public class HttpClientConfig {
   public HttpClientConfig() {
     this.tcpOptions = new TcpOptions();
     this.quicOptions = new QuicOptions();
-    this.sslOptions = null;
+    this.sslOptions = new ClientSSLOptions().setUseAlpn(true);
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
     this.metricsName = ClientOptionsBase.DEFAULT_METRICS_NAME;
@@ -75,10 +89,10 @@ public class HttpClientConfig {
     this.logActivity = NetworkOptions.DEFAULT_LOG_ENABLED;
     this.activityLogDataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
-    this.defaultProtocolVersion = null;
-    this.http1Config = null;
-    this.http2Config = null;
-    this.http3Config = null;
+    this.supportedVersions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
+    this.http1Config = new Http1ClientConfig();
+    this.http2Config = new Http2ClientConfig();
+    this.http3Config = new Http3ClientConfig();
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
     this.decompressionSupported = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
@@ -106,7 +120,7 @@ public class HttpClientConfig {
     this.logActivity = other.logActivity;
     this.activityLogDataFormat = other.activityLogDataFormat;
     this.ssl = other.ssl;
-    this.defaultProtocolVersion = other.defaultProtocolVersion;
+    this.supportedVersions = new ArrayList<>(other.supportedVersions != null ? other.supportedVersions : DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ClientConfig(other.http2Config) : null;
     this.http3Config = other.http3Config != null ? new Http3ClientConfig(other.http3Config) : null;
@@ -124,7 +138,8 @@ public class HttpClientConfig {
 
   public HttpClientConfig(HttpClientOptions other) {
     this.tcpOptions = new TcpOptions(other.getTransportOptions());
-    this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
+    this.quicOptions = new QuicOptions();
+    this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : new ClientSSLOptions();
     this.sslEngineOptions = other.getSslEngineOptions() != null ? other.getSslEngineOptions().copy() : null;
     this.connectTimeout = Duration.ofMillis(other.getConnectTimeout());
     this.metricsName = other.getMetricsName();
@@ -136,9 +151,10 @@ public class HttpClientConfig {
     this.logActivity = other.getLogActivity();
     this.activityLogDataFormat = other.getActivityLogDataFormat();
     this.ssl = other.isSsl();
-    this.defaultProtocolVersion = other.getProtocolVersion();
+    this.supportedVersions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
     this.http1Config = other.getHttp1Config();
     this.http2Config = other.getHttp2Config();
+    this.http3Config = new Http3ClientConfig();
     this.verifyHost = other.isVerifyHost();
     this.decompressionSupported = other.isDecompressionSupported();
     this.defaultHost = other.getDefaultHost();
@@ -149,29 +165,6 @@ public class HttpClientConfig {
     this.shared = other.isShared();
     this.name = other.getName();
     this.followAlternativeServices = other.getFollowAlternativeServices();
-  }
-
-  public HttpClientConfig(Http3ClientOptions other) {
-
-    Http3ClientConfig config = new Http3ClientConfig();
-    config.setKeepAliveTimeout(other.getKeepAliveTimeout());
-    config.setInitialSettings(other.getInitialSettings());
-
-    this.quicOptions = new QuicOptions(other.getTransportOptions());
-    this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : null;
-    this.connectTimeout = other.getConnectTimeout();
-    this.metricsName = other.getMetricsName();
-    this.idleTimeout = other.getStreamIdleTimeout();
-    this.readIdleTimeout = other.getStreamReadIdleTimeout();
-    this.writeIdleTimeout = other.getStreamWriteIdleTimeout();
-    this.verifyHost = other.isVerifyHost();
-    this.defaultHost = other.getDefaultHost();
-    this.defaultPort = other.getDefaultPort();
-    this.maxRedirects = other.getMaxRedirects();
-    this.defaultProtocolVersion = HttpVersion.HTTP_3;
-    this.http1Config = null;
-    this.http2Config = null;
-    this.http3Config = config;
   }
 
   /**
@@ -464,10 +457,29 @@ public class HttpClientConfig {
   }
 
   /**
+   * @return the ordered list of the versions supported by the client
+   */
+  public List<HttpVersion> getSupportedVersions() {
+    return supportedVersions;
+  }
+
+  /**
+   * <p>Set the list of {@link HttpVersion} supported by the client, the first element of the list is considered
+   * as the default protocol to choose when none is specified at the request level.</p>
+   *
+   * @param supportedVersions the ordered list of supported versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setSupportedVersions(List<HttpVersion> supportedVersions) {
+    this.supportedVersions = Objects.requireNonNull(supportedVersions);
+    return this;
+  }
+
+  /**
    * @return the default protocol version
    */
   public HttpVersion getDefaultProtocolVersion() {
-    return defaultProtocolVersion;
+    return supportedVersions.isEmpty() ? null : supportedVersions.get(0);
   }
 
   /**
@@ -477,7 +489,7 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setDefaultProtocolVersion(HttpVersion protocolVersion) {
-    this.defaultProtocolVersion = protocolVersion;
+    setSupportedVersions(toSupportedVersion(protocolVersion));
     return this;
   }
 

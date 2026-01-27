@@ -20,6 +20,6 @@ import io.vertx.test.http.HttpConfig;
 public class Http2CompressionTest extends HttpCompressionTest {
 
   public Http2CompressionTest(CompressionConfig config) {
-    super(HttpConfig.Http2.CODEC, config);
+    super(HttpConfig.H2.CODEC, config);
   }
 }

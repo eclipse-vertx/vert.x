@@ -24,9 +24,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.config.Http1ClientConfig;
-import io.vertx.core.http.impl.config.Http2ClientConfig;
-import io.vertx.core.http.impl.config.HttpClientConfig;
+import io.vertx.core.http.Http1ClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
@@ -102,7 +102,7 @@ public class Http1xOrH2ClientTransport implements HttpClientTransport {
                                    Duration writeIdleTimeout,
                                    HttpClientMetrics clientMetrics) {
 
-    if (!http1Config.isKeepAlive() && http1Config.isPipelining()) {
+    if (http1Config != null && !http1Config.isKeepAlive() && http1Config.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     this.clientMetrics = clientMetrics;
@@ -225,6 +225,12 @@ public class Http1xOrH2ClientTransport implements HttpClientTransport {
 
     if (params.sslOptions != null && !params.sslOptions.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
       return context.failedFuture("Must enable ALPN when using H2");
+    }
+
+    if (!params.ssl && params.protocol == HttpVersion.HTTP_2) {
+      if (http2Config.isClearTextUpgrade() && http1Config == null) {
+        return context.failedFuture("Must enable HTTP/1.1 when using H2C with upgrade");
+      }
     }
 
     Promise<NetSocket> promise = context.promise();

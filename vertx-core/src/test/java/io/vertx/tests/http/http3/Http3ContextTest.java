@@ -14,6 +14,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpServerConnection;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.LinuxOrOsx;
@@ -23,11 +24,13 @@ import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 @RunWith(LinuxOrOsx.class)
 public class Http3ContextTest extends VertxTestBase {
 
   private HttpServer server;
-  private Http3ClientOptions clientOptions;
+  private HttpClientConfig clientConfig;
   private HttpClientAgent client;
 
   @Override
@@ -35,11 +38,11 @@ public class Http3ContextTest extends VertxTestBase {
     super.setUp();
     Http3ServerOptions serverOptions = new Http3ServerOptions();
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
-    clientOptions = new Http3ClientOptions();
-    clientOptions.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    clientOptions.getSslOptions().setHostnameVerificationAlgorithm("");
+    clientConfig = new HttpClientConfig();
+    clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
+    clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
-    client = vertx.createHttpClient(clientOptions);
+    client = vertx.createHttpClient(clientConfig);
   }
 
   @Override

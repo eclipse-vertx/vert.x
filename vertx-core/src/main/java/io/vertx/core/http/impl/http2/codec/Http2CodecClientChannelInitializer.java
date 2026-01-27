@@ -16,7 +16,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.config.Http2ClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.impl.http1x.Http1xClientConnection;
 import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;

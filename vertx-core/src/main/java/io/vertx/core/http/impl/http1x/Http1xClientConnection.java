@@ -39,7 +39,7 @@ import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpRequestHead;
-import io.vertx.core.http.impl.config.Http1ClientConfig;
+import io.vertx.core.http.Http1ClientConfig;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.websocket.WebSocketConnectionImpl;

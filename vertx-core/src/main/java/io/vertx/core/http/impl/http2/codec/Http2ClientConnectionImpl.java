@@ -20,7 +20,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.impl.config.Http2ClientConfig;
+import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
