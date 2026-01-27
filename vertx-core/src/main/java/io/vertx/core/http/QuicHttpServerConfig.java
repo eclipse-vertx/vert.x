@@ -26,15 +26,22 @@ import java.util.Arrays;
 @DataObject
 public class QuicHttpServerConfig extends HttpServerConfig {
 
+  public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 1000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE = 1000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI = 1000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 100L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 100L;
+
   private static QuicServerConfig httpEndpointQuicConfig() {
     QuicServerConfig config = new QuicServerConfig();
     config.getSslOptions().setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
-    config.getTransportOptions().setInitialMaxData(10000000L);
-    config.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
-    config.getTransportOptions().setInitialMaxStreamDataBidiRemote(1000000L);
-    config.getTransportOptions().setInitialMaxStreamDataUni(1000000L);
-    config.getTransportOptions().setInitialMaxStreamsBidi(100L);
-    config.getTransportOptions().setInitialMaxStreamsUni(100L);
+    config.getTransportOptions().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
+    config.getTransportOptions().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+    config.getTransportOptions().setInitialMaxStreamDataBidiRemote(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+    config.getTransportOptions().setInitialMaxStreamDataUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
+    config.getTransportOptions().setInitialMaxStreamsBidi(DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI);
+    config.getTransportOptions().setInitialMaxStreamsUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI);
     return config;
   }
 
