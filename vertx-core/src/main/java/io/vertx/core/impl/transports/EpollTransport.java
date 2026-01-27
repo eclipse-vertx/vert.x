@@ -134,6 +134,7 @@ public class EpollTransport implements Transport {
       }
       bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
+      bootstrap.childOption(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
     }
     Transport.super.configure(options, domainSocket, bootstrap);
   }
