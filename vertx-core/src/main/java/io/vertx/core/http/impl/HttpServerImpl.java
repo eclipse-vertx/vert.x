@@ -20,9 +20,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.tcp.NetServerImpl;
-import io.vertx.core.net.impl.tcp.NetServerInternal;
-import io.vertx.core.net.impl.tcp.NetSocketImpl;
+import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
@@ -187,7 +185,10 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .build();
     }
-    NetServerInternal server = vertx.createNetServer(tcpOptions);
+    NetServerInternal server = new NetServerBuilder(vertx, new NetServerConfig(tcpOptions))
+      .fileRegionEnabled(tcpOptions.isFileRegionEnabled())
+      .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(options, addr))
+      .build();
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;
     server.exceptionHandler(exceptionHandler);

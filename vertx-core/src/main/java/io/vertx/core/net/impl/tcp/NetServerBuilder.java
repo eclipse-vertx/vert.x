@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+package io.vertx.core.net.impl.tcp;
+
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.NetClientConfig;
+import io.vertx.core.spi.metrics.TransportMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
+
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+/**
+ * A builder to configure NetServer plugins.
+ */
+public class NetServerBuilder {
+
+  private VertxInternal vertx;
+  private NetServerConfig config;
+  private BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
+  private boolean fileRegionEnabled;
+  private boolean registerWriteHandler;
+
+  public NetServerBuilder(VertxInternal vertx, NetServerConfig config) {
+    this.vertx = vertx;
+    this.config = config;
+    this.fileRegionEnabled = false;
+    this.registerWriteHandler = false;
+  }
+
+  public NetServerBuilder(VertxInternal vertx, NetServerOptions options) {
+
+    NetServerConfig cfg = new NetServerConfig(options);
+
+    this.vertx = vertx;
+    this.config = cfg;
+    this.fileRegionEnabled = options.isFileRegionEnabled();
+    this.registerWriteHandler = options.isRegisterWriteHandler();
+    this.metricsProvider = (metrics,  localAddress) -> metrics.createNetServerMetrics(options, localAddress);
+  }
+
+  public NetServerBuilder fileRegionEnabled(boolean fileRegionEnabled) {
+    this.fileRegionEnabled = fileRegionEnabled;
+    return this;
+  }
+
+  public NetServerBuilder metricsProvider(BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
+    this.metricsProvider = metricsProvider;
+    return this;
+  }
+
+  public NetServerInternal build() {
+    return new NetServerImpl(
+      vertx,
+      config,
+      fileRegionEnabled,
+      registerWriteHandler,
+      metricsProvider);
+  }
+}

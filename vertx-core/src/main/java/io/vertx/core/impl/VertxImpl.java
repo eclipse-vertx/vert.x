@@ -48,10 +48,7 @@ import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.impl.transports.NioTransport;
-import io.vertx.core.net.impl.tcp.CleanableNetClient;
-import io.vertx.core.net.impl.tcp.NetClientBuilder;
-import io.vertx.core.net.impl.tcp.NetServerImpl;
-import io.vertx.core.net.impl.tcp.NetServerInternal;
+import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
@@ -353,8 +350,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return so;
   }
 
-  public NetServerImpl createNetServer(NetServerOptions options) {
-    return new NetServerImpl(this, options.copy());
+  public NetServerInternal createNetServer(NetServerOptions options) {
+    return new NetServerBuilder(this, options.copy()).build();
   }
 
   public NetClient createNetClient(NetClientOptions options) {

@@ -26,13 +26,8 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
@@ -45,18 +40,8 @@ import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.TrafficShapingOptions;
-import io.vertx.core.net.impl.ConnectionGroup;
-import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.ServerID;
-import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.net.*;
+import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -67,6 +52,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Vert.x TCP server
@@ -79,7 +66,11 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
   private final VertxInternal vertx;
-  private final NetServerOptions options;
+  private final NetServerConfig config;
+  private final ServerSSLOptions sslOptions;
+  private final boolean fileRegionEnabled;
+  private final boolean registerWriteHandler;
+  private final BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
   private Handler<NetSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
@@ -102,11 +93,19 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private TransportMetrics<?> metrics;
   private volatile int actualPort;
 
-  public NetServerImpl(VertxInternal vertx, NetServerOptions options) {
+  public NetServerImpl(VertxInternal vertx,
+                       NetServerConfig config,
+                       boolean fileRegionEnabled,
+                       boolean registerWriteHandler,
+                       BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
 
 
     this.vertx = vertx;
-    this.options = options;
+    this.config = config;
+    this.fileRegionEnabled = fileRegionEnabled;
+    this.registerWriteHandler = registerWriteHandler;
+    this.metricsProvider = metricsProvider;
+    this.sslOptions = config.getSslOptions() != null ? config.getSslOptions() : new ServerSSLOptions();
   }
 
   public SslContextProvider sslContextProvider() {
@@ -168,7 +167,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   @Override
   public Future<NetServer> listen() {
-    return listen(options.getPort(), options.getHost());
+    return listen(config.getPort(), config.getHost());
   }
 
   @Override
@@ -203,12 +202,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         ch.close();
         return;
       }
-      if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
+      if (HAProxyMessageCompletionHandler.canUseProxyProtocol(config.isUseProxyProtocol())) {
         IdleStateHandler idle;
         io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
         ch.pipeline().addLast(new HAProxyMessageDecoder());
-        if (options.getProxyProtocolTimeout() > 0) {
-          ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getProxyProtocolTimeout(), options.getProxyProtocolTimeoutUnit()));
+        Duration proxyProtocolTimeout = config.getProxyProtocolTimeout();
+        if (!(proxyProtocolTimeout.isNegative() || proxyProtocolTimeout.isZero())) {
+          ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, proxyProtocolTimeout.toMillis(), TimeUnit.MILLISECONDS));
         } else {
           idle = null;
         }
@@ -230,16 +230,16 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
 
     private void configurePipeline(Channel ch, SslContextProvider sslContextProvider, SslContextManager sslContextManager, ServerSSLOptions sslOptions) {
-      if (options.isSsl()) {
+      if (config.isSsl()) {
         List<String> applicationProtocols;
-        if (options.isUseAlpn()) {
-          applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+        if (sslOptions.isUseAlpn()) {
+          applicationProtocols = sslOptions.getApplicationLayerProtocols();
         } else {
           applicationProtocols = null;
         }
         SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni());
-        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(applicationProtocols, options.getSslHandshakeTimeout(),
-          options.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
+        ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(applicationProtocols, sslOptions.getSslHandshakeTimeout(),
+          sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();
         ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
         p.addListener(future -> {
@@ -264,9 +264,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     }
 
     private void connected(Channel ch, SslContextManager sslContextManager, SSLOptions sslOptions) {
-      initChannel(ch.pipeline(), options.isSsl());
+      initChannel(ch.pipeline(), config.isSsl());
       TransportMetrics<?> metrics = getMetrics();
-      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, options.isRegisterWriteHandler()));
+      VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, registerWriteHandler));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
       handler.addHandler(conn -> {
         if (metrics != null) {
@@ -280,23 +280,23 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
-    if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    if (config.getLogActivity()) {
+      pipeline.addLast("logging", new LoggingHandler(config.getActivityLogDataFormat()));
     }
-    int idleTimeout = options.getIdleTimeout();
-    int readIdleTimeout = options.getReadIdleTimeout();
-    int writeIdleTimeout = options.getWriteIdleTimeout();
+    long idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout().toMillis() : 0L;
+    long readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout().toMillis() : 0L;
+    long writeIdleTimeout = config.getWriteIdleTimeout() != null ? config.getWriteIdleTimeout().toMillis() : 0L;
     if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, TimeUnit.MILLISECONDS));
     }
-    if (ssl || !options.isFileRegionEnabled() || !vertx.transport().supportFileRegion() || (options.getTrafficShapingOptions() != null && options.getTrafficShapingOptions().getOutboundGlobalBandwidth() > 0)) {
+    if (ssl || !fileRegionEnabled || !vertx.transport().supportFileRegion() || (config.getTrafficShapingOptions() != null && config.getTrafficShapingOptions().getOutboundGlobalBandwidth() > 0)) {
       // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported or when outbound traffic shaping is enabled
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
   }
 
   protected GlobalTrafficShapingHandler createTrafficShapingHandler() {
-    return createTrafficShapingHandler(vertx.eventLoopGroup(), options.getTrafficShapingOptions());
+    return createTrafficShapingHandler(vertx.eventLoopGroup(), config.getTrafficShapingOptions());
   }
 
   private GlobalTrafficShapingHandler createTrafficShapingHandler(EventLoopGroup eventLoopGroup, TrafficShapingOptions options) {
@@ -373,9 +373,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     ContextInternal ctx = vertx.getOrCreateContext();
     if (server == null) {
       // Server not yet started
-      TrafficShapingOptions prev = this.options.getTrafficShapingOptions();
+      TrafficShapingOptions prev = this.config.getTrafficShapingOptions();
       boolean updated = prev == null || !prev.equals(options);
-      this.options.setTrafficShapingOptions(options);
+      this.config.setTrafficShapingOptions(options);
       return ctx.succeededFuture(updated);
     }
     // Update the traffic shaping options only for the actual/main server
@@ -392,9 +392,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     if (trafficShapingHandler == null) {
       promise.fail(new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
         "to use traffic shaping during startup"));
-    } else if (!options.equals(this.options.getTrafficShapingOptions())) {
+    } else if (!options.equals(this.config.getTrafficShapingOptions())) {
       // Compare with existing traffic-shaping options to ensure they are updated only when they differ.
-      this.options.setTrafficShapingOptions(options);
+      this.config.setTrafficShapingOptions(options);
       long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
       trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
       if (options.getPeakOutboundGlobalBandwidth() != 0) {
@@ -462,7 +462,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
         SslContextManager helper;
         try {
-          helper = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), options.isUseAlpn()));
+          helper = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions.isUseAlpn()));
         } catch (Exception e) {
           return context.failedFuture(e);
         }
@@ -477,12 +477,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           // Should close if the channel group is closed actually or check that
           channelGroup.add(ch);
           Future<SslContextProvider> scp = sslContextProvider;
-          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
+          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, sslOptions);
         };
         channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 
         //
-        if (options.isSsl() && options.getKeyCertOptions() == null && options.getTrustOptions() == null) {
+        if (config.isSsl() && sslOptions.getKeyCertOptions() == null && sslOptions.getTrustOptions() == null) {
           return context.failedFuture("Key/certificate is mandatory for SSL");
         }
 
@@ -493,8 +493,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
-        if (options.isSsl()) {
-          ServerSSLOptions sslOptions = options.getSslOptions();
+        if (config.isSsl()) {
+          ServerSSLOptions sslOptions = this.sslOptions;
           configure(sslOptions);
           sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, listenContext).onComplete(ar -> {
             if (ar.succeeded()) {
@@ -526,7 +526,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         worker = ch -> {
           group.add(ch);
           Future<SslContextProvider> scp = actualServer.sslContextProvider;
-          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, options.getSslOptions());
+          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, sslOptions);
         };
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
@@ -585,11 +585,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private TransportMetrics<?> createMetrics(SocketAddress localAddress) {
     VertxMetrics metrics = vertx.metrics();
     if (metrics != null) {
-      if (options instanceof HttpServerOptions) {
-        return metrics.createHttpServerMetrics((HttpServerOptions) options, localAddress);
-      } else {
-        return metrics.createNetServerMetrics(options, localAddress);
-      }
+      return metricsProvider.apply(metrics, localAddress);
     }
     return null;
   }
@@ -603,28 +599,30 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private void applyConnectionOptions(boolean domainSocket, ServerBootstrap bootstrap) {
 
     // Server socket channel
-    if (options.getAcceptBacklog() != -1) {
-      bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
+    if (config.getAcceptBacklog() != -1) {
+      bootstrap.option(ChannelOption.SO_BACKLOG, config.getAcceptBacklog());
     }
 
+    TcpOptions transportOptions = config.getTransportOptions();
+
     //  Socket/Datagram channel
-    if (options.getSendBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_SNDBUF, options.getSendBufferSize());
+    if (transportOptions.getSendBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_SNDBUF, transportOptions.getSendBufferSize());
     }
     if (!domainSocket) {
-      bootstrap.option(ChannelOption.SO_REUSEADDR, options.isReuseAddress());
+      bootstrap.option(ChannelOption.SO_REUSEADDR, transportOptions.isReuseAddress());
     }
-    if (options.getTrafficClass() != -1) {
-      bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
+    if (transportOptions.getTrafficClass() != -1) {
+      bootstrap.childOption(ChannelOption.IP_TOS, transportOptions.getTrafficClass());
     }
 
     // Channel
-    if (options.getReceiveBufferSize() != -1) {
-      bootstrap.childOption(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
-      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
+    if (transportOptions.getReceiveBufferSize() != -1) {
+      bootstrap.childOption(ChannelOption.SO_RCVBUF, transportOptions.getReceiveBufferSize());
+      bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(transportOptions.getReceiveBufferSize()));
     }
 
-    vertx.transport().configure(options.getTransportOptions(), domainSocket, bootstrap);
+    vertx.transport().configure(config.getTransportOptions(), domainSocket, bootstrap);
   }
 
 
