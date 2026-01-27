@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * Vert.x TCP server
@@ -66,7 +65,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
   private final VertxInternal vertx;
-  private final NetServerConfig config;
+  private final TcpServerConfig config;
   private final ServerSSLOptions sslOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
@@ -94,7 +93,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private volatile int actualPort;
 
   public NetServerImpl(VertxInternal vertx,
-                       NetServerConfig config,
+                       TcpServerConfig config,
                        boolean fileRegionEnabled,
                        boolean registerWriteHandler,
                        BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {

@@ -8,11 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl;
+package io.vertx.core.net;
 
 import io.netty.handler.logging.ByteBufFormat;
-import io.vertx.core.net.*;
-import io.vertx.core.net.impl.tcp.NetEndpointConfig;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -23,7 +21,7 @@ import java.util.List;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetClientConfig extends NetEndpointConfig {
+public class TcpClientConfig extends TcpEndpointConfig {
 
   private Duration connectTimeout;
   private String metricsName;
@@ -32,7 +30,7 @@ public class NetClientConfig extends NetEndpointConfig {
   private int reconnectAttempts;
   private Duration reconnectInterval;
 
-  public NetClientConfig() {
+  public TcpClientConfig() {
     super();
     this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
     this.metricsName = ClientOptionsBase.DEFAULT_METRICS_NAME;
@@ -42,7 +40,7 @@ public class NetClientConfig extends NetEndpointConfig {
     this.reconnectInterval = Duration.ofMillis(NetClientOptions.DEFAULT_RECONNECT_INTERVAL);
   }
 
-  public NetClientConfig(NetClientConfig other) {
+  public TcpClientConfig(TcpClientConfig other) {
     super(other);
     this.connectTimeout = other.connectTimeout;
     this.metricsName = other.metricsName;
@@ -52,7 +50,7 @@ public class NetClientConfig extends NetEndpointConfig {
     this.reconnectInterval = other.reconnectInterval;
   }
 
-  public NetClientConfig(NetClientOptions options) {
+  public TcpClientConfig(NetClientOptions options) {
     super(options);
     setConnectTimeout(Duration.ofMillis(options.getConnectTimeout()));
     setMetricsName(options.getMetricsName());
@@ -62,8 +60,8 @@ public class NetClientConfig extends NetEndpointConfig {
     setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
   }
 
-  public NetClientConfig setTransportOptions(TcpOptions transportOptions) {
-    return (NetClientConfig)super.setTransportOptions(transportOptions);
+  public TcpClientConfig setTransportOptions(TcpOptions transportOptions) {
+    return (TcpClientConfig)super.setTransportOptions(transportOptions);
   }
 
   public ClientSSLOptions getSslOptions() {
@@ -76,36 +74,36 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param sslOptions the options
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setSslOptions(ClientSSLOptions sslOptions) {
-    return (NetClientConfig)super.setSslOptions(sslOptions);
+  public TcpClientConfig setSslOptions(ClientSSLOptions sslOptions) {
+    return (TcpClientConfig)super.setSslOptions(sslOptions);
   }
 
-  public NetClientConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
-    return (NetClientConfig)super.setSslEngineOptions(sslEngineOptions);
+  public TcpClientConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (TcpClientConfig)super.setSslEngineOptions(sslEngineOptions);
   }
 
-  public NetClientConfig setIdleTimeout(Duration idleTimeout) {
-    return (NetClientConfig)super.setIdleTimeout(idleTimeout);
+  public TcpClientConfig setIdleTimeout(Duration idleTimeout) {
+    return (TcpClientConfig)super.setIdleTimeout(idleTimeout);
   }
 
-  public NetClientConfig setReadIdleTimeout(Duration idleTimeout) {
-    return (NetClientConfig)super.setReadIdleTimeout(idleTimeout);
+  public TcpClientConfig setReadIdleTimeout(Duration idleTimeout) {
+    return (TcpClientConfig)super.setReadIdleTimeout(idleTimeout);
   }
 
-  public NetClientConfig setWriteIdleTimeout(Duration idleTimeout) {
-    return (NetClientConfig)super.setWriteIdleTimeout(idleTimeout);
+  public TcpClientConfig setWriteIdleTimeout(Duration idleTimeout) {
+    return (TcpClientConfig)super.setWriteIdleTimeout(idleTimeout);
   }
 
-  public NetClientConfig setLogActivity(boolean logActivity) {
-    return (NetClientConfig)super.setLogActivity(logActivity);
+  public TcpClientConfig setLogActivity(boolean logActivity) {
+    return (TcpClientConfig)super.setLogActivity(logActivity);
   }
 
-  public NetClientConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    return (NetClientConfig)super.setActivityLogDataFormat(activityLogDataFormat);
+  public TcpClientConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (TcpClientConfig)super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
-  public NetClientConfig setSsl(boolean ssl) {
-    return (NetClientConfig)super.setSsl(ssl);
+  public TcpClientConfig setSsl(boolean ssl) {
+    return (TcpClientConfig)super.setSsl(ssl);
   }
 
   /**
@@ -121,7 +119,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param connectTimeout  connect timeout, in ms
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setConnectTimeout(Duration connectTimeout) {
+  public TcpClientConfig setConnectTimeout(Duration connectTimeout) {
     if (connectTimeout.isNegative() || connectTimeout.isZero()) {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
     }
@@ -143,7 +141,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param metricsName the metrics name
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setMetricsName(String metricsName) {
+  public TcpClientConfig setMetricsName(String metricsName) {
     this.metricsName = metricsName;
     return this;
   }
@@ -163,7 +161,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param proxyOptions proxy options object
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setProxyOptions(ProxyOptions proxyOptions) {
+  public TcpClientConfig setProxyOptions(ProxyOptions proxyOptions) {
     this.proxyOptions = proxyOptions;
     return this;
   }
@@ -185,7 +183,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param nonProxyHosts the list of non proxies hosts
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setNonProxyHosts(List<String> nonProxyHosts) {
+  public TcpClientConfig setNonProxyHosts(List<String> nonProxyHosts) {
     this.nonProxyHosts = nonProxyHosts;
     return this;
   }
@@ -196,7 +194,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param host the added host
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig addNonProxyHost(String host) {
+  public TcpClientConfig addNonProxyHost(String host) {
     if (nonProxyHosts == null) {
       nonProxyHosts = new ArrayList<>();
     }
@@ -217,7 +215,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param attempts  the maximum number of reconnect attempts
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setReconnectAttempts(int attempts) {
+  public TcpClientConfig setReconnectAttempts(int attempts) {
     if (attempts < -1) {
       throw new IllegalArgumentException("reconnect attempts must be >= -1");
     }
@@ -238,7 +236,7 @@ public class NetClientConfig extends NetEndpointConfig {
    * @param interval  the reconnect interval
    * @return a reference to this, so the API can be used fluently
    */
-  public NetClientConfig setReconnectInterval(Duration interval) {
+  public TcpClientConfig setReconnectInterval(Duration interval) {
     if (interval.isNegative() || interval.isZero()) {
       throw new IllegalArgumentException("reconnect interval must be >= 1");
     }

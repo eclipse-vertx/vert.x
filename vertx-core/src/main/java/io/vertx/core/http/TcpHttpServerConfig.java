@@ -12,11 +12,9 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
-import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.core.net.TcpOptions;
-import io.vertx.core.net.impl.tcp.NetServerConfig;
+import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
@@ -30,7 +28,7 @@ import java.util.List;
  */
 public class TcpHttpServerConfig extends HttpServerConfig {
 
-  private NetServerConfig endpointConfig;
+  private TcpServerConfig endpointConfig;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
   private WebSocketServerConfig webSocketConfig;
@@ -43,7 +41,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   public TcpHttpServerConfig(TcpHttpServerConfig other) {
     super(other);
 
-    this.endpointConfig = other.endpointConfig != null ? new NetServerConfig(other.endpointConfig) : new NetServerConfig();
+    this.endpointConfig = other.endpointConfig != null ? new TcpServerConfig(other.endpointConfig) : new TcpServerConfig();
     this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : new Http1ServerConfig();
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : new Http2ServerConfig();
     this.webSocketConfig = other.webSocketConfig != null ? new WebSocketServerConfig(other.webSocketConfig) : new WebSocketServerConfig();
@@ -64,7 +62,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
     compression.setContentSizeThreshold(options.getCompressionContentSizeThreshold());
     compression.setCompressors(compressors);
 
-    this.endpointConfig = new NetServerConfig(options);
+    this.endpointConfig = new TcpServerConfig(options);
     this.http1Config = new Http1ServerConfig(options.getHttp1Config());
     this.http2Config = new Http2ServerConfig(options.getHttp2Config());
     this.webSocketConfig = new WebSocketServerConfig(options.getWebSocketConfig());
@@ -183,7 +181,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
     return this;
   }
 
-  public NetServerConfig getEndpointConfig() {
+  public TcpServerConfig getEndpointConfig() {
     return endpointConfig;
   }
 

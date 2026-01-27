@@ -30,7 +30,7 @@ import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;
-import io.vertx.core.net.impl.NetClientConfig;
+import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.Metrics;
@@ -56,7 +56,7 @@ class NetClientImpl implements NetClientInternal {
   protected final boolean logEnabled;
 
   private final VertxInternal vertx;
-  private final NetClientConfig options;
+  private final TcpClientConfig options;
   private final TcpOptions transportOptions;
   private final boolean registerWriteHandler;
   private final String localAddress;
@@ -68,7 +68,7 @@ class NetClientImpl implements NetClientInternal {
 
   public NetClientImpl(VertxInternal vertx,
                        TransportMetrics metrics,
-                       NetClientConfig options,
+                       TcpClientConfig options,
                        boolean registerWriteHandler,
                        String localAddress) {
 

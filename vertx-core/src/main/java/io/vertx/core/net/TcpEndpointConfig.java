@@ -8,10 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.tcp;
+package io.vertx.core.net;
 
 import io.netty.handler.logging.ByteBufFormat;
-import io.vertx.core.net.*;
 
 import java.time.Duration;
 
@@ -20,7 +19,7 @@ import java.time.Duration;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class NetEndpointConfig {
+public abstract class TcpEndpointConfig {
 
   private TcpOptions transportOptions;
   private SSLOptions sslOptions;
@@ -32,7 +31,7 @@ public abstract class NetEndpointConfig {
   private ByteBufFormat activityLogDataFormat;
   private boolean ssl;
 
-  public NetEndpointConfig() {
+  public TcpEndpointConfig() {
     this.transportOptions = new TcpOptions();
     this.sslOptions = null;
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
@@ -44,7 +43,7 @@ public abstract class NetEndpointConfig {
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
   }
 
-  public NetEndpointConfig(NetEndpointConfig other) {
+  public TcpEndpointConfig(TcpEndpointConfig other) {
     this.transportOptions = other.transportOptions != null ? new TcpOptions(other.transportOptions) : null;
     this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : null;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
@@ -56,7 +55,7 @@ public abstract class NetEndpointConfig {
     this.ssl = other.ssl;
   }
 
-  public NetEndpointConfig(TCPSSLOptions options) {
+  public TcpEndpointConfig(TCPSSLOptions options) {
     setTransportOptions(new TcpOptions(options.getTransportOptions()));
     setSslOptions(options.getSslOptions() != null ? options.getSslOptions().copy() : null);
     setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
@@ -81,7 +80,7 @@ public abstract class NetEndpointConfig {
    * @param transportOptions the transport options
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setTransportOptions(TcpOptions transportOptions) {
+  public TcpEndpointConfig setTransportOptions(TcpOptions transportOptions) {
     this.transportOptions = transportOptions;
     return this;
   }
@@ -99,7 +98,7 @@ public abstract class NetEndpointConfig {
    * @param sslOptions the options
    * @return a reference to this, so the API can be used fluently
    */
-  protected NetEndpointConfig setSslOptions(SSLOptions sslOptions) {
+  protected TcpEndpointConfig setSslOptions(SSLOptions sslOptions) {
     this.sslOptions = sslOptions;
     return this;
   }
@@ -117,7 +116,7 @@ public abstract class NetEndpointConfig {
    * @param sslEngineOptions the ssl engine to use
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+  public TcpEndpointConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     this.sslEngineOptions = sslEngineOptions;
     return this;
   }
@@ -136,7 +135,7 @@ public abstract class NetEndpointConfig {
    * @param idleTimeout  the timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setIdleTimeout(Duration idleTimeout) {
+  public TcpEndpointConfig setIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("idleTimeout must be >= 0");
     }
@@ -151,7 +150,7 @@ public abstract class NetEndpointConfig {
    * @param idleTimeout  the read timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setReadIdleTimeout(Duration idleTimeout) {
+  public TcpEndpointConfig setReadIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("readIdleTimeout must be >= 0");
     }
@@ -173,7 +172,7 @@ public abstract class NetEndpointConfig {
    * @param idleTimeout  the write timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setWriteIdleTimeout(Duration idleTimeout) {
+  public TcpEndpointConfig setWriteIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
     }
@@ -201,7 +200,7 @@ public abstract class NetEndpointConfig {
    * @param logActivity true for logging the network activity
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setLogActivity(boolean logActivity) {
+  public TcpEndpointConfig setLogActivity(boolean logActivity) {
     this.logActivity = logActivity;
     return this;
   }
@@ -219,7 +218,7 @@ public abstract class NetEndpointConfig {
    * @param activityLogDataFormat the format to use
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+  public TcpEndpointConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
     this.activityLogDataFormat = activityLogDataFormat;
     return this;
   }
@@ -238,7 +237,7 @@ public abstract class NetEndpointConfig {
    * @param ssl  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setSsl(boolean ssl) {
+  public TcpEndpointConfig setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }

@@ -19,7 +19,7 @@ import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.net.endpoint.EndpointResolver;
-import io.vertx.core.net.impl.NetClientConfig;
+import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
@@ -162,8 +162,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     };
   }
 
-  private static NetClientConfig netClientConfig(HttpClientConfig httpConfig) {
-    NetClientConfig config = new NetClientConfig();
+  private static TcpClientConfig netClientConfig(HttpClientConfig httpConfig) {
+    TcpClientConfig config = new TcpClientConfig();
     config.setTransportOptions(httpConfig.getTcpOptions());
     config.setSslOptions(null);
     config.setSslEngineOptions(httpConfig.getSslEngineOptions() != null ? httpConfig.getSslEngineOptions().copy() : null);
@@ -233,7 +233,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         // Todo : change this (breaking)
         metrics = vertx.metrics().createHttpClientMetrics(new HttpClientOptions().setMetricsName(co.getMetricsName()));
       }
-      NetClientConfig netClientConfig = netClientConfig(co);
+      TcpClientConfig netClientConfig = netClientConfig(co);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null)).metrics(metrics).build();
       transport = new Http1xOrH2ClientTransport(
         tcpClient,
