@@ -94,7 +94,7 @@ public abstract class NetEndpointConfig {
   }
 
   /**
-   * Set the client SSL options.
+   * Set the SSL options.
    *
    * @param sslOptions the options
    * @return a reference to this, so the API can be used fluently

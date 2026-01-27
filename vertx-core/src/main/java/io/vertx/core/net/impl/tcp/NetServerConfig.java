@@ -76,12 +76,12 @@ public class NetServerConfig extends NetEndpointConfig {
   }
 
   /**
-   * Set the client SSL options.
+   * Set the server SSL options.
    *
    * @param sslOptions the options
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setSslOptions(ClientSSLOptions sslOptions) {
+  public NetServerConfig setSslOptions(ServerSSLOptions sslOptions) {
     return (NetServerConfig)super.setSslOptions(sslOptions);
   }
 
