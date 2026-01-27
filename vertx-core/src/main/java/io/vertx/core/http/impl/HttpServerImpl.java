@@ -219,7 +219,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         options.getCompression().isCompressionEnabled(), // Todo : remove
         options.getCompression().isDecompressionEnabled(), // Todo : remove
         options.getTracingPolicy(),
-        options.getEndpointConfig().getLogActivity(),
+        options.getEndpointConfig().getNetworkLogging() != null,
         options.getCompression().getCompressors().toArray(new CompressionOptions[0]),
         options.getCompression().getContentSizeThreshold(),
         options.isHandle100ContinueAutomatically(),

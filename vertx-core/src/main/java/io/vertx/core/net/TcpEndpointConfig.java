@@ -27,8 +27,7 @@ public abstract class TcpEndpointConfig {
   private Duration idleTimeout;
   private Duration readIdleTimeout;
   private Duration writeIdleTimeout;
-  private boolean logActivity;
-  private ByteBufFormat activityLogDataFormat;
+  private NetworkLogging networkLogging;
   private boolean ssl;
 
   public TcpEndpointConfig() {
@@ -38,8 +37,7 @@ public abstract class TcpEndpointConfig {
     this.idleTimeout = null;
     this.readIdleTimeout = null;
     this.writeIdleTimeout = null;
-    this.logActivity = NetworkOptions.DEFAULT_LOG_ENABLED;
-    this.activityLogDataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
+    this.networkLogging = null;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
   }
 
@@ -50,8 +48,7 @@ public abstract class TcpEndpointConfig {
     this.idleTimeout = other.idleTimeout;
     this.readIdleTimeout = other.readIdleTimeout;
     this.writeIdleTimeout = other.writeIdleTimeout;
-    this.logActivity = other.logActivity;
-    this.activityLogDataFormat = other.activityLogDataFormat;
+    this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
     this.ssl = other.ssl;
   }
 
@@ -62,8 +59,7 @@ public abstract class TcpEndpointConfig {
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    setLogActivity(options.getLogActivity());
-    setActivityLogDataFormat(options.getActivityLogDataFormat());
+    setNetworkLogging(options.getLogActivity() ? new NetworkLogging().setDataFormat(options.getActivityLogDataFormat()) : null);
     setSsl(options.isSsl());
   }
 
@@ -188,38 +184,20 @@ public abstract class TcpEndpointConfig {
   }
 
   /**
-   * @return true when network activity logging is enabled
+   * @return the connection network logging config, {@code null} means disabled
    */
-  public boolean getLogActivity() {
-    return logActivity;
+  public NetworkLogging getNetworkLogging() {
+    return networkLogging;
   }
 
   /**
-   * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
+   * Configure the per connection networking logging: Netty's stream pipeline is configured for logging on Netty's logger.
    *
-   * @param logActivity true for logging the network activity
+   * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public TcpEndpointConfig setLogActivity(boolean logActivity) {
-    this.logActivity = logActivity;
-    return this;
-  }
-
-  /**
-   * @return Netty's logging handler's data format.
-   */
-  public ByteBufFormat getActivityLogDataFormat() {
-    return activityLogDataFormat;
-  }
-
-  /**
-   * Set the value of Netty's logging handler's data format: Netty's pipeline is configured for logging on Netty's logger.
-   *
-   * @param activityLogDataFormat the format to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TcpEndpointConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    this.activityLogDataFormat = activityLogDataFormat;
+  public TcpEndpointConfig setNetworkLogging(NetworkLogging config) {
+    this.networkLogging = config;
     return this;
   }
 

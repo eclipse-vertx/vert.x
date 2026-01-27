@@ -55,8 +55,7 @@ public class HttpClientConfig {
   private Duration idleTimeout;
   private Duration readIdleTimeout;
   private Duration writeIdleTimeout;
-  private boolean logActivity;
-  private ByteBufFormat activityLogDataFormat;
+  private NetworkLogging networkLogging;
   private boolean ssl;
 
   private List<HttpVersion> supportedVersions;
@@ -86,8 +85,7 @@ public class HttpClientConfig {
     this.idleTimeout = null;
     this.readIdleTimeout = null;
     this.writeIdleTimeout = null;
-    this.logActivity = NetworkOptions.DEFAULT_LOG_ENABLED;
-    this.activityLogDataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
+    this.networkLogging = null;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
     this.supportedVersions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = new Http1ClientConfig();
@@ -117,8 +115,7 @@ public class HttpClientConfig {
     this.idleTimeout = other.idleTimeout;
     this.readIdleTimeout = other.readIdleTimeout;
     this.writeIdleTimeout = other.writeIdleTimeout;
-    this.logActivity = other.logActivity;
-    this.activityLogDataFormat = other.activityLogDataFormat;
+    this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
     this.ssl = other.ssl;
     this.supportedVersions = new ArrayList<>(other.supportedVersions != null ? other.supportedVersions : DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
@@ -148,8 +145,7 @@ public class HttpClientConfig {
     this.idleTimeout = other.getIdleTimeout() > 0 ? Duration.of(other.getIdleTimeout(), other.getIdleTimeoutUnit().toChronoUnit()) : null;
     this.readIdleTimeout = other.getReadIdleTimeout() > 0 ? Duration.of(other.getReadIdleTimeout(), other.getIdleTimeoutUnit().toChronoUnit()) : null;
     this.writeIdleTimeout = other.getWriteIdleTimeout() > 0 ? Duration.of(other.getWriteIdleTimeout(), other.getIdleTimeoutUnit().toChronoUnit()) : null;
-    this.logActivity = other.getLogActivity();
-    this.activityLogDataFormat = other.getActivityLogDataFormat();
+    this.networkLogging = other.getLogActivity() ? new NetworkLogging().setDataFormat(other.getActivityLogDataFormat()) : null;
     this.ssl = other.isSsl();
     this.supportedVersions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
     this.http1Config = other.getHttp1Config();
@@ -402,38 +398,20 @@ public class HttpClientConfig {
   }
 
   /**
-   * @return true when network activity logging is enabled
+   * @return the connection network logging config, {@code null} means disabled
    */
-  public boolean getLogActivity() {
-    return logActivity;
+  public NetworkLogging getNetworkLogging() {
+    return networkLogging;
   }
 
   /**
-   * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
+   * Configure the per connection networking logging: Netty's stream pipeline is configured for logging on Netty's logger.
    *
-   * @param logActivity true for logging the network activity
+   * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setLogActivity(boolean logActivity) {
-    this.logActivity = logActivity;
-    return this;
-  }
-
-  /**
-   * @return Netty's logging handler's data format.
-   */
-  public ByteBufFormat getActivityLogDataFormat() {
-    return activityLogDataFormat;
-  }
-
-  /**
-   * Set the value of Netty's logging handler's data format: Netty's pipeline is configured for logging on Netty's logger.
-   *
-   * @param activityLogDataFormat the format to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    this.activityLogDataFormat = activityLogDataFormat;
+  public HttpClientConfig setNetworkLogging(NetworkLogging config) {
+    this.networkLogging = config;
     return this;
   }
 

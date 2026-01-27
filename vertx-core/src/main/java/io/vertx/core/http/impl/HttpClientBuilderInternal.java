@@ -14,6 +14,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.NetworkLogging;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
@@ -174,8 +175,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     config.setIdleTimeout(httpConfig.getIdleTimeout());
     config.setReadIdleTimeout(httpConfig.getReadIdleTimeout());
     config.setWriteIdleTimeout(httpConfig.getWriteIdleTimeout());
-    config.setLogActivity(httpConfig.getLogActivity());
-    config.setActivityLogDataFormat(httpConfig.getActivityLogDataFormat());
+    config.setNetworkLogging(httpConfig.getNetworkLogging() != null ? new NetworkLogging(httpConfig.getNetworkLogging()) : null);
     config.setSsl(false);
     config.setSslOptions(null);
     return config;
@@ -239,8 +239,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         tcpClient,
         co.getTracingPolicy(),
         co.isDecompressionSupported(),
-        co.getLogActivity(),
-        co.getActivityLogDataFormat(),
+        co.getNetworkLogging() != null,
+        co.getNetworkLogging() != null ? co.getNetworkLogging().getDataFormat() : null,
         co.isForceSni(),
         supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_1_0) ? (co.getHttp1Config() != null ? co.getHttp1Config() : new Http1ClientConfig()) : null,
         supportedVersions.contains(HttpVersion.HTTP_2) ? (co.getHttp2Config() != null ? co.getHttp2Config() : new Http2ClientConfig()) : null,

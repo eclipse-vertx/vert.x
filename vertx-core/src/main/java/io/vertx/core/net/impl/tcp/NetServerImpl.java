@@ -279,8 +279,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
-    if (config.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(config.getActivityLogDataFormat()));
+    if (config.getNetworkLogging() != null) {
+      pipeline.addLast("logging", new LoggingHandler(config.getNetworkLogging().getDataFormat()));
     }
     long idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout().toMillis() : 0L;
     long readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout().toMillis() : 0L;

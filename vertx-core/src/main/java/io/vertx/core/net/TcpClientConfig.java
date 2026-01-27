@@ -94,12 +94,9 @@ public class TcpClientConfig extends TcpEndpointConfig {
     return (TcpClientConfig)super.setWriteIdleTimeout(idleTimeout);
   }
 
-  public TcpClientConfig setLogActivity(boolean logActivity) {
-    return (TcpClientConfig)super.setLogActivity(logActivity);
-  }
-
-  public TcpClientConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    return (TcpClientConfig)super.setActivityLogDataFormat(activityLogDataFormat);
+  @Override
+  public TcpClientConfig setNetworkLogging(NetworkLogging config) {
+    return (TcpClientConfig)super.setNetworkLogging(config);
   }
 
   public TcpClientConfig setSsl(boolean ssl) {

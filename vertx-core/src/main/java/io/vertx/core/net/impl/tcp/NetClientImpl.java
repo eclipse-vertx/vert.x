@@ -13,6 +13,7 @@ package io.vertx.core.net.impl.tcp;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -53,7 +54,7 @@ class NetClientImpl implements NetClientInternal {
   protected final Duration idleTimeout;
   protected final Duration readIdleTimeout;
   protected final Duration writeIdleTimeout;
-  protected final boolean logEnabled;
+  protected final ByteBufFormat logging;
 
   private final VertxInternal vertx;
   private final TcpClientConfig options;
@@ -84,7 +85,7 @@ class NetClientImpl implements NetClientInternal {
     this.localAddress = localAddress;
     this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
     this.metrics = metrics;
-    this.logEnabled = options.getLogActivity();
+    this.logging = options.getNetworkLogging() != null ? options.getNetworkLogging().getDataFormat() : null;
     this.idleTimeout = options.getIdleTimeout() != null ? options.getIdleTimeout() : Duration.ofMillis(0L);
     this.readIdleTimeout = options.getReadIdleTimeout() != null ? options.getReadIdleTimeout() : Duration.ofMillis(0L);
     this.writeIdleTimeout = options.getWriteIdleTimeout() != null ? options.getWriteIdleTimeout() : Duration.ofMillis(0L);
@@ -94,8 +95,8 @@ class NetClientImpl implements NetClientInternal {
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
-    if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    if (logging != null) {
+      pipeline.addLast("logging", new LoggingHandler(logging));
     }
     if (ssl || !vertx.transport().supportFileRegion()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
