@@ -3962,7 +3962,7 @@ public class Http1xTest extends HttpTest {
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1));
     server.requestHandler(req -> {
-      testComplete();
+      fail();
     });
     startServer(testAddress);
     NetClient client = vertx.createNetClient();

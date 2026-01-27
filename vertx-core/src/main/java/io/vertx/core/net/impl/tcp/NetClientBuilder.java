@@ -42,23 +42,7 @@ public class NetClientBuilder {
 
   public NetClientBuilder(VertxInternal vertx, NetClientOptions options) {
 
-    NetClientConfig cfg = new NetClientConfig();
-
-    cfg.setConnectTimeout(Duration.ofMillis(options.getConnectTimeout()));
-    cfg.setMetricsName(options.getMetricsName());
-    cfg.setNonProxyHosts(options.getNonProxyHosts() != null ? new ArrayList<>(options.getNonProxyHosts()) : null);
-    cfg.setProxyOptions(options.getProxyOptions() != null ? new ProxyOptions(options.getProxyOptions()) : null);
-    cfg.setReconnectAttempts(options.getReconnectAttempts());
-    cfg.setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
-    cfg.setSslOptions(options.getSslOptions() != null ? new ClientSSLOptions(options.getSslOptions()) : null);
-    cfg.setTransportOptions(new TcpOptions(options.getTransportOptions()));
-    cfg.setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    cfg.setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    cfg.setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    cfg.setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
-    cfg.setLogActivity(options.getLogActivity());
-    cfg.setActivityLogDataFormat(options.getActivityLogDataFormat());
-    cfg.setSsl(options.isSsl());
+    NetClientConfig cfg = new NetClientConfig(options);
 
     this.vertx = vertx;
     this.config = cfg;
