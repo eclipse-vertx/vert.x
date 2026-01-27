@@ -59,7 +59,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerOptions options, SocketAddress localAddress) {
+  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig options, SocketAddress localAddress) {
     return new FakeHttpServerMetrics();
   }
 

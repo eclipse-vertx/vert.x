@@ -45,8 +45,8 @@ import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 @RunWith(LinuxOrOsx.class)
 public class Http3ServerTest extends VertxTestBase {
 
-  public static Http3ServerOptions serverOptions() {
-    Http3ServerOptions options = new Http3ServerOptions();
+  public static QuicHttpServerConfig serverOptions() {
+    QuicHttpServerConfig options = new QuicHttpServerConfig();
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -362,7 +362,9 @@ public class Http3ServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
 
-    server = vertx.createHttpServer(serverOptions().setStreamIdleTimeout(Duration.ofMillis(200)));
+    QuicHttpServerConfig config = serverOptions();
+    config.getEndpointConfig().setStreamIdleTimeout(Duration.ofMillis(200));
+    server = vertx.createHttpServer(config);
 
     server.requestHandler(req -> {
       long now = System.currentTimeMillis();
@@ -392,12 +394,14 @@ public class Http3ServerTest extends VertxTestBase {
 
   @Test
   public void testSettings() throws Exception {
-    server = vertx.createHttpServer(serverOptions()
+    QuicHttpServerConfig config = serverOptions();
+    config.getHttp3Config()
       .setInitialSettings(new io.vertx.core.http.Http3Settings()
-        .setMaxFieldSectionSize(1024)
-        .setQPackBlockedStreams(1024)
-        .setQPackMaxTableCapacity(1024)
-      ));
+      .setMaxFieldSectionSize(1024)
+      .setQPackBlockedStreams(1024)
+      .setQPackMaxTableCapacity(1024)
+    );
+    server = vertx.createHttpServer(config);
 
     server.connectionHandler(connection -> {
       connection.remoteSettingsHandler(settings -> {

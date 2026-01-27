@@ -35,25 +35,19 @@ import java.util.function.BiFunction;
 public class Http3Server implements HttpServer, MetricsProvider {
 
   private final VertxInternal vertx;
-  private final Http3ServerOptions options;
+  private final QuicHttpServerConfig config;
+  private final Http3ServerConfig http3Config;
+  private final QuicServerOptions endpointConfig;
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
   private QuicServer quicServer;
   private volatile int actualPort;
 
-  public Http3Server(VertxInternal vertx, Http3ServerOptions options) {
-
-    options = new Http3ServerOptions(options);
-    options.getSslOptions().setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
-    options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidiRemote(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataUni(1000000L);
-    options.getTransportOptions().setInitialMaxStreamsBidi(100L);
-    options.getTransportOptions().setInitialMaxStreamsUni(100L);
-
+  public Http3Server(VertxInternal vertx, QuicHttpServerConfig config) {
     this.vertx = vertx;
-    this.options = options;
+    this.config = new QuicHttpServerConfig(config);
+    this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
+    this.endpointConfig = config.getEndpointConfig() != null ? config.getEndpointConfig() : new QuicServerOptions();
     this.actualPort = 0;
   }
 
@@ -129,7 +123,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
 
   @Override
   public Future<HttpServer> listen() {
-    return listen(SocketAddress.inetSocketAddress(options.getPort(), options.getHost()));
+    return listen(SocketAddress.inetSocketAddress(config.getPort(), config.getHost()));
   }
 
   private static class ConnectionHandler implements Handler<QuicConnection> {
@@ -200,7 +194,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
     VertxMetrics metrics = vertx.metrics();
     if (metrics != null) {
       metricsProvider = (quicEndpointOptions, socketAddress) -> metrics
-        .createHttpServerMetrics((Http3ServerOptions) quicEndpointOptions, socketAddress);
+        .createHttpServerMetrics(http3Config, socketAddress);
     } else {
       metricsProvider = null;
     }
@@ -211,7 +205,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
-      quicServer = new QuicServerImpl(vertx, metricsProvider, options);
+      quicServer = new QuicServerImpl(vertx, metricsProvider, endpointConfig);
     }
 
     if (requestHandler == null) {
@@ -219,8 +213,8 @@ public class Http3Server implements HttpServer, MetricsProvider {
     }
 
     quicServer.handler(new ConnectionHandler(quicServer, requestHandler, connectionHandler,
-      options.isHandle100ContinueAutomatically(), options.getMaxFormAttributeSize(), options.getMaxFormFields(),
-      options.getMaxFormBufferedBytes(), options.getInitialSettings() != null ? options.getInitialSettings().copy() : new Http3Settings()));
+      config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
+      config.getMaxFormBufferedBytes(), http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings()));
     return quicServer
       .bind(address)
       .map(port -> {

@@ -399,8 +399,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpServer createHttpServer(Http3ServerOptions options) {
-    return new Http3Server(this, options);
+  public HttpServer createHttpServer(HttpServerConfig config) {
+    if (config instanceof TcpHttpServerConfig) {
+      return new HttpServerImpl(this, new TcpHttpServerConfig((TcpHttpServerConfig)config), false);
+    } else {
+      return new Http3Server(this, new QuicHttpServerConfig((QuicHttpServerConfig)config));
+    }
   }
 
   @Override

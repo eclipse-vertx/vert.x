@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Configuration of a {@link HttpServer}
+ * Configuration of a TCP {@link HttpServer}
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -35,6 +35,20 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   private Http2ServerConfig http2Config;
   private WebSocketServerConfig webSocketConfig;
   private HttpCompressionConfig compression; // Currently here as we do not support compression for QUIC
+
+  public TcpHttpServerConfig() {
+    this(new HttpServerOptions());
+  }
+
+  public TcpHttpServerConfig(TcpHttpServerConfig other) {
+    super(other);
+
+    this.endpointConfig = other.endpointConfig != null ? new NetServerConfig(other.endpointConfig) : new NetServerConfig();
+    this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : new Http1ServerConfig();
+    this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : new Http2ServerConfig();
+    this.webSocketConfig = other.webSocketConfig != null ? new WebSocketServerConfig(other.webSocketConfig) : new WebSocketServerConfig();
+    this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
+  }
 
   public TcpHttpServerConfig(HttpServerOptions options) {
     super(options);
@@ -77,19 +91,20 @@ public class TcpHttpServerConfig extends HttpServerConfig {
     return endpointConfig.getSslOptions();
   }
 
-  @Override
-  public TcpHttpServerConfig setSslOptions(ServerSSLOptions sslOptions) {
-    endpointConfig.setSslOptions(sslOptions);
-    return this;
-  }
-
-  @Override
+  /**
+   * @return the SSL engine implementation to use
+   */
   public SSLEngineOptions getSslEngineOptions() {
     return endpointConfig.getSslEngineOptions();
   }
 
-  @Override
-  public TcpHttpServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+  /**
+   * Set to use SSL engine implementation to use.
+   *
+   * @param sslEngineOptions the ssl engine to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     endpointConfig.setSslEngineOptions(sslEngineOptions);
     return this;
   }
@@ -149,12 +164,20 @@ public class TcpHttpServerConfig extends HttpServerConfig {
     return this;
   }
 
-  @Override
+  /**
+   *
+   * @return is SSL/TLS enabled?
+   */
   public boolean isSsl() {
     return endpointConfig.isSsl();
   }
 
-  @Override
+  /**
+   * Set whether SSL/TLS is enabled
+   *
+   * @param ssl  true if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
   public TcpHttpServerConfig setSsl(boolean ssl) {
     endpointConfig.setSsl(ssl);
     return this;

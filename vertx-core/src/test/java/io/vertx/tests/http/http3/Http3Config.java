@@ -52,7 +52,7 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpServerConfig forServer() {
-    Http3ServerOptions options = new Http3ServerOptions();
+    QuicHttpServerConfig options = new QuicHttpServerConfig();
     options.setPort(port);
     options.setHost(host);
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
@@ -88,7 +88,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpServerConfig setIdleTimeout(Duration timeout) {
-        options.setStreamIdleTimeout(timeout);
+        options.getEndpointConfig().setStreamIdleTimeout(timeout);
         return this;
       }
       @Override

@@ -41,31 +41,28 @@ public abstract class HttpServerConfig {
     this.tracingPolicy = options.getTracingPolicy();
   }
 
+  public HttpServerConfig() {
+    this.maxFormAttributeSize = HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
+    this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
+    this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
+    this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
+    this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
+    this.tracingPolicy = HttpServerOptions.DEFAULT_TRACING_POLICY;
+  }
+
+  public HttpServerConfig(HttpServerConfig other) {
+    this.maxFormAttributeSize = other.maxFormAttributeSize;
+    this.maxFormFields = other.maxFormFields;
+    this.maxFormBufferedBytes = other.maxFormBufferedBytes;
+    this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
+    this.strictThreadMode = other.strictThreadMode;
+    this.tracingPolicy = other.tracingPolicy;
+  }
+
   /**
    * @return the client SSL options.
    */
   public abstract ServerSSLOptions getSslOptions();
-
-  /**
-   * Set the server SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public abstract HttpServerConfig setSslOptions(ServerSSLOptions sslOptions);
-
-  /**
-   * @return the SSL engine implementation to use
-   */
-  public abstract SSLEngineOptions getSslEngineOptions();
-
-  /**
-   * Set to use SSL engine implementation to use.
-   *
-   * @param sslEngineOptions the ssl engine to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public abstract HttpServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions);
 
   /**
    *
@@ -135,20 +132,6 @@ public abstract class HttpServerConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public abstract HttpServerConfig setWriteIdleTimeout(Duration idleTimeout);
-
-  /**
-   *
-   * @return is SSL/TLS enabled?
-   */
-  public abstract boolean isSsl();
-
-  /**
-   * Set whether SSL/TLS is enabled
-   *
-   * @param ssl  true if enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public abstract HttpServerConfig setSsl(boolean ssl);
 
   /**
    * @return Returns the maximum size of a form attribute

@@ -63,7 +63,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Version of {@link #createHttpServerMetrics(HttpServerOptions, SocketAddress)} for HTTP/3
    */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerOptions options, SocketAddress localAddress) {
+  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig options, SocketAddress localAddress) {
     return null;
   }
 

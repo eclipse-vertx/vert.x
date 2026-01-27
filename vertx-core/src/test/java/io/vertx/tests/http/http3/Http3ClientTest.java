@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @RunWith(LinuxOrOsx.class)
 public class Http3ClientTest extends VertxTestBase {
 
-  private Http3ServerOptions serverOptions;
+  private QuicHttpServerConfig serverOptions;
   private HttpServer server;
   private HttpClientConfig clientConfig;
   private HttpClientAgent client;
@@ -29,7 +29,7 @@ public class Http3ClientTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    serverOptions = new Http3ServerOptions();
+    serverOptions = new QuicHttpServerConfig();
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -388,14 +388,14 @@ public class Http3ClientTest extends VertxTestBase {
   @Test
   public void testSettings() throws Exception {
 
-    server.close();
-    server = vertx.createHttpServer(new Http3ServerOptions(serverOptions)
-      .setInitialSettings(new Http3Settings()
+    QuicHttpServerConfig serverConfig = new QuicHttpServerConfig(serverOptions);
+    serverConfig.getHttp3Config().setInitialSettings(new Http3Settings()
         .setMaxFieldSectionSize(1024)
         .setQPackMaxTableCapacity(1024)
-        .setQPackBlockedStreams(1024)
-      )
-    );
+        .setQPackBlockedStreams(1024));
+
+    server.close();
+    server = vertx.createHttpServer(serverConfig);
 
     server.connectionHandler(connection -> {
       connection.remoteSettingsHandler(settings -> {
