@@ -41,6 +41,7 @@ public class Http3ClientTransport implements HttpClientTransport {
   private final Lock lock;
   private Future<QuicClient> clientFuture;
   private final QuicClientConfig quicClientOptions;
+  private final ClientSSLOptions sslOptions;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
@@ -62,7 +63,6 @@ public class Http3ClientTransport implements HttpClientTransport {
     QuicClientConfig quicClientOptions = new QuicClientConfig();
     quicClientOptions.setTransportOptions(transportOptions);
     quicClientOptions.setConnectTimeout(options.getConnectTimeout());
-    quicClientOptions.setSslOptions(sslOptions);
     quicClientOptions.setStreamIdleTimeout(options.getIdleTimeout());
     quicClientOptions.setStreamReadIdleTimeout(options.getReadIdleTimeout());
     quicClientOptions.setStreamWriteIdleTimeout(options.getWriteIdleTimeout());
@@ -78,6 +78,7 @@ public class Http3ClientTransport implements HttpClientTransport {
     this.quicClientOptions = quicClientOptions;
     this.keepAliveTimeoutMillis = options.getHttp3Config().getKeepAliveTimeout() == null ? 0L : options.getHttp3Config().getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
+    this.sslOptions = sslOptions;
   }
 
   @Override
@@ -92,7 +93,7 @@ public class Http3ClientTransport implements HttpClientTransport {
       } else {
         metricsProvider = null;
       }
-      QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicClientOptions);
+      QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicClientOptions, sslOptions);
       fut = client.bind(SocketAddress.inetSocketAddress(0, "localhost")).map(client);
       clientFuture = fut;
       lock.unlock();

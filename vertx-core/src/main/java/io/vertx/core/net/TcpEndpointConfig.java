@@ -22,7 +22,6 @@ import java.time.Duration;
 public abstract class TcpEndpointConfig {
 
   private TcpOptions transportOptions;
-  private SSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
   private Duration idleTimeout;
   private Duration readIdleTimeout;
@@ -32,7 +31,6 @@ public abstract class TcpEndpointConfig {
 
   public TcpEndpointConfig() {
     this.transportOptions = new TcpOptions();
-    this.sslOptions = null;
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.idleTimeout = null;
     this.readIdleTimeout = null;
@@ -43,7 +41,6 @@ public abstract class TcpEndpointConfig {
 
   public TcpEndpointConfig(TcpEndpointConfig other) {
     this.transportOptions = other.transportOptions != null ? new TcpOptions(other.transportOptions) : null;
-    this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : null;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.idleTimeout = other.idleTimeout;
     this.readIdleTimeout = other.readIdleTimeout;
@@ -54,7 +51,6 @@ public abstract class TcpEndpointConfig {
 
   public TcpEndpointConfig(TCPSSLOptions options) {
     setTransportOptions(new TcpOptions(options.getTransportOptions()));
-    setSslOptions(options.getSslOptions() != null ? options.getSslOptions().copy() : null);
     setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
@@ -78,24 +74,6 @@ public abstract class TcpEndpointConfig {
    */
   public TcpEndpointConfig setTransportOptions(TcpOptions transportOptions) {
     this.transportOptions = transportOptions;
-    return this;
-  }
-
-  /**
-   * @return the client SSL options.
-   */
-  public SSLOptions getSslOptions() {
-    return sslOptions;
-  }
-
-  /**
-   * Set the SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  protected TcpEndpointConfig setSslOptions(SSLOptions sslOptions) {
-    this.sslOptions = sslOptions;
     return this;
   }
 

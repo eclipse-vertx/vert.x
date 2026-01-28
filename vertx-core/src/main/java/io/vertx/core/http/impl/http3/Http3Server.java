@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.http3;
 
+import io.netty.handler.codec.http3.Http3;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
@@ -23,6 +24,7 @@ import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.spi.metrics.*;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -196,13 +198,16 @@ public class Http3Server implements HttpServer, MetricsProvider {
       metricsProvider = null;
     }
 
+    ServerSSLOptions sslOptions = config.getSslOptions().copy();
+    sslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
+
     synchronized (this) {
       if (quicServer != null) {
         return vertx.getOrCreateContext().failedFuture(new IllegalStateException("Already listening on port " + address.port()));
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
-      quicServer = new QuicServerImpl(vertx, metricsProvider, endpointConfig);
+      quicServer = new QuicServerImpl(vertx, metricsProvider, endpointConfig, sslOptions);
     }
 
     if (requestHandler == null) {

@@ -70,20 +70,6 @@ public class TcpServerConfig extends TcpEndpointConfig {
     return (TcpServerConfig)super.setTransportOptions(transportOptions);
   }
 
-  public ServerSSLOptions getSslOptions() {
-    return (ServerSSLOptions)super.getSslOptions();
-  }
-
-  /**
-   * Set the server SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TcpServerConfig setSslOptions(ServerSSLOptions sslOptions) {
-    return (TcpServerConfig)super.setSslOptions(sslOptions);
-  }
-
   public TcpServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (TcpServerConfig)super.setSslEngineOptions(sslEngineOptions);
   }

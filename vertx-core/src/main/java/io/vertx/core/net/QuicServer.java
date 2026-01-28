@@ -37,7 +37,7 @@ public interface QuicServer extends QuicEndpoint {
    * @param options the server configuration options
    * @return the server
    */
-  static QuicServer create(Vertx vertx, QuicServerConfig options) {
+  static QuicServer create(Vertx vertx, QuicServerConfig options, ServerSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
     BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
@@ -46,7 +46,7 @@ public interface QuicServer extends QuicEndpoint {
     } else {
       metricsProvider = null;
     }
-    return QuicServerImpl.create((VertxInternal) vertx, metricsProvider, options);
+    return QuicServerImpl.create((VertxInternal) vertx, metricsProvider, options, sslOptions);
   }
 
   /**

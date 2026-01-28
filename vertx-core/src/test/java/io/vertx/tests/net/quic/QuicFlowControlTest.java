@@ -37,8 +37,8 @@ public class QuicFlowControlTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    server = QuicServer.create(vertx, serverOptions());
-    client = QuicClient.create(vertx, clientOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    client = QuicClient.create(vertx, clientOptions(), QuicClientTest.SSL_OPTIONS);
   }
 
   @Override

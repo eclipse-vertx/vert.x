@@ -13,7 +13,6 @@ package io.vertx.core.http;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -82,11 +81,6 @@ public class HttpOverTcpServerConfig extends HttpServerConfig {
   @Override
   public HttpOverTcpServerConfig setTracingPolicy(TracingPolicy tracingPolicy) {
     return (HttpOverTcpServerConfig)super.setTracingPolicy(tracingPolicy);
-  }
-
-  @Override
-  public ServerSSLOptions getSslOptions() {
-    return endpointConfig.getSslOptions();
   }
 
   /**

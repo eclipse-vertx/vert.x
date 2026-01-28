@@ -69,11 +69,11 @@ public class QuicApplicationTest extends VertxTestBase {
     byte[] content = "Hello World!\r\n".getBytes(CharsetUtil.US_ASCII);
 
     QuicServerConfig serverOptions = serverOptions();
-    ServerSSLOptions serverSslOptions = serverOptions.getSslOptions();
+    ServerSSLOptions serverSslOptions = QuicServerTest.SSL_OPTIONS.copy();
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     serverOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportOptions().setInitialMaxStreamDataUni(1024L);
-    QuicServer server = QuicServer.create(vertx, serverOptions);
+    QuicServer server = QuicServer.create(vertx, serverOptions, serverSslOptions);
     server.handler(conn -> {
       QuicConnectionInternal connInternal = (QuicConnectionInternal) conn;
       ChannelPipeline pipeline = connInternal.channelHandlerContext().pipeline();
@@ -113,11 +113,11 @@ public class QuicApplicationTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
     QuicClientConfig clientOptions = clientOptions();
-    ClientSSLOptions clientSslOptions = clientOptions.getSslOptions();
+    ClientSSLOptions clientSslOptions = QuicClientTest.SSL_OPTIONS.copy();
     clientSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     clientOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
     clientOptions.getTransportOptions().setInitialMaxStreamDataUni(1024L);
-    QuicClient client = QuicClient.create(vertx, clientOptions);
+    QuicClient client = QuicClient.create(vertx, clientOptions, clientSslOptions);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
 
     QuicConnectionInternal connection = (QuicConnectionInternal) client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
@@ -167,11 +167,11 @@ public class QuicApplicationTest extends VertxTestBase {
   public void testStreamLevel() {
     // HTTP/1.1
     QuicServerConfig serverOptions = serverOptions();
-    ServerSSLOptions serverSslOptions = serverOptions.getSslOptions();
+    ServerSSLOptions serverSslOptions = QuicServerTest.SSL_OPTIONS.copy();
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     serverOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportOptions().setInitialMaxStreamDataUni(1024L);
-    QuicServer server = QuicServer.create(vertx, serverOptions);
+    QuicServer server = QuicServer.create(vertx, serverOptions, serverSslOptions);
     server.handler(connection -> {
       connection.streamHandler(stream -> {
         QuicStreamInternal streamInternal = (QuicStreamInternal) stream;
@@ -193,11 +193,11 @@ public class QuicApplicationTest extends VertxTestBase {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicClientConfig clientOptions = clientOptions();
-    ClientSSLOptions clientSslOptions = clientOptions.getSslOptions();
+    ClientSSLOptions clientSslOptions = QuicClientTest.SSL_OPTIONS.copy();
     clientSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     clientOptions.getTransportOptions().setInitialMaxStreamsUni(3L);
     clientOptions.getTransportOptions().setInitialMaxStreamDataUni(1024L);
-    QuicClient client = QuicClient.create(vertx, clientOptions);
+    QuicClient client = QuicClient.create(vertx, clientOptions, clientSslOptions);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnectionInternal connection = (QuicConnectionInternal) client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStreamInternal stream = (QuicStreamInternal) connection.openStream().await();

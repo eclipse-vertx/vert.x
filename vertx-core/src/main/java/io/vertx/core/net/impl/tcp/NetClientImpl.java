@@ -70,6 +70,7 @@ class NetClientImpl implements NetClientInternal {
   public NetClientImpl(VertxInternal vertx,
                        TransportMetrics metrics,
                        TcpClientConfig options,
+                       ClientSSLOptions sslOptions,
                        boolean registerWriteHandler,
                        String localAddress) {
 
@@ -90,7 +91,7 @@ class NetClientImpl implements NetClientInternal {
     this.readIdleTimeout = options.getReadIdleTimeout() != null ? options.getReadIdleTimeout() : Duration.ofMillis(0L);
     this.writeIdleTimeout = options.getWriteIdleTimeout() != null ? options.getWriteIdleTimeout() : Duration.ofMillis(0L);
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-    this.sslOptions = options.getSslOptions();
+    this.sslOptions = sslOptions;
     this.transportOptions = options.getTransportOptions();
   }
 

@@ -58,18 +58,20 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   public static final String QUIC_SERVER_MAP_KEY = "__vertx.shared.quicServers";
 
   public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                                      QuicServerConfig options) {
-    return new QuicServerImpl(vertx, metricsProvider, new QuicServerConfig(options));
+                                      QuicServerConfig options, ServerSSLOptions sslOptions) {
+    return new QuicServerImpl(vertx, metricsProvider, new QuicServerConfig(options), sslOptions);
   }
 
   private final QuicServerConfig options;
+  private final ServerSSLOptions sslOptions;
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
   public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicServerConfig options) {
-    super(vertx, metricsProvider, options);
+                        QuicServerConfig options, ServerSSLOptions sslOptions) {
+    super(vertx, metricsProvider, options, sslOptions);
     this.options = options;
+    this.sslOptions = sslOptions;
   }
 
   @Override
@@ -89,7 +91,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     if (options.isLoadBalanced()) {
       ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
-      Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
+      Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
       return f.<ChannelHandler>map(sslContextProvider -> {
         QuicDispatcher dispatcher;
         synchronized (map) {
@@ -115,7 +117,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
-    Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
+    Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
     return f.map(sslContextProvider -> {
       try {
         return codecBuilder(context, sslContextProvider, metrics);
@@ -127,7 +129,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
-    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+    List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
     Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(applicationProtocols);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;

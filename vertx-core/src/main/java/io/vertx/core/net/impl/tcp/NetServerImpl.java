@@ -94,17 +94,21 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   public NetServerImpl(VertxInternal vertx,
                        TcpServerConfig config,
+                       ServerSSLOptions sslOptions,
                        boolean fileRegionEnabled,
                        boolean registerWriteHandler,
                        BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
 
+    if (sslOptions == null) {
+      sslOptions = new ServerSSLOptions();
+    }
 
     this.vertx = vertx;
     this.config = config;
     this.fileRegionEnabled = fileRegionEnabled;
     this.registerWriteHandler = registerWriteHandler;
     this.metricsProvider = metricsProvider;
-    this.sslOptions = config.getSslOptions() != null ? config.getSslOptions() : new ServerSSLOptions();
+    this.sslOptions = sslOptions;
   }
 
   public SslContextProvider sslContextProvider() {

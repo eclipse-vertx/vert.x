@@ -74,21 +74,6 @@ public class QuicClientConfig extends QuicEndpointConfig {
     return (QuicClientConfig) super.setStreamLogging(config);
   }
 
-  @Override
-  public ClientSSLOptions getSslOptions() {
-    return (ClientSSLOptions) super.getSslOptions();
-  }
-
-  public QuicClientConfig setSslOptions(ClientSSLOptions sslOptions) {
-    super.setSslOptions(sslOptions);
-    return this;
-  }
-
-  @Override
-  protected ClientSSLOptions getOrCreateSSLOptions() {
-    return new ClientSSLOptions();
-  }
-
   /**
    * @return the value of connect timeout
    */

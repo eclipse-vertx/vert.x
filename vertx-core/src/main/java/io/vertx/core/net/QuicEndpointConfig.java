@@ -24,7 +24,6 @@ import java.util.Objects;
 public abstract class QuicEndpointConfig {
 
   private QuicOptions transportOptions;
-  private SSLOptions sslOptions;
   private QLogConfig qlogConfig;
   private String keyLogFile;
   private Duration streamIdleTimeout;
@@ -41,7 +40,6 @@ public abstract class QuicEndpointConfig {
     QLogConfig qLogConfig = other.qlogConfig;
 
     this.transportOptions = other.transportOptions.copy();
-    this.sslOptions = other.sslOptions.copy();
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
     this.streamIdleTimeout = other.streamIdleTimeout;
@@ -61,24 +59,6 @@ public abstract class QuicEndpointConfig {
     this.transportOptions = Objects.requireNonNull(transportOptions);
     return this;
   }
-
-  /**
-   * @return the endpoint SSL options
-   */
-  public SSLOptions getSslOptions() {
-    SSLOptions opts = sslOptions;
-    if (opts == null) {
-      opts = getOrCreateSSLOptions();
-      sslOptions = opts;
-    }
-    return opts;
-  }
-
-  protected void setSslOptions(SSLOptions sslOptions)  {
-    this.sslOptions = sslOptions;
-  }
-
-  protected abstract SSLOptions getOrCreateSSLOptions();
 
   /**
    * @return the endpoint QLog config.

@@ -47,18 +47,22 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
   private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
 
-  public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientConfig options) {
-    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(options));
+  public static QuicClientImpl create(VertxInternal vertx,
+                                      BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                                      QuicClientConfig options, ClientSSLOptions sslOptions) {
+    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(options), sslOptions);
   }
 
   private final QuicClientConfig options;
+  private final ClientSSLOptions sslOptions;
   private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
   public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicClientConfig options) {
-    super(vertx, metricsProvider, options);
+                        QuicClientConfig options, ClientSSLOptions sslOptions) {
+    super(vertx, metricsProvider, options, sslOptions);
     this.options = options;
+    this.sslOptions = sslOptions;
   }
 
   @Override
@@ -70,7 +74,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
-    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+    List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
         SslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
@@ -96,7 +100,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     ContextInternal context = vertx.getOrCreateContext();
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions == null) {
-      sslOptions = options.getSslOptions();
+      sslOptions = this.sslOptions;
     }
     Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
     String serverName = connectOptions.getServerName();

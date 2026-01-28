@@ -37,7 +37,7 @@ public interface QuicClient extends QuicEndpoint {
    * @param options the client configuration options
    * @return the client
    */
-  static QuicClient create(Vertx vertx, QuicClientConfig options) {
+  static QuicClient create(Vertx vertx, QuicClientConfig options, ClientSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
     BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
@@ -46,7 +46,7 @@ public interface QuicClient extends QuicEndpoint {
     } else {
       metricsProvider = null;
     }
-    return QuicClientImpl.create(vertxInternal, metricsProvider, options);
+    return QuicClientImpl.create(vertxInternal, metricsProvider, options, sslOptions);
   }
 
   /**

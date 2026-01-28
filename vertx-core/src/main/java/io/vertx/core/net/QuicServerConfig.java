@@ -86,21 +86,6 @@ public class QuicServerConfig extends QuicEndpointConfig {
     return (QuicServerConfig) super.setStreamLogging(config);
   }
 
-  @Override
-  public ServerSSLOptions getSslOptions() {
-    return (ServerSSLOptions) super.getSslOptions();
-  }
-
-  public QuicServerConfig setSslOptions(ServerSSLOptions sslOptions) {
-    super.setSslOptions(sslOptions);
-    return this;
-  }
-
-  @Override
-  protected ServerSSLOptions getOrCreateSSLOptions() {
-    return new ServerSSLOptions();
-  }
-
   /**
    * @return whether the server is load balanced
    */

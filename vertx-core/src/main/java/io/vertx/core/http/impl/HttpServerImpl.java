@@ -187,7 +187,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .build();
     }
-    NetServerInternal server = new NetServerBuilder(vertx, options.getEndpointConfig())
+    NetServerInternal server = new NetServerBuilder(vertx, options.getEndpointConfig(), options.getSslOptions())
       .fileRegionEnabled(!options.getCompression().isCompressionEnabled())
       .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(new HttpServerOptions(), addr))
       .build();

@@ -166,7 +166,6 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private static TcpClientConfig netClientConfig(HttpClientConfig httpConfig) {
     TcpClientConfig config = new TcpClientConfig();
     config.setTransportOptions(httpConfig.getTcpOptions());
-    config.setSslOptions(null);
     config.setSslEngineOptions(httpConfig.getSslEngineOptions() != null ? httpConfig.getSslEngineOptions().copy() : null);
     config.setConnectTimeout(httpConfig.getConnectTimeout());
     config.setMetricsName(httpConfig.getMetricsName());
@@ -177,7 +176,6 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     config.setWriteIdleTimeout(httpConfig.getWriteIdleTimeout());
     config.setNetworkLogging(httpConfig.getNetworkLogging() != null ? new NetworkLogging(httpConfig.getNetworkLogging()) : null);
     config.setSsl(false);
-    config.setSslOptions(null);
     return config;
   }
 
@@ -234,7 +232,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         metrics = vertx.metrics().createHttpClientMetrics(new HttpClientOptions().setMetricsName(co.getMetricsName()));
       }
       TcpClientConfig netClientConfig = netClientConfig(co);
-      NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null)).metrics(metrics).build();
+      NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null), null).metrics(metrics).build();
       transport = new Http1xOrH2ClientTransport(
         tcpClient,
         co.getTracingPolicy(),

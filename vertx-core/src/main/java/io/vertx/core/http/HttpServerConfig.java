@@ -29,6 +29,7 @@ public abstract class HttpServerConfig {
   private int maxFormFields;
   private int maxFormBufferedBytes;
   private boolean handle100ContinueAutomatically;
+  private ServerSSLOptions sslOptions;
   private boolean strictThreadMode;
   private TracingPolicy tracingPolicy;
 
@@ -46,6 +47,7 @@ public abstract class HttpServerConfig {
     this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
+    this.sslOptions = new ServerSSLOptions();
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
     this.tracingPolicy = HttpServerOptions.DEFAULT_TRACING_POLICY;
   }
@@ -55,6 +57,7 @@ public abstract class HttpServerConfig {
     this.maxFormFields = other.maxFormFields;
     this.maxFormBufferedBytes = other.maxFormBufferedBytes;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
+    this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : new ServerSSLOptions();
     this.strictThreadMode = other.strictThreadMode;
     this.tracingPolicy = other.tracingPolicy;
   }
@@ -62,7 +65,9 @@ public abstract class HttpServerConfig {
   /**
    * @return the client SSL options.
    */
-  public abstract ServerSSLOptions getSslOptions();
+  public ServerSSLOptions getSslOptions() {
+    return sslOptions;
+  }
 
   /**
    *

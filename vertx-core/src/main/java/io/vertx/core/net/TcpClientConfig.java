@@ -64,20 +64,6 @@ public class TcpClientConfig extends TcpEndpointConfig {
     return (TcpClientConfig)super.setTransportOptions(transportOptions);
   }
 
-  public ClientSSLOptions getSslOptions() {
-    return (ClientSSLOptions)super.getSslOptions();
-  }
-
-  /**
-   * Set the client SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TcpClientConfig setSslOptions(ClientSSLOptions sslOptions) {
-    return (TcpClientConfig)super.setSslOptions(sslOptions);
-  }
-
   public TcpClientConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (TcpClientConfig)super.setSslEngineOptions(sslEngineOptions);
   }
