@@ -39,7 +39,7 @@ public class HttpServerConfig {
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 100L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 100L;
 
-  private static QuicServerConfig defaultQuicServerConfig() {
+  private static QuicServerConfig defaultQuicConfig() {
     QuicServerConfig config = new QuicServerConfig();
     config.getTransportOptions().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
     config.getTransportOptions().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
@@ -99,7 +99,7 @@ public class HttpServerConfig {
     this.webSocketConfig = new WebSocketServerConfig(options.getWebSocketConfig());
     this.compression = compression;
     this.tcpConfig = new TcpServerConfig(options);
-    this.quicConfig = defaultQuicServerConfig();
+    this.quicConfig = defaultQuicConfig();
   }
 
   public HttpServerConfig() {
@@ -117,7 +117,7 @@ public class HttpServerConfig {
     this.webSocketConfig = new WebSocketServerConfig();
     this.compression = new HttpCompressionConfig();
     this.tcpConfig = defaultTcpServerConfig();
-    this.quicConfig = defaultQuicServerConfig();
+    this.quicConfig = defaultQuicConfig();
   }
 
   public HttpServerConfig(HttpServerConfig other) {
@@ -135,7 +135,7 @@ public class HttpServerConfig {
     this.webSocketConfig = other.webSocketConfig != null ? new WebSocketServerConfig(other.webSocketConfig) : new WebSocketServerConfig();
     this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
     this.tcpConfig = other.tcpConfig != null ? new TcpServerConfig(other.tcpConfig) : defaultTcpServerConfig();
-    this.quicConfig = other.quicConfig != null ? new QuicServerConfig(other.quicConfig) : defaultQuicServerConfig();
+    this.quicConfig = other.quicConfig != null ? new QuicServerConfig(other.quicConfig) : defaultQuicConfig();
   }
 
   public Set<HttpVersion> getSupportedVersions() {
@@ -471,10 +471,16 @@ public class HttpServerConfig {
     return this;
   }
 
+  /**
+   * @return the TCP transport config
+   */
   public TcpServerConfig getTcpConfig() {
     return tcpConfig;
   }
 
+  /**
+   * @return the QUIC transport config
+   */
   public QuicServerConfig getQuicConfig() {
     return quicConfig;
   }

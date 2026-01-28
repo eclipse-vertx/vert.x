@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http;
 
-import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.*;
@@ -42,20 +41,28 @@ public class HttpClientConfig {
     }
   }
 
-  public static final List<HttpVersion> DEFAULT_SUPPORTED_VERSIONS = List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+  private static QuicClientConfig defaultQuicConfig() {
+    QuicClientConfig config = new QuicClientConfig();
+    config.getTransportOptions().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
+    config.getTransportOptions().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+    config.getTransportOptions().setInitialMaxStreamDataBidiRemote(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+    config.getTransportOptions().setInitialMaxStreamDataUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
+    config.getTransportOptions().setInitialMaxStreamsBidi(DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI);
+    config.getTransportOptions().setInitialMaxStreamsUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI);
+    return config;
+  }
 
-  private TcpOptions tcpOptions; // todo : use client config
-  private QuicOptions quicOptions; // todo : use client config
+  public static final List<HttpVersion> DEFAULT_SUPPORTED_VERSIONS = List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+  public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 1000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE = 1000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI = 1000000L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 100L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 100L;
+
+  private TcpClientConfig tcpConfig;
+  private QuicClientConfig quicConfig;
   private ClientSSLOptions sslOptions;
-  private SSLEngineOptions sslEngineOptions;
-  private Duration connectTimeout;
-  private String metricsName;
-  private ProxyOptions proxyOptions;
-  private List<String> nonProxyHosts;
-  private Duration idleTimeout;
-  private Duration readIdleTimeout;
-  private Duration writeIdleTimeout;
-  private NetworkLogging networkLogging;
   private boolean ssl;
 
   private List<HttpVersion> supportedVersions;
@@ -63,7 +70,7 @@ public class HttpClientConfig {
   private Http2ClientConfig http2Config;
   private Http3ClientConfig http3Config;
   private boolean verifyHost;
-  private boolean decompressionSupported; // todo : rename this
+  private boolean decompressionEnabled; // todo : rename this
   private String defaultHost;
   private int defaultPort;
   private int maxRedirects;
@@ -74,25 +81,16 @@ public class HttpClientConfig {
   private boolean followAlternativeServices;
 
   public HttpClientConfig() {
-    this.tcpOptions = new TcpOptions();
-    this.quicOptions = new QuicOptions();
+    this.tcpConfig = new TcpClientConfig();
+    this.quicConfig = defaultQuicConfig();
     this.sslOptions = new ClientSSLOptions().setUseAlpn(true);
-    this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
-    this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
-    this.metricsName = ClientOptionsBase.DEFAULT_METRICS_NAME;
-    this.proxyOptions = null;
-    this.nonProxyHosts = null;
-    this.idleTimeout = null;
-    this.readIdleTimeout = null;
-    this.writeIdleTimeout = null;
-    this.networkLogging = null;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
     this.supportedVersions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = new Http1ClientConfig();
     this.http2Config = new Http2ClientConfig();
     this.http3Config = new Http3ClientConfig();
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
-    this.decompressionSupported = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
+    this.decompressionEnabled = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
@@ -104,25 +102,16 @@ public class HttpClientConfig {
   }
 
   public HttpClientConfig(HttpClientConfig other) {
-    this.tcpOptions = other.tcpOptions != null ? new TcpOptions(other.tcpOptions) : null;
-    this.quicOptions = other.quicOptions != null ? new QuicOptions(other.quicOptions) : null;
+    this.tcpConfig = other.tcpConfig != null ? new TcpClientConfig(other.tcpConfig) : null;
+    this.quicConfig = other.quicConfig != null ? new QuicClientConfig(other.quicConfig) : null;
     this.sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
-    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
-    this.connectTimeout = other.connectTimeout;
-    this.metricsName = other.metricsName;
-    this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
-    this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
-    this.idleTimeout = other.idleTimeout;
-    this.readIdleTimeout = other.readIdleTimeout;
-    this.writeIdleTimeout = other.writeIdleTimeout;
-    this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
     this.ssl = other.ssl;
     this.supportedVersions = new ArrayList<>(other.supportedVersions != null ? other.supportedVersions : DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ClientConfig(other.http2Config) : null;
     this.http3Config = other.http3Config != null ? new Http3ClientConfig(other.http3Config) : null;
     this.verifyHost = other.isVerifyHost();
-    this.decompressionSupported = other.decompressionSupported;
+    this.decompressionEnabled = other.decompressionEnabled;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.maxRedirects = other.maxRedirects;
@@ -134,25 +123,16 @@ public class HttpClientConfig {
   }
 
   public HttpClientConfig(HttpClientOptions other) {
-    this.tcpOptions = new TcpOptions(other.getTransportOptions());
-    this.quicOptions = new QuicOptions();
+    this.tcpConfig = new TcpClientConfig(other);
+    this.quicConfig = defaultQuicConfig();
     this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : new ClientSSLOptions();
-    this.sslEngineOptions = other.getSslEngineOptions() != null ? other.getSslEngineOptions().copy() : null;
-    this.connectTimeout = Duration.ofMillis(other.getConnectTimeout());
-    this.metricsName = other.getMetricsName();
-    this.proxyOptions = other.getProxyOptions() != null ? new ProxyOptions(other.getProxyOptions()) : null;
-    this.nonProxyHosts = other.getNonProxyHosts() != null ? new ArrayList<>(other.getNonProxyHosts()) : null;
-    this.idleTimeout = other.getIdleTimeout() > 0 ? Duration.of(other.getIdleTimeout(), other.getIdleTimeoutUnit().toChronoUnit()) : null;
-    this.readIdleTimeout = other.getReadIdleTimeout() > 0 ? Duration.of(other.getReadIdleTimeout(), other.getIdleTimeoutUnit().toChronoUnit()) : null;
-    this.writeIdleTimeout = other.getWriteIdleTimeout() > 0 ? Duration.of(other.getWriteIdleTimeout(), other.getIdleTimeoutUnit().toChronoUnit()) : null;
-    this.networkLogging = other.getLogActivity() ? new NetworkLogging().setDataFormat(other.getActivityLogDataFormat()) : null;
     this.ssl = other.isSsl();
     this.supportedVersions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
     this.http1Config = other.getHttp1Config();
     this.http2Config = other.getHttp2Config();
     this.http3Config = new Http3ClientConfig();
     this.verifyHost = other.isVerifyHost();
-    this.decompressionSupported = other.isDecompressionSupported();
+    this.decompressionEnabled = other.isDecompressionSupported();
     this.defaultHost = other.getDefaultHost();
     this.defaultPort = other.getDefaultPort();
     this.maxRedirects = other.getMaxRedirects();
@@ -164,39 +144,17 @@ public class HttpClientConfig {
   }
 
   /**
-   * @return the client TCP transport options
+   * @return the client TCP transport config
    */
-  public TcpOptions getTcpOptions() {
-    return tcpOptions;
+  public TcpClientConfig getTcpConfig() {
+    return tcpConfig;
   }
 
   /**
-   * Set the client TCP transport options.
-   *
-   * @param tcpOptions the transport options
-   * @return a reference to this, so the API can be used fluently
+   * @return the client QUIC transport config
    */
-  public HttpClientConfig setTcpOptions(TcpOptions tcpOptions) {
-    this.tcpOptions = tcpOptions;
-    return this;
-  }
-
-  /**
-   * @return the client QUIC transport options
-   */
-  public QuicOptions getQuicOptions() {
-    return quicOptions;
-  }
-
-  /**
-   * Set the client QUIC transport options.
-   *
-   * @param quicOptions the transport options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setQuicOptions(QuicOptions quicOptions) {
-    this.quicOptions = quicOptions;
-    return this;
+  public QuicClientConfig getQuicConfig() {
+    return quicConfig;
   }
 
   /**
@@ -218,49 +176,15 @@ public class HttpClientConfig {
   }
 
   /**
-   * @return the SSL engine implementation to use
-   */
-  public SSLEngineOptions getSslEngineOptions() {
-    return sslEngineOptions;
-  }
-
-  /**
-   * Set to use SSL engine implementation to use.
-   *
-   * @param sslEngineOptions the ssl engine to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
-    this.sslEngineOptions = sslEngineOptions;
-    return this;
-  }
-
-  /**
-   * @return the value of connect timeout
-   */
-  public Duration getConnectTimeout() {
-    return connectTimeout;
-  }
-
-  /**
    * Set the connect timeout
    *
    * @param connectTimeout  connect timeout, in ms
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
-    if (connectTimeout.isNegative() || connectTimeout.isZero()) {
-      throw new IllegalArgumentException("connectTimeout must be >= 0");
-    }
-    this.connectTimeout = connectTimeout;
+    tcpConfig.setConnectTimeout(connectTimeout);
+    quicConfig.setConnectTimeout(connectTimeout);
     return this;
-  }
-
-  /**
-   * @return the metrics name identifying the reported metrics.
-   */
-  public String getMetricsName() {
-    return metricsName;
   }
 
   /**
@@ -271,71 +195,9 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setMetricsName(String metricsName) {
-    this.metricsName = metricsName;
+    tcpConfig.setMetricsName(metricsName);
+    // Todo : quic
     return this;
-  }
-
-  /**
-   * Get proxy options for connections
-   *
-   * @return proxy options
-   */
-  public ProxyOptions getProxyOptions() {
-    return proxyOptions;
-  }
-
-  /**
-   * Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
-   *
-   * @param proxyOptions proxy options object
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setProxyOptions(ProxyOptions proxyOptions) {
-    this.proxyOptions = proxyOptions;
-    return this;
-  }
-
-  /**
-   * @return the list of non proxies hosts
-   */
-  public List<String> getNonProxyHosts() {
-    return nonProxyHosts;
-  }
-
-  /**
-   * Set a list of remote hosts that are not proxied when the client is configured to use a proxy. This
-   * list serves the same purpose than the JVM {@code nonProxyHosts} configuration.
-   *
-   * <p> Entries can use the <i>*</i> wildcard character for pattern matching, e.g <i>*.example.com</i> matches
-   * <i>www.example.com</i>.
-   *
-   * @param nonProxyHosts the list of non proxies hosts
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setNonProxyHosts(List<String> nonProxyHosts) {
-    this.nonProxyHosts = nonProxyHosts;
-    return this;
-  }
-
-  /**
-   * Add a {@code host} to the {@link #getNonProxyHosts()} list.
-   *
-   * @param host the added host
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig addNonProxyHost(String host) {
-    if (nonProxyHosts == null) {
-      nonProxyHosts = new ArrayList<>();
-    }
-    nonProxyHosts.add(host);
-    return this;
-  }
-
-  /**
-   * @return the idle timeout
-   */
-  public Duration getIdleTimeout() {
-    return idleTimeout;
   }
 
   /**
@@ -346,10 +208,8 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setIdleTimeout(Duration idleTimeout) {
-    if (idleTimeout != null && idleTimeout.isNegative()) {
-      throw new IllegalArgumentException("idleTimeout must be >= 0");
-    }
-    this.idleTimeout = idleTimeout;
+    tcpConfig.setIdleTimeout(idleTimeout);
+    quicConfig.setStreamIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -361,18 +221,9 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setReadIdleTimeout(Duration idleTimeout) {
-    if (idleTimeout != null && idleTimeout.isNegative()) {
-      throw new IllegalArgumentException("readIdleTimeout must be >= 0");
-    }
-    this.readIdleTimeout = idleTimeout;
+    tcpConfig.setReadIdleTimeout(idleTimeout);
+    quicConfig.setStreamReadIdleTimeout(idleTimeout);
     return this;
-  }
-
-  /**
-   * @return the read idle timeout
-   */
-  public Duration getReadIdleTimeout() {
-    return readIdleTimeout;
   }
 
   /**
@@ -383,35 +234,8 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setWriteIdleTimeout(Duration idleTimeout) {
-    if (idleTimeout != null && idleTimeout.isNegative()) {
-      throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
-    }
-    this.writeIdleTimeout = idleTimeout;
-    return this;
-  }
-
-  /**
-   * @return the write idle timeout.
-   */
-  public Duration getWriteIdleTimeout() {
-    return writeIdleTimeout;
-  }
-
-  /**
-   * @return the connection network logging config, {@code null} means disabled
-   */
-  public NetworkLogging getNetworkLogging() {
-    return networkLogging;
-  }
-
-  /**
-   * Configure the per connection networking logging: Netty's stream pipeline is configured for logging on Netty's logger.
-   *
-   * @param config the stream network logging config, {@code null} means disabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setNetworkLogging(NetworkLogging config) {
-    this.networkLogging = config;
+    tcpConfig.setWriteIdleTimeout(idleTimeout);
+    quicConfig.setStreamWriteIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -548,18 +372,18 @@ public class HttpClientConfig {
   /**
    * @return {@code true} if the client should send requests with an {@code accepting-encoding} header set to a compression algorithm, {@code false} otherwise
    */
-  public boolean isDecompressionSupported() {
-    return decompressionSupported;
+  public boolean isDecompressionEnabled() {
+    return decompressionEnabled;
   }
 
   /**
    * Whether the client should send requests with an {@code accepting-encoding} header set to a compression algorithm.
    *
-   * @param decompressionSupported {@code true} if the client should send a request with an {@code accepting-encoding} header set to a compression algorithm, {@code false} otherwise
+   * @param decompressionEnabled {@code true} if the client should send a request with an {@code accepting-encoding} header set to a compression algorithm, {@code false} otherwise
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setDecompressionSupported(boolean decompressionSupported) {
-    this.decompressionSupported = decompressionSupported;
+  public HttpClientConfig setDecompressionEnabled(boolean decompressionEnabled) {
+    this.decompressionEnabled = decompressionEnabled;
     return this;
   }
 

@@ -14,7 +14,6 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
-import io.vertx.core.net.NetworkLogging;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
@@ -25,7 +24,6 @@ import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -123,8 +121,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     ProxyOptions proxyOptions;
     List<String> nonProxyHosts;
     if (clientConfig != null) {
-      proxyOptions = clientConfig.getProxyOptions();
-      nonProxyHosts = clientConfig.getNonProxyHosts();
+      proxyOptions = clientConfig.getTcpConfig().getProxyOptions();
+      nonProxyHosts = clientConfig.getTcpConfig().getNonProxyHosts();
       followAlternativeServices = clientConfig.getFollowAlternativeServices();
     } else {
       proxyOptions = null;
@@ -164,17 +162,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   private static TcpClientConfig netClientConfig(HttpClientConfig httpConfig) {
-    TcpClientConfig config = new TcpClientConfig();
-    config.setTransportOptions(httpConfig.getTcpOptions());
-    config.setSslEngineOptions(httpConfig.getSslEngineOptions() != null ? httpConfig.getSslEngineOptions().copy() : null);
-    config.setConnectTimeout(httpConfig.getConnectTimeout());
-    config.setMetricsName(httpConfig.getMetricsName());
+    TcpClientConfig config = new TcpClientConfig(httpConfig.getTcpConfig());
     config.setProxyOptions(null);
-    config.setNonProxyHosts(httpConfig.getNonProxyHosts() != null ? new ArrayList<>(httpConfig.getNonProxyHosts()) : null);
-    config.setIdleTimeout(httpConfig.getIdleTimeout());
-    config.setReadIdleTimeout(httpConfig.getReadIdleTimeout());
-    config.setWriteIdleTimeout(httpConfig.getWriteIdleTimeout());
-    config.setNetworkLogging(httpConfig.getNetworkLogging() != null ? new NetworkLogging(httpConfig.getNetworkLogging()) : null);
     config.setSsl(false);
     return config;
   }
@@ -229,22 +218,22 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       shared = co.isShared() ? co.getName() : null;
       if (metrics == null && vertx.metrics() != null) {
         // Todo : change this (breaking)
-        metrics = vertx.metrics().createHttpClientMetrics(new HttpClientOptions().setMetricsName(co.getMetricsName()));
+        metrics = vertx.metrics().createHttpClientMetrics(new HttpClientOptions().setMetricsName(co.getTcpConfig().getMetricsName()));
       }
       TcpClientConfig netClientConfig = netClientConfig(co);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null), null).metrics(metrics).build();
       transport = new Http1xOrH2ClientTransport(
         tcpClient,
         co.getTracingPolicy(),
-        co.isDecompressionSupported(),
-        co.getNetworkLogging() != null,
-        co.getNetworkLogging() != null ? co.getNetworkLogging().getDataFormat() : null,
+        co.isDecompressionEnabled(),
+        co.getTcpConfig().getNetworkLogging() != null,
+        co.getTcpConfig().getNetworkLogging() != null ? co.getTcpConfig().getNetworkLogging().getDataFormat() : null,
         co.isForceSni(),
         supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_1_0) ? (co.getHttp1Config() != null ? co.getHttp1Config() : new Http1ClientConfig()) : null,
         supportedVersions.contains(HttpVersion.HTTP_2) ? (co.getHttp2Config() != null ? co.getHttp2Config() : new Http2ClientConfig()) : null,
-        co.getIdleTimeout(),
-        co.getReadIdleTimeout(),
-        co.getWriteIdleTimeout(),
+        co.getTcpConfig().getIdleTimeout(),
+        co.getTcpConfig().getReadIdleTimeout(),
+        co.getTcpConfig().getWriteIdleTimeout(),
         metrics
       );
     } else {

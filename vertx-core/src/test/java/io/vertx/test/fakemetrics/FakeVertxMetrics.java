@@ -69,7 +69,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   @Override
   public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientConfig options) {
-    return new FakeHttpClientMetrics(options.getMetricsName());
+    return new FakeHttpClientMetrics(options.getTcpConfig().getMetricsName());
   }
 
   public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {

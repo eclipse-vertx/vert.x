@@ -51,13 +51,17 @@ public class TcpClientConfig extends TcpEndpointConfig {
   }
 
   public TcpClientConfig(NetClientOptions options) {
+    this((ClientOptionsBase)options);
+    setReconnectAttempts(options.getReconnectAttempts());
+    setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
+  }
+
+  public TcpClientConfig(ClientOptionsBase options) {
     super(options);
     setConnectTimeout(Duration.ofMillis(options.getConnectTimeout()));
     setMetricsName(options.getMetricsName());
     setNonProxyHosts(options.getNonProxyHosts() != null ? new ArrayList<>(options.getNonProxyHosts()) : null);
     setProxyOptions(options.getProxyOptions() != null ? new ProxyOptions(options.getProxyOptions()) : null);
-    setReconnectAttempts(options.getReconnectAttempts());
-    setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
   }
 
   public TcpClientConfig setTransportOptions(TcpOptions transportOptions) {

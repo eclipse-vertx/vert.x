@@ -64,15 +64,15 @@ public class Http1xOrH2ClientTransport implements HttpClientTransport {
                                                  HttpClientMetrics clientMetrics) {
     return new Http1xOrH2ClientTransport(netClient,
       config.getTracingPolicy(),
-      config.isDecompressionSupported(),
-      config.getNetworkLogging() != null,
-      config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null,
+      config.isDecompressionEnabled(),
+      config.getTcpConfig().getNetworkLogging() != null,
+      config.getTcpConfig().getNetworkLogging() != null ? config.getTcpConfig().getNetworkLogging().getDataFormat() : null,
       config.isForceSni(),
       config.getHttp1Config(),
       config.getHttp2Config(),
-      config.getIdleTimeout(),
-      config.getReadIdleTimeout(),
-      config.getWriteIdleTimeout(),
+      config.getTcpConfig().getIdleTimeout(),
+      config.getTcpConfig().getReadIdleTimeout(),
+      config.getTcpConfig().getWriteIdleTimeout(),
       clientMetrics);
   }
 
