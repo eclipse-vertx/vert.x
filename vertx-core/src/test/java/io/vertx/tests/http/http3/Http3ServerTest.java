@@ -11,8 +11,6 @@
 package io.vertx.tests.http.http3;
 
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http3.DefaultHttp3Headers;
 import io.netty.handler.codec.http3.Http3ErrorCode;
 import io.netty.handler.codec.http3.Http3Settings;
@@ -24,7 +22,6 @@ import io.vertx.core.http.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
-import io.vertx.tests.http.Http2ServerTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,8 +42,8 @@ import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 @RunWith(LinuxOrOsx.class)
 public class Http3ServerTest extends VertxTestBase {
 
-  public static QuicHttpServerConfig serverOptions() {
-    QuicHttpServerConfig options = new QuicHttpServerConfig();
+  public static HttpOverQuicServerConfig serverOptions() {
+    HttpOverQuicServerConfig options = new HttpOverQuicServerConfig();
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -362,7 +359,7 @@ public class Http3ServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
 
-    QuicHttpServerConfig config = serverOptions();
+    HttpOverQuicServerConfig config = serverOptions();
     config.getEndpointConfig().setStreamIdleTimeout(Duration.ofMillis(200));
     server = vertx.createHttpServer(config);
 
@@ -394,7 +391,7 @@ public class Http3ServerTest extends VertxTestBase {
 
   @Test
   public void testSettings() throws Exception {
-    QuicHttpServerConfig config = serverOptions();
+    HttpOverQuicServerConfig config = serverOptions();
     config.getHttp3Config()
       .setInitialSettings(new io.vertx.core.http.Http3Settings()
       .setMaxFieldSectionSize(1024)

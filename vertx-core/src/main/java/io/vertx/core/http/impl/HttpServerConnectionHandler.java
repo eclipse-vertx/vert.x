@@ -96,7 +96,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     } else {
       Http2ServerConnection http2Conn = (Http2ServerConnection) conn;
       http2Conn.streamHandler(stream -> {
-        TcpHttpServerConfig options = server.options;
+        HttpOverTcpServerConfig options = server.options;
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
           options.isHandle100ContinueAutomatically(), options.getMaxFormAttributeSize(), options.getMaxFormFields(),
           options.getMaxFormBufferedBytes(), serverOrigin);

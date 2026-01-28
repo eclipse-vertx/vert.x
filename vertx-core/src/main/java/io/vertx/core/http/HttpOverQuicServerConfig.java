@@ -24,7 +24,7 @@ import java.util.Arrays;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
-public class QuicHttpServerConfig extends HttpServerConfig {
+public class HttpOverQuicServerConfig extends HttpServerConfig {
 
   public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10000000L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 1000000L;
@@ -60,7 +60,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
   private QuicServerConfig endpointConfig;
   private Http3ServerConfig http3Config;
 
-  public QuicHttpServerConfig() {
+  public HttpOverQuicServerConfig() {
     super();
 
     this.port = DEFAULT_PORT;
@@ -69,7 +69,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
     this.http3Config = new Http3ServerConfig();
   }
 
-  public QuicHttpServerConfig(QuicHttpServerConfig other) {
+  public HttpOverQuicServerConfig(HttpOverQuicServerConfig other) {
     super(other);
 
     this.port = other.port;
@@ -89,7 +89,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public QuicHttpServerConfig setPort(int port) {
+  public HttpOverQuicServerConfig setPort(int port) {
     if (port > 65535) {
       throw new IllegalArgumentException("port must be <= 65535");
     }
@@ -103,7 +103,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public QuicHttpServerConfig setHost(String host) {
+  public HttpOverQuicServerConfig setHost(String host) {
     this.host = host;
     return this;
   }
@@ -114,7 +114,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public QuicHttpServerConfig setIdleTimeout(Duration idleTimeout) {
+  public HttpOverQuicServerConfig setIdleTimeout(Duration idleTimeout) {
     endpointConfig.setStreamIdleTimeout(idleTimeout);
     return this;
   }
@@ -125,7 +125,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public QuicHttpServerConfig setReadIdleTimeout(Duration idleTimeout) {
+  public HttpOverQuicServerConfig setReadIdleTimeout(Duration idleTimeout) {
     endpointConfig.setStreamReadIdleTimeout(idleTimeout);
     return this;
   }
@@ -136,7 +136,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public QuicHttpServerConfig setWriteIdleTimeout(Duration idleTimeout) {
+  public HttpOverQuicServerConfig setWriteIdleTimeout(Duration idleTimeout) {
     endpointConfig.setStreamWriteIdleTimeout(idleTimeout);
     return this;
   }
@@ -158,7 +158,7 @@ public class QuicHttpServerConfig extends HttpServerConfig {
    * @param config the config
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicHttpServerConfig setHttp3Config(Http3ServerConfig config) {
+  public HttpOverQuicServerConfig setHttp3Config(Http3ServerConfig config) {
     this.http3Config = config;
     return this;
   }

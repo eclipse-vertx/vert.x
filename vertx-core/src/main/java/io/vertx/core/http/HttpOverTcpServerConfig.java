@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TcpHttpServerConfig extends HttpServerConfig {
+public class HttpOverTcpServerConfig extends HttpServerConfig {
 
   private TcpServerConfig endpointConfig;
   private Http1ServerConfig http1Config;
@@ -34,11 +34,11 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   private WebSocketServerConfig webSocketConfig;
   private HttpCompressionConfig compression; // Currently here as we do not support compression for QUIC
 
-  public TcpHttpServerConfig() {
+  public HttpOverTcpServerConfig() {
     this(new HttpServerOptions());
   }
 
-  public TcpHttpServerConfig(TcpHttpServerConfig other) {
+  public HttpOverTcpServerConfig(HttpOverTcpServerConfig other) {
     super(other);
 
     this.endpointConfig = other.endpointConfig != null ? new TcpServerConfig(other.endpointConfig) : new TcpServerConfig();
@@ -48,7 +48,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
     this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
   }
 
-  public TcpHttpServerConfig(HttpServerOptions options) {
+  public HttpOverTcpServerConfig(HttpServerOptions options) {
     super(options);
 
     List<CompressionOptions> compressors = options.getCompression().getCompressors();
@@ -70,18 +70,18 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public TcpHttpServerConfig setHandle100ContinueAutomatically(boolean handle100ContinueAutomatically) {
-    return (TcpHttpServerConfig)super.setHandle100ContinueAutomatically(handle100ContinueAutomatically);
+  public HttpOverTcpServerConfig setHandle100ContinueAutomatically(boolean handle100ContinueAutomatically) {
+    return (HttpOverTcpServerConfig)super.setHandle100ContinueAutomatically(handle100ContinueAutomatically);
   }
 
   @Override
-  public TcpHttpServerConfig setStrictThreadMode(boolean strictThreadMode) {
-    return (TcpHttpServerConfig)super.setStrictThreadMode(strictThreadMode);
+  public HttpOverTcpServerConfig setStrictThreadMode(boolean strictThreadMode) {
+    return (HttpOverTcpServerConfig)super.setStrictThreadMode(strictThreadMode);
   }
 
   @Override
-  public TcpHttpServerConfig setTracingPolicy(TracingPolicy tracingPolicy) {
-    return (TcpHttpServerConfig)super.setTracingPolicy(tracingPolicy);
+  public HttpOverTcpServerConfig setTracingPolicy(TracingPolicy tracingPolicy) {
+    return (HttpOverTcpServerConfig)super.setTracingPolicy(tracingPolicy);
   }
 
   @Override
@@ -135,7 +135,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public TcpHttpServerConfig setIdleTimeout(Duration idleTimeout) {
+  public HttpOverTcpServerConfig setIdleTimeout(Duration idleTimeout) {
     endpointConfig.setIdleTimeout(idleTimeout);
     return this;
   }
@@ -146,7 +146,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public TcpHttpServerConfig setReadIdleTimeout(Duration idleTimeout) {
+  public HttpOverTcpServerConfig setReadIdleTimeout(Duration idleTimeout) {
     endpointConfig.setReadIdleTimeout(idleTimeout);
     return this;
   }
@@ -157,7 +157,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
   }
 
   @Override
-  public TcpHttpServerConfig setWriteIdleTimeout(Duration idleTimeout) {
+  public HttpOverTcpServerConfig setWriteIdleTimeout(Duration idleTimeout) {
     endpointConfig.setWriteIdleTimeout(idleTimeout);
     return this;
   }
@@ -176,7 +176,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
    * @param ssl  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public TcpHttpServerConfig setSsl(boolean ssl) {
+  public HttpOverTcpServerConfig setSsl(boolean ssl) {
     endpointConfig.setSsl(ssl);
     return this;
   }
@@ -250,7 +250,7 @@ public class TcpHttpServerConfig extends HttpServerConfig {
    * @param compression the new configuration
    * @return a reference to this, so the API can be used fluently
    */
-  public TcpHttpServerConfig setCompression(HttpCompressionConfig compression) {
+  public HttpOverTcpServerConfig setCompression(HttpCompressionConfig compression) {
     this.compression = compression == null ? new HttpCompressionConfig() : compression;
     return this;
   }

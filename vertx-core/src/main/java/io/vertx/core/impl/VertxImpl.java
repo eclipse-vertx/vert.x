@@ -395,15 +395,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new HttpServerImpl(this, new TcpHttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
+    return new HttpServerImpl(this, new HttpOverTcpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
   }
 
   @Override
   public HttpServer createHttpServer(HttpServerConfig config) {
-    if (config instanceof TcpHttpServerConfig) {
-      return new HttpServerImpl(this, new TcpHttpServerConfig((TcpHttpServerConfig)config), false);
+    if (config instanceof HttpOverTcpServerConfig) {
+      return new HttpServerImpl(this, new HttpOverTcpServerConfig((HttpOverTcpServerConfig)config), false);
     } else {
-      return new Http3Server(this, new QuicHttpServerConfig((QuicHttpServerConfig)config));
+      return new Http3Server(this, new HttpOverQuicServerConfig((HttpOverQuicServerConfig)config));
     }
   }
 

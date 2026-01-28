@@ -40,7 +40,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   static final boolean DISABLE_WEBSOCKETS = SysProps.DISABLE_WEBSOCKETS.getBoolean();
 
   private final VertxInternal vertx;
-  final TcpHttpServerConfig options;
+  final HttpOverTcpServerConfig options;
   private final boolean registerWebSocketWriteHandlers;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> webSocketHandler;
@@ -53,7 +53,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private CloseSequence closeSequence;
 
-  public HttpServerImpl(VertxInternal vertx, TcpHttpServerConfig options, boolean registerWebSocketWriteHandlers) {
+  public HttpServerImpl(VertxInternal vertx, HttpOverTcpServerConfig options, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.options = options;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
@@ -176,7 +176,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     if (tcpServer != null) {
       throw new IllegalStateException();
     }
-    TcpHttpServerConfig options = this.options;
+    HttpOverTcpServerConfig options = this.options;
     ContextInternal context = vertx.getOrCreateContext();
     ContextInternal listenContext;
     // Not sure of this

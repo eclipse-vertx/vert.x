@@ -36,7 +36,7 @@ public class Http3FlowControlTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    QuicHttpServerConfig serverConfig = new QuicHttpServerConfig();
+    HttpOverQuicServerConfig serverConfig = new HttpOverQuicServerConfig();
     serverConfig.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     clientConfig = new HttpClientConfig();
     clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));

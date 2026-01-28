@@ -52,7 +52,7 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpServerConfig forServer() {
-    QuicHttpServerConfig options = new QuicHttpServerConfig();
+    HttpOverQuicServerConfig options = new HttpOverQuicServerConfig();
     options.setPort(port);
     options.setHost(host);
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());

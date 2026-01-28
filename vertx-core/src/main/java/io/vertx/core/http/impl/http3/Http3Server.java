@@ -32,7 +32,7 @@ import java.util.function.BiFunction;
 public class Http3Server implements HttpServer, MetricsProvider {
 
   private final VertxInternal vertx;
-  private final QuicHttpServerConfig config;
+  private final HttpOverQuicServerConfig config;
   private final Http3ServerConfig http3Config;
   private final QuicServerConfig endpointConfig;
   private volatile Handler<HttpServerRequest> requestHandler;
@@ -40,9 +40,9 @@ public class Http3Server implements HttpServer, MetricsProvider {
   private QuicServer quicServer;
   private volatile int actualPort;
 
-  public Http3Server(VertxInternal vertx, QuicHttpServerConfig config) {
+  public Http3Server(VertxInternal vertx, HttpOverQuicServerConfig config) {
     this.vertx = vertx;
-    this.config = new QuicHttpServerConfig(config);
+    this.config = new HttpOverQuicServerConfig(config);
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
     this.endpointConfig = config.getEndpointConfig() != null ? config.getEndpointConfig() : new QuicServerConfig();
     this.actualPort = 0;

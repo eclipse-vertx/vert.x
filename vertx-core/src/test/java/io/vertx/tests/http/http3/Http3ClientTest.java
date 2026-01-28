@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @RunWith(LinuxOrOsx.class)
 public class Http3ClientTest extends VertxTestBase {
 
-  private QuicHttpServerConfig serverOptions;
+  private HttpOverQuicServerConfig serverOptions;
   private HttpServer server;
   private HttpClientConfig clientConfig;
   private HttpClientAgent client;
@@ -29,7 +29,7 @@ public class Http3ClientTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    serverOptions = new QuicHttpServerConfig();
+    serverOptions = new HttpOverQuicServerConfig();
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -388,7 +388,7 @@ public class Http3ClientTest extends VertxTestBase {
   @Test
   public void testSettings() throws Exception {
 
-    QuicHttpServerConfig serverConfig = new QuicHttpServerConfig(serverOptions);
+    HttpOverQuicServerConfig serverConfig = new HttpOverQuicServerConfig(serverOptions);
     serverConfig.getHttp3Config().setInitialSettings(new Http3Settings()
         .setMaxFieldSectionSize(1024)
         .setQPackMaxTableCapacity(1024)
