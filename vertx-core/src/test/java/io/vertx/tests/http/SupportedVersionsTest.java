@@ -196,25 +196,25 @@ public class SupportedVersionsTest extends VertxTestBase {
 
   @Test
   public void testConfigH3() {
-    HttpVersion version = configTest(new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_3, version);
   }
 
   @Test
   public void testConfigHttp1H3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_1_1, version);
   }
 
   @Test
   public void testConfigH2H3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSsl(true).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSsl(true).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH2CH3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
@@ -223,7 +223,7 @@ public class SupportedVersionsTest extends VertxTestBase {
     HttpClientConfig config = new HttpClientConfig(CLIENT_DEFAULT_TLS).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3));
     config.getSslOptions().setUseAlpn(false);
     try {
-      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), config);
+      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), config);
       fail();
     } catch (VertxException e) {
       // Must enable ALPN
