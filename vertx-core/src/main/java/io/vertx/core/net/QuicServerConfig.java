@@ -15,6 +15,9 @@ import io.vertx.codegen.annotations.DataObject;
 import java.time.Duration;
 import java.util.Objects;
 
+import static io.vertx.core.net.NetServerOptions.DEFAULT_HOST;
+import static io.vertx.core.net.NetServerOptions.DEFAULT_PORT;
+
 /**
  * Configuration of a Quic client.
  *
@@ -28,12 +31,16 @@ public class QuicServerConfig extends QuicEndpointConfig {
   public static final KeyCertOptions DEFAULT_CLIENT_ADDRESS_VALIDATION_KEY = null;
   public static final Duration DEFAULT_CLIENT_ADDRESS_VALIDATION_TIME_WINDOW = Duration.ofSeconds(30);
 
+  private int port;
+  private String host;
   private boolean loadBalanced;
   private QuicClientAddressValidation clientAddressValidation;
   private Duration clientAddressValidationTimeWindow;
   private KeyCertOptions clientAddressValidationKey;
 
   public QuicServerConfig() {
+    port = DEFAULT_PORT;
+    host = DEFAULT_HOST;
     loadBalanced = DEFAULT_LOAD_BALANCED;
     clientAddressValidation = DEFAULT_CLIENT_ADDRESS_VALIDATION;
     clientAddressValidationKey = DEFAULT_CLIENT_ADDRESS_VALIDATION_KEY;
@@ -45,6 +52,8 @@ public class QuicServerConfig extends QuicEndpointConfig {
 
     KeyCertOptions tokenValidationKey = other.clientAddressValidationKey;
 
+    this.port = other.port;
+    this.host = other.host;
     this.loadBalanced = other.loadBalanced;
     this.clientAddressValidation = other.clientAddressValidation;
     this.clientAddressValidationTimeWindow = other.clientAddressValidationTimeWindow;
@@ -84,6 +93,46 @@ public class QuicServerConfig extends QuicEndpointConfig {
   @Override
   public QuicServerConfig setStreamLogging(NetworkLogging config) {
     return (QuicServerConfig) super.setStreamLogging(config);
+  }
+
+  /**
+   * @return the port
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
+   * Set the port
+   *
+   * @param port  the port
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicServerConfig setPort(int port) {
+    if (port > 65535) {
+      throw new IllegalArgumentException("port must be <= 65535");
+    }
+    this.port = port;
+    return this;
+  }
+
+  /**
+   *
+   * @return the host
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Set the host
+   *
+   * @param host  the host
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicServerConfig setHost(String host) {
+    this.host = host;
+    return this;
   }
 
   /**

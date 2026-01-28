@@ -40,7 +40,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   static final boolean DISABLE_WEBSOCKETS = SysProps.DISABLE_WEBSOCKETS.getBoolean();
 
   private final VertxInternal vertx;
-  final HttpOverTcpServerConfig options;
+  final HttpServerConfig options;
   private final boolean registerWebSocketWriteHandlers;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> webSocketHandler;
@@ -53,7 +53,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private CloseSequence closeSequence;
 
-  public HttpServerImpl(VertxInternal vertx, HttpOverTcpServerConfig options, boolean registerWebSocketWriteHandlers) {
+  public HttpServerImpl(VertxInternal vertx, HttpServerConfig options, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.options = options;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
@@ -165,7 +165,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
 
   @Override
   public Future<HttpServer> listen() {
-    return listen(options.getPort(), options.getHost());
+    return listen(options.getTcpPort(), options.getTcpHost());
   }
 
   @Override
@@ -176,7 +176,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     if (tcpServer != null) {
       throw new IllegalStateException();
     }
-    HttpOverTcpServerConfig options = this.options;
+    HttpServerConfig options = this.options;
     ContextInternal context = vertx.getOrCreateContext();
     ContextInternal listenContext;
     // Not sure of this
@@ -187,7 +187,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .build();
     }
-    NetServerInternal server = new NetServerBuilder(vertx, options.getEndpointConfig(), options.getSslOptions())
+    NetServerInternal server = new NetServerBuilder(vertx, options.getTcpConfig(), options.getSslOptions())
       .fileRegionEnabled(!options.getCompression().isCompressionEnabled())
       .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(new HttpServerOptions(), addr))
       .build();
@@ -219,7 +219,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         options.getCompression().isCompressionEnabled(), // Todo : remove
         options.getCompression().isDecompressionEnabled(), // Todo : remove
         options.getTracingPolicy(),
-        options.getEndpointConfig().getNetworkLogging() != null,
+        options.getTcpConfig().getNetworkLogging() != null,
         options.getCompression().getCompressors().toArray(new CompressionOptions[0]),
         options.getCompression().getContentSizeThreshold(),
         options.isHandle100ContinueAutomatically(),

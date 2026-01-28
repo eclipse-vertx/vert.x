@@ -42,8 +42,10 @@ import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 @RunWith(LinuxOrOsx.class)
 public class Http3ServerTest extends VertxTestBase {
 
-  public static HttpOverQuicServerConfig serverOptions() {
-    HttpOverQuicServerConfig options = new HttpOverQuicServerConfig();
+  public static HttpServerConfig serverOptions() {
+    HttpServerConfig options = new HttpServerConfig();
+    options.addSupportedVersion(HttpVersion.HTTP_3);
+    options.setQuicPort(4043);
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -359,8 +361,8 @@ public class Http3ServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
 
-    HttpOverQuicServerConfig config = serverOptions();
-    config.getEndpointConfig().setStreamIdleTimeout(Duration.ofMillis(200));
+    HttpServerConfig config = serverOptions();
+    config.getQuicConfig().setStreamIdleTimeout(Duration.ofMillis(200));
     server = vertx.createHttpServer(config);
 
     server.requestHandler(req -> {
@@ -391,7 +393,7 @@ public class Http3ServerTest extends VertxTestBase {
 
   @Test
   public void testSettings() throws Exception {
-    HttpOverQuicServerConfig config = serverOptions();
+    HttpServerConfig config = serverOptions();
     config.getHttp3Config()
       .setInitialSettings(new io.vertx.core.http.Http3Settings()
       .setMaxFieldSectionSize(1024)

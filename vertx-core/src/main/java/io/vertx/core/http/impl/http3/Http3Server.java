@@ -34,19 +34,19 @@ import java.util.function.BiFunction;
 public class Http3Server implements HttpServer, MetricsProvider {
 
   private final VertxInternal vertx;
-  private final HttpOverQuicServerConfig config;
+  private final HttpServerConfig config;
   private final Http3ServerConfig http3Config;
-  private final QuicServerConfig endpointConfig;
+  private final QuicServerConfig quicConfig;
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
   private QuicServer quicServer;
   private volatile int actualPort;
 
-  public Http3Server(VertxInternal vertx, HttpOverQuicServerConfig config) {
+  public Http3Server(VertxInternal vertx, HttpServerConfig config) {
     this.vertx = vertx;
-    this.config = new HttpOverQuicServerConfig(config);
+    this.config = new HttpServerConfig(config);
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
-    this.endpointConfig = config.getEndpointConfig() != null ? config.getEndpointConfig() : new QuicServerConfig();
+    this.quicConfig = config.getQuicConfig() != null ? config.getQuicConfig() : new QuicServerConfig();
     this.actualPort = 0;
   }
 
@@ -122,7 +122,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
 
   @Override
   public Future<HttpServer> listen() {
-    return listen(SocketAddress.inetSocketAddress(config.getPort(), config.getHost()));
+    return listen(SocketAddress.inetSocketAddress(config.getQuicPort(), config.getQuicHost()));
   }
 
   private static class ConnectionHandler implements Handler<QuicConnection> {
@@ -207,7 +207,7 @@ public class Http3Server implements HttpServer, MetricsProvider {
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
-      quicServer = new QuicServerImpl(vertx, metricsProvider, endpointConfig, sslOptions);
+      quicServer = new QuicServerImpl(vertx, metricsProvider, quicConfig, sslOptions);
     }
 
     if (requestHandler == null) {

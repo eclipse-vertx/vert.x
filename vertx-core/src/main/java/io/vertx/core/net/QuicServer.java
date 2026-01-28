@@ -11,9 +11,11 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -55,5 +57,47 @@ public interface QuicServer extends QuicEndpoint {
    * @return this object instance
    */
   QuicServer handler(Handler<QuicConnection> handler);
+
+  /**
+   * Start listening on the {@code port} and {@code host} as configured in the {@link io.vertx.core.net.QuicServerConfig} used when
+   * creating the server.
+   *
+   * @return a future completed with the listen operation result
+   */
+  Future<Integer> listen();
+
+  /**
+   * Start listening on the specified {@code port} and {@code host}.
+   * <p>
+   * Port {@code 0} can be specified meaning "choose a random port".
+   * <p>
+   * Host {@code 0.0.0.0} can be specified meaning "listen on all available interfaces".
+   *
+   * @return a future completed with the port the server is bound to
+   */
+  default Future<Integer> listen(int port, String host) {
+    return listen(new SocketAddressImpl(port, host));
+  }
+
+  /**
+   * Start listening on the specified port and host "0.0.0.0".
+   * <p>
+   * Port {@code 0} can be specified meaning "choose an random port".
+   *
+   * @return a future completed with the port the server is bound to
+   */
+  default Future<Integer> listen(int port) {
+    return listen(port, "0.0.0.0");
+  }
+
+  /**
+   * Start listening on the specified local address.
+   *
+   * @param localAddress the local address to listen on
+   * @return a future completed with the port the server is bound to
+   */
+  default Future<Integer> listen(SocketAddress localAddress) {
+    return bind(localAddress);
+  }
 
 }

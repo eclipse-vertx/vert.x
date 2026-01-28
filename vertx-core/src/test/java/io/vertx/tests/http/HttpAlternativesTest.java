@@ -81,7 +81,8 @@ public class HttpAlternativesTest extends VertxTestBase {
       server.listen(port).await();
     }
     if (!quicVersions.isEmpty()) {
-      HttpOverQuicServerConfig config = new HttpOverQuicServerConfig();
+      HttpServerConfig config = new HttpServerConfig();
+      config.addSupportedVersion(HttpVersion.HTTP_3);
       config.getSslOptions().setKeyCertOptions(cert.get());
       HttpServer server = vertx.createHttpServer(config);
       server.requestHandler(request -> {

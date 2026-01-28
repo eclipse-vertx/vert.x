@@ -36,8 +36,9 @@ public class SupportedVersionsTest extends VertxTestBase {
     .setKeyCertOptions(Cert.SNI_JKS.get());
   private static final HttpServerOptions TCP_SERVER_DEFAULT_TLS_WITH_ALPN = new HttpServerOptions(TCP_SERVER_DEFAULT_TLS)
     .setUseAlpn(true);
-  private static final HttpOverQuicServerConfig QUIC_SERVER_DEFAULT_TLS = new HttpOverQuicServerConfig()
-    .setPort(DEFAULT_HTTPS_PORT);
+  private static final HttpServerConfig QUIC_SERVER_DEFAULT_TLS = new HttpServerConfig()
+    .addSupportedVersion(HttpVersion.HTTP_3)
+    .setQuicPort(DEFAULT_HTTPS_PORT);
 
   static {
     // Todo : improve this usability
@@ -195,25 +196,25 @@ public class SupportedVersionsTest extends VertxTestBase {
 
   @Test
   public void testConfigH3() {
-    HttpVersion version = configTest(new HttpOverQuicServerConfig(QUIC_SERVER_DEFAULT_TLS).setPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_3, version);
   }
 
   @Test
   public void testConfigHttp1H3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpOverQuicServerConfig(QUIC_SERVER_DEFAULT_TLS).setPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_1_1, version);
   }
 
   @Test
   public void testConfigH2H3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpOverQuicServerConfig(QUIC_SERVER_DEFAULT_TLS).setPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSsl(true).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSsl(true).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH2CH3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpOverQuicServerConfig(QUIC_SERVER_DEFAULT_TLS).setPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), new HttpClientConfig(CLIENT_DEFAULT).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
@@ -222,7 +223,7 @@ public class SupportedVersionsTest extends VertxTestBase {
     HttpClientConfig config = new HttpClientConfig(CLIENT_DEFAULT_TLS).setSupportedVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3));
     config.getSslOptions().setUseAlpn(false);
     try {
-      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpOverQuicServerConfig(QUIC_SERVER_DEFAULT_TLS).setPort(4043), config);
+      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setTcpPort(4043), config);
       fail();
     } catch (VertxException e) {
       // Must enable ALPN
@@ -233,11 +234,11 @@ public class SupportedVersionsTest extends VertxTestBase {
     return configTest(serverOptions, null, clientConfig);
   }
 
-  private HttpVersion configTest(HttpOverQuicServerConfig serverOptions, HttpClientConfig clientConfig) {
+  private HttpVersion configTest(HttpServerConfig serverOptions, HttpClientConfig clientConfig) {
     return configTest(null, serverOptions, clientConfig);
   }
 
-  private HttpVersion configTest(HttpServerOptions tcpServerOptions, HttpOverQuicServerConfig quicServerOptions, HttpClientConfig clientConfig) {
+  private HttpVersion configTest(HttpServerOptions tcpServerOptions, HttpServerConfig quicServerOptions, HttpClientConfig clientConfig) {
     if (tcpServerOptions != null) {
       tcpServer = vertx
         .createHttpServer(tcpServerOptions)

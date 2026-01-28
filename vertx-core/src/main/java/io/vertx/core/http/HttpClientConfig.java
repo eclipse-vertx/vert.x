@@ -44,8 +44,8 @@ public class HttpClientConfig {
 
   public static final List<HttpVersion> DEFAULT_SUPPORTED_VERSIONS = List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
 
-  private TcpOptions tcpOptions;
-  private QuicOptions quicOptions;
+  private TcpOptions tcpOptions; // todo : use client config
+  private QuicOptions quicOptions; // todo : use client config
   private ClientSSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
   private Duration connectTimeout;
@@ -63,7 +63,7 @@ public class HttpClientConfig {
   private Http2ClientConfig http2Config;
   private Http3ClientConfig http3Config;
   private boolean verifyHost;
-  private boolean decompressionSupported;
+  private boolean decompressionSupported; // todo : rename this
   private String defaultHost;
   private int defaultPort;
   private int maxRedirects;

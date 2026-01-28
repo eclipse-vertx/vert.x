@@ -267,4 +267,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       channel.close();
     }
   }
+
+  @Override
+  public Future<Integer> listen() {
+    return listen(options.getPort(), options.getHost());
+  }
 }
