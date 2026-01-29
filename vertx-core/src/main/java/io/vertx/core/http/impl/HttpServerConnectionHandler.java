@@ -120,13 +120,13 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
 
   private void initializeWebSocketExtensions(ChannelPipeline pipeline) {
     ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (server.config.getWebSocketConfig().getPerFrameCompressionSupported()) {
+    if (server.config.getWebSocketConfig().getUsePerFrameCompression()) {
       extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel()));
     }
-    if (server.config.getWebSocketConfig().getPerMessageCompressionSupported()) {
+    if (server.config.getWebSocketConfig().getUsePerMessageCompression()) {
       extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        server.config.getWebSocketConfig().getAllowServerNoContext(), server.config.getWebSocketConfig().getPreferredClientNoContext()));
+        server.config.getWebSocketConfig().getUseServerNoContext(), server.config.getWebSocketConfig().getUseClientNoContext()));
     }
     if (!extensionHandshakers.isEmpty()) {
       WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(

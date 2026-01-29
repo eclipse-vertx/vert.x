@@ -27,57 +27,100 @@ import static io.vertx.core.http.HttpServerOptions.*;
 @DataObject
 public class WebSocketServerConfig {
 
+  private List<String> subProtocols;
+  private Duration closingTimeout;
   private int maxFrameSize;
   private int maxMessageSize;
-  private List<String> subProtocols;
-  private boolean acceptUnmaskedFrames;
-  private boolean perFrameCompressionSupported;
-  private boolean perMessageCompressionSupported;
+  private boolean usePerFrameCompression;
+  private boolean usePerMessageCompression;
   private int compressionLevel;
-  private boolean allowServerNoContext;
-  private boolean preferredClientNoContext;
-  private Duration closingTimeout;
+  private boolean useUnmaskedFrames;
+  private boolean useServerNoContext;
+  private boolean useClientNoContext;
 
   public WebSocketServerConfig() {
-    maxFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    maxMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
-    acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
-    perFrameCompressionSupported = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
-    perMessageCompressionSupported = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
-    compressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
-    preferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
-    allowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
-    closingTimeout = Duration.ofSeconds(DEFAULT_WEBSOCKET_CLOSING_TIMEOUT);
+    this.subProtocols = null;
+    this.closingTimeout = Duration.ofSeconds(DEFAULT_WEBSOCKET_CLOSING_TIMEOUT);
+    this.maxFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    this.maxMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
+    this.usePerFrameCompression = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
+    this.usePerMessageCompression = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
+    this.compressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
+    this.useUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
+    this.useClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
+    this.useServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
   }
 
   public WebSocketServerConfig(WebSocketServerConfig other) {
+    this.subProtocols = other.subProtocols != null ? new ArrayList<>(other.subProtocols) : null;
+    this.closingTimeout = other.closingTimeout;
     this.maxFrameSize = other.maxFrameSize;
     this.maxMessageSize = other.maxMessageSize;
-    this.subProtocols = other.subProtocols != null ? new ArrayList<>(other.subProtocols) : null;
-    this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
-    this.perFrameCompressionSupported = other.perFrameCompressionSupported;
-    this.perMessageCompressionSupported = other.perMessageCompressionSupported;
+    this.usePerFrameCompression = other.usePerFrameCompression;
+    this.usePerMessageCompression = other.usePerMessageCompression;
     this.compressionLevel = other.compressionLevel;
-    this.preferredClientNoContext = other.preferredClientNoContext;
-    this.allowServerNoContext = other.allowServerNoContext;
-    this.closingTimeout = other.closingTimeout;
-  }
-
-
-  public boolean isAcceptUnmaskedFrames() {
-    return acceptUnmaskedFrames;
+    this.useUnmaskedFrames = other.useUnmaskedFrames;
+    this.useClientNoContext = other.useClientNoContext;
+    this.useServerNoContext = other.useServerNoContext;
   }
 
   /**
-   * Set {@code true} when the server accepts unmasked frame.
-   * As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting {@code true}.
-   * It's set to {@code false} as default.
+   * Add a WebSocket sub-protocol to the list supported by the server.
    *
-   * @param acceptUnmaskedFrames {@code true} if enabled
+   * @param subProtocol the sub-protocol to add
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketServerConfig setAcceptUnmaskedFrames(boolean acceptUnmaskedFrames) {
-    this.acceptUnmaskedFrames = acceptUnmaskedFrames;
+  public WebSocketServerConfig addWebSocketSubProtocol(String subProtocol) {
+    Objects.requireNonNull(subProtocol, "Cannot add a null WebSocket sub-protocol");
+    if (subProtocols == null) {
+      subProtocols = new ArrayList<>();
+    }
+    subProtocols.add(subProtocol);
+    return this;
+  }
+  /**
+   * Set the WebSocket list of sub-protocol supported by the server.
+   *
+   * @param subProtocols  comma separated list of sub-protocols
+   * @return a reference to this, so the API can be used fluently
+   */
+  public WebSocketServerConfig setSubProtocols(List<String> subProtocols) {
+    this.subProtocols = subProtocols;
+    return this;
+  }
+
+  /**
+   * @return Get the WebSocket list of sub-protocol
+   */
+  public List<String> getSubProtocols() {
+    return subProtocols;
+  }
+
+  /**
+   * @return the amount of time (in seconds) a client WebSocket will wait until it closes TCP connection after receiving a close frame
+   */
+  public Duration getClosingTimeout() {
+    return closingTimeout;
+  }
+
+  /**
+   * Set the amount of time a server WebSocket will wait until it closes the TCP connection
+   * after sending a close frame.
+   *
+   * <p> When a server closes a WebSocket, it should wait the client close frame to close the TCP connection.
+   * This timeout will close the TCP connection on the server when it expires. When the TCP
+   * connection is closed receiving the close frame, the {@link WebSocket#exceptionHandler} instead
+   * of the {@link WebSocket#endHandler} will be called.
+   *
+   * <p> Set to {@code 0L} closes the TCP connection immediately after sending the close frame.
+   *
+   * <p> Set to a negative value to disable it.
+   *
+   * @param closingTimeout the duration of the timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public WebSocketServerConfig setClosingTimeout(Duration closingTimeout) {
+    this.closingTimeout = closingTimeout;
     return this;
   }
 
@@ -118,75 +161,46 @@ public class WebSocketServerConfig {
   }
 
   /**
-   * Add a WebSocket sub-protocol to the list supported by the server.
-   *
-   * @param subProtocol the sub-protocol to add
-   * @return a reference to this, so the API can be used fluently
+   * @return whether the endpoint will send or accept the per-frame deflate compression extension
    */
-  public WebSocketServerConfig addWebSocketSubProtocol(String subProtocol) {
-    Objects.requireNonNull(subProtocol, "Cannot add a null WebSocket sub-protocol");
-    if (subProtocols == null) {
-      subProtocols = new ArrayList<>();
-    }
-    subProtocols.add(subProtocol);
-    return this;
+  public boolean getUsePerFrameCompression() {
+    return this.usePerFrameCompression;
   }
+
   /**
-   * Set the WebSocket list of sub-protocol supported by the server.
+   * Set whether the WebSocket per-frame deflate compression extension is used or supported.
    *
-   * @param subProtocols  comma separated list of sub-protocols
+   * @param use whether the per-frame deflate compression extension will be sent or accepted
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketServerConfig setSubProtocols(List<String> subProtocols) {
-    this.subProtocols = subProtocols;
+  public WebSocketServerConfig setUsePerFrameCompression(boolean use) {
+    this.usePerFrameCompression = use;
     return this;
   }
 
   /**
-   * @return Get the WebSocket list of sub-protocol
+   * @return whether the endpoint will send or accept the per-frame deflate compression extension
    */
-  public List<String> getSubProtocols() {
-    return subProtocols;
+  public boolean getUsePerMessageCompression() {
+    return this.usePerMessageCompression;
   }
 
   /**
-   * Enable or disable support for the WebSocket per-frame deflate compression extension.
+   * Set whether the WebSocket per-message deflate compression extension is used or supported.
    *
-   * @param supported {@code true} when the per-frame deflate compression extension is supported
+   * @param use whether the per-frame deflate compression extension will be sent or accepted
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketServerConfig setPerFrameCompressionSupported(boolean supported) {
-    this.perFrameCompressionSupported = supported;
+  public WebSocketServerConfig setUsePerMessageCompression(boolean use) {
+    this.usePerMessageCompression = use;
     return this;
   }
 
   /**
-   * Get whether WebSocket the per-frame deflate compression extension is supported.
-   *
-   * @return {@code true} if the http server will accept the per-frame deflate compression extension
+   * @return the current WebSocket deflate compression level
    */
-  public boolean getPerFrameCompressionSupported() {
-    return this.perFrameCompressionSupported;
-  }
-
-  /**
-   * Enable or disable support for WebSocket per-message deflate compression extension.
-   *
-   * @param supported {@code true} when the per-message WebSocket compression extension is supported
-   * @return a reference to this, so the API can be used fluently
-   */
-  public WebSocketServerConfig setPerMessageCompressionSupported(boolean supported) {
-    this.perMessageCompressionSupported = supported;
-    return this;
-  }
-
-  /**
-   * Get whether WebSocket per-message deflate compression extension is supported.
-   *
-   * @return {@code true} if the http server will accept the per-message deflate compression extension
-   */
-  public boolean getPerMessageCompressionSupported() {
-    return this.perMessageCompressionSupported;
+  public int getCompressionLevel() {
+    return this.compressionLevel;
   }
 
   /**
@@ -201,77 +215,62 @@ public class WebSocketServerConfig {
   }
 
   /**
-   * @return the current WebSocket deflate compression level
+   * @return whether WebSocket unmasked frames are used or supported
    */
-  public int getCompressionLevel() {
-    return this.compressionLevel;
+  public boolean isUseUnmaskedFrames() {
+    return useUnmaskedFrames;
   }
 
   /**
-   * Set whether the WebSocket server will accept the {@code server_no_context_takeover} parameter of the per-message
-   * deflate compression extension offered by the client.
+   * Set whether WebSocket unmasked frames are used or supported
    *
-   * @param accept {@code true} to accept the {@literal server_no_context_takeover} parameter when the client offers it
+   * @param use whether the masked frames are used or supported
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketServerConfig setAllowServerNoContext(boolean accept) {
-    this.allowServerNoContext = accept;
+  public WebSocketServerConfig setUseUnmaskedFrames(boolean use) {
+    this.useUnmaskedFrames = use;
     return this;
   }
 
   /**
-   * @return {@code true} when the WebSocket server will accept the {@code server_no_context_takeover} parameter for the per-message
-   * deflate compression extension offered by the client
+   * @return whether the WebSocket {@code server_no_context_takeover} parameter of the per-message deflate compression
+   * is used or supported.
    */
-  public boolean getAllowServerNoContext() {
-    return this.allowServerNoContext;
+  public boolean getUseServerNoContext() {
+    return this.useServerNoContext;
   }
 
   /**
-   * Set whether the WebSocket server will accept the {@code client_no_context_takeover} parameter of the per-message
-   * deflate compression extension offered by the client.
+   * Set whether the WebSocket {@code server_no_context_takeover} parameter of the per-message deflate compression
+   * is used or supported.
    *
-   * @param accept {@code true} to accept the {@code client_no_context_takeover} parameter when the client offers it
+   * @param use whether the WebSocket {@code server_no_context_takeover} parameter of the per-message deflate compression
+   *            is used or supported.
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketServerConfig setPreferredClientNoContext(boolean accept) {
-    this.preferredClientNoContext = accept;
+  public WebSocketServerConfig setUseServerNoContext(boolean use) {
+    this.useServerNoContext = use;
     return this;
   }
 
   /**
-   * @return {@code true} when the WebSocket server will accept the {@code client_no_context_takeover} parameter for the per-message
-   * deflate compression extension offered by the client
+   * @return use whether the WebSocket {@code client_no_context_takeover} parameter of the per-message deflate compression
+   * is used or supported.
    */
-  public boolean getPreferredClientNoContext() {
-    return this.preferredClientNoContext;
+  public boolean getUseClientNoContext() {
+    return this.useClientNoContext;
   }
 
   /**
-   * @return the amount of time (in seconds) a client WebSocket will wait until it closes TCP connection after receiving a close frame
-   */
-  public Duration getClosingTimeout() {
-    return closingTimeout;
-  }
-
-  /**
-   * Set the amount of time a server WebSocket will wait until it closes the TCP connection
-   * after sending a close frame.
+   * Set whether the WebSocket {@code client_no_context_takeover} parameter of the per-message deflate compression
+   * is used or supported.
    *
-   * <p> When a server closes a WebSocket, it should wait the client close frame to close the TCP connection.
-   * This timeout will close the TCP connection on the server when it expires. When the TCP
-   * connection is closed receiving the close frame, the {@link WebSocket#exceptionHandler} instead
-   * of the {@link WebSocket#endHandler} will be called.
-   *
-   * <p> Set to {@code 0L} closes the TCP connection immediately after sending the close frame.
-   *
-   * <p> Set to a negative value to disable it.
-   *
-   * @param closingTimeout the duration of the timeout
+   * @param use whether the WebSocket {@code client_no_context_takeover} parameter of the per-message deflate compression
+   *            is used or supported.
    * @return a reference to this, so the API can be used fluently
    */
-  public WebSocketServerConfig setClosingTimeout(Duration closingTimeout) {
-    this.closingTimeout = closingTimeout;
+  public WebSocketServerConfig setUseClientNoContext(boolean use) {
+    this.useClientNoContext = use;
     return this;
   }
 }

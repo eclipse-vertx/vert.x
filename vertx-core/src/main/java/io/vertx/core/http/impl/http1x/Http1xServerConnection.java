@@ -382,9 +382,9 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       subProtocols = String.join(",", webSocketConfig.getSubProtocols());
     }
     WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
-      .allowExtensions(webSocketConfig.getPerMessageCompressionSupported() || webSocketConfig.getPerFrameCompressionSupported())
+      .allowExtensions(webSocketConfig.getUsePerMessageCompression() || webSocketConfig.getUsePerFrameCompression())
       .maxFramePayloadLength(webSocketConfig.getMaxFrameSize())
-      .allowMaskMismatch(webSocketConfig.isAcceptUnmaskedFrames())
+      .allowMaskMismatch(webSocketConfig.isUseUnmaskedFrames())
       .closeOnProtocolViolation(false)
       .build();
     WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(wsURL, subProtocols, config);

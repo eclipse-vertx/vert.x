@@ -639,7 +639,7 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   public boolean isAcceptUnmaskedFrames() {
-    return webSocketConfig.isAcceptUnmaskedFrames();
+    return webSocketConfig.isUseUnmaskedFrames();
   }
 
   /**
@@ -651,7 +651,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setAcceptUnmaskedFrames(boolean acceptUnmaskedFrames) {
-    webSocketConfig.setAcceptUnmaskedFrames(acceptUnmaskedFrames);
+    webSocketConfig.setUseUnmaskedFrames(acceptUnmaskedFrames);
     return this;
   }
 
@@ -997,7 +997,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setPerFrameWebSocketCompressionSupported(boolean supported) {
-    webSocketConfig.setPerFrameCompressionSupported(supported);
+    webSocketConfig.setUsePerFrameCompression(supported);
     return this;
   }
 
@@ -1007,7 +1007,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the http server will accept the per-frame deflate compression extension
    */
   public boolean getPerFrameWebSocketCompressionSupported() {
-    return this.webSocketConfig.getPerFrameCompressionSupported();
+    return this.webSocketConfig.getUsePerFrameCompression();
   }
 
   /**
@@ -1017,7 +1017,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setPerMessageWebSocketCompressionSupported(boolean supported) {
-    webSocketConfig.setPerMessageCompressionSupported(supported);
+    webSocketConfig.setUsePerMessageCompression(supported);
     return this;
   }
 
@@ -1027,7 +1027,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the http server will accept the per-message deflate compression extension
    */
   public boolean getPerMessageWebSocketCompressionSupported() {
-    return webSocketConfig.getPerMessageCompressionSupported();
+    return webSocketConfig.getUsePerMessageCompression();
   }
 
   /**
@@ -1056,7 +1056,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketAllowServerNoContext(boolean accept) {
-    webSocketConfig.setAllowServerNoContext(accept);
+    webSocketConfig.setUseServerNoContext(accept);
     return this;
   }
 
@@ -1065,7 +1065,7 @@ public class HttpServerOptions extends NetServerOptions {
    * deflate compression extension offered by the client
    */
   public boolean getWebSocketAllowServerNoContext() {
-    return webSocketConfig.getAllowServerNoContext();
+    return webSocketConfig.getUseServerNoContext();
   }
 
   /**
@@ -1076,7 +1076,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebSocketPreferredClientNoContext(boolean accept) {
-    webSocketConfig.setPreferredClientNoContext(accept);
+    webSocketConfig.setUseClientNoContext(accept);
     return this;
   }
 
@@ -1085,7 +1085,7 @@ public class HttpServerOptions extends NetServerOptions {
    * deflate compression extension offered by the client
    */
   public boolean getWebSocketPreferredClientNoContext() {
-    return webSocketConfig.getPreferredClientNoContext();
+    return webSocketConfig.getUseClientNoContext();
   }
 
   /**
