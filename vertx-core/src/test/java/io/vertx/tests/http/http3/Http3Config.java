@@ -17,8 +17,10 @@ import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpServerConfig;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import junit.runner.Version;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_HOST;
@@ -52,9 +54,10 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpServerConfig forServer() {
-    Http3ServerOptions options = new Http3ServerOptions();
-    options.setPort(port);
-    options.setHost(host);
+    io.vertx.core.http.HttpServerConfig options = new io.vertx.core.http.HttpServerConfig();
+    options.setSupportedVersions(EnumSet.of(HttpVersion.HTTP_3));
+    options.setQuicPort(port);
+    options.setQuicHost(host);
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -64,7 +67,7 @@ public class Http3Config implements HttpConfig {
         throw new UnsupportedOperationException();
       }
       @Override
-      public HttpServerConfig setCompression(HttpCompressionOptions compression) {
+      public HttpServerConfig setCompression(HttpCompressionConfig compression) {
         throw new UnsupportedOperationException();
       }
       @Override
@@ -88,7 +91,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpServerConfig setIdleTimeout(Duration timeout) {
-        options.setStreamIdleTimeout(timeout);
+        options.getQuicConfig().setStreamIdleTimeout(timeout);
         return this;
       }
       @Override

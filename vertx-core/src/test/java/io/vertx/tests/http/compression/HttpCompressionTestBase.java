@@ -55,7 +55,7 @@ public abstract class HttpCompressionTestBase extends SimpleHttpTest {
   /**
    * @return the default configuration
    */
-  protected Optional<HttpCompressionOptions> serverCompressionConfig() {
+  protected Optional<HttpCompressionConfig> serverCompressionConfig() {
     throw new UnsupportedOperationException();
   }
 

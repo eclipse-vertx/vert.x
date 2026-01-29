@@ -20,6 +20,7 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketDecoderConfig;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
@@ -28,15 +29,14 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.internal.tls.SslContextManager;
@@ -75,6 +75,13 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
   private final Supplier<ContextInternal> streamContextSupplier;
   private final TracingPolicy tracingPolicy;
   private final boolean eagerCreateRequestQueue;
+  private final int maxFormAttributeSize;
+  private final int maxFormFields;
+  private final int maxFormBufferedBytes;
+  private final Http1ServerConfig serverConfig;
+  private final boolean registerWebSocketWriteHandlers;
+  private final WebSocketServerConfig webSocketConfig;
+  private final ServerSSLOptions sslOptions;
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
@@ -84,29 +91,55 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
 
   final HttpServerMetrics metrics;
   final boolean handle100ContinueAutomatically;
-  final HttpServerOptions options;
   final SslContextManager sslContextManager;
   final boolean strictThreadMode;
 
   public Http1xServerConnection(ThreadingModel threadingModel,
                                 Supplier<ContextInternal> streamContextSupplier,
+                                boolean strictThreadMode,
+                                boolean handle100ContinueAutomatically,
+                                ServerSSLOptions sslOptions,
                                 SslContextManager sslContextManager,
-                                HttpServerOptions options,
+                                int maxFormAttributeSize,
+                                int maxFormFields,
+                                int maxFormBufferedBytes,
+                                Http1ServerConfig serverConfig,
+                                boolean registerWebSocketWriteHandlers,
+                                WebSocketServerConfig webSocketConfig,
                                 ChannelHandlerContext chctx,
                                 ContextInternal context,
                                 String serverOrigin,
+                                TracingPolicy tracingPolicy,
                                 HttpServerMetrics metrics) {
-    super(context, chctx, options.getStrictThreadMode() && threadingModel == ThreadingModel.EVENT_LOOP);
+    super(context, chctx, strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP);
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
-    this.options = options;
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
+    this.serverConfig = serverConfig;
+    this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
+    this.webSocketConfig = webSocketConfig;
     this.sslContextManager = sslContextManager;
     this.metrics = metrics;
-    this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
-    this.tracingPolicy = options.getTracingPolicy();
+    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    this.tracingPolicy = tracingPolicy;
     this.wantClose = false;
-    this.strictThreadMode = options.getStrictThreadMode() && threadingModel == ThreadingModel.EVENT_LOOP;
+    this.strictThreadMode = strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP;
     this.eagerCreateRequestQueue = threadingModel != ThreadingModel.EVENT_LOOP;
+    this.sslOptions = sslOptions;
+  }
+
+  int maxFormAttributeSize() {
+    return maxFormAttributeSize;
+  }
+
+  int maxFormFields() {
+    return maxFormFields;
+  }
+
+  int maxFormBufferedBytes() {
+    return maxFormBufferedBytes;
   }
 
   @Override
@@ -313,7 +346,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
           promise.fail(e);
           return;
         }
-        promise.complete(new ServerWebSocketHandshaker(request, handshaker, options));
+        promise.complete(new ServerWebSocketHandshaker(request, handshaker, webSocketConfig, registerWebSocketWriteHandlers));
       }
     });
   }
@@ -345,13 +378,13 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       throw new WebSocketHandshakeException("Invalid WebSocket location", e);
     }
     String subProtocols = null;
-    if (options.getWebSocketSubProtocols() != null) {
-      subProtocols = String.join(",", options.getWebSocketSubProtocols());
+    if (webSocketConfig.getSubProtocols() != null) {
+      subProtocols = String.join(",", webSocketConfig.getSubProtocols());
     }
     WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
-      .allowExtensions(options.getPerMessageWebSocketCompressionSupported() || options.getPerFrameWebSocketCompressionSupported())
-      .maxFramePayloadLength(options.getMaxWebSocketFrameSize())
-      .allowMaskMismatch(options.isAcceptUnmaskedFrames())
+      .allowExtensions(webSocketConfig.getUsePerMessageCompression() || webSocketConfig.getUsePerFrameCompression())
+      .maxFramePayloadLength(webSocketConfig.getMaxFrameSize())
+      .allowMaskMismatch(webSocketConfig.isUseUnmaskedFrames())
       .closeOnProtocolViolation(false)
       .build();
     WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(wsURL, subProtocols, config);
@@ -399,7 +432,7 @@ public class Http1xServerConnection extends Http1xConnection implements HttpServ
       }
 
       pipeline.replace("handler", "handler", VertxHandler.create(ctx -> {
-        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslContextManager, options.getSslOptions(), metrics, false) {
+        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, false) {
           @Override
           protected void handleClosed() {
             if (metrics != null) {

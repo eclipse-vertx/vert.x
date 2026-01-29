@@ -57,19 +57,21 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   public static final String QUIC_SERVER_MAP_KEY = "__vertx.shared.quicServers";
 
-  public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                                      QuicServerOptions options) {
-    return new QuicServerImpl(vertx, metricsProvider, new QuicServerOptions(options));
+  public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                                      QuicServerConfig config, ServerSSLOptions sslOptions) {
+    return new QuicServerImpl(vertx, metricsProvider, new QuicServerConfig(config), sslOptions);
   }
 
-  private final QuicServerOptions options;
+  private final QuicServerConfig config;
+  private final ServerSSLOptions sslOptions;
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
-  public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicServerOptions options) {
-    super(vertx, metricsProvider, options);
-    this.options = options;
+  public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                        QuicServerConfig config, ServerSSLOptions sslOptions) {
+    super(vertx, metricsProvider, config, sslOptions);
+    this.config = config;
+    this.sslOptions = sslOptions;
   }
 
   @Override
@@ -86,10 +88,10 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   @Override
   protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) throws Exception {
-    if (options.isLoadBalanced()) {
+    if (config.isLoadBalanced()) {
       ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
-      Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
+      Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
       return f.<ChannelHandler>map(sslContextProvider -> {
         QuicDispatcher dispatcher;
         synchronized (map) {
@@ -115,7 +117,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
-    Future<SslContextProvider> f = manager.resolveSslContextProvider(options.getSslOptions(), context);
+    Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
     return f.map(sslContextProvider -> {
       try {
         return codecBuilder(context, sslContextProvider, metrics);
@@ -127,21 +129,21 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
-    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+    List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
     Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(applicationProtocols);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {
-      switch (options.getClientAddressValidation()) {
+      switch (config.getClientAddressValidation()) {
         case BASIC:
           qtc = InsecureQuicTokenHandler.INSTANCE;
           break;
         case CRYPTO:
-          KeyCertOptions tokenValidationKey = options.getClientAddressValidationKey();
+          KeyCertOptions tokenValidationKey = config.getClientAddressValidationKey();
           if (tokenValidationKey == null) {
             throw new IllegalArgumentException("The server must be configured with a token validation key to operate address validation");
           }
-          Duration timeWindow = options.getClientAddressValidationTimeWindow();
+          Duration timeWindow = config.getClientAddressValidationTimeWindow();
           TokenManager tokenManager = new TokenManager(vertx, timeWindow);
           tokenManager.init(tokenValidationKey);
           qtc = tokenManager;
@@ -156,9 +158,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
-                ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
-                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
-                  options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging,
+                ByteBufFormat activityLogging = config.getStreamLogging() != null ? config.getStreamLogging().getDataFormat() : null;
+                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getStreamIdleTimeout(),
+                  config.getStreamReadIdleTimeout(), config.getStreamWriteIdleTimeout(), activityLogging,
                   vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);
@@ -179,7 +181,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 */
             });
 
-    QLogConfig qlogCfg = options.getQLogConfig();
+    QLogConfig qlogCfg = config.getQLogConfig();
     if (qlogCfg != null) {
       if (qlogCfg.getPath() == null) {
         throw new IllegalArgumentException("Missing QLog path configuration");
@@ -264,5 +266,10 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       }
       channel.close();
     }
+  }
+
+  @Override
+  public Future<Integer> listen() {
+    return listen(config.getPort(), config.getHost());
   }
 }

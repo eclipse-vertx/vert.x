@@ -16,7 +16,7 @@ import io.vertx.codegen.annotations.DataObject;
 import java.util.Objects;
 
 /**
- * Generic purpose logging of network operations.
+ * Generic purpose logging of network operations configuration.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */

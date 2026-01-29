@@ -11,16 +11,11 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.NetClientInternal;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.NetClientConfig;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * A builder to configure NetServer plugins.
@@ -28,24 +23,27 @@ import java.util.function.Function;
 public class NetServerBuilder {
 
   private VertxInternal vertx;
-  private NetServerConfig config;
+  private TcpServerConfig config;
+  private ServerSSLOptions sslOptions;
   private BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
   private boolean fileRegionEnabled;
   private boolean registerWriteHandler;
 
-  public NetServerBuilder(VertxInternal vertx, NetServerConfig config) {
+  public NetServerBuilder(VertxInternal vertx, TcpServerConfig config, ServerSSLOptions sslOptions) {
     this.vertx = vertx;
     this.config = config;
+    this.sslOptions = sslOptions;
     this.fileRegionEnabled = false;
     this.registerWriteHandler = false;
   }
 
   public NetServerBuilder(VertxInternal vertx, NetServerOptions options) {
 
-    NetServerConfig cfg = new NetServerConfig(options);
+    TcpServerConfig cfg = new TcpServerConfig(options);
 
     this.vertx = vertx;
     this.config = cfg;
+    this.sslOptions = options.getSslOptions();
     this.fileRegionEnabled = options.isFileRegionEnabled();
     this.registerWriteHandler = options.isRegisterWriteHandler();
     this.metricsProvider = (metrics,  localAddress) -> metrics.createNetServerMetrics(options, localAddress);
@@ -65,6 +63,7 @@ public class NetServerBuilder {
     return new NetServerImpl(
       vertx,
       config,
+      sslOptions,
       fileRegionEnabled,
       registerWriteHandler,
       metricsProvider);

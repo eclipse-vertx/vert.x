@@ -229,12 +229,12 @@ public interface Vertx extends Measured {
   HttpServer createHttpServer(HttpServerOptions options);
 
   /**
-   * Create an HTTP3 server using the specified options
+   * Create an HTTP server using the specified config
    *
-   * @param options  the options to use
+   * @param config  the config to use
    * @return the server
    */
-  HttpServer createHttpServer(Http3ServerOptions options);
+  HttpServer createHttpServer(HttpServerConfig config);
 
   /**
    * Create an HTTP/HTTPS server using default options
@@ -269,6 +269,17 @@ public interface Vertx extends Measured {
    * Example usage: {@code HttpClient client = vertx.httpClientBuilder().with(options).withConnectHandler(conn -> ...).build()}
    */
   HttpClientBuilder httpClientBuilder();
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client and pool options
+   *
+   * @param clientConfig  the client config to use
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClientAgent createHttpClient(HttpClientConfig clientConfig, PoolOptions poolOptions) {
+    return httpClientBuilder().with(clientConfig).with(poolOptions).build();
+  }
 
   /**
    * Create a HTTP/HTTPS client using the specified client and pool options

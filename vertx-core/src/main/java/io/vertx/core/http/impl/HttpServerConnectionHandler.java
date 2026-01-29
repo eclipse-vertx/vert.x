@@ -18,11 +18,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.ServerWebSocketHandshake;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.http1x.Http1xServerConnection;
 import io.vertx.core.http.impl.http1x.Http1xServerRequestHandler;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
@@ -100,10 +96,10 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     } else {
       Http2ServerConnection http2Conn = (Http2ServerConnection) conn;
       http2Conn.streamHandler(stream -> {
-        HttpServerOptions options = server.options;
+        HttpServerConfig config = server.config;
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
-          options.isHandle100ContinueAutomatically(), options.getMaxFormAttributeSize(), options.getMaxFormFields(),
-          options.getMaxFormBufferedBytes(), serverOrigin);
+          config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
+          config.getMaxFormBufferedBytes(), serverOrigin);
         request.init();
       });
     }
@@ -124,13 +120,13 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
 
   private void initializeWebSocketExtensions(ChannelPipeline pipeline) {
     ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (server.options.getPerFrameWebSocketCompressionSupported()) {
-      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.options.getWebSocketCompressionLevel()));
+    if (server.config.getWebSocketConfig().getUsePerFrameCompression()) {
+      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel()));
     }
-    if (server.options.getPerMessageWebSocketCompressionSupported()) {
-      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.options.getWebSocketCompressionLevel(),
+    if (server.config.getWebSocketConfig().getUsePerMessageCompression()) {
+      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        server.options.getWebSocketAllowServerNoContext(), server.options.getWebSocketPreferredClientNoContext()));
+        server.config.getWebSocketConfig().getUseServerNoContext(), server.config.getWebSocketConfig().getUseClientNoContext()));
     }
     if (!extensionHandshakers.isEmpty()) {
       WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(

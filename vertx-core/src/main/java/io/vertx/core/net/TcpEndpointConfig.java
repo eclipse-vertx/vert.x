@@ -8,10 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.tcp;
+package io.vertx.core.net;
 
-import io.netty.handler.logging.ByteBufFormat;
-import io.vertx.core.net.*;
+import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
@@ -20,51 +19,44 @@ import java.time.Duration;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class NetEndpointConfig {
+@DataObject
+public abstract class TcpEndpointConfig {
 
   private TcpOptions transportOptions;
-  private SSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
   private Duration idleTimeout;
   private Duration readIdleTimeout;
   private Duration writeIdleTimeout;
-  private boolean logActivity;
-  private ByteBufFormat activityLogDataFormat;
+  private NetworkLogging networkLogging;
   private boolean ssl;
 
-  public NetEndpointConfig() {
+  public TcpEndpointConfig() {
     this.transportOptions = new TcpOptions();
-    this.sslOptions = null;
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.idleTimeout = null;
     this.readIdleTimeout = null;
     this.writeIdleTimeout = null;
-    this.logActivity = NetworkOptions.DEFAULT_LOG_ENABLED;
-    this.activityLogDataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
+    this.networkLogging = null;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
   }
 
-  public NetEndpointConfig(NetEndpointConfig other) {
+  public TcpEndpointConfig(TcpEndpointConfig other) {
     this.transportOptions = other.transportOptions != null ? new TcpOptions(other.transportOptions) : null;
-    this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : null;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.idleTimeout = other.idleTimeout;
     this.readIdleTimeout = other.readIdleTimeout;
     this.writeIdleTimeout = other.writeIdleTimeout;
-    this.logActivity = other.logActivity;
-    this.activityLogDataFormat = other.activityLogDataFormat;
+    this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
     this.ssl = other.ssl;
   }
 
-  public NetEndpointConfig(TCPSSLOptions options) {
+  public TcpEndpointConfig(TCPSSLOptions options) {
     setTransportOptions(new TcpOptions(options.getTransportOptions()));
-    setSslOptions(options.getSslOptions() != null ? options.getSslOptions().copy() : null);
     setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    setLogActivity(options.getLogActivity());
-    setActivityLogDataFormat(options.getActivityLogDataFormat());
+    setNetworkLogging(options.getLogActivity() ? new NetworkLogging().setDataFormat(options.getActivityLogDataFormat()) : null);
     setSsl(options.isSsl());
   }
 
@@ -81,26 +73,8 @@ public abstract class NetEndpointConfig {
    * @param transportOptions the transport options
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setTransportOptions(TcpOptions transportOptions) {
+  public TcpEndpointConfig setTransportOptions(TcpOptions transportOptions) {
     this.transportOptions = transportOptions;
-    return this;
-  }
-
-  /**
-   * @return the client SSL options.
-   */
-  public SSLOptions getSslOptions() {
-    return sslOptions;
-  }
-
-  /**
-   * Set the client SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  protected NetEndpointConfig setSslOptions(SSLOptions sslOptions) {
-    this.sslOptions = sslOptions;
     return this;
   }
 
@@ -117,7 +91,7 @@ public abstract class NetEndpointConfig {
    * @param sslEngineOptions the ssl engine to use
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+  public TcpEndpointConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     this.sslEngineOptions = sslEngineOptions;
     return this;
   }
@@ -136,7 +110,7 @@ public abstract class NetEndpointConfig {
    * @param idleTimeout  the timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setIdleTimeout(Duration idleTimeout) {
+  public TcpEndpointConfig setIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("idleTimeout must be >= 0");
     }
@@ -151,7 +125,7 @@ public abstract class NetEndpointConfig {
    * @param idleTimeout  the read timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setReadIdleTimeout(Duration idleTimeout) {
+  public TcpEndpointConfig setReadIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("readIdleTimeout must be >= 0");
     }
@@ -173,7 +147,7 @@ public abstract class NetEndpointConfig {
    * @param idleTimeout  the write timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setWriteIdleTimeout(Duration idleTimeout) {
+  public TcpEndpointConfig setWriteIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
     }
@@ -189,38 +163,20 @@ public abstract class NetEndpointConfig {
   }
 
   /**
-   * @return true when network activity logging is enabled
+   * @return the connection network logging config, {@code null} means disabled
    */
-  public boolean getLogActivity() {
-    return logActivity;
+  public NetworkLogging getNetworkLogging() {
+    return networkLogging;
   }
 
   /**
-   * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
+   * Configure the per connection networking logging: Netty's stream pipeline is configured for logging on Netty's logger.
    *
-   * @param logActivity true for logging the network activity
+   * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setLogActivity(boolean logActivity) {
-    this.logActivity = logActivity;
-    return this;
-  }
-
-  /**
-   * @return Netty's logging handler's data format.
-   */
-  public ByteBufFormat getActivityLogDataFormat() {
-    return activityLogDataFormat;
-  }
-
-  /**
-   * Set the value of Netty's logging handler's data format: Netty's pipeline is configured for logging on Netty's logger.
-   *
-   * @param activityLogDataFormat the format to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public NetEndpointConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    this.activityLogDataFormat = activityLogDataFormat;
+  public TcpEndpointConfig setNetworkLogging(NetworkLogging config) {
+    this.networkLogging = config;
     return this;
   }
 
@@ -238,7 +194,7 @@ public abstract class NetEndpointConfig {
    * @param ssl  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public NetEndpointConfig setSsl(boolean ssl) {
+  public TcpEndpointConfig setSsl(boolean ssl) {
     this.ssl = ssl;
     return this;
   }

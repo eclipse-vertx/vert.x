@@ -47,18 +47,22 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
   private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
 
-  public static QuicClientImpl create(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider, QuicClientOptions options) {
-    return new QuicClientImpl(vertx, metricsProvider, new QuicClientOptions(options));
+  public static QuicClientImpl create(VertxInternal vertx,
+                                      BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                                      QuicClientConfig config, ClientSSLOptions sslOptions) {
+    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(config), sslOptions);
   }
 
-  private final QuicClientOptions options;
+  private final QuicClientConfig config;
+  private final ClientSSLOptions sslOptions;
   private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
-  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicClientOptions options) {
-    super(vertx, metricsProvider, options);
-    this.options = options;
+  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                        QuicClientConfig config, ClientSSLOptions sslOptions) {
+    super(vertx, metricsProvider, config, sslOptions);
+    this.config = config;
+    this.sslOptions = sslOptions;
   }
 
   @Override
@@ -70,7 +74,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
-    List<String> applicationProtocols = options.getSslOptions().getApplicationLayerProtocols();
+    List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
         SslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
@@ -96,18 +100,18 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     ContextInternal context = vertx.getOrCreateContext();
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions == null) {
-      sslOptions = options.getSslOptions();
+      sslOptions = this.sslOptions;
     }
     Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
     String serverName = connectOptions.getServerName();
     return fut.compose(sslContextProvider -> {
       Duration connectTimeout = connectOptions.getTimeout();
       if (connectTimeout == null) {
-        connectTimeout = options.getConnectTimeout();
+        connectTimeout = config.getConnectTimeout();
       }
       QLogConfig qlogConfig = connectOptions.getQLogConfig();
       if (qlogConfig == null) {
-        qlogConfig = options.getQLogConfig();
+        qlogConfig = config.getQLogConfig();
       }
       return connect(address, serverName, qlogConfig, context, connectTimeout, sslContextProvider);
     });
@@ -143,9 +147,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
-          ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
-          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
-            options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
+          ByteBufFormat activityLogging = config.getStreamLogging() != null ? config.getStreamLogging().getDataFormat() : null;
+          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getStreamIdleTimeout(),
+            config.getStreamReadIdleTimeout(), config.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })
