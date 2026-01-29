@@ -870,6 +870,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param tcpUserTimeout the tcp user timeout value
    */
   public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
+    Arguments.require(tcpUserTimeout >= 0,  "tcpUserTimeout must be >= 0");
     this.tcpUserTimeout = tcpUserTimeout;
     return this;
   }
