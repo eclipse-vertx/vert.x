@@ -8,10 +8,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.tcp;
+package io.vertx.core.net;
 
-import io.netty.handler.logging.ByteBufFormat;
-import io.vertx.core.net.*;
+import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
@@ -22,7 +21,8 @@ import static io.vertx.core.net.NetServerOptions.*;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetServerConfig extends NetEndpointConfig {
+@DataObject
+public class TcpServerConfig extends TcpEndpointConfig {
 
   private int port;
   private String host;
@@ -31,11 +31,11 @@ public class NetServerConfig extends NetEndpointConfig {
   private Duration proxyProtocolTimeout;
   private TrafficShapingOptions trafficShapingOptions;
 
-  public NetServerConfig() {
+  public TcpServerConfig() {
     init();
   }
 
-  public NetServerConfig(NetServerConfig other) {
+  public TcpServerConfig(TcpServerConfig other) {
     super(other);
 
     this.port = other.getPort();
@@ -46,7 +46,7 @@ public class NetServerConfig extends NetEndpointConfig {
     this.trafficShapingOptions = other.getTrafficShapingOptions() != null ? new TrafficShapingOptions(other.getTrafficShapingOptions()) : null;
   }
 
-  public NetServerConfig(NetServerOptions options) {
+  public TcpServerConfig(NetServerOptions options) {
     super(options);
 
     this.port = options.getPort();
@@ -67,50 +67,33 @@ public class NetServerConfig extends NetEndpointConfig {
     this.trafficShapingOptions = null;
   }
 
-  public NetServerConfig setTransportOptions(TcpOptions transportOptions) {
-    return (NetServerConfig)super.setTransportOptions(transportOptions);
+  public TcpServerConfig setTransportOptions(TcpOptions transportOptions) {
+    return (TcpServerConfig)super.setTransportOptions(transportOptions);
   }
 
-  public ServerSSLOptions getSslOptions() {
-    return (ServerSSLOptions)super.getSslOptions();
+  public TcpServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    return (TcpServerConfig)super.setSslEngineOptions(sslEngineOptions);
   }
 
-  /**
-   * Set the client SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public NetServerConfig setSslOptions(ClientSSLOptions sslOptions) {
-    return (NetServerConfig)super.setSslOptions(sslOptions);
+  public TcpServerConfig setIdleTimeout(Duration idleTimeout) {
+    return (TcpServerConfig)super.setIdleTimeout(idleTimeout);
   }
 
-  public NetServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
-    return (NetServerConfig)super.setSslEngineOptions(sslEngineOptions);
+  public TcpServerConfig setReadIdleTimeout(Duration idleTimeout) {
+    return (TcpServerConfig)super.setReadIdleTimeout(idleTimeout);
   }
 
-  public NetServerConfig setIdleTimeout(Duration idleTimeout) {
-    return (NetServerConfig)super.setIdleTimeout(idleTimeout);
+  public TcpServerConfig setWriteIdleTimeout(Duration idleTimeout) {
+    return (TcpServerConfig)super.setWriteIdleTimeout(idleTimeout);
   }
 
-  public NetServerConfig setReadIdleTimeout(Duration idleTimeout) {
-    return (NetServerConfig)super.setReadIdleTimeout(idleTimeout);
+  @Override
+  public TcpServerConfig setNetworkLogging(NetworkLogging config) {
+    return (TcpServerConfig)super.setNetworkLogging(config);
   }
 
-  public NetServerConfig setWriteIdleTimeout(Duration idleTimeout) {
-    return (NetServerConfig)super.setWriteIdleTimeout(idleTimeout);
-  }
-
-  public NetServerConfig setLogActivity(boolean logActivity) {
-    return (NetServerConfig)super.setLogActivity(logActivity);
-  }
-
-  public NetServerConfig setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    return (NetServerConfig)super.setActivityLogDataFormat(activityLogDataFormat);
-  }
-
-  public NetServerConfig setSsl(boolean ssl) {
-    return (NetServerConfig)super.setSsl(ssl);
+  public TcpServerConfig setSsl(boolean ssl) {
+    return (TcpServerConfig)super.setSsl(ssl);
   }
 
   /**
@@ -126,7 +109,7 @@ public class NetServerConfig extends NetEndpointConfig {
    * @param port  the port
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setPort(int port) {
+  public TcpServerConfig setPort(int port) {
     if (port > 65535) {
       throw new IllegalArgumentException("port must be <= 65535");
     }
@@ -148,7 +131,7 @@ public class NetServerConfig extends NetEndpointConfig {
    * @param host  the host
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setHost(String host) {
+  public TcpServerConfig setHost(String host) {
     this.host = host;
     return this;
   }
@@ -166,7 +149,7 @@ public class NetServerConfig extends NetEndpointConfig {
    * @param acceptBacklog accept backlog
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setAcceptBacklog(int acceptBacklog) {
+  public TcpServerConfig setAcceptBacklog(int acceptBacklog) {
     this.acceptBacklog = acceptBacklog;
     return this;
   }
@@ -181,7 +164,7 @@ public class NetServerConfig extends NetEndpointConfig {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setUseProxyProtocol(boolean useProxyProtocol) {
+  public TcpServerConfig setUseProxyProtocol(boolean useProxyProtocol) {
     this.useProxyProtocol = useProxyProtocol;
     return this;
   }
@@ -199,7 +182,7 @@ public class NetServerConfig extends NetEndpointConfig {
    * @param proxyProtocolTimeout the Proxy protocol timeout to set
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setProxyProtocolTimeout(Duration proxyProtocolTimeout) {
+  public TcpServerConfig setProxyProtocolTimeout(Duration proxyProtocolTimeout) {
     if (proxyProtocolTimeout != null && proxyProtocolTimeout.isNegative()) {
       throw new IllegalArgumentException("proxyProtocolTimeout must be >= 0");
     }
@@ -220,7 +203,7 @@ public class NetServerConfig extends NetEndpointConfig {
    * @param trafficShapingOptions options used by traffic handler
    * @return a reference to this, so the API can be used fluently
    */
-  public NetServerConfig setTrafficShapingOptions(TrafficShapingOptions trafficShapingOptions) {
+  public TcpServerConfig setTrafficShapingOptions(TrafficShapingOptions trafficShapingOptions) {
     this.trafficShapingOptions = trafficShapingOptions;
     return this;
   }

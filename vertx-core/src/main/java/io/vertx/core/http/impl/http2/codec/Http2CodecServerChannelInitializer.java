@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.http2.codec;
 
 import io.netty.channel.ChannelPipeline;
 import io.vertx.core.Handler;
+import io.vertx.core.http.Http2ServerConfig;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.CompressionManager;
 import io.vertx.core.http.impl.HttpServerConnection;
@@ -22,31 +23,41 @@ import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.Supplier;
 
 public class Http2CodecServerChannelInitializer implements Http2ServerChannelInitializer {
 
   private final HttpServerConnectionInitializer initializer;
+  private final TracingPolicy tracingPolicy;
   private final HttpServerMetrics serverMetrics;
   private final Object metric;
-  private final HttpServerOptions options;
+  private final boolean useDecompression;
+  private final boolean useCompression;
+  private final Http2ServerConfig config;
   private final CompressionManager compressionManager;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
   private final boolean logEnabled;
 
   public Http2CodecServerChannelInitializer(HttpServerConnectionInitializer initializer,
+                                            TracingPolicy tracingPolicy,
                                             HttpServerMetrics serverMetrics,
-                                            HttpServerOptions options,
+                                            boolean useDecompression,
+                                            boolean useCompression,
+                                            Http2ServerConfig config,
                                             CompressionManager compressionManager,
                                             Supplier<ContextInternal> streamContextSupplier,
                                             Handler<HttpServerConnection> connectionHandler,
                                             Object metric,
                                             boolean logEnabled) {
     this.initializer = initializer;
+    this.tracingPolicy = tracingPolicy;
     this.serverMetrics = serverMetrics;
-    this.options = options;
+    this.useDecompression = useDecompression;
+    this.useCompression = useCompression;
+    this.config = config;
     this.compressionManager = compressionManager;
     this.streamContextSupplier = streamContextSupplier;
     this.connectionHandler = connectionHandler;
@@ -62,22 +73,22 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
 
   @Override
   public void configureHttp1OrH2CUpgradeHandler(ContextInternal context, ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
-    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(initializer, context, this, sslChannelProvider, sslContextManager, options.isCompressionSupported(), options.isDecompressionSupported()));
+    pipeline.addAfter("httpEncoder", "h2c", new Http1xUpgradeToH2CHandler(initializer, context, this, sslChannelProvider, sslContextManager, useCompression, useDecompression));
   }
 
   public VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> buildHttp2ConnectionHandler(ContextInternal ctx) {
-    int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
-    int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
+    int maxRstFramesPerWindow = config.getRstFloodMaxRstFramePerWindow();
+    int secondsPerWindow = (int)config.getRstFloodWindowDuration().toSeconds();
     VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnectionImpl>()
       .server(true)
       .useCompression(compressionManager != null ? compressionManager.options() : null)
       .gracefulShutdownTimeoutMillis(0)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
-      .useDecompression(options.isDecompressionSupported())
-      .initialSettings(options.getInitialSettings())
+      .useDecompression(useDecompression)
+      .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, options, serverMetrics);
+        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, tracingPolicy, serverMetrics);
         conn.metric(metric);
         return conn;
       })

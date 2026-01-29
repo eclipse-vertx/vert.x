@@ -395,12 +395,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new HttpServerImpl(this, serverOptions);
+    return new HttpServerImpl(this, new HttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
   }
 
   @Override
-  public HttpServer createHttpServer(Http3ServerOptions options) {
-    return new Http3Server(this, options);
+  public HttpServer createHttpServer(HttpServerConfig config) {
+    if (config.getSupportedVersions().contains(HttpVersion.HTTP_1_1) || config.getSupportedVersions().contains(HttpVersion.HTTP_2) || config.getSupportedVersions().contains(HttpVersion.HTTP_1_0)) {
+      if (config.getSupportedVersions().contains(HttpVersion.HTTP_3)) {
+        throw new UnsupportedOperationException("Todo");
+      }
+      return new HttpServerImpl(this, new HttpServerConfig(config), false);
+    } else if (config.getSupportedVersions().contains(HttpVersion.HTTP_3)) {
+      return new Http3Server(this, new HttpServerConfig(config));
+    } else {
+      throw new IllegalArgumentException("You must set at least one supported HTTP version");
+    }
   }
 
   @Override

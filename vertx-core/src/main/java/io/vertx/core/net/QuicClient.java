@@ -19,7 +19,6 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 /**
  * A Quic client.
@@ -35,19 +34,19 @@ public interface QuicClient extends QuicEndpoint {
    * <p>The returned client must be bound, prior {@link #connect(SocketAddress) connecting} to a server.</p>
    *
    * @param vertx the vertx instance
-   * @param options the client configuration options
+   * @param config the client configuration
    * @return the client
    */
-  static QuicClient create(Vertx vertx, QuicClientOptions options) {
+  static QuicClient create(Vertx vertx, QuicClientConfig config, ClientSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
-    BiFunction<QuicEndpointOptions, SocketAddress, TransportMetrics<?>> metricsProvider;
+    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
     if (metrics != null) {
       metricsProvider = metrics::createQuicEndpointMetrics;
     } else {
       metricsProvider = null;
     }
-    return QuicClientImpl.create(vertxInternal, metricsProvider, options);
+    return QuicClientImpl.create(vertxInternal, metricsProvider, config, sslOptions);
   }
 
   /**

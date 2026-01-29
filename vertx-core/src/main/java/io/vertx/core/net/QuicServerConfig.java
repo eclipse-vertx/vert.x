@@ -15,36 +15,45 @@ import io.vertx.codegen.annotations.DataObject;
 import java.time.Duration;
 import java.util.Objects;
 
+import static io.vertx.core.net.NetServerOptions.DEFAULT_HOST;
+import static io.vertx.core.net.NetServerOptions.DEFAULT_PORT;
+
 /**
- * Config operations of a Quic server.
+ * Configuration of a Quic client.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
-public class QuicServerOptions extends QuicEndpointOptions {
+public class QuicServerConfig extends QuicEndpointConfig {
 
   public static final boolean DEFAULT_LOAD_BALANCED = false;
   public static final QuicClientAddressValidation DEFAULT_CLIENT_ADDRESS_VALIDATION = QuicClientAddressValidation.BASIC;
   public static final KeyCertOptions DEFAULT_CLIENT_ADDRESS_VALIDATION_KEY = null;
   public static final Duration DEFAULT_CLIENT_ADDRESS_VALIDATION_TIME_WINDOW = Duration.ofSeconds(30);
 
+  private int port;
+  private String host;
   private boolean loadBalanced;
   private QuicClientAddressValidation clientAddressValidation;
   private Duration clientAddressValidationTimeWindow;
   private KeyCertOptions clientAddressValidationKey;
 
-  public QuicServerOptions() {
+  public QuicServerConfig() {
+    port = DEFAULT_PORT;
+    host = DEFAULT_HOST;
     loadBalanced = DEFAULT_LOAD_BALANCED;
     clientAddressValidation = DEFAULT_CLIENT_ADDRESS_VALIDATION;
     clientAddressValidationKey = DEFAULT_CLIENT_ADDRESS_VALIDATION_KEY;
     clientAddressValidationTimeWindow = DEFAULT_CLIENT_ADDRESS_VALIDATION_TIME_WINDOW;
   }
 
-  public QuicServerOptions(QuicServerOptions other) {
+  public QuicServerConfig(QuicServerConfig other) {
     super(other);
 
     KeyCertOptions tokenValidationKey = other.clientAddressValidationKey;
 
+    this.port = other.port;
+    this.host = other.host;
     this.loadBalanced = other.loadBalanced;
     this.clientAddressValidation = other.clientAddressValidation;
     this.clientAddressValidationTimeWindow = other.clientAddressValidationTimeWindow;
@@ -52,53 +61,78 @@ public class QuicServerOptions extends QuicEndpointOptions {
   }
 
   @Override
-  public QuicServerOptions setTransportOptions(QuicOptions transportOptions) {
-    return (QuicServerOptions) super.setTransportOptions(transportOptions);
+  public QuicServerConfig setTransportOptions(QuicOptions transportOptions) {
+    return (QuicServerConfig) super.setTransportOptions(transportOptions);
   }
 
   @Override
-  public QuicServerOptions setQLogConfig(QLogConfig qLogConfig) {
-    return (QuicServerOptions) super.setQLogConfig(qLogConfig);
+  public QuicServerConfig setQLogConfig(QLogConfig qLogConfig) {
+    return (QuicServerConfig) super.setQLogConfig(qLogConfig);
   }
 
   @Override
-  public QuicServerOptions setKeyLogFile(String keyLogFile) {
-    return (QuicServerOptions) super.setKeyLogFile(keyLogFile);
+  public QuicServerConfig setKeyLogFile(String keyLogFile) {
+    return (QuicServerConfig) super.setKeyLogFile(keyLogFile);
   }
 
   @Override
-  public QuicServerOptions setStreamIdleTimeout(Duration idleTimeout) {
-    return (QuicServerOptions) super.setStreamIdleTimeout(idleTimeout);
+  public QuicServerConfig setStreamIdleTimeout(Duration idleTimeout) {
+    return (QuicServerConfig) super.setStreamIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicServerOptions setStreamReadIdleTimeout(Duration idleTimeout) {
-    return (QuicServerOptions) super.setStreamReadIdleTimeout(idleTimeout);
+  public QuicServerConfig setStreamReadIdleTimeout(Duration idleTimeout) {
+    return (QuicServerConfig) super.setStreamReadIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicServerOptions setStreamWriteIdleTimeout(Duration idleTimeout) {
-    return (QuicServerOptions) super.setStreamWriteIdleTimeout(idleTimeout);
+  public QuicServerConfig setStreamWriteIdleTimeout(Duration idleTimeout) {
+    return (QuicServerConfig) super.setStreamWriteIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicServerOptions setStreamLogging(NetworkLogging config) {
-    return (QuicServerOptions) super.setStreamLogging(config);
+  public QuicServerConfig setStreamLogging(NetworkLogging config) {
+    return (QuicServerConfig) super.setStreamLogging(config);
   }
 
-  @Override
-  public ServerSSLOptions getSslOptions() {
-    return (ServerSSLOptions) super.getSslOptions();
+  /**
+   * @return the port
+   */
+  public int getPort() {
+    return port;
   }
 
-  public QuicServerOptions setSslOptions(ServerSSLOptions sslOptions) {
-    super.setSslOptions(sslOptions);
+  /**
+   * Set the port
+   *
+   * @param port  the port
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicServerConfig setPort(int port) {
+    if (port > 65535) {
+      throw new IllegalArgumentException("port must be <= 65535");
+    }
+    this.port = port;
     return this;
   }
 
-  @Override
-  protected ServerSSLOptions getOrCreateSSLOptions() {
-    return new ServerSSLOptions();
+  /**
+   *
+   * @return the host
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Set the host
+   *
+   * @param host  the host
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicServerConfig setHost(String host) {
+    this.host = host;
+    return this;
   }
 
   /**
@@ -115,7 +149,7 @@ public class QuicServerOptions extends QuicEndpointOptions {
    * @param loadBalanced whether the server can be load balanced
    * @return this exact object instance
    */
-  public QuicServerOptions setLoadBalanced(boolean loadBalanced) {
+  public QuicServerConfig setLoadBalanced(boolean loadBalanced) {
     this.loadBalanced = loadBalanced;
     return this;
   }
@@ -136,7 +170,7 @@ public class QuicServerOptions extends QuicEndpointOptions {
    * @param clientAddressValidation whether to perform address validation
    * @return this exact object instance
    */
-  public QuicServerOptions setClientAddressValidation(QuicClientAddressValidation clientAddressValidation) {
+  public QuicServerConfig setClientAddressValidation(QuicClientAddressValidation clientAddressValidation) {
     this.clientAddressValidation = Objects.requireNonNull(clientAddressValidation);
     return this;
   }
@@ -154,7 +188,7 @@ public class QuicServerOptions extends QuicEndpointOptions {
    * @param clientAddressValidationTimeWindow the client address validation time window
    * @return this exact object instance
    */
-  public QuicServerOptions setClientAddressValidationTimeWindow(Duration clientAddressValidationTimeWindow) {
+  public QuicServerConfig setClientAddressValidationTimeWindow(Duration clientAddressValidationTimeWindow) {
     if (clientAddressValidationTimeWindow.isNegative() || clientAddressValidationTimeWindow.isZero()) {
       throw new IllegalArgumentException("Token validation time window must be > 0");
     }
@@ -176,7 +210,7 @@ public class QuicServerOptions extends QuicEndpointOptions {
    * @param validationKey the validation key
    * @return this exact object instance
    */
-  public QuicServerOptions setClientAddressValidationKey(KeyCertOptions validationKey) {
+  public QuicServerConfig setClientAddressValidationKey(KeyCertOptions validationKey) {
     this.clientAddressValidationKey = validationKey;
     return this;
   }

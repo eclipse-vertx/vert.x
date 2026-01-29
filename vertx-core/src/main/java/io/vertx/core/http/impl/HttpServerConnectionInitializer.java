@@ -20,7 +20,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Handler;
 import io.vertx.core.ThreadingModel;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.http1x.Http1xServerConnection;
 import io.vertx.core.http.impl.http1x.HttpChunkContentCompressor;
 import io.vertx.core.http.impl.http1x.VertxHttpRequestDecoder;
@@ -31,9 +31,11 @@ import io.vertx.core.http.impl.http2.multiplex.Http2MultiplexServerChannelInitia
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -48,67 +50,89 @@ public class HttpServerConnectionInitializer {
 
   private final ContextInternal context;
   private final ThreadingModel threadingModel;
+  private final boolean strictThreadMode;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final HttpServerImpl server;
-  private final HttpServerOptions options;
   private final String serverOrigin;
   private final boolean disableH2C;
   private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
   private final Object metric;
+  private final boolean useCompression;
+  private final boolean useDecompression;
+  private final boolean handle100ContinueAutomatically;
+  private final int maxFormAttributeSize;
+  private final int maxFormFields;
+  private final int maxFormBufferedBytes;
+  private final Http1ServerConfig http1Config;
+  private final Http2ServerConfig http2Config;
+  private final boolean registerWebSocketWriteHandlers;
+  private final WebSocketServerConfig webSocketConfig;
   private final CompressionManager compressionManager;
+  private final ServerSSLOptions sslOptions;
   private final int compressionContentSizeThreshold;
   private final Http2ServerChannelInitializer http2ChannelInitializer;
+  private final TracingPolicy tracingPolicy;
 
   HttpServerConnectionInitializer(ContextInternal context,
                                   ThreadingModel threadingModel,
+                                  boolean strictThreadMode,
                                   Supplier<ContextInternal> streamContextSupplier,
                                   HttpServerImpl server,
-                                  HttpServerOptions options,
+                                  boolean useCompression,
+                                  boolean useDecompression,
+                                  TracingPolicy tracingPolicy,
+                                  boolean logEnabled,
+                                  CompressionOptions[] compressionOptions,
+                                  int compressionContentSizeThreshold,
+                                  boolean handle100ContinueAutomatically,
+                                  int maxFormAttributeSize,
+                                  int maxFormFields,
+                                  int maxFormBufferedBytes,
+                                  Http1ServerConfig http1Config,
+                                  Http2ServerConfig http2Config,
+                                  boolean registerWebSocketWriteHandlers,
+                                  WebSocketServerConfig webSocketConfig,
+                                  ServerSSLOptions sslOptions,
                                   String serverOrigin,
                                   Handler<HttpServerConnection> connectionHandler,
                                   Handler<Throwable> exceptionHandler,
                                   Object metric) {
 
     CompressionManager compressionManager;
-    if (options.isCompressionSupported()) {
-      CompressionOptions[] compressionOptions;
-      List<CompressionOptions> compressors = options.getCompressors();
-      if (compressors == null) {
-        int compressionLevel = options.getCompressionLevel();
-        compressionOptions = new CompressionOptions[] { StandardCompressionOptions.gzip(compressionLevel, 15, 8), StandardCompressionOptions.deflate(compressionLevel, 15, 8) };
-      } else {
-        compressionOptions = compressors.toArray(new CompressionOptions[0]);
-      }
-      compressionManager = new CompressionManager(options.getCompressionContentSizeThreshold(), compressionOptions);
+    if (useCompression) {
+      compressionManager = new CompressionManager(compressionContentSizeThreshold, compressionOptions);
     } else {
       compressionManager = null;
     }
 
     Http2ServerChannelInitializer http2ChannelInitalizer;
-    if (options.getHttp2MultiplexImplementation()) {
+    if (http2Config.getMultiplexImplementation()) {
       http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
         context,
         compressionManager,
-        options.isDecompressionSupported(),
+        useDecompression,
         (HttpServerMetrics) server.getMetrics(),
         metric,
         streamContextSupplier,
         connectionHandler,
-        HttpUtils.fromVertxInitialSettings(true, options.getInitialSettings()),
-        options.getHttp2RstFloodMaxRstFramePerWindow(),
-        options.getHttp2RstFloodWindowDuration(),
-        options.getLogActivity());
+        HttpUtils.fromVertxInitialSettings(true, http2Config.getInitialSettings()),
+        http2Config.getRstFloodMaxRstFramePerWindow(),
+        (int)http2Config.getRstFloodWindowDuration().toSeconds(),
+        logEnabled);
     } else {
       http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
         this,
+        tracingPolicy,
         (HttpServerMetrics) server.getMetrics(),
-        options,
+        useDecompression,
+        useCompression,
+        http2Config,
         compressionManager,
         streamContextSupplier,
         connectionHandler,
         metric,
-        options.getLogActivity()
+        logEnabled
       );
     }
 
@@ -116,22 +140,34 @@ public class HttpServerConnectionInitializer {
     this.threadingModel = threadingModel;
     this.streamContextSupplier = streamContextSupplier;
     this.server = server;
-    this.options = options;
+    this.useCompression = useCompression;
+    this.useDecompression = useDecompression;
     this.serverOrigin = serverOrigin;
-    this.disableH2C = !options.isHttp2ClearTextEnabled();
+    this.handle100ContinueAutomatically = handle100ContinueAutomatically;
+    this.maxFormAttributeSize = maxFormAttributeSize;
+    this.maxFormFields = maxFormFields;
+    this.maxFormBufferedBytes = maxFormBufferedBytes;
+    this.http1Config = http1Config;
+    this.http2Config = http2Config;
+    this.disableH2C = !http2Config.isClearTextEnabled();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
     this.compressionManager = compressionManager;
-    this.compressionContentSizeThreshold = options.getCompressionContentSizeThreshold();
+    this.strictThreadMode = strictThreadMode;
+    this.sslOptions = sslOptions;
+    this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
+    this.webSocketConfig = webSocketConfig;
+    this.tracingPolicy = tracingPolicy;
+    this.compressionContentSizeThreshold = compressionContentSizeThreshold;
     this.http2ChannelInitializer = http2ChannelInitalizer;
   }
 
   void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     ChannelPipeline pipeline = ch.pipeline();
-    if (options.isSsl()) {
+    if (sslOptions != null) {
       SslHandler sslHandler = pipeline.get(SslHandler.class);
-      if (options.isUseAlpn()) {
+      if (sslOptions.isUseAlpn()) {
         String protocol = sslHandler.applicationProtocol();
         if (protocol != null) {
           switch (protocol) {
@@ -226,12 +262,12 @@ public class HttpServerConnectionInitializer {
 
   private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
     String name = computeChannelName(pipeline);
-    pipeline.addBefore(name, "httpDecoder", new VertxHttpRequestDecoder(options));
+    pipeline.addBefore(name, "httpDecoder", new VertxHttpRequestDecoder(http1Config));
     pipeline.addBefore(name, "httpEncoder", new VertxHttpResponseEncoder());
-    if (options.isDecompressionSupported()) {
+    if (useDecompression) {
       pipeline.addBefore(name, "inflater", new HttpContentDecompressor(false));
     }
-    if (options.isCompressionSupported()) {
+    if (useCompression) {
       pipeline.addBefore(name, "deflater", new HttpChunkContentCompressor(compressionContentSizeThreshold, compressionManager.options()));
     }
   }
@@ -246,11 +282,20 @@ public class HttpServerConnectionInitializer {
       Http1xServerConnection conn = new Http1xServerConnection(
         threadingModel,
         streamContextSupplier,
+        strictThreadMode,
+        handle100ContinueAutomatically,
+        sslOptions,
         sslContextManager,
-        options,
+        maxFormAttributeSize,
+        maxFormFields,
+        maxFormBufferedBytes,
+        http1Config,
+        registerWebSocketWriteHandlers,
+        webSocketConfig,
         chctx,
         context,
         serverOrigin,
+        tracingPolicy,
         metrics);
       conn.metric(metric);
       return conn;

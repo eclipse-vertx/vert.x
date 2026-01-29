@@ -37,8 +37,8 @@ public class QLogTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    server = QuicServer.create(vertx, serverOptions());
-    client = QuicClient.create(vertx, clientOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    client = QuicClient.create(vertx, clientOptions(), QuicClientTest.SSL_OPTIONS);
   }
 
   @Override
@@ -94,7 +94,7 @@ public class QLogTest extends VertxTestBase {
     File qlogDir = File.createTempFile("vertx", "qlog");
     assertTrue(qlogDir.delete());
     assertTrue(qlogDir.mkdirs());
-    server = QuicServer.create(vertx, serverOptions().setQLogConfig(qlogConfig(qlogDir, "the title", "the description")));
+    server = QuicServer.create(vertx, serverOptions().setQLogConfig(qlogConfig(qlogDir, "the title", "the description")), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();

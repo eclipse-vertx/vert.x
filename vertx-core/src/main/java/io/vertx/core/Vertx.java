@@ -229,12 +229,12 @@ public interface Vertx extends Measured {
   HttpServer createHttpServer(HttpServerOptions options);
 
   /**
-   * Create an HTTP3 server using the specified options
+   * Create an HTTP server using the specified config
    *
-   * @param options  the options to use
+   * @param config  the config to use
    * @return the server
    */
-  HttpServer createHttpServer(Http3ServerOptions options);
+  HttpServer createHttpServer(HttpServerConfig config);
 
   /**
    * Create an HTTP/HTTPS server using default options

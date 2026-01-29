@@ -72,14 +72,14 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
   }
 
   @Override
-  protected final Optional<HttpCompressionOptions> serverCompressionConfig() {
-    return Optional.of(new HttpCompressionOptions().addCompressor(compressionConfig.compressor));
+  protected final Optional<HttpCompressionConfig> serverCompressionConfig() {
+    return Optional.of(new HttpCompressionConfig().addCompressor(compressionConfig.compressor));
   }
 
   @Test
   public void testSkipEncoding() throws Exception {
     server.close();
-    server = config.forServer().setCompression(new HttpCompressionOptions().addCompressor(CompressionConfig.gzip(6).compressor)).create(vertx);
+    server = config.forServer().setCompression(new HttpCompressionConfig().addCompressor(CompressionConfig.gzip(6).compressor)).create(vertx);
     server.requestHandler(req -> {
       assertNotNull(req.headers().get(HttpHeaders.ACCEPT_ENCODING));
       req.response()

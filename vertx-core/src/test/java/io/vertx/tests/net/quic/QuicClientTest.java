@@ -43,10 +43,12 @@ import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
 @RunWith(LinuxOrOsx.class)
 public class QuicClientTest extends VertxTestBase {
 
-  static QuicClientOptions clientOptions() {
-    QuicClientOptions options = new QuicClientOptions();
-    options.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    options.getSslOptions().setApplicationLayerProtocols(List.of("test-protocol"));
+  static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()
+    .setTrustOptions(Trust.SERVER_JKS.get())
+    .setApplicationLayerProtocols(List.of("test-protocol"));
+
+  static QuicClientConfig clientOptions() {
+    QuicClientConfig options = new QuicClientConfig();
     options.getTransportOptions().setInitialMaxData(10000000L);
     options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
     return options;
@@ -58,8 +60,8 @@ public class QuicClientTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    server = QuicServer.create(vertx, serverOptions());
-    client = QuicClient.create(vertx, clientOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    client = QuicClient.create(vertx, clientOptions(), SSL_OPTIONS);
   }
 
   @Override
@@ -88,10 +90,10 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testClientSSLOverride() {
-    QuicServerOptions serverOptions = serverOptions();
-    serverOptions.getSslOptions().setKeyCertOptions(Cert.CLIENT_JKS.get());
+    QuicServerConfig serverOptions = serverOptions();
     // server.close();
-    server = QuicServer.create(vertx, serverOptions);
+    server = QuicServer.create(vertx, serverOptions, new ServerSSLOptions()
+      .setKeyCertOptions(Cert.CLIENT_JKS.get()).setApplicationLayerProtocols(List.of("test-protocol")));
     AtomicInteger inflight = new AtomicInteger();
     server.handler(conn -> {
       inflight.getAndIncrement();
@@ -107,9 +109,8 @@ public class QuicClientTest extends VertxTestBase {
     } catch (Exception e) {
       assertSame(SSLHandshakeException.class, e.getClass());
     }
-    QuicClientOptions clientOptions = clientOptions();
-    clientOptions.getSslOptions().setTrustOptions(Trust.CLIENT_JKS.get());
-    QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(clientOptions.getSslOptions());
+    QuicClientConfig clientOptions = clientOptions();
+    QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(SSL_OPTIONS.copy().setTrustOptions(Trust.CLIENT_JKS.get()));
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
     assertWaitUntil(() -> inflight.get() == 1);
     connection.close().await();
@@ -143,7 +144,7 @@ public class QuicClientTest extends VertxTestBase {
   public void testServerReset() {
 
     waitFor(4);
-    server = QuicServer.create(vertx, serverOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
@@ -176,7 +177,7 @@ public class QuicClientTest extends VertxTestBase {
   public void testClientReset() {
 
     waitFor(2);
-    server = QuicServer.create(vertx, serverOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.resetHandler(code -> {
@@ -216,7 +217,7 @@ public class QuicClientTest extends VertxTestBase {
   public void testClientResetHandler() {
 
     waitFor(2);
-    server = QuicServer.create(vertx, serverOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         AtomicBoolean isReset = new AtomicBoolean();
@@ -269,7 +270,7 @@ public class QuicClientTest extends VertxTestBase {
     AtomicInteger clientEndCount = new AtomicInteger();
     AtomicInteger serverEndCount = new AtomicInteger();
 
-    server = QuicServer.create(vertx, serverOptions());
+    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
         stream.endHandler(v -> {
@@ -329,9 +330,9 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testStreamIdleTimeout() throws Exception {
-    QuicServerOptions options = serverOptions();
+    QuicServerConfig options = serverOptions();
     options.setStreamIdleTimeout(Duration.ofMillis(100));
-    QuicServer server = QuicServer.create(vertx, options);
+    QuicServer server = QuicServer.create(vertx, options, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.streamHandler(stream -> {
       });
@@ -339,7 +340,7 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
     client.close();
-    client = QuicClient.create(vertx, clientOptions().setStreamIdleTimeout(Duration.ofMillis(100)));
+    client = QuicClient.create(vertx, clientOptions().setStreamIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStream stream = connection.openStream().await();
@@ -363,9 +364,8 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testServerNameIndication() {
-    QuicServerOptions options = serverOptions();
-    options.getSslOptions().setKeyCertOptions(Cert.SNI_JKS.get());
-    server = QuicServer.create(vertx, options);
+    QuicServerConfig options = serverOptions();
+    server = QuicServer.create(vertx, options, QuicServerTest.SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get()));
     AtomicReference<String> serverName = new AtomicReference<>();
     server.handler(conn -> {
       serverName.set(conn.indicatedServerName());

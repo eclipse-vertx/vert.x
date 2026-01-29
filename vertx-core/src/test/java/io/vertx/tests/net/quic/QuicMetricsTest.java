@@ -68,10 +68,10 @@ public class QuicMetricsTest extends VertxTestBase {
   }
 
   private void testMetrics(int numberOfServers) throws Exception {
-    client = QuicClient.create(vertx, clientOptions());
+    client = QuicClient.create(vertx, clientOptions(), QuicClientTest.SSL_OPTIONS);
     AtomicReference<SocketMetric> serverConnectionMetric = new AtomicReference<>();
     for (int i = 0;i < numberOfServers;i++) {
-      QuicServer server = QuicServer.create(vertx, serverOptions().setLoadBalanced(numberOfServers > 1));
+      QuicServer server = QuicServer.create(vertx, serverOptions().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
       server.handler(conn -> {
         FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.getMetrics(server);
         assertEquals(1, serverMetrics.connectionCount());

@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * Vert.x TCP server
@@ -66,7 +65,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
   private final VertxInternal vertx;
-  private final NetServerConfig config;
+  private final TcpServerConfig config;
   private final ServerSSLOptions sslOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
@@ -94,18 +93,22 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private volatile int actualPort;
 
   public NetServerImpl(VertxInternal vertx,
-                       NetServerConfig config,
+                       TcpServerConfig config,
+                       ServerSSLOptions sslOptions,
                        boolean fileRegionEnabled,
                        boolean registerWriteHandler,
                        BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
 
+    if (sslOptions == null) {
+      sslOptions = new ServerSSLOptions();
+    }
 
     this.vertx = vertx;
     this.config = config;
     this.fileRegionEnabled = fileRegionEnabled;
     this.registerWriteHandler = registerWriteHandler;
     this.metricsProvider = metricsProvider;
-    this.sslOptions = config.getSslOptions() != null ? config.getSslOptions() : new ServerSSLOptions();
+    this.sslOptions = sslOptions;
   }
 
   public SslContextProvider sslContextProvider() {
@@ -280,8 +283,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
-    if (config.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(config.getActivityLogDataFormat()));
+    if (config.getNetworkLogging() != null) {
+      pipeline.addLast("logging", new LoggingHandler(config.getNetworkLogging().getDataFormat()));
     }
     long idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout().toMillis() : 0L;
     long readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout().toMillis() : 0L;
