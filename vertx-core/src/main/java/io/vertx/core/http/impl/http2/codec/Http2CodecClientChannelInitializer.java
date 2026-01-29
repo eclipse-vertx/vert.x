@@ -17,13 +17,13 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2ClientConfig;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
-import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
-import io.vertx.core.http.impl.http1x.VertxHttp2ClientUpgradeCodec;
+import io.vertx.core.http.impl.tcp.VertxHttp2ClientUpgradeCodec;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -35,7 +35,7 @@ import io.vertx.core.tracing.TracingPolicy;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import static io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection.SEND_BUFFERED_MESSAGES_EVENT;
+import static io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection.SEND_BUFFERED_MESSAGES_EVENT;
 
 public class Http2CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
@@ -54,7 +54,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
   }
 
   @Override
-  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, ClientMetrics<?, ?, ?> metrics) {
+  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1ClientConnection conn, ClientMetrics<?, ?, ?> metrics) {
     return new CodecChannelUpgrade(clientMetrics, metrics, conn.metric(), config, tracingPolicy, useDecompression, logActivity);
   }
 

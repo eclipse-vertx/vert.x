@@ -30,7 +30,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
+import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;

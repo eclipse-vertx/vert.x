@@ -18,7 +18,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.transports.NioTransport;
-import io.vertx.core.net.TcpOptions;
+import io.vertx.core.net.TcpConfig;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.*;
@@ -142,7 +142,7 @@ public interface Transport {
     }
   }
 
-  default void configure(TcpOptions options, boolean domainSocket, Bootstrap bootstrap) {
+  default void configure(TcpConfig options, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
       bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
@@ -152,7 +152,7 @@ public interface Transport {
     }
   }
 
-  default void configure(TcpOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
+  default void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
     if (!domainSocket) {
       bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
       bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());

@@ -23,40 +23,48 @@ import java.util.Objects;
 @DataObject
 public abstract class QuicEndpointConfig {
 
-  private QuicOptions transportOptions;
+  private QuicConfig transportConfig;
   private QLogConfig qlogConfig;
   private String keyLogFile;
   private Duration streamIdleTimeout;
   private Duration streamReadIdleTimeout;
   private Duration streamWriteIdleTimeout;
+  private String metricsName;
   private NetworkLogging streamLogging;
 
   public QuicEndpointConfig() {
-    this.transportOptions = new QuicOptions();
+    this.transportConfig = new QuicConfig();
+    this.qlogConfig = null;
+    this.streamIdleTimeout = null;
+    this.streamReadIdleTimeout = null;
+    this.streamWriteIdleTimeout = null;
+    this.metricsName = null;
+    this.streamLogging = null;
   }
 
   public QuicEndpointConfig(QuicEndpointConfig other) {
 
     QLogConfig qLogConfig = other.qlogConfig;
 
-    this.transportOptions = other.transportOptions.copy();
+    this.transportConfig = other.transportConfig.copy();
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
     this.streamIdleTimeout = other.streamIdleTimeout;
     this.streamReadIdleTimeout = other.streamReadIdleTimeout;
     this.streamWriteIdleTimeout = other.streamWriteIdleTimeout;
+    this.metricsName = other.metricsName;
     this.streamLogging = other.streamLogging != null ? new NetworkLogging(other.streamLogging) : null;
   }
 
   /**
-   * @return the endpoint transport options
+   * @return the endpoint transport config
    */
-  public QuicOptions getTransportOptions() {
-    return transportOptions;
+  public QuicConfig getTransportConfig() {
+    return transportConfig;
   }
 
-  public QuicEndpointConfig setTransportOptions(QuicOptions transportOptions) {
-    this.transportOptions = Objects.requireNonNull(transportOptions);
+  public QuicEndpointConfig setTransportConfig(QuicConfig transportConfig) {
+    this.transportConfig = Objects.requireNonNull(transportConfig);
     return this;
   }
 
@@ -106,7 +114,7 @@ public abstract class QuicEndpointConfig {
   }
 
   /**
-   * Set the stream idle timeout, {@code null} means don't time out.
+   * Set the stream idle timeout, zero or {@code null} means don't time out.
    * This determines if a stream will timeout and be closed if no data is received nor sent within the timeout.
    *
    * @param idleTimeout  the idle timeout
@@ -128,8 +136,8 @@ public abstract class QuicEndpointConfig {
   }
 
   /**
-   * Set the stream read idle timeout, {@code null} means don't time out.
-   * This determines if a stream will timeout and be closed if no data is received within the timeout.
+   * <p>Set the stream read idle timeout, zero or {@code null} means or null means don't time out. This determines if a
+   * stream will timeout and be closed if no data is received within the timeout.</p>
    *
    * @param idleTimeout  the read idle timeout
    * @return a reference to this, so the API can be used fluently
@@ -150,8 +158,8 @@ public abstract class QuicEndpointConfig {
   }
 
   /**
-   * Set the stream write idle timeout, {@code null} means don't time out.
-   * This determines if a stream will timeout and be closed if no data is sent within the timeout.
+   * <p>Set the stream write idle timeout, zero or {@code null} means don't time out. This determines if a
+   * stream will timeout and be closed if no data is sent within the timeout.</p>
    *
    * @param idleTimeout  the write idle timeout
    * @return a reference to this, so the API can be used fluently
@@ -169,6 +177,26 @@ public abstract class QuicEndpointConfig {
    */
   public Duration getStreamWriteIdleTimeout() {
     return streamWriteIdleTimeout;
+  }
+
+
+  /**
+   * @return the metrics name identifying the reported metrics.
+   */
+  public String getMetricsName() {
+    return metricsName;
+  }
+
+  /**
+   * Set the metrics name identifying the reported metrics, useful for grouping metrics
+   * with the same name.
+   *
+   * @param metricsName the metrics name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicEndpointConfig setMetricsName(String metricsName) {
+    this.metricsName = metricsName;
+    return this;
   }
 
   /**

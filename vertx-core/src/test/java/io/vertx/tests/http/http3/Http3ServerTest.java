@@ -44,7 +44,7 @@ public class Http3ServerTest extends VertxTestBase {
 
   public static HttpServerConfig serverOptions() {
     HttpServerConfig options = new HttpServerConfig();
-    options.addSupportedVersion(HttpVersion.HTTP_3);
+    options.addVersion(HttpVersion.HTTP_3);
     options.setQuicPort(4043);
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);

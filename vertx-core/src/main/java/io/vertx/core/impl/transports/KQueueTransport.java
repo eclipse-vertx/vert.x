@@ -18,7 +18,7 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.net.TcpOptions;
+import io.vertx.core.net.TcpConfig;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.transport.Transport;
 
@@ -98,7 +98,7 @@ public class KQueueTransport implements Transport {
   }
 
   @Override
-  public void configure(TcpOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
+  public void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
     if (!domainSocket) {
       bootstrap.option(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
     }

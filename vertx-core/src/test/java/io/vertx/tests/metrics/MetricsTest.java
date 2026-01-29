@@ -44,7 +44,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -657,12 +656,12 @@ public class MetricsTest extends VertxTestBase {
     HttpClientAgent client1 = vertx.createHttpClient();
     try {
       FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
-      assertEquals("", metrics1.getName());
+      assertEquals("", metrics1.name());
       String name = TestUtils.randomAlphaString(10);
       HttpClientAgent client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
       try {
         FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
-        assertEquals(name, metrics2.getName());
+        assertEquals(name, metrics2.name());
       } finally {
         client2.close();
       }
@@ -1237,10 +1236,6 @@ public class MetricsTest extends VertxTestBase {
         public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
           lifecycle.compareAndSet(0, 1);
           return new HttpServerMetrics<>() {
-            @Override
-            public String type() {
-              return "tcp";
-            }
             @Override
             public void close() {
               lifecycle.compareAndSet(1, 2);

@@ -43,12 +43,12 @@ public class HttpClientConfig {
 
   private static QuicClientConfig defaultQuicConfig() {
     QuicClientConfig config = new QuicClientConfig();
-    config.getTransportOptions().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
-    config.getTransportOptions().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-    config.getTransportOptions().setInitialMaxStreamDataBidiRemote(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-    config.getTransportOptions().setInitialMaxStreamDataUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
-    config.getTransportOptions().setInitialMaxStreamsBidi(DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI);
-    config.getTransportOptions().setInitialMaxStreamsUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI);
+    config.getTransportConfig().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
+    config.getTransportConfig().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+    config.getTransportConfig().setInitialMaxStreamDataBidiRemote(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+    config.getTransportConfig().setInitialMaxStreamDataUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
+    config.getTransportConfig().setInitialMaxStreamsBidi(DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI);
+    config.getTransportConfig().setInitialMaxStreamsUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI);
     return config;
   }
 
@@ -65,16 +65,17 @@ public class HttpClientConfig {
   private ClientSSLOptions sslOptions;
   private boolean ssl;
 
-  private List<HttpVersion> supportedVersions;
+  private List<HttpVersion> versions;
   private Http1ClientConfig http1Config;
   private Http2ClientConfig http2Config;
   private Http3ClientConfig http3Config;
   private boolean verifyHost;
-  private boolean decompressionEnabled; // todo : rename this
+  private boolean decompressionEnabled;
   private String defaultHost;
   private int defaultPort;
   private int maxRedirects;
   private boolean forceSni;
+  private String metricsName;
   private TracingPolicy tracingPolicy;
   private boolean shared;
   private String name;
@@ -85,7 +86,7 @@ public class HttpClientConfig {
     this.quicConfig = defaultQuicConfig();
     this.sslOptions = new ClientSSLOptions().setUseAlpn(true);
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
-    this.supportedVersions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
+    this.versions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = new Http1ClientConfig();
     this.http2Config = new Http2ClientConfig();
     this.http3Config = new Http3ClientConfig();
@@ -95,6 +96,7 @@ public class HttpClientConfig {
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
     this.forceSni = HttpClientOptions.DEFAULT_FORCE_SNI;
+    this.metricsName = null;
     this.tracingPolicy = HttpClientOptions.DEFAULT_TRACING_POLICY;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
@@ -106,7 +108,7 @@ public class HttpClientConfig {
     this.quicConfig = other.quicConfig != null ? new QuicClientConfig(other.quicConfig) : null;
     this.sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     this.ssl = other.ssl;
-    this.supportedVersions = new ArrayList<>(other.supportedVersions != null ? other.supportedVersions : DEFAULT_SUPPORTED_VERSIONS);
+    this.versions = new ArrayList<>(other.versions != null ? other.versions : DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ClientConfig(other.http2Config) : null;
     this.http3Config = other.http3Config != null ? new Http3ClientConfig(other.http3Config) : null;
@@ -116,6 +118,7 @@ public class HttpClientConfig {
     this.defaultPort = other.defaultPort;
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
+    this.metricsName = other.metricsName;
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
@@ -127,7 +130,7 @@ public class HttpClientConfig {
     this.quicConfig = defaultQuicConfig();
     this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : new ClientSSLOptions();
     this.ssl = other.isSsl();
-    this.supportedVersions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
+    this.versions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
     this.http1Config = other.getHttp1Config();
     this.http2Config = other.getHttp2Config();
     this.http3Config = new Http3ClientConfig();
@@ -137,6 +140,7 @@ public class HttpClientConfig {
     this.defaultPort = other.getDefaultPort();
     this.maxRedirects = other.getMaxRedirects();
     this.forceSni = other.isForceSni();
+    this.metricsName = other.getMetricsName();
     this.tracingPolicy = other.getTracingPolicy();
     this.shared = other.isShared();
     this.name = other.getName();
@@ -188,21 +192,29 @@ public class HttpClientConfig {
   }
 
   /**
-   * Set the metrics name identifying the reported metrics, useful for grouping metrics
-   * with the same name.
+   * <p>Set the keep alive timeout for HTTP connections. This value determines how long a connection remains
+   * unused in the pool before being evicted and closed. A timeout of zero or {@code null} means there is no timeout.</p>
+   * <p>This configures each HTTP version with the same value, you can override this and configure each
+   * version separately.</p>
    *
-   * @param metricsName the metrics name
+   * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setMetricsName(String metricsName) {
-    tcpConfig.setMetricsName(metricsName);
-    // Todo : quic
+  public HttpClientConfig setKeepAliveTimeout(Duration keepAliveTimeout) {
+    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative())) {
+      throw new IllegalArgumentException("HTTP keepAliveTimeout must be >= 0");
+    }
+    http1Config.setKeepAliveTimeout(keepAliveTimeout);
+    http2Config.setKeepAliveTimeout(keepAliveTimeout);
+    http3Config.setKeepAliveTimeout(keepAliveTimeout);
     return this;
   }
 
   /**
-   * Set the idle timeout, default time unit is seconds. Zero means don't time out.
+   * Set the idle timeout, zero or {@code null} means don't time out.
    * This determines if a connection will timeout and be closed if no data is received nor sent within the timeout.
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
    *
    * @param idleTimeout  the timeout
    * @return a reference to this, so the API can be used fluently
@@ -214,8 +226,10 @@ public class HttpClientConfig {
   }
 
   /**
-   * Set the read idle timeout. Zero means don't time out.
-   * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   * <p>Set the read idle timeout, zero or {@code null} means or null means don't time out. This determines if a
+   * connection will timeout and be closed if no data is received within the timeout.</p>
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
    *
    * @param idleTimeout  the read timeout
    * @return a reference to this, so the API can be used fluently
@@ -227,8 +241,10 @@ public class HttpClientConfig {
   }
 
   /**
-   * Set the write idle timeout, default time unit is seconds. Zero means don't time out.
-   * This determines if a connection will timeout and be closed if no data is sent within the timeout.
+   * <p>Set the write idle timeout, zero or {@code null} means don't time out. This determines if a
+   * connection will timeout and be closed if no data is sent within the timeout.</p>
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
    *
    * @param idleTimeout  the write timeout
    * @return a reference to this, so the API can be used fluently
@@ -261,37 +277,19 @@ public class HttpClientConfig {
   /**
    * @return the ordered list of the versions supported by the client
    */
-  public List<HttpVersion> getSupportedVersions() {
-    return supportedVersions;
+  public List<HttpVersion> getVersions() {
+    return versions;
   }
 
   /**
    * <p>Set the list of {@link HttpVersion} supported by the client, the first element of the list is considered
    * as the default protocol to choose when none is specified at the request level.</p>
    *
-   * @param supportedVersions the ordered list of supported versions
+   * @param versions the ordered list of supported versions
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setSupportedVersions(List<HttpVersion> supportedVersions) {
-    this.supportedVersions = Objects.requireNonNull(supportedVersions);
-    return this;
-  }
-
-  /**
-   * @return the default protocol version
-   */
-  public HttpVersion getDefaultProtocolVersion() {
-    return supportedVersions.isEmpty() ? null : supportedVersions.get(0);
-  }
-
-  /**
-   * Set the default protocol version.
-   *
-   * @param protocolVersion the protocol version
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setDefaultProtocolVersion(HttpVersion protocolVersion) {
-    setSupportedVersions(toSupportedVersion(protocolVersion));
+  public HttpClientConfig setVersions(List<HttpVersion> versions) {
+    this.versions = Objects.requireNonNull(versions);
     return this;
   }
 
@@ -459,6 +457,25 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setForceSni(boolean forceSni) {
     this.forceSni = forceSni;
+    return this;
+  }
+
+  /**
+   * @return the metrics name identifying the reported metrics
+   */
+  public String getMetricsName() {
+    return metricsName;
+  }
+
+  /**
+   * Set the metrics name identifying the reported metrics, useful for grouping metrics
+   * with the same name.
+   *
+   * @param metricsName the metrics name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setMetricsName(String metricsName) {
+    this.metricsName = metricsName;
     return this;
   }
 

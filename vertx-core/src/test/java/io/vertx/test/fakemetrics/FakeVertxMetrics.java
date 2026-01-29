@@ -69,20 +69,20 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
   @Override
   public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientConfig options) {
-    return new FakeHttpClientMetrics(options.getTcpConfig().getMetricsName());
+    return new FakeHttpClientMetrics(options.getMetricsName());
   }
 
   public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
-    return new FakeTCPMetrics();
+    return new FakeTCPMetrics(null);
   }
 
   public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
-    return new FakeTCPMetrics();
+    return new FakeTCPMetrics(options.getMetricsName());
   }
 
   @Override
   public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {
-    return new FakeQuicEndpointMetrics();
+    return new FakeQuicEndpointMetrics(config.getMetricsName());
   }
 
   public DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {

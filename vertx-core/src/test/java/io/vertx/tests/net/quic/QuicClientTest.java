@@ -49,8 +49,8 @@ public class QuicClientTest extends VertxTestBase {
 
   static QuicClientConfig clientOptions() {
     QuicClientConfig options = new QuicClientConfig();
-    options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
+    options.getTransportConfig().setInitialMaxData(10000000L);
+    options.getTransportConfig().setInitialMaxStreamDataBidiLocal(1000000L);
     return options;
   }
 

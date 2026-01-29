@@ -7,7 +7,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Test;
 
@@ -40,7 +40,7 @@ public class HttpServerCloseSequenceTest extends HttpTestBase {
     customServer
       .shutdown(10, TimeUnit.SECONDS)
       .onComplete(onSuccess(v2 -> {
-        assertTrue(((HttpServerImpl) customServer).isClosed());
+        assertTrue(((TcpHttpServer) customServer).isClosed());
         assertTrue("TestHandler should be closed during shutdown", testHandler.isClosed());
         testComplete();
       }));

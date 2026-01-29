@@ -30,12 +30,12 @@ public class Http3ClientTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     serverOptions = new HttpServerConfig();
-    serverOptions.addSupportedVersion(HttpVersion.HTTP_3);
+    serverOptions.addVersion(HttpVersion.HTTP_3);
     serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");
     clientConfig = new HttpClientConfig();
-    clientConfig.setSupportedVersions(List.of(HttpVersion.HTTP_3));
+    clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
     clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverOptions);
     client = vertx.createHttpClient(clientConfig);

@@ -12,7 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.http.HttpClientTransport;
@@ -216,7 +216,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
           owner.init(connection);
           long capacity = connection.concurrency();
           int idx;
-          if (connection instanceof Http1xClientConnection) {
+          if (connection instanceof Http1ClientConnection) {
             idx = 0;
           } else {
             idx = 1;

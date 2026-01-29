@@ -12,7 +12,7 @@ package io.vertx.test.fakemetrics;
 
 public class FakeQuicEndpointMetrics extends FakeTransportMetrics implements io.vertx.core.spi.metrics.TransportMetrics<SocketMetric> {
 
-  public FakeQuicEndpointMetrics() {
-    super("quic");
+  public FakeQuicEndpointMetrics(String name) {
+    super(name);
   }
 }

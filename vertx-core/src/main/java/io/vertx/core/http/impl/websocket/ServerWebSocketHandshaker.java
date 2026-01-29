@@ -22,10 +22,10 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.http1x.Http1xServerConnection;
-import io.vertx.core.http.impl.http1x.Http1xServerRequest;
-import io.vertx.core.http.impl.http1x.Http1xServerResponse;
-import io.vertx.core.http.impl.http1x.HttpChunkContentCompressor;
+import io.vertx.core.http.impl.http1.Http1ServerConnection;
+import io.vertx.core.http.impl.http1.Http1ServerRequest;
+import io.vertx.core.http.impl.http1.Http1ServerResponse;
+import io.vertx.core.http.impl.http1.HttpChunkContentCompressor;
 import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -50,13 +50,13 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  */
 public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> implements ServerWebSocketHandshake, ServerWebSocket {
 
-  private final Http1xServerRequest request;
+  private final Http1ServerRequest request;
   private final WebSocketServerConfig config;
   private final WebSocketServerHandshaker handshaker;
   private final boolean registerWebSocketWriteHandlers;
   private boolean done;
 
-  public ServerWebSocketHandshaker(Http1xServerRequest request,
+  public ServerWebSocketHandshaker(Http1ServerRequest request,
                                    WebSocketServerHandshaker handshaker,
                                    WebSocketServerConfig config,
                                    boolean registerWebSocketWriteHandlers) {
@@ -163,15 +163,15 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
 
   private Future<Void> rejectHandshake(int sc) {
     HttpResponseStatus status = HttpResponseStatus.valueOf(sc);
-    Http1xServerResponse response = request.response();
+    Http1ServerResponse response = request.response();
     return response.setStatusCode(sc).end(status.reasonPhrase());
   }
 
   private ServerWebSocket acceptHandshake() {
-    Http1xServerConnection httpConn = (Http1xServerConnection) request.connection();
+    Http1ServerConnection httpConn = (Http1ServerConnection) request.connection();
     ChannelHandlerContext chctx = httpConn.channelHandlerContext();
     Channel channel = chctx.channel();
-    Http1xServerResponse response = request.response();
+    Http1ServerResponse response = request.response();
     Object requestMetric = request.metric();
     handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), channel.newPromise());
     response.completeHandshake();

@@ -8,6 +8,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http1ClientConfig;
 import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.http.impl.quic.QuicClientTransport;
+import io.vertx.core.http.impl.tcp.TcpClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -133,6 +135,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     po = poolOptions != null ? poolOptions : new PoolOptions();
     HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
     Handler<HttpConnection> connectHandler = connectionHandler(clientConfig);
+    HttpVersion defaultVersion = clientConfig.getVersions().isEmpty() ? null : clientConfig.getVersions().get(0);
     return new HttpClientImpl(
       vertx,
       resolver,
@@ -149,11 +152,15 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       clientConfig.getDefaultHost(),
       clientConfig.getDefaultPort(),
       clientConfig.getMaxRedirects(),
-      clientConfig.getDefaultProtocolVersion(),
+      defaultVersion,
       clientConfig.getSslOptions(),
       connectHandler,
       tcpTransport,
       quicTransport) {
+      @Override
+      public HttpClientConfig config() {
+        return new HttpClientConfig(clientConfig);
+      }
       @Override
       public HttpClientOptions options() {
         return options == null ? new HttpClientOptions() : new HttpClientOptions(options);
@@ -165,6 +172,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     TcpClientConfig config = new TcpClientConfig(httpConfig.getTcpConfig());
     config.setProxyOptions(null);
     config.setSsl(false);
+    config.setMetricsName(httpConfig.getMetricsName());
     return config;
   }
 
@@ -199,30 +207,34 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co = new HttpClientConfig(new HttpClientOptions());
     }
 
-    HttpClientTransport quicTransport;
+    if (co.getVersions().isEmpty()) {
+      throw new IllegalStateException("HTTP client must be configured for at least one HTTP version");
+    }
+
     HttpClientMetrics<?, ?, ?> metrics;
-    if (co.getSupportedVersions().contains(HttpVersion.HTTP_3)) {
-      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(new HttpClientOptions()) : null;
-      quicTransport = new Http3ClientTransport(vertx, metrics, co);
+    if (vertx.metrics() != null) {
+      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(clientConfig) : null;
+    } else {
+      metrics = null;
+    }
+
+    HttpClientTransport quicTransport;
+    if (co.getVersions().contains(HttpVersion.HTTP_3)) {
+      quicTransport = new QuicClientTransport(vertx, metrics, co);
     } else {
       quicTransport = null;
-      metrics = null;
     }
 
     HttpClientTransport transport;
     String shared;
     EndpointResolver resolver;
-    List<HttpVersion> supportedVersions = co.getSupportedVersions();
+    List<HttpVersion> supportedVersions = co.getVersions();
     if (supportedVersions.contains(HttpVersion.HTTP_1_0) || supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_2)) {
       resolver = endpointResolver(co);
       shared = co.isShared() ? co.getName() : null;
-      if (metrics == null && vertx.metrics() != null) {
-        // Todo : change this (breaking)
-        metrics = vertx.metrics().createHttpClientMetrics(new HttpClientOptions().setMetricsName(co.getTcpConfig().getMetricsName()));
-      }
       TcpClientConfig netClientConfig = netClientConfig(co);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null), null).metrics(metrics).build();
-      transport = new Http1xOrH2ClientTransport(
+      transport = new TcpClientTransport(
         tcpClient,
         co.getTracingPolicy(),
         co.isDecompressionEnabled(),

@@ -4,8 +4,7 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 
 public class FakeTCPMetrics extends FakeTransportMetrics implements TCPMetrics<SocketMetric> {
 
-  public FakeTCPMetrics() {
-    super("tcp");
+  public FakeTCPMetrics(String name) {
+    super(name);
   }
-
 }

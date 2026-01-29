@@ -27,7 +27,7 @@ import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.observability.ClientStreamObserver;
 import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
@@ -174,7 +174,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
         }
       }
       if (decompressionSupported && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
-        headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
+        headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1ClientConnection.determineCompressionAcceptEncoding());
       }
       try {
         connection.createStream(DefaultHttp2ClientStream.this);

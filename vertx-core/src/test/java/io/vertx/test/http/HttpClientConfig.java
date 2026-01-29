@@ -14,6 +14,7 @@ public interface HttpClientConfig {
   HttpClientConfig setDecompressionSupported(boolean decompressionSupported);
   HttpClientConfig setLocalAddress(String localAddress);
   HttpClientConfig setLogActivity(boolean logActivity);
+  HttpClientConfig setMetricsName(String name);
   default HttpClientAgent create(Vertx vertx, PoolOptions poolOptions) {
     return builder(vertx).with(poolOptions).build();
   }

@@ -64,13 +64,13 @@ public class QuicServerTest extends VertxTestBase {
 
   static QuicServerConfig serverOptions() {
     QuicServerConfig options = new QuicServerConfig();
-    options.getTransportOptions().setInitialMaxData(10000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidiLocal(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataBidiRemote(1000000L);
-    options.getTransportOptions().setInitialMaxStreamDataUni(1000000L);
-    options.getTransportOptions().setInitialMaxStreamsBidi(100L);
-    options.getTransportOptions().setInitialMaxStreamsUni(100L);
-    options.getTransportOptions().setDisableActiveMigration(true);
+    options.getTransportConfig().setInitialMaxData(10000000L);
+    options.getTransportConfig().setInitialMaxStreamDataBidiLocal(1000000L);
+    options.getTransportConfig().setInitialMaxStreamDataBidiRemote(1000000L);
+    options.getTransportConfig().setInitialMaxStreamDataUni(1000000L);
+    options.getTransportConfig().setInitialMaxStreamsBidi(100L);
+    options.getTransportConfig().setInitialMaxStreamsUni(100L);
+    options.getTransportConfig().setDisableActiveMigration(true);
 
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
@@ -579,7 +579,7 @@ public class QuicServerTest extends VertxTestBase {
     disableThreadChecks();
     waitFor(2);
     QuicServerConfig options = serverOptions();
-    options.getTransportOptions().setEnableDatagrams(true);
+    options.getTransportConfig().setEnableDatagrams(true);
     QuicServer server = QuicServer.create(vertx, options, SSL_OPTIONS);
     server.handler(conn -> {
       conn.writeDatagram(Buffer.buffer("ping")).onComplete(onSuccess2(v -> {
@@ -604,7 +604,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testReceiveDatagram() throws Exception {
     QuicServerConfig options = serverOptions();
-    options.getTransportOptions().setEnableDatagrams(true);
+    options.getTransportConfig().setEnableDatagrams(true);
     QuicServer server = QuicServer.create(vertx, options, SSL_OPTIONS);
     server.handler(conn -> {
       conn.datagramHandler(dgram -> {
@@ -628,7 +628,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testMaxIdleTimeout() throws Exception {
     QuicServerConfig options = serverOptions();
-    options.getTransportOptions().setMaxIdleTimeout(Duration.ofMillis(1000));
+    options.getTransportConfig().setMaxIdleTimeout(Duration.ofMillis(1000));
     QuicServer server = QuicServer.create(vertx, options, SSL_OPTIONS);
     server.handler(conn -> {
       long now = System.currentTimeMillis();

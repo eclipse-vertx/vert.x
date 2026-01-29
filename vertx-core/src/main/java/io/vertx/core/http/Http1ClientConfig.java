@@ -83,18 +83,15 @@ public class Http1ClientConfig {
   }
 
   /**
-   * Set the keep alive timeout for HTTP/1.x.
-   * <p/>
-   * This value determines how long a connection remains unused in the pool before being evicted and closed.
-   * <p/>
-   * A timeout of {@code null} means there is no timeout.
+   * <p>Set the keep alive timeout for HTTP/1.1 connections. This value determines how long a connection remains
+   * unused in the pool before being evicted and closed. A timeout of zero or {@code null} means there is no timeout.</p>
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
    */
   public Http1ClientConfig setKeepAliveTimeout(Duration keepAliveTimeout) {
-    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative() || keepAliveTimeout.isZero())) {
-      throw new IllegalArgumentException("keepAliveTimeout must be > 0");
+    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative())) {
+      throw new IllegalArgumentException("keepAliveTimeout must be >= 0");
     }
     this.keepAliveTimeout = keepAliveTimeout;
     return this;

@@ -12,7 +12,7 @@
 package io.vertx.core.http.impl.websocket;
 
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.impl.http1x.Http1xServerRequest;
+import io.vertx.core.http.impl.http1.Http1ServerRequest;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 
@@ -30,7 +30,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   ServerWebSocketImpl(ContextInternal context,
                       WebSocketConnectionImpl conn,
                       boolean supportsContinuation,
-                      Http1xServerRequest request,
+                      Http1ServerRequest request,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize,
                       boolean registerWebSocketWriteHandlers) {

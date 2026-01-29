@@ -19,9 +19,4 @@ package io.vertx.core.spi.metrics;
  */
 @Deprecated(forRemoval = true)
 public interface TCPMetrics<S> extends TransportMetrics<S> {
-
-  @Override
-  default String type() {
-    return "tcp";
-  }
 }

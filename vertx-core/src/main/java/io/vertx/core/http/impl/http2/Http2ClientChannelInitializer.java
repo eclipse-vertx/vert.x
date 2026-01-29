@@ -11,8 +11,8 @@
 package io.vertx.core.http.impl.http2;
 
 import io.netty.channel.Channel;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
-import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -26,6 +26,6 @@ public interface Http2ClientChannelInitializer {
 
   void http2Connected(ContextInternal context, HostAndPort authority, Object metric, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise);
 
-  Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics);
+  Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1ClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics);
 
 }

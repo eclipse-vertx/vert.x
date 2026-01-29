@@ -67,8 +67,8 @@ public class TcpServerConfig extends TcpEndpointConfig {
     this.trafficShapingOptions = null;
   }
 
-  public TcpServerConfig setTransportOptions(TcpOptions transportOptions) {
-    return (TcpServerConfig)super.setTransportOptions(transportOptions);
+  public TcpServerConfig setTransportConfig(TcpConfig transportConfig) {
+    return (TcpServerConfig)super.setTransportConfig(transportConfig);
   }
 
   public TcpServerConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {

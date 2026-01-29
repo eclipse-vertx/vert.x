@@ -31,13 +31,12 @@ import java.util.stream.Collectors;
  */
 public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric> {
 
-  private final String name;
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();
   private volatile boolean implementInit = false;
 
   public FakeHttpClientMetrics(String name) {
-    this.name = name;
+    super(name);
   }
 
   public WebSocketMetric getMetric(WebSocket ws) {
@@ -59,10 +58,6 @@ public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientM
 
   public void setImplementInit(boolean implementInit) {
     this.implementInit = implementInit;
-  }
-
-  public String getName() {
-    return name;
   }
 
   public Set<String> endpoints() {

@@ -16,9 +16,9 @@ public class HttpConnectParams {
     this.ssl = ssl;
   }
 
-  final HttpVersion protocol;
-  final ClientSSLOptions sslOptions;
-  final ProxyOptions proxyOptions;
-  final boolean ssl;
+  public final HttpVersion protocol;
+  public final ClientSSLOptions sslOptions;
+  public final ProxyOptions proxyOptions;
+  public final boolean ssl;
 
 }

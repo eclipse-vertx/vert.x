@@ -43,17 +43,14 @@ public class Http3ClientConfig {
   }
 
   /**
-   * Set the keep alive timeout for HTTP/3 connections.
-   * <p/>
-   * This value determines how long a connection remains unused in the pool before being evicted and closed.
-   * <p/>
-   * A timeout of {@code null} means there is no timeout.
+   * <p>Set the keep alive timeout for HTTP/3 connections. This value determines how long a connection remains
+   * unused in the pool before being evicted and closed. A timeout of zero or {@code null} means there is no timeout.</p>
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
    */
   public Http3ClientConfig setKeepAliveTimeout(Duration keepAliveTimeout) {
-    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative() || keepAliveTimeout.isZero())) {
+    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative())) {
       throw new IllegalArgumentException("HTTP/3 keepAliveTimeout must be >= 0");
     }
     this.keepAliveTimeout = keepAliveTimeout;

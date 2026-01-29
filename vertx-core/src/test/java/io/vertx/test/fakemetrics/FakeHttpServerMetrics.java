@@ -32,6 +32,10 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   private final ConcurrentMap<String, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
 
+  public FakeHttpServerMetrics() {
+    super(null);
+  }
+
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
     return webSockets.get(ws.path());
   }

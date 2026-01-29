@@ -37,8 +37,8 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.WebSocketVersion;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
-import io.vertx.core.http.impl.http1x.Http1xServerConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.impl.http1.Http1ServerConnection;
 import io.vertx.core.internal.http.WebSocketInternal;
 import io.vertx.core.http.impl.websocket.WebSocketFrameImpl;
 import io.vertx.core.internal.VertxInternal;
@@ -2103,7 +2103,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private Future<NetSocket> handshakeWithCookie(HttpServerRequest req) {
-    return ((Http1xServerConnection)req.connection()).netSocket().compose(so -> {
+    return ((Http1ServerConnection)req.connection()).netSocket().compose(so -> {
       try {
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
         byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
@@ -2128,7 +2128,7 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private Future<NetSocket> handshake(HttpServerRequest req) {
-    return ((Http1xServerConnection)req.connection()).netSocket().flatMap(so -> {
+    return ((Http1ServerConnection)req.connection()).netSocket().flatMap(so -> {
       try {
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
         byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
@@ -2943,7 +2943,7 @@ public class WebSocketTest extends VertxTestBase {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(101, resp.statusCode());
           resp.endHandler(v -> {
-            Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+            Http1ClientConnection conn = (Http1ClientConnection) req.connection();
             NetSocketInternal soi = conn.toNetSocket();
             soi.messageHandler(msg -> {
               if (msg instanceof CloseWebSocketFrame) {
@@ -2983,7 +2983,7 @@ public class WebSocketTest extends VertxTestBase {
       handshake(client, req -> {
         req.send().onComplete(onSuccess(resp -> {
           assertEquals(101, resp.statusCode());
-          Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+          Http1ClientConnection conn = (Http1ClientConnection) req.connection();
           NetSocketInternal soi = conn.toNetSocket();
           ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
           pipeline.addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
@@ -3150,7 +3150,7 @@ public class WebSocketTest extends VertxTestBase {
     handshake(client, req -> {
       req.send().onComplete(onSuccess(resp -> {
         assertEquals(101, resp.statusCode());
-        Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+        Http1ClientConnection conn = (Http1ClientConnection) req.connection();
         NetSocketInternal soi = conn.toNetSocket();
         soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
         soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));

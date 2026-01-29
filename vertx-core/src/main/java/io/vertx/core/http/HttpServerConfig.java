@@ -17,6 +17,7 @@ import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -41,12 +42,12 @@ public class HttpServerConfig {
 
   private static QuicServerConfig defaultQuicConfig() {
     QuicServerConfig config = new QuicServerConfig();
-    config.getTransportOptions().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
-    config.getTransportOptions().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-    config.getTransportOptions().setInitialMaxStreamDataBidiRemote(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-    config.getTransportOptions().setInitialMaxStreamDataUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
-    config.getTransportOptions().setInitialMaxStreamsBidi(DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI);
-    config.getTransportOptions().setInitialMaxStreamsUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI);
+    config.getTransportConfig().setInitialMaxData(DEFAULT_QUIC_INITIAL_MAX_DATA);
+    config.getTransportConfig().setInitialMaxStreamDataBidiLocal(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
+    config.getTransportConfig().setInitialMaxStreamDataBidiRemote(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
+    config.getTransportConfig().setInitialMaxStreamDataUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
+    config.getTransportConfig().setInitialMaxStreamsBidi(DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI);
+    config.getTransportConfig().setInitialMaxStreamsUni(DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI);
     config.setPort(DEFAULT_HTTP3_PORT);
     return config;
   }
@@ -57,7 +58,7 @@ public class HttpServerConfig {
     return config;
   }
 
-  private Set<HttpVersion> supportedVersions;
+  private Set<HttpVersion> versions;
   private int maxFormAttributeSize;
   private int maxFormFields;
   private int maxFormBufferedBytes;
@@ -86,7 +87,7 @@ public class HttpServerConfig {
     compression.setContentSizeThreshold(options.getCompressionContentSizeThreshold());
     compression.setCompressors(compressors);
 
-    this.supportedVersions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+    this.versions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
@@ -103,7 +104,7 @@ public class HttpServerConfig {
   }
 
   public HttpServerConfig() {
-    this.supportedVersions = EnumSet.noneOf(HttpVersion.class);
+    this.versions = EnumSet.noneOf(HttpVersion.class);
     this.maxFormAttributeSize = HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
@@ -121,7 +122,7 @@ public class HttpServerConfig {
   }
 
   public HttpServerConfig(HttpServerConfig other) {
-    this.supportedVersions = EnumSet.copyOf(other.supportedVersions);
+    this.versions = EnumSet.copyOf(other.versions);
     this.maxFormAttributeSize = other.maxFormAttributeSize;
     this.maxFormFields = other.maxFormFields;
     this.maxFormBufferedBytes = other.maxFormBufferedBytes;
@@ -138,25 +139,96 @@ public class HttpServerConfig {
     this.quicConfig = other.quicConfig != null ? new QuicServerConfig(other.quicConfig) : defaultQuicConfig();
   }
 
-  public Set<HttpVersion> getSupportedVersions() {
-    return supportedVersions;
-  }
-
-  public HttpServerConfig setSupportedVersions(Set<HttpVersion> supportedVersions) {
-    this.supportedVersions = Objects.requireNonNull(supportedVersions);
-    return this;
-  }
-
-  public HttpServerConfig addSupportedVersion(HttpVersion version) {
-    supportedVersions.add(version);
+  /**
+   * Set the idle timeout, zero or {@code null} means don't time out.
+   * This determines if a connection will timeout and be closed if no data is received nor sent within the timeout.
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
+   *
+   * @param idleTimeout  the timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setIdleTimeout(Duration idleTimeout) {
+    tcpConfig.setIdleTimeout(idleTimeout);
+    quicConfig.setStreamIdleTimeout(idleTimeout);
     return this;
   }
 
   /**
-   * @return the client SSL options.
+   * <p>Set the read idle timeout, zero or {@code null} means or null means don't time out. This determines if a
+   * connection will timeout and be closed if no data is received within the timeout.</p>
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
+   *
+   * @param idleTimeout  the read timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setReadIdleTimeout(Duration idleTimeout) {
+    tcpConfig.setReadIdleTimeout(idleTimeout);
+    quicConfig.setStreamReadIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  /**
+   * <p>Set the write idle timeout, zero or {@code null} means don't time out. This determines if a
+   * connection will timeout and be closed if no data is sent within the timeout.</p>
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
+   *
+   * @param idleTimeout  the write timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setWriteIdleTimeout(Duration idleTimeout) {
+    tcpConfig.setWriteIdleTimeout(idleTimeout);
+    quicConfig.setStreamWriteIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  /**
+   * @return the HTTP versions
+   */
+  public Set<HttpVersion> getVersions() {
+    return versions;
+  }
+
+  /**
+   * Set the HTTP versions.
+   *
+   * @param versions the versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setVersions(Set<HttpVersion> versions) {
+    this.versions = Objects.requireNonNull(versions);
+    return this;
+  }
+
+  /**
+   * Add an HTTP version.
+   *
+   * @param version an additional version to support
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig addVersion(HttpVersion version) {
+    versions.add(version);
+    return this;
+  }
+
+  /**
+   * @return the server SSL options.
    */
   public ServerSSLOptions getSslOptions() {
     return sslOptions;
+  }
+
+  /**
+   * Set the server SSL options.
+   *
+   * @param sslOptions the options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setSslOptions(ServerSSLOptions sslOptions) {
+    this.sslOptions = sslOptions;
+    return this;
   }
 
   /**

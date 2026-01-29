@@ -20,9 +20,9 @@ import io.vertx.core.http.Http1ServerConfig;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.impl.http1x.Http1xServerConnection;
-import io.vertx.core.http.impl.http1x.VertxHttpRequestDecoder;
-import io.vertx.core.http.impl.http1x.VertxHttpResponseEncoder;
+import io.vertx.core.http.impl.http1.Http1ServerConnection;
+import io.vertx.core.http.impl.http1.VertxHttpRequestDecoder;
+import io.vertx.core.http.impl.http1.VertxHttpResponseEncoder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.VertxHandler;
@@ -57,8 +57,8 @@ public class Http1xServerConnectionTest extends VertxTestBase {
       .build();
 
 
-    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
-      Http1xServerConnection conn = new Http1xServerConnection(
+    VertxHandler<Http1ServerConnection> handler = VertxHandler.create(chctx -> {
+      Http1ServerConnection conn = new Http1ServerConnection(
         ThreadingModel.EVENT_LOOP,
         () -> context,
         true,

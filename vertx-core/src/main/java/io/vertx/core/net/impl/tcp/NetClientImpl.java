@@ -58,7 +58,7 @@ class NetClientImpl implements NetClientInternal {
 
   private final VertxInternal vertx;
   private final TcpClientConfig config;
-  private final TcpOptions transportOptions;
+  private final TcpConfig transportOptions;
   private final boolean registerWriteHandler;
   private final String localAddress;
   private final SslContextManager sslContextManager;
@@ -92,7 +92,7 @@ class NetClientImpl implements NetClientInternal {
     this.writeIdleTimeout = config.getWriteIdleTimeout() != null ? config.getWriteIdleTimeout() : Duration.ofMillis(0L);
     this.proxyFilter = config.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(config.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.sslOptions = sslOptions;
-    this.transportOptions = config.getTransportOptions();
+    this.transportOptions = config.getTransportConfig();
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
@@ -272,7 +272,7 @@ class NetClientImpl implements NetClientInternal {
       boolean domainSocket = remoteAddress.isDomainSocket();
 
       // Transport specific TCP configuration
-      vertx.transport().configure(config.getTransportOptions(), domainSocket, bootstrap);
+      vertx.transport().configure(config.getTransportConfig(), domainSocket, bootstrap);
 
       if (localAddress != null) {
         bootstrap.localAddress(localAddress, 0);

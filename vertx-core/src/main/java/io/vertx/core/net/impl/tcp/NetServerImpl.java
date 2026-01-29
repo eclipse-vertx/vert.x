@@ -606,7 +606,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       bootstrap.option(ChannelOption.SO_BACKLOG, config.getAcceptBacklog());
     }
 
-    TcpOptions transportOptions = config.getTransportOptions();
+    TcpConfig transportOptions = config.getTransportConfig();
 
     //  Socket/Datagram channel
     if (transportOptions.getSendBufferSize() != -1) {
@@ -625,7 +625,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(transportOptions.getReceiveBufferSize()));
     }
 
-    vertx.transport().configure(config.getTransportOptions(), domainSocket, bootstrap);
+    vertx.transport().configure(config.getTransportConfig(), domainSocket, bootstrap);
   }
 
 

@@ -20,12 +20,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class FakeTransportMetrics extends FakeMetricsBase implements TransportMetrics<SocketMetric> {
 
-  private final String type;
+  private final String name;
   private final AtomicInteger count = new AtomicInteger();
   private final ConcurrentMap<SocketAddress, SocketMetric[]> sockets = new ConcurrentHashMap<>();
 
-  public FakeTransportMetrics(String type) {
-    this.type = type;
+  public FakeTransportMetrics(String name) {
+    this.name = name;
   }
 
   public int connectionCount() {
@@ -37,9 +37,8 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
     return sockets.getOrDefault(socket, new SocketMetric[0]).length;
   }
 
-  @Override
-  public String type() {
-    return type;
+  public String name() {
+    return name;
   }
 
   private SocketAddress keyOf(SocketAddress addr) {
