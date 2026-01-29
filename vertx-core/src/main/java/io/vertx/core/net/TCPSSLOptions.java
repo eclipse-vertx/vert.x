@@ -16,7 +16,6 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -97,7 +96,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
 
-  private TcpOptions transportOptions;
+  private TcpConfig transportOptions;
   private int idleTimeout;
   private int readIdleTimeout;
   private int writeIdleTimeout;
@@ -131,7 +130,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.writeIdleTimeout = other.getWriteIdleTimeout();
     this.ssl = other.isSsl();
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
-    this.transportOptions = other.transportOptions != null ? other.transportOptions.copy() : new TcpOptions();
+    this.transportOptions = other.transportOptions != null ? other.transportOptions.copy() : new TcpConfig();
 
     SSLOptions sslOptions = other.sslOptions;
     if (sslOptions != null) {
@@ -221,7 +220,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
     sslEngineOptions = DEFAULT_SSL_ENGINE;
-    transportOptions = new TcpOptions();
+    transportOptions = new TcpConfig();
     sslOptions = null;
   }
 
@@ -253,7 +252,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @GenIgnore
-  public TcpOptions getTransportOptions() {
+  public TcpConfig getTransportOptions() {
     return transportOptions;
   }
 

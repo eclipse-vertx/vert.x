@@ -17,7 +17,6 @@ import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpServerConfig;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import junit.runner.Version;
 
 import java.time.Duration;
 import java.util.EnumSet;
@@ -55,7 +54,7 @@ public class Http3Config implements HttpConfig {
   @Override
   public HttpServerConfig forServer() {
     io.vertx.core.http.HttpServerConfig options = new io.vertx.core.http.HttpServerConfig();
-    options.setSupportedVersions(EnumSet.of(HttpVersion.HTTP_3));
+    options.setVersions(EnumSet.of(HttpVersion.HTTP_3));
     options.setQuicPort(port);
     options.setQuicHost(host);
     options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
@@ -108,16 +107,16 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpClientConfig forClient() {
-    io.vertx.core.http.HttpClientConfig options = new io.vertx.core.http.HttpClientConfig();
-    options.setSupportedVersions(List.of(HttpVersion.HTTP_3));
-    options.setDefaultHost(host);
-    options.setDefaultPort(port);
-    options.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    options.getSslOptions().setHostnameVerificationAlgorithm("");
+    io.vertx.core.http.HttpClientConfig config = new io.vertx.core.http.HttpClientConfig();
+    config.setVersions(List.of(HttpVersion.HTTP_3));
+    config.setDefaultHost(host);
+    config.setDefaultPort(port);
+    config.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
+    config.getSslOptions().setHostnameVerificationAlgorithm("");
     return new HttpClientConfig() {
       @Override
       public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
-        options.setConnectTimeout(connectTimeout);
+        config.setConnectTimeout(connectTimeout);
         return this;
       }
       @Override
@@ -133,18 +132,23 @@ public class Http3Config implements HttpConfig {
         return null;
       }
       @Override
+      public HttpClientConfig setMetricsName(String name) {
+        config.setMetricsName(name);
+        return this;
+      }
+      @Override
       public HttpClientConfig setIdleTimeout(Duration timeout) {
-        options.setIdleTimeout(timeout);
+        config.setIdleTimeout(timeout);
         return this;
       }
       @Override
       public HttpClientConfig setKeepAliveTimeout(Duration timeout) {
-        options.getHttp3Config().setKeepAliveTimeout(timeout.toMillis() > 0 ? timeout : null);
+        config.getHttp3Config().setKeepAliveTimeout(timeout.toMillis() > 0 ? timeout : null);
         return this;
       }
       @Override
       public HttpClientBuilder builder(Vertx vertx) {
-        return vertx.httpClientBuilder().with(options);
+        return vertx.httpClientBuilder().with(config);
       }
     };
   }

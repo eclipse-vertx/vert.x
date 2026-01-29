@@ -14,7 +14,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.websocket.WebSocketImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -106,7 +106,7 @@ class WebSocketGroup extends ManagedResource {
         if (connectOptions.getIdleTimeout() >= 0L) {
           timeout = connectOptions.getIdleTimeout();
         }
-        Http1xClientConnection ci = (Http1xClientConnection) c;
+        Http1ClientConnection ci = (Http1ClientConnection) c;
         ci.toWebSocket(
           ctx,
           connectOptions.getURI(),

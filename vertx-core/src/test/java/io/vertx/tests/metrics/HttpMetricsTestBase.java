@@ -21,15 +21,8 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
-import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
-import io.vertx.test.fakemetrics.FakeMetricsBase;
-import io.vertx.test.fakemetrics.FakeMetricsFactory;
-import io.vertx.test.fakemetrics.HttpClientMetric;
-import io.vertx.test.fakemetrics.HttpServerMetric;
-import io.vertx.test.fakemetrics.SocketMetric;
+import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Test;
 
@@ -137,6 +130,8 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     AtomicReference<SocketMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+
+
 //    Http1xOrH2ChannelConnector connector = (Http1xOrH2ChannelConnector)((HttpClientInternal) client).channelConnector();
 //    FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(connector.netClient());
 //    assertSame(metrics, tcpMetrics);
@@ -195,7 +190,11 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     testHttpClientLifecycle(true);
   }
 
+  // TODO : need to check network metrics name
+
   void testHttpClientLifecycle(boolean implementInit) throws Exception {
+    client.close().await();
+    client = config.forClient().setMetricsName("the-metrics").create(vertx);
     CountDownLatch requestBeginLatch = new CountDownLatch(1);
     CountDownLatch requestBodyLatch = new CountDownLatch(1);
     CountDownLatch requestEndLatch = new CountDownLatch(1);
@@ -224,6 +223,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     });
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    assertEquals("the-metrics", clientMetrics.name());
     clientMetrics.setImplementInit(implementInit);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     HttpClientRequest request = client.request(new RequestOptions(requestOptions)

@@ -30,7 +30,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
     assertTrue(config.getSslOptions().isUseAlpn());
-    assertEquals(List.of(HTTP_1_1, HTTP_2), config.getSupportedVersions());
+    assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
   }
 
   @Test
@@ -42,7 +42,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
     assertFalse(config.getSslOptions().isUseAlpn());
-    assertEquals(List.of(HTTP_1_1, HTTP_2), config.getSupportedVersions());
+    assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
   }
 
   @Test
@@ -54,7 +54,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
     assertFalse(config.getSslOptions().isUseAlpn());
-    assertEquals(List.of(HTTP_2, HTTP_1_1), config.getSupportedVersions());
+    assertEquals(List.of(HTTP_2, HTTP_1_1), config.getVersions());
   }
 
   @Test
@@ -66,6 +66,6 @@ public class HttpClientConfigTest {
     assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
     assertFalse(config.getSslOptions().isUseAlpn());
-    assertEquals(List.of(HTTP_1_0), config.getSupportedVersions());
+    assertEquals(List.of(HTTP_1_0), config.getVersions());
   }
 }

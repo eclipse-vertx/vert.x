@@ -161,7 +161,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   void initQuicCodecBuilder(QuicCodecBuilder<?> codecBuilder, TransportMetrics<?> metrics) throws Exception {
-    QuicOptions transportOptions = config.getTransportOptions();
+    QuicConfig transportOptions = config.getTransportConfig();
     codecBuilder.initialMaxData(transportOptions.getInitialMaxData());
     codecBuilder.initialMaxStreamDataBidirectionalLocal(transportOptions.getInitialMaxStreamDataBidiLocal());
     codecBuilder.initialMaxStreamDataBidirectionalRemote(transportOptions.getInitialMaxStreamDataBidiRemote());

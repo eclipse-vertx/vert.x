@@ -60,6 +60,11 @@ public interface HttpConfig {
           return this;
         }
         @Override
+        public HttpClientConfig setMetricsName(String name) {
+          options.setMetricsName(name);
+          return this;
+        }
+        @Override
         public HttpClientConfig setIdleTimeout(Duration timeout) {
           options.setIdleTimeout((int)timeout.toMillis());
           options.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);

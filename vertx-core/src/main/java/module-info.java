@@ -127,8 +127,10 @@ module io.vertx.core {
   exports io.vertx.core.http.impl.http2.codec to io.vertx.core.tests;
   exports io.vertx.core.net.impl.tcp to io.vertx.core.tests;
   exports io.vertx.core.net.impl.quic to io.vertx.core.tests;
-  exports io.vertx.core.http.impl.http1x to io.vertx.core.tests;
+  exports io.vertx.core.http.impl.http1 to io.vertx.core.tests;
   exports io.vertx.core.http.impl.observability to io.vertx.core.tests;
   exports io.vertx.core.net.endpoint.impl to io.vertx.core.tests;
+  exports io.vertx.core.http.impl.tcp to io.vertx.core.tests;
+  exports io.vertx.core.http.impl.quic to io.vertx.core.tests;
 
 }

@@ -61,8 +61,8 @@ public class QuicServerConfig extends QuicEndpointConfig {
   }
 
   @Override
-  public QuicServerConfig setTransportOptions(QuicOptions transportOptions) {
-    return (QuicServerConfig) super.setTransportOptions(transportOptions);
+  public QuicServerConfig setTransportConfig(QuicConfig transportConfig) {
+    return (QuicServerConfig) super.setTransportConfig(transportConfig);
   }
 
   @Override

@@ -20,7 +20,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-import io.vertx.core.http.impl.HttpServerConnectionInitializer;
+import io.vertx.core.http.impl.tcp.HttpServerConnectionInitializer;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextManager;

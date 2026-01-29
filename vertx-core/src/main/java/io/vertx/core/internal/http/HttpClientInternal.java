@@ -40,6 +40,10 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
     return null;
   }
 
+  default HttpClientConfig config() {
+    return null;
+  }
+
   EndpointResolverInternal originResolver();
 
   EndpointResolverInternal resolver();

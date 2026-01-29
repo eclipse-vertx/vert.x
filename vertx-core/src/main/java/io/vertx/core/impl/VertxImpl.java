@@ -32,9 +32,10 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.Http1xOrH2ClientTransport;
+import io.vertx.core.http.impl.tcp.TcpClientTransport;
 import io.vertx.core.http.HttpClientConfig;
-import io.vertx.core.http.impl.http3.Http3Server;
+import io.vertx.core.http.impl.quic.QuicHttpServer;
+import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;
@@ -395,20 +396,31 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new HttpServerImpl(this, new HttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
+    return new TcpHttpServer(this, new HttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
   }
 
   @Override
   public HttpServer createHttpServer(HttpServerConfig config) {
-    if (config.getSupportedVersions().contains(HttpVersion.HTTP_1_1) || config.getSupportedVersions().contains(HttpVersion.HTTP_2) || config.getSupportedVersions().contains(HttpVersion.HTTP_1_0)) {
-      if (config.getSupportedVersions().contains(HttpVersion.HTTP_3)) {
-        throw new UnsupportedOperationException("Todo");
+    HttpServer tcpServer = null;
+    if (config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0)) {
+      tcpServer = new TcpHttpServer(this, new HttpServerConfig(config), false);
+    }
+    HttpServer quicServer = null;
+    if (config.getVersions().contains(HttpVersion.HTTP_3)) {
+      quicServer = new QuicHttpServer(this, new HttpServerConfig(config));
+    }
+    if (tcpServer != null) {
+      if (quicServer != null) {
+        return new CompositeHttpServer(tcpServer, quicServer);
+      } else {
+        return tcpServer;
       }
-      return new HttpServerImpl(this, new HttpServerConfig(config), false);
-    } else if (config.getSupportedVersions().contains(HttpVersion.HTTP_3)) {
-      return new Http3Server(this, new HttpServerConfig(config));
     } else {
-      throw new IllegalArgumentException("You must set at least one supported HTTP version");
+      if (quicServer != null) {
+        return quicServer;
+      } else {
+        throw new IllegalArgumentException("You must set at least one supported HTTP version");
+      }
     }
   }
 
@@ -444,9 +456,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
-    HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(o) : null;
+    HttpClientConfig config = new HttpClientConfig(o);
+    HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(config) : null;
     NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
-    Http1xOrH2ClientTransport channelConnector = Http1xOrH2ClientTransport.create(tcpClient, new HttpClientConfig(o), metrics);
+    TcpClientTransport channelConnector = TcpClientTransport.create(tcpClient, config, metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
 

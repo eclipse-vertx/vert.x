@@ -113,6 +113,11 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
+  public HttpClientConfig config() {
+    return delegate.config();
+  }
+
+  @Override
   public Future<Void> closeFuture() {
     return delegate.closeFuture();
   }

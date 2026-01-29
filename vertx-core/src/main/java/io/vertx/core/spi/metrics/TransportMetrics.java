@@ -24,11 +24,6 @@ import io.vertx.core.net.SocketAddress;
 public interface TransportMetrics<S> extends NetworkMetrics<S> {
 
   /**
-   * @return the transport type, {@code tcp} or {@code quic}
-   */
-  String type();
-
-  /**
    * Called when a client has connected, which is applicable for connections.<p/>
    *
    * The remote name of the client is a best effort to provide the name of the remote host, i.e. if the name

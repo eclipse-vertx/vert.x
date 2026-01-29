@@ -14,6 +14,8 @@ import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
+import static io.vertx.core.net.ClientOptionsBase.DEFAULT_METRICS_NAME;
+
 /**
  * Should this be {@code TcpConfig} instead ?
  *
@@ -22,36 +24,39 @@ import java.time.Duration;
 @DataObject
 public abstract class TcpEndpointConfig {
 
-  private TcpOptions transportOptions;
+  private TcpConfig transportConfig;
   private SSLEngineOptions sslEngineOptions;
   private Duration idleTimeout;
   private Duration readIdleTimeout;
   private Duration writeIdleTimeout;
+  private String metricsName;
   private NetworkLogging networkLogging;
   private boolean ssl;
 
   public TcpEndpointConfig() {
-    this.transportOptions = new TcpOptions();
+    this.transportConfig = new TcpConfig();
     this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.idleTimeout = null;
     this.readIdleTimeout = null;
     this.writeIdleTimeout = null;
+    this.metricsName = DEFAULT_METRICS_NAME;
     this.networkLogging = null;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
   }
 
   public TcpEndpointConfig(TcpEndpointConfig other) {
-    this.transportOptions = other.transportOptions != null ? new TcpOptions(other.transportOptions) : null;
+    this.transportConfig = other.transportConfig != null ? new TcpConfig(other.transportConfig) : null;
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.idleTimeout = other.idleTimeout;
     this.readIdleTimeout = other.readIdleTimeout;
     this.writeIdleTimeout = other.writeIdleTimeout;
+    this.metricsName = other.metricsName;
     this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
     this.ssl = other.ssl;
   }
 
   public TcpEndpointConfig(TCPSSLOptions options) {
-    setTransportOptions(new TcpOptions(options.getTransportOptions()));
+    setTransportConfig(new TcpConfig(options.getTransportOptions()));
     setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
@@ -63,18 +68,18 @@ public abstract class TcpEndpointConfig {
   /**
    * @return the client TCP transport options
    */
-  public TcpOptions getTransportOptions() {
-    return transportOptions;
+  public TcpConfig getTransportConfig() {
+    return transportConfig;
   }
 
   /**
-   * Set the client TCP transport options.
+   * Set the client TCP transport config.
    *
-   * @param transportOptions the transport options
+   * @param transportConfig the transport config
    * @return a reference to this, so the API can be used fluently
    */
-  public TcpEndpointConfig setTransportOptions(TcpOptions transportOptions) {
-    this.transportOptions = transportOptions;
+  public TcpEndpointConfig setTransportConfig(TcpConfig transportConfig) {
+    this.transportConfig = transportConfig;
     return this;
   }
 
@@ -104,7 +109,7 @@ public abstract class TcpEndpointConfig {
   }
 
   /**
-   * Set the idle timeout, default time unit is seconds. Zero means don't time out.
+   * Set the idle timeout, zero or {@code null} means don't time out.
    * This determines if a connection will timeout and be closed if no data is received nor sent within the timeout.
    *
    * @param idleTimeout  the timeout
@@ -119,8 +124,8 @@ public abstract class TcpEndpointConfig {
   }
 
   /**
-   * Set the read idle timeout. Zero means don't time out.
-   * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   * <p>Set the read idle timeout, zero or {@code null} means or null means don't time out. This determines if a
+   * connection will timeout and be closed if no data is received within the timeout.</p>
    *
    * @param idleTimeout  the read timeout
    * @return a reference to this, so the API can be used fluently
@@ -141,8 +146,8 @@ public abstract class TcpEndpointConfig {
   }
 
   /**
-   * Set the write idle timeout, default time unit is seconds. Zero means don't time out.
-   * This determines if a connection will timeout and be closed if no data is sent within the timeout.
+   * <p>Set the write idle timeout, zero or {@code null} means don't time out. This determines if a
+   * connection will timeout and be closed if no data is sent within the timeout.</p>
    *
    * @param idleTimeout  the write timeout
    * @return a reference to this, so the API can be used fluently
@@ -160,6 +165,26 @@ public abstract class TcpEndpointConfig {
    */
   public Duration getWriteIdleTimeout() {
     return writeIdleTimeout;
+  }
+
+
+  /**
+   * @return the metrics name identifying the reported metrics.
+   */
+  public String getMetricsName() {
+    return metricsName;
+  }
+
+  /**
+   * Set the metrics name identifying the reported metrics, useful for grouping metrics
+   * with the same name.
+   *
+   * @param metricsName the metrics name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpEndpointConfig setMetricsName(String metricsName) {
+    this.metricsName = metricsName;
+    return this;
   }
 
   /**

@@ -23,8 +23,8 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2StreamChannel;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.http1x.Http1xClientConnection;
-import io.vertx.core.http.impl.http1x.Http2UpgradeClientConnection;
+import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.HttpRequestHead;
@@ -73,7 +73,7 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
   }
 
   @Override
-  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1xClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics) {
+  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1ClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics) {
     return new MultiplexChannelUpgrade(conn.metric());
   }
 

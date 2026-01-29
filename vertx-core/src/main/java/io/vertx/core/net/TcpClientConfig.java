@@ -25,7 +25,6 @@ import java.util.List;
 public class TcpClientConfig extends TcpEndpointConfig {
 
   private Duration connectTimeout;
-  private String metricsName;
   private ProxyOptions proxyOptions;
   private List<String> nonProxyHosts;
   private int reconnectAttempts;
@@ -34,7 +33,6 @@ public class TcpClientConfig extends TcpEndpointConfig {
   public TcpClientConfig() {
     super();
     this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
-    this.metricsName = ClientOptionsBase.DEFAULT_METRICS_NAME;
     this.proxyOptions = null;
     this.nonProxyHosts = null;
     this.reconnectAttempts = NetClientOptions.DEFAULT_RECONNECT_ATTEMPTS;
@@ -44,7 +42,6 @@ public class TcpClientConfig extends TcpEndpointConfig {
   public TcpClientConfig(TcpClientConfig other) {
     super(other);
     this.connectTimeout = other.connectTimeout;
-    this.metricsName = other.metricsName;
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
     this.reconnectAttempts = other.reconnectAttempts;
@@ -65,8 +62,8 @@ public class TcpClientConfig extends TcpEndpointConfig {
     setProxyOptions(options.getProxyOptions() != null ? new ProxyOptions(options.getProxyOptions()) : null);
   }
 
-  public TcpClientConfig setTransportOptions(TcpOptions transportOptions) {
-    return (TcpClientConfig)super.setTransportOptions(transportOptions);
+  public TcpClientConfig setTransportConfig(TcpConfig transportConfig) {
+    return (TcpClientConfig)super.setTransportConfig(transportConfig);
   }
 
   public TcpClientConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
@@ -83,6 +80,11 @@ public class TcpClientConfig extends TcpEndpointConfig {
 
   public TcpClientConfig setWriteIdleTimeout(Duration idleTimeout) {
     return (TcpClientConfig)super.setWriteIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public TcpClientConfig setMetricsName(String metricsName) {
+    return (TcpClientConfig)super.setMetricsName(metricsName);
   }
 
   @Override
@@ -112,25 +114,6 @@ public class TcpClientConfig extends TcpEndpointConfig {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
     }
     this.connectTimeout = connectTimeout;
-    return this;
-  }
-
-  /**
-   * @return the metrics name identifying the reported metrics.
-   */
-  public String getMetricsName() {
-    return metricsName;
-  }
-
-  /**
-   * Set the metrics name identifying the reported metrics, useful for grouping metrics
-   * with the same name.
-   *
-   * @param metricsName the metrics name
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TcpClientConfig setMetricsName(String metricsName) {
-    this.metricsName = metricsName;
     return this;
   }
 

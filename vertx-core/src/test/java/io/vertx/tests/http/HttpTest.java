@@ -27,6 +27,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
+import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
@@ -2941,7 +2942,7 @@ public abstract class HttpTest extends SimpleHttpTest {
           }).connectionHandler(conn -> {
           Context current = Vertx.currentContext();
           // Not great but works for now
-          if (server instanceof HttpServerImpl) {
+          if (server instanceof TcpHttpServer) {
             assertTrue(Context.isOnEventLoopThread());
             assertTrue(current.isEventLoopContext());
             assertNotSame(context, current);

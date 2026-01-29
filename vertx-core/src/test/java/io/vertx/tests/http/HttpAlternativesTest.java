@@ -82,7 +82,7 @@ public class HttpAlternativesTest extends VertxTestBase {
     }
     if (!quicVersions.isEmpty()) {
       HttpServerConfig config = new HttpServerConfig();
-      config.addSupportedVersion(HttpVersion.HTTP_3);
+      config.addVersion(HttpVersion.HTTP_3);
       config.getSslOptions().setKeyCertOptions(cert.get());
       HttpServer server = vertx.createHttpServer(config);
       server.requestHandler(request -> {
@@ -202,10 +202,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .setFollowAlternativeServices(true)
         .setSsl(true)
         .setSslOptions(new ClientSSLOptions().setTrustAll(true).setUseAlpn(true))
-        .setSupportedVersions(List.of(initialProtocol, upgradedProtocol))
-        .setHttp1Config(new Http1ClientConfig())
-        .setHttp2Config(new Http2ClientConfig())
-        .setHttp3Config(new Http3ClientConfig())
+        .setVersions(List.of(initialProtocol, upgradedProtocol))
       ));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request

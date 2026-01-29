@@ -40,8 +40,8 @@ public class QuicClientConfig extends QuicEndpointConfig {
   }
 
   @Override
-  public QuicClientConfig setTransportOptions(QuicOptions transportOptions) {
-    return (QuicClientConfig) super.setTransportOptions(transportOptions);
+  public QuicClientConfig setTransportConfig(QuicConfig transportConfig) {
+    return (QuicClientConfig) super.setTransportConfig(transportConfig);
   }
 
   @Override
@@ -67,6 +67,11 @@ public class QuicClientConfig extends QuicEndpointConfig {
   @Override
   public QuicClientConfig setStreamWriteIdleTimeout(Duration idleTimeout) {
     return (QuicClientConfig) super.setStreamWriteIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public QuicClientConfig setMetricsName(String metricsName) {
+    return (QuicClientConfig) super.setMetricsName(metricsName);
   }
 
   @Override

@@ -110,11 +110,8 @@ public class Http2ClientConfig {
   }
 
   /**
-   * Set the keep alive timeout for HTTP/2 connections.
-   * <p/>
-   * This value determines how long a connection remains unused in the pool before being evicted and closed.
-   * <p/>
-   * A timeout of {@code null} means there is no timeout.
+   * <p>Set the keep alive timeout for HTTP/2 connections. This value determines how long a connection remains
+   * unused in the pool before being evicted and closed. A timeout of zero or {@code null} means there is no timeout.</p>
    *
    * @param keepAliveTimeout the timeout, in seconds
    * @return a reference to this, so the API can be used fluently
