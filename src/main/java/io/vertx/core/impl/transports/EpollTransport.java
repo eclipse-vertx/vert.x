@@ -43,7 +43,7 @@ public class EpollTransport implements Transport {
 
   /**
    * Return the number of of pending TFO connections in SYN-RCVD state for TCP_FASTOPEN.
-   *
+   * <p>
    * {@see #setPendingFastOpenRequestsThreshold}
    */
   public static int getPendingFastOpenRequestsThreshold() {
@@ -155,6 +155,9 @@ public class EpollTransport implements Transport {
       if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
         bootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
       }
+      if (options.getTcpUserTimeout() > 0) {
+        bootstrap.childOption(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
+      }
     }
     Transport.super.configure(options, domainSocket, bootstrap);
   }
@@ -168,6 +171,15 @@ public class EpollTransport implements Transport {
       bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIdleSeconds() != -1) {
+        bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+      }
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveCount() != -1) {
+        bootstrap.option(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
+      }
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
+        bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
+      }
     }
     Transport.super.configure(options, domainSocket, bootstrap);
   }

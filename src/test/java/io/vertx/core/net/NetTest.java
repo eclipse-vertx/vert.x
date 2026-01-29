@@ -276,6 +276,27 @@ public class NetTest extends VertxTestBase {
     assertEquals(randLong, options.getSslHandshakeTimeout());
     assertIllegalArgumentException(() -> options.setSslHandshakeTimeout(-123));
 
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS, options.getTcpKeepAliveIdleSeconds());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpKeepAliveIdleSeconds(rand));
+    assertEquals(rand, options.getTcpKeepAliveIdleSeconds());
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(0));
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(-123));
+
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPALIVE_COUNT, options.getTcpKeepAliveCount());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpKeepAliveCount(rand));
+    assertEquals(rand, options.getTcpKeepAliveCount());
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(0));
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(-123));
+
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS, options.getTcpKeepAliveIntervalSeconds());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpKeepAliveIntervalSeconds(rand));
+    assertEquals(rand, options.getTcpKeepAliveIntervalSeconds());
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIntervalSeconds(0));
+    assertIllegalArgumentException(() -> options.setTcpKeepAliveIntervalSeconds(-123));
+
     testComplete();
   }
 
@@ -414,6 +435,11 @@ public class NetTest extends VertxTestBase {
     assertEquals(rand, options.getTcpKeepAliveIntervalSeconds());
     assertIllegalArgumentException(() -> options.setTcpKeepAliveIntervalSeconds(0));
     assertIllegalArgumentException(() -> options.setTcpKeepAliveIntervalSeconds(-123));
+
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpUserTimeout(rand));
+    assertEquals(rand, options.getTcpUserTimeout());
+    assertIllegalArgumentException(() -> options.setTcpUserTimeout(-123));
 
     testComplete();
   }
