@@ -10,7 +10,7 @@
  */
 package io.vertx.core.net;
 
-import io.netty.handler.logging.ByteBufFormat;
+import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
@@ -21,6 +21,7 @@ import static io.vertx.core.net.NetServerOptions.*;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@DataObject
 public class TcpServerConfig extends TcpEndpointConfig {
 
   private int port;

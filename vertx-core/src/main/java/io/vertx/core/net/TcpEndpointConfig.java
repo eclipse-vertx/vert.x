@@ -10,7 +10,7 @@
  */
 package io.vertx.core.net;
 
-import io.netty.handler.logging.ByteBufFormat;
+import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
@@ -19,6 +19,7 @@ import java.time.Duration;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@DataObject
 public abstract class TcpEndpointConfig {
 
   private TcpOptions transportOptions;
