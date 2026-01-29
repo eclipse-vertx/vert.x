@@ -273,6 +273,17 @@ public interface Vertx extends Measured {
   /**
    * Create a HTTP/HTTPS client using the specified client and pool options
    *
+   * @param clientConfig  the client config to use
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClientAgent createHttpClient(HttpClientConfig clientConfig, PoolOptions poolOptions) {
+    return httpClientBuilder().with(clientConfig).with(poolOptions).build();
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client and pool options
+   *
    * @param clientOptions  the client options to use
    * @param poolOptions  the pool options to use
    * @return the client
