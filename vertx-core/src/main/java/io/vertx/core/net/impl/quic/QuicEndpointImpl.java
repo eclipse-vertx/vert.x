@@ -59,7 +59,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     CC_MAP.put(QuicCongestionControlAlgorithm.BBR, io.netty.handler.codec.quic.QuicCongestionControlAlgorithm.BBR);
   }
 
-  private final QuicEndpointConfig options;
+  private final QuicEndpointConfig config;
   private final SSLOptions sslOptions;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
@@ -72,10 +72,10 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
   public QuicEndpointImpl(VertxInternal vertx,
                           BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                          QuicEndpointConfig options,
+                          QuicEndpointConfig config,
                           SSLOptions sslOptions) {
 
-    String keyLogFilePath = options.getKeyLogFile();
+    String keyLogFilePath = config.getKeyLogFile();
     File keylogFile;
     if (keyLogFilePath != null) {
       keylogFile = new File(keyLogFilePath);
@@ -104,7 +104,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       keylog = null;
     }
 
-    this.options = options;
+    this.config = config;
     this.sslOptions = sslOptions;
     this.vertx = Objects.requireNonNull(vertx);
     this.metricsProvider = metricsProvider;
@@ -161,7 +161,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   void initQuicCodecBuilder(QuicCodecBuilder<?> codecBuilder, TransportMetrics<?> metrics) throws Exception {
-    QuicOptions transportOptions = options.getTransportOptions();
+    QuicOptions transportOptions = config.getTransportOptions();
     codecBuilder.initialMaxData(transportOptions.getInitialMaxData());
     codecBuilder.initialMaxStreamDataBidirectionalLocal(transportOptions.getInitialMaxStreamDataBidiLocal());
     codecBuilder.initialMaxStreamDataBidirectionalRemote(transportOptions.getInitialMaxStreamDataBidiRemote());
@@ -221,7 +221,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       VertxMetrics metricsFactory = vertx.metrics();
       TransportMetrics<?> metrics;
       if (metricsProvider != null) {
-        metrics = metricsProvider.apply(options, address);
+        metrics = metricsProvider.apply(config, address);
       } else {
         metrics = null;
       }

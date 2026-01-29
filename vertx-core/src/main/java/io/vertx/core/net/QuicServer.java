@@ -36,10 +36,10 @@ public interface QuicServer extends QuicEndpoint {
    * <p>The returned server can be bound, after setting a connection {@link #handler(Handler) handler}</p>
    *
    * @param vertx the vertx instance
-   * @param options the server configuration options
+   * @param config the server configuration
    * @return the server
    */
-  static QuicServer create(Vertx vertx, QuicServerConfig options, ServerSSLOptions sslOptions) {
+  static QuicServer create(Vertx vertx, QuicServerConfig config, ServerSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
     BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
@@ -48,7 +48,7 @@ public interface QuicServer extends QuicEndpoint {
     } else {
       metricsProvider = null;
     }
-    return QuicServerImpl.create((VertxInternal) vertx, metricsProvider, options, sslOptions);
+    return QuicServerImpl.create((VertxInternal) vertx, metricsProvider, config, sslOptions);
   }
 
   /**

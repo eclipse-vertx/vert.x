@@ -40,7 +40,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   static final boolean DISABLE_WEBSOCKETS = SysProps.DISABLE_WEBSOCKETS.getBoolean();
 
   private final VertxInternal vertx;
-  final HttpServerConfig options;
+  final HttpServerConfig config;
   private final boolean registerWebSocketWriteHandlers;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> webSocketHandler;
@@ -53,9 +53,9 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private CloseSequence closeSequence;
 
-  public HttpServerImpl(VertxInternal vertx, HttpServerConfig options, boolean registerWebSocketWriteHandlers) {
+  public HttpServerImpl(VertxInternal vertx, HttpServerConfig config, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
-    this.options = options;
+    this.config = config;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
   }
 
@@ -165,7 +165,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
 
   @Override
   public Future<HttpServer> listen() {
-    return listen(options.getTcpPort(), options.getTcpHost());
+    return listen(config.getTcpPort(), config.getTcpHost());
   }
 
   @Override
@@ -176,7 +176,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
     if (tcpServer != null) {
       throw new IllegalStateException();
     }
-    HttpServerConfig options = this.options;
+    HttpServerConfig config = this.config;
     ContextInternal context = vertx.getOrCreateContext();
     ContextInternal listenContext;
     // Not sure of this
@@ -187,8 +187,8 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .build();
     }
-    NetServerInternal server = new NetServerBuilder(vertx, options.getTcpConfig(), options.getSslOptions())
-      .fileRegionEnabled(!options.getCompression().isCompressionEnabled())
+    NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
+      .fileRegionEnabled(!config.getCompression().isCompressionEnabled())
       .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(new HttpServerOptions(), addr))
       .build();
     Handler<Throwable> h = exceptionHandler;
@@ -199,7 +199,7 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
       Supplier<ContextInternal> streamContextSupplier = context::duplicate;
       String host = address.isInetSocket() ? address.host() : "localhost";
       int port = address.port();
-      String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
+      String serverOrigin = (config.isSsl() ? "https" : "http") + "://" + host + ":" + port;
       HttpServerConnectionHandler handler = new HttpServerConnectionHandler(
         this,
         serverOrigin,
@@ -209,28 +209,28 @@ public class HttpServerImpl implements HttpServer, MetricsProvider {
         webSocketHandhakeHandler,
         connectionHandler,
         exceptionHandler,
-        options.getHttp2Config().getConnectionWindowSize());
+        config.getHttp2Config().getConnectionWindowSize());
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),
-        options.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP,
+        config.getStrictThreadMode() && context.threadingModel() == ThreadingModel.EVENT_LOOP,
         streamContextSupplier,
         this,
-        options.getCompression().isCompressionEnabled(), // Todo : remove
-        options.getCompression().isDecompressionEnabled(), // Todo : remove
-        options.getTracingPolicy(),
-        options.getTcpConfig().getNetworkLogging() != null,
-        options.getCompression().getCompressors().toArray(new CompressionOptions[0]),
-        options.getCompression().getContentSizeThreshold(),
-        options.isHandle100ContinueAutomatically(),
-        options.getMaxFormAttributeSize(),
-        options.getMaxFormFields(),
-        options.getMaxFormBufferedBytes(),
-        options.getHttp1Config(),
-        options.getHttp2Config(),
+        config.getCompression().isCompressionEnabled(), // Todo : remove
+        config.getCompression().isDecompressionEnabled(), // Todo : remove
+        config.getTracingPolicy(),
+        config.getTcpConfig().getNetworkLogging() != null,
+        config.getCompression().getCompressors().toArray(new CompressionOptions[0]),
+        config.getCompression().getContentSizeThreshold(),
+        config.isHandle100ContinueAutomatically(),
+        config.getMaxFormAttributeSize(),
+        config.getMaxFormFields(),
+        config.getMaxFormBufferedBytes(),
+        config.getHttp1Config(),
+        config.getHttp2Config(),
         registerWebSocketWriteHandlers,
-        options.getWebSocketConfig(),
-        options.isSsl() ? options.getSslOptions() : null,
+        config.getWebSocketConfig(),
+        config.isSsl() ? config.getSslOptions() : null,
         serverOrigin,
         handler,
         exceptionHandler,

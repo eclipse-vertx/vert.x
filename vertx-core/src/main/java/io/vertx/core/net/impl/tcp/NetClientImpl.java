@@ -57,7 +57,7 @@ class NetClientImpl implements NetClientInternal {
   protected final ByteBufFormat logging;
 
   private final VertxInternal vertx;
-  private final TcpClientConfig options;
+  private final TcpClientConfig config;
   private final TcpOptions transportOptions;
   private final boolean registerWriteHandler;
   private final String localAddress;
@@ -69,7 +69,7 @@ class NetClientImpl implements NetClientInternal {
 
   public NetClientImpl(VertxInternal vertx,
                        TransportMetrics metrics,
-                       TcpClientConfig options,
+                       TcpClientConfig config,
                        ClientSSLOptions sslOptions,
                        boolean registerWriteHandler,
                        String localAddress) {
@@ -81,18 +81,18 @@ class NetClientImpl implements NetClientInternal {
         NetClientImpl.this.handleClose(completion);
       }
     };
-    this.options = options;
+    this.config = config;
     this.registerWriteHandler = registerWriteHandler;
     this.localAddress = localAddress;
-    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(options.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
+    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
     this.metrics = metrics;
-    this.logging = options.getNetworkLogging() != null ? options.getNetworkLogging().getDataFormat() : null;
-    this.idleTimeout = options.getIdleTimeout() != null ? options.getIdleTimeout() : Duration.ofMillis(0L);
-    this.readIdleTimeout = options.getReadIdleTimeout() != null ? options.getReadIdleTimeout() : Duration.ofMillis(0L);
-    this.writeIdleTimeout = options.getWriteIdleTimeout() != null ? options.getWriteIdleTimeout() : Duration.ofMillis(0L);
-    this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
+    this.logging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
+    this.idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout() : Duration.ofMillis(0L);
+    this.readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout() : Duration.ofMillis(0L);
+    this.writeIdleTimeout = config.getWriteIdleTimeout() != null ? config.getWriteIdleTimeout() : Duration.ofMillis(0L);
+    this.proxyFilter = config.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(config.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.sslOptions = sslOptions;
-    this.transportOptions = options.getTransportOptions();
+    this.transportOptions = config.getTransportOptions();
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
@@ -135,7 +135,7 @@ class NetClientImpl implements NetClientInternal {
       connectOptions.setHost(peerHost);
       connectOptions.setPort(remoteAddress.port());
     }
-    connectOptions.setSsl(options.isSsl());
+    connectOptions.setSsl(config.isSsl());
     connectOptions.setSniServerName(serverName);
     connectOptions.setSslOptions(sslOptions);
     return connect(connectOptions);
@@ -145,7 +145,7 @@ class NetClientImpl implements NetClientInternal {
   public Future<NetSocket> connect(ConnectOptions connectOptions) {
     ContextInternal context = vertx.getOrCreateContext();
     Promise<NetSocket> promise = context.promise();
-    connectInternal(connectOptions, registerWriteHandler, promise, context, options.getReconnectAttempts());
+    connectInternal(connectOptions, registerWriteHandler, promise, context, config.getReconnectAttempts());
     return promise.future();
   }
 
@@ -267,12 +267,12 @@ class NetClientImpl implements NetClientInternal {
 
       int connectTimeout = connectOptions.getTimeout();
       if (connectTimeout < 0) {
-        connectTimeout = (int)options.getConnectTimeout().toMillis();
+        connectTimeout = (int) config.getConnectTimeout().toMillis();
       }
       boolean domainSocket = remoteAddress.isDomainSocket();
 
       // Transport specific TCP configuration
-      vertx.transport().configure(options.getTransportOptions(), domainSocket, bootstrap);
+      vertx.transport().configure(config.getTransportOptions(), domainSocket, bootstrap);
 
       if (localAddress != null) {
         bootstrap.localAddress(localAddress, 0);
@@ -296,7 +296,7 @@ class NetClientImpl implements NetClientInternal {
 
       ProxyOptions proxyOptions = connectOptions.getProxyOptions();
       if (proxyOptions == null) {
-        proxyOptions = options.getProxyOptions();
+        proxyOptions = config.getProxyOptions();
       }
       if (proxyFilter != null) {
         if (!proxyFilter.test(remoteAddress)) {
@@ -330,9 +330,9 @@ class NetClientImpl implements NetClientInternal {
           boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
           if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
             context.emit(v -> {
-              log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
+              log.debug("Failed to create connection. Will retry in " + config.getReconnectInterval() + " milliseconds");
               //Set a timer to retry connection
-              vertx.setTimer(options.getReconnectInterval().toMillis(), tid ->
+              vertx.setTimer(config.getReconnectInterval().toMillis(), tid ->
                 connectInternal(
                   connectOptions,
                   registerWriteHandlers,

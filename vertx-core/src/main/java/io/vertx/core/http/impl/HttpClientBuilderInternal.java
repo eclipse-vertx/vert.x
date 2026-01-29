@@ -168,10 +168,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return config;
   }
 
-  private Handler<HttpConnection> connectionHandler(HttpClientConfig options) {
+  private Handler<HttpConnection> connectionHandler(HttpClientConfig config) {
     int windowSize;
-    if (options.getHttp2Config() != null) {
-      windowSize = options.getHttp2Config().getConnectionWindowSize();
+    if (config.getHttp2Config() != null) {
+      windowSize = config.getHttp2Config().getConnectionWindowSize();
     } else {
       windowSize = 0;
     }

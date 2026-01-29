@@ -59,7 +59,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig options, SocketAddress localAddress) {
+  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig config, SocketAddress localAddress) {
     return new FakeHttpServerMetrics();
   }
 
@@ -81,7 +81,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   @Override
-  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig options, SocketAddress localAddress) {
+  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {
     return new FakeQuicEndpointMetrics();
   }
 

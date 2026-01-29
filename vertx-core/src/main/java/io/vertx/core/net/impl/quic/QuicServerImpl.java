@@ -58,19 +58,19 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   public static final String QUIC_SERVER_MAP_KEY = "__vertx.shared.quicServers";
 
   public static QuicServerImpl create(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                                      QuicServerConfig options, ServerSSLOptions sslOptions) {
-    return new QuicServerImpl(vertx, metricsProvider, new QuicServerConfig(options), sslOptions);
+                                      QuicServerConfig config, ServerSSLOptions sslOptions) {
+    return new QuicServerImpl(vertx, metricsProvider, new QuicServerConfig(config), sslOptions);
   }
 
-  private final QuicServerConfig options;
+  private final QuicServerConfig config;
   private final ServerSSLOptions sslOptions;
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
   public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicServerConfig options, ServerSSLOptions sslOptions) {
-    super(vertx, metricsProvider, options, sslOptions);
-    this.options = options;
+                        QuicServerConfig config, ServerSSLOptions sslOptions) {
+    super(vertx, metricsProvider, config, sslOptions);
+    this.config = config;
     this.sslOptions = sslOptions;
   }
 
@@ -88,7 +88,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   @Override
   protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) throws Exception {
-    if (options.isLoadBalanced()) {
+    if (config.isLoadBalanced()) {
       ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
       Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
@@ -134,16 +134,16 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {
-      switch (options.getClientAddressValidation()) {
+      switch (config.getClientAddressValidation()) {
         case BASIC:
           qtc = InsecureQuicTokenHandler.INSTANCE;
           break;
         case CRYPTO:
-          KeyCertOptions tokenValidationKey = options.getClientAddressValidationKey();
+          KeyCertOptions tokenValidationKey = config.getClientAddressValidationKey();
           if (tokenValidationKey == null) {
             throw new IllegalArgumentException("The server must be configured with a token validation key to operate address validation");
           }
-          Duration timeWindow = options.getClientAddressValidationTimeWindow();
+          Duration timeWindow = config.getClientAddressValidationTimeWindow();
           TokenManager tokenManager = new TokenManager(vertx, timeWindow);
           tokenManager.init(tokenValidationKey);
           qtc = tokenManager;
@@ -158,9 +158,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
-                ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
-                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
-                  options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging,
+                ByteBufFormat activityLogging = config.getStreamLogging() != null ? config.getStreamLogging().getDataFormat() : null;
+                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getStreamIdleTimeout(),
+                  config.getStreamReadIdleTimeout(), config.getStreamWriteIdleTimeout(), activityLogging,
                   vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);
@@ -181,7 +181,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 */
             });
 
-    QLogConfig qlogCfg = options.getQLogConfig();
+    QLogConfig qlogCfg = config.getQLogConfig();
     if (qlogCfg != null) {
       if (qlogCfg.getPath() == null) {
         throw new IllegalArgumentException("Missing QLog path configuration");
@@ -270,6 +270,6 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   @Override
   public Future<Integer> listen() {
-    return listen(options.getPort(), options.getHost());
+    return listen(config.getPort(), config.getHost());
   }
 }

@@ -49,19 +49,19 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   public static QuicClientImpl create(VertxInternal vertx,
                                       BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                                      QuicClientConfig options, ClientSSLOptions sslOptions) {
-    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(options), sslOptions);
+                                      QuicClientConfig config, ClientSSLOptions sslOptions) {
+    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(config), sslOptions);
   }
 
-  private final QuicClientConfig options;
+  private final QuicClientConfig config;
   private final ClientSSLOptions sslOptions;
   private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
   public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicClientConfig options, ClientSSLOptions sslOptions) {
-    super(vertx, metricsProvider, options, sslOptions);
-    this.options = options;
+                        QuicClientConfig config, ClientSSLOptions sslOptions) {
+    super(vertx, metricsProvider, config, sslOptions);
+    this.config = config;
     this.sslOptions = sslOptions;
   }
 
@@ -107,11 +107,11 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     return fut.compose(sslContextProvider -> {
       Duration connectTimeout = connectOptions.getTimeout();
       if (connectTimeout == null) {
-        connectTimeout = options.getConnectTimeout();
+        connectTimeout = config.getConnectTimeout();
       }
       QLogConfig qlogConfig = connectOptions.getQLogConfig();
       if (qlogConfig == null) {
-        qlogConfig = options.getQLogConfig();
+        qlogConfig = config.getQLogConfig();
       }
       return connect(address, serverName, qlogConfig, context, connectTimeout, sslContextProvider);
     });
@@ -147,9 +147,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
-          ByteBufFormat activityLogging = options.getStreamLogging() != null ? options.getStreamLogging().getDataFormat() : null;
-          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, options.getStreamIdleTimeout(),
-            options.getStreamReadIdleTimeout(), options.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
+          ByteBufFormat activityLogging = config.getStreamLogging() != null ? config.getStreamLogging().getDataFormat() : null;
+          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getStreamIdleTimeout(),
+            config.getStreamReadIdleTimeout(), config.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })

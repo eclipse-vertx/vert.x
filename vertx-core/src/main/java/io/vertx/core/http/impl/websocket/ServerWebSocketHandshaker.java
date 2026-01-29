@@ -51,20 +51,20 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> implements ServerWebSocketHandshake, ServerWebSocket {
 
   private final Http1xServerRequest request;
-  private final WebSocketServerConfig options;
+  private final WebSocketServerConfig config;
   private final WebSocketServerHandshaker handshaker;
   private final boolean registerWebSocketWriteHandlers;
   private boolean done;
 
   public ServerWebSocketHandshaker(Http1xServerRequest request,
                                    WebSocketServerHandshaker handshaker,
-                                   WebSocketServerConfig options,
+                                   WebSocketServerConfig config,
                                    boolean registerWebSocketWriteHandlers) {
     super(request.context());
     this.request = request;
     this.handshaker = handshaker;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
-    this.options = options;
+    this.config = config;
   }
 
   @Override
@@ -182,15 +182,15 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       pipeline.remove(compressor);
     }
     VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
-      long closingTimeoutMS = options.getClosingTimeout().toMillis() >= 0 ? options.getClosingTimeout().toMillis() : 0L;
+      long closingTimeoutMS = config.getClosingTimeout().toMillis() >= 0 ? config.getClosingTimeout().toMillis() : 0L;
       WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context(), ctx, true, closingTimeoutMS,httpConn.metrics());
       ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
         request.context(),
         webSocketConn,
         handshaker.version() != WebSocketVersion.V00,
         request,
-        options.getMaxFrameSize(),
-        options.getMaxMessageSize(),
+        config.getMaxFrameSize(),
+        config.getMaxMessageSize(),
         registerWebSocketWriteHandlers);
       String subprotocol = handshaker.selectedSubprotocol();
       webSocket.subProtocol(subprotocol);

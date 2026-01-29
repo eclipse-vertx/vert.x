@@ -45,16 +45,16 @@ public class Http3ClientTransport implements HttpClientTransport {
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public Http3ClientTransport(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig options) {
+  public Http3ClientTransport(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
 
-    ClientSSLOptions sslOptions = options.getSslOptions()
+    ClientSSLOptions sslOptions = config.getSslOptions()
       .copy()
       .setUseAlpn(true)
       .setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
 
-    QuicClientConfig quicConfig = new QuicClientConfig(options.getQuicConfig());
+    QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
 
-    Http3Settings localSettings = options.getHttp3Config().getInitialSettings();
+    Http3Settings localSettings = config.getHttp3Config().getInitialSettings();
     if (localSettings == null) {
       localSettings = new Http3Settings();
     }
@@ -63,7 +63,7 @@ public class Http3ClientTransport implements HttpClientTransport {
     this.clientMetrics = clientMetrics;
     this.lock = new ReentrantLock();
     this.quicConfig = quicConfig;
-    this.keepAliveTimeoutMillis = options.getHttp3Config().getKeepAliveTimeout() == null ? 0L : options.getHttp3Config().getKeepAliveTimeout().toMillis();
+    this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
     this.sslOptions = sslOptions;
   }

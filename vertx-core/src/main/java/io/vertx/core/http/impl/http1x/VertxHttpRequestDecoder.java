@@ -49,13 +49,13 @@ public class VertxHttpRequestDecoder extends HttpRequestDecoder {
   private final AsciiString _Content_Length;
   private final AsciiString _Accept;
 
-  public VertxHttpRequestDecoder(Http1ServerConfig options) {
+  public VertxHttpRequestDecoder(Http1ServerConfig config) {
     super(
-      options.getMaxInitialLineLength(),
-      options.getMaxHeaderSize(),
-      options.getMaxChunkSize(),
+      config.getMaxInitialLineLength(),
+      config.getMaxHeaderSize(),
+      config.getMaxChunkSize(),
       !HttpHeadersInternal.DISABLE_HTTP_HEADERS_VALIDATION,
-      options.getDecoderInitialBufferSize());
+      config.getDecoderInitialBufferSize());
 
     boolean internToLowerCase = SysProps.INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE.getBoolean();
 

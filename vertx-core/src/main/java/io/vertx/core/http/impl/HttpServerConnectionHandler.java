@@ -96,10 +96,10 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     } else {
       Http2ServerConnection http2Conn = (Http2ServerConnection) conn;
       http2Conn.streamHandler(stream -> {
-        HttpServerConfig options = server.options;
+        HttpServerConfig config = server.config;
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
-          options.isHandle100ContinueAutomatically(), options.getMaxFormAttributeSize(), options.getMaxFormFields(),
-          options.getMaxFormBufferedBytes(), serverOrigin);
+          config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
+          config.getMaxFormBufferedBytes(), serverOrigin);
         request.init();
       });
     }
@@ -120,13 +120,13 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
 
   private void initializeWebSocketExtensions(ChannelPipeline pipeline) {
     ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (server.options.getWebSocketConfig().getPerFrameCompressionSupported()) {
-      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.options.getWebSocketConfig().getCompressionLevel()));
+    if (server.config.getWebSocketConfig().getPerFrameCompressionSupported()) {
+      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel()));
     }
-    if (server.options.getWebSocketConfig().getPerMessageCompressionSupported()) {
-      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.options.getWebSocketConfig().getCompressionLevel(),
+    if (server.config.getWebSocketConfig().getPerMessageCompressionSupported()) {
+      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.config.getWebSocketConfig().getCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        server.options.getWebSocketConfig().getAllowServerNoContext(), server.options.getWebSocketConfig().getPreferredClientNoContext()));
+        server.config.getWebSocketConfig().getAllowServerNoContext(), server.config.getWebSocketConfig().getPreferredClientNoContext()));
     }
     if (!extensionHandshakers.isEmpty()) {
       WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(

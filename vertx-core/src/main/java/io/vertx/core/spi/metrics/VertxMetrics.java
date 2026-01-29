@@ -63,7 +63,7 @@ public interface VertxMetrics extends Metrics, Measured {
   /**
    * Version of {@link #createHttpServerMetrics(HttpServerOptions, SocketAddress)} for HTTP/3
    */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig options, SocketAddress localAddress) {
+  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig config, SocketAddress localAddress) {
     return null;
   }
 
@@ -136,11 +136,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * scaled, it is the responsibility of the metrics implementation to eventually merge metrics. In this case
    * the provided {@code server} argument can be used to distinguish the different metrics instances.</p>
    *
-   * @param options      the options used to create the {@link NetServer}
+   * @param config      the config used to create the {@link NetServer}
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig options, SocketAddress localAddress) {
+  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {
     return null;
   }
 
