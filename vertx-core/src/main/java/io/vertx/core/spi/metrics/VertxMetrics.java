@@ -52,18 +52,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code HttpServerMetrics}
    * instances.
    *
-   * @param options      the options used to create the {@link HttpServer}
-   * @param localAddress localAddress the local address the net socket is listening on
+   * @param config      the options used to create the {@link HttpServer}
    * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-    return null;
-  }
-
-  /**
-   * Version of {@link #createHttpServerMetrics(HttpServerOptions, SocketAddress)} for HTTP/3
-   */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig config, SocketAddress localAddress) {
+  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config) {
     return null;
   }
 
@@ -103,11 +95,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code TCPMetrics}
    * instances.
    *
-   * @param options      the options used to create the {@link NetServer}
-   * @param localAddress localAddress the local address the net socket is listening on
+   * @param config the options used to create the {@link NetServer}
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-    default TransportMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+  default TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config) {
     return null;
   }
 
@@ -116,10 +107,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param options the options used to create the {@link NetClient}
+   * @param config the options used to create the {@link NetClient}
    * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createNetClientMetrics(NetClientOptions options) {
+  default TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
     return null;
   }
 
@@ -129,11 +120,10 @@ public interface VertxMetrics extends Metrics, Measured {
    * scaled, it is the responsibility of the metrics implementation to eventually merge metrics. In this case
    * the provided {@code server} argument can be used to distinguish the different metrics instances.</p>
    *
-   * @param config      the config used to create the {@link NetServer}
-   * @param localAddress localAddress the local address the net socket is listening on
+   * @param config the config used to create the {@link NetServer}
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {
+  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config) {
     return null;
   }
 

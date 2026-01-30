@@ -14,6 +14,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
@@ -37,15 +38,14 @@ public class NetClientBuilder {
     this.registerWriteHandler = false;
   }
 
-  public NetClientBuilder(VertxInternal vertx, NetClientOptions options) {
+  public NetClientBuilder localAddress(String localAddress) {
+    this.localAddress = localAddress;
+    return this;
+  }
 
-    TcpClientConfig cfg = new TcpClientConfig(options);
-
-    this.vertx = vertx;
-    this.config = cfg;
-    this.sslOptions = options.getSslOptions();
-    this.localAddress = options.getLocalAddress();
-    this.registerWriteHandler = options.isRegisterWriteHandler();
+  public NetClientBuilder registerWriteHandler(boolean registerWriteHandler) {
+    this.registerWriteHandler = registerWriteHandler;
+    return this;
   }
 
   public NetClientBuilder metrics(TransportMetrics metrics) {

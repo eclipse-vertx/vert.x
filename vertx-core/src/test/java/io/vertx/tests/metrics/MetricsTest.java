@@ -22,11 +22,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -1233,11 +1229,17 @@ public class MetricsTest extends VertxTestBase {
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(options -> new VertxMetrics() {
         @Override
-        public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+        public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config) {
           lifecycle.compareAndSet(0, 1);
           return new HttpServerMetrics<>() {
+            SocketAddress localAddress;
+            @Override
+            public void bound(boolean tcp, SocketAddress localAddress) {
+              this.localAddress = localAddress;
+            }
             @Override
             public void close() {
+              assertEquals(SocketAddress.inetSocketAddress(8080, "localhost"), localAddress);
               lifecycle.compareAndSet(1, 2);
               HttpServerMetrics.super.close();
             }

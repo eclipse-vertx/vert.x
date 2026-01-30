@@ -14,12 +14,17 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FakeTransportMetrics extends FakeMetricsBase implements TransportMetrics<SocketMetric> {
 
+  private final Set<SocketAddress> tcpBindings = Collections.synchronizedSet(new HashSet<>());
+  private final Set<SocketAddress> udpBindings = Collections.synchronizedSet(new HashSet<>());
   private final String name;
   private final AtomicInteger count = new AtomicInteger();
   private final ConcurrentMap<SocketAddress, SocketMetric[]> sockets = new ConcurrentHashMap<>();
@@ -46,6 +51,24 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
       addr = SocketAddress.inetSocketAddress(addr.port(), "127.0.0.1");
     }
     return addr;
+  }
+
+  public Set<SocketAddress> tcpBindings() {
+    return tcpBindings;
+  }
+
+  public Set<SocketAddress> udpBindings() {
+    return udpBindings;
+  }
+
+  @Override
+  public void bound(boolean tcp, SocketAddress localAddress) {
+    (tcp ? tcpBindings : udpBindings).add(localAddress);
+  }
+
+  @Override
+  public void unbound(boolean tcp, SocketAddress localAddress) {
+    (tcp ? tcpBindings : udpBindings).remove(localAddress);
   }
 
   public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {

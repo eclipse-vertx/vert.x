@@ -42,13 +42,13 @@ public interface QuicServer extends QuicEndpoint {
   static QuicServer create(Vertx vertx, QuicServerConfig config, ServerSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
-    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
+    TransportMetrics<?> serverMetrics;
     if (metrics != null) {
-      metricsProvider = metrics::createQuicEndpointMetrics;
+      serverMetrics = metrics.createQuicEndpointMetrics(config);
     } else {
-      metricsProvider = null;
+      serverMetrics = null;
     }
-    return QuicServerImpl.create((VertxInternal) vertx, metricsProvider, config, sslOptions);
+    return QuicServerImpl.create((VertxInternal) vertx, serverMetrics, config, sslOptions);
   }
 
   /**

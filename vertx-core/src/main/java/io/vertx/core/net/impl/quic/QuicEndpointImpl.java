@@ -33,7 +33,6 @@ import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tls.QuicSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -44,7 +43,6 @@ import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -63,15 +61,15 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private final SSLOptions sslOptions;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
-  protected final BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
-  private TransportMetrics<?> metrics;
+  protected final TransportMetrics<?> metrics;
   private Channel channel;
+  private SocketAddress actualLocalAddress;
   protected ConnectionGroup connectionGroup;
   private FlushStrategy flushStrategy;
   private ContextInternal context;
 
   public QuicEndpointImpl(VertxInternal vertx,
-                          BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                          TransportMetrics<?> metricsProvider,
                           QuicEndpointConfig config,
                           SSLOptions sslOptions) {
 
@@ -107,7 +105,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     this.config = config;
     this.sslOptions = sslOptions;
     this.vertx = Objects.requireNonNull(vertx);
-    this.metricsProvider = metricsProvider;
+    this.metrics = metricsProvider;
     this.manager = new SslContextManager(new SSLEngineOptions() {
       @Override
       public SSLEngineOptions copy() {
@@ -189,13 +187,20 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
   protected void handleBind(Channel channel, TransportMetrics<?> metrics) {
     this.channel = channel;
-    this.metrics = metrics;
     this.connectionGroup = new ConnectionGroup(channel.eventLoop()) {
       @Override
       protected void handleClose(Completable<Void> completion) {
         PromiseInternal<Void> promise = (PromiseInternal<Void>) completion;
         Channel ch = channel;
         ch.close().addListener((ChannelFutureListener) future -> {
+          if (metrics != null) {
+            SocketAddress addr = actualLocalAddress;
+            actualLocalAddress = null;
+            if (addr != null) {
+              metrics.unbound(false, addr);
+            }
+            metrics.close();
+          }
           ContextInternal ctx;
           synchronized (QuicEndpointImpl.this) {
             ctx = context;
@@ -217,21 +222,16 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       context = current;
     }
     Future<SslContextProvider> f1 = manager.resolveSslContextProvider(sslOptions, current);
-    return f1.compose(sslContextProvider -> {
-      VertxMetrics metricsFactory = vertx.metrics();
-      TransportMetrics<?> metrics;
-      if (metricsProvider != null) {
-        metrics = metricsProvider.apply(config, address);
-      } else {
-        metrics = null;
-      }
-      return bind(current, address, metrics)
-        .map(ch -> {
-          handleBind(ch, metrics);
-          context.addCloseHook(this);
-          return ((InetSocketAddress)ch.localAddress()).getPort();
-        });
-    });
+    return f1.compose(sslContextProvider -> bind(current, address, metrics)
+      .map(ch -> {
+        handleBind(ch, metrics);
+        if (metrics != null) {
+          actualLocalAddress = SocketAddress.inetSocketAddress(((InetSocketAddress) channel.localAddress()).getPort(), address.host());
+          metrics.bound(false, actualLocalAddress);
+        }
+        context.addCloseHook(this);
+        return ((InetSocketAddress)ch.localAddress()).getPort();
+      }));
   }
 
   @Override

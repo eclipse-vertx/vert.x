@@ -13,9 +13,6 @@ package io.vertx.core.net.impl.tcp;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
-
-import java.util.function.BiFunction;
 
 /**
  * A builder to configure NetServer plugins.
@@ -25,7 +22,7 @@ public class NetServerBuilder {
   private VertxInternal vertx;
   private TcpServerConfig config;
   private ServerSSLOptions sslOptions;
-  private BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
+  private TransportMetrics<?> metrics;
   private boolean fileRegionEnabled;
   private boolean registerWriteHandler;
 
@@ -35,18 +32,12 @@ public class NetServerBuilder {
     this.sslOptions = sslOptions;
     this.fileRegionEnabled = false;
     this.registerWriteHandler = false;
+    this.metrics = null;
   }
 
-  public NetServerBuilder(VertxInternal vertx, NetServerOptions options) {
-
-    TcpServerConfig cfg = new TcpServerConfig(options);
-
-    this.vertx = vertx;
-    this.config = cfg;
-    this.sslOptions = options.getSslOptions();
-    this.fileRegionEnabled = options.isFileRegionEnabled();
-    this.registerWriteHandler = options.isRegisterWriteHandler();
-    this.metricsProvider = (metrics,  localAddress) -> metrics.createNetServerMetrics(options, localAddress);
+  public NetServerBuilder registerWriteHandler(boolean registerWriteHandler) {
+    this.registerWriteHandler = registerWriteHandler;
+    return this;
   }
 
   public NetServerBuilder fileRegionEnabled(boolean fileRegionEnabled) {
@@ -54,8 +45,8 @@ public class NetServerBuilder {
     return this;
   }
 
-  public NetServerBuilder metricsProvider(BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
-    this.metricsProvider = metricsProvider;
+  public NetServerBuilder metrics(TransportMetrics<?> metricsProvider) {
+    this.metrics = metricsProvider;
     return this;
   }
 
@@ -66,6 +57,6 @@ public class NetServerBuilder {
       sslOptions,
       fileRegionEnabled,
       registerWriteHandler,
-      metricsProvider);
+      metrics);
   }
 }

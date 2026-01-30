@@ -26,7 +26,6 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -34,7 +33,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiFunction;
 
 public class QuicClientTransport implements HttpClientTransport {
 
@@ -77,13 +75,7 @@ public class QuicClientTransport implements HttpClientTransport {
     lock.lock();
     Future<QuicClient> fut = clientFuture;
     if (fut == null) {
-      BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
-      if (clientMetrics != null) {
-        metricsProvider = (quicEndpointOptions, socketAddress) -> clientMetrics;
-      } else {
-        metricsProvider = null;
-      }
-      QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicConfig, sslOptions);
+      QuicClient client = new QuicClientImpl(vertx, clientMetrics, quicConfig, sslOptions);
       fut = client.bind(SocketAddress.inetSocketAddress(0, "localhost")).map(client);
       clientFuture = fut;
       lock.unlock();

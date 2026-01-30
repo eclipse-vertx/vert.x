@@ -24,6 +24,22 @@ import io.vertx.core.net.SocketAddress;
 public interface TransportMetrics<S> extends NetworkMetrics<S> {
 
   /**
+   * Signal the endpoint is bound to a local address
+   * @param tcp whether the binding is tcp or udp
+   * @param localAddress the address the endpoint is bound to
+   */
+  default void bound(boolean tcp, SocketAddress localAddress) {
+  }
+
+  /**
+   * Signal the endpoint is unbound
+   * @param tcp whether the binding is tcp or udp
+   * @param localAddress the address the endpoint is unbound from
+   */
+  default void unbound(boolean tcp, SocketAddress localAddress) {
+  }
+
+  /**
    * Called when a client has connected, which is applicable for connections.<p/>
    *
    * The remote name of the client is a best effort to provide the name of the remote host, i.e. if the name

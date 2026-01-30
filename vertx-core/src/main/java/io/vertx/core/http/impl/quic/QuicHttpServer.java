@@ -37,6 +37,7 @@ import java.util.function.BiFunction;
 public class QuicHttpServer implements HttpServer, MetricsProvider {
 
   private final VertxInternal vertx;
+  private final HttpServerMetrics<?, ?, ?> metrics;
   private final HttpServerConfig config;
   private final Http3ServerConfig http3Config;
   private final QuicServerConfig quicConfig;
@@ -45,8 +46,9 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
   private io.vertx.core.net.QuicServer quicServer;
   private volatile int actualPort;
 
-  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config) {
+  public QuicHttpServer(VertxInternal vertx, HttpServerMetrics<?, ?, ?> metrics,  HttpServerConfig config) {
     this.vertx = vertx;
+    this.metrics = metrics;
     this.config = new HttpServerConfig(config);
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
     this.quicConfig = config.getQuicConfig() != null ? config.getQuicConfig() : new QuicServerConfig();
@@ -192,15 +194,6 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
     Handler<HttpServerRequest> requestHandler;
     Handler<HttpConnection> connectionHandler;
 
-    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
-    VertxMetrics metrics = vertx.metrics();
-    if (metrics != null) {
-      metricsProvider = (quicEndpointOptions, socketAddress) -> metrics
-        .createHttpServerMetrics(http3Config, socketAddress);
-    } else {
-      metricsProvider = null;
-    }
-
     ServerSSLOptions sslOptions = config.getSslOptions().copy();
     sslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
 
@@ -210,7 +203,7 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
-      quicServer = new QuicServerImpl(vertx, metricsProvider, quicConfig, sslOptions);
+      quicServer = new QuicServerImpl(vertx, metrics, quicConfig, sslOptions);
     }
 
     if (requestHandler == null) {

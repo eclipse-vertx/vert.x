@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -48,7 +49,9 @@ public class QuicMetricsTest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    client.close().await();
+    if (client != null) {
+      client.close().await();
+    }
     List<QuicServer> toClose = new ArrayList<>(servers);
     servers.clear();
     for (QuicServer server : toClose) {
@@ -88,6 +91,10 @@ public class QuicMetricsTest extends VertxTestBase {
     QuicConnection clientConnection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.getMetrics(client);
     assertEquals("the-metrics", clientMetrics.name());
+    assertEquals(1, clientMetrics.udpBindings().size());
+    SocketAddress localAddress = clientMetrics.udpBindings().iterator().next();
+    assertEquals("localhost", localAddress.hostName());
+    assertTrue(localAddress.port() > 0);
     assertEquals(1, clientMetrics.connectionCount());
     SocketMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
     QuicStream clientStream = clientConnection.openStream().await();
@@ -108,5 +115,7 @@ public class QuicMetricsTest extends VertxTestBase {
     assertEquals(4, serverConnectionMetric.get().bytesWritten.get());
     assertEquals(4, clientConnectionMetric.bytesRead.get());
     assertEquals(4, clientConnectionMetric.bytesWritten.get());
+    client.close().await();
+    assertTrue(clientMetrics.udpBindings().isEmpty());
   }
 }

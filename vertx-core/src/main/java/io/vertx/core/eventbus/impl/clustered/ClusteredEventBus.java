@@ -129,10 +129,11 @@ public final class ClusteredEventBus extends EventBusImpl {
   }
 
   private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
-    NetClientBuilder builder = new NetClientBuilder(vertx, clientOptions);
+    TcpClientConfig cfg = new TcpClientConfig(clientOptions);
+    NetClientBuilder builder = new NetClientBuilder(vertx, cfg, clientOptions.getSslOptions());
     VertxMetrics metricsSPI = vertx.metrics();
     if (metricsSPI != null) {
-      builder.metrics(metricsSPI.createNetClientMetrics(clientOptions));
+      builder.metrics(metricsSPI.createTcpClientMetrics(cfg));
     }
     return builder.build();
   }

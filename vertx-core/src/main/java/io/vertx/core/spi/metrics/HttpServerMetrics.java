@@ -13,6 +13,7 @@ package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 

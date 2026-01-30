@@ -352,13 +352,23 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetServerInternal createNetServer(NetServerOptions options) {
-    return new NetServerBuilder(this, options.copy()).build();
+    TcpServerConfig config = new TcpServerConfig(options);
+    TransportMetrics<?> transportMetrics = metrics != null ? metrics.createTcpServerMetrics(config) : null;
+    return new NetServerBuilder(this, config, options.getSslOptions())
+      .fileRegionEnabled(options.isFileRegionEnabled())
+      .registerWriteHandler(options.isRegisterWriteHandler())
+      .metrics(transportMetrics)
+      .build();
   }
 
   public NetClient createNetClient(NetClientOptions options) {
     CloseFuture fut = resolveCloseFuture();
-    NetClientBuilder builder = new NetClientBuilder(this, options);
-    builder.metrics(metrics() != null ? metrics().createNetClientMetrics(options) : null);
+    TcpClientConfig config = new TcpClientConfig(options);
+    TransportMetrics<?> transportMetrics = metrics() != null ? metrics().createTcpClientMetrics(config) : null;
+    NetClientBuilder builder = new NetClientBuilder(this, config, options.getSslOptions())
+      .localAddress(options.getLocalAddress())
+      .registerWriteHandler(options.isRegisterWriteHandler())
+      .metrics(transportMetrics);
     NetClientInternal netClient = builder.build();
     fut.add(netClient);
     return new CleanableNetClient(netClient, cleaner);
@@ -396,32 +406,35 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new TcpHttpServer(this, new HttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
+    HttpServerConfig config = new HttpServerConfig(serverOptions);
+    HttpServerMetrics<?, ?, ?> serverMetrics = metrics != null ? metrics.createHttpServerMetrics(config) : null;
+    return new TcpHttpServer(this, serverMetrics, config, serverOptions.isRegisterWebSocketWriteHandlers());
   }
 
   @Override
   public HttpServer createHttpServer(HttpServerConfig config) {
+    Set<HttpVersion> versions = config.getVersions();
+    if (versions.isEmpty()) {
+      throw new IllegalArgumentException("You must set at least one supported HTTP version");
+    }
+    boolean tcp = versions.contains(HttpVersion.HTTP_1_1) || versions.contains(HttpVersion.HTTP_2) || versions.contains(HttpVersion.HTTP_1_0);
+    boolean quic = versions.contains(HttpVersion.HTTP_3);
+    HttpServerMetrics<?, ?, ?> serverMetrics = metrics != null ? metrics.createHttpServerMetrics(config) : null;
+    if (tcp && quic) {
+      serverMetrics = new CompositeHttpServerMetrics<>(serverMetrics);
+    }
     HttpServer tcpServer = null;
-    if (config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0)) {
-      tcpServer = new TcpHttpServer(this, new HttpServerConfig(config), false);
-    }
-    HttpServer quicServer = null;
-    if (config.getVersions().contains(HttpVersion.HTTP_3)) {
-      quicServer = new QuicHttpServer(this, new HttpServerConfig(config));
-    }
-    if (tcpServer != null) {
-      if (quicServer != null) {
-        return new CompositeHttpServer(tcpServer, quicServer);
-      } else {
+    if (tcp) {
+      tcpServer = new TcpHttpServer(this, serverMetrics, new HttpServerConfig(config), false);
+      if (!quic) {
         return tcpServer;
       }
-    } else {
-      if (quicServer != null) {
-        return quicServer;
-      } else {
-        throw new IllegalArgumentException("You must set at least one supported HTTP version");
-      }
     }
+    HttpServer quicServer = new QuicHttpServer(this, serverMetrics, new HttpServerConfig(config));
+    if (!tcp) {
+      return quicServer;
+    }
+    return new CompositeHttpServer(tcpServer, quicServer);
   }
 
   @Override
@@ -458,7 +471,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
     HttpClientConfig config = new HttpClientConfig(o);
     HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(config) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
+    TcpClientConfig cfg = new TcpClientConfig(new NetClientOptions(o).setProxyOptions(null));
+    NetClientInternal tcpClient = new NetClientBuilder(this, cfg, o.getSslOptions())
+      .metrics(metrics)
+      .build();
     TcpClientTransport channelConnector = TcpClientTransport.create(tcpClient, config, metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }

@@ -15,10 +15,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.QuicEndpointConfig;
+import io.vertx.core.net.TcpClientConfig;
+import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.spi.metrics.*;
 
 /**
@@ -54,12 +53,8 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeEventBusMetrics();
   }
 
-  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-    return new FakeHttpServerMetrics();
-  }
-
   @Override
-  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig config, SocketAddress localAddress) {
+  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config) {
     return new FakeHttpServerMetrics();
   }
 
@@ -72,16 +67,16 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 
-  public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+  public TCPMetrics<?> createTcpServerMetrics(TcpServerConfig config) {
     return new FakeTCPMetrics(null);
   }
 
-  public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
-    return new FakeTCPMetrics(options.getMetricsName());
+  public TCPMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
+    return new FakeTCPMetrics(config.getMetricsName());
   }
 
   @Override
-  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {
+  public TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config) {
     return new FakeQuicEndpointMetrics(config.getMetricsName());
   }
 

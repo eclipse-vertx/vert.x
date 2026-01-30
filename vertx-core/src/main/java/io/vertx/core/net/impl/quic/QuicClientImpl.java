@@ -48,19 +48,18 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
 
   public static QuicClientImpl create(VertxInternal vertx,
-                                      BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+                                      TransportMetrics<?> metrics,
                                       QuicClientConfig config, ClientSSLOptions sslOptions) {
-    return new QuicClientImpl(vertx, metricsProvider, new QuicClientConfig(config), sslOptions);
+    return new QuicClientImpl(vertx, metrics, new QuicClientConfig(config), sslOptions);
   }
 
   private final QuicClientConfig config;
   private final ClientSSLOptions sslOptions;
-  private TransportMetrics<?> metrics;
   private volatile Channel channel;
 
-  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
+  public QuicClientImpl(VertxInternal vertx, TransportMetrics<?> metrics,
                         QuicClientConfig config, ClientSSLOptions sslOptions) {
-    super(vertx, metricsProvider, config, sslOptions);
+    super(vertx, metrics, config, sslOptions);
     this.config = config;
     this.sslOptions = sslOptions;
   }
@@ -68,7 +67,6 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   @Override
   protected void handleBind(Channel channel, TransportMetrics<?> metrics) {
     super.handleBind(channel, metrics);
-    this.metrics = metrics;
     this.channel = channel;
   }
 

@@ -112,7 +112,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
@@ -196,7 +196,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicInteger count = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
@@ -296,7 +296,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicInteger httpLifecycle = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+      public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
@@ -607,6 +607,8 @@ public class MetricsContextTest extends VertxTestBase {
   private void testNetServer(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
+    AtomicReference<SocketAddress> bindCalled = new AtomicReference<>();
+    AtomicReference<SocketAddress> unbindCalled = new AtomicReference<>();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
@@ -614,8 +616,16 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TCPMetrics createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+      public TCPMetrics createTcpServerMetrics(TcpServerConfig config) {
         return new TCPMetrics<Void>() {
+          @Override
+          public void bound(boolean tcp, SocketAddress localAddress) {
+            bindCalled.set(localAddress);
+          }
+          @Override
+          public void unbound(boolean tcp, SocketAddress localAddress) {
+            unbindCalled.set(localAddress);
+          }
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
@@ -640,46 +650,55 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
     };
-    CountDownLatch latch = new CountDownLatch(1);
     Vertx vertx = vertx(() -> Vertx.builder()
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(factory)
       .build());
     Context ctx = contextFactory.apply(vertx);
-    ctx.runOnContext(v1 -> {
+    try {
+      SocketAddress bindAddress = SocketAddress.inetSocketAddress(1234, "localhost");
       NetServer server = vertx.createNetServer().connectHandler(so -> {
         so.handler(buf -> {
           so.write("bye");
         });
       });
-      server.listen(1234, "localhost").onComplete(onSuccess(s -> {
-        expectedThread.set(Thread.currentThread());
-        expectedContext.set(Vertx.currentContext());
-        assertSame(expectedThread.get(), Thread.currentThread());
-        latch.countDown();
-      }));
-    });
-    awaitLatch(latch);
-    NetClient client = vertx.createNetClient();
-    client.connect(1234, "localhost").onComplete(onSuccess(so -> {
-      so.handler(buf -> {
-        so.closeHandler(v -> {
-          TestUtils.executeInVanillaVertxThread(() -> {
-            vertx.close().onComplete(v4 -> {
-              assertTrue(bytesReadCalled.get());
-              assertTrue(bytesWrittenCalled.get());
-              assertTrue(socketConnectedCalled.get());
-              assertTrue(socketDisconnectedCalled.get());
-              assertTrue(closeCalled.get());
-              testComplete();
+      CountDownLatch latch = new CountDownLatch(1);
+      ctx.runOnContext(v -> {
+        server.listen(bindAddress).onComplete(onSuccess(v2 -> {
+          latch.countDown();
+        }));
+      });
+      awaitLatch(latch);
+      expectedThread.set(Thread.currentThread());
+      expectedContext.set(Vertx.currentContext());
+      assertSame(expectedThread.get(), Thread.currentThread());
+      NetClient client = vertx.createNetClient();
+      client.connect(1234, "localhost").onComplete(onSuccess(so -> {
+        so.handler(buf -> {
+          so.closeHandler(v -> {
+            TestUtils.executeInVanillaVertxThread(() -> {
+              vertx.close().onComplete(v4 -> {
+                assertEquals(bindAddress, bindCalled.get());
+                assertTrue(bytesReadCalled.get());
+                assertTrue(bytesWrittenCalled.get());
+                assertTrue(socketConnectedCalled.get());
+                assertTrue(socketDisconnectedCalled.get());
+                assertTrue(closeCalled.get());
+                testComplete();
+              });
             });
           });
+          so.close();
         });
-        so.close();
-      });
-      so.write("hello");
-    }));
-    await();
+        so.write("hello");
+      }));
+      await();
+      client.close().await();
+      server.close().await();
+      assertEquals(bindAddress, unbindCalled.get());
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test
@@ -702,7 +721,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TCPMetrics createNetClientMetrics(NetClientOptions options) {
+      public TCPMetrics createTcpClientMetrics(TcpClientConfig config) {
         return new TCPMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {

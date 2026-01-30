@@ -22,6 +22,7 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.*;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
@@ -43,6 +44,7 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
   static final boolean DISABLE_WEBSOCKETS = SysProps.DISABLE_WEBSOCKETS.getBoolean();
 
   private final VertxInternal vertx;
+  private final HttpServerMetrics<?, ?, ?> metrics;
   final HttpServerConfig config;
   private final boolean registerWebSocketWriteHandlers;
   private Handler<HttpServerRequest> requestHandler;
@@ -56,8 +58,12 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
   private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
   private CloseSequence closeSequence;
 
-  public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, boolean registerWebSocketWriteHandlers) {
+  public TcpHttpServer(VertxInternal vertx,
+                       HttpServerMetrics<?, ?, ?> metrics,
+                       HttpServerConfig config,
+                       boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
+    this.metrics = metrics;
     this.config = config;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
   }
@@ -193,7 +199,7 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
     HttpCompressionConfig compression = config.getCompression();
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
-      .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(new HttpServerOptions(), addr))
+      .metrics(metrics)
       .build();
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;

@@ -40,13 +40,13 @@ public interface QuicClient extends QuicEndpoint {
   static QuicClient create(Vertx vertx, QuicClientConfig config, ClientSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) vertx;
     VertxMetrics metrics = vertxInternal.metrics();
-    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
+    TransportMetrics<?> clientMetrics;
     if (metrics != null) {
-      metricsProvider = metrics::createQuicEndpointMetrics;
+      clientMetrics = metrics.createQuicEndpointMetrics(config);
     } else {
-      metricsProvider = null;
+      clientMetrics = null;
     }
-    return QuicClientImpl.create(vertxInternal, metricsProvider, config, sslOptions);
+    return QuicClientImpl.create(vertxInternal, clientMetrics, config, sslOptions);
   }
 
   /**

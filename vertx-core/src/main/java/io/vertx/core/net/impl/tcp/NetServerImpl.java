@@ -44,7 +44,6 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,7 +51,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * Vert.x TCP server
@@ -69,7 +67,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private final ServerSSLOptions sslOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
-  private final BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
+  private final TransportMetrics<?> metrics;
   private Handler<NetSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
@@ -89,15 +87,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
-  private TransportMetrics<?> metrics;
   private volatile int actualPort;
+  private volatile SocketAddress actualLocalAddress;
 
   public NetServerImpl(VertxInternal vertx,
                        TcpServerConfig config,
                        ServerSSLOptions sslOptions,
                        boolean fileRegionEnabled,
                        boolean registerWriteHandler,
-                       BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
+                       TransportMetrics<?> metrics) {
 
     if (sslOptions == null) {
       sslOptions = new ServerSSLOptions();
@@ -107,8 +105,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     this.config = config;
     this.fileRegionEnabled = fileRegionEnabled;
     this.registerWriteHandler = registerWriteHandler;
-    this.metricsProvider = metricsProvider;
     this.sslOptions = sslOptions;
+    this.metrics = metrics;
   }
 
   public SslContextProvider sslContextProvider() {
@@ -523,7 +521,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = main;
-        metrics = main.metrics;
         trafficShapingHandler = main.trafficShapingHandler;
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
@@ -571,9 +568,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         }
         // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
         if (bindAddress.isInetSocket()) {
-          actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+          int port = ((InetSocketAddress) ch.localAddress()).getPort();
+          actualPort = port;
+          actualLocalAddress = SocketAddress.inetSocketAddress(port, localAddress.host());
+        } else {
+          actualLocalAddress = localAddress;
         }
-        metrics = createMetrics(localAddress);
+        if (metrics != null) {
+          metrics.bound(true, actualLocalAddress);
+        }
         promise.complete(ch);
       } else {
         promise.fail(res.cause());
@@ -583,14 +586,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
 
   public boolean isListening() {
     return listening;
-  }
-
-  private TransportMetrics<?> createMetrics(SocketAddress localAddress) {
-    VertxMetrics metrics = vertx.metrics();
-    if (metrics != null) {
-      return metricsProvider.apply(metrics, localAddress);
-    }
-    return null;
   }
 
   /**
@@ -675,8 +670,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       if (ar.succeeded()) {
         Channel channel = ar.result();
         ChannelFuture a = channel.close();
+        SocketAddress addr = actualLocalAddress;
+        actualLocalAddress = null;
         if (metrics != null) {
-          a.addListener(cg -> metrics.close());
+          a.addListener(cg -> {
+            if (addr != null) {
+              metrics.unbound(true, addr);
+            }
+            metrics.close();
+          });
         }
         a.addListener((PromiseInternal<Void>)done);
       } else {
