@@ -86,19 +86,6 @@ public interface VertxMetrics extends Metrics, Measured {
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param options the options used to create the {@link HttpClient}
-   * @return the http client metrics SPI or {@code null} when metrics are disabled
-   */
-  @Deprecated(forRemoval = true)
-  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
-    return null;
-  }
-
-  /**
-   * Provides the http client metrics SPI when an http client has been created.<p/>
-   * <p>
-   * No specific thread and context can be expected when this method is called.
-   *
    * @param config the config used to create the {@link HttpClient}
    * @return the http client metrics SPI or {@code null} when metrics are disabled
    */

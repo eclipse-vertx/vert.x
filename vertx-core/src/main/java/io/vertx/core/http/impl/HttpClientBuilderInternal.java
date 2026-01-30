@@ -213,7 +213,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
     HttpClientMetrics<?, ?, ?> metrics;
     if (vertx.metrics() != null) {
-      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(clientConfig) : null;
+      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
     } else {
       metrics = null;
     }
