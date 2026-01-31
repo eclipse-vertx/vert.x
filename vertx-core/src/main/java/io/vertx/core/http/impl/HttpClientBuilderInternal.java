@@ -232,8 +232,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     if (supportedVersions.contains(HttpVersion.HTTP_1_0) || supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_2)) {
       resolver = endpointResolver(co);
       shared = co.isShared() ? co.getName() : null;
-      TcpClientConfig netClientConfig = netClientConfig(co);
-      NetClientInternal tcpClient = new NetClientBuilder(vertx, netClientConfig.setProxyOptions(null), null).metrics(metrics).build();
+      TcpClientConfig clientConfig = netClientConfig(co)
+        .setProxyOptions(null);
+      NetClientInternal tcpClient = new NetClientBuilder(vertx, clientConfig)
+        .sslOptions(co.getSslOptions())
+        .metrics(metrics)
+        .build();
       transport = new TcpClientTransport(
         tcpClient,
         co.getTracingPolicy(),

@@ -27,6 +27,7 @@ public class TcpClientConfig extends TcpEndpointConfig {
   private Duration connectTimeout;
   private ProxyOptions proxyOptions;
   private List<String> nonProxyHosts;
+  private SocketAddress localAddress;
   private int reconnectAttempts;
   private Duration reconnectInterval;
 
@@ -35,6 +36,7 @@ public class TcpClientConfig extends TcpEndpointConfig {
     this.connectTimeout = Duration.ofMillis(ClientOptionsBase.DEFAULT_CONNECT_TIMEOUT);
     this.proxyOptions = null;
     this.nonProxyHosts = null;
+    this.localAddress = null;
     this.reconnectAttempts = NetClientOptions.DEFAULT_RECONNECT_ATTEMPTS;
     this.reconnectInterval = Duration.ofMillis(NetClientOptions.DEFAULT_RECONNECT_INTERVAL);
   }
@@ -44,12 +46,17 @@ public class TcpClientConfig extends TcpEndpointConfig {
     this.connectTimeout = other.connectTimeout;
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.nonProxyHosts = other.nonProxyHosts != null ? new ArrayList<>(other.nonProxyHosts) : null;
+    this.localAddress = other.localAddress;
     this.reconnectAttempts = other.reconnectAttempts;
     this.reconnectInterval = other.reconnectInterval;
   }
 
   public TcpClientConfig(NetClientOptions options) {
     this((ClientOptionsBase)options);
+    String localAddress = options.getLocalAddress();
+    if (localAddress != null) {
+      setLocalAddress(SocketAddress.inetSocketAddress(0, localAddress));
+    }
     setReconnectAttempts(options.getReconnectAttempts());
     setReconnectInterval(Duration.ofMillis(options.getReconnectInterval()));
   }
@@ -170,6 +177,28 @@ public class TcpClientConfig extends TcpEndpointConfig {
       nonProxyHosts = new ArrayList<>();
     }
     nonProxyHosts.add(host);
+    return this;
+  }
+
+  /**
+   * @return the local address to bind for network connections.
+   */
+  public SocketAddress getLocalAddress() {
+    return localAddress;
+  }
+
+  /**
+   * Set the local address to bind for network connections. When the local address is null,
+   * it will pick any local address and a random port, the default local address is null.
+   *
+   * @param localAddress the local address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TcpClientConfig setLocalAddress(SocketAddress localAddress) {
+    if (localAddress != null && localAddress.isDomainSocket()) {
+      throw new IllegalArgumentException("Cannot set a domain socket local address");
+    }
+    this.localAddress = localAddress;
     return this;
   }
 

@@ -52,18 +52,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code HttpServerMetrics}
    * instances.
    *
-   * @param options      the options used to create the {@link HttpServer}
+   * @param config       the options used to create the {@link HttpServer}
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-    return null;
-  }
-
-  /**
-   * Version of {@link #createHttpServerMetrics(HttpServerOptions, SocketAddress)} for HTTP/3
-   */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(Http3ServerConfig config, SocketAddress localAddress) {
+  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
     return null;
   }
 
@@ -103,23 +96,23 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code TCPMetrics}
    * instances.
    *
-   * @param options      the options used to create the {@link NetServer}
+   * @param config       the options used to create the {@link NetServer}
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-    default TransportMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+    default TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
     return null;
   }
 
   /**
-   * Provides the net client metrics SPI when a net client is created.<p/>
+   * Provides the TCP client metrics SPI when a net client is created.<p/>
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param options the options used to create the {@link NetClient}
+   * @param config the options used to create the {@link NetClient}
    * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createNetClientMetrics(NetClientOptions options) {
+  default TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
     return null;
   }
 

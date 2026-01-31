@@ -357,8 +357,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public NetClient createNetClient(NetClientOptions options) {
     CloseFuture fut = resolveCloseFuture();
-    NetClientBuilder builder = new NetClientBuilder(this, options);
-    builder.metrics(metrics() != null ? metrics().createNetClientMetrics(options) : null);
+    TcpClientConfig config = new TcpClientConfig(options);
+    NetClientBuilder builder = new NetClientBuilder(this, config)
+      .sslOptions(options.getSslOptions())
+      .registerWriteHandler(options.isRegisterWriteHandler())
+      .metrics(metrics != null ? metrics.createTcpClientMetrics(config) : null);
     NetClientInternal netClient = builder.build();
     fut.add(netClient);
     return new CleanableNetClient(netClient, cleaner);
@@ -426,6 +429,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WebSocketClient createWebSocketClient(WebSocketClientOptions options) {
+    CloseFuture cf = resolveCloseFuture();
+    WebSocketClient client;
+    Closeable closeable;
+    if (options.isShared()) {
+      CloseFuture closeFuture = new CloseFuture();
+      client = createSharedResource("__vertx.shared.webSocketClients", options.getName(), closeFuture, cf_ -> {
+        WebSocketClientImpl impl = createWebSocketClientImpl(options);
+        cf_.add(completion -> impl.close().onComplete(completion));
+        return impl;
+      });
+      client = new CleanableWebSocketClient(client, cleaner, (timeout, timeunit) -> closeFuture.close());
+      closeable = closeFuture;
+    } else {
+      WebSocketClientImpl impl = createWebSocketClientImpl(options);
+      closeable = impl;
+      client = new CleanableWebSocketClient(impl, cleaner, impl::shutdown);
+    }
+    cf.add(closeable);
+    return client;
+  }
+
+  private WebSocketClientImpl createWebSocketClientImpl(WebSocketClientOptions options) {
     HttpClientOptions o = new HttpClientOptions(options);
     o.setDefaultHost(options.getDefaultHost());
     o.setDefaultPort(options.getDefaultPort());
@@ -434,31 +459,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     o.setName(options.getName());
     o.setUseAlpn(false);
     o.setProtocolVersion(HttpVersion.HTTP_1_1);
-    CloseFuture cf = resolveCloseFuture();
-    WebSocketClient client;
-    Closeable closeable;
-    if (options.isShared()) {
-      CloseFuture closeFuture = new CloseFuture();
-      client = createSharedResource("__vertx.shared.webSocketClients", options.getName(), closeFuture, cf_ -> {
-        WebSocketClientImpl impl = createWebSocketClientImpl(o, options);
-        cf_.add(completion -> impl.close().onComplete(completion));
-        return impl;
-      });
-      client = new CleanableWebSocketClient(client, cleaner, (timeout, timeunit) -> closeFuture.close());
-      closeable = closeFuture;
-    } else {
-      WebSocketClientImpl impl = createWebSocketClientImpl(o, options);
-      closeable = impl;
-      client = new CleanableWebSocketClient(impl, cleaner, impl::shutdown);
-    }
-    cf.add(closeable);
-    return client;
-  }
-
-  private WebSocketClientImpl createWebSocketClientImpl(HttpClientOptions o, WebSocketClientOptions options) {
     HttpClientConfig config = new HttpClientConfig(o);
     HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(config) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(this, new NetClientOptions(o).setProxyOptions(null)).metrics(metrics).build();
+    NetClientInternal tcpClient = new NetClientBuilder(this, config.getTcpConfig())
+      .sslOptions(options.getSslOptions())
+      .metrics(metrics)
+      .build();
     TcpClientTransport channelConnector = TcpClientTransport.create(tcpClient, config, metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }

@@ -112,7 +112,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
@@ -196,7 +196,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicInteger count = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
@@ -296,7 +296,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicInteger httpLifecycle = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
           public Void requestBegin(Void socketMetric, HttpRequest request) {
@@ -614,7 +614,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TCPMetrics createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+      public TCPMetrics createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
         return new TCPMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -702,7 +702,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TCPMetrics createNetClientMetrics(NetClientOptions options) {
+      public TCPMetrics createTcpClientMetrics(TcpClientConfig config) {
         return new TCPMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {

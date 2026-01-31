@@ -193,7 +193,7 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
     HttpCompressionConfig compression = config.getCompression();
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
-      .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(new HttpServerOptions(), addr))
+      .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(config, addr))
       .build();
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;

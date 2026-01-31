@@ -196,7 +196,7 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
     VertxMetrics metrics = vertx.metrics();
     if (metrics != null) {
       metricsProvider = (quicEndpointOptions, socketAddress) -> metrics
-        .createHttpServerMetrics(http3Config, socketAddress);
+        .createHttpServerMetrics(config, socketAddress);
     } else {
       metricsProvider = null;
     }

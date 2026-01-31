@@ -15,9 +15,9 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TcpClientConfig;
+import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.core.spi.metrics.TCPMetrics;
@@ -716,7 +716,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .withClusterManager(getClusterManager())
       .withMetrics(options -> new VertxMetrics() {
         @Override
-        public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
+        public TCPMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
           return new TCPMetrics<>() {
             @Override
             public Object connected(SocketAddress remoteAddress, String remoteName) {
@@ -730,7 +730,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
           };
         }
         @Override
-        public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
+        public TCPMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
           return new TCPMetrics<>() {
             @Override
             public Object connected(SocketAddress remoteAddress, String remoteName) {
