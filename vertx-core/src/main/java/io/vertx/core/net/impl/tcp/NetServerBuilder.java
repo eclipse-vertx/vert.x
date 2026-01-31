@@ -46,7 +46,7 @@ public class NetServerBuilder {
     this.sslOptions = options.getSslOptions();
     this.fileRegionEnabled = options.isFileRegionEnabled();
     this.registerWriteHandler = options.isRegisterWriteHandler();
-    this.metricsProvider = (metrics,  localAddress) -> metrics.createNetServerMetrics(options, localAddress);
+    this.metricsProvider = (metrics,  localAddress) -> metrics.createTcpServerMetrics(cfg, localAddress);
   }
 
   public NetServerBuilder fileRegionEnabled(boolean fileRegionEnabled) {

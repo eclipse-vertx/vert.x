@@ -1233,7 +1233,7 @@ public class MetricsTest extends VertxTestBase {
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(options -> new VertxMetrics() {
         @Override
-        public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+        public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
           lifecycle.compareAndSet(0, 1);
           return new HttpServerMetrics<>() {
             @Override

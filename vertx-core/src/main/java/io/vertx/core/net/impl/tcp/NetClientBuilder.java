@@ -25,35 +25,31 @@ public class NetClientBuilder {
   private VertxInternal vertx;
   private TcpClientConfig config;
   private ClientSSLOptions sslOptions;
-  private TransportMetrics metrics;
-  private String localAddress;
+  private TransportMetrics<?> metrics;
   private boolean registerWriteHandler;
 
-  public NetClientBuilder(VertxInternal vertx, TcpClientConfig config, ClientSSLOptions sslOptions) {
+  public NetClientBuilder(VertxInternal vertx, TcpClientConfig config) {
     this.vertx = vertx;
     this.config = config;
-    this.sslOptions = sslOptions;
-    this.localAddress = null;
     this.registerWriteHandler = false;
   }
 
-  public NetClientBuilder(VertxInternal vertx, NetClientOptions options) {
-
-    TcpClientConfig cfg = new TcpClientConfig(options);
-
-    this.vertx = vertx;
-    this.config = cfg;
-    this.sslOptions = options.getSslOptions();
-    this.localAddress = options.getLocalAddress();
-    this.registerWriteHandler = options.isRegisterWriteHandler();
+  public NetClientBuilder sslOptions(ClientSSLOptions sslOptions) {
+    this.sslOptions = sslOptions;
+    return this;
   }
 
-  public NetClientBuilder metrics(TransportMetrics metrics) {
+  public NetClientBuilder registerWriteHandler(boolean registerWriteHandler) {
+    this.registerWriteHandler =  registerWriteHandler;
+    return this;
+  }
+
+  public NetClientBuilder metrics(TransportMetrics<?> metrics) {
     this.metrics = metrics;
     return this;
   }
 
   public NetClientInternal build() {
-    return new NetClientImpl(vertx, metrics, config, sslOptions, registerWriteHandler, localAddress);
+    return new NetClientImpl(vertx, metrics, config, sslOptions, registerWriteHandler);
   }
 }

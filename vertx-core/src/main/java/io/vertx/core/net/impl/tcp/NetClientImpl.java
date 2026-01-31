@@ -60,7 +60,6 @@ class NetClientImpl implements NetClientInternal {
   private final TcpClientConfig config;
   private final TcpConfig transportOptions;
   private final boolean registerWriteHandler;
-  private final String localAddress;
   private final SslContextManager sslContextManager;
   private volatile ClientSSLOptions sslOptions;
   public final ConnectionGroup channelGroup;
@@ -71,8 +70,7 @@ class NetClientImpl implements NetClientInternal {
                        TransportMetrics metrics,
                        TcpClientConfig config,
                        ClientSSLOptions sslOptions,
-                       boolean registerWriteHandler,
-                       String localAddress) {
+                       boolean registerWriteHandler) {
 
     this.vertx = vertx;
     this.channelGroup = new ConnectionGroup(vertx.acceptorEventLoopGroup().next()) {
@@ -83,7 +81,6 @@ class NetClientImpl implements NetClientInternal {
     };
     this.config = config;
     this.registerWriteHandler = registerWriteHandler;
-    this.localAddress = localAddress;
     this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
     this.metrics = metrics;
     this.logging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
@@ -274,8 +271,9 @@ class NetClientImpl implements NetClientInternal {
       // Transport specific TCP configuration
       vertx.transport().configure(config.getTransportConfig(), domainSocket, bootstrap);
 
+      SocketAddress localAddress = config.getLocalAddress();
       if (localAddress != null) {
-        bootstrap.localAddress(localAddress, 0);
+        bootstrap.localAddress(localAddress.host(), localAddress.port());
       }
 
       //
