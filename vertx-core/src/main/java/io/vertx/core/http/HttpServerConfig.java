@@ -33,12 +33,12 @@ public class HttpServerConfig {
    */
   public static final int DEFAULT_HTTP3_PORT = 443;
 
-  public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10000000L;
-  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 1000000L;
-  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE = 1000000L;
-  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI = 1000000L;
-  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 100L;
-  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 100L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10_485_760L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE = 1_048_576L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI = 1_048_576L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 256L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 1L;
 
   private static QuicServerConfig defaultQuicConfig() {
     QuicServerConfig config = new QuicServerConfig();

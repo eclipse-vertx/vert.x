@@ -60,6 +60,13 @@ public interface QuicClient extends QuicEndpoint {
   }
 
   /**
+   * Like {@link #create(Vertx, QuicClientConfig, ServerSSLOptions)}, with the default client configuration.
+   */
+  static QuicClient create(Vertx vertx, ClientSSLOptions defaultSslOptions) {
+    return create(vertx, new QuicClientConfig(), defaultSslOptions);
+  }
+
+  /**
    * Connect to a Quic server.
    *
    * @param address the server address

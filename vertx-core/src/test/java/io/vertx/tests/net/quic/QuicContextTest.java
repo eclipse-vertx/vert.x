@@ -25,9 +25,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
-import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
-
 @RunWith(LinuxOrOsx.class)
 public class QuicContextTest extends VertxTestBase {
 
@@ -38,8 +35,8 @@ public class QuicContextTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    QuicServerConfig serverOptions = serverOptions();
-    QuicClientConfig clientOptions = clientOptions();
+    QuicServerConfig serverOptions = new QuicServerConfig();
+    QuicClientConfig clientOptions = new QuicClientConfig();
     serverOptions.getTransportConfig().setEnableDatagrams(true);
     clientOptions.getTransportConfig().setEnableDatagrams(true);
     server = QuicServer.create(vertx, serverOptions, QuicServerTest.SSL_OPTIONS);

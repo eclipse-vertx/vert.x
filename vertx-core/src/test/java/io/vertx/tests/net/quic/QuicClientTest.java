@@ -39,8 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
-
 @RunWith(LinuxOrOsx.class)
 public class QuicClientTest extends VertxTestBase {
 
@@ -49,10 +47,7 @@ public class QuicClientTest extends VertxTestBase {
     .setApplicationLayerProtocols(List.of("test-protocol"));
 
   static QuicClientConfig clientOptions() {
-    QuicClientConfig options = new QuicClientConfig();
-    options.getTransportConfig().setInitialMaxData(10000000L);
-    options.getTransportConfig().setInitialMaxStreamDataBidiLocal(1000000L);
-    return options;
+    return new QuicClientConfig();
   }
 
   private QuicServer server;
@@ -61,8 +56,8 @@ public class QuicClientTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
-    client = QuicClient.create(vertx, clientOptions(), SSL_OPTIONS);
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS);
+    client = QuicClient.create(vertx, SSL_OPTIONS);
   }
 
   @Override
@@ -91,9 +86,8 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testClientSSLOverride() {
-    QuicServerConfig serverOptions = serverOptions();
-    // server.close();
-    server = QuicServer.create(vertx, serverOptions, new ServerSSLOptions()
+    server.close();
+    server = QuicServer.create(vertx, new ServerSSLOptions()
       .setKeyCertOptions(Cert.CLIENT_JKS.get()).setApplicationLayerProtocols(List.of("test-protocol")));
     AtomicInteger inflight = new AtomicInteger();
     server.handler(conn -> {
@@ -121,7 +115,6 @@ public class QuicClientTest extends VertxTestBase {
   public void testConnectionSpecificSSLOptions() {
     client.close();
     client = QuicClient.create(vertx, clientOptions(), null);
-    QuicServerConfig serverOptions = serverOptions();
     server.handler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
@@ -158,7 +151,7 @@ public class QuicClientTest extends VertxTestBase {
   public void testServerReset() {
 
     waitFor(4);
-    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.handler(buff -> {
@@ -191,7 +184,7 @@ public class QuicClientTest extends VertxTestBase {
   public void testClientReset() {
 
     waitFor(2);
-    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.resetHandler(code -> {
@@ -231,7 +224,7 @@ public class QuicClientTest extends VertxTestBase {
   public void testClientResetHandler() {
 
     waitFor(2);
-    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         AtomicBoolean isReset = new AtomicBoolean();
@@ -284,7 +277,7 @@ public class QuicClientTest extends VertxTestBase {
     AtomicInteger clientEndCount = new AtomicInteger();
     AtomicInteger serverEndCount = new AtomicInteger();
 
-    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.endHandler(v -> {
@@ -343,9 +336,9 @@ public class QuicClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testStreamIdleTimeout() throws Exception {
-    QuicServerConfig options = serverOptions();
-    options.setStreamIdleTimeout(Duration.ofMillis(100));
+  public void testStreamIdleTimeout() {
+    QuicServerConfig options = new QuicServerConfig()
+      .setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
@@ -378,8 +371,7 @@ public class QuicClientTest extends VertxTestBase {
 
   @Test
   public void testServerNameIndication() {
-    QuicServerConfig options = serverOptions();
-    server = QuicServer.create(vertx, options, QuicServerTest.SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get()));
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get()));
     AtomicReference<String> serverName = new AtomicReference<>();
     server.handler(conn -> {
       serverName.set(conn.indicatedServerName());

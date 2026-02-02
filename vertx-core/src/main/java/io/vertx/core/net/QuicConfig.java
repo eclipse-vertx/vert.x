@@ -19,6 +19,22 @@ import java.time.Duration;
  */
 public class QuicConfig extends TransportConfig {
 
+  public static final long DEFAULT_CLIENT_MAX_INITIAL_DATA = 10_485_760L;
+  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_LOCAL = 1_048_576L;
+  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_REMOTE = 0L;
+  public static final long DEFAULT_CLIENT_MAX_STREAMS_DATA_UNI = 0L;
+  public static final long DEFAULT_CLIENT_MAX_STREAMS_DATA_BIDI = 0L;
+  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_UNI = 0L;
+  public static final boolean DEFAULT_CLIENT_DISABLE_ACTIVE_MIGRATION = true;
+
+  public static final long DEFAULT_SERVER_MAX_INITIAL_DATA = 10_485_760L;
+  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
+  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_REMOTE = 1_048_576L;
+  public static final long DEFAULT_SERVER_MAX_STREAMS_DATA_UNI = 0L;
+  public static final long DEFAULT_SERVER_MAX_STREAMS_DATA_BIDI = 256L;
+  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_UNI = 0L;
+  public static final boolean DEFAULT_SERVER_DISABLE_ACTIVE_MIGRATION = true;
+
   public static final long DEFAULT_MAX_INITIAL_DATA = 0L;
   public static final long DEFAULT_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
   public static final long DEFAULT_MAX_STREAM_DATA_BIDI_REMOTE = 0L;

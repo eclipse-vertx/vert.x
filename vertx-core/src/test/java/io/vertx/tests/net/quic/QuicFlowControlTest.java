@@ -25,9 +25,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CompletableFuture;
 
-import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
-import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
-
 @RunWith(LinuxOrOsx.class)
 public class QuicFlowControlTest extends VertxTestBase {
 
@@ -37,8 +34,8 @@ public class QuicFlowControlTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
-    client = QuicClient.create(vertx, clientOptions(), QuicClientTest.SSL_OPTIONS);
+    server = QuicServer.create(vertx, QuicServerTest.SSL_OPTIONS);
+    client = QuicClient.create(vertx, QuicClientTest.SSL_OPTIONS);
   }
 
   @Override

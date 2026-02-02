@@ -57,7 +57,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
-import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
 
 @RunWith(LinuxOrOsx.class)
 public class QuicApplicationTest extends VertxTestBase {
@@ -68,9 +67,9 @@ public class QuicApplicationTest extends VertxTestBase {
     // HTTP/3
     byte[] content = "Hello World!\r\n".getBytes(CharsetUtil.US_ASCII);
 
-    QuicServerConfig serverOptions = serverOptions();
     ServerSSLOptions serverSslOptions = QuicServerTest.SSL_OPTIONS.copy();
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
+    QuicServerConfig serverOptions = new QuicServerConfig();
     serverOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
     QuicServer server = QuicServer.create(vertx, serverOptions, serverSslOptions);
@@ -166,7 +165,7 @@ public class QuicApplicationTest extends VertxTestBase {
   @Test
   public void testStreamLevel() {
     // HTTP/1.1
-    QuicServerConfig serverOptions = serverOptions();
+    QuicServerConfig serverOptions = new QuicServerConfig();
     ServerSSLOptions serverSslOptions = QuicServerTest.SSL_OPTIONS.copy();
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     serverOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
