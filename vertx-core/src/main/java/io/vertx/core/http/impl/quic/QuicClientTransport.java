@@ -12,7 +12,6 @@ package io.vertx.core.http.impl.quic;
 
 import io.netty.handler.codec.http3.Http3;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.HttpClientConnection;
@@ -41,13 +40,13 @@ public class QuicClientTransport implements HttpClientTransport {
   private final VertxInternal vertx;
   private final HttpClientMetrics<?, ?, ?> clientMetrics;
   private final Lock lock;
-  private Future<QuicClient> clientFuture;
+  private final QuicClient client;
   private final QuicClientConfig quicConfig;
   private final ClientSSLOptions sslOptions;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public QuicClientTransport(VertxInternal vertxInternal, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
+  public QuicClientTransport(VertxInternal vertx, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
 
     ClientSSLOptions sslOptions = config.getSslOptions()
       .copy()
@@ -62,78 +61,48 @@ public class QuicClientTransport implements HttpClientTransport {
       localSettings = new Http3Settings();
     }
 
-    this.vertx = vertxInternal;
+    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
+    if (clientMetrics != null) {
+      metricsProvider = (quicEndpointOptions, socketAddress) -> clientMetrics;
+    } else {
+      metricsProvider = null;
+    }
+    QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicConfig, sslOptions);
+
+    this.vertx = vertx;
     this.clientMetrics = clientMetrics;
     this.lock = new ReentrantLock();
     this.quicConfig = quicConfig;
     this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
     this.sslOptions = sslOptions;
+    this.client = client;
   }
 
   @Override
   public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
-
-    lock.lock();
-    Future<QuicClient> fut = clientFuture;
-    if (fut == null) {
-      BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
-      if (clientMetrics != null) {
-        metricsProvider = (quicEndpointOptions, socketAddress) -> clientMetrics;
-      } else {
-        metricsProvider = null;
-      }
-      QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicConfig, sslOptions);
-      fut = client.bind(SocketAddress.inetSocketAddress(0, "localhost")).map(client);
-      clientFuture = fut;
-      lock.unlock();
-    } else {
-      lock.unlock();
-    }
-    Promise<HttpClientConnection> promise = context.promise();
-
-    fut.onComplete((res, err) -> {
-      if (err == null) {
-        QuicConnectOptions connectOptions = new QuicConnectOptions();
-        connectOptions.setServerName(authority.host());
-        Future<QuicConnection> f = res.connect(server, connectOptions);
-        f.onComplete((res2, err2) -> {
-          if (err2 == null) {
-            Http3ClientConnection c = new Http3ClientConnection(
-              (QuicConnectionInternal) res2,
-              authority,
-              (ClientMetrics<Object, HttpRequest, HttpResponse>) metrics,
-              keepAliveTimeoutMillis,
-              localSettings);
-            c.init();
-            promise.complete(c);
-          } else {
-            promise.fail(err2);
-          }
-        });
-      } else {
-        promise.fail(err);
-      }
+    QuicConnectOptions connectOptions = new QuicConnectOptions();
+    connectOptions.setServerName(authority.host());
+    Future<QuicConnection> f = client.connect(server, connectOptions);
+    return f.map(res -> {
+      Http3ClientConnection c = new Http3ClientConnection(
+        (QuicConnectionInternal) res,
+        authority,
+        (ClientMetrics<Object, HttpRequest, HttpResponse>) metrics,
+        keepAliveTimeoutMillis,
+        localSettings);
+      c.init();
+      return c;
     });
-
-    return promise.future();
   }
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    if (clientFuture == null) {
-      return vertx.getOrCreateContext().succeededFuture();
-    } else {
-      return clientFuture.compose(client -> client.shutdown(timeout));
-    }
+    return client.shutdown(timeout);
   }
 
   @Override
   public Future<Void> close() {
-    if (clientFuture == null) {
-      return vertx.getOrCreateContext().succeededFuture();
-    } else {
-      return clientFuture.compose(QuicEndpoint::close);
-    }
+    return client.close();
   }
 }

@@ -395,4 +395,18 @@ public class QuicClientTest extends VertxTestBase {
     assertEquals(doesNotResolve, connection.remoteAddress().hostName());
     connection.close().await();
   }
+
+  @Test
+  public void testClientLocalAddress() {
+    String expectedAddress = TestUtils.loopbackAddress();
+    QuicClientConfig clientOptions = clientOptions().setLocalAddress(SocketAddress.inetSocketAddress(1234, expectedAddress));
+    client.close();
+    client = QuicClient.create(vertx,clientOptions.setStreamIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
+    server.handler(connection -> {
+
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    assertEquals(1234, connection.localAddress().port());
+  }
 }

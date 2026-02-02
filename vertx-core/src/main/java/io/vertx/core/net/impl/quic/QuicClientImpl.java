@@ -11,6 +11,7 @@
 package io.vertx.core.net.impl.quic;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.quic.QLogConfiguration;
@@ -23,6 +24,7 @@ import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.logging.ByteBufFormat;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -56,6 +58,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private final QuicClientConfig config;
   private final ClientSSLOptions sslOptions;
   private TransportMetrics<?> metrics;
+  private Future<Integer> clientFuture;
   private volatile Channel channel;
 
   public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
@@ -136,9 +139,34 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          Duration connectTimeout,
                                          SslContextProvider sslContextProvider) {
     Channel ch = channel;
-    if (ch == null) {
-      return context.failedFuture("Client must be bound");
+    if (ch != null) {
+      return connect(ch, remoteAddress, resolvedAddress, serverName, qLogConfig, context, connectTimeout, sslContextProvider);
     }
+    Future<Integer> cf;
+    synchronized (this) {
+      cf = clientFuture;
+      if (cf == null) {
+        SocketAddress bindAddress = config.getLocalAddress();
+        if (bindAddress == null) {
+          bindAddress = SocketAddress.inetSocketAddress(0, NetUtil.LOCALHOST.getHostName());
+        }
+        cf = bind(bindAddress);
+        clientFuture = cf;
+      }
+    }
+    return cf
+      .compose(port -> connect(channel, remoteAddress, resolvedAddress, serverName, qLogConfig, context, connectTimeout, sslContextProvider));
+  }
+
+
+  private Future<QuicConnection> connect(Channel ch,
+                                         SocketAddress remoteAddress,
+                                         java.net.SocketAddress resolvedAddress,
+                                         String serverName,
+                                         QLogConfig qLogConfig,
+                                         ContextInternal context,
+                                         Duration connectTimeout,
+                                         SslContextProvider sslContextProvider) {
     TransportMetrics<?> metrics = this.metrics;
     PromiseInternal<QuicConnection> promise = context.promise();
     QuicChannelBootstrap bootstrap = QuicChannel.newBootstrap(ch)
