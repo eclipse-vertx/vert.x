@@ -69,7 +69,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
                         QuicServerConfig config, ServerSSLOptions sslOptions) {
-    super(vertx, metricsProvider, config, sslOptions);
+    super(vertx, metricsProvider, config);
     this.config = config;
     this.sslOptions = sslOptions;
   }

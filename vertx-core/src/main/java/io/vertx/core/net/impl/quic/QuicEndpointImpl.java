@@ -60,7 +60,6 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   private final QuicEndpointConfig config;
-  private final SSLOptions sslOptions;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
   protected final BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
@@ -72,8 +71,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
   public QuicEndpointImpl(VertxInternal vertx,
                           BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                          QuicEndpointConfig config,
-                          SSLOptions sslOptions) {
+                          QuicEndpointConfig config) {
 
     String keyLogFilePath = config.getKeyLogFile();
     File keylogFile;
@@ -105,7 +103,6 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     }
 
     this.config = config;
-    this.sslOptions = sslOptions;
     this.vertx = Objects.requireNonNull(vertx);
     this.metricsProvider = metricsProvider;
     this.manager = new SslContextManager(new SSLEngineOptions() {
@@ -216,22 +213,18 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       }
       context = current;
     }
-    Future<SslContextProvider> f1 = manager.resolveSslContextProvider(sslOptions, current);
-    return f1.compose(sslContextProvider -> {
-      VertxMetrics metricsFactory = vertx.metrics();
-      TransportMetrics<?> metrics;
-      if (metricsProvider != null) {
-        metrics = metricsProvider.apply(config, address);
-      } else {
-        metrics = null;
-      }
-      return bind(current, address, metrics)
-        .map(ch -> {
-          handleBind(ch, metrics);
-          context.addCloseHook(this);
-          return ((InetSocketAddress)ch.localAddress()).getPort();
-        });
-    });
+    TransportMetrics<?> metrics;
+    if (metricsProvider != null) {
+      metrics = metricsProvider.apply(config, address);
+    } else {
+      metrics = null;
+    }
+    return bind(current, address, metrics)
+      .map(ch -> {
+        handleBind(ch, metrics);
+        context.addCloseHook(this);
+        return ((InetSocketAddress)ch.localAddress()).getPort();
+      });
   }
 
   @Override

@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -109,12 +110,25 @@ public class QuicClientTest extends VertxTestBase {
     } catch (Exception e) {
       assertSame(SSLHandshakeException.class, e.getClass());
     }
-    QuicClientConfig clientOptions = clientOptions();
     QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(SSL_OPTIONS.copy().setTrustOptions(Trust.CLIENT_JKS.get()));
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
     assertWaitUntil(() -> inflight.get() == 1);
     connection.close().await();
     assertWaitUntil(() -> inflight.get() == 0);
+  }
+
+  @Test
+  public void testConnectionSpecificSSLOptions() {
+    client.close();
+    client = QuicClient.create(vertx, clientOptions(), null);
+    QuicServerConfig serverOptions = serverOptions();
+    server.handler(conn -> {
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(SSL_OPTIONS.copy());
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
+    connection.close().await();
   }
 
   @Test
@@ -401,12 +415,29 @@ public class QuicClientTest extends VertxTestBase {
     String expectedAddress = TestUtils.loopbackAddress();
     QuicClientConfig clientOptions = clientOptions().setLocalAddress(SocketAddress.inetSocketAddress(1234, expectedAddress));
     client.close();
-    client = QuicClient.create(vertx,clientOptions.setStreamIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
+    client = QuicClient.create(vertx, clientOptions.setStreamIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
     server.handler(connection -> {
 
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     assertEquals(1234, connection.localAddress().port());
+  }
+
+  @Test
+  public void testInvalidApplicationProtocols() {
+    server.handler(connection -> {
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.close();
+    client = QuicClient.create(vertx, clientOptions());
+    for (List<String> applicationProtocols : Arrays.<List<String>>asList(null, List.of())) {
+      try {
+        client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), new QuicConnectOptions()
+          .setSslOptions(new ClientSSLOptions().setTrustAll(true).setApplicationLayerProtocols(applicationProtocols))).await();
+        fail();
+      } catch (IllegalArgumentException ignore) {
+      }
+    }
   }
 }
