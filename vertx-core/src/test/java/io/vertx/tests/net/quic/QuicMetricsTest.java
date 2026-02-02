@@ -11,11 +11,7 @@
 package io.vertx.tests.net.quic;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicStream;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
@@ -31,9 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
-import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
 
 @RunWith(LinuxOrOsx.class)
 public class QuicMetricsTest extends VertxTestBase {
@@ -68,10 +61,10 @@ public class QuicMetricsTest extends VertxTestBase {
   }
 
   private void testMetrics(int numberOfServers) throws Exception {
-    client = QuicClient.create(vertx, clientOptions().setMetricsName("the-metrics"), QuicClientTest.SSL_OPTIONS);
+    client = QuicClient.create(vertx, new QuicClientConfig().setMetricsName("the-metrics"), QuicClientTest.SSL_OPTIONS);
     AtomicReference<SocketMetric> serverConnectionMetric = new AtomicReference<>();
     for (int i = 0;i < numberOfServers;i++) {
-      QuicServer server = QuicServer.create(vertx, serverOptions().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
+      QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
       server.handler(conn -> {
         FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.getMetrics(server);
         assertEquals(1, serverMetrics.connectionCount());
@@ -97,6 +90,9 @@ public class QuicMetricsTest extends VertxTestBase {
     clientStream.endHandler(v -> {
       latch.countDown();
     });
+
+    // TODO stream close metrics
+
     clientStream.end(Buffer.buffer("ping"));
     awaitLatch(latch);
     assertEquals(List.of(Buffer.buffer("ping")), received);

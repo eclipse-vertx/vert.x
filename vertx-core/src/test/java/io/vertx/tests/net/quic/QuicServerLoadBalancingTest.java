@@ -12,10 +12,7 @@ package io.vertx.tests.net.quic;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.test.core.LinuxOrOsx;
@@ -32,9 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.vertx.test.core.AsyncTestBase.assertWaitUntil;
 import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
-import static io.vertx.tests.net.quic.QuicServerTest.serverOptions;
 
 @RunWith(LinuxOrOsx.class)
 public class QuicServerLoadBalancingTest extends VertxTestBase {
@@ -59,7 +54,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
   }
 
   private QuicServer server() {
-    QuicServer server = QuicServer.create(vertx, serverOptions().setLoadBalanced(true), QuicServerTest.SSL_OPTIONS);
+    QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setLoadBalanced(true), QuicServerTest.SSL_OPTIONS);
     servers.add(server);
     return server;
   }

@@ -15,7 +15,10 @@ import io.vertx.codegen.annotations.DataObject;
 import java.time.Duration;
 
 /**
- * Configuration of a Quic client.
+ * <p>Configuration of a Quic client.</p>
+ *
+ * <p>The default transport configuration, allows the client to open bidi streams to a server with sensitive defaults values,
+ * it does not allow to open uni streams nor allows the server to open streams toward the client.</p>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -31,6 +34,9 @@ public class QuicClientConfig extends QuicEndpointConfig {
   private SocketAddress localAddress;
 
   public QuicClientConfig() {
+
+    configureClient(getTransportConfig());
+
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.localAddress = null;
   }
@@ -40,6 +46,16 @@ public class QuicClientConfig extends QuicEndpointConfig {
 
     this.connectTimeout = other.connectTimeout;
     this.localAddress = other.localAddress;
+  }
+
+  private static void configureClient(QuicConfig cfg) {
+    cfg.setInitialMaxData(QuicConfig.DEFAULT_CLIENT_MAX_INITIAL_DATA);
+    cfg.setInitialMaxStreamDataBidiLocal(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_LOCAL);
+    cfg.setInitialMaxStreamDataBidiRemote(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_REMOTE);
+    cfg.setInitialMaxStreamDataUni(QuicConfig.DEFAULT_CLIENT_MAX_STREAMS_DATA_UNI);
+    cfg.setInitialMaxStreamsBidi(QuicConfig.DEFAULT_CLIENT_MAX_STREAMS_DATA_BIDI);
+    cfg.setInitialMaxStreamsUni(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_UNI);
+    cfg.setDisableActiveMigration(QuicConfig.DEFAULT_CLIENT_DISABLE_ACTIVE_MIGRATION);
   }
 
   @Override

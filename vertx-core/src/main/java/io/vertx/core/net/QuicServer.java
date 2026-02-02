@@ -52,6 +52,13 @@ public interface QuicServer extends QuicEndpoint {
   }
 
   /**
+   * Like {@link #create(Vertx, QuicServerConfig, ServerSSLOptions)}, with the default server configuration.
+   */
+  static QuicServer create(Vertx vertx, ServerSSLOptions sslOptions) {
+    return create(vertx, new QuicServerConfig(), sslOptions);
+  }
+
+  /**
    * Set the handler processing {@link QuicConnection}, the handler must be set before the server is bound.
    * @param handler the connection handler
    * @return this object instance

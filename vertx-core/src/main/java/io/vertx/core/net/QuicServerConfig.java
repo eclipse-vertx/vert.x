@@ -19,7 +19,10 @@ import static io.vertx.core.net.NetServerOptions.DEFAULT_HOST;
 import static io.vertx.core.net.NetServerOptions.DEFAULT_PORT;
 
 /**
- * Configuration of a Quic client.
+ * <p>Configuration of a Quic server.</p>
+ *
+ * <p>The default transport configuration, allows the server to accept bidi streams from a client with sensitive defaults values,
+ * it does not allow to accept uni streams nor allows the open streams toward the client.</p>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -39,6 +42,9 @@ public class QuicServerConfig extends QuicEndpointConfig {
   private KeyCertOptions clientAddressValidationKey;
 
   public QuicServerConfig() {
+
+    configureServer(getTransportConfig());
+
     port = DEFAULT_PORT;
     host = DEFAULT_HOST;
     loadBalanced = DEFAULT_LOAD_BALANCED;
@@ -58,6 +64,16 @@ public class QuicServerConfig extends QuicEndpointConfig {
     this.clientAddressValidation = other.clientAddressValidation;
     this.clientAddressValidationTimeWindow = other.clientAddressValidationTimeWindow;
     this.clientAddressValidationKey = tokenValidationKey != null ? tokenValidationKey.copy() : null;
+  }
+
+  private static void configureServer(QuicConfig cfg) {
+    cfg.setInitialMaxData(QuicConfig.DEFAULT_SERVER_MAX_INITIAL_DATA);
+    cfg.setInitialMaxStreamDataBidiLocal(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_LOCAL);
+    cfg.setInitialMaxStreamDataBidiRemote(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_REMOTE);
+    cfg.setInitialMaxStreamDataUni(QuicConfig.DEFAULT_SERVER_MAX_STREAMS_DATA_UNI);
+    cfg.setInitialMaxStreamsBidi(QuicConfig.DEFAULT_SERVER_MAX_STREAMS_DATA_BIDI);
+    cfg.setInitialMaxStreamsUni(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_UNI);
+    cfg.setDisableActiveMigration(QuicConfig.DEFAULT_SERVER_DISABLE_ACTIVE_MIGRATION);
   }
 
   @Override
