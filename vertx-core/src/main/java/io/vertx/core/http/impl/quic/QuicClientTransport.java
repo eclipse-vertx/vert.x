@@ -31,27 +31,16 @@ import io.vertx.core.spi.observability.HttpResponse;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
 public class QuicClientTransport implements HttpClientTransport {
 
   private final VertxInternal vertx;
-  private final HttpClientMetrics<?, ?, ?> clientMetrics;
-  private final Lock lock;
   private final QuicClient client;
-  private final QuicClientConfig quicConfig;
-  private final ClientSSLOptions sslOptions;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
   public QuicClientTransport(VertxInternal vertx, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
-
-    ClientSSLOptions sslOptions = config.getSslOptions()
-      .copy()
-      .setUseAlpn(true)
-      .setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
 
     QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
     quicConfig.setMetricsName(config.getMetricsName());
@@ -67,22 +56,27 @@ public class QuicClientTransport implements HttpClientTransport {
     } else {
       metricsProvider = null;
     }
-    QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicConfig, sslOptions);
+    QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicConfig, null);
 
     this.vertx = vertx;
-    this.clientMetrics = clientMetrics;
-    this.lock = new ReentrantLock();
-    this.quicConfig = quicConfig;
     this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
-    this.sslOptions = sslOptions;
     this.client = client;
   }
 
   @Override
   public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
+    ClientSSLOptions sslOptions = params.sslOptions;
+    if (sslOptions == null) {
+      return context.failedFuture("Missing clients SSL options");
+    }
+    sslOptions = sslOptions
+      .copy()
+      .setUseAlpn(true)
+      .setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     QuicConnectOptions connectOptions = new QuicConnectOptions();
     connectOptions.setServerName(authority.host());
+    connectOptions.setSslOptions(sslOptions);
     Future<QuicConnection> f = client.connect(server, connectOptions);
     return f.map(res -> {
       Http3ClientConnection c = new Http3ClientConnection(
