@@ -123,7 +123,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different metrics instances.</p>
    *
    * @param config      the config used to create the {@link NetServer}
-   * @param localAddress localAddress the local address the net socket is listening on
+   * @param localAddress localAddress the local address of the UDP socket the endpoint is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
   default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {

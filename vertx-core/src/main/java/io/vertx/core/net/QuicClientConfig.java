@@ -28,15 +28,18 @@ public class QuicClientConfig extends QuicEndpointConfig {
   public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(60);
 
   private Duration connectTimeout;
+  private SocketAddress localAddress;
 
   public QuicClientConfig() {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+    this.localAddress = null;
   }
 
   public QuicClientConfig(QuicClientConfig other) {
     super(other);
 
     this.connectTimeout = other.connectTimeout;
+    this.localAddress = other.localAddress;
   }
 
   @Override
@@ -97,6 +100,25 @@ public class QuicClientConfig extends QuicEndpointConfig {
       throw new IllegalArgumentException("connectTimeout must be >= 0");
     }
     this.connectTimeout = connectTimeout;
+    return this;
+  }
+
+  /**
+   * @return the local address to bind for network connections.
+   */
+  public SocketAddress getLocalAddress() {
+    return localAddress;
+  }
+
+  /**
+   * Set the local address to bind for network connections. When the local address is null,
+   * it will pick any local address, the default local address is null.
+   *
+   * @param localAddress the local address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicClientConfig setLocalAddress(SocketAddress localAddress) {
+    this.localAddress = localAddress;
     return this;
   }
 }
