@@ -62,7 +62,7 @@ public class QuicFlowControlTest extends VertxTestBase {
     CompletableFuture<Integer> latch = new CompletableFuture<>();
     Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(128));
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
         pump(0, chunk, stream, onSuccess2(times -> {
           stream.end();
           latch.complete(times);

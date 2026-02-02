@@ -76,7 +76,7 @@ public class QuicMetricsTest extends VertxTestBase {
         FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.getMetrics(server);
         assertEquals(1, serverMetrics.connectionCount());
         serverConnectionMetric.set(serverMetrics.firstMetric(conn.remoteAddress()));
-        conn.streamHandler(stream -> {
+        conn.handler(stream -> {
           stream.handler(buff -> stream.write(buff));
           stream.endHandler(v -> stream.end());
         });
