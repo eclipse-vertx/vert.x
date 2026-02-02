@@ -8,8 +8,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http1ClientConfig;
 import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
-import io.vertx.core.http.impl.quic.QuicClientTransport;
-import io.vertx.core.http.impl.tcp.TcpClientTransport;
+import io.vertx.core.http.impl.quic.QuicHttpClientTransport;
+import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -220,7 +220,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
     HttpClientTransport quicTransport;
     if (co.getVersions().contains(HttpVersion.HTTP_3)) {
-      quicTransport = new QuicClientTransport(vertx, metrics, co);
+      quicTransport = new QuicHttpClientTransport(vertx, metrics, co);
     } else {
       quicTransport = null;
     }
@@ -238,7 +238,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         .sslOptions(co.getSslOptions())
         .metrics(metrics)
         .build();
-      transport = new TcpClientTransport(
+      transport = new TcpHttpClientTransport(
         tcpClient,
         co.getTracingPolicy(),
         co.isDecompressionEnabled(),

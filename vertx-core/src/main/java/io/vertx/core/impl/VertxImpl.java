@@ -32,7 +32,7 @@ import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
-import io.vertx.core.http.impl.tcp.TcpClientTransport;
+import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.quic.QuicHttpServer;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
@@ -465,7 +465,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       .sslOptions(options.getSslOptions())
       .metrics(metrics)
       .build();
-    TcpClientTransport channelConnector = TcpClientTransport.create(tcpClient, config, metrics);
+    TcpHttpClientTransport channelConnector = TcpHttpClientTransport.create(tcpClient, config, metrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
   }
 

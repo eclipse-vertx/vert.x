@@ -57,12 +57,12 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TcpClientTransport implements HttpClientTransport {
+public class TcpHttpClientTransport implements HttpClientTransport {
 
-  public static TcpClientTransport create(NetClientInternal netClient,
-                                          HttpClientConfig config,
-                                          HttpClientMetrics clientMetrics) {
-    return new TcpClientTransport(netClient,
+  public static TcpHttpClientTransport create(NetClientInternal netClient,
+                                              HttpClientConfig config,
+                                              HttpClientMetrics clientMetrics) {
+    return new TcpHttpClientTransport(netClient,
       config.getTracingPolicy(),
       config.isDecompressionEnabled(),
       config.getTcpConfig().getNetworkLogging() != null,
@@ -89,18 +89,18 @@ public class TcpClientTransport implements HttpClientTransport {
   private final HttpClientMetrics clientMetrics;
   private final NetClientInternal netClient;
 
-  public TcpClientTransport(NetClientInternal netClient,
-                            TracingPolicy tracingPolicy,
-                            boolean useDecompression,
-                            boolean logActivity,
-                            ByteBufFormat logFormat,
-                            boolean forceSni,
-                            Http1ClientConfig http1Config,
-                            Http2ClientConfig http2Config,
-                            Duration idleTimeout,
-                            Duration readIdleTimeout,
-                            Duration writeIdleTimeout,
-                            HttpClientMetrics clientMetrics) {
+  public TcpHttpClientTransport(NetClientInternal netClient,
+                                TracingPolicy tracingPolicy,
+                                boolean useDecompression,
+                                boolean logActivity,
+                                ByteBufFormat logFormat,
+                                boolean forceSni,
+                                Http1ClientConfig http1Config,
+                                Http2ClientConfig http2Config,
+                                Duration idleTimeout,
+                                Duration readIdleTimeout,
+                                Duration writeIdleTimeout,
+                                HttpClientMetrics clientMetrics) {
 
     if (http1Config != null && !http1Config.isKeepAlive() && http1Config.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
