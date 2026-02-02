@@ -33,14 +33,14 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
-public class QuicClientTransport implements HttpClientTransport {
+public class QuicHttpClientTransport implements HttpClientTransport {
 
   private final VertxInternal vertx;
   private final QuicClient client;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public QuicClientTransport(VertxInternal vertx, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
+  public QuicHttpClientTransport(VertxInternal vertx, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
 
     QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
     quicConfig.setMetricsName(config.getMetricsName());
