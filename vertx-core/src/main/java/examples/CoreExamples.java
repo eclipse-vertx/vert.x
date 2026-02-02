@@ -501,13 +501,14 @@ public class CoreExamples {
       .build();
   }
 
-  public void configureLinuxOptions(Vertx vertx, boolean fastOpen, boolean cork, boolean quickAck, boolean reusePort) {
+  public void configureLinuxOptions(Vertx vertx, boolean fastOpen, boolean cork, boolean quickAck, boolean reusePort, int tcpUserTimeout) {
     // Available on Linux
     vertx.createHttpServer(new HttpServerOptions()
       .setTcpFastOpen(fastOpen)
       .setTcpCork(cork)
       .setTcpQuickAck(quickAck)
       .setReusePort(reusePort)
+      .setTcpUserTimeout(tcpUserTimeout)
     );
   }
 

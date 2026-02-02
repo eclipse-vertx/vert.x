@@ -742,6 +742,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @param tcpUserTimeout the tcp user timeout value
    */
   public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
+    if (tcpUserTimeout < 0) {
+      throw new IllegalArgumentException("tcpUserTimeout must be >= 0");
+    }
     transportOptions.setTcpUserTimeout(tcpUserTimeout);
     return this;
   }
