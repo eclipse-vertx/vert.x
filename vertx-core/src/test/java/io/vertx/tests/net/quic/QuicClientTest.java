@@ -134,7 +134,7 @@ public class QuicClientTest extends VertxTestBase {
   @Test
   public void testCreateStream() throws Exception {
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
         stream.handler(buff -> stream.write(buff));
         stream.endHandler(v -> stream.end());
       });
@@ -160,7 +160,7 @@ public class QuicClientTest extends VertxTestBase {
     waitFor(4);
     server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
         stream.handler(buff -> {
           stream.reset(4).onComplete(onSuccess2(v -> complete()));
         });
@@ -193,7 +193,7 @@ public class QuicClientTest extends VertxTestBase {
     waitFor(2);
     server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
         stream.resetHandler(code -> {
           assertEquals(10L, (long)code);
           vertx.setTimer(20, id -> {
@@ -233,7 +233,7 @@ public class QuicClientTest extends VertxTestBase {
     waitFor(2);
     server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
         AtomicBoolean isReset = new AtomicBoolean();
         Buffer buffer = Buffer.buffer();
         stream.handler(buff -> {
@@ -286,7 +286,7 @@ public class QuicClientTest extends VertxTestBase {
 
     server = QuicServer.create(vertx, serverOptions(), QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
         stream.endHandler(v -> {
           vertx.setTimer(100, id -> {
             serverEndCount.incrementAndGet();
@@ -348,7 +348,7 @@ public class QuicClientTest extends VertxTestBase {
     options.setStreamIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
-      conn.streamHandler(stream -> {
+      conn.handler(stream -> {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();

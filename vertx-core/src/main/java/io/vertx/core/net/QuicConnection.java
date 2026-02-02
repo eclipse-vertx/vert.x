@@ -33,7 +33,7 @@ public interface QuicConnection {
    * @param handler the handler processing streams
    * @return this instance of a connection
    */
-  QuicConnection streamHandler(Handler<QuicStream> handler);
+  QuicConnection handler(Handler<QuicStream> handler);
 
   /**
    * Set a {@code handler} notified when the connection is shutdown: the client or server will close the connection
