@@ -18,11 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FakeTransportMetrics extends FakeMetricsBase implements TransportMetrics<SocketMetric> {
+public class FakeTransportMetrics extends FakeMetricsBase implements TransportMetrics<ConnectionMetric> {
 
   private final String name;
   private final AtomicInteger count = new AtomicInteger();
-  private final ConcurrentMap<SocketAddress, SocketMetric[]> sockets = new ConcurrentHashMap<>();
+  private final ConcurrentMap<SocketAddress, ConnectionMetric[]> sockets = new ConcurrentHashMap<>();
 
   public FakeTransportMetrics(String name) {
     this.name = name;
@@ -34,7 +34,7 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
 
   public Integer connectionCount(SocketAddress socket) {
     socket = keyOf(socket);
-    return sockets.getOrDefault(socket, new SocketMetric[0]).length;
+    return sockets.getOrDefault(socket, new ConnectionMetric[0]).length;
   }
 
   public String name() {
@@ -48,12 +48,12 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
     return addr;
   }
 
-  public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
+  public ConnectionMetric connected(SocketAddress remoteAddress, String remoteName) {
     remoteAddress = keyOf(remoteAddress);
-    SocketMetric metric = new SocketMetric(remoteAddress, remoteName);
+    ConnectionMetric metric = new ConnectionMetric(remoteAddress, remoteName);
     sockets.compute(remoteAddress, (key, value) -> {
       if (value == null) {
-        value = new SocketMetric[] { metric };
+        value = new ConnectionMetric[] { metric };
       } else {
         value = Arrays.copyOf(value, value.length + 1);
         value[value.length - 1] = metric;
@@ -64,13 +64,13 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
     return metric;
   }
 
-  public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
+  public void disconnected(ConnectionMetric connectionMetric, SocketAddress remoteAddress) {
     remoteAddress = keyOf(remoteAddress);
     sockets.compute(remoteAddress, (key, value) -> {
       if (value != null) {
         for (int idx = 0;idx < value.length;idx++) {
-          if (value[idx] == socketMetric) {
-            SocketMetric[] next = new SocketMetric[value.length - 1];
+          if (value[idx] == connectionMetric) {
+            ConnectionMetric[] next = new ConnectionMetric[value.length - 1];
             System.arraycopy(value, 0, next, 0, idx);
             System.arraycopy(value, idx + 1, next, idx, next.length - idx);
             if (next.length == 0) {
@@ -82,25 +82,35 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
       }
       return null;
     });
-    if (socketMetric.connected.compareAndSet(true, false)) {
+    if (connectionMetric.connected.compareAndSet(true, false)) {
       count.decrementAndGet();
     }
   }
 
-  public SocketMetric firstMetric(SocketAddress address) {
+  @Override
+  public void streamOpened(ConnectionMetric connectionMetric) {
+    connectionMetric.openStreams.incrementAndGet();
+  }
+
+  @Override
+  public void streamClosed(ConnectionMetric connectionMetric) {
+    connectionMetric.openStreams.decrementAndGet();
+  }
+
+  public ConnectionMetric firstMetric(SocketAddress address) {
     address = keyOf(address);
     return sockets.get(address)[0];
   }
 
   @Override
-  public void bytesRead(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    socketMetric.bytesRead.addAndGet(numberOfBytes);
-    socketMetric.bytesReadEvents.add(numberOfBytes);
+  public void bytesRead(ConnectionMetric connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    connectionMetric.bytesRead.addAndGet(numberOfBytes);
+    connectionMetric.bytesReadEvents.add(numberOfBytes);
   }
 
   @Override
-  public void bytesWritten(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    socketMetric.bytesWritten.addAndGet(numberOfBytes);
-    socketMetric.bytesWrittenEvents.add(numberOfBytes);
+  public void bytesWritten(ConnectionMetric connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    connectionMetric.bytesWritten.addAndGet(numberOfBytes);
+    connectionMetric.bytesWrittenEvents.add(numberOfBytes);
   }
 }

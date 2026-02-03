@@ -35,17 +35,17 @@ import io.vertx.core.spi.observability.HttpResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpServerMetrics<R, W, S> extends TransportMetrics<S> {
+public interface HttpServerMetrics<R, W, C> extends TransportMetrics<C> {
 
   /**
    * Called when an http server request begins. Vert.x will invoke {@link #responseEnd} when the response has ended
    * or {@link #requestReset} if the request/response has failed before.
    *
-   * @param socketMetric the socket metric
-   * @param request the http server reuqest
+   * @param connectionMetric the connection metric
+   * @param request the http server request
    * @return the request metric
    */
-  default R requestBegin(S socketMetric, HttpRequest request) {
+  default R requestBegin(C connectionMetric, HttpRequest request) {
     return null;
   }
 
@@ -79,12 +79,12 @@ public interface HttpServerMetrics<R, W, S> extends TransportMetrics<S> {
   /**
    * Called when an http server response is pushed.
    *
-   * @param socketMetric the socket metric
+   * @param connectionMetric the connection metric
    * @param method the pushed response method
    * @param uri the pushed response uri
    * @param response the http server response  @return the request metric
    */
-  default R responsePushed(S socketMetric, HttpMethod method, String uri, HttpResponse response) {
+  default R responsePushed(C connectionMetric, HttpMethod method, String uri, HttpResponse response) {
     return null;
   }
 
@@ -100,21 +100,21 @@ public interface HttpServerMetrics<R, W, S> extends TransportMetrics<S> {
   /**
    * Called when a server web socket connects.
    *
-   * @param socketMetric the socket metric
+   * @param connectionMetric the socket metric
    * @param requestMetric the request metric
-   * @param serverWebSocket the server web socket
+   * @param webSocket the server web socket
    * @return the server web socket metric
    */
-  default W connected(S socketMetric, R requestMetric, ServerWebSocket serverWebSocket) {
+  default W connected(C connectionMetric, R requestMetric, ServerWebSocket webSocket) {
     return null;
   }
 
   /**
    * Called when the server web socket has disconnected.
    *
-   * @param serverWebSocketMetric the server web socket metric
+   * @param webSocketMetric the server web socket metric
    */
-  default void disconnected(W serverWebSocketMetric) {
+  default void disconnected(W webSocketMetric) {
   }
 
   /**

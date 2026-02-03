@@ -160,17 +160,17 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   }
 
   @Override
-  public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    NetworkMetrics.super.bytesRead(socketMetric, remoteAddress, numberOfBytes);
+  public void bytesRead(Object connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    NetworkMetrics.super.bytesRead(connectionMetric, remoteAddress, numberOfBytes);
   }
 
   @Override
-  public void bytesWritten(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    NetworkMetrics.super.bytesWritten(socketMetric, remoteAddress, numberOfBytes);
+  public void bytesWritten(Object connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
+    NetworkMetrics.super.bytesWritten(connectionMetric, remoteAddress, numberOfBytes);
   }
 
   @Override
-  public void exceptionOccurred(Object socketMetric, SocketAddress remoteAddress, Throwable t) {
-    NetworkMetrics.super.exceptionOccurred(socketMetric, remoteAddress, t);
+  public void exceptionOccurred(Object connectionMetric, SocketAddress remoteAddress, Throwable err) {
+    NetworkMetrics.super.exceptionOccurred(connectionMetric, remoteAddress, err);
   }
 }

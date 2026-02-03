@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class HttpServerMetric {
 
   public final String uri;
-  public final SocketMetric socket;
+  public final ConnectionMetric socket;
   public final AtomicBoolean failed = new AtomicBoolean();
   public final AtomicReference<String> route = new AtomicReference<>();
   public final HttpRequest request;
@@ -34,13 +34,13 @@ public class HttpServerMetric {
   public final AtomicBoolean responseEnded = new AtomicBoolean();
   public final AtomicLong bytesWritten = new AtomicLong();
 
-  public HttpServerMetric(String uri, SocketMetric socket) {
+  public HttpServerMetric(String uri, ConnectionMetric socket) {
     this.uri = uri;
     this.request = null;
     this.socket = socket;
   }
 
-  public HttpServerMetric(HttpRequest request, SocketMetric socket) {
+  public HttpServerMetric(HttpRequest request, ConnectionMetric socket) {
     this.uri = request.uri();
     this.request = request;
     this.socket = socket;

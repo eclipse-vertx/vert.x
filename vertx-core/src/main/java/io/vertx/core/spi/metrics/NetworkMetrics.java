@@ -15,39 +15,39 @@ import io.vertx.core.net.SocketAddress;
 
 /**
  * An SPI used internally by Vert.x to gather metrics on a net socket which serves
- * as a base class for TCP or UDP.<p/>
+ * as a base class for TCP, UDP or QUIC.<p/>
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface NetworkMetrics<S> extends Metrics {
+public interface NetworkMetrics<C> extends Metrics {
 
   /**
    * Called when bytes have been read
    *
-   * @param socketMetric the socket metric, null for UDP
+   * @param connectionMetric the connection metric, {@code null} for UDP
    * @param remoteAddress the remote address which this socket received bytes from
    * @param numberOfBytes the number of bytes read
    */
-  default void bytesRead(S socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+  default void bytesRead(C connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
   }
 
   /**
    * Called when bytes have been written
    *
-   * @param socketMetric the socket metric, null for UDP
+   * @param connectionMetric the connection metric,  {@code null} for UDP
    * @param remoteAddress the remote address which bytes are being written to
    * @param numberOfBytes the number of bytes written
    */
-  default void bytesWritten(S socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+  default void bytesWritten(C connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
   }
 
   /**
    * Called when exceptions occur for a specific connection.
    *
-   * @param socketMetric the socket metric, null for UDP
-   * @param remoteAddress the remote address of the connection or null if it's datagram/udp
-   * @param t the exception that occurred
+   * @param connectionMetric the connection metric,  {@code null} for UDP
+   * @param remoteAddress the remote address of the connection or  {@code null} if it's datagram/udp
+   * @param err the exception that occurred
    */
-  default void exceptionOccurred(S socketMetric, SocketAddress remoteAddress, Throwable t) {
+  default void exceptionOccurred(C connectionMetric, SocketAddress remoteAddress, Throwable err) {
   }
 }

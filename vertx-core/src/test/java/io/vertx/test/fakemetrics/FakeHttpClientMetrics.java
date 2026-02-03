@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric> {
+public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, ConnectionMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();

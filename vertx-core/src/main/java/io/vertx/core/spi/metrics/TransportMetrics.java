@@ -21,7 +21,7 @@ import io.vertx.core.net.SocketAddress;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface TransportMetrics<S> extends NetworkMetrics<S> {
+public interface TransportMetrics<C> extends NetworkMetrics<C> {
 
   /**
    * Called when a client has connected, which is applicable for connections.<p/>
@@ -31,18 +31,32 @@ public interface TransportMetrics<S> extends NetworkMetrics<S> {
    *
    * @param remoteAddress the remote address of the client
    * @param remoteName the remote name of the client
-   * @return the socket metric
+   * @return the connection metric
    */
-  default S connected(SocketAddress remoteAddress, String remoteName) {
+  default C connected(SocketAddress remoteAddress, String remoteName) {
     return null;
   }
 
   /**
    * Called when a client has disconnected, which is applicable for connections.
    *
-   * @param socketMetric the socket metric
+   * @param connectionMetric the connection metric
    * @param remoteAddress the remote address of the client
    */
-  default void disconnected(S socketMetric, SocketAddress remoteAddress) {
+  default void disconnected(C connectionMetric, SocketAddress remoteAddress) {
+  }
+
+  /**
+   * Called when a connection has opened a stream, only applicable for Quic connections
+   * @param connectionMetric the connection metric
+   */
+  default void streamOpened(C connectionMetric) {
+  }
+
+  /**
+   * Called when a connection has closed a stream, only applicable for Quic connections
+   * @param connectionMetric the connection metric
+   */
+  default void streamClosed(C connectionMetric) {
   }
 }
