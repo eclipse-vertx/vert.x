@@ -43,7 +43,9 @@ import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.*;
@@ -399,28 +401,30 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    return new TcpHttpServer(this, new HttpServerConfig(serverOptions), serverOptions.isRegisterWebSocketWriteHandlers());
+    HttpServerConfig config = new HttpServerConfig(serverOptions);
+    return new CleanableHttpServer(this, new TcpHttpServer(this, config, serverOptions.isRegisterWebSocketWriteHandlers()));
   }
 
   @Override
   public HttpServer createHttpServer(HttpServerConfig config) {
-    HttpServer tcpServer = null;
+    HttpServerInternal tcpServer = null;
     if (config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0)) {
       tcpServer = new TcpHttpServer(this, new HttpServerConfig(config), false);
     }
-    HttpServer quicServer = null;
+    HttpServerInternal quicServer = null;
     if (config.getVersions().contains(HttpVersion.HTTP_3)) {
       quicServer = new QuicHttpServer(this, new HttpServerConfig(config));
     }
     if (tcpServer != null) {
       if (quicServer != null) {
-        return new CompositeHttpServer(tcpServer, quicServer);
+        CompositeHttpServer compositeServer = new CompositeHttpServer(this, tcpServer, quicServer);
+        return new CleanableHttpServer(this, compositeServer);
       } else {
-        return tcpServer;
+        return new CleanableHttpServer(this, tcpServer);
       }
     } else {
       if (quicServer != null) {
-        return quicServer;
+        return new CleanableHttpServer(this, quicServer);
       } else {
         throw new IllegalArgumentException("You must set at least one supported HTTP version");
       }

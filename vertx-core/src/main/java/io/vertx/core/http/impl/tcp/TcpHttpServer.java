@@ -18,8 +18,10 @@ import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.metrics.Metrics;
@@ -34,7 +36,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class TcpHttpServer implements HttpServer, MetricsProvider {
+public class TcpHttpServer implements HttpServerInternal {
 
   static final Logger log = LoggerFactory.getLogger(TcpHttpServer.class);
 
@@ -95,9 +97,9 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
 
   @Override
   public Metrics getMetrics() {
-    NetServerImpl s;
+    NetServerInternal s;
     synchronized (this) {
-      s = (NetServerImpl) tcpServer;
+      s = (NetServerInternal) tcpServer;
     }
     return s == null ? null : s.getMetrics();
   }
@@ -168,11 +170,20 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
 
   @Override
   public Future<HttpServer> listen() {
-    return listen(config.getTcpPort(), config.getTcpHost());
+    return listen(vertx.getOrCreateContext());
   }
 
   @Override
-  public synchronized Future<HttpServer> listen(SocketAddress address) {
+  public Future<HttpServer> listen(SocketAddress address) {
+    return listen(vertx.getOrCreateContext(), address);
+  }
+
+  @Override
+  public Future<HttpServer> listen(ContextInternal context) {
+    return listen(context, SocketAddress.inetSocketAddress(config.getTcpPort(), config.getTcpHost()));
+  }
+
+  public synchronized Future<HttpServer> listen(ContextInternal context, SocketAddress address) {
     if (requestHandler == null && webSocketHandler == null && webSocketHandhakeHandler == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
@@ -180,7 +191,6 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
       throw new IllegalStateException();
     }
     HttpServerConfig config = this.config;
-    ContextInternal context = vertx.getOrCreateContext();
     ContextInternal listenContext;
     // Not sure of this
     if (context.isEventLoopContext()) {
@@ -194,6 +204,7 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
       .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(config, addr))
+      .cleanable(false)
       .build();
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;
@@ -295,7 +306,7 @@ public class TcpHttpServer implements HttpServer, MetricsProvider {
   }
 
   public synchronized boolean isClosed() {
-    NetServerImpl s = (NetServerImpl) tcpServer;
+    NetServerInternal s = tcpServer;
     return s == null || s.isClosed();
   }
 

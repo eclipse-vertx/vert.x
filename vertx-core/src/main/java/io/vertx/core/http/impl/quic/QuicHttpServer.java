@@ -19,6 +19,7 @@ import io.vertx.core.http.impl.HttpServerRequestImpl;
 import io.vertx.core.http.impl.http3.Http3ServerConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
@@ -34,7 +35,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class QuicHttpServer implements HttpServer, MetricsProvider {
+public class QuicHttpServer implements HttpServerInternal {
 
   private final VertxInternal vertx;
   private final HttpServerConfig config;
@@ -42,7 +43,7 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
   private final QuicServerConfig quicConfig;
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
-  private io.vertx.core.net.QuicServer quicServer;
+  private QuicServerImpl quicServer;
   private volatile int actualPort;
 
   public QuicHttpServer(VertxInternal vertx, HttpServerConfig config) {
@@ -123,11 +124,6 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
     return vertx.succeededFuture();
   }
 
-  @Override
-  public Future<HttpServer> listen() {
-    return listen(SocketAddress.inetSocketAddress(config.getQuicPort(), config.getQuicHost()));
-  }
-
   private static class ConnectionHandler implements Handler<QuicConnection> {
 
     private final io.vertx.core.net.QuicServer transport;
@@ -187,9 +183,24 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
   }
 
   @Override
-  public Future<HttpServer> listen(SocketAddress address) {
+  public Future<HttpServer> listen() {
+    return listen(vertx.getOrCreateContext());
+  }
 
-    Handler<HttpServerRequest> requestHandler;
+  @Override
+  public Future<HttpServer> listen(SocketAddress address) {
+    return listen(vertx.getOrCreateContext(), address);
+  }
+
+  @Override
+  public Future<HttpServer> listen(ContextInternal context) {
+    return listen(context, SocketAddress.inetSocketAddress(config.getQuicPort(), config.getQuicHost()));
+  }
+
+  @Override
+  public Future<HttpServer> listen(ContextInternal current, SocketAddress address) {
+
+  Handler<HttpServerRequest> requestHandler;
     Handler<HttpConnection> connectionHandler;
 
     BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
@@ -206,7 +217,7 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
 
     synchronized (this) {
       if (quicServer != null) {
-        return vertx.getOrCreateContext().failedFuture(new IllegalStateException("Already listening on port " + address.port()));
+        return current.failedFuture(new IllegalStateException("Already listening on port " + address.port()));
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
@@ -214,18 +225,23 @@ public class QuicHttpServer implements HttpServer, MetricsProvider {
     }
 
     if (requestHandler == null) {
-      return vertx.getOrCreateContext().failedFuture(new IllegalStateException("Set request handler first"));
+      return current.failedFuture(new IllegalStateException("Set request handler first"));
     }
 
     quicServer.handler(new ConnectionHandler(quicServer, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
       config.getMaxFormBufferedBytes(), http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings()));
     return quicServer
-      .bind(address)
+      .bind(current, address)
       .map(port -> {
         actualPort = port;
         return this;
       });
+  }
+
+  @Override
+  public boolean isClosed() {
+    return quicServer == null;
   }
 
   @Override

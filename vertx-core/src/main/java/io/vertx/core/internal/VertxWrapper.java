@@ -26,7 +26,7 @@ import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.tcp.NetServerInternal;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;

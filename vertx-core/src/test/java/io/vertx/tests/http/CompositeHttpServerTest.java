@@ -13,6 +13,7 @@ package io.vertx.tests.http;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
@@ -49,7 +50,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
     expectSucceed();
   }
 
-  public void expectFail() throws Exception {
+  public void expectFail() {
     HttpServerConfig config = new HttpServerConfig()
       .setSsl(true)
       .setPort(4043)
@@ -94,5 +95,25 @@ public class CompositeHttpServerTest extends VertxTestBase {
         .await();
       assertEquals(version.name(), resp.toString());
     }
+  }
+
+  @Test
+  public void testAutomaticCleanup() {
+
+    HttpServerConfig config = new HttpServerConfig()
+      .setSsl(true)
+      .setPort(4043)
+      .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
+
+    config.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
+
+    HttpServerInternal server = (HttpServerInternal)vertx.createHttpServer(config)
+      .requestHandler(request -> request
+        .response()
+        .end(request.version().name()));
+
+    String id = vertx.deployVerticle(context -> server.listen()).await();
+    vertx.undeploy(id).await();
+    assertTrue(server.isClosed());
   }
 }

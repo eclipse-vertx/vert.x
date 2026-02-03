@@ -49,7 +49,7 @@ import java.util.function.BiFunction;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsProvider, Closeable {
+public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsProvider {
 
   private static final EnumMap<QuicCongestionControlAlgorithm, io.netty.handler.codec.quic.QuicCongestionControlAlgorithm> CC_MAP = new EnumMap<>(QuicCongestionControlAlgorithm.class);
 
@@ -198,7 +198,6 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
             ctx = context;
             context = null;
           }
-          ctx.removeCloseHook(QuicEndpointImpl.this);
         }).addListener(promise);
       }
     };
@@ -206,7 +205,10 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
   @Override
   public Future<Integer> bind(SocketAddress address) {
-    ContextInternal current = vertx.getOrCreateContext();
+    return bind(vertx.getOrCreateContext(), address);
+  }
+
+  public Future<Integer> bind(ContextInternal current, SocketAddress address) {
     synchronized (this) {
       if (context != null) {
         return current.failedFuture("Already bound");
@@ -222,7 +224,6 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     return bind(current, address, metrics)
       .map(ch -> {
         handleBind(ch, metrics);
-        context.addCloseHook(this);
         return ((InetSocketAddress)ch.localAddress()).getPort();
       });
   }
@@ -252,9 +253,9 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     this.flushStrategy = flushStrategy;
     return this;
   }
-
-  @Override
-  public void close(Completable<Void> completion) {
-    close().onComplete(completion);
-  }
+//
+//  @Override
+//  public void close(Completable<Void> completion) {
+//    close().onComplete(completion);
+//  }
 }

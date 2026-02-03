@@ -40,7 +40,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
-import io.vertx.core.net.impl.tcp.NetServerImpl;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
@@ -1489,7 +1489,7 @@ public class NetTest extends VertxTestBase {
       cns.add(host);
     }
     assertEquals(Arrays.asList("host1", "host2.com", "localhost"), cns);
-    assertEquals(2, ((NetServerImpl)server).sniEntrySize());
+    assertEquals(2, ((NetServerInternal)server).sniEntrySize());
     assertWaitUntil(() -> receivedServerNames.size() == 3);
     assertEquals(receivedServerNames, serverNames);
   }
@@ -2140,13 +2140,13 @@ public class NetTest extends VertxTestBase {
   public void testClosingVertxCloseSharedServers() throws Exception {
     int numServers = 2;
     Vertx vertx = createVertx(getOptions());
-    List<NetServerImpl> servers = new ArrayList<>();
+    List<NetServerInternal> servers = new ArrayList<>();
     for (int i = 0;i < numServers;i++) {
       NetServer server = vertx.createNetServer().connectHandler(so -> {
         fail();
       });
       startServer(server);
-      servers.add((NetServerImpl) server);
+      servers.add((NetServerInternal) server);
     }
     CountDownLatch latch = new CountDownLatch(1);
     vertx.close().onComplete(onSuccess(v -> latch.countDown()));
@@ -2259,12 +2259,11 @@ public class NetTest extends VertxTestBase {
           testComplete();
         }
       });
-    }).listen(testAddress).onComplete(onSuccess(v -> {
-      client.connect(testAddress).onComplete(onSuccess(socket -> {
-        Buffer buff = Buffer.buffer("foo");
-        socket.write(buff);
-        socket.write(buff);
-      }));
+    }).listen(testAddress).await();
+    client.connect(testAddress).onComplete(onSuccess(socket -> {
+      Buffer buff = Buffer.buffer("foo");
+      socket.write(buff);
+      socket.write(buff);
     }));
     await();
   }
@@ -2432,18 +2431,13 @@ public class NetTest extends VertxTestBase {
   public void testListenTwice() {
     server.connectHandler(sock -> {
     });
-    server.listen(testAddress).onComplete(onSuccess(s -> {
-      try {
-        server.listen(testAddress);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        // OK
-        testComplete();
-      } catch (Exception e) {
-        fail(e.getMessage());
-      }
-    }));
-    await();
+    server.listen(testAddress).await();
+    try {
+      server.listen(testAddress).await();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
   }
 
   @Test
@@ -2476,16 +2470,13 @@ public class NetTest extends VertxTestBase {
   public void testListenTwice2() {
     server.connectHandler(sock -> {
     });
-    server.listen(testAddress).onComplete(onSuccess(v -> {
-      try {
-        server.listen(testAddress);
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        // OK
-      }
-      testComplete();
-    }));
-    await();
+    server.listen(testAddress).await();
+    try {
+      server.listen(testAddress).await();
+      fail("Should throw exception");
+    } catch (IllegalStateException e) {
+      // OK
+    }
   }
 
   @Test

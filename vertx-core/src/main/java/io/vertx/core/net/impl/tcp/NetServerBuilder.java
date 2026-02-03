@@ -11,6 +11,7 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -28,6 +29,7 @@ public class NetServerBuilder {
   private BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
   private boolean fileRegionEnabled;
   private boolean registerWriteHandler;
+  private boolean cleanable;
 
   public NetServerBuilder(VertxInternal vertx, TcpServerConfig config, ServerSSLOptions sslOptions) {
     this.vertx = vertx;
@@ -35,6 +37,7 @@ public class NetServerBuilder {
     this.sslOptions = sslOptions;
     this.fileRegionEnabled = false;
     this.registerWriteHandler = false;
+    this.cleanable = false;
   }
 
   public NetServerBuilder(VertxInternal vertx, NetServerOptions options) {
@@ -47,6 +50,12 @@ public class NetServerBuilder {
     this.fileRegionEnabled = options.isFileRegionEnabled();
     this.registerWriteHandler = options.isRegisterWriteHandler();
     this.metricsProvider = (metrics,  localAddress) -> metrics.createTcpServerMetrics(cfg, localAddress);
+    this.cleanable = true;
+  }
+
+  public NetServerBuilder cleanable(boolean cleanable) {
+    this.cleanable = cleanable;
+    return this;
   }
 
   public NetServerBuilder fileRegionEnabled(boolean fileRegionEnabled) {
@@ -60,12 +69,23 @@ public class NetServerBuilder {
   }
 
   public NetServerInternal build() {
-    return new NetServerImpl(
-      vertx,
-      config,
-      sslOptions,
-      fileRegionEnabled,
-      registerWriteHandler,
-      metricsProvider);
+    NetServerInternal server;
+    if (cleanable) {
+      server = new CleanableNetServer(vertx,
+        config,
+        sslOptions,
+        fileRegionEnabled,
+        registerWriteHandler,
+        metricsProvider);
+    } else {
+      server = new NetServerImpl(
+        vertx,
+        config,
+        sslOptions,
+        fileRegionEnabled,
+        registerWriteHandler,
+        metricsProvider);
+    }
+    return server;
   }
 }
