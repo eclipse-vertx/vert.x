@@ -13,10 +13,15 @@ package io.vertx.core.http.impl;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
+import io.vertx.core.spi.metrics.Metrics;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -26,12 +31,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CompositeHttpServer implements HttpServer {
+public class CompositeHttpServer implements HttpServerInternal {
 
-  private final HttpServer tcpServer;
-  private final HttpServer quicServer;
+  private final VertxInternal vertx;
+  private final HttpServerInternal tcpServer;
+  private final HttpServerInternal quicServer;
 
-  public CompositeHttpServer(HttpServer tcpServer, HttpServer quicServer) {
+  public CompositeHttpServer(VertxInternal vertx, HttpServerInternal tcpServer, HttpServerInternal quicServer) {
+    this.vertx = vertx;
     this.tcpServer = tcpServer;
     this.quicServer = quicServer;
   }
@@ -106,12 +113,22 @@ public class CompositeHttpServer implements HttpServer {
 
   @Override
   public Future<HttpServer> listen() {
-    return listen(tcpServer.listen(), quicServer.listen());
+    return listen(vertx.getOrCreateContext());
   }
 
   @Override
   public Future<HttpServer> listen(SocketAddress address) {
-    return listen(tcpServer.listen(address), quicServer.listen(address));
+    return listen(vertx.getOrCreateContext(), address);
+  }
+
+  @Override
+  public Future<HttpServer> listen(ContextInternal context) {
+    return listen(tcpServer.listen(context), quicServer.listen(context));
+  }
+
+  @Override
+  public Future<HttpServer> listen(ContextInternal context, SocketAddress address) {
+    return listen(tcpServer.listen(context, address), quicServer.listen(context, address));
   }
 
   private Future<HttpServer> listen(Future<HttpServer> f1, Future<HttpServer> f2) {
@@ -136,12 +153,22 @@ public class CompositeHttpServer implements HttpServer {
   @Override
   public Future<Void> shutdown(long timeout, TimeUnit unit) {
     return Future
-      .join(tcpServer.shutdown(timeout, unit), tcpServer.shutdown(timeout, unit))
+      .join(tcpServer.shutdown(timeout, unit), quicServer.shutdown(timeout, unit))
       .mapEmpty();
   }
 
   @Override
   public int actualPort() {
     return tcpServer.actualPort();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return tcpServer.isClosed() && quicServer.isClosed();
+  }
+
+  @Override
+  public Metrics getMetrics() {
+    return tcpServer.getMetrics();
   }
 }

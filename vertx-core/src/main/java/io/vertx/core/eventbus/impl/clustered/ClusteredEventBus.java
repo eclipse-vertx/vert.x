@@ -25,7 +25,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
-import io.vertx.core.net.impl.tcp.NetServerInternal;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.RegistrationInfo;

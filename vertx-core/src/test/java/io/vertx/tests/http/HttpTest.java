@@ -3086,6 +3086,10 @@ public abstract class HttpTest extends SimpleHttpTest {
             .onComplete(onSuccess(v -> complete()));
         }
       }
+      @Override
+      public void stop(Promise<Void> stopPromise) throws Exception {
+        client.close().onComplete(stopPromise);
+      }
     });
     await();
   }

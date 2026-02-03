@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.tcp;
+package io.vertx.core.internal.net;
 
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
@@ -16,11 +16,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
+import io.vertx.core.spi.metrics.MetricsProvider;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface NetServerInternal extends NetServer {
+public interface NetServerInternal extends NetServer, MetricsProvider {
 
   @Override
   NetServerInternal connectHandler(@Nullable Handler<NetSocket> handler);
@@ -32,4 +33,7 @@ public interface NetServerInternal extends NetServer {
 
   Future<NetServer> listen(ContextInternal context, SocketAddress localAddress);
 
+  int sniEntrySize();
+
+  boolean isClosed();
 }

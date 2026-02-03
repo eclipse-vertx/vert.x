@@ -35,6 +35,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.internal.resolver.NameResolver;
@@ -60,7 +61,7 @@ import java.util.function.BiFunction;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetServerImpl implements Closeable, MetricsProvider, NetServerInternal {
+public class NetServerImpl implements NetServerInternal {
 
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
@@ -79,7 +80,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   private ConnectionGroup channelGroup;
   private Handler<Channel> worker;
   private volatile boolean listening;
-  private ContextInternal listenContext;
   private NetServerImpl actualServer;
 
   // Main
@@ -121,7 +121,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   @Override
-  public synchronized NetServerInternal connectHandler(Handler<NetSocket> handler) {
+  public synchronized NetServerImpl connectHandler(Handler<NetSocket> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
@@ -130,7 +130,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   }
 
   @Override
-  public synchronized NetServerInternal exceptionHandler(Handler<Throwable> handler) {
+  public synchronized NetServerImpl exceptionHandler(Handler<Throwable> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set exceptionHandler when server is listening");
     }
@@ -157,7 +157,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
     return listen(vertx.getOrCreateContext(), localAddress);
   }
 
-  @Override
   public Future<NetServer> listen(ContextInternal context, SocketAddress localAddress) {
     if (localAddress == null) {
       throw new NullPointerException("No null bind local address");
@@ -171,11 +170,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
   @Override
   public Future<NetServer> listen() {
     return listen(config.getPort(), config.getHost());
-  }
-
-  @Override
-  public synchronized void close(Completable<Void> completion) {
-    shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
   }
 
   public boolean isClosed() {
@@ -419,7 +413,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       throw new IllegalStateException("Listen already called");
     }
 
-    this.listenContext = context;
     this.listening = true;
     this.eventLoop = context.nettyEventLoop();
 
@@ -449,7 +442,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           bindAddress = localAddress;
         }
       }
-      ConnectionGroup group = new ConnectionGroup(listenContext.nettyEventLoop()) {
+      ConnectionGroup group = new ConnectionGroup(context.nettyEventLoop()) {
         @Override
         protected void handleClose(Completable<Void> completion) {
           NetServerImpl.this.handleClose(completion);
@@ -460,7 +453,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         }
       };
       channelGroup = group;
-      PromiseInternal<Channel> promise = listenContext.promise();
+      PromiseInternal<Channel> promise = context.promise();
       if (main == null) {
 
         SslContextManager helper;
@@ -493,13 +486,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
         if (shared) {
           sharedNetServers.put(id, this);
         }
-        listenContext.addCloseHook(this);
 
         // Initialize SSL before binding
         if (config.isSsl()) {
           ServerSSLOptions sslOptions = this.sslOptions;
           configure(sslOptions);
-          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, listenContext).onComplete(ar -> {
+          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, context).onComplete(ar -> {
             if (ar.succeeded()) {
               bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
             } else {
@@ -532,7 +524,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
           initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, sslOptions);
         };
         actualServer.channelBalancer.addWorker(eventLoop, worker);
-        listenContext.addCloseHook(this);
         main.bindFuture.onComplete(promise);
         return promise.future();
       }
@@ -644,7 +635,6 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
       completion.succeed();
       return;
     }
-    listenContext.removeCloseHook(this);
     Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
     boolean hasHandlers;
     synchronized (servers) {

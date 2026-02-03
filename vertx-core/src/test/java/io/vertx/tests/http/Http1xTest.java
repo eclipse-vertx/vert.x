@@ -23,13 +23,13 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
-import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.http.impl.tcp.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.http1.Http1ServerConnection;
 import io.vertx.core.http.impl.http2.codec.Http1xUpgradeToH2CHandler;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -4791,7 +4791,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testClosingVertxCloseSharedServers() throws Exception {
     int numServers = 2;
-    List<TcpHttpServer> servers = new ArrayList<>();
+    List<HttpServerInternal> servers = new ArrayList<>();
     Vertx vertx = Vertx.vertx();
     try {
       for (int i = 0;i < numServers;i++) {
@@ -4799,7 +4799,7 @@ public class Http1xTest extends HttpTest {
 
         });
         startServer(testAddress, server);
-        servers.add((TcpHttpServer) server);
+        servers.add((HttpServerInternal) server);
       }
     } finally {
       vertx.close().await();
