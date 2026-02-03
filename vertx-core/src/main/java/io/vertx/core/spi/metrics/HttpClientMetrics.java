@@ -11,7 +11,6 @@
 
 package io.vertx.core.spi.metrics;
 
-import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
@@ -35,7 +34,7 @@ import io.vertx.core.spi.observability.HttpResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics<R, W, C> extends TransportMetrics<C> {
+public interface HttpClientMetrics<R, W> extends WebSocketMetrics<W> {
 
   /**
    * Provides metrics for a particular endpoint
@@ -62,23 +61,5 @@ public interface HttpClientMetrics<R, W, C> extends TransportMetrics<C> {
    *
    */
   default void endpointDisconnected(ClientMetrics<R, ?, ?> endpointMetric) {
-  }
-
-  /**
-   * Called when a web socket connects.
-   *
-   * @param webSocket the server web socket
-   * @return the web socket metric
-   */
-  default W connected(WebSocket webSocket) {
-    return null;
-  }
-
-  /**
-   * Called when the web socket has disconnected.
-   *
-   * @param webSocketMetric the web socket metric
-   */
-  default void disconnected(W webSocketMetric) {
   }
 }

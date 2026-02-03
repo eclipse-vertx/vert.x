@@ -166,8 +166,8 @@ public class VertxTest extends AsyncTestBase {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onSuccess(req -> {
         req.send();
       });
-      TcpHttpClientTransport channelConnector = (TcpHttpClientTransport)(((CleanableHttpClient) client).delegate).channelConnector();
-      NetClientInternal netClient = channelConnector.netClient();
+      TcpHttpClientTransport channelConnector = (TcpHttpClientTransport)(((CleanableHttpClient) client).delegate).tcpTransport();
+      NetClientInternal netClient = channelConnector.client();
       netClient.closeFuture().onComplete(ar -> {
         closed2.set(true);
       });

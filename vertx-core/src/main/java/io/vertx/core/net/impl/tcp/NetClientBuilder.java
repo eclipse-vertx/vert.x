@@ -25,7 +25,6 @@ public class NetClientBuilder {
   private VertxInternal vertx;
   private TcpClientConfig config;
   private ClientSSLOptions sslOptions;
-  private TransportMetrics<?> metrics;
   private boolean registerWriteHandler;
 
   public NetClientBuilder(VertxInternal vertx, TcpClientConfig config) {
@@ -44,12 +43,7 @@ public class NetClientBuilder {
     return this;
   }
 
-  public NetClientBuilder metrics(TransportMetrics<?> metrics) {
-    this.metrics = metrics;
-    return this;
-  }
-
   public NetClientInternal build() {
-    return new NetClientImpl(vertx, metrics, config, sslOptions, registerWriteHandler);
+    return new NetClientImpl(vertx, config, sslOptions, registerWriteHandler);
   }
 }

@@ -58,10 +58,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   public static final String QUIC_SERVER_MAP_KEY = "__vertx.shared.quicServers";
 
   public static QuicServer create(VertxInternal vertx,
-                                  BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
                                   QuicServerConfig config,
                                   ServerSSLOptions sslOptions) {
-    return new CleanableQuicServer(vertx, metricsProvider, new QuicServerConfig(config), sslOptions);
+    return new CleanableQuicServer(vertx, new QuicServerConfig(config), sslOptions);
   }
 
   private final QuicServerConfig config;
@@ -69,9 +68,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
-  public QuicServerImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicServerConfig config, ServerSSLOptions sslOptions) {
-    super(vertx, metricsProvider, config);
+  public QuicServerImpl(VertxInternal vertx, QuicServerConfig config, ServerSSLOptions sslOptions) {
+    super(vertx, config);
     this.config = config;
     this.sslOptions = sslOptions;
   }

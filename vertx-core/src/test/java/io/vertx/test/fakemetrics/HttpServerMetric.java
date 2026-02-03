@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class HttpServerMetric {
 
   public final String uri;
-  public final ConnectionMetric socket;
+  public final SocketAddress address;
   public final AtomicBoolean failed = new AtomicBoolean();
   public final AtomicReference<String> route = new AtomicReference<>();
   public final HttpRequest request;
@@ -34,15 +35,15 @@ public class HttpServerMetric {
   public final AtomicBoolean responseEnded = new AtomicBoolean();
   public final AtomicLong bytesWritten = new AtomicLong();
 
-  public HttpServerMetric(String uri, ConnectionMetric socket) {
+  public HttpServerMetric(String uri, SocketAddress address) {
     this.uri = uri;
     this.request = null;
-    this.socket = socket;
+    this.address = address;
   }
 
-  public HttpServerMetric(HttpRequest request, ConnectionMetric socket) {
+  public HttpServerMetric(HttpRequest request, SocketAddress address) {
     this.uri = request.uri();
     this.request = request;
-    this.socket = socket;
+    this.address = address;
   }
 }

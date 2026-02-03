@@ -67,7 +67,6 @@ class NetClientImpl implements NetClientInternal {
   private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx,
-                       TransportMetrics metrics,
                        TcpClientConfig config,
                        ClientSSLOptions sslOptions,
                        boolean registerWriteHandler) {
@@ -82,7 +81,7 @@ class NetClientImpl implements NetClientInternal {
     this.config = config;
     this.registerWriteHandler = registerWriteHandler;
     this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
-    this.metrics = metrics;
+    this.metrics = vertx.metrics() != null ? vertx.metrics().createTcpClientMetrics(config) : null;
     this.logging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
     this.idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout() : Duration.ofMillis(0L);
     this.readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout() : Duration.ofMillis(0L);

@@ -24,14 +24,11 @@ import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.function.BiFunction;
 
 public class QuicHttpClientTransport implements HttpClientTransport {
 
@@ -40,7 +37,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public QuicHttpClientTransport(VertxInternal vertx, HttpClientMetrics<?, ?, ?> clientMetrics, HttpClientConfig config) {
+  public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
 
     QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
     quicConfig.setMetricsName(config.getMetricsName());
@@ -50,13 +47,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       localSettings = new Http3Settings();
     }
 
-    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
-    if (clientMetrics != null) {
-      metricsProvider = (quicEndpointOptions, socketAddress) -> clientMetrics;
-    } else {
-      metricsProvider = null;
-    }
-    QuicClient client = new QuicClientImpl(vertx, metricsProvider, quicConfig, null);
+    QuicClient client = new QuicClientImpl(vertx, quicConfig, null);
 
     this.vertx = vertx;
     this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
@@ -65,7 +56,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   }
 
   @Override
-  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
+  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics) {
     ClientSSLOptions sslOptions = params.sslOptions;
     if (sslOptions == null) {
       return context.failedFuture("Missing clients SSL options");
@@ -82,7 +73,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       Http3ClientConnection c = new Http3ClientConnection(
         (QuicConnectionInternal) res,
         authority,
-        (ClientMetrics<Object, HttpRequest, HttpResponse>) metrics,
+        (ClientMetrics<Object, HttpRequest, HttpResponse>) clientMetrics,
         keepAliveTimeoutMillis,
         localSettings);
       c.init();
@@ -95,8 +86,4 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     return client.shutdown(timeout);
   }
 
-  @Override
-  public Future<Void> close() {
-    return client.close();
-  }
 }

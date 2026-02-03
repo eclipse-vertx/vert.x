@@ -14,7 +14,6 @@ import io.vertx.core.http.impl.HttpClientStream;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 

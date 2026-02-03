@@ -50,10 +50,8 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
   private static final AttributeKey<List<String>> APPLICATION_PROTOCOLS_KEY = AttributeKey.newInstance("io.vertx.net.quic.client.application_protocols");
 
-  public static QuicClient create(VertxInternal vertx,
-                                  BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                                  QuicClientConfig config, ClientSSLOptions sslOptions) {
-    return new CleanableQuicClient(vertx, metricsProvider, new QuicClientConfig(config), sslOptions);
+  public static QuicClient create(VertxInternal vertx, QuicClientConfig config, ClientSSLOptions sslOptions) {
+    return new CleanableQuicClient(vertx, new QuicClientConfig(config), sslOptions);
   }
 
   private final QuicClientConfig config;
@@ -62,9 +60,8 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private Future<Integer> clientFuture;
   private volatile Channel channel;
 
-  public QuicClientImpl(VertxInternal vertx, BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                        QuicClientConfig config, ClientSSLOptions sslOptions) {
-    super(vertx, metricsProvider, config);
+  public QuicClientImpl(VertxInternal vertx, QuicClientConfig config, ClientSSLOptions sslOptions) {
+    super(vertx, config);
     this.config = config;
     this.sslOptions = sslOptions;
   }

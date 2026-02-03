@@ -1,12 +1,8 @@
 package io.vertx.core.net.impl.tcp;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
-import io.vertx.core.http.impl.CleanableHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.NetServerInternal;
-import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -24,9 +20,8 @@ public class CleanableNetServer extends NetServerImpl implements Closeable {
                             TcpServerConfig config,
                             ServerSSLOptions sslOptions,
                             boolean fileRegionEnabled,
-                            boolean registerWriteHandler,
-                            BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
-    super(vertx, config, sslOptions, fileRegionEnabled, registerWriteHandler, metricsProvider);
+                            boolean registerWriteHandler) {
+    super(vertx, config, sslOptions, fileRegionEnabled, registerWriteHandler);
     this.vertx = vertx;
   }
 

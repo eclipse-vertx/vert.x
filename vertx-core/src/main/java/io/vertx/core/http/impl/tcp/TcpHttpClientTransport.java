@@ -42,6 +42,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
@@ -61,7 +62,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
   public static TcpHttpClientTransport create(NetClientInternal netClient,
                                               HttpClientConfig config,
-                                              HttpClientMetrics clientMetrics) {
+                                              HttpClientMetrics httpMetrics) {
     return new TcpHttpClientTransport(netClient,
       config.getTracingPolicy(),
       config.isDecompressionEnabled(),
@@ -73,7 +74,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       config.getTcpConfig().getIdleTimeout(),
       config.getTcpConfig().getReadIdleTimeout(),
       config.getTcpConfig().getWriteIdleTimeout(),
-      clientMetrics);
+      httpMetrics);
   }
 
   private final TracingPolicy tracingPolicy;
@@ -86,8 +87,8 @@ public class TcpHttpClientTransport implements HttpClientTransport {
   private final Duration idleTimeout;
   private final Duration readIdleTimeout;
   private final Duration writeIdleTimeout;
-  private final HttpClientMetrics clientMetrics;
-  private final NetClientInternal netClient;
+  private final HttpClientMetrics<?, ?> httpMetrics;
+  private final NetClientInternal client;
 
   public TcpHttpClientTransport(NetClientInternal netClient,
                                 TracingPolicy tracingPolicy,
@@ -100,12 +101,12 @@ public class TcpHttpClientTransport implements HttpClientTransport {
                                 Duration idleTimeout,
                                 Duration readIdleTimeout,
                                 Duration writeIdleTimeout,
-                                HttpClientMetrics clientMetrics) {
+                                HttpClientMetrics httpMetrics) {
 
     if (http1Config != null && !http1Config.isKeepAlive() && http1Config.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
-    this.clientMetrics = clientMetrics;
+    this.httpMetrics = httpMetrics;
     this.tracingPolicy = tracingPolicy;
     this.useDecompression = useDecompression;
     this.logActivity = logActivity;
@@ -116,24 +117,23 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     this.idleTimeout = idleTimeout != null ? idleTimeout : Duration.ofMillis(0);
     this.readIdleTimeout = readIdleTimeout != null ? readIdleTimeout : Duration.ofMillis(0);
     this.writeIdleTimeout = writeIdleTimeout != null ? writeIdleTimeout : Duration.ofMillis(0);
-    this.netClient = netClient;
+    this.client = netClient;
   }
 
-  public NetClientInternal netClient() {
-    return netClient;
+  public NetClientInternal client() {
+    return client;
   }
 
   private Http2ClientChannelInitializer http2Initializer() {
     if (http2Config.getMultiplexImplementation()) {
       return new Http2MultiplexClientChannelInitializer(
         HttpUtils.fromVertxSettings(http2Config.getInitialSettings()),
-        clientMetrics,
         http2Config.getKeepAliveTimeout() == null ? 0 : http2Config.getKeepAliveTimeout().toMillis(),
         http2Config.getMultiplexingLimit(),
         useDecompression,
         logActivity);
     } else {
-      return new Http2CodecClientChannelInitializer(http2Config, tracingPolicy, useDecompression, logActivity, clientMetrics);
+      return new Http2CodecClientChannelInitializer(http2Config, tracingPolicy, useDecompression, logActivity, httpMetrics);
     }
   }
 
@@ -165,12 +165,13 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       }
     }
     connectOptions.setProxyOptions(params.proxyOptions);
-    netClient.connectInternal(connectOptions, promise, context);
+    client.connectInternal(connectOptions, promise, context);
   }
 
-  public Future<HttpClientConnection> wrap(ContextInternal context, HttpConnectParams params, HostAndPort authority, ClientMetrics<?, ?, ?> metrics, SocketAddress server, NetSocket so_) {
+  public Future<HttpClientConnection> wrap(ContextInternal context, HttpConnectParams params, HostAndPort authority, ClientMetrics<?, ?, ?> clientMetrics, SocketAddress server, NetSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
+    TransportMetrics<?> transportMetrics = so.metrics();
     PromiseInternal<HttpClientConnection> promise = context.promise();
 
     // Remove all un-necessary handlers
@@ -192,36 +193,36 @@ public class TcpHttpClientTransport implements HttpClientTransport {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
-          http2ChannelInitializer.http2Connected(context, authority, metric, ch, metrics, promise);
+          http2ChannelInitializer.http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
         } else {
           applyHttp1xConnectionOptions(ch.pipeline());
           HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
             HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-          http1xConnected(fallbackProtocol, server, authority, true, context, metric, ch, metrics, promise);
+          http1xConnected(fallbackProtocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
         }
       } else {
         applyHttp1xConnectionOptions(ch.pipeline());
-        http1xConnected(params.protocol, server, authority, true, context, metric, ch, metrics, promise);
+        http1xConnected(params.protocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
       }
     } else {
       if (params.protocol == HttpVersion.HTTP_2) {
         if (http2Config.isClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
-          http1xConnected(params.protocol, server, authority, false, context, metric, ch, metrics, promise);
+          http1xConnected(params.protocol, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
         } else {
           applyHttp2ConnectionOptions(pipeline);
           Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
-          http2ChannelInitializer.http2Connected(context, authority, metric, ch, metrics, promise);
+          http2ChannelInitializer.http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
         }
       } else {
         applyHttp1xConnectionOptions(pipeline);
-        http1xConnected(params.protocol, server, authority, false, context, metric, ch, metrics, promise);
+        http1xConnected(params.protocol, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
       }
     }
     return promise.future();
   }
 
-  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> metrics) {
+  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics) {
 
     if (params.sslOptions != null && !params.sslOptions.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
       return context.failedFuture("Must enable ALPN when using H2");
@@ -237,7 +238,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     Future<NetSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens
     // before the promise is completed by the connect operation
-    Future<HttpClientConnection> ret = future.compose(so -> wrap(context, params, authority, metrics, server, so));
+    Future<HttpClientConnection> ret = future.compose(so -> wrap(context, params, authority, clientMetrics, server, so));
     connect(context, params, authority, server, promise);
     return ret;
   }
@@ -278,26 +279,28 @@ public class TcpHttpClientTransport implements HttpClientTransport {
                                HostAndPort authority,
                                boolean ssl,
                                ContextInternal context,
+                               TransportMetrics<?> transportMetrics,
                                Object socketMetric,
                                Channel ch,
-                               ClientMetrics<?, ?, ?> metrics,
+                               ClientMetrics clientMetrics,
                                Promise<HttpClientConnection> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && http2Config.isClearTextUpgrade();
     VertxHandler<Http1ClientConnection> clientHandler = VertxHandler.create(chctx -> {
-      Http1ClientConnection conn = new Http1ClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, clientMetrics, http1Config, tracingPolicy, useDecompression, chctx, ssl, server, authority, context, metrics);
-      if (clientMetrics != null) {
+      Http1ClientConnection conn = new Http1ClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, httpMetrics, transportMetrics,
+        http1Config, tracingPolicy, useDecompression, chctx, ssl, server, authority, context, clientMetrics);
+      if (httpMetrics != null) {
         conn.metric(socketMetric);
-        clientMetrics.endpointConnected(metrics);
+        httpMetrics.endpointConnected(clientMetrics);
       }
       return conn;
     });
     clientHandler.addHandler(conn -> {
       if (upgrade) {
         Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
-        Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade= http2ChannelInitializer.channelUpgrade(conn, metrics);
+        Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade= http2ChannelInitializer.channelUpgrade(conn, clientMetrics);
         boolean preflightRequest = http2Config.isClearTextUpgradeWithPreflightRequest();
         if (preflightRequest) {
-          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(conn, metrics, channelUpgrade);
+          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(conn, clientMetrics, channelUpgrade);
           conn2.concurrencyChangeHandler(concurrency -> {
             // Ignore
           });
@@ -318,7 +321,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
             }
           });
         } else {
-          future.complete(new Http2UpgradeClientConnection(conn, metrics, channelUpgrade));
+          future.complete(new Http2UpgradeClientConnection(conn, clientMetrics, channelUpgrade));
         }
       } else {
         future.complete(conn);
@@ -329,11 +332,12 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    return netClient.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
-  }
-
-  @Override
-  public Future<Void> close() {
-    return netClient.close();
+    Future<Void> f = client.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    if (httpMetrics != null) {
+      f = f.andThen((result, err) -> {
+        httpMetrics.close();
+      });
+    }
+    return f;
   }
 }

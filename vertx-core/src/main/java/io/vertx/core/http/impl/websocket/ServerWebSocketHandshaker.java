@@ -173,7 +173,6 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     ChannelHandlerContext chctx = httpConn.channelHandlerContext();
     Channel channel = chctx.channel();
     Http1ServerResponse response = request.response();
-    Object requestMetric = request.metric();
     handshaker.handshake(channel, request.nettyRequest(), (HttpHeaders) response.headers(), channel.newPromise());
     response.completeHandshake();
     // remove compressor as it's not needed anymore once connection was upgraded to websockets
@@ -184,7 +183,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
     }
     VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
       long closingTimeoutMS = config.getClosingTimeout().toMillis() >= 0 ? config.getClosingTimeout().toMillis() : 0L;
-      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context(), ctx, true, closingTimeoutMS,httpConn.metrics());
+      WebSocketConnectionImpl webSocketConn = new WebSocketConnectionImpl(request.context(), ctx, true, closingTimeoutMS, httpConn.httpMetrics, httpConn.metrics());
       ServerWebSocketImpl webSocket = new ServerWebSocketImpl(
         request.context(),
         webSocketConn,
@@ -212,8 +211,9 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
       throw new RuntimeException(e);
     }
     ServerWebSocketImpl webSocket = (ServerWebSocketImpl) handler.getConnection().webSocket();
-    if (METRICS_ENABLED && httpConn.metrics() != null) {
-      webSocket.setMetric(httpConn.metrics().connected(httpConn.metric(), requestMetric, this));
+    if (METRICS_ENABLED && httpConn.httpMetrics != null) {
+      httpConn.httpMetrics.requestUpgraded(request.metric());
+      webSocket.setMetric(httpConn.httpMetrics.connected(request));
     }
     webSocket.registerHandler(httpConn.context().owner().eventBus());
     return webSocket;

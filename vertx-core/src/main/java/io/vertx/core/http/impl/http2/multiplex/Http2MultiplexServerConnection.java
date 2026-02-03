@@ -27,27 +27,31 @@ import io.vertx.core.http.impl.http2.Http2ServerStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.function.Supplier;
 
 public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Http2ServerStream> implements Http2ServerConnection, HttpServerConnection {
 
   private final CompressionManager compressionManager;
-  private final HttpServerMetrics<?, ?, ?> serverMetrics;
+  private final HttpServerMetrics<?, ?> httpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final Handler<HttpServerConnection> connectionHandler;
   private Handler<HttpServerStream> streamHandler;
 
   public Http2MultiplexServerConnection(Http2MultiplexHandler handler,
                                         CompressionManager compressionManager,
-                                        HttpServerMetrics<?, ?, ?> serverMetrics,
+                                        HttpServerMetrics<?, ?> httpMetrics,
+                                        TransportMetrics<?> transportMetrics,
                                         ChannelHandlerContext chctx,
                                         ContextInternal context,
                                         Supplier<ContextInternal> streamContextSupplier,
                                         Handler<HttpServerConnection> connectionHandler) {
-    super(handler, serverMetrics, chctx, context);
+    super(handler, transportMetrics, chctx, context);
 
-    this.serverMetrics = serverMetrics;
+    this.httpMetrics = httpMetrics;
+    this.transportMetrics = transportMetrics;
     this.compressionManager = compressionManager;
     this.streamContextSupplier = streamContextSupplier;
     this.connectionHandler = connectionHandler;
@@ -82,7 +86,7 @@ public class Http2MultiplexServerConnection extends Http2MultiplexConnection<Htt
         if (handler == null) {
           chctx.writeAndFlush(new DefaultHttp2ResetFrame(Http2Error.REFUSED_STREAM.code()));
         } else {
-          Http2ServerStream stream = Http2ServerStream.create(this, serverMetrics, metric(),
+          Http2ServerStream stream = Http2ServerStream.create(this, httpMetrics, transportMetrics, metric(),
                   streamContextSupplier.get(), null);;
           stream.init(streamId, chctx.channel().isWritable());
           registerChannel(stream, frameStream, chctx);

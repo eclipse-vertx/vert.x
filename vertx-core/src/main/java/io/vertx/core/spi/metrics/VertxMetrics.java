@@ -56,7 +56,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+  default HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
     return null;
   }
 
@@ -82,7 +82,7 @@ public interface VertxMetrics extends Metrics, Measured {
    * @param config the config used to create the {@link HttpClient}
    * @return the http client metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientConfig config) {
+  default HttpClientMetrics<?, ?> createHttpClientMetrics(HttpClientConfig config) {
     return null;
   }
 

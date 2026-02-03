@@ -50,7 +50,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
 
 //  private final HttpServerOptions options;
   private final TracingPolicy tracingPolicy;
-  private final HttpServerMetrics<?, ?, ?> metrics;
+  private final HttpServerMetrics<?, ?> httpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
   private final VertxHttp2ConnectionHandler handler;
@@ -65,13 +66,15 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
     VertxHttp2ConnectionHandler connHandler,
     Function<String, String> encodingDetector,
     TracingPolicy tracingPolicy,
-    HttpServerMetrics metrics) {
+    HttpServerMetrics<?, ?> httpMetrics,
+    TransportMetrics<?> transportMetrics) {
     super(context, connHandler);
 
     this.tracingPolicy = tracingPolicy;
     this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
-    this.metrics = metrics;
+    this.httpMetrics = httpMetrics;
+    this.transportMetrics = transportMetrics;
     this.handler = connHandler;
   }
 
@@ -82,7 +85,7 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public TransportMetrics<?> metrics() {
-    return metrics;
+    return transportMetrics;
   }
 
   private static class EncodingDetector extends HttpContentCompressor {
@@ -108,7 +111,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
   private Http2ServerStream createStream(Http2Headers headers, boolean streamEnded) {
     return Http2ServerStream.create(
       this,
-      metrics,
+      httpMetrics,
+      transportMetrics,
       metric(),
       streamContextSupplier.get(),
       tracingPolicy
@@ -229,7 +233,8 @@ public class Http2ServerConnectionImpl extends Http2ConnectionImpl implements Ht
           Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
           Http2ServerStream vertxStream = Http2ServerStream.create(
             this,
-            metrics,
+            httpMetrics,
+            transportMetrics,
             metric(),
             context,
             new HttpRequestHeaders(headers_),

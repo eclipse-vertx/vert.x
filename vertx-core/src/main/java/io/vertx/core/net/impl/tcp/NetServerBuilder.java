@@ -26,7 +26,6 @@ public class NetServerBuilder {
   private VertxInternal vertx;
   private TcpServerConfig config;
   private ServerSSLOptions sslOptions;
-  private BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
   private boolean fileRegionEnabled;
   private boolean registerWriteHandler;
   private boolean cleanable;
@@ -49,7 +48,6 @@ public class NetServerBuilder {
     this.sslOptions = options.getSslOptions();
     this.fileRegionEnabled = options.isFileRegionEnabled();
     this.registerWriteHandler = options.isRegisterWriteHandler();
-    this.metricsProvider = (metrics,  localAddress) -> metrics.createTcpServerMetrics(cfg, localAddress);
     this.cleanable = true;
   }
 
@@ -63,11 +61,6 @@ public class NetServerBuilder {
     return this;
   }
 
-  public NetServerBuilder metricsProvider(BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
-    this.metricsProvider = metricsProvider;
-    return this;
-  }
-
   public NetServerInternal build() {
     NetServerInternal server;
     if (cleanable) {
@@ -75,16 +68,15 @@ public class NetServerBuilder {
         config,
         sslOptions,
         fileRegionEnabled,
-        registerWriteHandler,
-        metricsProvider);
+        registerWriteHandler);
     } else {
       server = new NetServerImpl(
         vertx,
         config,
         sslOptions,
         fileRegionEnabled,
-        registerWriteHandler,
-        metricsProvider);
+        registerWriteHandler
+      );
     }
     return server;
   }

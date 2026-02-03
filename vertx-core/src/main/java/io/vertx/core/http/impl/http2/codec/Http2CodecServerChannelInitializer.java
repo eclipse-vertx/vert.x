@@ -22,6 +22,7 @@ import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.Supplier;
@@ -30,7 +31,8 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
 
   private final HttpServerConnectionInitializer initializer;
   private final TracingPolicy tracingPolicy;
-  private final HttpServerMetrics serverMetrics;
+  private final HttpServerMetrics<?, ?> httpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final Object metric;
   private final boolean useDecompression;
   private final boolean useCompression;
@@ -42,7 +44,8 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
 
   public Http2CodecServerChannelInitializer(HttpServerConnectionInitializer initializer,
                                             TracingPolicy tracingPolicy,
-                                            HttpServerMetrics serverMetrics,
+                                            HttpServerMetrics<?, ?> httpMetrics,
+                                            TransportMetrics<?> transportMetrics,
                                             boolean useDecompression,
                                             boolean useCompression,
                                             Http2ServerConfig config,
@@ -53,7 +56,8 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
                                             boolean logEnabled) {
     this.initializer = initializer;
     this.tracingPolicy = tracingPolicy;
-    this.serverMetrics = serverMetrics;
+    this.httpMetrics = httpMetrics;
+    this.transportMetrics = transportMetrics;
     this.useDecompression = useDecompression;
     this.useCompression = useCompression;
     this.config = config;
@@ -87,7 +91,9 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
       .useDecompression(useDecompression)
       .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler, compressionManager != null ? compressionManager::determineEncoding : null, tracingPolicy, serverMetrics);
+        Http2ServerConnectionImpl conn = new Http2ServerConnectionImpl(ctx, streamContextSupplier, connHandler,
+          compressionManager != null ? compressionManager::determineEncoding : null, tracingPolicy, httpMetrics,
+          transportMetrics);
         conn.metric(metric);
         return conn;
       })

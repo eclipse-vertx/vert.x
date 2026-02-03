@@ -18,22 +18,23 @@ import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 public class ServerStreamObserver extends StreamObserver {
 
-  private final HttpServerMetrics serverMetrics;
+  private final HttpServerMetrics httpMetrics;
 
-  public ServerStreamObserver(ContextInternal context, HttpServerMetrics serverMetrics, VertxTracer tracer, Object socketMetric, TracingPolicy tracingPolicy, SocketAddress remoteAddress) {
-    super(context, remoteAddress, serverMetrics, socketMetric, tracingPolicy, tracer);
-    this.serverMetrics = serverMetrics;
+  public ServerStreamObserver(ContextInternal context, HttpServerMetrics httpMetrics, TransportMetrics transportMetrics, VertxTracer tracer, Object socketMetric, TracingPolicy tracingPolicy, SocketAddress remoteAddress) {
+    super(context, remoteAddress, transportMetrics, socketMetric, tracingPolicy, tracer);
+    this.httpMetrics = httpMetrics;
   }
 
   public void observeOutboundHeaders(HttpHeaders headers) {
-    if (serverMetrics != null) {
-      serverMetrics.responseBegin(metric, observableResponse((HttpResponseHeaders) headers, remoteAddress));
+    if (httpMetrics != null) {
+      httpMetrics.responseBegin(metric, observableResponse((HttpResponseHeaders) headers, remoteAddress));
     }
     VertxTracer tracer = context.tracer();
     Object trace = this.trace;
@@ -44,14 +45,14 @@ public class ServerStreamObserver extends StreamObserver {
 
   public void observeInboundTrailers(long bytesRead) {
     super.observeInboundTrailers(bytesRead);
-    if (serverMetrics != null) {
-      serverMetrics.requestEnd(metric, observableRequest, bytesRead);
+    if (httpMetrics != null) {
+      httpMetrics.requestEnd(metric, observableRequest, bytesRead);
     }
   }
 
   public void observeInboundHeaders(HttpHeaders headers) {
-    if (serverMetrics != null) {
-      metric = serverMetrics.requestBegin(socketMetric, observableRequest((HttpRequestHeaders) headers, remoteAddress));
+    if (httpMetrics != null) {
+      metric = httpMetrics.requestBegin(remoteAddress, observableRequest((HttpRequestHeaders) headers, remoteAddress));
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
@@ -61,14 +62,14 @@ public class ServerStreamObserver extends StreamObserver {
 
   public void observeOutboundTrailers(long bytesWritten) {
     super.observeOutboundTrailers(bytesWritten);
-    if (serverMetrics != null) {
-      serverMetrics.responseEnd(metric, observableResponse, bytesWritten);
+    if (httpMetrics != null) {
+      httpMetrics.responseEnd(metric, observableResponse, bytesWritten);
     }
   }
 
   public void observeReset() {
-    if (serverMetrics != null) {
-      serverMetrics.requestReset(metric);
+    if (httpMetrics != null) {
+      httpMetrics.requestReset(metric);
     }
     VertxTracer tracer = context.tracer();
     Object trace = this.trace;
@@ -78,14 +79,14 @@ public class ServerStreamObserver extends StreamObserver {
   }
 
   public void observeRoute(String route) {
-    if (serverMetrics != null) {
-      serverMetrics.requestRouted(metric, route);
+    if (httpMetrics != null) {
+      httpMetrics.requestRouted(metric, route);
     }
   }
 
   public void observePush(HttpResponseHeaders headers, HttpMethod method, String uri) {
-    if (serverMetrics != null) {
-      metric = serverMetrics.responsePushed(socketMetric, method, uri, observableResponse(headers, remoteAddress));
+    if (httpMetrics != null) {
+      metric = httpMetrics.responsePushed(remoteAddress, method, uri, observableResponse(headers, remoteAddress));
     }
   }
 }

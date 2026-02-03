@@ -31,6 +31,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -49,7 +50,8 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   private Handler<HttpRequestHead> headersHandler;
 
   DefaultHttp2ServerStream(Http2ServerConnection connection,
-                           HttpServerMetrics serverMetrics,
+                           HttpServerMetrics httpMetrics,
+                           TransportMetrics transportMetrics,
                            Object socketMetric,
                            ContextInternal context,
                            HttpRequestHeaders requestHeaders,
@@ -66,11 +68,12 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     this.method = method;
     this.uri = uri;
     this.scheme = null;
-    this.observable = serverMetrics != null || tracer != null ? new ServerStreamObserver(context, serverMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
+    this.observable = httpMetrics != null || tracer != null ? new ServerStreamObserver(context, httpMetrics, transportMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
   }
 
   DefaultHttp2ServerStream(Http2ServerConnection connection,
-                           HttpServerMetrics<?, ?, ?> serverMetrics,
+                           HttpServerMetrics<?, ?> httpMetrics,
+                           TransportMetrics<?> transportMetrics,
                            Object socketMetric,
                            ContextInternal context,
                            TracingPolicy tracingPolicy) {
@@ -79,7 +82,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     VertxTracer<?, ?> tracer = vertx.tracer();
 
     this.connection = connection;
-    this.observable = serverMetrics != null || tracer != null ? new ServerStreamObserver(context, serverMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
+    this.observable = httpMetrics != null || tracer != null ? new ServerStreamObserver(context, httpMetrics, transportMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
   }
 
   @Override

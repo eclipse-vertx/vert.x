@@ -12,7 +12,7 @@
 package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -35,17 +35,17 @@ import io.vertx.core.spi.observability.HttpResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpServerMetrics<R, W, C> extends TransportMetrics<C> {
+public interface HttpServerMetrics<R, W> extends WebSocketMetrics<W> {
 
   /**
    * Called when an http server request begins. Vert.x will invoke {@link #responseEnd} when the response has ended
    * or {@link #requestReset} if the request/response has failed before.
    *
-   * @param connectionMetric the connection metric
-   * @param request the http server request
+   * @param remoteAddress the client remote address
+   * @param request       the http server request
    * @return the request metric
    */
-  default R requestBegin(C connectionMetric, HttpRequest request) {
+  default R requestBegin(SocketAddress remoteAddress, HttpRequest request) {
     return null;
   }
 
@@ -68,6 +68,13 @@ public interface HttpServerMetrics<R, W, C> extends TransportMetrics<C> {
   }
 
   /**
+   * Called when an http server request is upgraded, e.g. a WebSocket
+   * @param requestMetrics the request metric
+   */
+  default void requestUpgraded(R requestMetrics) {
+  }
+
+  /**
    * Called when an http server response begins.
    *
    * @param requestMetric the request metric
@@ -79,12 +86,12 @@ public interface HttpServerMetrics<R, W, C> extends TransportMetrics<C> {
   /**
    * Called when an http server response is pushed.
    *
-   * @param connectionMetric the connection metric
-   * @param method the pushed response method
-   * @param uri the pushed response uri
-   * @param response the http server response  @return the request metric
+   * @param remoteAddress the client remote address
+   * @param method        the pushed response method
+   * @param uri           the pushed response uri
+   * @param response      the http server response  @return the request metric
    */
-  default R responsePushed(C connectionMetric, HttpMethod method, String uri, HttpResponse response) {
+  default R responsePushed(SocketAddress remoteAddress, HttpMethod method, String uri, HttpResponse response) {
     return null;
   }
 
@@ -100,12 +107,10 @@ public interface HttpServerMetrics<R, W, C> extends TransportMetrics<C> {
   /**
    * Called when a server web socket connects.
    *
-   * @param connectionMetric the socket metric
-   * @param requestMetric the request metric
-   * @param webSocket the server web socket
+   * @param request the observable request
    * @return the server web socket metric
    */
-  default W connected(C connectionMetric, R requestMetric, ServerWebSocket webSocket) {
+  default W connected(HttpRequest request) {
     return null;
   }
 

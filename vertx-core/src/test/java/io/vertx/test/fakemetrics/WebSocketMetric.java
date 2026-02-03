@@ -12,15 +12,16 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.http.WebSocketBase;
+import io.vertx.core.spi.observability.HttpRequest;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class WebSocketMetric {
 
-  public final WebSocketBase ws;
+  public final HttpRequest request;
 
-  public WebSocketMetric(WebSocketBase ws) {
-    this.ws = ws;
+  public WebSocketMetric(HttpRequest request) {
+    this.request = request;
   }
 }

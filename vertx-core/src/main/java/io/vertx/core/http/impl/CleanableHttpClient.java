@@ -99,8 +99,13 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public HttpClientTransport channelConnector() {
-    return delegate.channelConnector();
+  public HttpClientTransport tcpTransport() {
+    return delegate.tcpTransport();
+  }
+
+  @Override
+  public HttpClientTransport quicTransport() {
+    return delegate.quicTransport();
   }
 
   @Override
@@ -136,5 +141,10 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public EndpointResolverInternal resolver() {
     return delegate.resolver();
+  }
+
+  @Override
+  public HttpClientInternal unwrap() {
+    return delegate;
   }
 }

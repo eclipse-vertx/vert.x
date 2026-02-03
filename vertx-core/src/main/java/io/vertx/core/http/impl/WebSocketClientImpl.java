@@ -46,8 +46,8 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
                              HttpClientOptions options,
                              WebSocketClientOptions wsOptions,
                              HttpClientTransport connector,
-                             HttpClientMetrics<?, ?, ?> metrics) {
-    super(vertx, metrics, options.getProxyOptions(), options.getNonProxyHosts());
+                             HttpClientMetrics<?, ?> httpMetrics) {
+    super(vertx, httpMetrics, options.getProxyOptions(), options.getNonProxyHosts());
 
     ClientSSLOptions sslOptions = options.getSslOptions();
     if (sslOptions != null) {
@@ -92,8 +92,8 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     // todo: cache
     Function<EndpointKey, WebSocketGroup> provider = (key_) -> {
       int maxPoolSize = options.getMaxConnections();
-      ClientMetrics clientMetrics = WebSocketClientImpl.this.metrics != null ? WebSocketClientImpl.this.metrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
-      PoolMetrics queueMetrics = WebSocketClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
+      ClientMetrics clientMetrics = WebSocketClientImpl.this.httpMetrics != null ? WebSocketClientImpl.this.httpMetrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
+      PoolMetrics queueMetrics = WebSocketClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
       HttpConnectParams params = new HttpConnectParams(HttpVersion.HTTP_1_1, sslOptions, key_.proxyOptions, key_.ssl);
       return new WebSocketGroup(key_.server, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };

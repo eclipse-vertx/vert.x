@@ -25,7 +25,8 @@ import io.vertx.core.tracing.TracingPolicy;
 public interface Http2ServerStream extends Http2Stream {
 
   static Http2ServerStream create(Http2ServerConnection connection,
-                                  HttpServerMetrics serverMetrics,
+                                  HttpServerMetrics httpMetrics,
+                                  TransportMetrics<?> transportMetrics,
                                   Object socketMetric,
                                   ContextInternal context,
                                   HttpRequestHeaders requestHeaders,
@@ -35,7 +36,8 @@ public interface Http2ServerStream extends Http2Stream {
                                   int promisedId) {
     return new DefaultHttp2ServerStream(
       connection,
-      serverMetrics,
+      httpMetrics,
+      transportMetrics,
       socketMetric,
       context,
       requestHeaders,
@@ -47,11 +49,12 @@ public interface Http2ServerStream extends Http2Stream {
 
   static Http2ServerStream create(
     Http2ServerConnection connection,
-    HttpServerMetrics<?, ?, ?> serverMetrics,
+    HttpServerMetrics<?, ?> httpMetrics,
+    TransportMetrics<?> transportMetrics,
     Object socketMetric,
     ContextInternal context,
     TracingPolicy tracingPolicy) {
-    return new DefaultHttp2ServerStream(connection, serverMetrics, socketMetric, context, tracingPolicy);
+    return new DefaultHttp2ServerStream(connection, httpMetrics, transportMetrics, socketMetric, context, tracingPolicy);
   }
 
   HttpHeaders headers();

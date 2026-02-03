@@ -24,12 +24,10 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.*;
-import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.spi.metrics.MetricsProvider;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -57,6 +55,7 @@ public class TcpHttpServer implements HttpServerInternal {
   private NetServerInternal tcpServer;
   private Duration closeTimeout = Duration.ZERO;
   private CloseSequence closeSequence;
+  private HttpServerMetrics<?, ?> httpMetrics;
 
   public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
@@ -96,12 +95,8 @@ public class TcpHttpServer implements HttpServerInternal {
   }
 
   @Override
-  public Metrics getMetrics() {
-    NetServerInternal s;
-    synchronized (this) {
-      s = (NetServerInternal) tcpServer;
-    }
-    return s == null ? null : s.getMetrics();
+  public HttpServerMetrics<?, ?> getMetrics() {
+    return httpMetrics;
   }
 
   @Override
@@ -203,7 +198,6 @@ public class TcpHttpServer implements HttpServerInternal {
     HttpCompressionConfig compression = config.getCompression();
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
-      .metricsProvider((metrics, addr) -> metrics.createHttpServerMetrics(config, addr))
       .cleanable(false)
       .build();
     Handler<Throwable> h = exceptionHandler;
@@ -227,7 +221,6 @@ public class TcpHttpServer implements HttpServerInternal {
         config.getHttp2Config().getConnectionWindowSize());
 
       List<CompressionOptions> compressors = compression.getCompressors();
-
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),
@@ -252,10 +245,13 @@ public class TcpHttpServer implements HttpServerInternal {
         serverOrigin,
         handler,
         exceptionHandler,
+        httpMetrics,
+        soi.metrics(),
         soi.metric());
-      initializer.configurePipeline(soi.channel(), null, null);
+      initializer.configurePipeline(soi.channel(), null, null, ((NetSocketImpl) so).metrics());
     });
     tcpServer = server;
+    httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address) : null;
     closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
     Promise<HttpServer> result = context.promise();
     tcpServer.listen(listenContext, address).onComplete(ar -> {
@@ -276,11 +272,22 @@ public class TcpHttpServer implements HttpServerInternal {
     if (requestHandler instanceof Closeable) {
       Closeable closeable = (Closeable) requestHandler;
       closeable.close((res, err) -> {
-        netServer.close().onComplete(p);
+        netServer.close().onComplete(foo(p));
       });
     } else {
-      netServer.close().onComplete(p);
+      netServer.close().onComplete(foo(p));
     }
+  }
+
+  private Completable<Void> foo(Completable<Void> completable) {
+    if (httpMetrics != null) {
+      Completable<Void> cont = completable;
+      completable = (result, failure) -> {
+        httpMetrics.close();
+        cont.complete(result, failure);
+      };
+    }
+    return completable;
   }
 
   @Override
@@ -313,5 +320,9 @@ public class TcpHttpServer implements HttpServerInternal {
   public boolean requestAccept() {
     // Might be useful later
     return true;
+  }
+
+  public NetServerInternal tcpServer() {
+    return tcpServer;
   }
 }

@@ -30,6 +30,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.ArrayDeque;
@@ -39,30 +40,34 @@ import static io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection.SEND_BUFF
 
 public class Http2CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
-  private final HttpClientMetrics clientMetrics;
+  private final HttpClientMetrics<?, ?> httpMetrics;
   private final Http2ClientConfig config;
   private final TracingPolicy tracingPolicy;
   private final boolean useDecompression;
   private final boolean logActivity;
 
-  public Http2CodecClientChannelInitializer(Http2ClientConfig config, TracingPolicy tracingPolicy, boolean useDecompression, boolean logActivity, HttpClientMetrics clientMetrics) {
+  public Http2CodecClientChannelInitializer(Http2ClientConfig config, TracingPolicy tracingPolicy,
+                                            boolean useDecompression, boolean logActivity,
+                                            HttpClientMetrics<?, ?> httpMetrics) {
     this.config = config;
     this.tracingPolicy = tracingPolicy;
     this.useDecompression = useDecompression;
-    this.clientMetrics = clientMetrics;
+    this.httpMetrics = httpMetrics;
     this.logActivity = logActivity;
   }
 
   @Override
-  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1ClientConnection conn, ClientMetrics<?, ?, ?> metrics) {
-    return new CodecChannelUpgrade(clientMetrics, metrics, conn.metric(), config, tracingPolicy, useDecompression, logActivity);
+  public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1ClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics) {
+    return new CodecChannelUpgrade(httpMetrics, conn.metrics(), clientMetrics, conn.metric(), config, tracingPolicy, useDecompression, logActivity);
   }
 
   @Override
-  public void http2Connected(ContextInternal context, HostAndPort authority, Object metric, Channel ch, ClientMetrics<?, ?, ?> metrics, PromiseInternal<HttpClientConnection> promise) {
+  public void http2Connected(ContextInternal context, HostAndPort authority, TransportMetrics<?> transportMetrics, Object metric, Channel ch,
+                             ClientMetrics<?, ?, ?> clientMetrics, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity, clientMetrics, metrics, context, false, metric, authority);
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity, httpMetrics,
+        transportMetrics, clientMetrics, context, false, metric, authority);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
@@ -84,27 +89,30 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
 
   public static class CodecChannelUpgrade implements Http2UpgradeClientConnection.Http2ChannelUpgrade {
 
-    private final HttpClientMetrics clientMetrics;
+    private final HttpClientMetrics<?, ?> httpMetrics;
+    private final TransportMetrics<?> transportMetrics;
+    private final ClientMetrics clientMetrics;
     private final Http2ClientConfig config;
     private final TracingPolicy tracingPolicy;
     private final boolean useDecompression;
     private final boolean logActivity;
-    private final ClientMetrics metrics;
     private final Object connectionMetric;
 
-    public CodecChannelUpgrade(HttpClientMetrics clientMetrics,
-                               ClientMetrics metrics,
+    public CodecChannelUpgrade(HttpClientMetrics<?, ?> httpMetrics,
+                               TransportMetrics<?> transportMetrics,
+                               ClientMetrics clientMetrics,
                                Object connectionMetric,
                                Http2ClientConfig config,
                                TracingPolicy tracingPolicy,
                                boolean useDecompression,
                                boolean logActivity) {
-      this.metrics = metrics;
+      this.clientMetrics = clientMetrics;
       this.config = config;
       this.tracingPolicy = tracingPolicy;
       this.useDecompression = useDecompression;
       this.logActivity = logActivity;
-      this.clientMetrics = clientMetrics;
+      this.httpMetrics = httpMetrics;
+      this.transportMetrics = transportMetrics;
       this.connectionMetric = connectionMetric;
     }
 
@@ -161,8 +169,9 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
             tracingPolicy,
             useDecompression,
             logActivity,
+            CodecChannelUpgrade.this.httpMetrics,
+            CodecChannelUpgrade.this.transportMetrics,
             CodecChannelUpgrade.this.clientMetrics,
-            metrics,
             upgradingStream.context(),
             true,
             connectionMetric,

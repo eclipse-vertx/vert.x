@@ -27,8 +27,6 @@ import io.vertx.core.spi.metrics.*;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * QUIC HTTP server.
@@ -44,6 +42,7 @@ public class QuicHttpServer implements HttpServerInternal {
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
   private QuicServerImpl quicServer;
+  private HttpServerMetrics<?, ?> httpMetrics;
   private volatile int actualPort;
 
   public QuicHttpServer(VertxInternal vertx, HttpServerConfig config) {
@@ -126,7 +125,8 @@ public class QuicHttpServer implements HttpServerInternal {
 
   private static class ConnectionHandler implements Handler<QuicConnection> {
 
-    private final io.vertx.core.net.QuicServer transport;
+    private final QuicServer transport;
+    private final HttpServerMetrics<?, ?> httpMetrics;
     private final Handler<HttpServerRequest> requestHandler;
     private final Handler<HttpConnection> connectionHandler;
     private final boolean handle100ContinueAutomatically;
@@ -135,7 +135,8 @@ public class QuicHttpServer implements HttpServerInternal {
     private final int maxFormBufferedSize;
     private final Http3Settings localSettings;
 
-    public ConnectionHandler(io.vertx.core.net.QuicServer transport,
+    public ConnectionHandler(QuicServer transport,
+                             HttpServerMetrics<?, ?> httpMetrics,
                              Handler<HttpServerRequest> requestHandler,
                              Handler<HttpConnection> connectionHandler,
                              boolean handle100ContinueAutomatically,
@@ -144,6 +145,7 @@ public class QuicHttpServer implements HttpServerInternal {
                              int maxFormBufferedSize,
                              Http3Settings localSettings) {
       this.transport = transport;
+      this.httpMetrics = httpMetrics;
       this.requestHandler = requestHandler;
       this.connectionHandler = connectionHandler;
       this.handle100ContinueAutomatically = handle100ContinueAutomatically;
@@ -161,9 +163,7 @@ public class QuicHttpServer implements HttpServerInternal {
 
       QuicConnectionInternal connectionInternal = (QuicConnectionInternal) connection;
 
-      HttpServerMetrics<?, ?, ?> metrics = (HttpServerMetrics<?, ?, ?>)((MetricsProvider)transport).getMetrics();
-
-      Http3ServerConnection http3Connection = new Http3ServerConnection(connectionInternal, localSettings, metrics);
+      Http3ServerConnection http3Connection = new Http3ServerConnection(connectionInternal, localSettings, httpMetrics);
 
       http3Connection.init();
 
@@ -203,15 +203,6 @@ public class QuicHttpServer implements HttpServerInternal {
   Handler<HttpServerRequest> requestHandler;
     Handler<HttpConnection> connectionHandler;
 
-    BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
-    VertxMetrics metrics = vertx.metrics();
-    if (metrics != null) {
-      metricsProvider = (quicEndpointOptions, socketAddress) -> metrics
-        .createHttpServerMetrics(config, socketAddress);
-    } else {
-      metricsProvider = null;
-    }
-
     ServerSSLOptions sslOptions = config.getSslOptions().copy();
     sslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
 
@@ -221,14 +212,15 @@ public class QuicHttpServer implements HttpServerInternal {
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
-      quicServer = new QuicServerImpl(vertx, metricsProvider, quicConfig, sslOptions);
+      quicServer = new QuicServerImpl(vertx, quicConfig, sslOptions);
+      httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address) : null;
     }
 
     if (requestHandler == null) {
       return current.failedFuture(new IllegalStateException("Set request handler first"));
     }
 
-    quicServer.handler(new ConnectionHandler(quicServer, requestHandler, connectionHandler,
+    quicServer.handler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
       config.getMaxFormBufferedBytes(), http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings()));
     return quicServer
@@ -254,7 +246,13 @@ public class QuicHttpServer implements HttpServerInternal {
       }
       quicServer = null;
     }
-    return s.shutdown(timeout);
+    Future<Void> fut = s.shutdown(timeout);
+    if (httpMetrics != null) {
+      fut = fut.andThen((res, err) -> {
+        httpMetrics.close();
+      });
+    }
+    return fut;
   }
 
   @Override
@@ -264,10 +262,6 @@ public class QuicHttpServer implements HttpServerInternal {
 
   @Override
   public Metrics getMetrics() {
-    QuicServerImpl s;
-    synchronized (this) {
-      s = (QuicServerImpl) quicServer;
-    }
-    return s == null ? null : s.getMetrics();
+    return httpMetrics;
   }
 }

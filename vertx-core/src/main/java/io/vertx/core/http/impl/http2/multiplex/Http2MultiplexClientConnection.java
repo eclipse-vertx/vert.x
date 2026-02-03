@@ -31,7 +31,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
@@ -53,7 +53,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
                                         ChannelHandlerContext chctx,
                                         ContextInternal context,
                                         ClientMetrics<?, ?, ?> clientMetrics,
-                                        HttpClientMetrics<?, ?, ?> transportMetrics,
+                                        TransportMetrics<?> transportMetrics,
                                         HostAndPort authority,
                                         int maxConcurrency,
                                         long keepAliveTimeoutMillis,

@@ -25,6 +25,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.function.Supplier;
 
@@ -41,7 +42,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
   public Http2MultiplexServerChannelInitializer(ContextInternal context,
                                                 CompressionManager compressionManager,
                                                 boolean decompressionSupported,
-                                                HttpServerMetrics<?, ?, ?> serverMetrics,
+                                                HttpServerMetrics<?, ?> httpMetrics,
+                                                TransportMetrics<?> transportMetrics,
                                                 Object connectionMetric,
                                                 Supplier<ContextInternal> streamContextSupplier,
                                                 Handler<HttpServerConnection> connectionHandler,
@@ -53,7 +55,8 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
       Http2MultiplexServerConnection connection = new Http2MultiplexServerConnection(
         handler,
         compressionManager,
-        serverMetrics,
+        httpMetrics,
+        transportMetrics,
         chctx,
         context,
         streamContextSupplier,
