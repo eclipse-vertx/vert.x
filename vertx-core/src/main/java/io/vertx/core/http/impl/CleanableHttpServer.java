@@ -173,4 +173,9 @@ public class CleanableHttpServer implements HttpServerInternal, Closeable {
   public Metrics getMetrics() {
     return server.getMetrics();
   }
+
+  @Override
+  public HttpServerInternal unwrap() {
+    return server;
+  }
 }

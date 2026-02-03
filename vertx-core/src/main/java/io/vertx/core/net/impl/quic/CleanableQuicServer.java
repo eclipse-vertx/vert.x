@@ -33,10 +33,9 @@ public class CleanableQuicServer extends QuicServerImpl implements Closeable {
   private ContextInternal listenContext;
 
   public CleanableQuicServer(VertxInternal vertx,
-                             BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
                              QuicServerConfig config,
                              ServerSSLOptions sslOptions) {
-    super(vertx, metricsProvider, config, sslOptions);
+    super(vertx, config, sslOptions);
     this.vertx = vertx;
   }
 

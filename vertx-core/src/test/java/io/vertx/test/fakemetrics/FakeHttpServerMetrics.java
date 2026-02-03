@@ -26,13 +26,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, ConnectionMetric> {
+public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServerMetrics<HttpServerMetric, WebSocketMetric> {
 
   private final ConcurrentMap<String, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
 
   public FakeHttpServerMetrics() {
-    super(null);
   }
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
@@ -48,8 +47,8 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   }
 
   @Override
-  public HttpServerMetric requestBegin(ConnectionMetric connectionMetric, HttpRequest request) {
-    HttpServerMetric metric = new HttpServerMetric(request, connectionMetric);
+  public HttpServerMetric requestBegin(SocketAddress remoteAddress, HttpRequest request) {
+    HttpServerMetric metric = new HttpServerMetric(request, remoteAddress);
     requests.add(metric);
     return metric;
   }
@@ -61,8 +60,8 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   }
 
   @Override
-  public HttpServerMetric responsePushed(ConnectionMetric connectionMetric, HttpMethod method, String uri, HttpResponse response) {
-    HttpServerMetric requestMetric = new HttpServerMetric(uri, connectionMetric);
+  public HttpServerMetric responsePushed(SocketAddress remoteAddress, HttpMethod method, String uri, HttpResponse response) {
+    HttpServerMetric requestMetric = new HttpServerMetric(uri, remoteAddress);
     requestMetric.response.set(response);
     requests.add(requestMetric);
     return requestMetric;
@@ -87,9 +86,9 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
   }
 
   @Override
-  public WebSocketMetric connected(ConnectionMetric connectionMetric, HttpServerMetric requestMetric, ServerWebSocket webSocket) {
-    WebSocketMetric metric = new WebSocketMetric(webSocket);
-    if (webSockets.put(webSocket.path(), metric) != null) {
+  public WebSocketMetric connected(HttpRequest request) {
+    WebSocketMetric metric = new WebSocketMetric(request);
+    if (webSockets.put(request.uri(), metric) != null) {
       throw new AssertionError();
     }
     return metric;
@@ -97,11 +96,7 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   @Override
   public void disconnected(WebSocketMetric webSocketMetric) {
-    webSockets.remove(((ServerWebSocket) webSocketMetric.ws).path());
-  }
-
-  @Override
-  public void exceptionOccurred(ConnectionMetric connectionMetric, SocketAddress remoteAddress, Throwable err) {
+    webSockets.remove(webSocketMetric.request.uri());
   }
 
   @Override

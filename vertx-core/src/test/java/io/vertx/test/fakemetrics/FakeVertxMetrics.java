@@ -51,16 +51,16 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeEventBusMetrics();
   }
 
-  public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+  public HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
     return new FakeHttpServerMetrics();
   }
 
-  public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
+  public HttpClientMetrics<?, ?> createHttpClientMetrics(HttpClientOptions options) {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 
   @Override
-  public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientConfig options) {
+  public HttpClientMetrics<?, ?> createHttpClientMetrics(HttpClientConfig options) {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 

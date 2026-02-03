@@ -36,7 +36,6 @@ import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.time.Duration;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -46,7 +45,7 @@ import java.util.function.Function;
 public class Http3ClientConnection extends Http3Connection implements HttpClientConnection {
 
   private final HostAndPort authority;
-  private final ClientMetrics<Object, HttpRequest, HttpResponse> metrics;
+  private final ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics;
   private Handler<Void> evictionHandler;
   private final long keepAliveTimeoutMillis;
   private final long creationTimetstamp;
@@ -54,13 +53,13 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
 
   public Http3ClientConnection(QuicConnectionInternal connection,
                                HostAndPort authority,
-                               ClientMetrics<Object, HttpRequest, HttpResponse> metrics,
+                               ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics,
                                long keepAliveTimeoutMillis,
                                Http3Settings localSettings) {
     super(connection, localSettings);
 
     this.authority = authority;
-    this.metrics = metrics;
+    this.clientMetrics = clientMetrics;
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
     this.creationTimetstamp = System.currentTimeMillis();
   }
@@ -154,14 +153,14 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
       QuicStreamInternal streamInternal = (QuicStreamInternal) stream;
       VertxTracer<?, ?> tracer = context.owner().tracer();
       ClientStreamObserver observer;
-      if (metrics != null || tracer != null) {
+      if (clientMetrics != null || tracer != null) {
         Object metric;
-        if (metrics != null) {
-          metric = metrics.init();
+        if (clientMetrics != null) {
+          metric = clientMetrics.init();
         } else {
           metric = null;
         }
-        observer = new ClientStreamObserver(context, TracingPolicy.PROPAGATE, metrics, metric, connection.metrics(),
+        observer = new ClientStreamObserver(context, TracingPolicy.PROPAGATE, clientMetrics, metric, connection.metrics(),
           connection.metric(), tracer, connection.remoteAddress());
       } else {
         observer = null;

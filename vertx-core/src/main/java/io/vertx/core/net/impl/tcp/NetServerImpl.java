@@ -43,7 +43,6 @@ import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.*;
-import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
@@ -53,7 +52,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * Vert.x TCP server
@@ -70,7 +68,6 @@ public class NetServerImpl implements NetServerInternal {
   private final ServerSSLOptions sslOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
-  private final BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider;
   private Handler<NetSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
@@ -96,8 +93,7 @@ public class NetServerImpl implements NetServerInternal {
                        TcpServerConfig config,
                        ServerSSLOptions sslOptions,
                        boolean fileRegionEnabled,
-                       boolean registerWriteHandler,
-                       BiFunction<VertxMetrics, SocketAddress, TransportMetrics<?>> metricsProvider) {
+                       boolean registerWriteHandler) {
 
     if (sslOptions == null) {
       sslOptions = new ServerSSLOptions();
@@ -107,7 +103,6 @@ public class NetServerImpl implements NetServerInternal {
     this.config = config;
     this.fileRegionEnabled = fileRegionEnabled;
     this.registerWriteHandler = registerWriteHandler;
-    this.metricsProvider = metricsProvider;
     this.sslOptions = sslOptions;
   }
 
@@ -564,7 +559,7 @@ public class NetServerImpl implements NetServerInternal {
         if (bindAddress.isInetSocket()) {
           actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
         }
-        metrics = createMetrics(localAddress);
+        metrics = createMetrics(vertx.metrics(), localAddress);
         promise.complete(ch);
       } else {
         promise.fail(res.cause());
@@ -576,12 +571,8 @@ public class NetServerImpl implements NetServerInternal {
     return listening;
   }
 
-  private TransportMetrics<?> createMetrics(SocketAddress localAddress) {
-    VertxMetrics metrics = vertx.metrics();
-    if (metrics != null) {
-      return metricsProvider.apply(metrics, localAddress);
-    }
-    return null;
+  private TransportMetrics<?> createMetrics(VertxMetrics metrics,  SocketAddress localAddress) {
+    return metrics != null ? metrics.createTcpServerMetrics(config, localAddress) : null;
   }
 
   /**

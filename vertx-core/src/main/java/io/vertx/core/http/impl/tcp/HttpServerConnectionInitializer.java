@@ -37,6 +37,7 @@ import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.nio.charset.StandardCharsets;
@@ -58,6 +59,8 @@ public class HttpServerConnectionInitializer {
   private final boolean disableH2C;
   private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
+  private final HttpServerMetrics<?, ?> httpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final Object metric;
   private final boolean useCompression;
   private final boolean useDecompression;
@@ -98,6 +101,8 @@ public class HttpServerConnectionInitializer {
                                   String serverOrigin,
                                   Handler<HttpServerConnection> connectionHandler,
                                   Handler<Throwable> exceptionHandler,
+                                  HttpServerMetrics<?, ?> httpMetrics,
+                                  TransportMetrics<?> transportMetrics,
                                   Object metric) {
 
     CompressionManager compressionManager;
@@ -113,7 +118,8 @@ public class HttpServerConnectionInitializer {
         context,
         compressionManager,
         useDecompression,
-        (HttpServerMetrics) server.getMetrics(),
+        server.getMetrics(),
+        transportMetrics,
         metric,
         streamContextSupplier,
         connectionHandler,
@@ -125,7 +131,8 @@ public class HttpServerConnectionInitializer {
       http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
         this,
         tracingPolicy,
-        (HttpServerMetrics) server.getMetrics(),
+        httpMetrics,
+        transportMetrics,
         useDecompression,
         useCompression,
         http2Config,
@@ -161,10 +168,12 @@ public class HttpServerConnectionInitializer {
     this.webSocketConfig = webSocketConfig;
     this.tracingPolicy = tracingPolicy;
     this.compressionContentSizeThreshold = compressionContentSizeThreshold;
+    this.httpMetrics = httpMetrics;
+    this.transportMetrics = transportMetrics;
     this.http2ChannelInitializer = http2ChannelInitalizer;
   }
 
-  public void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
+  public void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager, TransportMetrics<?> transportMetrics) {
     ChannelPipeline pipeline = ch.pipeline();
     if (sslOptions != null) {
       SslHandler sslHandler = pipeline.get(SslHandler.class);
@@ -278,7 +287,6 @@ public class HttpServerConnectionInitializer {
       sendServiceUnavailable(pipeline.channel());
       return;
     }
-    HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     VertxHandler<Http1ServerConnection> handler = VertxHandler.create(chctx -> {
       Http1ServerConnection conn = new Http1ServerConnection(
         threadingModel,
@@ -297,7 +305,8 @@ public class HttpServerConnectionInitializer {
         context,
         serverOrigin,
         tracingPolicy,
-        metrics);
+        httpMetrics,
+        transportMetrics);
       conn.metric(metric);
       return conn;
     });

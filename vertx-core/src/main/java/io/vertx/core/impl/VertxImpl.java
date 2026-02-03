@@ -362,8 +362,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     TcpClientConfig config = new TcpClientConfig(options);
     NetClientBuilder builder = new NetClientBuilder(this, config)
       .sslOptions(options.getSslOptions())
-      .registerWriteHandler(options.isRegisterWriteHandler())
-      .metrics(metrics != null ? metrics.createTcpClientMetrics(config) : null);
+      .registerWriteHandler(options.isRegisterWriteHandler());
     NetClientInternal netClient = builder.build();
     fut.add(netClient);
     return new CleanableNetClient(netClient, cleaner);
@@ -464,13 +463,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     o.setUseAlpn(false);
     o.setProtocolVersion(HttpVersion.HTTP_1_1);
     HttpClientConfig config = new HttpClientConfig(o);
-    HttpClientMetrics<?, ?, ?> metrics = metrics() != null ? metrics().createHttpClientMetrics(config) : null;
+    HttpClientMetrics<?, ?> httpMetrics = metrics() != null ? metrics().createHttpClientMetrics(config) : null;
     NetClientInternal tcpClient = new NetClientBuilder(this, config.getTcpConfig())
       .sslOptions(options.getSslOptions())
-      .metrics(metrics)
       .build();
-    TcpHttpClientTransport channelConnector = TcpHttpClientTransport.create(tcpClient, config, metrics);
-    return new WebSocketClientImpl(this, o, options, channelConnector, metrics);
+    TcpHttpClientTransport channelConnector = TcpHttpClientTransport.create(tcpClient, config, httpMetrics);
+    return new WebSocketClientImpl(this, o, options, channelConnector, httpMetrics);
   }
 
   @Override

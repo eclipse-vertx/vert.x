@@ -244,6 +244,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         context,
         "localhost",
         TracingPolicy.PROPAGATE,
+        null,
         null);
       conn.handler(app);
       return conn;

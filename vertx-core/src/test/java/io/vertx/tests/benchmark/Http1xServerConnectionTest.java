@@ -75,6 +75,7 @@ public class Http1xServerConnectionTest extends VertxTestBase {
         context,
         "localhost",
         TracingPolicy.PROPAGATE,
+        null,
         null);
       conn.handler(app);
       return conn;

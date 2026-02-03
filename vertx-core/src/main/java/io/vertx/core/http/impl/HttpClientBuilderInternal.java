@@ -114,7 +114,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   private HttpClientImpl createHttpClientImpl(HttpClientConfig clientConfig,
-                                              HttpClientMetrics<?, ?, ?> metrics,
+                                              HttpClientMetrics<?, ?> httpMetrics,
                                               EndpointResolver resolver,
                                               Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
                                               HttpClientTransport tcpTransport,
@@ -140,7 +140,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       vertx,
       resolver,
       redirectHandler,
-      metrics,
+      httpMetrics,
       po,
       proxyOptions,
       nonProxyHosts,
@@ -211,16 +211,16 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       throw new IllegalStateException("HTTP client must be configured for at least one HTTP version");
     }
 
-    HttpClientMetrics<?, ?, ?> metrics;
+    HttpClientMetrics<?, ?> httpMetrics;
     if (vertx.metrics() != null) {
-      metrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
+      httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpClientMetrics(co) : null;
     } else {
-      metrics = null;
+      httpMetrics = null;
     }
 
     HttpClientTransport quicTransport;
     if (co.getVersions().contains(HttpVersion.HTTP_3)) {
-      quicTransport = new QuicHttpClientTransport(vertx, metrics, co);
+      quicTransport = new QuicHttpClientTransport(vertx, co);
     } else {
       quicTransport = null;
     }
@@ -236,7 +236,6 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         .setProxyOptions(null);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, clientConfig)
         .sslOptions(co.getSslOptions())
-        .metrics(metrics)
         .build();
       transport = new TcpHttpClientTransport(
         tcpClient,
@@ -250,7 +249,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         co.getTcpConfig().getIdleTimeout(),
         co.getTcpConfig().getReadIdleTimeout(),
         co.getTcpConfig().getWriteIdleTimeout(),
-        metrics
+        httpMetrics
       );
     } else {
       resolver = null;
@@ -265,16 +264,15 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     Closeable closeable;
     if (shared != null) {
       CloseFuture closeFuture = new CloseFuture();
-      HttpClientMetrics<?, ?, ?> m = metrics;
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(co2, m, resolver, redirectHandler, transport, quicTransport);
+        HttpClientImpl impl = createHttpClientImpl(co2, httpMetrics, resolver, redirectHandler, transport, quicTransport);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = createHttpClientImpl(co2, metrics, resolver, redirectHandler, transport, quicTransport);
+      HttpClientImpl impl = createHttpClientImpl(co2, httpMetrics, resolver, redirectHandler, transport, quicTransport);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

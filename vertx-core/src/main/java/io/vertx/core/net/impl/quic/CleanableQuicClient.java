@@ -30,10 +30,9 @@ public class CleanableQuicClient extends QuicClientImpl implements Closeable {
   private ContextInternal listenContext;
 
   public CleanableQuicClient(VertxInternal vertx,
-                             BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
                              QuicClientConfig config,
                              ClientSSLOptions sslOptions) {
-    super(vertx, metricsProvider, config, sslOptions);
+    super(vertx, config, sslOptions);
     this.vertx = vertx;
   }
 

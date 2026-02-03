@@ -598,7 +598,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   }
 
   private void reportRequestComplete() {
-    HttpServerMetrics metrics = conn.metrics;
+    HttpServerMetrics metrics = conn.httpMetrics;
     if (metrics != null) {
       metrics.requestEnd(metric, this, bytesRead);
       conn.flushBytesRead();
@@ -606,9 +606,9 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   }
 
   private void reportRequestBegin() {
-    HttpServerMetrics metrics = conn.metrics;
+    HttpServerMetrics metrics = conn.httpMetrics;
     if (metrics != null) {
-      metric = metrics.requestBegin(conn.metric(), this);
+      metric = metrics.requestBegin(remoteAddress(), this);
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
@@ -675,8 +675,8 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   }
 
   private void reportRequestReset(Throwable err) {
-    if (conn.metrics != null) {
-      conn.metrics.requestReset(metric);
+    if (conn.httpMetrics != null) {
+      conn.httpMetrics.requestReset(metric);
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
@@ -732,8 +732,8 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
 
   @Override
   public HttpServerRequest routed(String route) {
-    if (METRICS_ENABLED && !response.ended() && conn.metrics != null) {
-      conn.metrics.requestRouted(metric, route);
+    if (METRICS_ENABLED && !response.ended() && conn.httpMetrics != null) {
+      conn.httpMetrics.requestRouted(metric, route);
     }
     return this;
   }

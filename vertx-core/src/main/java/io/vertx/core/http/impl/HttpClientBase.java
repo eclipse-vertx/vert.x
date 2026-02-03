@@ -18,12 +18,10 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -33,17 +31,17 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   protected final VertxInternal vertx;
   protected final ProxyOptions defaultProxyOptions;
-  protected final HttpClientMetrics<?, ?, ?> metrics;
+  protected final HttpClientMetrics<?, ?> httpMetrics;
   protected final CloseSequence closeSequence;
   private Duration closeTimeout = Duration.ZERO;
   private Predicate<SocketAddress> proxyFilter;
 
   public HttpClientBase(VertxInternal vertx,
-                        HttpClientMetrics<?, ?, ?> metrics,
+                        HttpClientMetrics<?, ?> httpMetrics,
                         ProxyOptions defaultProxyOptions,
                         List<String> nonProxyHosts) {
     this.vertx = vertx;
-    this.metrics = metrics;
+    this.httpMetrics = httpMetrics;
     this.defaultProxyOptions = defaultProxyOptions;
     this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(closeTimeout, p1));
     this.proxyFilter = nonProxyHosts != null ? ProxyFilter.nonProxyHosts(nonProxyHosts) : ProxyFilter.DEFAULT_PROXY_FILTER;
@@ -92,7 +90,7 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
   }
 
   public HttpClientMetrics metrics() {
-    return metrics;
+    return httpMetrics;
   }
 
   protected abstract void doShutdown(Duration timeout, Completable<Void> p);
@@ -110,8 +108,8 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
   }
 
   @Override
-  public Metrics getMetrics() {
-    return metrics;
+  public HttpClientMetrics<?, ?> getMetrics() {
+    return httpMetrics;
   }
 
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {

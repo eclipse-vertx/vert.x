@@ -57,6 +57,7 @@ import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -78,14 +79,15 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
-  private final HttpClientMetrics clientMetrics;
+  private final HttpClientMetrics<?, ?> httpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private final Http1ClientConfig config;
   private final TracingPolicy tracingPolicy;
   private final boolean useDecompression;
   private final boolean ssl;
   private final SocketAddress server;
   private final HostAndPort authority;
-  public final ClientMetrics metrics;
+  public final ClientMetrics clientMetrics;
   private final HttpVersion version;
 
   private final Deque<Stream> pending;
@@ -107,7 +109,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   private long lastResponseReceivedTimestamp;
 
   public Http1ClientConnection(HttpVersion version,
-                               HttpClientMetrics clientMetrics,
+                               HttpClientMetrics<?, ?> httpMetrics,
+                               TransportMetrics<?> transportMetrics,
                                Http1ClientConfig config,
                                TracingPolicy tracingPolicy,
                                boolean useDecompression,
@@ -116,8 +119,10 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
                                SocketAddress server,
                                HostAndPort authority,
                                ContextInternal context,
-                               ClientMetrics metrics) {
+                               ClientMetrics clientMetrics) {
     super(context, chctx);
+    this.httpMetrics = httpMetrics;
+    this.transportMetrics = transportMetrics;
     this.clientMetrics = clientMetrics;
     this.config = config;
     this.tracingPolicy = tracingPolicy;
@@ -125,7 +130,6 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     this.ssl = ssl;
     this.server = server;
     this.authority = authority;
-    this.metrics = metrics;
     this.version = version;
     this.keepAliveTimeout = config.getKeepAliveTimeout() == null ? 0 : (int)config.getKeepAliveTimeout().toSeconds();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
@@ -270,13 +274,13 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       assert stream == removed;
       inflight.addLast(stream);
       this.isConnect = connect;
-      if (metrics != null) {
+      if (clientMetrics != null) {
         Object m = stream.metric;
         ObservableRequest observable = new ObservableRequest(request);
         if (m != null) {
-          metrics.requestBegin(m, request.uri, observable);
+          clientMetrics.requestBegin(m, request.uri, observable);
         } else {
-          stream.metric = metrics.requestBegin(request.uri, observable);
+          stream.metric = clientMetrics.requestBegin(request.uri, observable);
         }
       }
       VertxTracer tracer = stream.context.tracer();
@@ -330,8 +334,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       s.requestEnded = true;
       next = pending.peek();
       responseEnded = s.responseEnded;
-      if (metrics != null) {
-        metrics.requestEnd(s.metric, s.bytesWritten);
+      if (clientMetrics != null) {
+        clientMetrics.requestEnd(s.metric, s.bytesWritten);
       }
     }
     flushBytesWritten();
@@ -896,8 +900,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         request = stream.request;
         stream.version = version;
         stream.response = response;
-        if (metrics != null) {
-          metrics.responseBegin(stream.metric, new ObservableResponse(response));
+        if (clientMetrics != null) {
+          clientMetrics.responseBegin(stream.metric, new ObservableResponse(response));
         }
       }
       stream.onHead(response);
@@ -997,8 +1001,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     if (tracer != null) {
       tracer.receiveResponse(stream.context, new ObservableResponse(response), stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
-    if (metrics != null) {
-      metrics.responseEnd(stream.metric, stream.bytesRead);
+    if (clientMetrics != null) {
+      clientMetrics.responseEnd(stream.metric, stream.bytesRead);
     }
     flushBytesRead();
     checkLifecycle();
@@ -1011,8 +1015,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     }
   }
 
-  public HttpClientMetrics metrics() {
-    return clientMetrics;
+  public TransportMetrics<?> metrics() {
+    return transportMetrics;
   }
 
   public synchronized void toWebSocket(
@@ -1084,7 +1088,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         if (future.isSuccess()) {
 
           VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
-            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), clientMetrics);
+            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), httpMetrics, transportMetrics);
             WebSocketImpl webSocket = new WebSocketImpl(
               context,
               conn,
@@ -1105,8 +1109,10 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           ws.subProtocol(handshaker.actualSubprotocol());
           ws.registerHandler(vertx.eventBus());
 
-          if (clientMetrics != null) {
-            ws.setMetric(clientMetrics.connected(ws));
+          if (httpMetrics != null) {
+            ws.setMetric(httpMetrics.connected(new ObservableRequest(new HttpRequestHead(
+              ssl ? "https" : "http", HttpMethod.GET, requestURI, headers, authority, "/", null
+            ))));
           }
           ws.pause();
           Deque<WebSocketFrame> toResubmit = pendingFrames;
@@ -1242,8 +1248,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   protected void handleClosed() {
     super.handleClosed();
     closed = true;
-    if (metrics != null) {
-      clientMetrics.endpointDisconnected(metrics);
+    if (clientMetrics != null) {
+      httpMetrics.endpointDisconnected(clientMetrics);
     }
     if (!evicted) {
       evicted = true;
@@ -1267,8 +1273,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       }
     }
     for (Stream stream : inflight) {
-      if (metrics != null) {
-        metrics.requestReset(stream.metric);
+      if (clientMetrics != null) {
+        clientMetrics.requestReset(stream.metric);
       }
       Object trace = stream.trace;
       VertxTracer tracer = stream.context.tracer();
@@ -1318,8 +1324,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         if (!closed) {
           if (pending.size() < concurrency()) {
             Object metric;
-            if (metrics != null) {
-              metric = metrics.init();
+            if (clientMetrics != null) {
+              metric = clientMetrics.init();
             } else {
               metric = null;
             }

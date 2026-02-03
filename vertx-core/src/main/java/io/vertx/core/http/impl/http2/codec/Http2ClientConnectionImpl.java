@@ -54,7 +54,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   Http2ClientConnectionImpl(ContextInternal context,
                             HostAndPort authority,
                             VertxHttp2ConnectionHandler connHandler,
-                            HttpClientMetrics transportMetrics,
+                            TransportMetrics<?> transportMetrics,
                             ClientMetrics clientMetrics,
                             Http2ClientConfig config,
                             TracingPolicy tracingPolicy,
@@ -309,8 +309,9 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     TracingPolicy tracingPolicy,
     boolean useDecompression,
     boolean logActivity,
-    HttpClientMetrics clientMetrics,
-    ClientMetrics metrics,
+    HttpClientMetrics<?, ?> httpMetrics,
+    TransportMetrics<?> transportMetrics,
+    ClientMetrics clientMetrics,
     ContextInternal context,
     boolean upgrade,
     Object socketMetric,
@@ -321,8 +322,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, clientMetrics, metrics, config, tracingPolicy, useDecompression);
-        if (metrics != null) {
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, transportMetrics, clientMetrics, config, tracingPolicy, useDecompression);
+        if (clientMetrics != null) {
           Object m = socketMetric;
           conn.metric(m);
         }
@@ -331,15 +332,15 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       .logEnabled(logActivity)
       .build();
     handler.addHandler(conn -> {
-      if (metrics != null) {
+      if (clientMetrics != null) {
         if (!upgrade)  {
-          clientMetrics.endpointConnected(metrics);
+          httpMetrics.endpointConnected(clientMetrics);
         }
       }
     });
     handler.removeHandler(conn -> {
-      if (metrics != null) {
-        clientMetrics.endpointDisconnected(metrics);
+      if (clientMetrics != null) {
+        httpMetrics.endpointDisconnected(clientMetrics);
       }
       conn.tryEvict();
     });

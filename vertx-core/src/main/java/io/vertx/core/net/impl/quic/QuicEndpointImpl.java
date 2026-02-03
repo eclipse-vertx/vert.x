@@ -62,16 +62,13 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private final QuicEndpointConfig config;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
-  protected final BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider;
   private TransportMetrics<?> metrics;
   private Channel channel;
   protected ConnectionGroup connectionGroup;
   private FlushStrategy flushStrategy;
   private ContextInternal context;
 
-  public QuicEndpointImpl(VertxInternal vertx,
-                          BiFunction<QuicEndpointConfig, SocketAddress, TransportMetrics<?>> metricsProvider,
-                          QuicEndpointConfig config) {
+  public QuicEndpointImpl(VertxInternal vertx, QuicEndpointConfig config) {
 
     String keyLogFilePath = config.getKeyLogFile();
     File keylogFile;
@@ -104,7 +101,6 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
     this.config = config;
     this.vertx = Objects.requireNonNull(vertx);
-    this.metricsProvider = metricsProvider;
     this.manager = new SslContextManager(new SSLEngineOptions() {
       @Override
       public SSLEngineOptions copy() {
@@ -216,8 +212,8 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       context = current;
     }
     TransportMetrics<?> metrics;
-    if (metricsProvider != null) {
-      metrics = metricsProvider.apply(config, address);
+    if (vertx.metrics() != null) {
+      metrics = vertx.metrics().createQuicEndpointMetrics(config, address);
     } else {
       metrics = null;
     }

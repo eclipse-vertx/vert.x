@@ -39,18 +39,20 @@ public final class WebSocketConnectionImpl extends VertxConnection {
   private final long closingTimeoutMS;
   private ScheduledFuture<?> closingTimeout;
   private final boolean server;
-  private final TransportMetrics<?> metrics;
+  private final WebSocketMetrics webSocketMetrics;
+  private final TransportMetrics<?> transportMetrics;
   private WebSocketImplBase<?> webSocket;
   private boolean closeSent;
   private ChannelPromise closePromise;
   private Object closeReason;
   private boolean closeReceived;
 
-  public WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, TransportMetrics<?> metrics) {
+  public WebSocketConnectionImpl(ContextInternal context, ChannelHandlerContext chctx, boolean server, long closingTimeoutMS, WebSocketMetrics<?> webSocketMetrics, TransportMetrics<?> transportMetrics) {
     super(context, chctx);
     this.closingTimeoutMS = closingTimeoutMS;
-    this.metrics = metrics;
+    this.transportMetrics = transportMetrics;
     this.server = server;
+    this.webSocketMetrics = webSocketMetrics;
   }
 
   public WebSocketImplBase<?> webSocket() {
@@ -72,7 +74,7 @@ public final class WebSocketConnectionImpl extends VertxConnection {
 
   @Override
   public NetworkMetrics metrics() {
-    return metrics;
+    return transportMetrics;
   }
 
   private Object reason;
@@ -166,17 +168,8 @@ public final class WebSocketConnectionImpl extends VertxConnection {
       metric = ws.getMetric();
       ws.setMetric(null);
     }
-    // Improve this with a common super interface to both
-    if (this.metrics instanceof HttpServerMetrics) {
-      HttpServerMetrics metrics = (HttpServerMetrics) this.metrics;
-      if (METRICS_ENABLED && metrics != null) {
-        metrics.disconnected(metric);
-      }
-    } else if (this.metrics instanceof HttpClientMetrics) {
-      HttpClientMetrics metrics = (HttpClientMetrics) this.metrics;
-      if (METRICS_ENABLED && metrics != null) {
-        metrics.disconnected(metric);
-      }
+    if (METRICS_ENABLED && webSocketMetrics != null) {
+      webSocketMetrics.disconnected(metric);
     }
     super.handleClosed();
   }

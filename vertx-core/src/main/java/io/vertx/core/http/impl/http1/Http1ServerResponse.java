@@ -425,8 +425,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   public void completeHandshake() {
-    if (conn.metrics != null) {
-      conn.metrics.responseBegin(requestMetric, this);
+    if (conn.httpMetrics != null) {
+      conn.httpMetrics.responseBegin(requestMetric, this);
     }
     setStatusCode(101);
     synchronized (conn) {
@@ -714,8 +714,8 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void reportResponseBegin() {
-    if (conn.metrics != null) {
-      conn.metrics.responseBegin(requestMetric, this);
+    if (conn.httpMetrics != null) {
+      conn.httpMetrics.responseBegin(requestMetric, this);
     }
   }
 

@@ -42,6 +42,7 @@ import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -89,7 +90,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
 
-  final HttpServerMetrics metrics;
+  public final HttpServerMetrics httpMetrics;
+  private final TransportMetrics<?> transportMetrics;
   final boolean handle100ContinueAutomatically;
   final SslContextManager sslContextManager;
   final boolean strictThreadMode;
@@ -110,7 +112,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
                                ContextInternal context,
                                String serverOrigin,
                                TracingPolicy tracingPolicy,
-                               HttpServerMetrics metrics) {
+                               HttpServerMetrics<?, ?> httpMetrics,
+                               TransportMetrics<?> transportMetrics) {
     super(context, chctx, strictThreadMode && threadingModel == ThreadingModel.EVENT_LOOP);
     this.serverOrigin = serverOrigin;
     this.streamContextSupplier = streamContextSupplier;
@@ -121,7 +124,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
     this.sslContextManager = sslContextManager;
-    this.metrics = metrics;
+    this.httpMetrics = httpMetrics;
+    this.transportMetrics = transportMetrics;
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.tracingPolicy = tracingPolicy;
     this.wantClose = false;
@@ -181,8 +185,8 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   }
 
   @Override
-  public HttpServerMetrics metrics() {
-    return metrics;
+  public TransportMetrics<?> metrics() {
+    return transportMetrics;
   }
 
   public void handleMessage(Object msg) {
@@ -312,12 +316,12 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
 
   private void reportResponseComplete() {
     Http1ServerRequest request = responseInProgress;
-    if (metrics != null) {
+    if (httpMetrics != null) {
       flushBytesWritten();
       if (request.reportMetricsFailed) {
-        metrics.requestReset(request.metric());
+        httpMetrics.requestReset(request.metric());
       } else {
-        metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
+        httpMetrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
       }
     }
     VertxTracer tracer = context.tracer();
@@ -432,12 +436,12 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
       }
 
       pipeline.replace("handler", "handler", VertxHandler.create(ctx -> {
-        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslContextManager, sslOptions, metrics, false) {
+        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslContextManager, sslOptions, transportMetrics, false) {
           @Override
           protected void handleClosed() {
-            if (metrics != null) {
+            if (httpMetrics != null) {
               Http1ServerRequest request = Http1ServerConnection.this.responseInProgress;
-              metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
+              httpMetrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
             }
             super.handleClosed();
           }

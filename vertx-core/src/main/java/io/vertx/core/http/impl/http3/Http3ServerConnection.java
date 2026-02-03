@@ -16,7 +16,6 @@ import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.http.Http3Settings;
-import io.vertx.core.http.HttpSettings;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
@@ -35,25 +34,25 @@ import java.util.function.Supplier;
 public class Http3ServerConnection extends Http3Connection implements HttpServerConnection {
 
   private final Supplier<ContextInternal> streamContextProvider;
-  private final HttpServerMetrics<?, ?, ?> metrics;
+  private final HttpServerMetrics<?, ?> httpMetrics;
   private Handler<HttpServerStream> streamHandler;
   private QuicStreamChannel outboundControlStream;
 
   public Http3ServerConnection(QuicConnectionInternal connection,
                                Http3Settings localSettings,
-                               HttpServerMetrics<?, ?, ?> metrics) {
+                               HttpServerMetrics<?, ?> httpMetrics) {
     super(connection, localSettings);
 
     this.streamContextProvider = connection.context()::duplicate;
-    this.metrics = metrics;
+    this.httpMetrics = httpMetrics;
   }
 
   void handleStream(QuicStreamInternal quicStream) {
     ContextInternal streamContext = streamContextProvider.get();
     VertxTracer<?, ?> tracer = context.owner().tracer();
     ServerStreamObserver observer;
-    if (metrics != null || tracer != null) {
-      observer = new ServerStreamObserver(streamContext, metrics, tracer, connection.metric(), TracingPolicy.PROPAGATE, connection.remoteAddress());
+    if (httpMetrics != null || tracer != null) {
+      observer = new ServerStreamObserver(streamContext, httpMetrics, null, tracer, connection.metric(), TracingPolicy.PROPAGATE, connection.remoteAddress());
     } else {
       observer = null;
     }

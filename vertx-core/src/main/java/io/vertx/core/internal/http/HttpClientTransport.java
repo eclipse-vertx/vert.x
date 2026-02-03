@@ -32,10 +32,12 @@ public interface HttpClientTransport {
                                        SocketAddress server,
                                        HostAndPort authority,
                                        HttpConnectParams params,
-                                       ClientMetrics<?, ?, ?> metrics);
+                                       ClientMetrics<?, ?, ?> clientMetrics);
 
   Future<Void> shutdown(Duration timeout);
 
-  Future<Void> close();
+  default Future<Void> close() {
+    return shutdown(Duration.ZERO);
+  }
 
 }

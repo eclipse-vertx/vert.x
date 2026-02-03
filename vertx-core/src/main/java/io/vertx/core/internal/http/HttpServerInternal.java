@@ -27,4 +27,8 @@ public interface HttpServerInternal extends HttpServer, MetricsProvider {
   Future<HttpServer> listen(ContextInternal context);
   Future<HttpServer> listen(ContextInternal context, SocketAddress address);
 
+  default HttpServerInternal unwrap() {
+    return this;
+  }
+
 }

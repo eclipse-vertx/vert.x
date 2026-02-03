@@ -27,7 +27,7 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
   public abstract ContextInternal context();
 
   /**
-   * @return the metric object returned by the {@link io.vertx.core.spi.metrics.HttpServerMetrics#requestBegin(Object, HttpRequest)} call
+   * @return the metric object returned by the {@link io.vertx.core.spi.metrics.HttpServerMetrics#requestBegin(io.vertx.core.net.SocketAddress, HttpRequest)} call
    */
   public abstract Object metric();
 

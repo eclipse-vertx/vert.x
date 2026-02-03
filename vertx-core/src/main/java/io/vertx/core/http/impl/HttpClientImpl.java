@@ -73,7 +73,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   HttpClientImpl(VertxInternal vertx,
                  EndpointResolver resolver,
                  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
-                 HttpClientMetrics<?, ?, ?> metrics,
+                 HttpClientMetrics<?, ?> httpMetrics,
                  PoolOptions poolOptions,
                  ProxyOptions defaultProxyOptions,
                  List<String> nonProxyHosts,
@@ -90,7 +90,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  Handler<HttpConnection> connectHandler,
                  HttpClientTransport tcpTransport,
                  HttpClientTransport quicTransport) {
-    super(vertx, metrics, defaultProxyOptions, nonProxyHosts);
+    super(vertx, httpMetrics, defaultProxyOptions, nonProxyHosts);
 
     if (sslOptions != null) {
       configureSSLOptions(verifyHost, sslOptions);
@@ -184,8 +184,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
       SocketAddress address = SocketAddress.inetSocketAddress(key.authority.port(), key.authority.host());
-      ClientMetrics clientMetrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(address, maxPoolSize) : null;
-      PoolMetrics poolMetrics = HttpClientImpl.this.metrics != null ? vertx.metrics().createPoolMetrics("http", key.authority.toString(), maxPoolSize) : null;
+      ClientMetrics clientMetrics = HttpClientImpl.this.httpMetrics != null ? HttpClientImpl.this.httpMetrics.createEndpointMetrics(address, maxPoolSize) : null;
+      PoolMetrics poolMetrics = HttpClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("http", key.authority.toString(), maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
@@ -226,8 +226,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   @Override
-  public HttpClientTransport channelConnector() {
+  public HttpClientTransport tcpTransport() {
     return tcpTransport;
+  }
+
+  @Override
+  public HttpClientTransport quicTransport() {
+    return quicTransport;
   }
 
   protected void setDefaultSslOptions(ClientSSLOptions options) {
@@ -317,7 +322,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     HostAndPort authority = HostAndPort.create(host, port);
     ClientSSLOptions sslOptions = sslOptions(verifyHost, connect, this.sslOptions);
     ProxyOptions proxyOptions = computeProxyOptions(connect.getProxyOptions(), server);
-    ClientMetrics clientMetrics = metrics != null ? metrics.createEndpointMetrics(server, 1) : null;
+    ClientMetrics clientMetrics = httpMetrics != null ? httpMetrics.createEndpointMetrics(server, 1) : null;
     Boolean ssl = connect.isSsl();
     boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
