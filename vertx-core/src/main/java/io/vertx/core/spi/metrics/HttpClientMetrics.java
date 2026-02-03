@@ -35,7 +35,7 @@ import io.vertx.core.spi.observability.HttpResponse;
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface HttpClientMetrics<R, W, S> extends TransportMetrics<S> {
+public interface HttpClientMetrics<R, W, C> extends TransportMetrics<C> {
 
   /**
    * Provides metrics for a particular endpoint

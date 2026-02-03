@@ -50,7 +50,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
 
   private final ContextInternal context;
   private final QuicChannel channel;
-  private final TransportMetrics<?> metrics;
+  private final TransportMetrics metrics;
   private final long idleTimeout;
   private final long readIdleTimeout;
   private final long writeIdleTimeout;
@@ -104,14 +104,18 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       }
     };
     if (metrics != null) {
-      this.streamMetrics = new NetworkMetrics<>() {
+      this.streamMetrics = new TransportMetrics<>() {
         @Override
-        public void bytesRead(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+        public void bytesRead(Object connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
           metrics.bytesRead(metric(), remoteAddress, numberOfBytes);
         }
         @Override
-        public void bytesWritten(Object socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+        public void bytesWritten(Object connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
           metrics.bytesWritten(metric(), remoteAddress, numberOfBytes);
+        }
+        @Override
+        public void disconnected(Object connectionMetric, SocketAddress remoteAddress) {
+          metrics.streamClosed(metric());
         }
       };
     } else {
@@ -140,6 +144,9 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     }
     VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, streamContext, streamChannel, streamMetrics, chctx));
     handler.addHandler(stream -> {
+      if (metrics != null) {
+        metrics.streamOpened(metric());
+      }
       Handler<QuicStream> h = QuicConnectionImpl.this.handler;
       if (h != null) {
         context.dispatch(stream, h);
@@ -238,6 +245,9 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     Promise<QuicStream> promise = context.promise();
     VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, (QuicStreamChannel) chctx.channel(), streamMetrics, chctx));
     handler.addHandler(stream -> {
+      if (metrics != null) {
+        metrics.streamOpened(metric());
+      }
       promise.tryComplete(stream);
     });
     QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;

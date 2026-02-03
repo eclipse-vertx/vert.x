@@ -128,7 +128,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     startServer(testAddress);
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
-    AtomicReference<SocketMetric> clientSocketMetric = new AtomicReference<>();
+    AtomicReference<ConnectionMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
 
 

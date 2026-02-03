@@ -565,14 +565,14 @@ public class MetricsTest extends VertxTestBase {
       wsRef.set(ws);
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       WebSocketMetric webSocketMetric = metrics.getWebSocketMetric(ws);
-      SocketMetric socketMetric = metrics.firstMetric(ws.remoteAddress());
-      long bytesWritten = socketMetric.bytesRead.get();
-      long bytesRead = socketMetric.bytesRead.get();
+      ConnectionMetric connectionMetric = metrics.firstMetric(ws.remoteAddress());
+      long bytesWritten = connectionMetric.bytesRead.get();
+      long bytesRead = connectionMetric.bytesRead.get();
       assertNotNull(webSocketMetric);
       ws.handler(ws::write);
       ws.closeHandler(closed -> {
         vertx.runOnContext(v -> {
-          assertTrue(socketMetric.bytesRead.get() > bytesRead || socketMetric.bytesWritten.get() > bytesWritten);
+          assertTrue(connectionMetric.bytesRead.get() > bytesRead || connectionMetric.bytesWritten.get() > bytesWritten);
           latch.countDown();
         });
       });
@@ -600,14 +600,14 @@ public class MetricsTest extends VertxTestBase {
         .onComplete(onSuccess(ws -> {
           assertNull(metrics.getRequestMetric(req));
           WebSocketMetric wsMetric = metrics.getWebSocketMetric(ws);
-          SocketMetric socketMetric = metrics.firstMetric(ws.remoteAddress());
-          long bytesWritten = socketMetric.bytesRead.get();
-          long bytesRead = socketMetric.bytesRead.get();
+          ConnectionMetric connectionMetric = metrics.firstMetric(ws.remoteAddress());
+          long bytesWritten = connectionMetric.bytesRead.get();
+          long bytesRead = connectionMetric.bytesRead.get();
           assertNotNull(wsMetric);
           ws.handler(ws::write);
           ws.closeHandler(closed -> {
             vertx.runOnContext(v -> {
-              assertTrue(socketMetric.bytesRead.get() > bytesRead || socketMetric.bytesWritten.get() > bytesWritten);
+              assertTrue(connectionMetric.bytesRead.get() > bytesRead || connectionMetric.bytesWritten.get() > bytesWritten);
               ref.set(ws);
             });
           });
@@ -831,7 +831,7 @@ public class MetricsTest extends VertxTestBase {
     testHttpConnect(TestUtils.loopbackAddress(), socketMetric -> assertEquals(socketMetric.remoteAddress.host(), socketMetric.remoteName));
   }
 
-  private void testHttpConnect(String host, Consumer<SocketMetric> checker) throws InterruptedException {
+  private void testHttpConnect(String host, Consumer<ConnectionMetric> checker) throws InterruptedException {
     waitFor(2);
     server = vertx.createHttpServer();
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();

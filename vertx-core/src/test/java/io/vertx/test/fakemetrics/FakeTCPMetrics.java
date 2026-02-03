@@ -1,8 +1,8 @@
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 
-public class FakeTCPMetrics extends FakeTransportMetrics implements TCPMetrics<SocketMetric> {
+public class FakeTCPMetrics extends FakeTransportMetrics implements TransportMetrics<ConnectionMetric> {
 
   public FakeTCPMetrics(String name) {
     super(name);

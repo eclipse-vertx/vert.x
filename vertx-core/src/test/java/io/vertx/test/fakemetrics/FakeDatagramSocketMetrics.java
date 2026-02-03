@@ -51,12 +51,12 @@ public class FakeDatagramSocketMetrics extends FakeMetricsBase implements Datagr
   }
 
   @Override
-  public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+  public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
     reads.add(new PacketMetric(remoteAddress, numberOfBytes));
   }
 
   @Override
-  public void bytesWritten(Void socketMetric, SocketAddress remoteAddress,long numberOfBytes) {
+  public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
     writes.add(new PacketMetric(remoteAddress, numberOfBytes));
   }
 }

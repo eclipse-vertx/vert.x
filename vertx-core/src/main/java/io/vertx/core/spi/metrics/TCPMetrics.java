@@ -18,5 +18,5 @@ package io.vertx.core.spi.metrics;
  * @deprecated instead use {@link TransportMetrics}
  */
 @Deprecated(forRemoval = true)
-public interface TCPMetrics<S> extends TransportMetrics<S> {
+public interface TCPMetrics<C> extends TransportMetrics<C> {
 }

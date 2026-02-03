@@ -64,11 +64,11 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
     return new FakeHttpClientMetrics(options.getMetricsName());
   }
 
-  public TCPMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+  public TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
     return new FakeTCPMetrics(null);
   }
 
-  public TCPMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
+  public TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
     return new FakeTCPMetrics(config.getMetricsName());
   }
 

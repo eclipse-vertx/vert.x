@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SocketMetric {
+public class ConnectionMetric {
 
   public final SocketAddress remoteAddress;
   public final String remoteName;
@@ -31,8 +31,9 @@ public class SocketMetric {
   public final List<Long> bytesReadEvents = Collections.synchronizedList(new ArrayList<>());
   public final AtomicLong bytesWritten = new AtomicLong();
   public final List<Long> bytesWrittenEvents = Collections.synchronizedList(new ArrayList<>());
+  public final AtomicLong openStreams = new AtomicLong();
 
-  public SocketMetric(SocketAddress remoteAddress, String remoteName) {
+  public ConnectionMetric(SocketAddress remoteAddress, String remoteName) {
     this.remoteAddress = remoteAddress;
     this.remoteName = remoteName;
   }

@@ -20,7 +20,7 @@ import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
-import io.vertx.core.spi.metrics.TCPMetrics;
+import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -716,29 +716,29 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .withClusterManager(getClusterManager())
       .withMetrics(options -> new VertxMetrics() {
         @Override
-        public TCPMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
-          return new TCPMetrics<>() {
+        public TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
+          return new TransportMetrics<>() {
             @Override
             public Object connected(SocketAddress remoteAddress, String remoteName) {
               numberOfOutboundConnections.incrementAndGet();
               return null;
             }
             @Override
-            public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
+            public void disconnected(Object connectionMetric, SocketAddress remoteAddress) {
               numberOfOutboundConnections.decrementAndGet();
             }
           };
         }
         @Override
-        public TCPMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
-          return new TCPMetrics<>() {
+        public TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+          return new TransportMetrics<>() {
             @Override
             public Object connected(SocketAddress remoteAddress, String remoteName) {
               numberOfInboundConnections.incrementAndGet();
               return null;
             }
             @Override
-            public void disconnected(Object socketMetric, SocketAddress remoteAddress) {
+            public void disconnected(Object connectionMetric, SocketAddress remoteAddress) {
               numberOfInboundConnections.decrementAndGet();
             }
           };

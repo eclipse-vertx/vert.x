@@ -115,7 +115,7 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
-          public Void requestBegin(Void socketMetric, HttpRequest request) {
+          public Void requestBegin(Void connectionMetric, HttpRequest request) {
             requestBeginCalled.set(true);
             return null;
           }
@@ -129,15 +129,15 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override
@@ -199,7 +199,7 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
-          public Void requestBegin(Void socketMetric, HttpRequest request) {
+          public Void requestBegin(Void connectionMetric, HttpRequest request) {
             switch (request.uri()) {
               case "/1":
                 assertEquals(0, count.get());
@@ -229,13 +229,13 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
           }
           @Override
           public void close() {
@@ -299,7 +299,7 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
         return new HttpServerMetrics<Void, Void, Void>() {
           @Override
-          public Void requestBegin(Void socketMetric, HttpRequest request) {
+          public Void requestBegin(Void connectionMetric, HttpRequest request) {
             assertEquals(0, httpLifecycle.getAndIncrement());
             return null;
           }
@@ -316,13 +316,13 @@ public class MetricsContextTest extends VertxTestBase {
             assertEquals(3, httpLifecycle.getAndIncrement());
           }
           @Override
-          public Void connected(Void socketMetric, Void requestMetric, ServerWebSocket serverWebSocket) {
+          public Void connected(Void connectionMetric, Void requestMetric, ServerWebSocket webSocket) {
             assertEquals(4, httpLifecycle.get());
             webSocketConnected.set(true);
             return null;
           }
           @Override
-          public void disconnected(Void serverWebSocketMetric) {
+          public void disconnected(Void webSocketMetric) {
             assertEquals(4, httpLifecycle.get());
             webSocketDisconnected.set(true);
           }
@@ -332,15 +332,15 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override
@@ -435,15 +435,15 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override
@@ -537,15 +537,15 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override
@@ -614,23 +614,23 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TCPMetrics createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
-        return new TCPMetrics<Void>() {
+      public TransportMetrics createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+        return new TransportMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override
@@ -702,23 +702,23 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TCPMetrics createTcpClientMetrics(TcpClientConfig config) {
-        return new TCPMetrics<Void>() {
+      public TransportMetrics createTcpClientMetrics(TcpClientConfig config) {
+        return new TransportMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(remoteAddress);
             return null;
           }
           @Override
-          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          public void disconnected(Void connectionMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override
@@ -792,11 +792,11 @@ public class MetricsContextTest extends VertxTestBase {
             listening.set(true);
           }
           @Override
-          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesRead(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
           }
           @Override
-          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          public void bytesWritten(Void connectionMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
           }
           @Override

@@ -18,7 +18,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.FakeQuicEndpointMetrics;
 import io.vertx.test.fakemetrics.FakeTransportMetrics;
-import io.vertx.test.fakemetrics.SocketMetric;
+import io.vertx.test.fakemetrics.ConnectionMetric;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -62,7 +62,7 @@ public class QuicMetricsTest extends VertxTestBase {
 
   private void testMetrics(int numberOfServers) throws Exception {
     client = QuicClient.create(vertx, new QuicClientConfig().setMetricsName("the-metrics"), QuicClientTest.SSL_OPTIONS);
-    AtomicReference<SocketMetric> serverConnectionMetric = new AtomicReference<>();
+    AtomicReference<ConnectionMetric> serverConnectionMetric = new AtomicReference<>();
     for (int i = 0;i < numberOfServers;i++) {
       QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
       server.handler(conn -> {
@@ -82,7 +82,7 @@ public class QuicMetricsTest extends VertxTestBase {
     FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.getMetrics(client);
     assertEquals("the-metrics", clientMetrics.name());
     assertEquals(1, clientMetrics.connectionCount());
-    SocketMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
+    ConnectionMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
     QuicStream clientStream = clientConnection.openStream().await();
     List<Buffer> received = Collections.synchronizedList(new ArrayList<>());
     clientStream.handler(buff -> received.add(buff));
@@ -90,10 +90,12 @@ public class QuicMetricsTest extends VertxTestBase {
     clientStream.endHandler(v -> {
       latch.countDown();
     });
-
-    // TODO stream close metrics
-
-    clientStream.end(Buffer.buffer("ping"));
+    clientStream.write(Buffer.buffer("ping"));
+    assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 1);
+    assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 1);
+    clientStream.end();
+    assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 0);
+    assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 0);
     awaitLatch(latch);
     assertEquals(List.of(Buffer.buffer("ping")), received);
     FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.getMetrics(servers.get(0));
