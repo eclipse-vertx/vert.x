@@ -22,6 +22,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -213,16 +214,23 @@ public interface HttpServer extends Measured {
    * @return a future completed with the result
    */
   default Future<Void> close() {
-    return shutdown(0, TimeUnit.SECONDS);
+    return shutdown(Duration.ZERO);
   }
 
   /**
-   * Shutdown with a 30 seconds timeout ({@code shutdown(30, TimeUnit.SECONDS)}).
+   * Shutdown with a 30 seconds timeout ({@code shutdown(Duration.ofSeconds(30))}).
    *
    * @return a future completed when shutdown has completed
    */
   default Future<Void> shutdown() {
-    return shutdown(30, TimeUnit.SECONDS);
+    return shutdown(Duration.ofSeconds(30));
+  }
+
+  /**
+   * Calls {@link #shutdown(Duration)}.
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
   }
 
   /**
@@ -237,10 +245,10 @@ public interface HttpServer extends Measured {
    * </ul>
    *
    * @param timeout the amount of time after which all resources are forcibly closed
-   * @param unit the of the timeout
    * @return a future notified when the client is closed
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> shutdown(Duration timeout);
 
   /**
    * The actual port the server is listening on. This is useful if you bound the server specifying 0 as port number

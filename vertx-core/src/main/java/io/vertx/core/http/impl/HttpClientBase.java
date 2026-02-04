@@ -35,8 +35,7 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
   protected final ProxyOptions defaultProxyOptions;
   protected final HttpClientMetrics<?, ?, ?> metrics;
   protected final CloseSequence closeSequence;
-  private long closeTimeout = 0L;
-  private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
+  private Duration closeTimeout = Duration.ZERO;
   private Predicate<SocketAddress> proxyFilter;
 
   public HttpClientBase(VertxInternal vertx,
@@ -46,7 +45,7 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
     this.vertx = vertx;
     this.metrics = metrics;
     this.defaultProxyOptions = defaultProxyOptions;
-    this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(Duration.ofMillis(closeTimeoutUnit.toMillis(closeTimeout)), p1));
+    this.closeSequence = new CloseSequence(p -> doClose(p), p1 -> doShutdown(closeTimeout, p1));
     this.proxyFilter = nonProxyHosts != null ? ProxyFilter.nonProxyHosts(nonProxyHosts) : ProxyFilter.DEFAULT_PROXY_FILTER;
   }
 
@@ -100,9 +99,8 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   protected abstract void doClose(Completable<Void> p);
 
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     this.closeTimeout = timeout;
-    this.closeTimeoutUnit = unit;
     return closeSequence.close();
   }
 

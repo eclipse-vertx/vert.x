@@ -19,6 +19,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -32,14 +33,13 @@ public class CleanableNetClient implements NetClientInternal {
 
   static class Action implements Runnable {
     private final NetClientInternal client;
-    private long timeout = 30L;
-    private TimeUnit timeUnit = TimeUnit.SECONDS;
+    private Duration timeout = Duration.ofSeconds(30);
     private Action(NetClientInternal client) {
       this.client = client;
     }
     @Override
     public void run() {
-      client.shutdown(timeout, timeUnit);
+      client.shutdown(timeout);
     }
   }
 
@@ -103,12 +103,11 @@ public class CleanableNetClient implements NetClientInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    if (timeout < 0L) {
+  public Future<Void> shutdown(Duration timeout) {
+    if (timeout.isNegative()) {
       throw new IllegalArgumentException("Invalid timeout: " + timeout);
     }
     action.timeout = timeout;
-    action.timeUnit = Objects.requireNonNull(unit);
     cleanable.clean();
     return client.closeFuture();
   }

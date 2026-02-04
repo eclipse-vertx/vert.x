@@ -46,7 +46,9 @@ public interface HttpClientConnection extends HttpConnection, HttpClient {
   }
 
   @Override
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return HttpConnection.super.shutdown(timeout, unit);
+  }
 
   @Override
   default Future<Void> close() {

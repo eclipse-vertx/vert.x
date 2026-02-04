@@ -443,7 +443,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
-      client = new CleanableWebSocketClient(client, cleaner, (timeout, timeunit) -> closeFuture.close());
+      client = new CleanableWebSocketClient(client, cleaner, (timeout) -> closeFuture.close());
       closeable = closeFuture;
     } else {
       WebSocketClientImpl impl = createWebSocketClientImpl(options);

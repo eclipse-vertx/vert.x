@@ -165,22 +165,28 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
+   * Calls {@link #shutdown(Duration)}
+   */
+  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /**
    * Initiate the connection shutdown sequence.
    *
    * @param timeout the shutdown timeout
-   * @param unit the shutdown timeout unit
    * @return the future completed after the channel's closure
    */
-  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
-    if (timeout < 0L) {
+  public final Future<Void> shutdown(Duration timeout) {
+    if (timeout.isNegative()) {
       throw new IllegalArgumentException("Timeout must be >= 0");
     }
     ChannelPromise promise = channel.newPromise();
     EventExecutor exec = chctx.executor();
     if (exec.inEventLoop()) {
-      shutdown(Duration.ofMillis(unit.toMillis(timeout)), promise);
+      shutdown(timeout, promise);
     } else {
-      exec.execute(() -> shutdown(Duration.ofMillis(unit.toMillis(timeout)), promise));
+      exec.execute(() -> shutdown(timeout, promise));
     }
     PromiseInternal<Void> p = context.promise();
     promise.addListener(p);

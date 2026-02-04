@@ -34,6 +34,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -349,7 +350,7 @@ public class ServerWebSocketHandshaker extends FutureImpl<ServerWebSocket> imple
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+  public Future<Void> shutdown(Duration timeout, short statusCode, @Nullable String reason) {
     throw new UnsupportedOperationException();
   }
 

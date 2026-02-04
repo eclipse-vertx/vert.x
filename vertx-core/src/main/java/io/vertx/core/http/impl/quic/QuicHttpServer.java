@@ -245,7 +245,7 @@ public class QuicHttpServer implements HttpServerInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     io.vertx.core.net.QuicServer s;
     synchronized (this) {
       s = quicServer;
@@ -254,7 +254,7 @@ public class QuicHttpServer implements HttpServerInternal {
       }
       quicServer = null;
     }
-    return s.shutdown(Duration.ofMillis(unit.toMillis(timeout)));
+    return s.shutdown(timeout);
   }
 
   @Override

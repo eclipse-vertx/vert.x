@@ -181,8 +181,8 @@ class NetClientImpl implements NetClientInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit timeUnit) {
-    return channelGroup.shutdown(timeout, timeUnit);
+  public Future<Void> shutdown(Duration timeout) {
+    return channelGroup.shutdown(timeout);
   }
 
   @Override

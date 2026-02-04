@@ -36,6 +36,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
 import javax.net.ssl.SSLSession;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -833,8 +834,8 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    return current.shutdown(timeout, unit);
+  public Future<Void> shutdown(Duration timeout) {
+    return current.shutdown(timeout);
   }
 
   @Override

@@ -78,12 +78,12 @@ public final class WebSocketConnectionImpl extends VertxConnection {
   private Object reason;
 
   public Future<Void> close(Object reason) {
-    return shutdown(reason, 0L, TimeUnit.SECONDS);
+    return shutdown(reason, Duration.ZERO);
   }
 
-  public Future<Void> shutdown(Object reason, long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Object reason, Duration timeout) {
     this.reason = reason;
-    return shutdown(timeout, unit);
+    return shutdown(timeout);
   }
 
   @Override

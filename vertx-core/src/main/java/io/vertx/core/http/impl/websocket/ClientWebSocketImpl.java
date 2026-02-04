@@ -24,6 +24,7 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -282,8 +283,8 @@ public class ClientWebSocketImpl implements ClientWebSocketInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
-    return delegate().close(statusCode, reason);
+  public Future<Void> shutdown(Duration timeout, short statusCode, @Nullable String reason) {
+    return delegate().shutdown(timeout, statusCode, reason);
   }
 
   @Override

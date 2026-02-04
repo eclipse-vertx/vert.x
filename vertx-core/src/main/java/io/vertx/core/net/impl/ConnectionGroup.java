@@ -54,9 +54,13 @@ public class ConnectionGroup extends DefaultChannelGroup {
     return closeSequence.started();
   }
 
-  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
-    shutdown = new ShutdownEvent(timeout, unit);
+  public final Future<Void> shutdown(Duration timeout) {
+    shutdown = new ShutdownEvent(timeout);
     return closeSequence.close();
+  }
+
+  public final Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
   }
 
   private void shutdown(Completable<Void> completion) {
