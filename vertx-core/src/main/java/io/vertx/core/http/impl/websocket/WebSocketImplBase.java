@@ -38,6 +38,7 @@ import io.vertx.core.internal.concurrent.InboundMessageQueue;
 
 import javax.net.ssl.SSLSession;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -146,11 +147,11 @@ public abstract class WebSocketImplBase<S extends WebSocket> implements WebSocke
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+  public Future<Void> shutdown(Duration timeout, short statusCode, @Nullable String reason) {
     // Close the WebSocket by sending a close frame with specified payload
     ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
     CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-    return conn.shutdown(frame, timeout, unit);
+    return conn.shutdown(frame, timeout);
   }
 
   @Override

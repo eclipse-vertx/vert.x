@@ -23,6 +23,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.spi.metrics.Metrics;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -89,7 +90,7 @@ public class CleanableHttpServer implements HttpServerInternal, Closeable {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     ContextInternal context;
     synchronized (this) {
       if (listenContext == null) {
@@ -99,7 +100,7 @@ public class CleanableHttpServer implements HttpServerInternal, Closeable {
       listenContext = null;
     }
     context.removeCloseHook(this);
-    return server.shutdown(timeout, unit);
+    return server.shutdown(timeout);
   }
 
   @Override

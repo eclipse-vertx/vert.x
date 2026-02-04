@@ -52,6 +52,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
@@ -267,10 +268,10 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     PromiseInternal<Void> promise = context.promise();
     Http2FrameCodec frameCodec = channel.pipeline().get(Http2FrameCodec.class);
-    frameCodec.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
+    frameCodec.gracefulShutdownTimeoutMillis(timeout.toMillis());
     ChannelFuture closeFuture = channel.close();
     closeFuture.addListener(promise);
     return promise.future();

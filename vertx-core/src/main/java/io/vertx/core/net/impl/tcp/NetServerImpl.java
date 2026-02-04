@@ -144,12 +144,12 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     ConnectionGroup group = channelGroup;
     if (group == null) {
       return vertx.getOrCreateContext().succeededFuture();
     }
-    return group.shutdown(timeout, unit);
+    return group.shutdown(timeout);
   }
 
   @Override

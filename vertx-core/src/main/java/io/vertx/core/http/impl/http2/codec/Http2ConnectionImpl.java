@@ -40,6 +40,7 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.impl.ConnectionBase;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
@@ -361,22 +362,18 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     PromiseInternal<Void> promise = vertx.promise();
-    shutdown(timeout, unit, promise);
+    shutdown(timeout, promise);
     return promise.future();
   }
 
-  private void shutdown(long timeout, TimeUnit unit, PromiseInternal<Void> promise) {
-    if (unit == null) {
-      promise.fail("Null time unit");
-      return;
-    }
-    if (timeout < 0) {
+  private void shutdown(Duration timeout, PromiseInternal<Void> promise) {
+    if (timeout.isNegative()) {
       promise.fail("Invalid timeout value " + timeout);
       return;
     }
-    handler.gracefulShutdownTimeoutMillis(unit.toMillis(timeout));
+    handler.gracefulShutdownTimeoutMillis(timeout.toMillis());
     ChannelFuture fut = channel.close();
     fut.addListener(promise);
   }

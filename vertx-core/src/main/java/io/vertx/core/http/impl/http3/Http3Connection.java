@@ -237,11 +237,11 @@ public abstract class Http3Connection implements HttpConnection {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    if (timeout < 0) {
+  public Future<Void> shutdown(Duration timeout) {
+    if (timeout.isNegative()) {
       throw new IllegalArgumentException("Timeout must be >= 0");
     }
-    return connection.shutdown(Duration.ofMillis(unit.toMillis(timeout)));
+    return connection.shutdown(timeout);
   }
 
   private void handleShutdown(QuicStreamChannel localControlStream, Duration timeout) {

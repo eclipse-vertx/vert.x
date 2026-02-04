@@ -27,6 +27,7 @@ import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -54,8 +55,7 @@ public class TcpHttpServer implements HttpServerInternal {
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
   private NetServerInternal tcpServer;
-  private long closeTimeout = 0L;
-  private TimeUnit closeTimeoutUnit = TimeUnit.SECONDS;
+  private Duration closeTimeout = Duration.ZERO;
   private CloseSequence closeSequence;
 
   public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, boolean registerWebSocketWriteHandlers) {
@@ -269,7 +269,7 @@ public class TcpHttpServer implements HttpServerInternal {
   }
 
   private void doShutdown(NetServer netServer, Completable<Void> p) {
-    netServer.shutdown(closeTimeout, closeTimeoutUnit).onComplete(p);
+    netServer.shutdown(closeTimeout).onComplete(p);
   }
 
   private void doClose(NetServer netServer, Completable<Void> p) {
@@ -283,12 +283,12 @@ public class TcpHttpServer implements HttpServerInternal {
     }
   }
 
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  @Override
+  public Future<Void> shutdown(Duration timeout) {
     CloseSequence seq;
     synchronized (this) {
       seq = closeSequence;
       closeTimeout = timeout;
-      closeTimeoutUnit = unit;
       closeSequence = null;
     }
     ContextInternal ctx = vertx.getOrCreateContext();

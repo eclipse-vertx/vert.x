@@ -11,11 +11,13 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Future;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -106,6 +108,13 @@ public interface NetClient extends Measured {
   }
 
   /**
+   * Calls {@link #shutdown(Duration)}.
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /**
    * Initiate the client shutdown sequence.
    * <p>
    * Connections are taken out of service and notified the close sequence has started through {@link NetSocket#shutdownHandler(Handler)}.
@@ -113,9 +122,9 @@ public interface NetClient extends Measured {
    *
    * @return a future notified when the client is closed
    * @param timeout the amount of time after which all resources are forcibly closed
-   * @param unit the of the timeout
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> shutdown(Duration timeout);
 
   /**
    * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different

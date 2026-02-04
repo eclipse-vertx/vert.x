@@ -11,6 +11,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -30,7 +31,7 @@ public class CleanableNetServer extends NetServerImpl implements Closeable {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     ContextInternal context;
     synchronized (this) {
       if (listenContext == null) {
@@ -40,7 +41,7 @@ public class CleanableNetServer extends NetServerImpl implements Closeable {
       listenContext = null;
     }
     context.removeCloseHook(this);
-    return super.shutdown(timeout, unit);
+    return super.shutdown(timeout);
   }
 
   @Override

@@ -27,6 +27,7 @@ import io.vertx.core.streams.WriteStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -339,10 +340,33 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   }
 
   /**
+   * Calls {@link #shutdown(Duration, short, String)} with the status code {@code 1000} and a {@code null} reason.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<Void> shutdown(Duration timeout) {
+    return shutdown(timeout, (short)1000);
+  }
+
+  /**
    * Calls {@link #shutdown(long, TimeUnit, short, String)} with a {@code null} reason.
    */
   default Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode) {
     return shutdown(timeout, unit, statusCode, null);
+  }
+
+  /**
+   * Calls {@link #shutdown(Duration, short, String)} with a {@code null} reason.
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<Void> shutdown(Duration timeout, short statusCode) {
+    return shutdown(timeout, statusCode, null);
+  }
+
+  /**
+   * Calls {@link #shutdown(Duration, short, String)}
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()), statusCode, reason);
   }
 
   /**
@@ -353,12 +377,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * here: RFC6455 <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">section 7.4.1</a>
    *
    * @param timeout the amount of time after which all resources are forcibly closed
-   * @param unit the of the timeout
    * @param statusCode the status code
    * @param reason reason of closure
    * @return a future completed when shutdown has completed
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit, short statusCode, @Nullable String reason);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> shutdown(Duration timeout, short statusCode, @Nullable String reason);
 
   /**
    * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket).

@@ -23,6 +23,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.spi.metrics.Metrics;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -151,9 +152,9 @@ public class CompositeHttpServer implements HttpServerInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
+  public Future<Void> shutdown(Duration timeout) {
     return Future
-      .join(tcpServer.shutdown(timeout, unit), quicServer.shutdown(timeout, unit))
+      .join(tcpServer.shutdown(timeout), quicServer.shutdown(timeout))
       .mapEmpty();
   }
 

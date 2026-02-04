@@ -22,6 +22,7 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -35,16 +36,15 @@ import java.util.function.Function;
 public class CleanableHttpClient implements HttpClientInternal {
 
   static class Action implements Runnable {
-    private final BiFunction<Long, TimeUnit, Future<Void>> dispose;
-    private long timeout = 30L;
-    private TimeUnit timeUnit = TimeUnit.SECONDS;
+    private final Function<Duration, Future<Void>> dispose;
+    private Duration timeout = Duration.ofSeconds(30);
     private Future<Void> closeFuture;
-    private Action(BiFunction<Long, TimeUnit, Future<Void>> dispose) {
+    private Action(Function<Duration, Future<Void>> dispose) {
       this.dispose = dispose;
     }
     @Override
     public void run() {
-      closeFuture = dispose.apply(timeout, timeUnit);
+      closeFuture = dispose.apply(timeout);
     }
   }
 
@@ -52,7 +52,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   private final Cleaner.Cleanable cleanable;
   private final Action action;
 
-  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, BiFunction<Long, TimeUnit, Future<Void>> dispose) {
+  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Function<Duration, Future<Void>> dispose) {
     this.action = new Action(dispose);
     this.delegate = delegate;
     this.cleanable = cleaner.register(this, action);
@@ -69,15 +69,11 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   @Override
-  public Future<Void> shutdown(long timeout, TimeUnit unit) {
-    if (timeout < 0L) {
-      throw new IllegalArgumentException();
-    }
-    if (unit == null) {
+  public Future<Void> shutdown(Duration timeout) {
+    if (timeout.isNegative()) {
       throw new IllegalArgumentException();
     }
     action.timeout = timeout;
-    action.timeUnit = unit;
     cleanable.clean();
     return action.closeFuture;
   }

@@ -20,6 +20,7 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -133,6 +134,13 @@ public interface HttpConnection {
   }
 
   /**
+   * Calls {@link #shutdown(Duration)}
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /**
    * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all the inflight requests
    * are processed, otherwise after a {@code timeout} the connection will be closed. Client connection are immediately removed
    * from the pool.
@@ -143,10 +151,10 @@ public interface HttpConnection {
    * </ul>
    *
    * @param timeout the amount of time after which all resources are forcibly closed
-   * @param unit the of the timeout
    * @return a future completed when shutdown has completed
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> shutdown(Duration timeout);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.

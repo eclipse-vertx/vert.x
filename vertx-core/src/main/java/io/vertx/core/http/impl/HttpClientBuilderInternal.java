@@ -271,7 +271,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
-      client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout, timeunit) -> closeFuture.close());
+      client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout) -> closeFuture.close());
       closeable = closeFuture;
     } else {
       HttpClientImpl impl = createHttpClientImpl(co2, metrics, resolver, redirectHandler, transport, quicTransport);

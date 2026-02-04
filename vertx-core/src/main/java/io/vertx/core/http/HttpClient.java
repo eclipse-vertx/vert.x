@@ -11,9 +11,11 @@
 
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -96,6 +98,13 @@ public interface HttpClient {
   }
 
   /**
+   * Calls {@link #shutdown(Duration)}.
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /**
    * Initiate the client shutdown sequence.
    *
    * <p> Connections are taken out of service and closed when all inflight requests are processed, client connection are
@@ -108,9 +117,9 @@ public interface HttpClient {
    * </ul>
    *
    * @param timeout the amount of time after which all resources are forcibly closed
-   * @param unit the of the timeout
    * @return a future notified when the client is closed
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> shutdown(Duration timeout);
 
 }

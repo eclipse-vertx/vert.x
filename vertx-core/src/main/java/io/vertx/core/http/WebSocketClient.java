@@ -10,11 +10,13 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.ClientSSLOptions;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -120,12 +122,19 @@ public interface WebSocketClient extends Measured {
   Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force);
 
   /**
+   * Calls {@link #shutdown(Duration)}.
+   */
+  default Future<Void> shutdown(long timeout, TimeUnit unit) {
+    return shutdown(Duration.of(timeout, unit.toChronoUnit()));
+  }
+
+  /**
    * Initiate the client shutdown sequence.
    *
    * @return a future notified when the client is closed
    * @param timeout the amount of time after which all resources are forcibly closed
-   * @param unit the of the timeout
    */
-  Future<Void> shutdown(long timeout, TimeUnit unit);
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  Future<Void> shutdown(Duration timeout);
 
 }
