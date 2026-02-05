@@ -46,7 +46,6 @@ import java.util.function.Function;
 public class Http3ClientConnection extends Http3Connection implements HttpClientConnection {
 
   private final HostAndPort authority;
-  private final HttpClientMetrics<?, ?> httpMetrics;
   private final ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics;
   private Handler<Void> evictionHandler;
   private final long keepAliveTimeoutMillis;
@@ -55,14 +54,12 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
 
   public Http3ClientConnection(QuicConnectionInternal connection,
                                HostAndPort authority,
-                               HttpClientMetrics<?, ?> httpMetrics,
                                ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics,
                                long keepAliveTimeoutMillis,
                                Http3Settings localSettings) {
     super(connection, localSettings);
 
     this.authority = authority;
-    this.httpMetrics = httpMetrics;
     this.clientMetrics = clientMetrics;
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
     this.creationTimetstamp = System.currentTimeMillis();
@@ -86,8 +83,8 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
 
     pipeline.addBefore("handler", "http3", http3Handler);
 
-    if (httpMetrics != null) {
-      ((HttpClientMetrics)httpMetrics).endpointConnected(clientMetrics);
+    if (clientMetrics != null) {
+      clientMetrics.connected();
     }
   }
 
@@ -113,8 +110,8 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
     if (handler != null) {
       handler.handle(null);
     }
-    if (httpMetrics != null) {
-      ((HttpClientMetrics)httpMetrics).endpointDisconnected(clientMetrics);
+    if (clientMetrics != null) {
+      clientMetrics.disconnected();
     }
     super.handleClosed();
   }

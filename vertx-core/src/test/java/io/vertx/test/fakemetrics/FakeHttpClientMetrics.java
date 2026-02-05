@@ -12,8 +12,6 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -33,7 +31,6 @@ public class FakeHttpClientMetrics extends FakeWebSocketMetrics implements HttpC
 
   private final String name;
   private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();
-  private volatile boolean implementInit = false;
 
   public FakeHttpClientMetrics(String name) {
     this.name = name;
@@ -54,10 +51,6 @@ public class FakeHttpClientMetrics extends FakeWebSocketMetrics implements HttpC
       }
     }
     return null;
-  }
-
-  public void setImplementInit(boolean implementInit) {
-    this.implementInit = implementInit;
   }
 
   public Set<String> endpoints() {
@@ -85,7 +78,7 @@ public class FakeHttpClientMetrics extends FakeWebSocketMetrics implements HttpC
 
   @Override
   public ClientMetrics<HttpClientMetric, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
-    EndpointMetric metric = new EndpointMetric(implementInit) {
+    EndpointMetric metric = new EndpointMetric() {
       @Override
       public void close() {
         endpoints.remove(remoteAddress);
@@ -93,15 +86,5 @@ public class FakeHttpClientMetrics extends FakeWebSocketMetrics implements HttpC
     };
     endpoints.put(remoteAddress, metric);
     return metric;
-  }
-
-  @Override
-  public void endpointConnected(ClientMetrics<HttpClientMetric, ?, ?> endpointMetric) {
-    ((EndpointMetric)endpointMetric).connectionCount.incrementAndGet();
-  }
-
-  @Override
-  public void endpointDisconnected(ClientMetrics<HttpClientMetric, ?, ?> endpointMetric) {
-    ((EndpointMetric)endpointMetric).connectionCount.decrementAndGet();
   }
 }

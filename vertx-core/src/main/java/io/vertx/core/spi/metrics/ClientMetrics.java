@@ -19,13 +19,7 @@ package io.vertx.core.spi.metrics;
 public interface ClientMetrics<M, Req, Resp> extends Metrics {
 
   /**
-   * Create a request metric instance, when the implementation
-   *
-   * <ul>
-   *   <li>returns {@code null}, {@link #requestBegin(String, Object)} is called (backward compatibility mode)</li>
-   *   <li>returns a non-null value, {@link #requestBegin(Object, String, Object)} is called with the returned request
-   *   metric instance</li>
-   * </ul>
+   * Create a request metric instance.
    *
    * @return a newly created request metric
    */
@@ -34,30 +28,17 @@ public interface ClientMetrics<M, Req, Resp> extends Metrics {
   }
 
   /**
-   * Called when a client request begins and {@link #init()} has returned a non-null value.
+   * Called when a client request begins. Vert.x will invoke {@link #requestEnd} when the request
+   * has ended or {@link #requestReset} if the request/response has failed before.
+   *
+   * <p>The request uri is an arbitrary URI that depends on the client, e.g. an HTTP request uri,
+   * a SQL query, etc...
    *
    * @param requestMetric the request metric
    * @param uri an arbitrary uri
    * @param request the request object
    */
   default void requestBegin(M requestMetric, String uri, Req request) {
-  }
-
-  /**
-   * Called when a client request begins. Vert.x will invoke {@link #requestEnd} when the request
-   * has ended or {@link #requestReset} if the request/response has failed before.
-   *
-   * <p>The request uri is an arbitrary URI that depends on the client, e.g an HTTP request uri,
-   * a SQL query, etc...
-   *
-   * @param uri an arbitrary uri
-   * @param request the request object
-   * @return the request metric
-   * @deprecated instead override {@link #init()} and {@link #requestBegin(Object, String, Object)}
-   */
-  @Deprecated
-  default M requestBegin(String uri, Req request) {
-    return null;
   }
 
   /**
@@ -109,5 +90,19 @@ public interface ClientMetrics<M, Req, Resp> extends Metrics {
    * @param bytesRead the number of bytes read or {@code -1} when it is not known
    */
   default void responseEnd(M requestMetric, long bytesRead) {
+  }
+
+  /**
+   * Called when a connection to the service is created, this can be called multiple times.
+   *
+   */
+  default void connected() {
+  }
+
+  /**
+   * Called when a connection to the service is closed.
+   *
+   */
+  default void disconnected() {
   }
 }

@@ -31,13 +31,11 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Http2ClientStream> implements HttpClientConnection, Http2ClientConnection {
 
   private final boolean decompressionSupported;
-  private final HttpClientMetrics<?, ?> httpMetrics;
   private final ClientMetrics<?, ?, ?> clientMetrics;
   private final HostAndPort authority;
   private Promise<HttpClientConnection> completion;
@@ -54,7 +52,6 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
   public Http2MultiplexClientConnection(Http2MultiplexHandler handler,
                                         ChannelHandlerContext chctx,
                                         ContextInternal context,
-                                        HttpClientMetrics<?, ?> httpMetrics,
                                         ClientMetrics<?, ?, ?> clientMetrics,
                                         TransportMetrics<?> transportMetrics,
                                         HostAndPort authority,
@@ -66,7 +63,6 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
 
     this.authority = authority;
     this.completion = completion;
-    this.httpMetrics = httpMetrics;
     this.clientMetrics = clientMetrics;
     this.concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
     this.maxConcurrency = maxConcurrency < 0 ? Long.MAX_VALUE : maxConcurrency;
@@ -253,7 +249,7 @@ public class Http2MultiplexClientConnection extends Http2MultiplexConnection<Htt
       promise.fail(ConnectionBase.CLOSED_EXCEPTION);
     }
     if (clientMetrics != null) {
-      ((HttpClientMetrics)httpMetrics).endpointDisconnected(clientMetrics);
+      clientMetrics.disconnected();
     }
   }
 }

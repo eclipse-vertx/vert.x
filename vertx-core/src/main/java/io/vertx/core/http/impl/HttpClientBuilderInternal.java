@@ -220,7 +220,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
     HttpClientTransport quicTransport;
     if (co.getVersions().contains(HttpVersion.HTTP_3)) {
-      quicTransport = new QuicHttpClientTransport(vertx, co, httpMetrics);
+      quicTransport = new QuicHttpClientTransport(vertx, co);
     } else {
       quicTransport = null;
     }
