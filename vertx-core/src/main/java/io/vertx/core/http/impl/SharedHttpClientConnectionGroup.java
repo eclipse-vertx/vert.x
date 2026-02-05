@@ -26,6 +26,7 @@ import io.vertx.core.internal.resource.ManagedResource;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.List;
@@ -62,13 +63,15 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
   };
 
   private final PoolMetrics poolMetrics;
-  private final ClientMetrics clientMetrics;
+  private final HttpClientMetrics<?, ?> httpMetrics;
+  private final ClientMetrics<?, ?, ?> clientMetrics;
   private final Handler<HttpConnection> connectHandler;
   private final Pool pool;
   private final HostAndPort authority;
   private final SocketAddress server;
 
-  public SharedHttpClientConnectionGroup(ClientMetrics clientMetrics,
+  public SharedHttpClientConnectionGroup(ClientMetrics<?, ?, ?> clientMetrics,
+                                         HttpClientMetrics<?, ?> httpMetrics,
                                          Handler<HttpConnection> connectHandler,
                                          Function<SharedHttpClientConnectionGroup, Pool> poolProvider,
                                          PoolMetrics poolMetrics,
@@ -76,6 +79,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
                                          SocketAddress server) {
     this.poolMetrics = poolMetrics;
     this.clientMetrics = clientMetrics;
+    this.httpMetrics = httpMetrics;
     this.authority = authority;
     this.pool = poolProvider.apply(this);
     this.server = server;
@@ -206,7 +210,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
       return connector
-        .connect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
+        .connect(context, owner.server, owner.authority, connectParams, owner.clientMetrics, owner.httpMetrics)
         .map(connection -> {
           connection.evictionHandler(v -> {
             owner.dispose(connection);

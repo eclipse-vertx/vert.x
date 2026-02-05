@@ -23,12 +23,13 @@ import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collections;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -360,5 +361,38 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testHttpClientMetricsQueueClose() throws Exception {
+    List<Runnable> requests = Collections.synchronizedList(new ArrayList<>());
+    Set<HttpConnection> closedConnections = new HashSet<>();
+    server.requestHandler(req -> {
+      requests.add(() -> {
+        HttpConnection connection = req.connection();
+        if (closedConnections.add(connection)) {
+          vertx.runOnContext(v -> {
+            connection.close();
+          });
+        }
+      });
+    });
+    awaitFuture(server.listen(testAddress));
+    FakeHttpClientMetrics metrics = FakeHttpClientMetrics.httpMetricsOf(client);
+    for (int i = 0;i < 5;i++) {
+      client.request(requestOptions)
+        .compose(HttpClientRequest::end)
+        .onComplete(onSuccess(v -> {
+        }));
+    }
+    assertWaitUntil(() -> requests.size() == 5);
+    EndpointMetric endpoint = metrics.endpoint("localhost:" + testAddress.port());
+    int expectedConnections = protocol == HttpVersion.HTTP_1_1 ? 5 : 1;
+    assertEquals(expectedConnections, endpoint.connectionCount.get());
+    ArrayList<Runnable> copy = new ArrayList<>(requests);
+    requests.clear();
+    copy.forEach(Runnable::run);
+    assertWaitUntil(() -> metrics.endpoints().isEmpty());
+    assertEquals(0, endpoint.connectionCount.get());
   }
 }

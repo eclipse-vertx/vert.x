@@ -86,7 +86,6 @@ public interface ClientMetrics<M, Req, Resp> extends Metrics {
   default void responseBegin(M requestMetric, Resp response) {
   }
 
-
   /**
    * Called when the client request couldn't complete successfully, for instance the connection
    * was closed before the response was received.

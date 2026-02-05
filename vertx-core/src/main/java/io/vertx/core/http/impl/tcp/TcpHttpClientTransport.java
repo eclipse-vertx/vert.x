@@ -192,12 +192,10 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       if (params.sslOptions != null && params.sslOptions.isUseAlpn()) {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
-          Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
-          http2ChannelInitializer.http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
+          http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, httpMetrics, promise);
         } else {
           applyHttp1xConnectionOptions(ch.pipeline());
-          HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
-            HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+          HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
           http1xConnected(fallbackProtocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
         }
       } else {
@@ -211,8 +209,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
           http1xConnected(params.protocol, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
         } else {
           applyHttp2ConnectionOptions(pipeline);
-          Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
-          http2ChannelInitializer.http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
+          http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, httpMetrics, promise);
         }
       } else {
         applyHttp1xConnectionOptions(pipeline);
@@ -222,7 +219,15 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     return promise.future();
   }
 
-  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics) {
+  private void http2Connected(ContextInternal context, HostAndPort authority, TransportMetrics<?> transportMetrics, Object metric, Channel ch, ClientMetrics<?, ?, ?> clientMetrics, HttpClientMetrics<?, ?> httpMetrics, PromiseInternal<HttpClientConnection> promise) {
+    Http2ClientChannelInitializer http2ChannelInitializer = http2Initializer();
+    http2ChannelInitializer.http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, httpMetrics, promise);
+    if (clientMetrics != null) {
+      ((HttpClientMetrics) this.httpMetrics).endpointConnected(clientMetrics);
+    }
+  }
+
+  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics, HttpClientMetrics<?, ?> httpMetrics) {
 
     if (params.sslOptions != null && !params.sslOptions.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
       return context.failedFuture("Must enable ALPN when using H2");
@@ -300,7 +305,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
         Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade= http2ChannelInitializer.channelUpgrade(conn, clientMetrics);
         boolean preflightRequest = http2Config.isClearTextUpgradeWithPreflightRequest();
         if (preflightRequest) {
-          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(conn, clientMetrics, channelUpgrade);
+          Http2UpgradeClientConnection conn2 = new Http2UpgradeClientConnection(conn, clientMetrics, httpMetrics, channelUpgrade);
           conn2.concurrencyChangeHandler(concurrency -> {
             // Ignore
           });
@@ -321,7 +326,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
             }
           });
         } else {
-          future.complete(new Http2UpgradeClientConnection(conn, clientMetrics, channelUpgrade));
+          future.complete(new Http2UpgradeClientConnection(conn, clientMetrics, httpMetrics, channelUpgrade));
         }
       } else {
         future.complete(conn);

@@ -37,11 +37,12 @@ import io.vertx.core.tracing.TracingPolicy;
  */
 public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
-  private final TransportMetrics<?> transportMetrics;
   private final Http2ClientConfig config;
   private final TracingPolicy tracingPolicy;
   private final boolean useDecompression;
-  private final ClientMetrics clientMetrics;
+  private final TransportMetrics<?> transportMetrics;
+  private final ClientMetrics<?, ?, ?> clientMetrics;
+  private final HttpClientMetrics<?, ?> httpMetrics;
   private final HostAndPort authority;
   private final long creationTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
@@ -55,12 +56,14 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                             HostAndPort authority,
                             VertxHttp2ConnectionHandler connHandler,
                             TransportMetrics<?> transportMetrics,
-                            ClientMetrics clientMetrics,
+                            ClientMetrics<?, ?, ?> clientMetrics,
+                            HttpClientMetrics<?, ?> httpMetrics,
                             Http2ClientConfig config,
                             TracingPolicy tracingPolicy,
                             boolean useDecompression) {
     super(context, connHandler);
     this.clientMetrics = clientMetrics;
+    this.httpMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
     this.config = config;
     this.tracingPolicy = tracingPolicy;
@@ -322,7 +325,8 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, transportMetrics, clientMetrics, config, tracingPolicy, useDecompression);
+        Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, transportMetrics,
+          clientMetrics, httpMetrics, config, tracingPolicy, useDecompression);
         if (clientMetrics != null) {
           Object m = socketMetric;
           conn.metric(m);
@@ -331,19 +335,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       })
       .logEnabled(logActivity)
       .build();
-    handler.addHandler(conn -> {
-      if (clientMetrics != null) {
-        if (!upgrade)  {
-          httpMetrics.endpointConnected(clientMetrics);
-        }
-      }
-    });
-    handler.removeHandler(conn -> {
-      if (clientMetrics != null) {
-        httpMetrics.endpointDisconnected(clientMetrics);
-      }
-      conn.tryEvict();
-    });
+    handler.removeHandler(Http2ClientConnectionImpl::tryEvict);
     return handler;
   }
 
@@ -359,5 +351,13 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     nettyStream.setProperty(streamKey, stream);
     int nettyStreamId = nettyStream.id();
     stream.init(nettyStreamId, isWritable(nettyStream.id()));
+  }
+
+  @Override
+  public void handleClosed() {
+    if (clientMetrics != null) {
+      ((HttpClientMetrics)httpMetrics).endpointDisconnected(clientMetrics);
+    }
+    super.handleClosed();
   }
 }

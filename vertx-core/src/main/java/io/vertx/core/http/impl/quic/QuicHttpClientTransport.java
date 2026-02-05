@@ -59,7 +59,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   }
 
   @Override
-  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics) {
+  public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics, HttpClientMetrics<?, ?> httpMetrics) {
     ClientSSLOptions sslOptions = params.sslOptions;
     if (sslOptions == null) {
       return context.failedFuture("Missing clients SSL options");
@@ -76,6 +76,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       Http3ClientConnection c = new Http3ClientConnection(
         (QuicConnectionInternal) res,
         authority,
+        httpMetrics,
         (ClientMetrics<Object, HttpRequest, HttpResponse>) clientMetrics,
         keepAliveTimeoutMillis,
         localSettings);
