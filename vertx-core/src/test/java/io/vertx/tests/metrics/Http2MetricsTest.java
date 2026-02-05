@@ -82,7 +82,7 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/wibble").onComplete(ar -> {
         HttpServerResponse pushedResp = ar.result();
-        FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
+        FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
         HttpServerMetric serverMetric = serverMetrics.getResponseMetric("/wibble");
         assertNotNull(serverMetric);
         pushedResp.putHeader("content-length", "" + contentLength);
@@ -102,7 +102,7 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     });
     startServer(testAddress);
     client = createHttpClient();
-    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.pushHandler(pushedReq -> {
         HttpClientMetric metric = metrics.getMetric(pushedReq);

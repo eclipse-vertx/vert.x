@@ -67,7 +67,13 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
   protected void doClose(Completable<Void> p) {
     webSocketCM.close();
-    connector.close().onComplete(p);
+    Future<Void> root = connector.close();
+    if (httpMetrics != null) {
+      root = root.andThen(ar -> {
+        httpMetrics.close();
+      });
+    }
+    root.onComplete(p);
   }
 
   @Override

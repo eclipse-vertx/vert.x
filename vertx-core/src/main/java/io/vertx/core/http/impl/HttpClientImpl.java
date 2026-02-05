@@ -269,7 +269,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (quicTransport != null) {
       list.add(quicTransport.close());
     }
-    Future.join(list).<Void>mapEmpty().onComplete(p);
+    Future<?> root = Future.join(list);
+    if (httpMetrics != null) {
+      root = root.andThen(ar -> {
+        httpMetrics.close();
+      });
+    }
+    root.<Void>mapEmpty().onComplete(p);
   }
 
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {

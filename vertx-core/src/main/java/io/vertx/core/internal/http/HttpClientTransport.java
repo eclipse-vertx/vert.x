@@ -36,8 +36,6 @@ public interface HttpClientTransport {
 
   Future<Void> shutdown(Duration timeout);
 
-  default Future<Void> close() {
-    return shutdown(Duration.ZERO);
-  }
+  Future<Void> close();
 
 }

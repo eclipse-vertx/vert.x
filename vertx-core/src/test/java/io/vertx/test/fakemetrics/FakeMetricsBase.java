@@ -21,9 +21,7 @@ import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.http.HttpServerInternal;
-import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.QuicEndpoint;
-import io.vertx.core.net.QuicServer;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import junit.framework.AssertionFailedError;
@@ -37,11 +35,11 @@ public class FakeMetricsBase implements Metrics {
 
   private boolean closed;
 
-  public static FakeQuicEndpointMetrics getMetrics(QuicEndpoint measured) {
+  public static FakeQuicEndpointMetrics quicMetricsOf(QuicEndpoint measured) {
     return (FakeQuicEndpointMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
-  public static FakeHttpServerMetrics getMetrics(HttpServer measured) {
+  public static FakeHttpServerMetrics httpMetricsOf(HttpServer measured) {
     return (FakeHttpServerMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
@@ -53,23 +51,27 @@ public class FakeMetricsBase implements Metrics {
     return (FakeTCPMetrics)((TcpHttpClientTransport)((HttpClientInternal)client).tcpTransport()).client().getMetrics();
   }
 
-  public static FakeEventBusMetrics getMetrics(EventBus measured) {
+  public static FakeEventBusMetrics eventBusMetricsOf(EventBus measured) {
     return (FakeEventBusMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
-  public static FakeHttpClientMetrics getMetrics(HttpClientAgent measured) {
+  public static FakeHttpClientMetrics httpMetricsOf(HttpClientAgent measured) {
     return (FakeHttpClientMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
-  public static FakeHttpClientMetrics getMetrics(WebSocketClient measured) {
-    return (FakeHttpClientMetrics) ((MetricsProvider) measured).getMetrics();
+  public static FakeWebSocketMetrics webSocketMetricsOf(HttpServer measured) {
+    return (FakeWebSocketMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
-  public static FakeDatagramSocketMetrics getMetrics(DatagramSocket measured) {
+  public static FakeWebSocketMetrics webSocketMetricsOf(WebSocketClient measured) {
+    return (FakeWebSocketMetrics) ((MetricsProvider) measured).getMetrics();
+  }
+
+  public static FakeDatagramSocketMetrics datagramSocketMetricsOf(DatagramSocket measured) {
     return (FakeDatagramSocketMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
-  public static FakeVertxMetrics getMetrics(Vertx measured) {
+  public static FakeVertxMetrics vertxMetricsOf(Vertx measured) {
     return (FakeVertxMetrics) ((MetricsProvider) measured).getMetrics();
   }
 
@@ -93,8 +95,7 @@ public class FakeMetricsBase implements Metrics {
   @Override
   public synchronized void close() {
     if (closed) {
-      // FAILING BECAUSE WE CLOSE MULTIPLE TIMES
-//      registerFailure(new IllegalStateException(getClass().getSimpleName() + " already closed"));
+      registerFailure(new IllegalStateException(getClass().getSimpleName() + " already closed"));
     }
     closed = true;
   }

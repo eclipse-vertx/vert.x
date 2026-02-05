@@ -24,6 +24,7 @@ import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -33,11 +34,12 @@ import java.util.Arrays;
 public class QuicHttpClientTransport implements HttpClientTransport {
 
   private final VertxInternal vertx;
+  private final HttpClientMetrics<?, ?> httpMetrics;
   private final QuicClient client;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
 
-  public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
+  public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config, HttpClientMetrics<?, ?> httpMetrics) {
 
     QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
     quicConfig.setMetricsName(config.getMetricsName());
@@ -53,6 +55,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
     this.client = client;
+    this.httpMetrics = httpMetrics;
   }
 
   @Override
@@ -86,4 +89,8 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     return client.shutdown(timeout);
   }
 
+  @Override
+  public Future<Void> close() {
+    return client.close();
+  }
 }

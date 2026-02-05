@@ -66,7 +66,8 @@ public class QuicMetricsTest extends VertxTestBase {
     for (int i = 0;i < numberOfServers;i++) {
       QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
       server.handler(conn -> {
-        FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.getMetrics(server);
+        FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(server);
+        assertNull(serverMetrics.protocol());
         assertEquals(1, serverMetrics.connectionCount());
         serverConnectionMetric.set(serverMetrics.firstMetric(conn.remoteAddress()));
         conn.handler(stream -> {
@@ -79,7 +80,8 @@ public class QuicMetricsTest extends VertxTestBase {
     }
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection clientConnection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.getMetrics(client);
+    FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.quicMetricsOf(client);
+    assertNull(clientMetrics.protocol());
     assertEquals("the-metrics", clientMetrics.name());
     assertEquals(1, clientMetrics.connectionCount());
     ConnectionMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
@@ -98,7 +100,8 @@ public class QuicMetricsTest extends VertxTestBase {
     assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 0);
     awaitLatch(latch);
     assertEquals(List.of(Buffer.buffer("ping")), received);
-    FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.getMetrics(servers.get(0));
+    FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(servers.get(0));
+    assertNull(serverMetrics.protocol());
     clientConnection.close().await();
     assertWaitUntil(() -> serverMetrics.connectionCount() == 0);
     assertWaitUntil(() -> clientMetrics.connectionCount() == 0);

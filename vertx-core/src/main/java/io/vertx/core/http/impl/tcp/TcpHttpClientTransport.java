@@ -101,7 +101,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
                                 Duration idleTimeout,
                                 Duration readIdleTimeout,
                                 Duration writeIdleTimeout,
-                                HttpClientMetrics httpMetrics) {
+                                HttpClientMetrics<?, ?> httpMetrics) {
 
     if (http1Config != null && !http1Config.isKeepAlive() && http1Config.isPipelining()) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
@@ -332,12 +332,11 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    Future<Void> f = client.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    if (httpMetrics != null) {
-      f = f.andThen((result, err) -> {
-        httpMetrics.close();
-      });
-    }
-    return f;
+    return client.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+  }
+
+  @Override
+  public Future<Void> close() {
+    return client.close();
   }
 }

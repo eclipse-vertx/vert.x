@@ -14,8 +14,6 @@ package io.vertx.tests.metrics;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
-import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.http.HttpClientRequestInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -87,7 +85,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     AtomicReference<HttpServerMetric> serverMetric = new AtomicReference<>();
     server.requestHandler(req -> {
       assertEquals(protocol, req.version());
-      FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
       assertNotNull(serverMetrics);
       HttpServerMetric metric = serverMetrics.getRequestMetric(req);
       serverMetric.set(metric);
@@ -133,7 +131,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     AtomicReference<ConnectionMetric> clientSocketMetric = new AtomicReference<>();
-    FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    FakeHttpClientMetrics clientMetrics = FakeMetricsBase.httpMetricsOf(client);
     FakeTCPMetrics tcpMetrics = FakeTCPMetrics.tpcMetricsOf(client);
 //    Http1xOrH2ChannelConnector connector = (Http1xOrH2ChannelConnector)((HttpClientInternal) client).channelConnector();
 //    FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(connector.netClient());
@@ -222,7 +220,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
       });
     });
     startServer(testAddress);
-    FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
+    FakeHttpClientMetrics clientMetrics = FakeMetricsBase.httpMetricsOf(client);
     assertEquals("the-metrics", clientMetrics.name());
     clientMetrics.setImplementInit(implementInit);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
@@ -272,7 +270,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     startServer(testAddress);
     client.close().await();
     client = config.forClient().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
-    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
     AtomicReference<HttpClientMetric> ref = new AtomicReference<>();
     client.request(requestOptions).onComplete(onSuccess(req -> {
       req.send().onComplete(onSuccess(resp -> {
@@ -294,7 +292,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     server.close();
     server = config.forServer().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
     server.requestHandler(req -> {
-      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);
       assertNotNull(metric);
       assertFalse(metric.failed.get());
@@ -312,7 +310,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
   @Test
   public void testRouteMetrics() throws Exception {
     server.requestHandler(req -> {
-      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);
       assertNull(metric.route.get());
       req.routed("MyRoute");
@@ -335,7 +333,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
   @Test
   public void testRouteMetricsIgnoredAfterResponseEnd() throws Exception {
     server.requestHandler(req -> {
-      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);
       assertNull(metric.route.get());
       req.response().end();
@@ -350,7 +348,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
 
   @Test
   public void testResetImmediately() {
-    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
     server.requestHandler(req -> {
     }).listen(testAddress).onComplete(onSuccess(v -> {
       client.request(requestOptions).onComplete(onSuccess(request -> {
