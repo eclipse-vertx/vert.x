@@ -27,43 +27,17 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, HttpReque
   public final AtomicInteger connectionCount = new AtomicInteger();
   public final AtomicInteger requestCount = new AtomicInteger();
   public final ConcurrentMap<HttpRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
-  private final boolean implementInit;
-
-  public EndpointMetric(boolean implementInit) {
-    this.implementInit = implementInit;
-  }
 
   @Override
   public HttpClientMetric init() {
-    if (implementInit) {
-      return new HttpClientMetric(this);
-    } else {
-      return ClientMetrics.super.init();
-    }
+    return new HttpClientMetric(this);
   }
 
   @Override
   public void requestBegin(HttpClientMetric requestMetric, String uri, HttpRequest request) {
-    if (implementInit) {
-      requestCount.incrementAndGet();
-      requestMetric.request.set(request);
-      requests.put(request, requestMetric);
-    } else {
-      ClientMetrics.super.requestBegin(requestMetric, uri, request);
-    }
-  }
-
-  @Override
-  public HttpClientMetric requestBegin(String uri, HttpRequest request) {
-    if (implementInit) {
-      return null;
-    } else {
-      requestCount.incrementAndGet();
-      HttpClientMetric metric = new HttpClientMetric(this);
-      metric.request.set(request);
-      requests.put(request, metric);
-      return metric;
-    }
+    requestCount.incrementAndGet();
+    requestMetric.request.set(request);
+    requests.put(request, requestMetric);
   }
 
   @Override
@@ -105,5 +79,15 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, HttpReque
     requestMetric.bytesRead.set(bytesRead);
     requestCount.decrementAndGet();
     requests.remove(requestMetric.request.get());
+  }
+
+  @Override
+  public void connected() {
+    connectionCount.incrementAndGet();
+  }
+
+  @Override
+  public void disconnected() {
+    connectionCount.decrementAndGet();
   }
 }

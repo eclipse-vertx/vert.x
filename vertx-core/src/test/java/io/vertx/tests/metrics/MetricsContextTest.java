@@ -417,9 +417,8 @@ public class MetricsContextTest extends VertxTestBase {
           public ClientMetrics<Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
             return new ClientMetrics<>() {
               @Override
-              public Void requestBegin(String uri, HttpRequest request) {
+              public void requestBegin(Void requestMetric, String uri, HttpRequest request) {
                 requestBeginCalled.set(uri);
-                return null;
               }
               @Override
               public void responseEnd(Void requestMetric, long bytesRead) {

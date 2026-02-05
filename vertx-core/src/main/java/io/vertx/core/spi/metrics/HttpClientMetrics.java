@@ -46,20 +46,4 @@ public interface HttpClientMetrics<R, W> extends WebSocketMetrics<W> {
   default ClientMetrics<R, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     return null;
   }
-
-  /**
-   * Called when a connection is made to a endpoint.
-   *  @param endpointMetric the endpoint metric
-   *
-   */
-  default void endpointConnected(ClientMetrics<R, ?, ?> endpointMetric) {
-  }
-
-  /**
-   * Called when a connection to an endpoint is closed.
-   *  @param endpointMetric the endpoint metric
-   *
-   */
-  default void endpointDisconnected(ClientMetrics<R, ?, ?> endpointMetric) {
-  }
 }

@@ -29,7 +29,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -40,33 +39,30 @@ import static io.vertx.core.http.impl.tcp.Http2UpgradeClientConnection.SEND_BUFF
 
 public class Http2CodecClientChannelInitializer implements Http2ClientChannelInitializer {
 
-  private final HttpClientMetrics<?, ?> httpMetrics;
   private final Http2ClientConfig config;
   private final TracingPolicy tracingPolicy;
   private final boolean useDecompression;
   private final boolean logActivity;
 
   public Http2CodecClientChannelInitializer(Http2ClientConfig config, TracingPolicy tracingPolicy,
-                                            boolean useDecompression, boolean logActivity,
-                                            HttpClientMetrics<?, ?> httpMetrics) {
+                                            boolean useDecompression, boolean logActivity) {
     this.config = config;
     this.tracingPolicy = tracingPolicy;
     this.useDecompression = useDecompression;
-    this.httpMetrics = httpMetrics;
     this.logActivity = logActivity;
   }
 
   @Override
   public Http2UpgradeClientConnection.Http2ChannelUpgrade channelUpgrade(Http1ClientConnection conn, ClientMetrics<?, ?, ?> clientMetrics) {
-    return new CodecChannelUpgrade(httpMetrics, conn.metrics(), clientMetrics, conn.metric(), config, tracingPolicy, useDecompression, logActivity);
+    return new CodecChannelUpgrade(conn.metrics(), clientMetrics, conn.metric(), config, tracingPolicy, useDecompression, logActivity);
   }
 
   @Override
   public void http2Connected(ContextInternal context, HostAndPort authority, TransportMetrics<?> transportMetrics, Object metric, Channel ch,
-                             ClientMetrics<?, ?, ?> clientMetrics, HttpClientMetrics<?, ?> httpMetrics, PromiseInternal<HttpClientConnection> promise) {
+                             ClientMetrics<?, ?, ?> clientMetrics, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity, this.httpMetrics,
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity,
         transportMetrics, clientMetrics, context, false, metric, authority);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
@@ -89,7 +85,6 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
 
   public static class CodecChannelUpgrade implements Http2UpgradeClientConnection.Http2ChannelUpgrade {
 
-    private final HttpClientMetrics<?, ?> httpMetrics;
     private final TransportMetrics<?> transportMetrics;
     private final ClientMetrics clientMetrics;
     private final Http2ClientConfig config;
@@ -98,8 +93,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
     private final boolean logActivity;
     private final Object connectionMetric;
 
-    public CodecChannelUpgrade(HttpClientMetrics<?, ?> httpMetrics,
-                               TransportMetrics<?> transportMetrics,
+    public CodecChannelUpgrade(TransportMetrics<?> transportMetrics,
                                ClientMetrics clientMetrics,
                                Object connectionMetric,
                                Http2ClientConfig config,
@@ -111,7 +105,6 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
       this.tracingPolicy = tracingPolicy;
       this.useDecompression = useDecompression;
       this.logActivity = logActivity;
-      this.httpMetrics = httpMetrics;
       this.transportMetrics = transportMetrics;
       this.connectionMetric = connectionMetric;
     }
@@ -120,7 +113,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
                         Buffer content,
                         boolean end,
                         Channel channel,
-                        HttpClientMetrics<?, ?> httpMetrics, ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
+                        ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
       ChannelPipeline pipeline = channel.pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
 
@@ -169,7 +162,6 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
             tracingPolicy,
             useDecompression,
             logActivity,
-            CodecChannelUpgrade.this.httpMetrics,
             CodecChannelUpgrade.this.transportMetrics,
             CodecChannelUpgrade.this.clientMetrics,
             upgradingStream.context(),

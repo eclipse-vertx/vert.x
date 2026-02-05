@@ -42,7 +42,6 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   private final boolean useDecompression;
   private final TransportMetrics<?> transportMetrics;
   private final ClientMetrics<?, ?, ?> clientMetrics;
-  private final HttpClientMetrics<?, ?> httpMetrics;
   private final HostAndPort authority;
   private final long creationTimestamp;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
@@ -57,13 +56,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                             VertxHttp2ConnectionHandler connHandler,
                             TransportMetrics<?> transportMetrics,
                             ClientMetrics<?, ?, ?> clientMetrics,
-                            HttpClientMetrics<?, ?> httpMetrics,
                             Http2ClientConfig config,
                             TracingPolicy tracingPolicy,
                             boolean useDecompression) {
     super(context, connHandler);
     this.clientMetrics = clientMetrics;
-    this.httpMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
     this.config = config;
     this.tracingPolicy = tracingPolicy;
@@ -312,7 +309,6 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
     TracingPolicy tracingPolicy,
     boolean useDecompression,
     boolean logActivity,
-    HttpClientMetrics<?, ?> httpMetrics,
     TransportMetrics<?> transportMetrics,
     ClientMetrics clientMetrics,
     ContextInternal context,
@@ -326,7 +322,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
       .initialSettings(config.getInitialSettings())
       .connectionFactory(connHandler -> {
         Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, transportMetrics,
-          clientMetrics, httpMetrics, config, tracingPolicy, useDecompression);
+          clientMetrics, config, tracingPolicy, useDecompression);
         if (clientMetrics != null) {
           Object m = socketMetric;
           conn.metric(m);
@@ -356,7 +352,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   public void handleClosed() {
     if (clientMetrics != null) {
-      ((HttpClientMetrics)httpMetrics).endpointDisconnected(clientMetrics);
+      clientMetrics.disconnected();
     }
     super.handleClosed();
   }

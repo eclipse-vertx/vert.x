@@ -58,6 +58,7 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
+import io.vertx.core.spi.metrics.WebSocketMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -79,7 +80,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   private static final Handler<Object> INVALID_MSG_HANDLER = ReferenceCountUtil::release;
 
-  private final HttpClientMetrics<?, ?> httpMetrics;
+  private final WebSocketMetrics<?> webSocketMetrics;
   private final TransportMetrics<?> transportMetrics;
   private final Http1ClientConfig config;
   private final TracingPolicy tracingPolicy;
@@ -109,7 +110,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   private long lastResponseReceivedTimestamp;
 
   public Http1ClientConnection(HttpVersion version,
-                               HttpClientMetrics<?, ?> httpMetrics,
+                               WebSocketMetrics<?> httpMetrics,
                                TransportMetrics<?> transportMetrics,
                                Http1ClientConfig config,
                                TracingPolicy tracingPolicy,
@@ -121,7 +122,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
                                ContextInternal context,
                                ClientMetrics clientMetrics) {
     super(context, chctx);
-    this.httpMetrics = httpMetrics;
+    this.webSocketMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
     this.clientMetrics = clientMetrics;
     this.config = config;
@@ -275,13 +276,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       inflight.addLast(stream);
       this.isConnect = connect;
       if (clientMetrics != null) {
-        Object m = stream.metric;
         ObservableRequest observable = new ObservableRequest(request);
-        if (m != null) {
-          clientMetrics.requestBegin(m, request.uri, observable);
-        } else {
-          stream.metric = clientMetrics.requestBegin(request.uri, observable);
-        }
+        clientMetrics.requestBegin(stream.metric, request.uri, observable);
       }
       VertxTracer tracer = stream.context.tracer();
       if (tracer != null) {
@@ -1088,7 +1084,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         if (future.isSuccess()) {
 
           VertxHandler<WebSocketConnectionImpl> handler = VertxHandler.create(ctx -> {
-            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), httpMetrics, transportMetrics);
+            WebSocketConnectionImpl conn = new WebSocketConnectionImpl(context, ctx, false, TimeUnit.SECONDS.toMillis(options.getClosingTimeout()), webSocketMetrics, transportMetrics);
             WebSocketImpl webSocket = new WebSocketImpl(
               context,
               conn,
@@ -1109,8 +1105,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
           ws.subProtocol(handshaker.actualSubprotocol());
           ws.registerHandler(vertx.eventBus());
 
-          if (httpMetrics != null) {
-            ws.setMetric(httpMetrics.connected(new ObservableRequest(new HttpRequestHead(
+          if (webSocketMetrics != null) {
+            ws.setMetric(webSocketMetrics.connected(new ObservableRequest(new HttpRequestHead(
               ssl ? "https" : "http", HttpMethod.GET, requestURI, headers, authority, "/", null
             ))));
           }
@@ -1249,7 +1245,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     super.handleClosed();
     closed = true;
     if (clientMetrics != null) {
-      httpMetrics.endpointDisconnected(clientMetrics);
+      clientMetrics.disconnected();
     }
     if (!evicted) {
       evicted = true;

@@ -18,7 +18,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
 
@@ -33,8 +32,7 @@ public interface HttpClientTransport {
                                        SocketAddress server,
                                        HostAndPort authority,
                                        HttpConnectParams params,
-                                       ClientMetrics<?, ?, ?> clientMetrics,
-                                       HttpClientMetrics<?, ?> httpMetrics);
+                                       ClientMetrics<?, ?, ?> clientMetrics);
 
   Future<Void> shutdown(Duration timeout);
 

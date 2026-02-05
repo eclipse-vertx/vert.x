@@ -181,17 +181,6 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
 
   @Test
   public void testHttpClientLifecycle() throws Exception {
-    testHttpClientLifecycle(false);
-  }
-
-  @Test
-  public void testHttpClientLifecycleWithInit() throws Exception {
-    testHttpClientLifecycle(true);
-  }
-
-  // TODO : need to check network metrics name
-
-  void testHttpClientLifecycle(boolean implementInit) throws Exception {
     client.close().await();
     client = config.forClient().setMetricsName("the-metrics").create(vertx);
     CountDownLatch requestBeginLatch = new CountDownLatch(1);
@@ -223,13 +212,12 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.httpMetricsOf(client);
     assertEquals("the-metrics", clientMetrics.name());
-    clientMetrics.setImplementInit(implementInit);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     HttpClientRequest request = client.request(new RequestOptions(requestOptions)
       .setMethod(HttpMethod.POST)
       .setURI("/somepath")).await();
     HttpClientMetric initRequestMetric = (HttpClientMetric)((HttpClientRequestInternal)request).metric(); // Might be null
-    assertEquals(implementInit, initRequestMetric != null);
+    assertTrue(initRequestMetric != null);
     Future<Void> responseEndLatch = request
       .response()
       .compose(response -> {
@@ -239,9 +227,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     request.setChunked(true).writeHead().await();
     awaitLatch(requestBeginLatch);
     HttpClientMetric requestMetric = clientMetrics.getMetric(request);
-    if (implementInit) {
-      assertSame(initRequestMetric, requestMetric);
-    }
+    assertSame(initRequestMetric, requestMetric);
     waitUntil(() -> requestMetric.requestEnded.get() == 0);
     waitUntil(() -> requestMetric.responseBegin.get() == 0);
     request.write(TestUtils.randomAlphaString(1024));

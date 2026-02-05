@@ -334,7 +334,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
     HttpConnectParams params = new HttpConnectParams(protocol, sslOptions, proxyOptions, useSSL);
-    return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics, httpMetrics)
+    return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
       .map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 

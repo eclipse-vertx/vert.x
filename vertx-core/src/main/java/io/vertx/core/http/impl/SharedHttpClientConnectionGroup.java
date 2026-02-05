@@ -210,7 +210,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
       return connector
-        .connect(context, owner.server, owner.authority, connectParams, owner.clientMetrics, owner.httpMetrics)
+        .connect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
         .map(connection -> {
           connection.evictionHandler(v -> {
             owner.dispose(connection);

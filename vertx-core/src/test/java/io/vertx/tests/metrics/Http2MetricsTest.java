@@ -120,13 +120,13 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   }
 
   @Override
-  void testHttpClientLifecycle(boolean implementInit) throws Exception {
+  public void testHttpClientLifecycle() throws Exception {
     // The test cannot pass for HTTP/2 upgrade for now
     if (clientOptions.getProtocolVersion() == HttpVersion.HTTP_2 &&
       !clientOptions.isSsl() &&
       clientOptions.isHttp2ClearTextUpgrade()) {
       return;
     }
-    super.testHttpClientLifecycle(implementInit);
+    super.testHttpClientLifecycle();
   }
 }

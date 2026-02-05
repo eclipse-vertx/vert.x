@@ -51,7 +51,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private static final Logger log = LoggerFactory.getLogger(Http2UpgradeClientConnection.class);
 
   private final Http2ChannelUpgrade upgrade;
-  private final HttpClientMetrics<?, ?> httpMetrics;
   private final ClientMetrics<?, ?, ?> clientMetrics;
   private io.vertx.core.http.impl.HttpClientConnection current;
   private boolean upgradeProcessed;
@@ -68,11 +67,10 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private Handler<HttpSettings> remoteSettingsHandler;
 
   public Http2UpgradeClientConnection(Http1ClientConnection connection, ClientMetrics<?, ?, ?> clientMetrics,
-                                      HttpClientMetrics<?, ?> httpMetrics, Http2ChannelUpgrade upgrade) {
+                                      Http2ChannelUpgrade upgrade) {
     this.current = connection;
     this.upgrade = upgrade;
     this.clientMetrics = clientMetrics;
-    this.httpMetrics = httpMetrics;
   }
 
   public io.vertx.core.http.impl.HttpClientConnection unwrap() {
@@ -360,7 +358,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private final Http2ChannelUpgrade upgrade;
     private final HttpClientStream upgradingStream;
     private final Http2UpgradeClientConnection upgradedConnection;
-    private final HttpClientMetrics<?, ?> httpMetrics;
     private final ClientMetrics<?, ?, ?> clientMetrics;
     private HttpClientStream upgradedStream;
     private Handler<io.vertx.core.http.impl.HttpResponseHead> headHandler;
@@ -377,13 +374,12 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     private Handler<Void> closeHandler;
 
     UpgradingStream(HttpClientStream stream, Http2UpgradeClientConnection upgradedConnection, ClientMetrics<?, ?, ?> clientMetrics,
-                    HttpClientMetrics<?, ?> httpMetrics, Http2ChannelUpgrade upgrade, Http1ClientConnection upgradingConnection) {
+                    Http2ChannelUpgrade upgrade, Http1ClientConnection upgradingConnection) {
       this.upgradedConnection = upgradedConnection;
       this.upgradingConnection = upgradingConnection;
       this.upgradingStream = stream;
       this.upgrade = upgrade;
       this.clientMetrics = clientMetrics;
-      this.httpMetrics = httpMetrics;
     }
 
     @Override
@@ -421,7 +417,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
         }
       };
       upgrade.upgrade(upgradingStream, request, buf, end,
-        upgradingConnection.channelHandlerContext().channel(), httpMetrics, clientMetrics, blah);
+        upgradingConnection.channelHandlerContext().channel(), clientMetrics, blah);
       PromiseInternal<Void> promise = upgradingStream.context().promise();
       writeHead(request, chunked, buf, end, priority, connect, promise);
       return promise.future();
@@ -722,7 +718,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
     if (current instanceof Http1ClientConnection && !upgradeProcessed) {
       return current
         .createStream(context)
-        .map(stream -> new UpgradingStream(stream, this, clientMetrics, httpMetrics,
+        .map(stream -> new UpgradingStream(stream, this, clientMetrics,
           upgrade, (Http1ClientConnection) current));
     } else {
       return current
@@ -946,7 +942,6 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
                  Buffer content,
                  boolean end,
                  Channel channel,
-                 HttpClientMetrics<?, ?> httpMetrics,
                  ClientMetrics<?, ?, ?> clientMetrics,
                  UpgradeResult result);
   }
