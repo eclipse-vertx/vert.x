@@ -18,10 +18,11 @@ public class CleanableNetServer extends NetServerImpl implements Closeable {
 
   public CleanableNetServer(VertxInternal vertx,
                             TcpServerConfig config,
+                            String protocol,
                             ServerSSLOptions sslOptions,
                             boolean fileRegionEnabled,
                             boolean registerWriteHandler) {
-    super(vertx, config, sslOptions, fileRegionEnabled, registerWriteHandler);
+    super(vertx, config, protocol, sslOptions, fileRegionEnabled, registerWriteHandler);
     this.vertx = vertx;
   }
 

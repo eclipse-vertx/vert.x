@@ -716,7 +716,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .withClusterManager(getClusterManager())
       .withMetrics(options -> new VertxMetrics() {
         @Override
-        public TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
+        public TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config, String protocol) {
           return new TransportMetrics<>() {
             @Override
             public Object connected(SocketAddress remoteAddress, String remoteName) {
@@ -730,7 +730,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
           };
         }
         @Override
-        public TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+        public TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, String protocol, SocketAddress localAddress) {
           return new TransportMetrics<>() {
             @Override
             public Object connected(SocketAddress remoteAddress, String remoteName) {

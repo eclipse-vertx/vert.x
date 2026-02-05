@@ -19,7 +19,6 @@ import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.FlushStrategy;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.Closeable;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
@@ -27,13 +26,11 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicEndpointInternal;
 import io.vertx.core.internal.tls.SslContextManager;
-import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tls.QuicSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -44,7 +41,6 @@ import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -60,6 +56,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   private final QuicEndpointConfig config;
+  private final String protocol;
   protected final SslContextManager manager;
   protected final VertxInternal vertx;
   private TransportMetrics<?> metrics;
@@ -68,7 +65,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private FlushStrategy flushStrategy;
   private ContextInternal context;
 
-  public QuicEndpointImpl(VertxInternal vertx, QuicEndpointConfig config) {
+  public QuicEndpointImpl(VertxInternal vertx, QuicEndpointConfig config, String protocol) {
 
     String keyLogFilePath = config.getKeyLogFile();
     File keylogFile;
@@ -100,6 +97,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     }
 
     this.config = config;
+    this.protocol = protocol;
     this.vertx = Objects.requireNonNull(vertx);
     this.manager = new SslContextManager(new SSLEngineOptions() {
       @Override
@@ -213,7 +211,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     }
     TransportMetrics<?> metrics;
     if (vertx.metrics() != null) {
-      metrics = vertx.metrics().createQuicEndpointMetrics(config, address);
+      metrics = vertx.metrics().createQuicEndpointMetrics(config, protocol, address);
     } else {
       metrics = null;
     }

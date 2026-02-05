@@ -112,7 +112,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TransportMetrics<Void> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+      public TransportMetrics<Void> createTcpServerMetrics(TcpServerConfig config, String protocol, SocketAddress localAddress) {
         return new TransportMetrics<>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -389,7 +389,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
+      public TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config, String protocol) {
         return new TransportMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -496,7 +496,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TransportMetrics<Void> createTcpClientMetrics(TcpClientConfig config) {
+      public TransportMetrics<Void> createTcpClientMetrics(TcpClientConfig config, String protocol) {
         return new TransportMetrics<>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -600,7 +600,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TransportMetrics createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+      public TransportMetrics createTcpServerMetrics(TcpServerConfig config, String protocol, SocketAddress localAddress) {
         return new TransportMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -688,7 +688,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean closeCalled = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public TransportMetrics createTcpClientMetrics(TcpClientConfig config) {
+      public TransportMetrics createTcpClientMetrics(TcpClientConfig config, String protocol) {
         return new TransportMetrics<Void>() {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {

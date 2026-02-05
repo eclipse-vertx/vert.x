@@ -60,8 +60,8 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private Future<Integer> clientFuture;
   private volatile Channel channel;
 
-  public QuicClientImpl(VertxInternal vertx, QuicClientConfig config, ClientSSLOptions sslOptions) {
-    super(vertx, config);
+  public QuicClientImpl(VertxInternal vertx, QuicClientConfig config, String protocol, ClientSSLOptions sslOptions) {
+    super(vertx, config, protocol);
     this.config = config;
     this.sslOptions = sslOptions;
   }

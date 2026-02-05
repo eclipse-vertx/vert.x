@@ -68,8 +68,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
-  public QuicServerImpl(VertxInternal vertx, QuicServerConfig config, ServerSSLOptions sslOptions) {
-    super(vertx, config);
+  public QuicServerImpl(VertxInternal vertx, QuicServerConfig config, String protocol, ServerSSLOptions sslOptions) {
+    super(vertx, config, protocol);
     this.config = config;
     this.sslOptions = sslOptions;
   }

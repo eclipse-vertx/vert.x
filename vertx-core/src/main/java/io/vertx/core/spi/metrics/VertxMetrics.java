@@ -97,10 +97,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * instances.
    *
    * @param config       the options used to create the {@link NetServer}
+   * @param protocol     the protocol type, e.g. {@code http}, {@code null} when unknown
    * @param localAddress localAddress the local address the net socket is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-    default TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, SocketAddress localAddress) {
+    default TransportMetrics<?> createTcpServerMetrics(TcpServerConfig config, String protocol, SocketAddress localAddress) {
     return null;
   }
 
@@ -109,10 +110,11 @@ public interface VertxMetrics extends Metrics, Measured {
    * <p>
    * No specific thread and context can be expected when this method is called.
    *
-   * @param config the options used to create the {@link NetClient}
+   * @param config   the options used to create the {@link NetClient}
+   * @param protocol the protocol type, e.g. {@code http}, {@code null} when unknown
    * @return the net client metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config) {
+  default TransportMetrics<?> createTcpClientMetrics(TcpClientConfig config, String protocol) {
     return null;
   }
 
@@ -122,11 +124,12 @@ public interface VertxMetrics extends Metrics, Measured {
    * scaled, it is the responsibility of the metrics implementation to eventually merge metrics. In this case
    * the provided {@code server} argument can be used to distinguish the different metrics instances.</p>
    *
-   * @param config      the config used to create the {@link NetServer}
+   * @param config       the config used to create the {@link NetServer}
+   * @param protocol     the protocol type, e.g. {@code http}, {@code null} when unknown
    * @param localAddress localAddress the local address of the UDP socket the endpoint is listening on
    * @return the net server metrics SPI or {@code null} when metrics are disabled
    */
-  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, SocketAddress localAddress) {
+  default TransportMetrics<?> createQuicEndpointMetrics(QuicEndpointConfig config, String protocol, SocketAddress localAddress) {
     return null;
   }
 
