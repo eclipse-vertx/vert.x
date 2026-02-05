@@ -235,6 +235,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       TcpClientConfig clientConfig = netClientConfig(co)
         .setProxyOptions(null);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, clientConfig)
+        .protocol("http")
         .sslOptions(co.getSslOptions())
         .build();
       transport = new TcpHttpClientTransport(

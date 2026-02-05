@@ -24,6 +24,7 @@ public class NetClientBuilder {
 
   private VertxInternal vertx;
   private TcpClientConfig config;
+  private String protocol;
   private ClientSSLOptions sslOptions;
   private boolean registerWriteHandler;
 
@@ -31,6 +32,7 @@ public class NetClientBuilder {
     this.vertx = vertx;
     this.config = config;
     this.registerWriteHandler = false;
+    this.protocol = null;
   }
 
   public NetClientBuilder sslOptions(ClientSSLOptions sslOptions) {
@@ -43,7 +45,12 @@ public class NetClientBuilder {
     return this;
   }
 
+  public NetClientBuilder protocol(String protocol) {
+    this.protocol = protocol;
+    return this;
+  }
+
   public NetClientInternal build() {
-    return new NetClientImpl(vertx, config, sslOptions, registerWriteHandler);
+    return new NetClientImpl(vertx, config, protocol, sslOptions, registerWriteHandler);
   }
 }

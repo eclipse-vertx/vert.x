@@ -26,6 +26,7 @@ public class NetServerBuilder {
   private VertxInternal vertx;
   private TcpServerConfig config;
   private ServerSSLOptions sslOptions;
+  private String protocol;
   private boolean fileRegionEnabled;
   private boolean registerWriteHandler;
   private boolean cleanable;
@@ -34,6 +35,7 @@ public class NetServerBuilder {
     this.vertx = vertx;
     this.config = config;
     this.sslOptions = sslOptions;
+    this.protocol = null;
     this.fileRegionEnabled = false;
     this.registerWriteHandler = false;
     this.cleanable = false;
@@ -61,11 +63,17 @@ public class NetServerBuilder {
     return this;
   }
 
+  public NetServerBuilder protocol(String protocol) {
+    this.protocol = protocol;
+    return this;
+  }
+
   public NetServerInternal build() {
     NetServerInternal server;
     if (cleanable) {
       server = new CleanableNetServer(vertx,
         config,
+        protocol,
         sslOptions,
         fileRegionEnabled,
         registerWriteHandler);
@@ -73,6 +81,7 @@ public class NetServerBuilder {
       server = new NetServerImpl(
         vertx,
         config,
+        protocol,
         sslOptions,
         fileRegionEnabled,
         registerWriteHandler

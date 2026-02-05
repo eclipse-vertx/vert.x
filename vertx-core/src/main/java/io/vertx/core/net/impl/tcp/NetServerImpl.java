@@ -68,6 +68,7 @@ public class NetServerImpl implements NetServerInternal {
   private final ServerSSLOptions sslOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
+  private final String protocol;
   private Handler<NetSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
@@ -91,6 +92,7 @@ public class NetServerImpl implements NetServerInternal {
 
   public NetServerImpl(VertxInternal vertx,
                        TcpServerConfig config,
+                       String protocol,
                        ServerSSLOptions sslOptions,
                        boolean fileRegionEnabled,
                        boolean registerWriteHandler) {
@@ -101,6 +103,7 @@ public class NetServerImpl implements NetServerInternal {
 
     this.vertx = vertx;
     this.config = config;
+    this.protocol = protocol;
     this.fileRegionEnabled = fileRegionEnabled;
     this.registerWriteHandler = registerWriteHandler;
     this.sslOptions = sslOptions;
@@ -572,7 +575,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   private TransportMetrics<?> createMetrics(VertxMetrics metrics,  SocketAddress localAddress) {
-    return metrics != null ? metrics.createTcpServerMetrics(config, localAddress) : null;
+    return metrics != null ? metrics.createTcpServerMetrics(config, protocol, localAddress) : null;
   }
 
   /**

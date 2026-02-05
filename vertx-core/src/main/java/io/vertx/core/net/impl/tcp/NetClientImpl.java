@@ -59,6 +59,7 @@ class NetClientImpl implements NetClientInternal {
   private final VertxInternal vertx;
   private final TcpClientConfig config;
   private final TcpConfig transportOptions;
+  private final String protocol;
   private final boolean registerWriteHandler;
   private final SslContextManager sslContextManager;
   private volatile ClientSSLOptions sslOptions;
@@ -68,6 +69,7 @@ class NetClientImpl implements NetClientInternal {
 
   public NetClientImpl(VertxInternal vertx,
                        TcpClientConfig config,
+                       String protocol,
                        ClientSSLOptions sslOptions,
                        boolean registerWriteHandler) {
 
@@ -81,7 +83,7 @@ class NetClientImpl implements NetClientInternal {
     this.config = config;
     this.registerWriteHandler = registerWriteHandler;
     this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
-    this.metrics = vertx.metrics() != null ? vertx.metrics().createTcpClientMetrics(config) : null;
+    this.metrics = vertx.metrics() != null ? vertx.metrics().createTcpClientMetrics(config, protocol) : null;
     this.logging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
     this.idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout() : Duration.ofMillis(0L);
     this.readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout() : Duration.ofMillis(0L);
@@ -89,6 +91,7 @@ class NetClientImpl implements NetClientInternal {
     this.proxyFilter = config.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(config.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.sslOptions = sslOptions;
     this.transportOptions = config.getTransportConfig();
+    this.protocol = protocol;
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {

@@ -199,6 +199,7 @@ public class TcpHttpServer implements HttpServerInternal {
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
       .cleanable(false)
+      .protocol("http")
       .build();
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;

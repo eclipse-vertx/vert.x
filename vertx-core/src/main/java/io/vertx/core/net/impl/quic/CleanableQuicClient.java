@@ -32,7 +32,7 @@ public class CleanableQuicClient extends QuicClientImpl implements Closeable {
   public CleanableQuicClient(VertxInternal vertx,
                              QuicClientConfig config,
                              ClientSSLOptions sslOptions) {
-    super(vertx, config, sslOptions);
+    super(vertx, config, null, sslOptions);
     this.vertx = vertx;
   }
 

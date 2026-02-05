@@ -212,7 +212,7 @@ public class QuicHttpServer implements HttpServerInternal {
       }
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
-      quicServer = new QuicServerImpl(vertx, quicConfig, sslOptions);
+      quicServer = new QuicServerImpl(vertx, quicConfig, "http", sslOptions);
       httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address) : null;
     }
 

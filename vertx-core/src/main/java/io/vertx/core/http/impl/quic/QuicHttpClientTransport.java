@@ -47,7 +47,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       localSettings = new Http3Settings();
     }
 
-    QuicClient client = new QuicClientImpl(vertx, quicConfig, null);
+    QuicClient client = new QuicClientImpl(vertx, quicConfig, "http", null);
 
     this.vertx = vertx;
     this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
