@@ -21,11 +21,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FakeTransportMetrics extends FakeMetricsBase implements TransportMetrics<ConnectionMetric> {
 
   private final String name;
+  private final String protocol;
   private final AtomicInteger count = new AtomicInteger();
   private final ConcurrentMap<SocketAddress, ConnectionMetric[]> sockets = new ConcurrentHashMap<>();
 
-  public FakeTransportMetrics(String name) {
+  public FakeTransportMetrics(String name, String protocol) {
     this.name = name;
+    this.protocol = protocol;
+  }
+
+  public String protocol() {
+    return protocol;
   }
 
   public int connectionCount() {

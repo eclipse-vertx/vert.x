@@ -67,7 +67,13 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
   protected void doClose(Completable<Void> p) {
     webSocketCM.close();
-    connector.close().onComplete(p);
+    Future<Void> root = connector.close();
+    if (httpMetrics != null) {
+      root = root.andThen(ar -> {
+        httpMetrics.close();
+      });
+    }
+    root.onComplete(p);
   }
 
   @Override
@@ -95,7 +101,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
       ClientMetrics clientMetrics = WebSocketClientImpl.this.httpMetrics != null ? WebSocketClientImpl.this.httpMetrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
       HttpConnectParams params = new HttpConnectParams(HttpVersion.HTTP_1_1, sslOptions, key_.proxyOptions, key_.ssl);
-      return new WebSocketGroup(key_.server, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
+      return new WebSocketGroup(key_.server, httpMetrics, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM
       .withResourceAsync(key, provider, (endpoint, created) -> endpoint.requestConnection(ctx, connectOptions, 0L))

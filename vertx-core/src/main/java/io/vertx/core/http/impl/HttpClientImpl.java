@@ -203,6 +203,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       };
       return new SharedHttpClientConnectionGroup(
         clientMetrics,
+        httpMetrics,
         connection -> {
           if (connectHandler != null) {
             connectHandler.handle(connection);
@@ -269,7 +270,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (quicTransport != null) {
       list.add(quicTransport.close());
     }
-    Future.join(list).<Void>mapEmpty().onComplete(p);
+    Future<?> root = Future.join(list);
+    if (httpMetrics != null) {
+      root = root.andThen(ar -> {
+        httpMetrics.close();
+      });
+    }
+    root.<Void>mapEmpty().onComplete(p);
   }
 
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
@@ -327,7 +334,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     boolean useSSL = ssl != null ? ssl : defaultSsl;
     checkClosed();
     HttpConnectParams params = new HttpConnectParams(protocol, sslOptions, proxyOptions, useSSL);
-    return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics)
+    return transport.connect(vertx.getOrCreateContext(), server, authority, params, clientMetrics, httpMetrics)
       .map(conn -> new UnpooledHttpClientConnection(conn).init());
   }
 

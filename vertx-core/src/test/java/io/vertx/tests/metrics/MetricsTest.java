@@ -135,7 +135,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testBroadcastMessage(Vertx from, Vertx[] to, boolean publish, SentMessage... expected) {
-    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(from.eventBus());
+    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.eventBusMetricsOf(from.eventBus());
     AtomicInteger broadcastCount = new AtomicInteger();
     AtomicInteger receiveCount = new AtomicInteger();
     for (Vertx vertx : to) {
@@ -173,7 +173,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testReceiveMessageSent(Vertx from, Vertx to, boolean expectedLocal, int expectedHandlers) {
-    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.eventBusMetricsOf(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     consumer.completion().onComplete(done -> {
       assertTrue(done.succeeded());
@@ -199,7 +199,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testReceiveMessagePublished(Vertx from, Vertx to, boolean expectedLocal, int expectedHandlers) {
-    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.eventBusMetricsOf(to.eventBus());
     AtomicInteger count = new AtomicInteger();
     for (int i = 0; i < expectedHandlers; i++) {
       MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
@@ -233,8 +233,8 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testReply(Vertx from, Vertx to, boolean expectedLocal, boolean expectedRemote) throws Exception {
-    FakeEventBusMetrics fromMetrics = FakeMetricsBase.getMetrics(from.eventBus());
-    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    FakeEventBusMetrics fromMetrics = FakeMetricsBase.eventBusMetricsOf(from.eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.eventBusMetricsOf(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     CountDownLatch latch = new CountDownLatch(1);
     consumer.completion().onComplete(onSuccess(v -> {
@@ -266,7 +266,7 @@ public class MetricsTest extends VertxTestBase {
   public void testDiscardOnOverflow() throws Exception {
     startNodes(2);
     Vertx from = vertices[0], to = vertices[1];
-    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.eventBusMetricsOf(to.eventBus());
     int num = 10;
     MessageConsumer<Object> consumer = to.eventBus().consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(num));
     consumer.pause();
@@ -287,7 +287,7 @@ public class MetricsTest extends VertxTestBase {
   public void testDiscardMessageOnUnregistration() {
     startNodes(2);
     Vertx from = vertices[0], to = vertices[1];
-    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.eventBusMetricsOf(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     consumer.pause();
     consumer.completion().onComplete(onSuccess(v -> {
@@ -303,7 +303,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testSignalMetricEventAfterUnregistration() throws Exception {
-    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(vertx.eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.eventBusMetricsOf(vertx.eventBus());
     int nums = 1000;
     List<HandlerMetric> metrics = new ArrayList<>();
     for (int i = 0;i < nums;i++) {
@@ -336,7 +336,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHandlerRegistration() throws Exception {
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(vertx.eventBus());
     MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {
     });
     CountDownLatch latch = new CountDownLatch(1);
@@ -360,7 +360,7 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testClusterUnregistration() {
     startNodes(1);
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertices[0].eventBus());
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(vertices[0].eventBus());
     Context ctx = vertices[0].getOrCreateContext();
     ctx.runOnContext(v1 -> {
       MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1, ar -> {
@@ -396,7 +396,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCount) {
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(to.eventBus());
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(to.eventBus());
     CountDownLatch latch1 = new CountDownLatch(1);
     to.runOnContext(v -> {
       to.eventBus().consumer(ADDRESS1, msg -> {
@@ -436,7 +436,7 @@ public class MetricsTest extends VertxTestBase {
   public void testHandlerMetricReply() throws Exception {
     AtomicReference<HandlerMetric> replyRegistration = new AtomicReference<>();
     CountDownLatch latch = new CountDownLatch(1);
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(vertx.eventBus());
     vertx.eventBus().consumer(ADDRESS1, msg -> {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       assertWaitUntil(() -> metrics.getRegistrations().size() == 2);
@@ -471,8 +471,8 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testBytesCodec() throws Exception {
     startNodes(2);
-    FakeEventBusMetrics fromMetrics = FakeMetricsBase.getMetrics(vertices[0].eventBus());
-    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(vertices[1].eventBus());
+    FakeEventBusMetrics fromMetrics = FakeMetricsBase.eventBusMetricsOf(vertices[0].eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.eventBusMetricsOf(vertices[1].eventBus());
     vertices[1].eventBus().consumer(ADDRESS1, msg -> {
       int encoded = fromMetrics.getEncodedBytes(ADDRESS1);
       int decoded = toMetrics.getDecodedBytes(ADDRESS1);
@@ -496,7 +496,7 @@ public class MetricsTest extends VertxTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(eb);
     assertEquals(Collections.singletonList("some-address1"), metrics.getReplyFailureAddresses());
     assertEquals(Collections.singletonList(ReplyFailure.NO_HANDLERS), metrics.getReplyFailures());
   }
@@ -505,7 +505,7 @@ public class MetricsTest extends VertxTestBase {
   public void testReplyFailureTimeout1() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     EventBus eb = vertx.eventBus();
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(eb);
     eb.consumer(ADDRESS1, msg -> {
       // Do not reply
     });
@@ -530,7 +530,7 @@ public class MetricsTest extends VertxTestBase {
     });
     eb.request(ADDRESS1, "bar");
     awaitLatch(latch);
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(eb);
     waitUntil(() -> metrics.getReplyFailureAddresses().size() == 1);
     assertEquals(Collections.singletonList(ReplyFailure.TIMEOUT), metrics.getReplyFailures());
   }
@@ -539,7 +539,7 @@ public class MetricsTest extends VertxTestBase {
   public void testReplyFailureRecipientFailure() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     EventBus eb = vertx.eventBus();
-    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
+    FakeEventBusMetrics metrics = FakeMetricsBase.eventBusMetricsOf(eb);
     AtomicReference<String> replyAddress = new AtomicReference<>();
     CountDownLatch regLatch = new CountDownLatch(1);
     eb.consumer("foo", msg -> {
@@ -564,9 +564,10 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     server.webSocketHandler(ws -> {
       wsRef.set(ws);
-      FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
-      WebSocketMetric webSocketMetric = serverMetrics.getWebSocketMetric(ws);
+      FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
+      WebSocketMetric webSocketMetric = serverMetrics.webSocketMetric(ws);
       FakeTCPMetrics transportMetrics = FakeMetricsBase.tpcMetricsOf(server);
+      assertEquals("http", transportMetrics.protocol());
       ConnectionMetric connectionMetric = transportMetrics.firstMetric(ws.remoteAddress());
       long bytesWritten = connectionMetric.bytesRead.get();
       long bytesRead = connectionMetric.bytesRead.get();
@@ -586,8 +587,8 @@ public class MetricsTest extends VertxTestBase {
       ws.handler(buff -> ws.close());
     }));
     awaitLatch(latch);
-    FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
-    assertWaitUntil(() -> metrics.getWebSocketMetric(wsRef.get()) == null);
+    FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
+    assertWaitUntil(() -> metrics.webSocketMetric(wsRef.get()) == null);
   }
 
   @Ignore
@@ -596,14 +597,15 @@ public class MetricsTest extends VertxTestBase {
     server = vertx.createHttpServer();
     AtomicReference<ServerWebSocket> ref = new AtomicReference<>();
     server.requestHandler(req -> {
-      FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
       FakeTCPMetrics transportMetrics = FakeMetricsBase.tpcMetricsOf(server);
+      assertEquals("http", transportMetrics.protocol());
       assertNotNull(serverMetrics.getRequestMetric(req));
       req
         .toWebSocket()
         .onComplete(onSuccess(ws -> {
           assertNull(serverMetrics.getRequestMetric(req));
-          WebSocketMetric wsMetric = serverMetrics.getWebSocketMetric(ws);
+          WebSocketMetric wsMetric = serverMetrics.webSocketMetric(ws);
           ConnectionMetric connectionMetric = transportMetrics.firstMetric(ws.remoteAddress());
           long bytesWritten = connectionMetric.bytesRead.get();
           long bytesRead = connectionMetric.bytesRead.get();
@@ -627,8 +629,8 @@ public class MetricsTest extends VertxTestBase {
         });
       }));
     assertWaitUntil(() -> ref.get() != null);
-    FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
-    assertWaitUntil(() -> metrics.getWebSocketMetric(ref.get()) == null);
+    FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
+    assertWaitUntil(() -> metrics.webSocketMetric(ref.get()) == null);
   }
 
   @Test
@@ -640,11 +642,11 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST));
     wsClient = vertx.createWebSocketClient();
-    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(wsClient);
+    FakeWebSocketMetrics metrics = FakeMetricsBase.webSocketMetricsOf(wsClient);
     CountDownLatch closeLatch = new CountDownLatch(1);
     Future<WebSocket> fut = wsClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/test");
     fut.onComplete(onSuccess(ws -> {
-      WebSocketMetric metric = metrics.getMetric("/test");
+      WebSocketMetric metric = metrics.webSocketMetric("/test");
       assertNotNull(metric);
       ws.closeHandler(closed -> {
         closeLatch.countDown();
@@ -652,19 +654,19 @@ public class MetricsTest extends VertxTestBase {
       ws.handler(ws::write);
     }));
     WebSocket ws = awaitFuture(fut);
-    assertWaitUntil(() -> metrics.getMetric("/test") == null);
+    assertWaitUntil(() -> metrics.webSocketMetric("/test") == null);
   }
 
   @Test
   public void testHttpClientName() throws Exception {
     HttpClientAgent client1 = vertx.createHttpClient();
     try {
-      FakeHttpClientMetrics metrics1 = FakeMetricsBase.getMetrics(client1);
+      FakeHttpClientMetrics metrics1 = FakeMetricsBase.httpMetricsOf(client1);
       assertEquals("", metrics1.name());
       String name = TestUtils.randomAlphaString(10);
       HttpClientAgent client2 = vertx.createHttpClient(new HttpClientOptions().setMetricsName(name));
       try {
-        FakeHttpClientMetrics metrics2 = FakeMetricsBase.getMetrics(client2);
+        FakeHttpClientMetrics metrics2 = FakeMetricsBase.httpMetricsOf(client2);
         assertEquals(name, metrics2.name());
       } finally {
         client2.close();
@@ -687,7 +689,7 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(1));
-    FakeHttpClientMetrics clientMetrics = FakeHttpClientMetrics.getMetrics(client);
+    FakeHttpClientMetrics clientMetrics = FakeHttpClientMetrics.httpMetricsOf(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
@@ -746,7 +748,7 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitFuture(server.listen(HttpTestBase.DEFAULT_HTTP_PORT, "localhost"));
     client = vertx.createHttpClient();
-    FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
+    FakeHttpClientMetrics metrics = FakeHttpClientMetrics.httpMetricsOf(client);
     for (int i = 0;i < 5;i++) {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/somepath")
         .compose(HttpClientRequest::end)
@@ -769,7 +771,7 @@ public class MetricsTest extends VertxTestBase {
     AtomicReference<EndpointMetric> endpointMetrics = new AtomicReference<>();
     AtomicReference<FakePoolMetrics> queueMetrics = new AtomicReference<>();
     server = vertx.createHttpServer().requestHandler(req -> {
-      endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.getMetrics(client)).endpoint("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
+      endpointMetrics.set(((FakeHttpClientMetrics)FakeHttpClientMetrics.httpMetricsOf(client)).endpoint("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
       queueMetrics.set(FakePoolMetrics.getMetrics("localhost:" + HttpTestBase.DEFAULT_HTTP_PORT));
       req.response().end();
     });
@@ -793,7 +795,7 @@ public class MetricsTest extends VertxTestBase {
     List<HttpServer> servers = new ArrayList<>();
     List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
     BiConsumer<HttpServer, HttpServerRequest> check = (server, request) -> {
-      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(request);
       assertNotNull(metric);
       requests.add(request);
@@ -811,7 +813,7 @@ public class MetricsTest extends VertxTestBase {
       Future
         .all(collect)
         .onSuccess(v -> {
-          assertEquals("Was expecting a single metric", 1, servers.stream().map(FakeMetricsBase::getMetrics).distinct().count());
+          assertEquals("Was expecting a single metric", 1, servers.stream().map(FakeMetricsBase::httpMetricsOf).distinct().count());
           for (int i = 0;i < 2;i++) {
             client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", TestUtils.randomAlphaString(16))
               .compose(HttpClientRequest::send)
@@ -841,8 +843,9 @@ public class MetricsTest extends VertxTestBase {
     server = vertx.createHttpServer();
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     server.requestHandler(req -> {
-      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       FakeTCPMetrics transportMetrics = FakeMetricsBase.tpcMetricsOf(server);
+      assertEquals("http", transportMetrics.protocol());
       HttpServerMetric serverMetric = metrics.getRequestMetric(req);
       assertNotNull(serverMetric);
       ConnectionMetric connectionMetric = transportMetrics.firstMetric(req.remoteAddress());
@@ -872,7 +875,7 @@ public class MetricsTest extends VertxTestBase {
       .setPort(HttpTestBase.DEFAULT_HTTP_PORT)
       .setHost(host)
       .setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(req -> {
-      FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+      FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
       req.connect().onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         clientMetric.set(metrics.getMetric(req));
@@ -915,8 +918,8 @@ public class MetricsTest extends VertxTestBase {
     waitFor(2);
     DatagramSocket peer1 = vertx.createDatagramSocket();
     DatagramSocket peer2 = vertx.createDatagramSocket();
-    FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
-    FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
+    FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.datagramSocketMetricsOf(peer1);
+    FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.datagramSocketMetricsOf(peer2);
     try {
       CountDownLatch latch = new CountDownLatch(1);
       peer1.handler(packet -> complete());
@@ -1188,9 +1191,9 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testInitialization() {
-    assertSame(vertx, ((FakeVertxMetrics)FakeMetricsBase.getMetrics(vertx)).vertx());
+    assertSame(vertx, ((FakeVertxMetrics)FakeMetricsBase.vertxMetricsOf(vertx)).vertx());
     startNodes(1);
-    assertSame(vertices[0], ((FakeVertxMetrics)FakeMetricsBase.getMetrics(vertices[0])).vertx());
+    assertSame(vertices[0], ((FakeVertxMetrics)FakeMetricsBase.vertxMetricsOf(vertices[0])).vertx());
     EventLoopGroup group = ((VertxInternal)vertx).nettyEventLoopGroup();
     Set<EventLoop> loops = new HashSet<>();
     int count = 0;
@@ -1216,7 +1219,7 @@ public class MetricsTest extends VertxTestBase {
 
     }).listen()
       .await(20, TimeUnit.SECONDS);
-    FakeHttpServerMetrics metrics = FakeVertxMetrics.getMetrics(server);
+    FakeHttpServerMetrics metrics = FakeVertxMetrics.httpMetricsOf(server);
     NetClient client = vertx.createNetClient(new NetClientOptions()
       .setSslEngineOptions(new JdkSSLEngineOptions())
       .setUseAlpn(true)

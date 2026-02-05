@@ -63,10 +63,10 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
 
   @Override
   public void http2Connected(ContextInternal context, HostAndPort authority, TransportMetrics<?> transportMetrics, Object metric, Channel ch,
-                             ClientMetrics<?, ?, ?> clientMetrics, PromiseInternal<HttpClientConnection> promise) {
+                             ClientMetrics<?, ?, ?> clientMetrics, HttpClientMetrics<?, ?> httpMetrics, PromiseInternal<HttpClientConnection> promise) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> clientHandler;
     try {
-      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity, httpMetrics,
+      clientHandler = Http2ClientConnectionImpl.createHttp2ConnectionHandler(config, tracingPolicy, useDecompression, logActivity, this.httpMetrics,
         transportMetrics, clientMetrics, context, false, metric, authority);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
@@ -120,7 +120,7 @@ public class Http2CodecClientChannelInitializer implements Http2ClientChannelIni
                         Buffer content,
                         boolean end,
                         Channel channel,
-                        ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
+                        HttpClientMetrics<?, ?> httpMetrics, ClientMetrics<?, ?, ?> clientMetrics, Http2UpgradeClientConnection.UpgradeResult result) {
       ChannelPipeline pipeline = channel.pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
 

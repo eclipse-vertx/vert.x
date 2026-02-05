@@ -29,10 +29,9 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric> {
+public class FakeHttpClientMetrics extends FakeWebSocketMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric> {
 
   private final String name;
-  private final ConcurrentMap<String, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();
   private volatile boolean implementInit = false;
 
@@ -42,10 +41,6 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   public String name() {
     return name;
-  }
-
-  public WebSocketMetric getMetric(String uri) {
-    return webSockets.get(uri);
   }
 
   public HttpClientMetric getMetric(HttpClientRequest request) {
@@ -109,17 +104,4 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   public void endpointDisconnected(ClientMetrics<HttpClientMetric, ?, ?> endpointMetric) {
     ((EndpointMetric)endpointMetric).connectionCount.decrementAndGet();
   }
-
-  @Override
-  public WebSocketMetric connected(HttpRequest request) {
-    WebSocketMetric metric = new WebSocketMetric(request);
-    webSockets.put(request.uri(), metric);
-    return metric;
-  }
-
-  @Override
-  public void disconnected(WebSocketMetric webSocketMetric) {
-    webSockets.remove(webSocketMetric.request.uri());
-  }
-
 }
