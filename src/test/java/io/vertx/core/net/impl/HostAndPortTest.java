@@ -67,6 +67,8 @@ public class HostAndPortTest {
     assertHostAndPort("127.0.0.1", 8080, "127.0.0.1:8080");
     assertHostAndPort("example.com", 8080, "example.com:8080");
     assertHostAndPort("example.com", -1, "example.com");
+    assertHostAndPort("host%3F", -1, "host%3F");
+    assertHostAndPort("host%3F", 8080, "host%3F:8080");
     assertHostAndPort("0.1.2.3", -1, "0.1.2.3");
     assertHostAndPort("[0::]", -1, "[0::]");
     assertHostAndPort("", -1, "");
@@ -90,6 +92,10 @@ public class HostAndPortTest {
     assertFalse(HostAndPortImpl.isValidAuthority("^"));
     assertNull(HostAndPortImpl.parseAuthority("bücher.de", -1));
     assertFalse(HostAndPortImpl.isValidAuthority("bücher.de"));
+    assertNull(HostAndPortImpl.parseAuthority("host%3", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("host%3"));
+    assertNull(HostAndPortImpl.parseAuthority("host%3:8080", -1));
+    assertFalse(HostAndPortImpl.isValidAuthority("host%3:8080"));
   }
 
   private void assertHostAndPort(String expectedHost, int expectedPort, String actual) {
