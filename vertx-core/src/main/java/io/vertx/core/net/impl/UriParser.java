@@ -64,7 +64,7 @@ public class UriParser {
       char c = s.charAt(from);
       if (isUnreserved(c) || isSubDelims(c)) {
         from++;
-      } else if (c == '%' && (from + 2) < to && isHEXDIG(s.charAt(c + 1)) && isHEXDIG(s.charAt(c + 2))) {
+      } else if (c == '%' && (from + 2) < to && isHEXDIG(s.charAt(from + 1)) && isHEXDIG(s.charAt(from + 2))) {
         from += 3;
       } else {
         break;
