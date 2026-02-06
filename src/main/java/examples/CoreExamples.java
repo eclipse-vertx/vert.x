@@ -412,13 +412,14 @@ public class CoreExamples {
     System.out.println("Running with native: " + usingNative);
   }
 
-  public void configureLinuxOptions(Vertx vertx, boolean fastOpen, boolean cork, boolean quickAck, boolean reusePort) {
+  public void configureLinuxOptions(Vertx vertx, boolean fastOpen, boolean cork, boolean quickAck, boolean reusePort, int tcpUserTimeout) {
     // Available on Linux
     vertx.createHttpServer(new HttpServerOptions()
       .setTcpFastOpen(fastOpen)
       .setTcpCork(cork)
       .setTcpQuickAck(quickAck)
       .setReusePort(reusePort)
+      .setTcpUserTimeout(tcpUserTimeout)
     );
   }
 

@@ -108,6 +108,12 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
 
+    assertEquals(TCPSSLOptions.DEFAULT_TCP_USER_TIMEOUT, options.getTcpUserTimeout());
+    int tcpUserTimeout = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpUserTimeout(tcpUserTimeout));
+    assertEquals(tcpUserTimeout, options.getTcpUserTimeout());
+    assertIllegalArgumentException(() -> options.setTcpUserTimeout(-1000));
+
     int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
     rand = TestUtils.randomPositiveInt();
@@ -316,6 +322,12 @@ public class Http1xTest extends HttpTest {
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
+
+    assertEquals(TCPSSLOptions.DEFAULT_TCP_USER_TIMEOUT, options.getTcpUserTimeout());
+    int tcpUserTimeout = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setTcpUserTimeout(tcpUserTimeout));
+    assertEquals(tcpUserTimeout, options.getTcpUserTimeout());
+    assertIllegalArgumentException(() -> options.setTcpUserTimeout(-1000));
 
     int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
@@ -584,6 +596,7 @@ public class Http1xTest extends HttpTest {
     int trafficClass = TestUtils.randomByte() + 128;
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
+    int tcpUserTimeout = TestUtils.randomPositiveInt();
     int soLinger = TestUtils.randomPositiveInt();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
@@ -634,6 +647,7 @@ public class Http1xTest extends HttpTest {
       .put("trafficClass", trafficClass)
       .put("tcpNoDelay", tcpNoDelay)
       .put("tcpKeepAlive", tcpKeepAlive)
+      .put("tcpUserTimeout", tcpUserTimeout)
       .put("soLinger", soLinger)
       .put("idleTimeout", idleTimeout)
       .put("ssl", ssl)
@@ -681,6 +695,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(reuseAddress, options.isReuseAddress());
     assertEquals(trafficClass, options.getTrafficClass());
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
+    assertEquals(tcpUserTimeout, options.getTcpUserTimeout());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
     assertEquals(idleTimeout, options.getIdleTimeout());
@@ -888,6 +903,7 @@ public class Http1xTest extends HttpTest {
     int trafficClass = TestUtils.randomByte() + 128;
     boolean tcpNoDelay = rand.nextBoolean();
     boolean tcpKeepAlive = rand.nextBoolean();
+    int tcpUserTimeout = TestUtils.randomPositiveInt();
     int soLinger = TestUtils.randomPositiveInt();
     int idleTimeout = TestUtils.randomPositiveInt();
     boolean ssl = rand.nextBoolean();
@@ -931,6 +947,7 @@ public class Http1xTest extends HttpTest {
       .put("trafficClass", trafficClass)
       .put("tcpNoDelay", tcpNoDelay)
       .put("tcpKeepAlive", tcpKeepAlive)
+      .put("tcpUserTimeout", tcpUserTimeout)
       .put("soLinger", soLinger)
       .put("idleTimeout", idleTimeout)
       .put("ssl", ssl)
@@ -971,6 +988,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(reuseAddress, options.isReuseAddress());
     assertEquals(trafficClass, options.getTrafficClass());
     assertEquals(tcpKeepAlive, options.isTcpKeepAlive());
+    assertEquals(tcpUserTimeout, options.getTcpUserTimeout());
     assertEquals(tcpNoDelay, options.isTcpNoDelay());
     assertEquals(soLinger, options.getSoLinger());
     assertEquals(idleTimeout, options.getIdleTimeout());
