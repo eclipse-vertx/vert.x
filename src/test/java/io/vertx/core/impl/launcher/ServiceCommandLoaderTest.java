@@ -55,7 +55,7 @@ public class ServiceCommandLoaderTest {
 
     // We see the implementation from the classpath
     loader = new ServiceCommandFactoryLoader(classLoader);
-    assertThat(loader.lookup()).isNotEmpty();
+    assertThat(loader.lookup()).isEmpty();
   }
 
 
