@@ -146,7 +146,7 @@ public interface VertxBootstrap {
    * @param transport the transport
    * @return this builder instance
    */
-  VertxBootstrapImpl transport(Transport transport);
+  VertxBootstrap transport(Transport transport);
 
   /**
    * @return the cluster manager to use
