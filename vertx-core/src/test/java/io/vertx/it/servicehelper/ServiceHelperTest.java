@@ -16,12 +16,16 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Check the service helper behavior.
@@ -125,5 +129,44 @@ public class ServiceHelperTest {
     Method method = serviceHelperClass.getMethod("loadFactories", Class.class);
     Collection collection = (Collection) method.invoke(null, someFactoryClass);
     assertThat(collection).hasSize(1);
+  }
+
+  @Test
+  public void shouldInvokeGetResourcesOnce() throws Exception {
+    // We want to make sure we don't try to get resource from CL twice
+    // When the TCCL is the same as the ServiceHelper's classloader
+
+    AtomicInteger invocations = new AtomicInteger();
+
+    // Load the ServiceHelper class from a custom classloader.
+    ClassLoader custom = new URLClassLoader(new URL[]{
+      new File(TestUtils.MAVEN_TARGET_DIR, "classes").toURI().toURL(),
+      new File(TestUtils.MAVEN_TARGET_DIR, "test-classes").toURI().toURL(),
+      serviceHelperFile.toURI().toURL(),
+    }, null) {
+
+      @Override
+      public Enumeration<URL> getResources(String name) throws IOException {
+        invocations.incrementAndGet();
+        return super.getResources(name);
+      }
+    };
+
+    Class serviceHelperClass = custom.loadClass(ServiceHelper.class.getName());
+    Class notImplementedSPIClass = custom.loadClass(NotImplementedSPI.class.getName());
+    assertThat(serviceHelperClass.getClassLoader()).isEqualTo(custom);
+    assertThat(notImplementedSPIClass.getClassLoader()).isEqualTo(custom);
+
+    final ClassLoader originalTCCL = Thread.currentThread().getContextClassLoader();
+    try {
+      // Set TCCL to the CL that loaded the ServiceHelper class
+      Thread.currentThread().setContextClassLoader(custom);
+      Method method = serviceHelperClass.getMethod("loadFactories", Class.class);
+      Collection collection = (Collection) method.invoke(null, notImplementedSPIClass);
+      assertThat(collection).hasSize(0);
+      assertEquals(1, invocations.get());
+    } finally {
+      Thread.currentThread().setContextClassLoader(originalTCCL);
+    }
   }
 }
