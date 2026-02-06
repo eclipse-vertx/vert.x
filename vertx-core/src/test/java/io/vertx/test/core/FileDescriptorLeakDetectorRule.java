@@ -21,6 +21,9 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +68,7 @@ public class FileDescriptorLeakDetectorRule implements TestRule {
     return new Statement() {
       @Override
       public void evaluate() throws Throwable {
-
+        String lsofBefore = captureListOfOpenFiles();
         //We do 40 runs. 20 to extract a baseline and 20 that will act as evaluation values
         //From baseline values we get the max and from evaluation values we get the average
         //If average is greater than max then we have a leak.
@@ -99,7 +102,42 @@ public class FileDescriptorLeakDetectorRule implements TestRule {
           openFd = openFd();
         }
 
-        assertTrue("*** Open file descriptor open file descriptors average " + openFd + " > " + maxOpenFD, openFd <= maxOpenFD);
+        try {
+          assertTrue("*** Open file descriptor open file descriptors average " + openFd + " > " + maxOpenFD, openFd <= maxOpenFD);
+        } catch (AssertionError e) {
+          if (!lsofBefore.isBlank()) {
+            System.out.print("lsof before:\n" + lsofBefore);
+            System.out.print("\n\nlsof after:\n" + captureListOfOpenFiles());
+          }
+          throw e;
+        }
+      }
+
+      private String captureListOfOpenFiles() throws IOException, InterruptedException {
+        StringBuilder lsof = new StringBuilder();
+        String[] pidAndHostname = ManagementFactory.getRuntimeMXBean().getName().split("@");
+        if (pidAndHostname.length == 2) {
+          try {
+            Process exec = Runtime.getRuntime().exec(new String[]{"lsof", "-p", pidAndHostname[0]});
+            String line;
+            try (BufferedReader stdout = new BufferedReader(new InputStreamReader(exec.getInputStream())); BufferedReader stderr = new BufferedReader(new InputStreamReader(exec.getInputStream()))) {
+              while ((line = stdout.readLine()) != null) {
+                lsof.append(line).append("\n");
+              }
+              while ((line = stderr.readLine()) != null) {
+                System.err.println(line);
+              }
+            } catch (IOException ignored) {
+            }
+            int exitCode = exec.waitFor();
+            if (exitCode != 0) {
+              System.err.println("lsof exited with " + exitCode);
+            }
+          } catch (IOException ignored) {
+            // lsof is not on the path
+          }
+        }
+        return lsof.toString();
       }
     };
   }
