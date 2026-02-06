@@ -168,12 +168,12 @@ public class VirtualThreadDeploymentTest extends VertxTestBase {
     Assert.assertEquals(5, max.get());
   }
   @Test
-  public void testHttpClientStopRequestInProgress() throws Exception {
+  public void testHttpClientStopRequestInProgress() {
     Assume.assumeTrue(isVirtualThreadAvailable());
     AtomicInteger inflight = new AtomicInteger();
     vertx.createHttpServer().requestHandler(request -> {
       inflight.incrementAndGet();
-    }).listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST);
+    }).listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST).await();
     int numReq = 10;
     Set<Thread> threads = Collections.synchronizedSet(new HashSet<>());
     Set<Thread> interruptedThreads = Collections.synchronizedSet(new HashSet<>());
