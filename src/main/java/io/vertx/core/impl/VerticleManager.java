@@ -13,12 +13,10 @@ package io.vertx.core.impl;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,12 +39,12 @@ public class VerticleManager {
   public VerticleManager(VertxInternal vertx, DeploymentManager deploymentManager) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
-    loadVerticleFactories();
   }
 
-  private void loadVerticleFactories() {
-    Collection<VerticleFactory> factories = ServiceHelper.loadFactories(VerticleFactory.class);
-    factories.forEach(this::registerVerticleFactory);
+  void init(List<VerticleFactory> factories) {
+    if (factories != null) {
+      factories.forEach(this::registerVerticleFactory);
+    }
     VerticleFactory defaultFactory = new JavaVerticleFactory();
     defaultFactory.init(vertx);
     defaultFactories.add(defaultFactory);
