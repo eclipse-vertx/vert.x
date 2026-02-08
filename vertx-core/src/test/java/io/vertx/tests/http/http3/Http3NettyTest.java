@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -170,12 +171,15 @@ public class Http3NettyTest {
         throw new IllegalStateException("Not bound");
       }
 
+      // Provide a latch to ensure setup is complete, as connectionRef might otherwise be null
+      CountDownLatch l = new CountDownLatch(1);
       AtomicReference<Connection> connectionRef = new AtomicReference<>();
 
       QuicChannel quicChannel = QuicChannel.newBootstrap(channel)
         .handler(new Http3ClientConnectionHandler(new ChannelInboundHandlerAdapter() {
           @Override
           public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            l.await();
             if (msg instanceof Http3ControlStreamFrame) {
               Http3ControlStreamFrame controlStreamFrame = (Http3ControlStreamFrame)msg;
               switch ((int)controlStreamFrame.type()) {
@@ -203,6 +207,9 @@ public class Http3NettyTest {
 
       Connection connection = new Connection(quicChannel, server);
       connectionRef.set(connection);
+      // Setup complete
+      l.countDown();
+
       return connection;
     }
 
