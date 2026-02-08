@@ -17,11 +17,8 @@ import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.impl.transports.NioTransport;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -38,11 +35,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -203,6 +202,19 @@ public class VertxBootstrapTest {
       .init()
       .vertx()
       .close().await();
+  }
+
+  @Test
+  public void testExplicitServiceProviders() {
+    AtomicInteger initialized = new AtomicInteger();
+    VertxServiceProvider provider = builder -> initialized.incrementAndGet();
+    VertxBootstrap factory = VertxBootstrap.create();
+    Vertx vertx = factory
+      .serviceProviders(Collections.singletonList(provider))
+      .init()
+      .vertx();
+    vertx.close();
+    assertEquals(1, initialized.get());
   }
 
   private class CustomExecutorServiceFactory implements ExecutorServiceFactory {
