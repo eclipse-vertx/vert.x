@@ -172,41 +172,24 @@ public class Http3NettyTest {
 
       AtomicReference<Connection> connectionRef = new AtomicReference<>();
 
-      QuicChannel quicChannel = QuicChannel.newBootstrap(channel)
-        .handler(new Http3ClientConnectionHandler(new ChannelInboundHandlerAdapter() {
+      QuicChannel.newBootstrap(channel)
+        .handler(new ChannelInitializer<>() {
           @Override
-          public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (msg instanceof Http3ControlStreamFrame) {
-              Http3ControlStreamFrame controlStreamFrame = (Http3ControlStreamFrame)msg;
-              switch ((int)controlStreamFrame.type()) {
-                case 4:
-                  Http3SettingsFrame settingsFrame = (Http3SettingsFrame) controlStreamFrame;
-                  connectionRef.get().remoteSettings = settingsFrame.settings();
-                  break;
-                case 7:
-                  // Go away
-                  LongConsumer runnable = connectionRef.get().goAwayHandlerRef;
-                  if (runnable != null) {
-                    Http3GoAwayFrame goAwayFrame = (Http3GoAwayFrame)controlStreamFrame;
-                    runnable.accept(goAwayFrame.id());
-                  }
-                  break;
-              }
-            } else {
-              super.channelRead(ctx, msg);
-            }
+          protected void initChannel(Channel ch) {
+            Connection connection = new Connection((QuicChannel) ch, server);
+            connectionRef.set(connection);
+            Http3ClientConnectionHandler handler = new Http3ClientConnectionHandler(connection, null, null, new DefaultHttp3SettingsFrame(localSettings), true);
+            ch.pipeline().addLast(handler);
           }
-        }, null, null, new DefaultHttp3SettingsFrame(localSettings), true))
+        })
         .remoteAddress(server)
         .connect()
         .get();
 
-      Connection connection = new Connection(quicChannel, server);
-      connectionRef.set(connection);
-      return connection;
+      return connectionRef.get();
     }
 
-    public class Connection {
+    public class Connection extends ChannelInboundHandlerAdapter {
 
       private final QuicChannel channel;
       private final InetSocketAddress address;
@@ -216,6 +199,29 @@ public class Http3NettyTest {
       private Connection(QuicChannel quicChannel, InetSocketAddress address) {
         this.channel = quicChannel;
         this.address = address;
+      }
+
+      @Override
+      public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (msg instanceof Http3ControlStreamFrame) {
+          Http3ControlStreamFrame controlStreamFrame = (Http3ControlStreamFrame) msg;
+          switch ((int) controlStreamFrame.type()) {
+            case 4:
+              Http3SettingsFrame settingsFrame = (Http3SettingsFrame) controlStreamFrame;
+              remoteSettings = settingsFrame.settings();
+              break;
+            case 7:
+              // Go away
+              LongConsumer runnable = goAwayHandlerRef;
+              if (runnable != null) {
+                Http3GoAwayFrame goAwayFrame = (Http3GoAwayFrame) controlStreamFrame;
+                runnable.accept(goAwayFrame.id());
+              }
+              break;
+          }
+        } else {
+          super.channelRead(ctx, msg);
+        }
       }
 
       public Connection goAwayHandler(LongConsumer handler) {
