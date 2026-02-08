@@ -251,20 +251,22 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.shadowContext = enableShadowContext;
   }
 
-  void init() {
+  void init(List<VerticleFactory> verticleFactories) {
     eventBus.start(Promise.promise());
     if (metrics != null) {
       metrics.vertxCreated(this);
     }
+    verticleManager.init(verticleFactories);
   }
 
-  Future<Vertx> initClustered(VertxOptions options) {
+  Future<Vertx> initClustered(VertxOptions options, List<VerticleFactory> verticleFactories) {
     nodeSelector.init(clusterManager);
     clusterManager.registrationListener(nodeSelector);
     clusterManager.init(this);
     Promise<Void> initPromise = Promise.promise();
     clusterManager.join((res, err) -> {
       if (err == null) {
+        verticleManager.init(verticleFactories);
         createHaManager(options, initPromise);
       } else {
         initPromise.fail(err);
