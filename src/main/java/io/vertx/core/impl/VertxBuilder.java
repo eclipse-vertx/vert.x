@@ -34,9 +34,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -52,6 +50,7 @@ public class VertxBuilder {
   private Transport transport;
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
+  private List<VertxServiceProvider> serviceProviders;
   private VertxTracer tracer;
   private VertxThreadFactory threadFactory;
   private ExecutorServiceFactory executorServiceFactory;
@@ -133,6 +132,25 @@ public class VertxBuilder {
    */
   public VertxBuilder clusterNodeSelector(NodeSelector selector) {
     this.clusterNodeSelector = selector;
+    return this;
+  }
+
+  /**
+   * @return the list of service providers to use
+   */
+  public List<VertxServiceProvider> serviceProviders() {
+    return serviceProviders;
+  }
+
+  /**
+   * Set the list of service providers to use, when the list is {@code null}, Java's service loader
+   * mechanism will be used to discover service providers.
+   *
+   * @param providers the service providers
+   * @return this builder instance
+   */
+  public VertxBuilder serviceProviders(List<VertxServiceProvider> providers) {
+    this.serviceProviders = providers;
     return this;
   }
 
@@ -271,7 +289,7 @@ public class VertxBuilder {
     initMetrics(options, providers);
     initTracing(options, providers);
     initClusterManager(options, providers);
-    providers.addAll(ServiceHelper.loadFactories(VertxServiceProvider.class));
+    providers.addAll(providers);
     initProviders(providers);
     initThreadFactory();
     initExecutorServiceFactory();
@@ -279,8 +297,13 @@ public class VertxBuilder {
     return this;
   }
 
-  private void initProviders(Collection<VertxServiceProvider> providers) {
-    for (VertxServiceProvider provider : providers) {
+  private void initProviders(Collection<VertxServiceProvider> toInit) {
+    List<VertxServiceProvider> serviceProviders = this.serviceProviders;
+    if (serviceProviders == null) {
+      serviceProviders = new ArrayList<>(ServiceHelper.loadFactories(VertxServiceProvider.class));
+    }
+    toInit.addAll(serviceProviders);
+    for (VertxServiceProvider provider : toInit) {
       provider.init(this);
     }
   }
