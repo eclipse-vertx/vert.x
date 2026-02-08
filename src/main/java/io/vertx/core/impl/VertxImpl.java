@@ -230,14 +230,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.verticleManager = new VerticleManager(this, deploymentManager);
   }
 
-  void init() {
+  void init(List<VerticleFactory> verticleFactories) {
     eventBus.start(Promise.promise());
     if (metrics != null) {
       metrics.vertxCreated(this);
     }
+    verticleManager.init(verticleFactories);
   }
 
-  void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  void initClustered(VertxOptions options, List<VerticleFactory> verticleFactories, Handler<AsyncResult<Vertx>> resultHandler) {
     nodeSelector.init(this, clusterManager);
     clusterManager.init(this, nodeSelector);
     Promise<Void> initPromise = getOrCreateContext().promise();
@@ -255,6 +256,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     Promise<Void> joinPromise = Promise.promise();
     joinPromise.future().onComplete(ar -> {
       if (ar.succeeded()) {
+        verticleManager.init(verticleFactories);
         createHaManager(options, initPromise);
       } else {
         initPromise.fail(ar.cause());
