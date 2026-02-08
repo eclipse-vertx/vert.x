@@ -175,6 +175,19 @@ public interface VertxBootstrap {
   VertxBootstrap clusterManager(ClusterManager clusterManager);
 
   /**
+   * @return the verticle factories to use
+   */
+  List<VerticleFactory> verticleFactories();
+
+  /**
+   * Set the list of {@code VerticleFactory} to use.
+   *
+   * @param verticleFactories the verticle factories
+   * @return the builder instance
+   */
+  VertxBootstrap verticleFactories(List<VerticleFactory> verticleFactories);
+
+  /**
    *
    * Initialize the service providers.
    *

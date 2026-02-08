@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.eventbus.impl.clustered.DefaultNodeSelector;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
@@ -22,11 +23,6 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -60,6 +56,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private VertxMetricsFactory metricsFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
+  private List<VerticleFactory> verticleFactories;
 
   public VertxBootstrapImpl(JsonObject config) {
     this(new VertxOptions(config));
@@ -266,7 +263,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
 
   public Vertx vertx() {
     VertxImpl vertx = instantiateVertx(null, null);
-    vertx.init();
+    vertx.init(verticleFactories);
     return vertx;
   }
 
@@ -282,7 +279,25 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       nodeSelector = new DefaultNodeSelector();
     }
     VertxImpl vertx = instantiateVertx(clusterManager, nodeSelector);
-    return vertx.initClustered(options);
+    return vertx.initClustered(options, verticleFactories);
+  }
+
+  /**
+   * @return the verticle factories to use
+   */
+  public List<VerticleFactory> verticleFactories() {
+    return verticleFactories;
+  }
+
+  /**
+   * Set the list of {@code VerticleFactory} to use.
+   *
+   * @param verticleFactories the verticle factories
+   * @return the builder instance
+   */
+  public VertxBootstrapImpl verticleFactories(List<VerticleFactory> verticleFactories) {
+    this.verticleFactories = verticleFactories;
+    return this;
   }
 
   @Override
@@ -295,6 +310,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
     initThreadFactory();
     initExecutorServiceFactory();
     initFileResolver();
+    initVerticleFactories();
     return this;
   }
 
@@ -350,6 +366,13 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       return;
     }
     executorServiceFactory = ExecutorServiceFactory.INSTANCE;
+  }
+
+  private void initVerticleFactories() {
+    if (verticleFactories != null) {
+      return;
+    }
+    verticleFactories = new ArrayList<>(ServiceHelper.loadFactories(VerticleFactory.class));
   }
 
   private void checkBeforeInstantiating() {
