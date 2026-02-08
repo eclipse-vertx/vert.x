@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.EpollTransport;
 import io.vertx.core.impl.transports.JDKTransport;
 import io.vertx.core.impl.transports.KQueueTransport;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.logging.Logger;
@@ -22,11 +23,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
@@ -56,6 +52,7 @@ public class VertxBuilder {
   private ExecutorServiceFactory executorServiceFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
+  private List<VerticleFactory> verticleFactories;
 
   public VertxBuilder(JsonObject config) {
     this(new VertxOptions(config));
@@ -240,6 +237,24 @@ public class VertxBuilder {
   }
 
   /**
+   * @return the verticle factories to use
+   */
+  public List<VerticleFactory> verticleFactories() {
+    return verticleFactories;
+  }
+
+  /**
+   * Set the list of {@code VerticleFactory} to use.
+   *
+   * @param verticleFactories the verticle factories
+   * @return the builder instance
+   */
+  public VertxBuilder verticleFactories(List<VerticleFactory> verticleFactories) {
+    this.verticleFactories = verticleFactories;
+    return this;
+  }
+
+  /**
    * Build and return the vertx instance
    */
   public Vertx vertx() {
@@ -254,7 +269,7 @@ public class VertxBuilder {
       fileResolver,
       threadFactory,
       executorServiceFactory);
-    vertx.init();
+    vertx.init(verticleFactories);
     return vertx;
   }
 
@@ -276,7 +291,7 @@ public class VertxBuilder {
       fileResolver,
       threadFactory,
       executorServiceFactory);
-    vertx.initClustered(options, handler);
+    vertx.initClustered(options, verticleFactories, handler);
   }
 
   /**
@@ -294,6 +309,7 @@ public class VertxBuilder {
     initThreadFactory();
     initExecutorServiceFactory();
     initFileResolver();
+    initVerticleFactories();
     return this;
   }
 
@@ -373,6 +389,13 @@ public class VertxBuilder {
       return;
     }
     executorServiceFactory = ExecutorServiceFactory.INSTANCE;
+  }
+
+  private void initVerticleFactories() {
+    if (verticleFactories != null) {
+      return;
+    }
+    verticleFactories = new ArrayList<>(ServiceHelper.loadFactories(VerticleFactory.class));
   }
 
   private void checkBeforeInstantiating() {

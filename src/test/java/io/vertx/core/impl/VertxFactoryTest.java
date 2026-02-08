@@ -10,6 +10,8 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.Promise;
+import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
@@ -34,11 +36,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -287,6 +285,59 @@ public class VertxFactoryTest {
       vertx.close();
     });
     assertEquals(1, TestVertxServiceProvider.initialized.get());
+    assertEquals(1, initialized.get());
+  }
+
+  public static class TestVerticleFactory implements VerticleFactory {
+    private static final AtomicInteger initialized = new AtomicInteger();
+    @Override
+    public void init(Vertx vertx) {
+      initialized.incrementAndGet();
+    }
+    @Override
+    public String prefix() {
+      return "test";
+    }
+    @Override
+    public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+      promise.fail("Cannot deploy");
+    }
+  }
+
+  @Test
+  public void testExplicitVerticleFactories() {
+    runWithServiceFromMetaInf(VerticleFactory.class, TestVerticleFactory.class.getName(), () -> {
+      VertxBuilder factory = new VertxBuilder();
+      Vertx vertx = factory
+        .init()
+        .vertx();
+      vertx.close();
+    });
+    assertEquals(1, TestVerticleFactory.initialized.get());
+    AtomicInteger initialized = new AtomicInteger();
+    VerticleFactory verticleFactory = new VerticleFactory() {
+      @Override
+      public void init(Vertx vertx) {
+        initialized.incrementAndGet();
+      }
+      @Override
+      public String prefix() {
+        return "test2";
+      }
+      @Override
+      public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+        promise.fail("Cannot deploy");
+      }
+    };
+    runWithServiceFromMetaInf(VertxServiceProvider.class, TestVertxServiceProvider.class.getName(), () -> {
+      VertxBuilder factory = new VertxBuilder();
+      Vertx vertx = factory
+        .verticleFactories(Collections.singletonList(verticleFactory))
+        .init()
+        .vertx();
+      vertx.close();
+    });
+    assertEquals(1, TestVerticleFactory.initialized.get());
     assertEquals(1, initialized.get());
   }
 }
