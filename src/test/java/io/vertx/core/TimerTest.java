@@ -64,13 +64,13 @@ public class TimerTest extends VertxTestBase {
    */
   @Test
   public void testTimings() {
-    final long start = System.currentTimeMillis();
+    final long start = System.nanoTime();
     final long delay = 2000;
     vertx.setTimer(delay, timerID -> {
-      long dur = System.currentTimeMillis() - start;
-      assertTrue(dur >= delay);
+      long dur = System.nanoTime() - start;
+      assertTrue(dur >= TimeUnit.MILLISECONDS.toNanos(delay));
       long maxDelay = delay * 2;
-      assertTrue("Timer accuracy: " + dur + " vs " + maxDelay, dur < maxDelay); // 100% margin of error (needed for CI)
+      assertTrue("Timer accuracy: " + dur + " vs " + TimeUnit.MILLISECONDS.toNanos(maxDelay), dur < TimeUnit.MILLISECONDS.toNanos(maxDelay)); // 100% margin of error (needed for CI)
       vertx.cancelTimer(timerID);
       testComplete();
     });
@@ -121,11 +121,11 @@ public class TimerTest extends VertxTestBase {
   private void periodic(PeriodicArg delay, BiFunction<PeriodicArg, Handler<Long>, Long> abc) {
     final int numFires = 10;
     final AtomicLong id = new AtomicLong(-1);
-    long now = System.currentTimeMillis();
+    long now = System.nanoTime();
     id.set(abc.apply(delay, new Handler<Long>() {
       int count;
       public void handle(Long timerID) {
-        assertTrue( System.currentTimeMillis() - now >= delay.initialDelay + count * delay.delay);
+        assertTrue( System.nanoTime() - now >= TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay));
         assertEquals(id.get(), timerID.longValue());
         count++;
         if (count == numFires) {
@@ -553,10 +553,10 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testTimerFire() {
-    long now = System.currentTimeMillis();
+    long now = System.nanoTime();
     Timer timer = vertx.timer(1, TimeUnit.SECONDS);
     timer.onComplete(onSuccess(v -> {
-      assertTrue(System.currentTimeMillis() - now >= 800);
+      assertTrue(System.nanoTime() - now >= TimeUnit.SECONDS.toNanos(1));
       testComplete();
     }));
     await();
