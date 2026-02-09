@@ -11,6 +11,10 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelPromise;
+import io.vertx.core.Future;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -47,9 +51,20 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   protected void handleCloseConnection() {
     if (closingTimeoutMS == 0L) {
       closeConnection();
-    } else if (closingTimeoutMS > 0L) {
-      initiateConnectionCloseTimeout(closingTimeoutMS);
     }
+  }
+
+  @Override
+  protected ChannelPromise sendCloseFrame(short statusCode, String reason) {
+    ChannelPromise promise = super.sendCloseFrame(statusCode, reason);
+    if (closingTimeoutMS > 0L) {
+      promise.addListener((ChannelFutureListener) channelFuture -> {
+        if (channelFuture.isSuccess()) {
+          initiateConnectionCloseTimeout(closingTimeoutMS);
+        }
+      });
+    }
+    return promise;
   }
 
   @Override

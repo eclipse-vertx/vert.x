@@ -321,6 +321,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public Future<Void> writeHead() {
+    synchronized (conn) {
+      checkHeadWritten();
+    }
+    return checkSendHeaders(false, true);
+  }
+
+  @Override
   public Future<Void> writeEarlyHints(MultiMap headers) {
     PromiseInternal<Void> promise = stream.context.promise();
     writeEarlyHints(headers, promise);
@@ -431,7 +439,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       if (netSocket == null) {
         status = HttpResponseStatus.OK;
-        if (!checkSendHeaders(false)) {
+        if (checkSendHeaders(false) == null) {
           netSocket = stream.context.failedFuture("Response for CONNECT already sent");
         } else {
           HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream.request, this);
@@ -464,7 +472,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (end && !headWritten && needsContentLengthHeader()) {
         headers().set(HttpHeaderNames.CONTENT_LENGTH, HttpUtils.positiveLongToString(chunk.readableBytes()));
       }
-      boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody);
+      boolean sent = checkSendHeaders(end && !hasBody && trailers == null, !hasBody) != null;
       if (hasBody || (!sent && end)) {
         stream.writeData(chunk, end && trailers == null, handler);
       } else {
@@ -493,11 +501,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return stream.method != HttpMethod.HEAD && status != HttpResponseStatus.NOT_MODIFIED && !headers.contains(HttpHeaderNames.CONTENT_LENGTH);
   }
 
-  private boolean checkSendHeaders(boolean end) {
+  private Future<Void> checkSendHeaders(boolean end) {
     return checkSendHeaders(end, true);
   }
 
-  private boolean checkSendHeaders(boolean end, boolean checkFlush) {
+  private Future<Void> checkSendHeaders(boolean end, boolean checkFlush) {
     if (!headWritten) {
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
@@ -507,10 +515,11 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       prepareHeaders();
       headWritten = true;
-      stream.writeHeaders(headers, end, checkFlush, null);
-      return true;
+      Promise<Void> promise = stream.context.promise();
+      stream.writeHeaders(headers, end, checkFlush, promise);
+      return promise.future();
     } else {
-      return false;
+      return null;
     }
   }
 
@@ -718,7 +727,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       throw new IllegalStateException("A push response cannot promise another push");
     }
     if (authority == null) {
-      authority = stream.authority;
+      authority = stream.authority();
     }
     synchronized (conn) {
       checkValid();
@@ -738,7 +747,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       hostAndPort = HostAndPort.parseAuthority(authority, -1);
     }
     if (hostAndPort == null) {
-      hostAndPort = stream.authority;
+      hostAndPort = stream.authority();
     }
     synchronized (conn) {
       checkValid();

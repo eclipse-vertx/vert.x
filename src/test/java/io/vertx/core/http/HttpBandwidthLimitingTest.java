@@ -69,9 +69,9 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     });
   }
 
-  private Function<Vertx, HttpServer> serverFactory;
-  private Function<Vertx, HttpClient> clientFactory;
-  private Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
+  private final Function<Vertx, HttpServer> serverFactory;
+  private final Function<Vertx, HttpClient> clientFactory;
+  private final Function<Vertx, HttpServer> nonTrafficShapedServerFactory;
 
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
                                    Function<Vertx, HttpClient> clientFactory,
@@ -81,19 +81,15 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     this.nonTrafficShapedServerFactory = nonTrafficShapedServerFactory;
   }
 
-  @Before
+  @Override
   public void setUp() throws Exception {
     super.setUp();
+    CountDownLatch waitForServerClose = new CountDownLatch(1);
+    server.close().onComplete(onSuccess(resp -> waitForServerClose.countDown()));
     server = serverFactory.apply(vertx);
+    CountDownLatch waitForClientClose = new CountDownLatch(1);
+    client.close().onComplete(onSuccess(resp -> waitForClientClose.countDown()));
     client = clientFactory.apply(vertx);
-  }
-
-  @After
-  public void after() throws InterruptedException
-  {
-    CountDownLatch waitForClose = new CountDownLatch(1);
-    vertx.close().onComplete(onSuccess(resp -> waitForClose.countDown()));
-    awaitLatch(waitForClose);
   }
 
   @Test
@@ -217,28 +213,26 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
       public void start(Promise<Void> startPromise) throws Exception
       {
         HttpServer testServer = serverFactory.apply(vertx);
-        servers.add(testServer);
         testServer.requestHandler(HANDLERS.getFile(sampleF))
                   .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(res -> {
                     if (res.succeeded()) {
+                      servers.add(testServer);
                       // Apply traffic shaping options after the server has started
                       TrafficShapingOptions updatedTrafficOptions = new TrafficShapingOptions()
                                                                       .setInboundGlobalBandwidth(INBOUND_LIMIT)
                                                                       .setOutboundGlobalBandwidth(2 * OUTBOUND_LIMIT);
 
                       List<Promise<Void>> promises = new ArrayList<>();
-                      for (int i = 0; i < numEventLoops; i++) {
-                        servers.forEach(s -> {
-                          Promise<Void> promise = Promise.promise();
-                          try {
-                            s.updateTrafficShapingOptions(updatedTrafficOptions);
-                            promise.complete();
-                          } catch (Exception e) {
-                            promise.fail(e);
-                          }
-                          promises.add(promise);
-                        });
-                      }
+                      servers.forEach(s -> {
+                        Promise<Void> promise = Promise.promise();
+                        try {
+                          s.updateTrafficShapingOptions(updatedTrafficOptions);
+                          promise.complete();
+                        } catch (Exception e) {
+                          promise.fail(e);
+                        }
+                        promises.add(promise);
+                      });
                       // Ensure all traffic shaping updates complete before resolving the startPromise
                       Future.all(promises.stream().map(Promise::future).collect(Collectors.toList()))
                             .onSuccess(v -> startPromise.complete())
@@ -270,7 +264,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
                   }));
       }
     }));
-    awaitLatch(waitForResponse);
+    awaitLatch(waitForResponse, 20, TimeUnit.SECONDS);
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }

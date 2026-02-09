@@ -41,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -201,12 +202,8 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testServerOpenSSL() throws Exception {
-    HttpServerOptions opts = new HttpServerOptions()
-      .setPort(DEFAULT_HTTPS_PORT)
-      .setHost(DEFAULT_HTTPS_HOST)
-      .setUseAlpn(true)
-      .setSsl(true)
-      .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
+    HttpServerOptions opts = Http2TestBase
+      .createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST)
       .setPemKeyCertOptions(Cert.SERVER_PEM.get())
       .setSslEngineOptions(new OpenSSLEngineOptions());
     server.close();
@@ -1223,6 +1220,38 @@ public class Http2Test extends HttpTest {
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER).setInstances(numVerticles));
 
+    await();
+  }
+
+  @Test
+  public void testClientKeepAliveTimeoutNoStreams() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    AtomicBoolean closed = new AtomicBoolean();
+    client = vertx
+      .httpClientBuilder()
+      .withConnectHandler(conn -> {
+        conn.closeHandler(v -> {
+          // We will have retry when the connection is closed
+          if (closed.compareAndSet(false, true)) {
+            client.close().onComplete(v2 -> {
+              testComplete();
+            });
+          }
+        });
+      })
+      .with(createBaseClientOptions().setHttp2KeepAliveTimeout(1))
+      .build();
+    client.request(requestOptions).onComplete(ar -> {
+      if (ar.succeeded()) {
+        ar.result().send();
+      }
+    });
     await();
   }
 }

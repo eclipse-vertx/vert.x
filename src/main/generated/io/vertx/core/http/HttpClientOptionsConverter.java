@@ -85,6 +85,11 @@ public class HttpClientOptionsConverter {
             obj.setHttp2MultiplexingLimit(((Number)member.getValue()).intValue());
           }
           break;
+        case "http2UpgradeMaxContentLength":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2UpgradeMaxContentLength(((Number)member.getValue()).intValue());
+          }
+          break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
@@ -254,6 +259,7 @@ public class HttpClientOptionsConverter {
     json.put("http2KeepAliveTimeout", obj.getHttp2KeepAliveTimeout());
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
+    json.put("http2UpgradeMaxContentLength", obj.getHttp2UpgradeMaxContentLength());
     if (obj.getInitialSettings() != null) {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }

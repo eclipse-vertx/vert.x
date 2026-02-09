@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -5179,14 +5180,17 @@ public abstract class HttpTest extends HttpTestBase {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     CompletableFuture<Void> closeSocket = new CompletableFuture<>();
-    vertx.createNetServer(new NetServerOptions().setPort(1235).setHost("localhost")).connectHandler(socket -> {
+    // Declare netClient in the main thread to avoid having it randomly garbage collected just after it created the connection
+    NetClient netClient = vertx.createNetClient(new NetClientOptions());
+
+    vertx.createNetServer(new NetServerOptions().setPort(0).setHost("localhost")).connectHandler(socket -> {
       socket.handler(socket::write);
       closeSocket.thenAccept(v -> {
         socket.close();
       });
     }).listen(onSuccess(netServer -> {
       server.requestHandler(req -> {
-        vertx.createNetClient(new NetClientOptions()).connect(1235, "localhost", onSuccess(dst -> {
+        netClient.connect(netServer.actualPort(), "localhost", onSuccess(dst -> {
 
           req.response().setStatusCode(sc);
           req.response().setStatusMessage("Connection established");
@@ -5217,7 +5221,7 @@ public abstract class HttpTest extends HttpTestBase {
                 }
               });
               socket.closeHandler(v -> {
-                assertEquals(buffer, received);
+                assertEquals(ByteBufUtil.hexDump(buffer.getBytes()), ByteBufUtil.hexDump(received.getBytes()));
                 testComplete();
               });
               socket.write(buffer);
@@ -6915,5 +6919,49 @@ public abstract class HttpTest extends HttpTestBase {
       .onComplete(onSuccess(resp -> complete()));
     await();
     assertEquals("msg1msg2", received.get());
+  }
+
+  @Test
+  public void testHttpServerResponseWriteHead() throws Exception {
+    waitFor(2);
+    AtomicReference<Runnable> continuation = new AtomicReference<>();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      continuation.set(() -> resp.end("body"));
+      try {
+        resp.writeHead().onComplete(onSuccess(v -> {
+          complete();
+        }));
+        assertEquals(HttpVersion.HTTP_2, req.version());
+      } catch (IllegalStateException ignore) {
+        resp
+          .setChunked(true)
+          .writeHead()
+          .onComplete(onSuccess(v -> {
+            complete();
+          }));
+      }
+    });
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(response -> {
+        response.handler(chunk -> {
+          fail();
+        });
+        response.endHandler(v -> {
+          fail();
+        });
+        vertx.setTimer(200, id -> {
+          response.handler(null);
+          response.endHandler(null);
+          response.bodyHandler(body -> {
+            assertEquals("body", body.toString());
+            complete();
+          });
+          continuation.get().run();
+        });
+      }));
+    }));
+    await();
   }
 }

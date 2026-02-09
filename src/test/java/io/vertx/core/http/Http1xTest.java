@@ -182,6 +182,13 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHttp2MultiplexingLimit(-1));
     assertEquals(-1, options.getHttp2MultiplexingLimit());
 
+    assertEquals(HttpClientOptions.DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH, options.getHttp2UpgradeMaxContentLength());
+    rand = TestUtils.randomPositiveInt();
+    assertEquals(options, options.setHttp2UpgradeMaxContentLength(rand));
+    assertEquals(rand, options.getHttp2UpgradeMaxContentLength());
+    assertEquals(options, options.setHttp2UpgradeMaxContentLength(-1));
+    assertEquals(-1, options.getHttp2UpgradeMaxContentLength());
+
     assertEquals(HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setHttp2ConnectionWindowSize(rand));
@@ -445,6 +452,7 @@ public class Http1xTest extends HttpTest {
     int http2MaxPoolSize = TestUtils.randomPositiveInt();
     int http2MultiplexingLimit = TestUtils.randomPositiveInt();
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
+    int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
     boolean decompressionSupported = rand.nextBoolean();
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxChunkSize = TestUtils.randomPositiveInt();
@@ -501,6 +509,7 @@ public class Http1xTest extends HttpTest {
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
     options.setKeepAliveTimeout(keepAliveTimeout);
     options.setHttp2KeepAliveTimeout(http2KeepAliveTimeout);
+    options.setHttp2UpgradeMaxContentLength(http2UpgradeMaxContentLength);
     HttpClientOptions copy = new HttpClientOptions(options);
     checkCopyHttpClientOptions(options, copy);
     HttpClientOptions copy2 = new HttpClientOptions(options.toJson());
@@ -563,6 +572,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
     assertEquals(def.getKeepAliveTimeout(), json.getKeepAliveTimeout());
     assertEquals(def.getHttp2KeepAliveTimeout(), json.getHttp2KeepAliveTimeout());
+    assertEquals(def.getHttp2UpgradeMaxContentLength(), json.getHttp2UpgradeMaxContentLength());
   }
 
   @Test
@@ -615,6 +625,7 @@ public class Http1xTest extends HttpTest {
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
     int keepAliveTimeout = TestUtils.randomPositiveInt();
     int http2KeepAliveTimeout = TestUtils.randomPositiveInt();
+    int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -661,7 +672,8 @@ public class Http1xTest extends HttpTest {
       .put("localAddress", localAddress)
       .put("decoderInitialBufferSize", decoderInitialBufferSize)
       .put("keepAliveTimeout", keepAliveTimeout)
-      .put("http2KeepAliveTimeout", http2KeepAliveTimeout);
+      .put("http2KeepAliveTimeout", http2KeepAliveTimeout)
+      .put("http2UpgradeMaxContentLength", http2UpgradeMaxContentLength);
 
     HttpClientOptions options = new HttpClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -2248,6 +2260,109 @@ public class Http1xTest extends HttpTest {
     }
   }
 
+  @Repeat(times = 16)
+  @Test
+  public void testClientResponseWindowAckRaceFromAnotherEventLoop() throws Exception {
+    Buffer chunk = TestUtils.randomBuffer(1024);
+    int numChunks = 64 * 16 * 16;
+    server.requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      switch (request.uri()) {
+        case "/tiny":
+          response.end();
+          break;
+        case "/large":
+          sendResponse(response.setChunked(true), chunk, numChunks);
+          break;
+        default:
+          response.setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    AtomicReference<EventLoop> eventLoopRef = new AtomicReference<>();
+    client.request(new RequestOptions(requestOptions).setURI("/tiny"))
+      .compose(req -> {
+        eventLoopRef.set(((ContextInternal) Vertx.currentContext()).nettyEventLoop());
+        return req
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
+      })
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(10, TimeUnit.SECONDS);
+    ContextInternal otherContext = ((VertxInternal) vertx).createEventLoopContext();
+    assertNotSame(eventLoopRef.get(), otherContext.nettyEventLoop());
+    otherContext.runOnContext(v -> {
+      client.request(new RequestOptions(requestOptions).setURI("/large")).onComplete(onSuccess(request -> {
+        request
+          .send()
+          .onComplete(onSuccess(response -> {
+            Buffer body = Buffer.buffer();
+            response.handler(body::appendBuffer);
+            response.endHandler(v2 -> {
+              assertEquals(body.length(), numChunks * chunk.length());
+              testComplete();
+            });
+          }));
+      }));
+    });
+    await();
+  }
+
+  private void sendResponse(HttpServerResponse response, Buffer chunk, int numChunks) {
+    int sent = 0;
+    while (sent++ < numChunks) {
+      response.write(chunk);
+      if (response.writeQueueFull()) {
+        int next = numChunks - sent;
+        response.drainHandler(v -> {
+          sendResponse(response, chunk, next);
+        });
+        return;
+      }
+    }
+    response.end();
+  }
+
+  @Test
+  public void testAckHttpClientResponseReadWindowOnEnd() throws Exception {
+    int highWaterMark = 65536;
+    int numRequests = 10;
+    waitFor(numRequests);
+    Buffer buffer = TestUtils.randomBuffer(highWaterMark);
+    server.requestHandler(req -> {
+      req.response().end(buffer);
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
+    List<HttpClientResponse> responses = new ArrayList<>();
+    for (int i = 0;i < numRequests;i++) {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send().onComplete(onSuccess(resp -> {
+          resp.pause();
+          resp.endHandler(v -> {
+            complete();
+          });
+          List<HttpClientResponse> responsesToResume;
+          synchronized (responses) {
+            responses.add(resp);
+            if (responses.size() < 10) {
+              return;
+            }
+            responsesToResume = new ArrayList<>(responses);
+          }
+          for (HttpClientResponse responseToResume : responsesToResume) {
+            responseToResume.resume();
+          }
+        }));
+      }));
+    }
+    await();
+  }
+
   @Test
   public void testEndServerResponseResumeTheConnection() throws Exception {
     server.requestHandler(req -> {
@@ -2479,20 +2594,38 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testServerInvalidHttpMessage() {
+  public void testServerInvalidHttpMessage() throws Exception {
+    waitFor(2);
+    NetClient client = vertx.createNetClient();
     server.requestHandler(req -> {
-        fail();
-      }).listen(testAddress, onSuccess(res -> {
-      vertx.createHttpClient()
-        .request(new RequestOptions(requestOptions).setURI("/?ab c=1"))
-        .compose(HttpClientRequest::send)
-        .onComplete(onSuccess(resp -> {
-          assertEquals(400, resp.statusCode());
-          resp.request().connection().closeHandler(v -> {
-            testComplete();
-          });
-        }));
-      }));
+      fail();
+    });
+    startServer(testAddress);
+    client.connect(testAddress).onSuccess(so -> {
+      so.write("GET /?ab\rc=1 HTTP/1.1\r\n").onSuccess(v -> complete());
+      Buffer response = Buffer.buffer();
+      so.handler(response::appendBuffer);
+      so.endHandler(v -> {
+        String expected = "HTTP/1.0 400 ";
+        assertEquals(expected, response.toString().substring(0, expected.length()));
+        complete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testClientInvalidHttpMessage() throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setURI("/a\rb"))
+      .compose(HttpClientRequest::send)
+      .onFailure(err -> {
+        assertEquals(IllegalArgumentException.class, err.getClass());
+        testComplete();
+      });
     await();
   }
 
@@ -2676,10 +2809,10 @@ public class Http1xTest extends HttpTest {
       socket.handler(RecordParser.newDelimited("\r\n\r\n", buffer -> {
         if (firstRequest.getAndSet(false)) {
           socket.write("HTTP/1.0 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 4\r\n"
-              + "Connection: keep-alive\r\n" + "\n" + "xxx\n");
+              + "Connection: keep-alive\r\n" + "\r\n" + "xxx\r\n");
         } else {
           socket.write("HTTP/1.0 200 OK\r\n" + "Content-Type: text/plain\r\n" + "Content-Length: 1\r\n"
-              + "\r\n" + "\n");
+              + "\r\n" + "\r\n");
           socket.close();
         }
       }));
@@ -5306,7 +5439,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testMissingHostHeader() throws Exception {
+  public void testServerMissingHostHeader() throws Exception {
     server.requestHandler(req -> {
       assertEquals(null, req.host());
       assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
@@ -5319,6 +5452,25 @@ public class Http1xTest extends HttpTest {
       so.write("GET / HTTP/1.1\r\n\r\n");
     }));
     await();
+  }
+
+  @Test
+  public void testClientMissingHostHeader() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals(null, req.authority());
+      assertFalse(((HttpServerRequestInternal) req).isValidAuthority());
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(request -> request
+        .authority(null)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(10, TimeUnit.SECONDS);
   }
 
   @Test

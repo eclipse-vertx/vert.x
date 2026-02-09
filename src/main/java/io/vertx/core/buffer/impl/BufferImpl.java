@@ -514,7 +514,7 @@ public class BufferImpl implements Buffer {
   }
 
   public int length() {
-    return buffer.writerIndex();
+    return buffer.readableBytes();
   }
 
   public Buffer copy() {

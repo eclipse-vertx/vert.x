@@ -11,7 +11,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -25,10 +24,9 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetServerOptions;
@@ -39,9 +37,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.net.InetSocketAddress;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
@@ -69,10 +65,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   // Main
   private SSLHelper sslHelper;
   private volatile Future<SslContextUpdate> sslChannelProvider;
-  private GlobalTrafficShapingHandler trafficShapingHandler;
+  private volatile GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
-  private Set<TCPServerBase> servers;
   private TCPMetrics<?> metrics;
   private volatile int actualPort;
 
@@ -153,12 +148,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
+    if (!listening) {
+      throw new IllegalStateException("Listening initialization not completed yet");
+    }
     TCPServerBase server = actualServer;
     // Update the traffic shaping options only for the actual/main server
     if (server != null && server != this) {
       server.updateTrafficShapingOptions(options);
     } else {
-      if (trafficShapingHandler == null) {
+      GlobalTrafficShapingHandler handler = trafficShapingHandler;
+      if (handler == null) {
         throw new IllegalStateException("Unable to update traffic shaping options because the server was not configured " +
                                         "to use traffic shaping during startup");
       }
@@ -167,18 +166,17 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       if(!options.equals(server.options.getTrafficShapingOptions())) {
         server.options.setTrafficShapingOptions(options);
         long checkIntervalForStatsInMillis = options.getCheckIntervalForStatsTimeUnit().toMillis(options.getCheckIntervalForStats());
-        trafficShapingHandler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
+        handler.configure(options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInMillis);
 
         if (options.getPeakOutboundGlobalBandwidth() != 0) {
-          trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+          handler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
         }
         if (options.getMaxDelayToWait() != 0) {
           long maxDelayToWaitInMillis = options.getMaxDelayToWaitTimeUnit().toMillis(options.getMaxDelayToWait());
-          trafficShapingHandler.setMaxWriteDelay(maxDelayToWaitInMillis);
+          handler.setMaxWriteDelay(maxDelayToWaitInMillis);
         }
-      }
-      else {
-        log.info("Not updating traffic shaping options as they have not changed");
+      } else {
+        log.debug("Not updating traffic shaping options as they have not changed");
       }
     }
   }
@@ -194,7 +192,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     }
 
     this.listenContext = context;
-    this.listening = true;
     this.eventLoop = context.nettyEventLoop();
 
     SocketAddress bindAddress;
@@ -232,8 +229,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         trafficShapingHandler = createTrafficShapingHandler();
         childHandler =  childHandler(listenContext, localAddress, trafficShapingHandler);
         worker = ch -> childHandler.accept(ch, sslChannelProvider.result().sslChannelProvider());
-        servers = new HashSet<>();
-        servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
 
         // Register the server in the shared server list
@@ -292,7 +287,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           }
           listening = false;
         });
-
+        this.listening = true;
         return bindFuture;
       } else {
         // Server already exists with that host/port - we will use that
@@ -302,10 +297,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         trafficShapingHandler = actualServer.trafficShapingHandler;
         childHandler =  childHandler(listenContext, localAddress, actualServer.trafficShapingHandler);
         worker = ch -> childHandler.accept(ch, actualServer.sslChannelProvider.result().sslChannelProvider());
-        actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
         main.bindFuture.onComplete(promise);
+        this.listening = true;
         return promise.future();
       }
     }

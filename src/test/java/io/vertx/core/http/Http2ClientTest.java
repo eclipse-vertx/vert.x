@@ -346,6 +346,7 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals("localhost:4444", req.host());
       assertEquals("localhost", req.authority().host());
       assertEquals(4444, req.authority().port());
+      assertEquals(req.authority(), req.authority(true));
       req.response().end();
     });
     startServer(testAddress);
@@ -355,6 +356,24 @@ public class Http2ClientTest extends Http2TestBase {
     )
       .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testNoAuthority() throws Exception {
+    server.requestHandler(req -> {
+      assertEquals("fromHost", req.authority().host());
+      assertEquals(1234, req.authority().port());
+      assertNull(req.authority(true));
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions().setServer(testAddress)
+                                       .addHeader("Host", "fromHost:1234")
+          )
+          .onSuccess(req -> req.authority(null))
+          .compose(HttpClientRequest::send)
+          .onComplete(onSuccess(resp -> testComplete()));
     await();
   }
 
@@ -1016,6 +1035,52 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testServerGracefulShutdownBeforeHeaderSent() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().shutdown();
+      req.response().end("OK");
+    });
+    startServer(testAddress);
+
+    client.request(requestOptions).compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .andThen(resp -> {
+        if (resp.succeeded()) {
+          testComplete();
+        } else {
+          fail(resp.cause());
+        }
+      });
+
+    await();
+  }
+
+  @Test
+  public void testGoAwayErrorBeforeHeaderSent() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().goAway(100);
+      req.response().end("OK");
+    });
+    startServer(testAddress);
+
+    client.request(requestOptions).compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .andThen(resp -> {
+        if (resp.succeeded()) {
+          testComplete();
+        } else {
+          fail(resp.cause());
+        }
+      });
+
     await();
   }
 

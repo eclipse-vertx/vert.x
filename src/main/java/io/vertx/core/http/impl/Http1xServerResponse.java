@@ -14,27 +14,18 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.EmptyHttpHeaders;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.internal.ObjectUtil;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -52,7 +43,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Set;
 
-import static io.vertx.core.http.HttpHeaders.*;
+import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 
 /**
  *
@@ -322,6 +313,25 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
+  public Future<Void> writeHead() {
+    PromiseInternal<Void> promise = context.promise();
+    synchronized (conn) {
+      if (headWritten) {
+        throw new IllegalStateException();
+      }
+      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
+      VertxHttpResponse msg;
+      prepareHeaders(-1);
+      msg = new VertxHttpResponse(head, version, status, headers);
+      conn.writeToChannel(msg, promise);
+    }
+    return promise.future();
+  }
+
+  @Override
   public Future<Void> write(Buffer chunk) {
     PromiseInternal<Void> promise = context.promise();
     write(chunk.getByteBuf(), promise);
@@ -435,13 +445,13 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
       conn.writeToChannel(msg, listener);
-      conn.responseComplete();
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
       if (!closed && endHandler != null) {
         endHandler.handle(null);
       }
+      conn.responseComplete();
       if (!keepAlive) {
         closed = true;
       }
@@ -798,6 +808,11 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
         }
         if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
           return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
+        }
+        ChannelPipeline pipeline = conn.channel().pipeline();
+        WebSocketServerExtensionHandler wsHandler = pipeline.get(WebSocketServerExtensionHandler.class);
+        if (wsHandler != null) {
+          pipeline.remove(wsHandler);
         }
         status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);

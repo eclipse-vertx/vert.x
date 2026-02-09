@@ -254,8 +254,16 @@ public class RunCommand extends BareCommand implements Closeable {
       }
 
       deploymentOptions = new DeploymentOptions();
-      configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
-      deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
+      configureFromSystemProperties.set(log);
+      try {
+        configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
+      } finally {
+        configureFromSystemProperties.set(null);
+      }
+      deploymentOptions.setConfig(conf).setHa(ha).setInstances(instances);
+      if (worker) {
+        deploymentOptions.setThreadingModel(ThreadingModel.WORKER);
+      }
       beforeDeployingVerticle(deploymentOptions);
       deploy();
     } else {

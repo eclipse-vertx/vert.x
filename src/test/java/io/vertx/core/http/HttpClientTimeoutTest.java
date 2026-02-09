@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.hamcrest.CoreMatchers.containsString;
+
 public abstract class HttpClientTimeoutTest extends HttpTestBase {
 
   @Test
@@ -266,6 +268,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
         resp.exceptionHandler(t -> {
           if (count.getAndIncrement() == 0) {
             assertTrue(t instanceof TimeoutException);
+            assertThat(t.getMessage(), containsString(testAddress.toString()));
             assertEquals(expected, received);
             complete();
           }
@@ -286,6 +289,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
       req.exceptionHandler(t -> {
         if (count.getAndIncrement() == 0) {
           assertTrue(t instanceof TimeoutException);
+          assertThat(t.getMessage(), containsString(testAddress.toString()));
           assertEquals(expected, received);
           complete();
         }
@@ -363,7 +367,10 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase {
     for (int i = 0; i < 5; i++) {
       client.request(new RequestOptions(requestOptions).setIdleTimeout(500))
         .compose(HttpClientRequest::send)
-        .onComplete(onFailure(t -> assertTrue(t instanceof TimeoutException)));
+        .onComplete(onFailure(t -> {
+          assertTrue(t instanceof TimeoutException);
+          assertThat(t.getMessage(), containsString(testAddress.toString()));
+        }));
     }
     // Now another request that should not timeout
     client.request(new RequestOptions(requestOptions).setIdleTimeout(3000))

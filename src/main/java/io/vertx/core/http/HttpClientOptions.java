@@ -163,6 +163,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final boolean DEFAULT_HTTP2_CLEAR_TEXT_UPGRADE_WITH_PREFLIGHT_REQUEST = false;
 
   /**
+   * Default maximum length of the aggregated content in bytes
+   */
+  public static final int DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH = 65536;
+
+  /**
    * Default WebSocket masked bit is true as depicted by RFC = {@code false}
    */
   public static final boolean DEFAULT_SEND_UNMASKED_FRAMES = false;
@@ -245,6 +250,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int http2MultiplexingLimit;
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
+  private int http2UpgradeMaxContentLength;
 
   private boolean decompressionSupported;
   private int maxWebSocketFrameSize;
@@ -312,6 +318,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2MultiplexingLimit = other.http2MultiplexingLimit;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
     this.http2KeepAliveTimeout = other.getHttp2KeepAliveTimeout();
+    this.http2UpgradeMaxContentLength = other.getHttp2UpgradeMaxContentLength();
     this.decompressionSupported = other.decompressionSupported;
     this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
@@ -376,6 +383,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     http2KeepAliveTimeout = DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT;
+    http2UpgradeMaxContentLength = DEFAULT_HTTP2_UPGRADE_MAX_CONTENT_LENGTH;
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
@@ -728,6 +736,28 @@ public class HttpClientOptions extends ClientOptionsBase {
       throw new IllegalArgumentException("HTTP/2 keepAliveTimeout must be >= 0");
     }
     this.http2KeepAliveTimeout = keepAliveTimeout;
+    return this;
+  }
+
+
+  /**
+   * @return the HTTP/2 upgrade maximum length of the aggregated content in bytes
+   */
+  public int getHttp2UpgradeMaxContentLength() {
+    return http2UpgradeMaxContentLength;
+  }
+
+  /**
+   * Set the HTTP/2 upgrade maximum length of the aggregated content in bytes.
+   * This is only taken into account when {@link HttpClientOptions#http2ClearTextUpgradeWithPreflightRequest} is set to {@code false} (which is the default).
+   * When {@link HttpClientOptions#http2ClearTextUpgradeWithPreflightRequest} is {@code true}, then the client makes a preflight OPTIONS request
+   * and the upgrade will not send a body, voiding the requirements.
+   *
+   * @param http2UpgradeMaxContentLength the length, in bytes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setHttp2UpgradeMaxContentLength(int http2UpgradeMaxContentLength) {
+    this.http2UpgradeMaxContentLength = http2UpgradeMaxContentLength;
     return this;
   }
 

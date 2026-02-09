@@ -182,21 +182,29 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public Future<Void> close(short statusCode, String reason) {
     boolean sendCloseFrame;
     synchronized (conn) {
-      if (sendCloseFrame = closeStatusCode == null) {
-        closeStatusCode = statusCode;
-        closeReason = reason;
+      sendCloseFrame = closeStatusCode == null;
+      if (sendCloseFrame) {
+        closeStatusCode = 1006;
+        closeReason = null;
       }
     }
     if (sendCloseFrame) {
-      // Close the WebSocket by sending a close frame with specified payload
-      ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
-      CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
+      ChannelPromise channelPromise = sendCloseFrame(statusCode, reason);
       PromiseInternal<Void> promise = context.promise();
-      conn.writeToChannel(frame, promise);
-      return promise;
+      channelPromise.addListener(promise);
+      return promise.future();
     } else {
       return context.succeededFuture();
     }
+  }
+
+  protected ChannelPromise sendCloseFrame(short statusCode, String reason) {
+    // Close the WebSocket by sending a close frame with specified payload
+    ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
+    CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
+    ChannelPromise promise = conn.channelFuture();
+    conn.writeToChannel(frame, promise);
+    return promise;
   }
 
   @Override
