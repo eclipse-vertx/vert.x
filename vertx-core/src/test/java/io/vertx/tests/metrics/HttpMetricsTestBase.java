@@ -20,6 +20,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpConfig;
@@ -379,6 +380,6 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     requests.clear();
     copy.forEach(Runnable::run);
     assertWaitUntil(() -> metrics.endpoints().isEmpty());
-    assertEquals(0, endpoint.connectionCount.get());
+    assertWaitUntil(() -> endpoint.connectionCount.get() == 0);
   }
 }
