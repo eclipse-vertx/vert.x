@@ -27,8 +27,8 @@ import java.util.UUID;
 
 public class FileCache {
 
-  static FileCache setupCache(String fileCacheDir) {
-    FileCache cache = new FileCache(setupCacheDir(fileCacheDir));
+  static FileCache setupCache(String fileCacheDir, boolean useExactPath) {
+    FileCache cache = new FileCache(setupCacheDir(fileCacheDir, useExactPath));
     // Add shutdown hook to delete on exit
     cache.registerShutdownHook();
     return cache;
@@ -37,15 +37,21 @@ public class FileCache {
   /**
    * Prepares the cache directory to be used in the application.
    */
-  static File setupCacheDir(String fileCacheDir) {
+  static File setupCacheDir(String fileCacheDir, boolean useExactPath) {
     // ensure that the argument doesn't end with separator
     if (fileCacheDir.endsWith(File.separator)) {
       fileCacheDir = fileCacheDir.substring(0, fileCacheDir.length() - File.separator.length());
     }
 
-    // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
-    // also this ensures that if process A deletes cacheDir, it won't affect process B
-    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID();
+    String cacheDirName;
+    if (useExactPath) {
+      // Use the path as-is, but if it exists, append a suffix to guarantee uniqueness
+      cacheDirName = findUniqueDir(fileCacheDir);
+    } else {
+      // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
+      // also this ensures that if process A deletes cacheDir, it won't affect process B
+      cacheDirName = fileCacheDir + "-" + UUID.randomUUID();
+    }
     File cacheDir = new File(cacheDirName);
     // Create the cache directory
     try {
@@ -61,6 +67,27 @@ public class FileCache {
       throw new IllegalStateException(FileSystemImpl.getFolderAccessErrorMessage("create", fileCacheDir), e);
     }
     return cacheDir;
+  }
+
+  /**
+   * Find a unique directory path. If the base path doesn't exist, return it.
+   * If it exists, append "-2", "-3", etc. until a non-existing path is found.
+   */
+  private static String findUniqueDir(String basePath) {
+    File baseDir = new File(basePath);
+    if (!baseDir.exists()) {
+      return basePath;
+    }
+    // Directory exists, find a unique suffix
+    int suffix = 2;
+    while (true) {
+      String candidatePath = basePath + "-" + suffix;
+      File candidate = new File(candidatePath);
+      if (!candidate.exists()) {
+        return candidatePath;
+      }
+      suffix++;
+    }
   }
 
   private Thread shutdownHook;

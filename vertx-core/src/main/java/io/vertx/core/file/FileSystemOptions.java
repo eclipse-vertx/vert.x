@@ -45,9 +45,15 @@ public class FileSystemOptions {
    */
   public static final String DEFAULT_FILE_CACHING_DIR = SysProps.FILE_CACHE_DIR.get();
 
+  /**
+   * The default value for using file cache dir as exact path = {@code false}
+   */
+  public static final boolean DEFAULT_FILE_CACHE_DIR_AS_EXACT_PATH = false;
+
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
   private String fileCacheDir = DEFAULT_FILE_CACHING_DIR;
+  private boolean fileCacheDirAsExactPath = DEFAULT_FILE_CACHE_DIR_AS_EXACT_PATH;
 
   /**
    * Default constructor
@@ -64,6 +70,7 @@ public class FileSystemOptions {
     this.classPathResolvingEnabled = other.isClassPathResolvingEnabled();
     this.fileCachingEnabled = other.isFileCachingEnabled();
     this.fileCacheDir = other.getFileCacheDir();
+    this.fileCacheDirAsExactPath = other.isFileCacheDirAsExactPath();
   }
 
   /**
@@ -147,6 +154,27 @@ public class FileSystemOptions {
     return this;
   }
 
+  /**
+   * @return whether the file cache dir should be used as an exact path
+   */
+  public boolean isFileCacheDirAsExactPath() {
+    return this.fileCacheDirAsExactPath;
+  }
+
+  /**
+   * Set to {@code true} to use the configured file cache dir as an exact path.
+   * When {@code false} (the default), a unique subdirectory is created under the
+   * file cache dir. When {@code true} and the directory already exists, a suffix
+   * like "-2", "-3", etc. is appended to guarantee uniqueness.
+   *
+   * @param fileCacheDirAsExactPath the value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public FileSystemOptions setFileCacheDirAsExactPath(boolean fileCacheDirAsExactPath) {
+    this.fileCacheDirAsExactPath = fileCacheDirAsExactPath;
+    return this;
+  }
+
 
   @Override
   public String toString() {
@@ -154,6 +182,7 @@ public class FileSystemOptions {
     "classPathResolvingEnabled=" + classPathResolvingEnabled +
     ", fileCachingEnabled=" + fileCachingEnabled +
     ", fileCacheDir=" + fileCacheDir +
+    ", fileCacheDirAsExactPath=" + fileCacheDirAsExactPath +
     '}';
   }
 }
