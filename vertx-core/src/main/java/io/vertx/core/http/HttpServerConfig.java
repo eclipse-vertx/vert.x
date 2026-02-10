@@ -263,14 +263,14 @@ public class HttpServerConfig {
   }
 
   /**
-   * Set the port used to bind the server at, affecting both TCP and QUIC transports.
+   * Set the host used to bind the server at, affecting both TCP and QUIC transports.
    *
-   * @param port  the port
+   * @param host  the host
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerConfig setHost(int port) {
-    tcpConfig.setPort(port);
-    quicConfig.setPort(port);
+  public HttpServerConfig setHost(String host) {
+    tcpConfig.setHost(host);
+    quicConfig.setHost(host);
     return this;
   }
 

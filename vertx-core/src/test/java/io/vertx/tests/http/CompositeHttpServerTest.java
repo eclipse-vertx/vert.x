@@ -11,12 +11,18 @@
 package io.vertx.tests.http;
 
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.net.*;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.net.ServerSocket;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(LinuxOrOsx.class)
 public class CompositeHttpServerTest extends VertxTestBase {
@@ -65,6 +72,10 @@ public class CompositeHttpServerTest extends VertxTestBase {
   }
 
   public void expectSucceed() throws Exception {
+    expectSucceed(vertx);
+  }
+
+  public void expectSucceed(Vertx vertx) throws Exception {
     HttpServerConfig config = new HttpServerConfig()
       .setSsl(true)
       .setPort(4043)
@@ -115,5 +126,28 @@ public class CompositeHttpServerTest extends VertxTestBase {
     String id = vertx.deployVerticle(context -> server.listen()).await();
     vertx.undeploy(id).await();
     assertTrue(server.isClosed());
+  }
+
+  @Test
+  public void testMetrics() throws Exception {
+    AtomicReference<FakeHttpServerMetrics> metricsRef = new AtomicReference<>();
+    Vertx vertx = Vertx.builder()
+      .withMetrics(options -> new VertxMetrics() {
+        @Override
+        public HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
+          FakeHttpServerMetrics metrics = new FakeHttpServerMetrics(tcpLocalAddress, udpLocalAddress);
+          metricsRef.set(metrics);
+          return metrics;
+        }
+      })
+      .build();
+    expectSucceed(vertx);
+    FakeHttpServerMetrics metrics = metricsRef.get();
+    assertNotNull(metricsRef.get());
+    assertNotNull(metricsRef.get().tcpLocalAddress());
+    assertNotNull(metricsRef.get().udpLocalAddress());
+    assertFalse(metrics.isClosed());
+    vertx.close().await();
+    assertTrue(metrics.isClosed());
   }
 }

@@ -152,6 +152,11 @@ public class HttpServerOptionsConverter {
             obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
           }
           break;
+        case "metricsName":
+          if (member.getValue() instanceof String) {
+            obj.setMetricsName((String)member.getValue());
+          }
+          break;
         case "tracingPolicy":
           if (member.getValue() instanceof String) {
             obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
@@ -232,6 +237,9 @@ public class HttpServerOptionsConverter {
     json.put("webSocketAllowServerNoContext", obj.getWebSocketAllowServerNoContext());
     json.put("webSocketPreferredClientNoContext", obj.getWebSocketPreferredClientNoContext());
     json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
+    if (obj.getMetricsName() != null) {
+      json.put("metricsName", obj.getMetricsName());
+    }
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }

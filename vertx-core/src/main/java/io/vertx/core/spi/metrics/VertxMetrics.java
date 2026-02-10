@@ -52,11 +52,12 @@ public interface VertxMetrics extends Metrics, Measured {
    * the provided {@code server} argument can be used to distinguish the different {@code HttpServerMetrics}
    * instances.
    *
-   * @param config       the options used to create the {@link HttpServer}
-   * @param localAddress localAddress the local address the net socket is listening on
+   * @param config          the options used to create the {@link HttpServer}
+   * @param tcpLocalAddress the local address the TCP server is listening on
+   * @param udpLocalAddress the lcoal address the QUIC server is listenin on
    * @return the http server metrics SPI or {@code null} when metrics are disabled
    */
-  default HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+  default HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
     return null;
   }
 

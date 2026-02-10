@@ -35,6 +35,10 @@ public class FakeMetricsBase implements Metrics {
 
   private boolean closed;
 
+  public boolean isClosed() {
+    return closed;
+  }
+
   public static FakeQuicEndpointMetrics quicMetricsOf(QuicEndpoint measured) {
     return (FakeQuicEndpointMetrics) ((MetricsProvider) measured).getMetrics();
   }

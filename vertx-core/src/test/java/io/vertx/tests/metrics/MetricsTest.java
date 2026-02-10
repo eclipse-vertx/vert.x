@@ -1243,7 +1243,7 @@ public class MetricsTest extends VertxTestBase {
       .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
       .withMetrics(options -> new VertxMetrics() {
         @Override
-        public HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+        public HttpServerMetrics<?, ?> createHttpServerMetrics(HttpServerConfig config, SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
           lifecycle.compareAndSet(0, 1);
           return new HttpServerMetrics<>() {
             @Override
