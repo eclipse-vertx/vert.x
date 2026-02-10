@@ -1394,6 +1394,10 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       return 1L;
     }
     @Override
+    public HttpVersion version() {
+      return HttpVersion.HTTP_1_1;
+    }
+    @Override
     public String uri() {
       return request.uri;
     }

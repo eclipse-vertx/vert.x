@@ -18,6 +18,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
@@ -68,7 +69,8 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     this.method = method;
     this.uri = uri;
     this.scheme = null;
-    this.observable = httpMetrics != null || tracer != null ? new ServerStreamObserver(context, httpMetrics, transportMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
+    this.observable = httpMetrics != null || tracer != null ? new ServerStreamObserver(context, httpMetrics,
+      transportMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress(), HttpVersion.HTTP_2) : null;
   }
 
   DefaultHttp2ServerStream(Http2ServerConnection connection,
@@ -82,7 +84,8 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
     VertxTracer<?, ?> tracer = vertx.tracer();
 
     this.connection = connection;
-    this.observable = httpMetrics != null || tracer != null ? new ServerStreamObserver(context, httpMetrics, transportMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress()) : null;
+    this.observable = httpMetrics != null || tracer != null ? new ServerStreamObserver(context, httpMetrics,
+      transportMetrics, tracer, socketMetric, tracingPolicy, connection.remoteAddress(), HttpVersion.HTTP_2) : null;
   }
 
   @Override

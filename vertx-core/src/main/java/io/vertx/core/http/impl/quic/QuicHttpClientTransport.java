@@ -56,6 +56,10 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     this.client = client;
   }
 
+  public QuicClientImpl client() {
+    return (QuicClientImpl)client;
+  }
+
   @Override
   public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics) {
     ClientSSLOptions sslOptions = params.sslOptions;

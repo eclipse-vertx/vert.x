@@ -166,7 +166,7 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
           metric = null;
         }
         observer = new ClientStreamObserver(context, TracingPolicy.PROPAGATE, clientMetrics, metric, connection.metrics(),
-          connection.metric(), tracer, connection.remoteAddress());
+          connection.metric(), tracer, connection.remoteAddress(), HttpVersion.HTTP_3);
       } else {
         observer = null;
       }

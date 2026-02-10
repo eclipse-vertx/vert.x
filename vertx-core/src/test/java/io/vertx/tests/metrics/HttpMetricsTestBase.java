@@ -80,7 +80,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
 
   @Test
   public void testHttpMetricsLifecycle() throws Exception {
-    Assume.assumeTrue(protocol != HttpVersion.HTTP_3);
+    String requestUri = TestUtils.randomAlphaString(16);
     int numBuffers = 10;
     int chunkSize = 1000;
     int contentLength = numBuffers * chunkSize;
@@ -90,16 +90,17 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
       FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
       assertNotNull(serverMetrics);
       HttpServerMetric metric = serverMetrics.getRequestMetric(req);
-      serverMetric.set(metric);
       assertSame(((HttpServerRequestInternal)req).metric(), metric);
-      assertNotNull(serverMetric.get());
-//      assertNotNull(serverMetric.get().socket);
-      assertNull(serverMetric.get().response.get());
-//      assertTrue(serverMetric.get().socket.connected.get());
-      assertNull(serverMetric.get().route.get());
+      assertNotNull(metric);
+      assertEquals(requestUri, metric.uri);
+      assertNotNull(metric.request);
+      assertEquals(protocol, metric.request.version());
+      assertNull(metric.response.get());
+      assertNull(metric.route.get());
       req.routed("/route/:param");
       // Worker can wait
-      assertWaitUntil(() -> serverMetric.get().route.get() != null);
+      assertWaitUntil(() -> metric.route.get() != null);
+      serverMetric.set(metric);
       assertEquals("/route/:param", serverMetric.get().route.get());
       req.bodyHandler(buff -> {
         assertEquals(contentLength, buff.length());
@@ -134,7 +135,6 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     AtomicReference<ConnectionMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.httpMetricsOf(client);
-    FakeTCPMetrics tcpMetrics = FakeTCPMetrics.tpcMetricsOf(client);
 //    Http1xOrH2ChannelConnector connector = (Http1xOrH2ChannelConnector)((HttpClientInternal) client).channelConnector();
 //    FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(connector.netClient());
 //    assertSame(metrics, tcpMetrics);
@@ -142,11 +142,12 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     ctx.runOnContext(v -> {
       assertEquals(Collections.emptySet(), clientMetrics.endpoints());
       client.request(new RequestOptions(requestOptions)
-        .setURI(TestUtils.randomAlphaString(16)))
+        .setURI(requestUri))
         .onComplete(onSuccess(req -> {
           req
             .response().onComplete(onSuccess(resp -> {
-              clientSocketMetric.set(tcpMetrics.firstMetric(testAddress));
+              FakeTransportMetrics transportMetrics = FakeTCPMetrics.transportMetricsOf(client);
+              clientSocketMetric.set(transportMetrics.firstMetric(testAddress));
               assertNotNull(clientSocketMetric.get());
               assertEquals(Collections.singleton(testAddress.toString()), clientMetrics.endpoints());
               clientMetric.set(clientMetrics.getMetric(resp.request()));
@@ -154,7 +155,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
               assertEquals(contentLength, clientMetric.get().bytesWritten.get());
               // assertNotNull(clientMetric.get().socket);
               // assertTrue(clientMetric.get().socket.connected.get());
-              assertEquals((Integer) 1, tcpMetrics.connectionCount(testAddress));
+              assertEquals((Integer) 1, transportMetrics.connectionCount(testAddress));
               resp.bodyHandler(buff -> {
                 assertEquals(contentLength, clientMetric.get().bytesRead.get());
                 assertNull(clientMetrics.getMetric(resp.request()));

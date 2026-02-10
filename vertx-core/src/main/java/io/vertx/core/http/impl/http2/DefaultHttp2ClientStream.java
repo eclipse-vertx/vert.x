@@ -21,6 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
@@ -86,7 +87,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     this.connection = connection;
     this.decompressionSupported = decompressionSupported;
     this.observable = clientMetrics != null || tracer != null ? new ClientStreamObserver(context, tracingPolicy,
-      clientMetrics, metric, transportMetrics, connection.metric(), tracer, connection.remoteAddress()) : null;
+      clientMetrics, metric, transportMetrics, connection.metric(), tracer, connection.remoteAddress(), HttpVersion.HTTP_2) : null;
   }
 
   @Override
