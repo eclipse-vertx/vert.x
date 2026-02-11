@@ -138,6 +138,7 @@ public class IoUringTransport implements Transport {
     if (options.isTcpFastOpen()) {
       bootstrap.option(IoUringChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
     }
+    bootstrap.childOption(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
     bootstrap.childOption(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.childOption(IoUringChannelOption.TCP_CORK, options.isTcpCork());
     Transport.super.configure(options, false, bootstrap);
@@ -151,6 +152,7 @@ public class IoUringTransport implements Transport {
     if (options.isTcpFastOpen()) {
       bootstrap.option(IoUringChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
     }
+    bootstrap.option(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
     bootstrap.option(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.option(IoUringChannelOption.TCP_CORK, options.isTcpCork());
     Transport.super.configure(options, connectTimeout, false, bootstrap);

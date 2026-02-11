@@ -287,6 +287,11 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setTcpUserTimeout(int tcpUserTimeout) {
+    return (NetServerOptions) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
+  @Override
   public NetServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetServerOptions) super.addCrlPath(crlPath);
   }
