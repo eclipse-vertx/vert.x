@@ -293,6 +293,9 @@ public class TcpConfig extends TransportConfig {
    * @param tcpUserTimeout the tcp user timeout value
    */
   public TcpConfig setTcpUserTimeout(int tcpUserTimeout) {
+    if (tcpUserTimeout < 0) {
+      throw new IllegalArgumentException("tcpUserTimeout must be >= 0");
+    }
     this.tcpUserTimeout = tcpUserTimeout;
     return this;
   }

@@ -467,6 +467,11 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setTcpUserTimeout(int tcpUserTimeout) {
+    return (HttpServerOptions) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
+  @Override
   public HttpServerOptions addCrlPath(String crlPath) throws NullPointerException {
     return (HttpServerOptions) super.addCrlPath(crlPath);
   }
