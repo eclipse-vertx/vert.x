@@ -240,6 +240,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setTcpUserTimeout(int tcpUserTimeout) {
+    return (NetClientOptions) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
+  @Override
   public NetClientOptions addCrlPath(String crlPath) throws NullPointerException {
     return (NetClientOptions) super.addCrlPath(crlPath);
   }
