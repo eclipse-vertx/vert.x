@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl.observability;
 
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
@@ -34,8 +35,9 @@ public class ClientStreamObserver extends StreamObserver {
 
   public ClientStreamObserver(ContextInternal context, TracingPolicy tracingPolicy,
                               ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics, Object metric,
-                              TransportMetrics<?> transportMetrics, Object socketMetric, VertxTracer tracer, SocketAddress remoteAddress) {
-    super(context, remoteAddress, transportMetrics, socketMetric, tracingPolicy, tracer);
+                              TransportMetrics<?> transportMetrics, Object socketMetric, VertxTracer tracer,
+                              SocketAddress remoteAddress, HttpVersion version) {
+    super(context, remoteAddress, version, transportMetrics, socketMetric, tracingPolicy, tracer);
     this.clientMetrics = clientMetrics;
     this.metric = metric;
   }

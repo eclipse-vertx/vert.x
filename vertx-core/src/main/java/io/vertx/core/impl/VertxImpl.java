@@ -43,7 +43,6 @@ import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
-import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
@@ -401,32 +400,24 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
     HttpServerConfig config = new HttpServerConfig(serverOptions);
-    return new CleanableHttpServer(this, new TcpHttpServer(this, config, serverOptions.isRegisterWebSocketWriteHandlers()));
+    return new CleanableHttpServer(this, new TcpHttpServer(this, config, null, serverOptions.isRegisterWebSocketWriteHandlers()));
   }
 
   @Override
   public HttpServer createHttpServer(HttpServerConfig config) {
-    HttpServerInternal tcpServer = null;
-    if (config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0)) {
-      tcpServer = new TcpHttpServer(this, new HttpServerConfig(config), false);
-    }
-    HttpServerInternal quicServer = null;
-    if (config.getVersions().contains(HttpVersion.HTTP_3)) {
-      quicServer = new QuicHttpServer(this, new HttpServerConfig(config));
-    }
-    if (tcpServer != null) {
-      if (quicServer != null) {
-        CompositeHttpServer compositeServer = new CompositeHttpServer(this, tcpServer, quicServer);
+    boolean useTcp = config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0);
+    boolean useQuic = config.getVersions().contains(HttpVersion.HTTP_3);
+    if (useTcp) {
+      if (useQuic) {
+        HybridHttpServer compositeServer = new HybridHttpServer(this, config);
         return new CleanableHttpServer(this, compositeServer);
       } else {
-        return new CleanableHttpServer(this, tcpServer);
+        return new CleanableHttpServer(this, new TcpHttpServer(this, new HttpServerConfig(config), null, false));
       }
+    } else if (useQuic) {
+      return new CleanableHttpServer(this, new QuicHttpServer(this, new HttpServerConfig(config), null));
     } else {
-      if (quicServer != null) {
-        return new CleanableHttpServer(this, quicServer);
-      } else {
-        throw new IllegalArgumentException("You must set at least one supported HTTP version");
-      }
+      throw new IllegalArgumentException("You must set at least one supported HTTP version");
     }
   }
 

@@ -177,6 +177,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.ALWAYS;
 
   /**
+   * The default value of the server metrics = "":
+   */
+  public static final String DEFAULT_METRICS_NAME = "";
+
+  /**
    * Whether write-handlers for server websockets should be registered by default = false.
    */
   public static final boolean DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS = false;
@@ -215,6 +220,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int compressionLevel;
   private HttpCompressionConfig compression;
   private boolean handle100ContinueAutomatically;
+  private String metricsName;
   private TracingPolicy tracingPolicy;
   private boolean registerWebSocketWriteHandlers;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
@@ -245,6 +251,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.http1Config = new Http1ServerConfig(other.http1Config);
     this.http2Config = new Http2ServerConfig(other.http2Config);
     this.webSocketConfig = new WebSocketServerConfig(other.webSocketConfig);
+    this.metricsName = other.metricsName;
     this.tracingPolicy = other.tracingPolicy;
     this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
@@ -284,6 +291,7 @@ public class HttpServerOptions extends NetServerOptions {
     http1Config = new Http1ServerConfig();
     http2Config = new Http2ServerConfig();
     webSocketConfig = new WebSocketServerConfig();
+    metricsName = DEFAULT_METRICS_NAME;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
@@ -1119,6 +1127,24 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setTrafficShapingOptions(TrafficShapingOptions trafficShapingOptions) {
     return (HttpServerOptions) super.setTrafficShapingOptions(trafficShapingOptions);
+  }
+
+  /**
+   * @return the metrics name identifying the reported metrics.
+   */
+  public String getMetricsName() {
+    return metricsName;
+  }
+
+  /**
+   * Set the metrics name identifying the reported metrics, useful for naming the server metrics.
+   *
+   * @param metricsName the metrics name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMetricsName(String metricsName) {
+    this.metricsName = metricsName;
+    return this;
   }
 
   /**

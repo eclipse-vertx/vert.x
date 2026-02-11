@@ -16,6 +16,7 @@ import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.vertx.core.Handler;
 import io.vertx.core.http.Http3Settings;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.impl.HttpServerStream;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
@@ -52,7 +53,8 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
     VertxTracer<?, ?> tracer = context.owner().tracer();
     ServerStreamObserver observer;
     if (httpMetrics != null || tracer != null) {
-      observer = new ServerStreamObserver(streamContext, httpMetrics, null, tracer, connection.metric(), TracingPolicy.PROPAGATE, connection.remoteAddress());
+      observer = new ServerStreamObserver(streamContext, httpMetrics, null, tracer, connection.metric(),
+        TracingPolicy.PROPAGATE, connection.remoteAddress(), HttpVersion.HTTP_3);
     } else {
       observer = null;
     }

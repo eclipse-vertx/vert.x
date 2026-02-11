@@ -46,6 +46,7 @@ public class TcpHttpServer implements HttpServerInternal {
   private final VertxInternal vertx;
   final HttpServerConfig config;
   private final boolean registerWebSocketWriteHandlers;
+  private final boolean manageMetrics;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<ServerWebSocket> webSocketHandler;
   private Handler<ServerWebSocketHandshake> webSocketHandhakeHandler;
@@ -57,10 +58,12 @@ public class TcpHttpServer implements HttpServerInternal {
   private CloseSequence closeSequence;
   private HttpServerMetrics<?, ?> httpMetrics;
 
-  public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, boolean registerWebSocketWriteHandlers) {
+  public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.config = config;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
+    this.httpMetrics = httpMetrics;
+    this.manageMetrics = httpMetrics == null;
   }
 
   @Override
@@ -252,7 +255,9 @@ public class TcpHttpServer implements HttpServerInternal {
       initializer.configurePipeline(soi.channel(), null, null, ((NetSocketImpl) so).metrics());
     });
     tcpServer = server;
-    httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address) : null;
+    if (manageMetrics) {
+      httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address, null) : null;
+    }
     closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
     Promise<HttpServer> result = context.promise();
     tcpServer.listen(listenContext, address).onComplete(ar -> {
@@ -281,7 +286,7 @@ public class TcpHttpServer implements HttpServerInternal {
   }
 
   private Completable<Void> foo(Completable<Void> completable) {
-    if (httpMetrics != null) {
+    if (manageMetrics && httpMetrics != null) {
       Completable<Void> cont = completable;
       completable = (result, failure) -> {
         httpMetrics.close();

@@ -12,6 +12,7 @@ package io.vertx.core.spi.observability;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -27,6 +28,11 @@ public interface HttpRequest {
    */
   @Deprecated(forRemoval = true)
   long id();
+
+  /**
+   * @return the request version
+   */
+  HttpVersion version();
 
   /**
    * @return the request URI

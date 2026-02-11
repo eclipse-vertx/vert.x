@@ -29,8 +29,20 @@ import java.util.concurrent.ConcurrentMap;
 public class FakeHttpServerMetrics extends FakeWebSocketMetrics implements HttpServerMetrics<HttpServerMetric, WebSocketMetric> {
 
   private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
+  private final SocketAddress tcpLocalAddress;
+  private final SocketAddress udpLocalAddress;
 
-  public FakeHttpServerMetrics() {
+  public FakeHttpServerMetrics(SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
+    this.tcpLocalAddress = tcpLocalAddress;
+    this.udpLocalAddress = udpLocalAddress;
+  }
+
+  public SocketAddress tcpLocalAddress() {
+    return tcpLocalAddress;
+  }
+
+  public SocketAddress udpLocalAddress() {
+    return udpLocalAddress;
   }
 
   public HttpServerMetric getRequestMetric(HttpServerRequest request) {

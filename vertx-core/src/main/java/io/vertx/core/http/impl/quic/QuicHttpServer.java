@@ -39,18 +39,21 @@ public class QuicHttpServer implements HttpServerInternal {
   private final HttpServerConfig config;
   private final Http3ServerConfig http3Config;
   private final QuicServerConfig quicConfig;
+  private final boolean manageMetrics;
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
   private QuicServerImpl quicServer;
   private HttpServerMetrics<?, ?> httpMetrics;
   private volatile int actualPort;
 
-  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config) {
+  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config, HttpServerMetrics<?, ?> httpMetrics) {
     this.vertx = vertx;
     this.config = new HttpServerConfig(config);
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
     this.quicConfig = config.getQuicConfig() != null ? config.getQuicConfig() : new QuicServerConfig();
     this.actualPort = 0;
+    this.httpMetrics = httpMetrics;
+    this.manageMetrics = httpMetrics == null;
   }
 
   @Override
@@ -213,7 +216,9 @@ public class QuicHttpServer implements HttpServerInternal {
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
       quicServer = new QuicServerImpl(vertx, quicConfig, "http", sslOptions);
-      httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address) : null;
+      if (manageMetrics) {
+        httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, null, address) : null;
+      }
     }
 
     if (requestHandler == null) {
@@ -247,7 +252,7 @@ public class QuicHttpServer implements HttpServerInternal {
       quicServer = null;
     }
     Future<Void> fut = s.shutdown(timeout);
-    if (httpMetrics != null) {
+    if (manageMetrics && httpMetrics != null) {
       fut = fut.andThen((res, err) -> {
         httpMetrics.close();
       });

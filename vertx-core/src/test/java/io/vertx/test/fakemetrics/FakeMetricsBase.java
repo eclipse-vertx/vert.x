@@ -17,6 +17,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpClientAgent;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.WebSocketClient;
+import io.vertx.core.http.impl.quic.QuicHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.http.HttpClientInternal;
@@ -35,6 +36,10 @@ public class FakeMetricsBase implements Metrics {
 
   private boolean closed;
 
+  public boolean isClosed() {
+    return closed;
+  }
+
   public static FakeQuicEndpointMetrics quicMetricsOf(QuicEndpoint measured) {
     return (FakeQuicEndpointMetrics) ((MetricsProvider) measured).getMetrics();
   }
@@ -48,7 +53,27 @@ public class FakeMetricsBase implements Metrics {
   }
 
   public static FakeTCPMetrics tpcMetricsOf(HttpClientAgent client) {
-    return (FakeTCPMetrics)((TcpHttpClientTransport)((HttpClientInternal)client).tcpTransport()).client().getMetrics();
+    TcpHttpClientTransport tcpTransport = (TcpHttpClientTransport) ((HttpClientInternal) client).tcpTransport();
+    if (tcpTransport != null) {
+      return (FakeTCPMetrics) tcpTransport.client().getMetrics();
+    }
+    return null;
+  }
+
+  public static FakeQuicEndpointMetrics quicMetricsOf(HttpClientAgent client) {
+    QuicHttpClientTransport quicTransport = (QuicHttpClientTransport) ((HttpClientInternal) client).quicTransport();
+    if (quicTransport != null) {
+      return (FakeQuicEndpointMetrics) quicTransport.client().getMetrics();
+    }
+    return null;
+  }
+
+  public static FakeTransportMetrics transportMetricsOf(HttpClientAgent client) {
+    FakeTransportMetrics metrics = tpcMetricsOf(client);
+    if (metrics == null) {
+      metrics = quicMetricsOf(client);
+    }
+    return metrics;
   }
 
   public static FakeEventBusMetrics eventBusMetricsOf(EventBus measured) {

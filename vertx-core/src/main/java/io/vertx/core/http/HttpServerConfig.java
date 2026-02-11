@@ -65,6 +65,7 @@ public class HttpServerConfig {
   private boolean handle100ContinueAutomatically;
   private ServerSSLOptions sslOptions;
   private boolean strictThreadMode;
+  private String metricsName;
   private TracingPolicy tracingPolicy;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
@@ -94,6 +95,7 @@ public class HttpServerConfig {
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.sslOptions = options.getSslOptions() != null ? new ServerSSLOptions(options.getSslOptions()) : null;
     this.strictThreadMode = options.getStrictThreadMode();
+    this.metricsName = options.getMetricsName();
     this.tracingPolicy = options.getTracingPolicy();
     this.http1Config = new Http1ServerConfig(options.getHttp1Config());
     this.http2Config = new Http2ServerConfig(options.getHttp2Config());
@@ -111,6 +113,7 @@ public class HttpServerConfig {
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     this.sslOptions = new ServerSSLOptions();
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
+    this.metricsName = null;
     this.tracingPolicy = HttpServerOptions.DEFAULT_TRACING_POLICY;
     this.http1Config = new Http1ServerConfig();
     this.http2Config = new Http2ServerConfig();
@@ -129,6 +132,7 @@ public class HttpServerConfig {
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : new ServerSSLOptions();
     this.strictThreadMode = other.strictThreadMode;
+    this.metricsName = other.metricsName;
     this.tracingPolicy = other.tracingPolicy;
     this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : new Http1ServerConfig();
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : new Http2ServerConfig();
@@ -263,14 +267,14 @@ public class HttpServerConfig {
   }
 
   /**
-   * Set the port used to bind the server at, affecting both TCP and QUIC transports.
+   * Set the host used to bind the server at, affecting both TCP and QUIC transports.
    *
-   * @param port  the port
+   * @param host  the host
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerConfig setHost(int port) {
-    tcpConfig.setPort(port);
-    quicConfig.setPort(port);
+  public HttpServerConfig setHost(String host) {
+    tcpConfig.setHost(host);
+    quicConfig.setHost(host);
     return this;
   }
 
@@ -433,6 +437,24 @@ public class HttpServerConfig {
   @Unstable("Experimental")
   public HttpServerConfig setStrictThreadMode(boolean strictThreadMode) {
     this.strictThreadMode = strictThreadMode;
+    return this;
+  }
+
+  /**
+   * @return the metrics name identifying the reported metrics.
+   */
+  public String getMetricsName() {
+    return metricsName;
+  }
+
+  /**
+   * Set the metrics name identifying the reported metrics, useful for naming the server metrics.
+   *
+   * @param metricsName the metrics name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setMetricsName(String metricsName) {
+    this.metricsName = metricsName;
     return this;
   }
 

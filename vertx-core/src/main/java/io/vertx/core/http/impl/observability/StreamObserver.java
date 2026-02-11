@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.observability;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
@@ -30,6 +31,7 @@ public abstract class StreamObserver {
 
   private final TransportMetrics transportMetrics;
   final Object socketMetric;
+  final HttpVersion version;
   final ContextInternal context;
   final SocketAddress remoteAddress;
   final TracingPolicy tracingPolicy;
@@ -39,12 +41,13 @@ public abstract class StreamObserver {
   HttpRequest observableRequest;
   HttpResponse observableResponse;
 
-  public StreamObserver(ContextInternal context, SocketAddress remoteAddress, TransportMetrics transportMetrics,
-                        Object socketMetric, TracingPolicy tracingPolicy, VertxTracer tracer) {
+  public StreamObserver(ContextInternal context, SocketAddress remoteAddress, HttpVersion version,
+                        TransportMetrics transportMetrics, Object socketMetric, TracingPolicy tracingPolicy, VertxTracer tracer) {
     this.context = context;
     this.transportMetrics = transportMetrics;
     this.socketMetric = socketMetric;
     this.remoteAddress = remoteAddress;
+    this.version = version;
     this.tracingPolicy = tracingPolicy;
     this.tracer = tracer;
   }
@@ -81,6 +84,11 @@ public abstract class StreamObserver {
         @Override
         public long id() {
           return 1L;
+        }
+
+        @Override
+        public HttpVersion version() {
+          return version;
         }
 
         @Override

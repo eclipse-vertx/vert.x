@@ -134,7 +134,7 @@ public class MetricsContextTest extends VertxTestBase {
         };
       }
       @Override
-      public HttpServerMetrics<Void, Void> createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+      public HttpServerMetrics<Void, Void> createHttpServerMetrics(HttpServerConfig config, SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
         return new HttpServerMetrics<>() {
           @Override
           public Void requestBegin(SocketAddress remoteAddress, HttpRequest request) {
@@ -201,7 +201,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicInteger count = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
         return new HttpServerMetrics<Void, Void>() {
           @Override
           public Void requestBegin(SocketAddress remoteAddress, HttpRequest request) {
@@ -289,7 +289,7 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicInteger httpLifecycle = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new VertxMetrics() {
       @Override
-      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress localAddress) {
+      public HttpServerMetrics createHttpServerMetrics(HttpServerConfig config, SocketAddress tcpLocalAddress, SocketAddress udpLocalAddress) {
         return new HttpServerMetrics<Void, Void>() {
           @Override
           public Void requestBegin(SocketAddress remoteAddress, HttpRequest request) {
