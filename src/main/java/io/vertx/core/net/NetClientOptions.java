@@ -289,6 +289,11 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setTcpQuickAck(tcpQuickAck);
   }
 
+  @Override
+  public NetClientOptions setTcpUserTimeout(int tcpUserTimeout) {
+    return (NetClientOptions) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
   @Deprecated
   @Override
   public ClientOptionsBase setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
