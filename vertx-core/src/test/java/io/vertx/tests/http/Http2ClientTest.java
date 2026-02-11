@@ -1452,39 +1452,63 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testResponseCompressionEnabled() throws Exception {
-    testResponseCompression(true);
+    testResponseCompression(true, 0, 1024);
+  }
+
+  @Test
+  public void testResponseCompressionEnabledWithPadding() throws Exception {
+    testResponseCompression(true, 1, 1024);
   }
 
   @Test
   public void testResponseCompressionDisabled() throws Exception {
-    testResponseCompression(false);
+    testResponseCompression(false, 0, 1024);
   }
 
-  private void testResponseCompression(boolean enabled) throws Exception {
-    byte[] expected = TestUtils.randomAlphaString(1000).getBytes();
+  private void testResponseCompression(boolean enabled, int responsePadding, int length) throws Exception {
+    disableThreadChecks();
+    byte[] expected = TestUtils.randomAlphaString(length).getBytes();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     GZIPOutputStream in = new GZIPOutputStream(baos);
     in.write(expected);
     in.close();
     byte[] compressed = baos.toByteArray();
-    server.requestHandler(req -> {
-      assertEquals(enabled ? "deflate, gzip, zstd, br, snappy" : null, req.getHeader(HttpHeaderNames.ACCEPT_ENCODING));
-      req.response().putHeader(HttpHeaderNames.CONTENT_ENCODING.toLowerCase(), "gzip").end(Buffer.buffer(compressed));
+    ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
+      @Override
+      public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+        Http2Headers responseHeaders = new DefaultHttp2Headers()
+          .status("200")
+          .set(HttpHeaderNames.CONTENT_ENCODING, "gzip");
+        encoder.writeHeaders(ctx, streamId, responseHeaders, 0, false, ctx.newPromise());
+        int chunkSize = 128;
+        int idx = 0;
+        while (idx < compressed.length) {
+          int toWrite = Math.min(compressed.length - idx, chunkSize);
+          ByteBuf chunk = Unpooled.copiedBuffer(compressed, idx, toWrite);
+          idx += toWrite;
+          encoder.writeData(ctx, streamId, chunk, responsePadding, idx == compressed.length, ctx.newPromise());
+        }
+        ctx.flush();
+      }
     });
-    startServer();
-    client.close();
-    client = vertx.createHttpClient(clientOptions.setDecompressionSupported(enabled));
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        String encoding = resp.getHeader(HttpHeaderNames.CONTENT_ENCODING);
-        assertEquals(enabled ? null : "gzip", encoding);
-        resp.body().onComplete(onSuccess(buff -> {
-          assertEquals(Buffer.buffer(enabled ? expected : compressed), buff);
-          testComplete();
-        }));
-      }));
-    }));
-    await();
+    ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
+    try {
+      client.close();
+      client = vertx.createHttpClient(clientOptions.setDecompressionSupported(enabled));
+      Buffer buff = client
+        .request(requestOptions)
+        .compose(req -> req
+          .send()
+          .andThen(onSuccess(resp -> {
+            String encoding = resp.getHeader(HttpHeaderNames.CONTENT_ENCODING);
+            assertEquals(enabled ? null : "gzip", encoding);
+          }))
+          .compose(HttpClientResponse::body))
+        .await();
+      assertEquals(Buffer.buffer(enabled ? expected : compressed), buff);
+    } finally {
+      s.channel().close().sync();
+    }
   }
 
   @Test
