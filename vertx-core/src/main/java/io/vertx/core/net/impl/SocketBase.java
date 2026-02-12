@@ -270,14 +270,17 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     }
   }
 
-  protected void handleEnd() {
-    pending.write(InboundBuffer.END_SENTINEL);
+  protected void handleEnded() {
+    read(InboundBuffer.END_SENTINEL);
+    endRead();
   }
 
   @Override
   protected void handleMessage(Object msg) {
     MessageHandler handler = messageHandler();
-    if (handler.accept(msg)) {
+    if (msg == InboundBuffer.END_SENTINEL) {
+      pending.write(InboundBuffer.END_SENTINEL);
+    } else if (handler.accept(msg)) {
       pending.write(handler.transform(msg));
     } else {
       if (msg instanceof ReferenceCounted) {

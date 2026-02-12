@@ -180,7 +180,7 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
 
   @Override
   protected void handleClosed() {
-    handleEnd();
+    handleEnded();
     super.handleClosed();
   }
 }
