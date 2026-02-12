@@ -159,10 +159,11 @@ class SharedHttpClientConnectionGroup extends ManagedResource implements PoolCon
 
     @Override
     public void complete(Lease<HttpClientConnectionInternal> result, Throwable failure) {
-      if (timerID >= 0) {
-        context.owner().cancelTimer(timerID);
+      if (timerID >= 0 && !context.owner().cancelTimer(timerID)) {
+        result.recycle();
+      } else {
+        promise.complete(result, failure);
       }
-      promise.complete(result, failure);
     }
 
     void acquire() {
