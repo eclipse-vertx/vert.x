@@ -10,7 +10,6 @@
  */
 package io.vertx.core.net.impl.quic;
 
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.ChannelInputShutdownEvent;
@@ -149,7 +148,7 @@ public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicSt
   @Override
   protected void handleEvent(Object event) {
     if (event == ChannelInputShutdownEvent.INSTANCE) {
-      handleEnd();
+      handleEnded();
     } else {
       super.handleEvent(event);
     }

@@ -432,4 +432,34 @@ public class QuicClientTest extends VertxTestBase {
       }
     }
   }
+
+  @Test
+  public void testEndHandlerCalledAfterAllEmissions() throws Exception {
+    Buffer  buffer = TestUtils.randomBuffer(1024 * 1024);
+    server.handler(conn -> {
+      conn.handler(stream -> {
+        stream.endHandler(v -> {
+          stream.end(buffer);
+        });
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicStream stream = connection.openStream().await();
+    AtomicInteger received = new AtomicInteger();
+    AtomicInteger ended = new AtomicInteger();
+    stream.handler(buf -> {
+      received.addAndGet(buf.length());
+      assertEquals(0, ended.get());
+      stream.pause();
+      vertx.setTimer(50, t -> stream.resume());
+    });
+    stream.endHandler(v -> {
+      assertEquals(0, ended.getAndIncrement());
+    });
+    stream.end();
+    assertWaitUntil(() -> received.get() == buffer.length());
+    assertWaitUntil(() -> ended.get() > 0);
+  }
 }
