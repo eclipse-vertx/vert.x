@@ -149,6 +149,16 @@ public class EpollTransport implements Transport {
       bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
+
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIdleSeconds() != -1) {
+        bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+      }
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveCount() != -1) {
+        bootstrap.option(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
+      }
+      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
+        bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
+      }
     }
     Transport.super.configure(options, connectTimeout, domainSocket, bootstrap);
   }
