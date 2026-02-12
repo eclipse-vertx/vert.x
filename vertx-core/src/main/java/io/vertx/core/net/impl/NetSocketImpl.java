@@ -180,7 +180,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
     return this;
   }
 
-  private synchronized Handler<Object> messageHandler() {
+  private synchronized MessageHandler messageHandler() {
     return messageHandler;
   }
 
@@ -190,6 +190,10 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
       messageHandler = new DataMessageHandler();
     } else {
       messageHandler = new MessageHandler() {
+        @Override
+        public void handleEnd() {
+          // Noop
+        }
         @Override
         public void pause() {
           doPause();
@@ -390,16 +394,25 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   protected void handleShutdown(Object reason, long timeout, TimeUnit unit, ChannelPromise promise) {
   }
 
+  private void handleEnded() {
+    read(InboundBuffer.END_SENTINEL);
+    endRead();
+  }
+
   @Override
   protected void handleClosed() {
-    pending.write(InboundBuffer.END_SENTINEL);
+    handleEnded();
     super.handleClosed();
   }
 
   @Override
   public void handleMessage(Object msg) {
-    Handler<Object> handler = messageHandler();
-    handler.handle(msg);
+    MessageHandler handler = messageHandler();
+    if (msg == InboundBuffer.END_SENTINEL) {
+      handler.handleEnd();
+    } else {
+      handler.handle(msg);
+    }
   }
 
   @Override
@@ -432,6 +445,7 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
   interface MessageHandler extends Handler<Object> {
     void pause();
     void fetch(long amount);
+    void handleEnd();
   }
 
   private class DataMessageHandler implements MessageHandler {
@@ -444,6 +458,11 @@ public class NetSocketImpl extends VertxConnection implements NetSocketInternal 
       } else {
         handleInvalid(msg);
       }
+    }
+
+    @Override
+    public void handleEnd() {
+      pending.write(InboundBuffer.END_SENTINEL);
     }
 
     @Override

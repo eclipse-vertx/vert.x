@@ -255,6 +255,10 @@ public class VertxConnection extends ConnectionBase {
     }
   }
 
+  final void endRead() {
+    read = false;
+  }
+
   private void addPending(Object msg) {
     if (pending == null) {
       pending = new ArrayDeque<>();
