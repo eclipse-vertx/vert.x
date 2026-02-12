@@ -132,6 +132,37 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testEndHandlerCalledAfterAllEmissions() {
+    Buffer  buffer = TestUtils.randomBuffer(1024 * 1024);
+    server = vertx.createNetServer().connectHandler(so -> {
+      so.end(buffer);
+      so.close();
+    });
+    server.listen(1234).await();
+    NetClient client = vertx.createNetClient();
+    AtomicInteger received = new AtomicInteger();
+    AtomicInteger ended = new AtomicInteger();
+    client.connect(1234, "localhost").onComplete(ar -> {
+      if (ar.succeeded()) {
+        NetSocket socket = ar.result();
+        socket.handler(buf -> {
+          int amount = received.addAndGet(buf.length());
+          assertEquals(0, ended.get());
+          socket.pause();
+          vertx.setTimer(50, t -> {
+            socket.resume();
+          });
+        });
+        socket.endHandler(v -> {
+          assertEquals(0, ended.getAndIncrement());
+        });
+      }
+    });
+    assertWaitUntil(() -> received.get() == buffer.length());
+    assertWaitUntil(() -> ended.get() > 0);
+  }
+
+  @Test
   public void testClientOptions() {
     NetClientOptions options = new NetClientOptions();
 
