@@ -481,6 +481,8 @@ public class ContextTest extends VertxTestBase {
     assertSame(ctx.deployment(), duplicated.deployment());
     assertSame(ctx.classLoader(), duplicated.classLoader());
     assertSame(ctx.owner(), duplicated.owner());
+    // Check that unwrap always returns a raw context, even when it was created by duplicating a duplicate
+    assertTrue(!ctx.isDuplicate() && duplicated.isDuplicate() && ctx == duplicated.unwrap());
     Object shared = new Object();
     Object local = new Object();
     ctx.put("key", shared);
