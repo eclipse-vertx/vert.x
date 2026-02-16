@@ -87,7 +87,7 @@ public interface HttpClientBuilder {
    *
    * @param resolver the address resolver
    */
-  @GenIgnore
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   HttpClientBuilder withAddressResolver(AddressResolver<?> resolver);
 
   /**
