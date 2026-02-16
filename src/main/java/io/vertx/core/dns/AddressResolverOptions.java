@@ -103,6 +103,11 @@ public class AddressResolverOptions {
    */
   public static final boolean DEFAULT_ROUND_ROBIN_INET_ADDRESS = false;
 
+  /**
+   * The default whether to use TCP for DNS resolving if resolving via UDP times out = false
+   */
+  public static final boolean DEFAULT_USE_TCP_FOR_FALLBACK_DNS_RESOLVING = false;
+
   private String hostsPath;
   private Buffer hostsValue;
   private int hostsRefreshPeriod;
@@ -118,6 +123,7 @@ public class AddressResolverOptions {
   private int ndots;
   private boolean rotateServers;
   private boolean roundRobinInetAddress;
+  private boolean useTcpForFallbackDnsResolving;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -133,6 +139,7 @@ public class AddressResolverOptions {
     rotateServers = DEFAULT_ROTATE_SERVERS;
     roundRobinInetAddress = DEFAULT_ROUND_ROBIN_INET_ADDRESS;
     hostsRefreshPeriod = DEFAULT_HOSTS_REFRESH_PERIOD;
+    useTcpForFallbackDnsResolving = DEFAULT_USE_TCP_FOR_FALLBACK_DNS_RESOLVING;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -151,6 +158,7 @@ public class AddressResolverOptions {
     this.ndots = other.ndots;
     this.rotateServers = other.rotateServers;
     this.roundRobinInetAddress = other.roundRobinInetAddress;
+    this.useTcpForFallbackDnsResolving = other.useTcpForFallbackDnsResolving;
   }
 
   public AddressResolverOptions(JsonObject json) {
@@ -493,6 +501,24 @@ public class AddressResolverOptions {
    */
   public AddressResolverOptions setRoundRobinInetAddress(boolean roundRobinInetAddress) {
     this.roundRobinInetAddress = roundRobinInetAddress;
+    return this;
+  }
+
+  /**
+   * @return the value {@code true} when using TCP for DNS resolving as a fallback is enabled when resolving via
+   * UDP times out.
+   */
+  public boolean isUseTcpForFallbackDnsResolving() {
+    return useTcpForFallbackDnsResolving;
+  }
+
+  /**
+   * Set to {@code true} to enable using TCP as a fallback for DNS resolving when using UDP times out.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setUseTcpForFallbackDnsResolving(boolean useTcpForFallbackDnsResolving) {
+    this.useTcpForFallbackDnsResolving = useTcpForFallbackDnsResolving;
     return this;
   }
 
