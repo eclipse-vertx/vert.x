@@ -12,6 +12,27 @@ You cannot interact directly with the result of a future, instead you need to se
 {@link examples.CoreExamples#exampleFuture1}
 ----
 
+Instead of using `onComplete` with `if (ar.succeeded()) { … } else { … }` you can use the `onSuccess` and `onFailure` handlers:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#exampleFuture2}
+----
+
+Frequently the future variable can be avoided. Often the lambda parameter type is not needed by compiler and code readers, allowing to replace `(FileProps fileProps)` with `fileProps`. In a lambda code block with a single statement the semicolon and the curly braces can be removed. This yields a more concise code:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#exampleFuture3}
+----
+
+`.onSuccess` and `.onFailure` can be combined into the two parameter method `.onComplete`. This is slightly faster and takes slightly less memory, but might be less readable:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#exampleFuture4}
+----
+
 [CAUTION]
 ====
 Do not confuse _futures_ with _promises_.
