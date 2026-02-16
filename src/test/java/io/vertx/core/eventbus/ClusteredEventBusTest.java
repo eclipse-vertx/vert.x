@@ -12,7 +12,9 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.core.eventbus.impl.HandlerHolder;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
@@ -25,10 +27,9 @@ import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
 import java.io.InvalidClassException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -705,5 +706,78 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
     await();
 
+  }
+
+  @Test
+  public void testNextHandlerForNonLocalMessageEmptyBlacklist() throws Throwable {
+    testNextHandlerInternal(0, 10, false);
+  }
+
+  @Test
+  public void testNextHandlerForNonLocalMessageNullBlacklist() throws Throwable {
+    testNextHandlerInternal(-1, 10, false);
+  }
+
+  @Test
+  public void testNextHandlerForNonLocalMessageHalfBlacklisted() throws Throwable {
+    testNextHandlerInternal(5, 10, false);
+  }
+
+  @Test
+  public void testNextHandlerForNonLocalMessageAllBlacklisted() throws Throwable {
+    testNextHandlerInternal(10, 10, false);
+  }
+
+  @Test
+  public void testNextHandlerForLocalMessageEmptyBlacklist() throws Throwable {
+    testNextHandlerInternal(0, 10, true);
+  }
+
+  @Test
+  public void testNextHandlerForLocalMessageNullBlacklist() throws Throwable {
+    testNextHandlerInternal(-1, 10, true);
+  }
+
+  @Test
+  public void testNextHandlerForLocalMessageHalfBlacklisted() throws Throwable {
+    testNextHandlerInternal(5, 10, true);
+  }
+
+  @Test
+  public void testNextHandlerForLocalMessageAllBlacklisted() throws Throwable {
+    testNextHandlerInternal(10, 10, true);
+  }
+
+  private void testNextHandlerInternal(int numberOfEntriesToBlacklist, int totalNumberOfEntries, boolean localMessage) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    int expectedIndex = numberOfEntriesToBlacklist >= 0 ? (numberOfEntriesToBlacklist >= totalNumberOfEntries ? -1 : numberOfEntriesToBlacklist) : 0;
+    startNodes(1);
+    waitFor(1);
+    final EventBus eventBus = vertices[0].eventBus();
+    List<HandlerHolder> handlerHolders = new ArrayList<>();
+    for(int i = 0; i < totalNumberOfEntries; i++) {
+      final int handlerIndex = i;
+      handlerHolders.add(new HandlerHolder(null, false, false, null) {
+        @Override
+        public String toString() {
+          return super.toString() + " Index: " + handlerIndex;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+          return this == o;
+        }
+
+        @Override
+        public int hashCode() {
+          return handlerIndex;
+        }
+      });
+    }
+    List<HandlerHolder> blacklist = numberOfEntriesToBlacklist >= 0 ? handlerHolders.stream().limit(numberOfEntriesToBlacklist).collect(Collectors.toList()) : null;
+    final ConcurrentCyclicSequence<HandlerHolder> concurrentCyclicSequence = new ConcurrentCyclicSequence<>(handlerHolders.toArray(new HandlerHolder[0]));
+    final Method methodNextHandler = eventBus.getClass().getDeclaredMethod("nextHandler", new Class<?>[]{ConcurrentCyclicSequence.class, Boolean.TYPE, Collection.class});
+    methodNextHandler.setAccessible(true);
+    final HandlerHolder selectedHandleHolder = (HandlerHolder) methodNextHandler.invoke(eventBus, concurrentCyclicSequence, localMessage, blacklist);
+    assertSame(expectedIndex >= 0 ? handlerHolders.get(expectedIndex) : null, selectedHandleHolder);
   }
 }
