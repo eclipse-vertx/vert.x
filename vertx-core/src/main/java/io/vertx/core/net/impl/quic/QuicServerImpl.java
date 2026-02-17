@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -158,9 +157,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
-                ByteBufFormat activityLogging = config.getStreamLogging() != null ? config.getStreamLogging().getDataFormat() : null;
-                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getStreamIdleTimeout(),
-                  config.getStreamReadIdleTimeout(), config.getStreamWriteIdleTimeout(), activityLogging,
+                ByteBufFormat activityLogging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
+                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
+                  config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging,
                   vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);

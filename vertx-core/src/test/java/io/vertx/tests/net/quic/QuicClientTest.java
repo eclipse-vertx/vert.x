@@ -338,7 +338,7 @@ public class QuicClientTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() {
     QuicServerConfig options = new QuicServerConfig()
-      .setStreamIdleTimeout(Duration.ofMillis(100));
+      .setIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, options, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
@@ -347,7 +347,7 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
 
     client.close();
-    client = QuicClient.create(vertx, clientOptions().setStreamIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
+    client = QuicClient.create(vertx, clientOptions().setIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStream stream = connection.openStream().await();
@@ -407,7 +407,7 @@ public class QuicClientTest extends VertxTestBase {
     String expectedAddress = TestUtils.loopbackAddress();
     QuicClientConfig clientOptions = clientOptions().setLocalAddress(SocketAddress.inetSocketAddress(1234, expectedAddress));
     client.close();
-    client = QuicClient.create(vertx, clientOptions.setStreamIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
+    client = QuicClient.create(vertx, clientOptions.setIdleTimeout(Duration.ofMillis(100)), SSL_OPTIONS);
     server.handler(connection -> {
 
     });

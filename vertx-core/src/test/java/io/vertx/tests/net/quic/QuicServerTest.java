@@ -908,7 +908,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
     QuicServerConfig config = new QuicServerConfig()
-      .setStreamIdleTimeout(Duration.ofMillis(100));
+      .setIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
@@ -946,7 +946,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testStreamIdleHandler() throws Exception {
     int numEvents = 10;
     QuicServerConfig config = new QuicServerConfig()
-      .setStreamIdleTimeout(Duration.ofMillis(100));
+      .setIdleTimeout(Duration.ofMillis(100));
     QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
@@ -1006,7 +1006,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerLogging() throws Exception {
     TestLoggerFactory fact = TestUtils.testLogging(() -> {
       try {
-        testConnect(new QuicServerConfig().setStreamLogging(new NetworkLogging()), 9999);
+        testConnect(new QuicServerConfig().setNetworkLogging(new NetworkLogging()), 9999);
       } catch (Exception e) {
         fail(e);
       }

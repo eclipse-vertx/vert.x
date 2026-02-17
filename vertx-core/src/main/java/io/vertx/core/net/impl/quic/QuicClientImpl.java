@@ -35,10 +35,8 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -189,9 +187,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
-          ByteBufFormat activityLogging = config.getStreamLogging() != null ? config.getStreamLogging().getDataFormat() : null;
-          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getStreamIdleTimeout(),
-            config.getStreamReadIdleTimeout(), config.getStreamWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
+          ByteBufFormat activityLogging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
+          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
+            config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })

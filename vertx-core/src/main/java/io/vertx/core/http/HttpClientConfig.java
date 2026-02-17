@@ -221,7 +221,7 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setIdleTimeout(Duration idleTimeout) {
     tcpConfig.setIdleTimeout(idleTimeout);
-    quicConfig.setStreamIdleTimeout(idleTimeout);
+    quicConfig.setIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -236,7 +236,7 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setReadIdleTimeout(Duration idleTimeout) {
     tcpConfig.setReadIdleTimeout(idleTimeout);
-    quicConfig.setStreamReadIdleTimeout(idleTimeout);
+    quicConfig.setReadIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -251,7 +251,7 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setWriteIdleTimeout(Duration idleTimeout) {
     tcpConfig.setWriteIdleTimeout(idleTimeout);
-    quicConfig.setStreamWriteIdleTimeout(idleTimeout);
+    quicConfig.setWriteIdleTimeout(idleTimeout);
     return this;
   }
 

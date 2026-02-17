@@ -154,7 +154,7 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setIdleTimeout(Duration idleTimeout) {
     tcpConfig.setIdleTimeout(idleTimeout);
-    quicConfig.setStreamIdleTimeout(idleTimeout);
+    quicConfig.setIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -169,7 +169,7 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setReadIdleTimeout(Duration idleTimeout) {
     tcpConfig.setReadIdleTimeout(idleTimeout);
-    quicConfig.setStreamReadIdleTimeout(idleTimeout);
+    quicConfig.setReadIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -184,7 +184,7 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setWriteIdleTimeout(Duration idleTimeout) {
     tcpConfig.setWriteIdleTimeout(idleTimeout);
-    quicConfig.setStreamWriteIdleTimeout(idleTimeout);
+    quicConfig.setWriteIdleTimeout(idleTimeout);
     return this;
   }
 
