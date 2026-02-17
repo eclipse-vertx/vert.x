@@ -24,10 +24,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -218,6 +215,62 @@ public interface Vertx extends Measured {
    */
   default NetClient createNetClient() {
     return createNetClient(new NetClientOptions());
+  }
+
+  /**
+   * Create a TCP/SSL server using the specified TCP config and the specified default SSL options
+   *
+   * @param tcpConfig  the tcp config to use
+   * @param sslOptions the default ssl options to use
+   * @return the server
+   */
+  TcpServer createTcpServer(TcpServerConfig tcpConfig, ServerSSLOptions sslOptions);
+
+  /**
+   * Create a TCP server using the specified TCP config
+   *
+   * @param tcpConfig  the tcp config to use
+   * @return the server
+   */
+  default TcpServer createTcpServer(TcpServerConfig tcpConfig) {
+    return createTcpServer(tcpConfig, null);
+  }
+
+  /**
+   * Create a TCP server using the default TCP config
+   *
+   * @return the server
+   */
+  default TcpServer createTcpServer() {
+    return createTcpServer(new TcpServerConfig());
+  }
+
+  /**
+   * Create a TCP/SSL client using the specified TCP config and the specified default SSL options
+   *
+   * @param tcpConfig  the tcp config to use
+   * @param sslOptions the default ssl options to use
+   * @return the client
+   */
+  TcpClient createTcpClient(TcpClientConfig tcpConfig, ClientSSLOptions sslOptions);
+
+  /**
+   * Create a TCP/SSL client using the specified TCP config
+   *
+   * @param tcpConfig  the tcp config to use
+   * @return the client
+   */
+  default TcpClient createTcpClient(TcpClientConfig tcpConfig) {
+    return createTcpClient(tcpConfig, null);
+  }
+
+  /**
+   * Create a TCP/SSL client using default options
+   *
+   * @return the client
+   */
+  default TcpClient createTcpClient() {
+    return createTcpClient(new TcpClientConfig());
   }
 
   /**

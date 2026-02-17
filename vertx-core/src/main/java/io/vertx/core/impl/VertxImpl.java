@@ -43,6 +43,7 @@ import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
+import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.internal.net.TcpServerInternal;
@@ -356,10 +357,22 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetServerInternal createNetServer(NetServerOptions options) {
-    return new NetServerImpl(new TcpServerBuilder(this, options.copy()).build());
+    return new NetServerImpl(new TcpServerBuilder(this, new TcpServerConfig(options.copy()))
+      .sslOptions(options.getSslOptions())
+      .fileRegionEnabled(options.isFileRegionEnabled())
+      .registerWriteHandler(options.isRegisterWriteHandler())
+      .cleanable(true)
+      .build());
   }
 
-  public NetClient createNetClient(NetClientOptions options) {
+  @Override
+  public TcpServerInternal createTcpServer(TcpServerConfig tcpConfig, ServerSSLOptions sslOptions) {
+    return new TcpServerBuilder(this, tcpConfig)
+      .sslOptions(sslOptions)
+      .build();
+  }
+
+  public NetClientInternal createNetClient(NetClientOptions options) {
     CloseFuture fut = resolveCloseFuture();
     TcpClientConfig config = new TcpClientConfig(options);
     TcpClientBuilder builder = new TcpClientBuilder(this, config)
@@ -368,6 +381,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     TcpClientInternal netClient = builder.build();
     fut.add(netClient);
     return new NetClientImpl(new CleanableTcpClient(netClient, cleaner));
+  }
+
+  @Override
+  public TcpClientInternal createTcpClient(TcpClientConfig tcpConfig, ClientSSLOptions sslOptions) {
+    CloseFuture fut = resolveCloseFuture();
+    TcpClientBuilder builder = new TcpClientBuilder(this, tcpConfig)
+      .sslOptions(sslOptions);
+    TcpClientInternal netClient = builder.build();
+    fut.add(netClient);
+    return new CleanableTcpClient(netClient, cleaner);
   }
 
   @Override

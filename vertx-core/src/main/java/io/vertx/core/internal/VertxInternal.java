@@ -17,10 +17,12 @@ import io.vertx.core.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.impl.*;
 import io.vertx.core.internal.deployment.DeploymentManager;
+import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
@@ -117,7 +119,41 @@ public interface VertxInternal extends Vertx {
   NetServerInternal createNetServer(NetServerOptions options);
 
   default NetServerInternal createNetServer() {
-    return createNetServer(new NetServerOptions());
+    return (NetServerInternal)Vertx.super.createNetServer();
+  }
+
+  @Override
+  NetClientInternal createNetClient(NetClientOptions options);
+
+  @Override
+  default NetClientInternal createNetClient() {
+    return (NetClientInternal)Vertx.super.createNetClient();
+  }
+
+  @Override
+  TcpServerInternal createTcpServer(TcpServerConfig tcpConfig, ServerSSLOptions sslOptions);
+
+  @Override
+  default TcpServerInternal createTcpServer(TcpServerConfig tcpConfig) {
+    return (TcpServerInternal)Vertx.super.createTcpServer(tcpConfig);
+  }
+
+  @Override
+  default TcpServerInternal createTcpServer() {
+    return (TcpServerInternal)Vertx.super.createTcpServer();
+  }
+
+  @Override
+  TcpClientInternal createTcpClient(TcpClientConfig tcpConfig, ClientSSLOptions sslOptions);
+
+  @Override
+  default TcpClientInternal createTcpClient(TcpClientConfig tcpConfig) {
+    return (TcpClientInternal)Vertx.super.createTcpClient(tcpConfig);
+  }
+
+  @Override
+  default TcpClientInternal createTcpClient() {
+    return (TcpClientInternal)Vertx.super.createTcpClient();
   }
 
   @Override

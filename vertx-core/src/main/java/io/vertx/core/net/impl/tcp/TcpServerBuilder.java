@@ -27,26 +27,18 @@ public class TcpServerBuilder {
   private boolean registerWriteHandler;
   private boolean cleanable;
 
-  public TcpServerBuilder(VertxInternal vertx, TcpServerConfig config, ServerSSLOptions sslOptions) {
+  public TcpServerBuilder(VertxInternal vertx, TcpServerConfig config) {
     this.vertx = vertx;
     this.config = config;
-    this.sslOptions = sslOptions;
     this.protocol = null;
     this.fileRegionEnabled = false;
     this.registerWriteHandler = false;
     this.cleanable = false;
   }
 
-  public TcpServerBuilder(VertxInternal vertx, NetServerOptions options) {
-
-    TcpServerConfig cfg = new TcpServerConfig(options);
-
-    this.vertx = vertx;
-    this.config = cfg;
-    this.sslOptions = options.getSslOptions();
-    this.fileRegionEnabled = options.isFileRegionEnabled();
-    this.registerWriteHandler = options.isRegisterWriteHandler();
-    this.cleanable = true;
+  public TcpServerBuilder sslOptions(ServerSSLOptions sslOptions) {
+    this.sslOptions = sslOptions;
+    return this;
   }
 
   public TcpServerBuilder cleanable(boolean cleanable) {
@@ -61,6 +53,11 @@ public class TcpServerBuilder {
 
   public TcpServerBuilder protocol(String protocol) {
     this.protocol = protocol;
+    return this;
+  }
+
+  public TcpServerBuilder registerWriteHandler(boolean registerWriteHandler) {
+    this.registerWriteHandler = registerWriteHandler;
     return this;
   }
 

@@ -95,6 +95,10 @@ class TcpClientImpl implements TcpClientInternal {
     this.protocol = protocol;
   }
 
+  public VertxInternal vertx() {
+    return vertx;
+  }
+
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
     if (logging != null) {
       pipeline.addLast("logging", new LoggingHandler(logging));

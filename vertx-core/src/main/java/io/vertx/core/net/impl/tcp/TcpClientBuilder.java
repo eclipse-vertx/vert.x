@@ -17,7 +17,7 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.TcpClientConfig;
 
 /**
- * A builder to configure TcpClient plugins.
+ * A builder to configure TcpClient.
  */
 public class TcpClientBuilder {
 

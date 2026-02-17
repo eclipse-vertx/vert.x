@@ -205,7 +205,8 @@ public class TcpHttpServer implements HttpServerInternal {
         .build();
     }
     HttpCompressionConfig compression = config.getCompression();
-    TcpServerInternal server = new TcpServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
+    TcpServerInternal server = new TcpServerBuilder(vertx, config.getTcpConfig())
+      .sslOptions(config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
       .cleanable(false)
       .protocol("http")

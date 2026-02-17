@@ -21,12 +21,12 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.internal.deployment.DeploymentManager;
+import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
@@ -78,8 +78,18 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public NetClient createNetClient(NetClientOptions options) {
+  public NetClientInternal createNetClient(NetClientOptions options) {
     return delegate.createNetClient(options);
+  }
+
+  @Override
+  public TcpServerInternal createTcpServer(TcpServerConfig tcpConfig, ServerSSLOptions sslOptions) {
+    return delegate.createTcpServer(tcpConfig, sslOptions);
+  }
+
+  @Override
+  public TcpClientInternal createTcpClient(TcpClientConfig tcpConfig, ClientSSLOptions sslOptions) {
+    return delegate.createTcpClient(tcpConfig, sslOptions);
   }
 
   @Override
