@@ -74,18 +74,18 @@ public class QuicClientConfig extends QuicEndpointConfig {
   }
 
   @Override
-  public QuicClientConfig setStreamIdleTimeout(Duration idleTimeout) {
-    return (QuicClientConfig) super.setStreamIdleTimeout(idleTimeout);
+  public QuicClientConfig setIdleTimeout(Duration idleTimeout) {
+    return (QuicClientConfig) super.setIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientConfig setStreamReadIdleTimeout(Duration idleTimeout) {
-    return (QuicClientConfig) super.setStreamReadIdleTimeout(idleTimeout);
+  public QuicClientConfig setReadIdleTimeout(Duration idleTimeout) {
+    return (QuicClientConfig) super.setReadIdleTimeout(idleTimeout);
   }
 
   @Override
-  public QuicClientConfig setStreamWriteIdleTimeout(Duration idleTimeout) {
-    return (QuicClientConfig) super.setStreamWriteIdleTimeout(idleTimeout);
+  public QuicClientConfig setWriteIdleTimeout(Duration idleTimeout) {
+    return (QuicClientConfig) super.setWriteIdleTimeout(idleTimeout);
   }
 
   @Override
@@ -94,8 +94,8 @@ public class QuicClientConfig extends QuicEndpointConfig {
   }
 
   @Override
-  public QuicClientConfig setStreamLogging(NetworkLogging config) {
-    return (QuicClientConfig) super.setStreamLogging(config);
+  public QuicClientConfig setNetworkLogging(NetworkLogging config) {
+    return (QuicClientConfig) super.setNetworkLogging(config);
   }
 
   /**

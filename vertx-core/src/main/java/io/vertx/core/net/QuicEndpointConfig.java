@@ -26,20 +26,20 @@ public abstract class QuicEndpointConfig {
   private QuicConfig transportConfig;
   private QLogConfig qlogConfig;
   private String keyLogFile;
-  private Duration streamIdleTimeout;
-  private Duration streamReadIdleTimeout;
-  private Duration streamWriteIdleTimeout;
+  private Duration idleTimeout;
+  private Duration readIdleTimeout;
+  private Duration writeIdleTimeout;
   private String metricsName;
-  private NetworkLogging streamLogging;
+  private NetworkLogging networkLogging;
 
   public QuicEndpointConfig() {
     this.transportConfig = new QuicConfig();
     this.qlogConfig = null;
-    this.streamIdleTimeout = null;
-    this.streamReadIdleTimeout = null;
-    this.streamWriteIdleTimeout = null;
+    this.idleTimeout = null;
+    this.readIdleTimeout = null;
+    this.writeIdleTimeout = null;
     this.metricsName = null;
-    this.streamLogging = null;
+    this.networkLogging = null;
   }
 
   public QuicEndpointConfig(QuicEndpointConfig other) {
@@ -49,11 +49,11 @@ public abstract class QuicEndpointConfig {
     this.transportConfig = other.transportConfig.copy();
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
-    this.streamIdleTimeout = other.streamIdleTimeout;
-    this.streamReadIdleTimeout = other.streamReadIdleTimeout;
-    this.streamWriteIdleTimeout = other.streamWriteIdleTimeout;
+    this.idleTimeout = other.idleTimeout;
+    this.readIdleTimeout = other.readIdleTimeout;
+    this.writeIdleTimeout = other.writeIdleTimeout;
     this.metricsName = other.metricsName;
-    this.streamLogging = other.streamLogging != null ? new NetworkLogging(other.streamLogging) : null;
+    this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
   }
 
   /**
@@ -120,19 +120,19 @@ public abstract class QuicEndpointConfig {
    * @param idleTimeout  the idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointConfig setStreamIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointConfig setIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("streamIdleTimeout must be >= 0");
     }
-    this.streamIdleTimeout = idleTimeout;
+    this.idleTimeout = idleTimeout;
     return this;
   }
 
   /**
    * @return the idle timeout applied to each stream
    */
-  public Duration getStreamIdleTimeout() {
-    return streamIdleTimeout;
+  public Duration getIdleTimeout() {
+    return idleTimeout;
   }
 
   /**
@@ -142,19 +142,19 @@ public abstract class QuicEndpointConfig {
    * @param idleTimeout  the read idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointConfig setStreamReadIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointConfig setReadIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("streamReadIdleTimeout must be >= 0");
     }
-    this.streamReadIdleTimeout = idleTimeout;
+    this.readIdleTimeout = idleTimeout;
     return this;
   }
 
   /**
    * @return the read idle timeout applied to each stream
    */
-  public Duration getStreamReadIdleTimeout() {
-    return streamReadIdleTimeout;
+  public Duration getReadIdleTimeout() {
+    return readIdleTimeout;
   }
 
   /**
@@ -164,19 +164,19 @@ public abstract class QuicEndpointConfig {
    * @param idleTimeout  the write idle timeout
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointConfig setStreamWriteIdleTimeout(Duration idleTimeout) {
+  public QuicEndpointConfig setWriteIdleTimeout(Duration idleTimeout) {
     if (idleTimeout != null && idleTimeout.isNegative()) {
       throw new IllegalArgumentException("streamWriteIdleTimeout must be >= 0");
     }
-    this.streamWriteIdleTimeout = idleTimeout;
+    this.writeIdleTimeout = idleTimeout;
     return this;
   }
 
   /**
    * @return the write idle timeout applied to each stream
    */
-  public Duration getStreamWriteIdleTimeout() {
-    return streamWriteIdleTimeout;
+  public Duration getWriteIdleTimeout() {
+    return writeIdleTimeout;
   }
 
 
@@ -202,8 +202,8 @@ public abstract class QuicEndpointConfig {
   /**
    * @return the stream network logging config, {@code null} means disabled
    */
-  public NetworkLogging getStreamLogging() {
-    return streamLogging;
+  public NetworkLogging getNetworkLogging() {
+    return networkLogging;
   }
 
   /**
@@ -212,8 +212,8 @@ public abstract class QuicEndpointConfig {
    * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public QuicEndpointConfig setStreamLogging(NetworkLogging config) {
-    this.streamLogging = config;
+  public QuicEndpointConfig setNetworkLogging(NetworkLogging config) {
+    this.networkLogging = config;
     return this;
   }
 }

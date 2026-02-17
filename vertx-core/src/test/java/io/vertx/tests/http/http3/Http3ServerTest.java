@@ -362,7 +362,7 @@ public class Http3ServerTest extends VertxTestBase {
   public void testStreamIdleTimeout() throws Exception {
 
     HttpServerConfig config = serverOptions();
-    config.getQuicConfig().setStreamIdleTimeout(Duration.ofMillis(200));
+    config.getQuicConfig().setIdleTimeout(Duration.ofMillis(200));
     server = vertx.createHttpServer(config);
 
     server.requestHandler(req -> {

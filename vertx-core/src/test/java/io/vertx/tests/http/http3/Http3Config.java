@@ -90,7 +90,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpServerConfig setIdleTimeout(Duration timeout) {
-        options.getQuicConfig().setStreamIdleTimeout(timeout);
+        options.getQuicConfig().setIdleTimeout(timeout);
         return this;
       }
       @Override
