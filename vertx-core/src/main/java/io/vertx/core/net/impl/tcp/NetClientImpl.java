@@ -29,6 +29,13 @@ public class NetClientImpl implements NetClientInternal {
     this.delegate = delegate;
   }
 
+  /**
+   * @return the actual TCP client.
+   */
+  public TcpClientInternal delegate() {
+    return delegate;
+  }
+
   @Override
   public void connectInternal(ConnectOptions connectOptions, Promise<NetSocket> connectHandler, ContextInternal context) {
     delegate.connectInternal(connectOptions, (Promise)connectHandler, context);

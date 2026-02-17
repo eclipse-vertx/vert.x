@@ -6,14 +6,13 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
-public class CleanableNetServer extends TcpServerImpl implements Closeable {
+public class CleanableTcpServer extends TcpServerImpl implements Closeable {
 
   private final VertxInternal vertx;
   private ContextInternal listenContext;
 
-  public CleanableNetServer(VertxInternal vertx,
+  public CleanableTcpServer(VertxInternal vertx,
                             TcpServerConfig config,
                             String protocol,
                             ServerSSLOptions sslOptions,
@@ -55,7 +54,7 @@ public class CleanableNetServer extends TcpServerImpl implements Closeable {
       .listen(context, localAddress)
       .andThen(ar -> {
         if (ar.failed()) {
-          synchronized (CleanableNetServer.this) {
+          synchronized (CleanableTcpServer.this) {
             if (listenContext == null) {
               return;
             }

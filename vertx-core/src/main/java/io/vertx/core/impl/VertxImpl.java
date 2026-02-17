@@ -43,7 +43,6 @@ import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
-import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.internal.net.TcpServerInternal;
@@ -357,7 +356,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetServerInternal createNetServer(NetServerOptions options) {
-    return new NetServerBuilder(this, options.copy()).build();
+    return new NetServerImpl(new TcpServerBuilder(this, options.copy()).build());
   }
 
   public NetClient createNetClient(NetClientOptions options) {
@@ -368,7 +367,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       .registerWriteHandler(options.isRegisterWriteHandler());
     TcpClientInternal netClient = builder.build();
     fut.add(netClient);
-    return new CleanableNetClient(new NetClientImpl(netClient), cleaner);
+    return new NetClientImpl(new CleanableTcpClient(netClient, cleaner));
   }
 
   @Override

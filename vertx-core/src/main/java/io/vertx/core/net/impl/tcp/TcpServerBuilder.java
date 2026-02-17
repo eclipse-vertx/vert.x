@@ -11,13 +11,13 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.net.*;
 
 /**
- * A builder to configure NetServer plugins.
+ * A builder to configure a TcpServer.
  */
-public class NetServerBuilder {
+public class TcpServerBuilder {
 
   private VertxInternal vertx;
   private TcpServerConfig config;
@@ -27,7 +27,7 @@ public class NetServerBuilder {
   private boolean registerWriteHandler;
   private boolean cleanable;
 
-  public NetServerBuilder(VertxInternal vertx, TcpServerConfig config, ServerSSLOptions sslOptions) {
+  public TcpServerBuilder(VertxInternal vertx, TcpServerConfig config, ServerSSLOptions sslOptions) {
     this.vertx = vertx;
     this.config = config;
     this.sslOptions = sslOptions;
@@ -37,7 +37,7 @@ public class NetServerBuilder {
     this.cleanable = false;
   }
 
-  public NetServerBuilder(VertxInternal vertx, NetServerOptions options) {
+  public TcpServerBuilder(VertxInternal vertx, NetServerOptions options) {
 
     TcpServerConfig cfg = new TcpServerConfig(options);
 
@@ -49,25 +49,25 @@ public class NetServerBuilder {
     this.cleanable = true;
   }
 
-  public NetServerBuilder cleanable(boolean cleanable) {
+  public TcpServerBuilder cleanable(boolean cleanable) {
     this.cleanable = cleanable;
     return this;
   }
 
-  public NetServerBuilder fileRegionEnabled(boolean fileRegionEnabled) {
+  public TcpServerBuilder fileRegionEnabled(boolean fileRegionEnabled) {
     this.fileRegionEnabled = fileRegionEnabled;
     return this;
   }
 
-  public NetServerBuilder protocol(String protocol) {
+  public TcpServerBuilder protocol(String protocol) {
     this.protocol = protocol;
     return this;
   }
 
-  public NetServerInternal build() {
+  public TcpServerInternal build() {
     TcpServerImpl server;
     if (cleanable) {
-      server = new CleanableNetServer(vertx,
+      server = new CleanableTcpServer(vertx,
         config,
         protocol,
         sslOptions,
@@ -83,6 +83,6 @@ public class NetServerBuilder {
         registerWriteHandler
       );
     }
-    return new NetServerImpl(server);
+    return server;
   }
 }

@@ -34,13 +34,15 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.net.impl.VertxHandler;
-import io.vertx.core.net.impl.tcp.CleanableNetClient;
+import io.vertx.core.net.impl.tcp.CleanableTcpClient;
 import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.net.impl.tcp.NetClientImpl;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
@@ -63,6 +65,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -4523,7 +4526,7 @@ public class NetTest extends VertxTestBase {
 
     });
     startServer();
-    NetClientInternal client = ((CleanableNetClient) vertx.createNetClient()).unwrap();
+    TcpClientInternal client = ((NetClientImpl) vertx.createNetClient()).delegate();
     CountDownLatch latch = new CountDownLatch(1);
     long now = System.currentTimeMillis();
     client.connect(testAddress)
@@ -4545,7 +4548,7 @@ public class NetTest extends VertxTestBase {
         latch.countDown();
     }));
     awaitLatch(latch);
-    Future<Void> fut = client.shutdown(2, TimeUnit.SECONDS);
+    Future<Void> fut = client.shutdown(Duration.ofSeconds(2));
     fut.onComplete(onSuccess(v -> {
       assertTrue(checker.test(now));
       complete();

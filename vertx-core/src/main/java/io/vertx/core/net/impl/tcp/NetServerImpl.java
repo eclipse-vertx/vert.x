@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
@@ -24,9 +25,9 @@ import java.time.Duration;
 public class NetServerImpl implements NetServerInternal {
 
   private Handler<NetSocket> connectHandler;
-  private TcpServerImpl delegate;
+  private TcpServerInternal delegate;
 
-  public NetServerImpl(TcpServerImpl delegate) {
+  public NetServerImpl(TcpServerInternal delegate) {
     this.delegate = delegate;
   }
 

@@ -22,6 +22,7 @@ import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -53,7 +54,7 @@ public class TcpHttpServer implements HttpServerInternal {
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
-  private NetServerInternal tcpServer;
+  private TcpServerInternal tcpServer;
   private Duration closeTimeout = Duration.ZERO;
   private CloseSequence closeSequence;
   private HttpServerMetrics<?, ?> httpMetrics;
@@ -68,7 +69,7 @@ public class TcpHttpServer implements HttpServerInternal {
 
   @Override
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
-    NetServer s;
+    TcpServer s;
     synchronized (this) {
       s = tcpServer;
     }
@@ -81,7 +82,7 @@ public class TcpHttpServer implements HttpServerInternal {
 
   @Override
   public Future<Boolean> updateTrafficShapingOptions(TrafficShapingOptions options) {
-    NetServer s;
+    TcpServer s;
     synchronized (this) {
       s = tcpServer;
     }
@@ -93,8 +94,13 @@ public class TcpHttpServer implements HttpServerInternal {
 
   @Override
   public synchronized int actualPort() {
-    NetServer s = tcpServer;
-    return s != null ? s.actualPort() : 0;
+    TcpServer s;
+    SocketAddress address;
+    if ((s = tcpServer) != null && (address = s.bindAddress()) != null) {
+      return address.port();
+    } else {
+      return 0;
+    }
   }
 
   @Override
@@ -199,7 +205,7 @@ public class TcpHttpServer implements HttpServerInternal {
         .build();
     }
     HttpCompressionConfig compression = config.getCompression();
-    NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
+    TcpServerInternal server = new TcpServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
       .fileRegionEnabled(!compression.isCompressionEnabled())
       .cleanable(false)
       .protocol("http")
@@ -270,18 +276,18 @@ public class TcpHttpServer implements HttpServerInternal {
     return result.future();
   }
 
-  private void doShutdown(NetServer netServer, Completable<Void> p) {
-    netServer.shutdown(closeTimeout).onComplete(p);
+  private void doShutdown(TcpServer tcpServer, Completable<Void> p) {
+    tcpServer.shutdown(closeTimeout).onComplete(p);
   }
 
-  private void doClose(NetServer netServer, Completable<Void> p) {
+  private void doClose(TcpServer tcpServer, Completable<Void> p) {
     if (requestHandler instanceof Closeable) {
       Closeable closeable = (Closeable) requestHandler;
       closeable.close((res, err) -> {
-        netServer.close().onComplete(foo(p));
+        tcpServer.close().onComplete(foo(p));
       });
     } else {
-      netServer.close().onComplete(foo(p));
+      tcpServer.close().onComplete(foo(p));
     }
   }
 
@@ -319,7 +325,7 @@ public class TcpHttpServer implements HttpServerInternal {
   }
 
   public synchronized boolean isClosed() {
-    NetServerInternal s = tcpServer;
+    TcpServerInternal s = tcpServer;
     return s == null || s.isClosed();
   }
 
@@ -328,7 +334,7 @@ public class TcpHttpServer implements HttpServerInternal {
     return true;
   }
 
-  public NetServerInternal tcpServer() {
+  public TcpServerInternal tcpServer() {
     return tcpServer;
   }
 }

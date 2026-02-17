@@ -19,10 +19,9 @@ import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.tcp.CleanableNetClient;
+import io.vertx.core.net.impl.tcp.CleanableTcpClient;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
@@ -292,7 +291,7 @@ public class VertxTest extends AsyncTestBase {
           latch2.countDown();
         }
       });
-      ((CleanableNetClient)client).unwrap().closeFuture().onComplete(ar -> {
+      ((CleanableTcpClient)client).unwrap().closeFuture().onComplete(ar -> {
         closed2.set(true);
       });
       awaitLatch(latch2);
