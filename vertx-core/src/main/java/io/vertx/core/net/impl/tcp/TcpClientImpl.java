@@ -48,9 +48,9 @@ import java.util.function.Predicate;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class NetClientImpl implements NetClientInternal {
+class TcpClientImpl implements NetClientInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(TcpClientImpl.class);
   protected final Duration idleTimeout;
   protected final Duration readIdleTimeout;
   protected final Duration writeIdleTimeout;
@@ -67,7 +67,7 @@ class NetClientImpl implements NetClientInternal {
   private final TransportMetrics metrics;
   private final Predicate<SocketAddress> proxyFilter;
 
-  public NetClientImpl(VertxInternal vertx,
+  public TcpClientImpl(VertxInternal vertx,
                        TcpClientConfig config,
                        String protocol,
                        ClientSSLOptions sslOptions,
@@ -77,7 +77,7 @@ class NetClientImpl implements NetClientInternal {
     this.channelGroup = new ConnectionGroup(vertx.acceptorEventLoopGroup().next()) {
       @Override
       protected void handleClose(Completable<Void> completion) {
-        NetClientImpl.this.handleClose(completion);
+        TcpClientImpl.this.handleClose(completion);
       }
     };
     this.config = config;
