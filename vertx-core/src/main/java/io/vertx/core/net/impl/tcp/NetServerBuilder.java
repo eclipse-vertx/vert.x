@@ -13,10 +13,6 @@ package io.vertx.core.net.impl.tcp;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
-
-import java.util.function.BiFunction;
 
 /**
  * A builder to configure NetServer plugins.
@@ -78,7 +74,7 @@ public class NetServerBuilder {
         fileRegionEnabled,
         registerWriteHandler);
     } else {
-      server = new NetServerImpl(
+      server = new TcpServerImpl(
         vertx,
         config,
         protocol,

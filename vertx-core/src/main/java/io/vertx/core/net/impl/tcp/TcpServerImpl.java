@@ -59,9 +59,9 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetServerImpl implements NetServerInternal {
+public class TcpServerImpl implements NetServerInternal {
 
-  private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(TcpServerImpl.class);
 
   private final VertxInternal vertx;
   private final TcpServerConfig config;
@@ -78,7 +78,7 @@ public class NetServerImpl implements NetServerInternal {
   private ConnectionGroup channelGroup;
   private Handler<Channel> worker;
   private volatile boolean listening;
-  private NetServerImpl actualServer;
+  private TcpServerImpl actualServer;
 
   // Main
   private SslContextManager sslContextManager;
@@ -90,7 +90,7 @@ public class NetServerImpl implements NetServerInternal {
   private TransportMetrics<?> metrics;
   private volatile int actualPort;
 
-  public NetServerImpl(VertxInternal vertx,
+  public TcpServerImpl(VertxInternal vertx,
                        TcpServerConfig config,
                        String protocol,
                        ServerSSLOptions sslOptions,
@@ -119,7 +119,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   @Override
-  public synchronized NetServerImpl connectHandler(Handler<NetSocket> handler) {
+  public synchronized TcpServerImpl connectHandler(Handler<NetSocket> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
@@ -128,7 +128,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   @Override
-  public synchronized NetServerImpl exceptionHandler(Handler<Throwable> handler) {
+  public synchronized TcpServerImpl exceptionHandler(Handler<Throwable> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set exceptionHandler when server is listening");
     }
@@ -137,7 +137,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   public int actualPort() {
-    NetServerImpl server = actualServer;
+    TcpServerImpl server = actualServer;
     return server != null ? server.actualPort : actualPort;
   }
 
@@ -321,7 +321,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
-    NetServerImpl server = actualServer;
+    TcpServerImpl server = actualServer;
     if (server != null && server != this) {
       return server.updateSSLOptions(options, force);
     } else {
@@ -364,7 +364,7 @@ public class NetServerImpl implements NetServerInternal {
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
-    NetServerImpl server = actualServer;
+    TcpServerImpl server = actualServer;
     ContextInternal ctx = vertx.getOrCreateContext();
     if (server == null) {
       // Server not yet started
@@ -419,18 +419,18 @@ public class NetServerImpl implements NetServerInternal {
     synchronized (sharedNetServers) {
       actualPort = localAddress.port();
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
-      NetServerImpl main;
+      TcpServerImpl main;
       boolean shared;
       ServerID id;
       if (actualPort > 0 || localAddress.isDomainSocket()) {
         id = new ServerID(actualPort, hostOrPath);
-        main = (NetServerImpl) sharedNetServers.get(id);
+        main = (TcpServerImpl) sharedNetServers.get(id);
         shared = true;
         bindAddress = localAddress;
       } else {
         if (actualPort < 0) {
           id = new ServerID(actualPort, hostOrPath + "/" + -actualPort);
-          main = (NetServerImpl) sharedNetServers.get(id);
+          main = (TcpServerImpl) sharedNetServers.get(id);
           shared = true;
           bindAddress = SocketAddress.inetSocketAddress(0, localAddress.host());
         } else {
@@ -443,11 +443,11 @@ public class NetServerImpl implements NetServerInternal {
       ConnectionGroup group = new ConnectionGroup(context.nettyEventLoop()) {
         @Override
         protected void handleClose(Completable<Void> completion) {
-          NetServerImpl.this.handleClose(completion);
+          TcpServerImpl.this.handleClose(completion);
         }
         @Override
         protected void handleShutdown(Duration timeout, Completable<Void> completion) {
-          NetServerImpl.this.handleShutdown(completion);
+          TcpServerImpl.this.handleShutdown(completion);
         }
       };
       channelGroup = group;
