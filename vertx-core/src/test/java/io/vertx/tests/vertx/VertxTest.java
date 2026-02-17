@@ -23,6 +23,7 @@ import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.CleanableTcpClient;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.impl.tcp.NetClientImpl;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.RepeatRule;
@@ -291,7 +292,7 @@ public class VertxTest extends AsyncTestBase {
           latch2.countDown();
         }
       });
-      ((CleanableTcpClient)client).unwrap().closeFuture().onComplete(ar -> {
+      ((NetClientImpl)client).delegate().closeFuture().onComplete(ar -> {
         closed2.set(true);
       });
       awaitLatch(latch2);
