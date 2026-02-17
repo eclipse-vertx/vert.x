@@ -21,7 +21,6 @@ import io.vertx.core.streams.WriteStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.security.cert.Certificate;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,8 +28,8 @@ import java.util.List;
  * Represents a socket-like interface to a TCP connection on either the
  * client or the server side.
  * <p>
- * Instances of this class are created on the client side by an {@link NetClient}
- * when a connection to a server is made, or on the server side by a {@link NetServer}
+ * Instances of this class are created on the client side by an {@link TcpClient}
+ * when a connection to a server is made, or on the server side by a {@link TcpServer}
  * when a server accepts a connection.
  * <p>
  * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with

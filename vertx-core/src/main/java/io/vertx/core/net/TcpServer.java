@@ -40,7 +40,7 @@ public interface TcpServer extends Measured {
   TcpServer connectHandler(@Nullable Handler<TcpSocket> handler);
 
   /**
-   * Start listening on the port and host as configured in the {@link NetServerOptions} used when
+   * Start listening on the port and host as configured in the {@link TcpServerConfig} used when
    * creating the server.
    * <p>
    * The server may not be listening until some time after the call to listen has returned.
@@ -50,7 +50,7 @@ public interface TcpServer extends Measured {
   Future<SocketAddress> listen();
 
   /**
-   * Start listening on the specified port and host, ignoring port and host configured in the {@link NetServerOptions} used when
+   * Start listening on the specified port and host, ignoring port and host configured in the {@link TcpServerConfig} used when
    * creating the server.
    * <p>
    * Port {@code 0} can be specified meaning "choose an random port".
@@ -67,7 +67,7 @@ public interface TcpServer extends Measured {
 
   /**
    * Start listening on the specified port and host "0.0.0.0", ignoring port and host configured in the
-   * {@link NetServerOptions} used when creating the server.
+   * {@link TcpServerConfig} used when creating the server.
    * <p>
    * Port {@code 0} can be specified meaning "choose an random port".
    * <p>
@@ -80,7 +80,7 @@ public interface TcpServer extends Measured {
   }
 
   /**
-   * Start listening on the specified local address, ignoring port and host configured in the {@link NetServerOptions} used when
+   * Start listening on the specified local address, ignoring port and host configured in the {@link TcpServerConfig} used when
    * creating the server.
    * <p>
    * The server may not be listening until some time after the call to listen has returned.
