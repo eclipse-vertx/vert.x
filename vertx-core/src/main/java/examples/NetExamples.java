@@ -255,155 +255,20 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  // SSL/TLS server key/cert
-
-  public void example17(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
-      new JksOptions().
-        setPath("/path/to/your/server-keystore.jks").
-        setPassword("password-of-your-keystore")
-    );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example18(Vertx vertx) {
-    Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.jks");
-    JksOptions jksOptions = new JksOptions().
-      setValue(myKeyStoreAsABuffer).
-      setPassword("password-of-your-keystore");
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(jksOptions);
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example19(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
-      new PfxOptions().
-        setPath("/path/to/your/server-keystore.pfx").
-        setPassword("password-of-your-keystore")
-    );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example20(Vertx vertx) {
-    Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-keystore.pfx");
-    PfxOptions pfxOptions = new PfxOptions().
-      setValue(myKeyStoreAsABuffer).
-      setPassword("password-of-your-keystore");
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(pfxOptions);
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example21(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
-      new PemKeyCertOptions().
-        setKeyPath("/path/to/your/server-key.pem").
-        setCertPath("/path/to/your/server-cert.pem")
-    );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example22(Vertx vertx) {
-    Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-key.pem");
-    Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-cert.pem");
-    PemKeyCertOptions pemOptions = new PemKeyCertOptions().
-      setKeyValue(myKeyAsABuffer).
-      setCertValue(myCertAsABuffer);
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(pemOptions);
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void exampleBKS(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
-      new KeyStoreOptions().
-        setType("BKS").
-        setPath("/path/to/your/server-keystore.bks").
-        setPassword("password-of-your-keystore")
-    );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  // SSL/TLS server trust
-
-  public void example23(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setClientAuth(ClientAuth.REQUIRED).
-      setTrustOptions(
+  public void sslServerConfiguration(Vertx vertx) {
+    ServerSSLOptions sslOptions = new ServerSSLOptions()
+      .setKeyCertOptions(
         new JksOptions().
-          setPath("/path/to/your/truststore.jks").
-          setPassword("password-of-your-truststore")
+          setPath("/path/to/your/server-keystore.jks").
+          setPassword("password-of-your-keystore")
       );
+
+    NetServerOptions options = new NetServerOptions()
+      .setSsl(true)
+      .setSslOptions(sslOptions);
+
     NetServer server = vertx.createNetServer(options);
   }
-
-  public void example24(Vertx vertx) {
-    Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setClientAuth(ClientAuth.REQUIRED).
-      setTrustOptions(
-        new JksOptions().
-          setValue(myTrustStoreAsABuffer).
-          setPassword("password-of-your-truststore")
-      );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example25(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setClientAuth(ClientAuth.REQUIRED).
-      setTrustOptions(
-        new PfxOptions().
-          setPath("/path/to/your/truststore.pfx").
-          setPassword("password-of-your-truststore")
-      );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example26(Vertx vertx) {
-    Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setClientAuth(ClientAuth.REQUIRED).
-      setTrustOptions(
-        new PfxOptions().
-          setValue(myTrustStoreAsABuffer).
-          setPassword("password-of-your-truststore")
-      );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example27(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setClientAuth(ClientAuth.REQUIRED).
-      setTrustOptions(
-        new PemTrustOptions().
-          addCertPath("/path/to/your/server-ca.pem")
-      );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void example28(Vertx vertx) {
-    Buffer myCaAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/server-ca.pfx");
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setClientAuth(ClientAuth.REQUIRED).
-      setTrustOptions(
-        new PemTrustOptions().
-          addCertValue(myCaAsABuffer)
-      );
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  // SSL/TLS client trust all
 
   public void example29(Vertx vertx) {
     NetClientOptions options = new NetClientOptions().
@@ -412,136 +277,71 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  // SSL/TLS client trust
-
-  public void example30(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(
-        new JksOptions().
-          setPath("/path/to/your/truststore.jks").
-          setPassword("password-of-your-truststore")
+  public void sslClientConfiguration(Vertx vertx) {
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(new JksOptions().
+        setPath("/path/to/your/truststore.jks").
+        setPassword("password-of-your-truststore")
       );
+
+    NetClientOptions options = new NetClientOptions()
+      .setSsl(true)
+      .setSslOptions(sslOptions);
+
     NetClient client = vertx.createNetClient(options);
   }
 
-  public void example31(Vertx vertx) {
-    Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.jks");
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(
-        new JksOptions().
-          setValue(myTrustStoreAsABuffer).
-          setPassword("password-of-your-truststore")
+  public void sslClientSocketConfiguration(Vertx vertx, int port, String host) {
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(new JksOptions().
+        setPath("/path/to/your/truststore.jks").
+        setPassword("password-of-your-truststore")
       );
+
+    NetClientOptions options = new NetClientOptions().setSslOptions(sslOptions);
+
     NetClient client = vertx.createNetClient(options);
-  }
 
-  public void example32(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(
-        new PfxOptions().
-          setPath("/path/to/your/truststore.pfx").
-          setPassword("password-of-your-truststore")
-      );
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example33(Vertx vertx) {
-    Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/truststore.pfx");
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(
-        new PfxOptions().
-          setValue(myTrustStoreAsABuffer).
-          setPassword("password-of-your-truststore")
-      );
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example34(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(
-        new PemTrustOptions().
-          addCertPath("/path/to/your/ca-cert.pem")
-      );
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example35(Vertx vertx) {
-    Buffer myTrustStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/ca-cert.pem");
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(
-        new PemTrustOptions().
-          addCertValue(myTrustStoreAsABuffer)
-      );
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  // SSL/TLS client key/cert
-
-  public void example36(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().setSsl(true).setKeyCertOptions(
-      new JksOptions().
-        setPath("/path/to/your/client-keystore.jks").
-        setPassword("password-of-your-keystore")
+    Future<NetSocket> future = client.connect(new ConnectOptions()
+      .setHost(host)
+      .setPort(port)
+      .setSsl(true)
     );
-    NetClient client = vertx.createNetClient(options);
   }
 
-  public void example37(Vertx vertx) {
-    Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-keystore.jks");
-    JksOptions jksOptions = new JksOptions().
-      setValue(myKeyStoreAsABuffer).
-      setPassword("password-of-your-keystore");
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setKeyCertOptions(jksOptions);
-    NetClient client = vertx.createNetClient(options);
-  }
+  public void sslClientSocketConfiguration2(Vertx vertx, int port, String host) {
+    NetClient client = vertx.createNetClient();
 
-  public void example38(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().setSsl(true).setKeyCertOptions(
-      new PfxOptions().
-        setPath("/path/to/your/client-keystore.pfx").
-        setPassword("password-of-your-keystore")
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(new JksOptions().
+        setPath("/path/to/your/truststore.jks").
+        setPassword("password-of-your-truststore")
+      );
+
+    Future<NetSocket> future = client.connect(new ConnectOptions()
+      .setHost(host)
+      .setPort(port)
+      .setSsl(true)
+      .setSslOptions(sslOptions)
     );
-    NetClient client = vertx.createNetClient(options);
   }
 
-  public void example39(Vertx vertx) {
-    Buffer myKeyStoreAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-keystore.pfx");
-    PfxOptions pfxOptions = new PfxOptions().
-      setValue(myKeyStoreAsABuffer).
-      setPassword("password-of-your-keystore");
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setKeyCertOptions(pfxOptions);
-    NetClient client = vertx.createNetClient(options);
-  }
+  public void upgradeToSSL(NetSocket socket, SSLOptions sslOptions) {
+    // Use the default SSL options of the client or the server
+    socket.upgradeToSsl()
+      .onSuccess(v -> {
+        // Upgrade worked
+      }).onFailure(err -> {
+        // Upgrade failed
+      });
 
-  public void example40(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().setSsl(true).setKeyCertOptions(
-      new PemKeyCertOptions().
-        setKeyPath("/path/to/your/client-key.pem").
-        setCertPath("/path/to/your/client-cert.pem")
-    );
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example41(Vertx vertx) {
-    Buffer myKeyAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-key.pem");
-    Buffer myCertAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/client-cert.pem");
-    PemKeyCertOptions pemOptions = new PemKeyCertOptions().
-      setKeyValue(myKeyAsABuffer).
-      setCertValue(myCertAsABuffer);
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setKeyCertOptions(pemOptions);
-    NetClient client = vertx.createNetClient(options);
+    // Use the specified SSL options
+    socket.upgradeToSsl(sslOptions)
+      .onSuccess(v -> {
+        // Upgrade worked
+      }).onFailure(err -> {
+        // Upgrade failed
+      });
   }
 
   public void updateSSLOptions(HttpServer server) {
@@ -550,50 +350,6 @@ public class NetExamples {
         new JksOptions()
           .setPath("/path/to/your/server-keystore.jks").
           setPassword("password-of-your-keystore")));
-  }
-
-  public void example42(Vertx vertx, JksOptions trustOptions) {
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(trustOptions).
-      addCrlPath("/path/to/your/crl.pem");
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example43(Vertx vertx, JksOptions trustOptions) {
-    Buffer myCrlAsABuffer = vertx.fileSystem().readFileBlocking("/path/to/your/crl.pem");
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustOptions(trustOptions).
-      addCrlValue(myCrlAsABuffer);
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example44(Vertx vertx, JksOptions keyStoreOptions) {
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(keyStoreOptions).
-      addEnabledCipherSuite("ECDHE-RSA-AES128-GCM-SHA256").
-      addEnabledCipherSuite("ECDHE-ECDSA-AES128-GCM-SHA256").
-      addEnabledCipherSuite("ECDHE-RSA-AES256-GCM-SHA384").
-      addEnabledCipherSuite("CDHE-ECDSA-AES256-GCM-SHA384");
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void addEnabledTLSPrococol(Vertx vertx, JksOptions keyStoreOptions) {
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(keyStoreOptions).
-      addEnabledSecureTransportProtocol("TLSv1.1");
-    NetServer server = vertx.createNetServer(options);
-  }
-
-  public void removeEnabledTLSPrococol(Vertx vertx, JksOptions keyStoreOptions) {
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(keyStoreOptions).
-      removeEnabledSecureTransportProtocol("TLSv1.2");
-    NetServer server = vertx.createNetServer(options);
   }
 
   public void exampleSSLEngine(Vertx vertx, JksOptions keyStoreOptions) {
@@ -616,10 +372,12 @@ public class NetExamples {
       setSslEngineOptions(new OpenSSLEngineOptions());
   }
 
-  public void example46(Vertx vertx, String verificationAlgorithm) {
+  public void example46(Vertx vertx, String verificationAlgorithm, ClientSSLOptions sslOptions) {
     NetClientOptions options = new NetClientOptions().
       setSsl(true).
+      setSslOptions(sslOptions).
       setHostnameVerificationAlgorithm(verificationAlgorithm);
+
     NetClient client = vertx.createNetClient(options);
   }
 

@@ -12,6 +12,7 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -147,6 +148,36 @@ public class ClientSSLOptions extends SSLOptions {
   @Override
   public ClientSSLOptions setApplicationLayerProtocols(List<String> protocols) {
     return (ClientSSLOptions) super.setApplicationLayerProtocols(protocols);
+  }
+
+  @Override
+  public ClientSSLOptions addCrlPath(String crlPath) throws NullPointerException {
+    return (ClientSSLOptions) super.addCrlPath(crlPath);
+  }
+
+  @Override
+  public ClientSSLOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    return (ClientSSLOptions) super.addCrlValue(crlValue);
+  }
+
+  @Override
+  public ClientSSLOptions removeEnabledCipherSuite(String suite) {
+    return (ClientSSLOptions) super.removeEnabledCipherSuite(suite);
+  }
+
+  @Override
+  public ClientSSLOptions addEnabledSecureTransportProtocol(String protocol) {
+    return (ClientSSLOptions) super.addEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
+  public ClientSSLOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (ClientSSLOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
+  @Override
+  public ClientSSLOptions addEnabledCipherSuite(String suite) {
+    return (ClientSSLOptions) super.addEnabledCipherSuite(suite);
   }
 
   /**

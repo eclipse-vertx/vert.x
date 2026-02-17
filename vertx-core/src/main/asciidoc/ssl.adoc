@@ -1,0 +1,57 @@
+=== Revoking certificate authorities
+
+Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
+longer be trusted. The {@link io.vertx.core.net.NetClientOptions#addCrlPath(java.lang.String) crlPath} configures
+the crl list to use:
+
+[source,$lang]
+----
+{@link examples.SslExamples#example42}
+----
+
+Buffer configuration is also supported:
+
+[source,$lang]
+----
+{@link examples.SslExamples#example43}
+----
+
+=== Configuring the Cipher suite
+
+By default, the TLS configuration will use the list of Cipher suites of the SSL engine:
+
+- JDK SSL engine when {@link io.vertx.core.net.JdkSSLEngineOptions} is used
+- OpenSSL engine when {@link io.vertx.core.net.OpenSSLEngineOptions} is used
+
+This Cipher suite can be configured with a suite of enabled ciphers:
+
+[source,$lang]
+----
+{@link examples.SslExamples#example44}
+----
+
+When the enabled cipher suites is defined (i.e not empty), it takes precedence over the default cipher suites of the SSL engine.
+
+Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+
+=== Configuring TLS protocol versions
+
+By default, the default TLS configuration enables the following protocols: TLSv1.2 and TLSv1.3. Protocol versions can be
+enabled by explicitly adding them:
+
+[source,$lang]
+----
+{@link examples.SslExamples#addEnabledTLSPrococol}
+----
+
+They can also be removed:
+
+[source,$lang]
+----
+{@link examples.SslExamples#removeEnabledTLSPrococol}
+----
+
+Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
+
+NOTE: TLS 1.0 (TLSv1) and TLS 1.1 (TLSv1.1) are widely deprecated and have been disabled by default since Vert.x 4.4.0.
+

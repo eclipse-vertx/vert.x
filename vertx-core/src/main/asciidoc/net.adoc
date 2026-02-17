@@ -159,13 +159,6 @@ read and write streams.
 
 See the chapter on <<streams, streams >> for more information.
 
-=== Upgrading connections to SSL/TLS
-
-A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl()}.
-
-The server or client must be configured for SSL/TLS for this to work correctly. Please see the <<ssl, chapter on SSL/TLS>>
-for more information.
-
 === TCP graceful shut down
 
 You can shut down a {@link io.vertx.core.net.NetServer#shutdown() server} or {@link io.vertx.core.net.NetClient#shutdown() client}.
@@ -414,158 +407,70 @@ These traffic shaping options can also be dynamically updated after server start
 TCP clients and servers can be configured to use http://en.wikipedia.org/wiki/Transport_Layer_Security[Transport Layer Security]
 - earlier versions of TLS were known as SSL.
 
-The APIs of the servers and clients are identical whether or not SSL/TLS is used, and it's enabled by configuring
+The APIs of the servers and clients are identical whether SSL/TLS is used, and it's enabled by configuring
 the {@link io.vertx.core.net.NetClientOptions} or {@link io.vertx.core.net.NetServerOptions} instances used
 to create the servers or clients.
 
 ==== Enabling SSL/TLS on the server
 
-SSL/TLS is enabled with  {@link io.vertx.core.net.NetServerOptions#setSsl(boolean) ssl}.
+Server SSL/TLS is enabled with the `NetServerOptions` {@link io.vertx.core.net.NetServerOptions#setSsl(boolean) ssl} setting.
 
-By default it is disabled.
-
-==== Specifying key/certificate for the server
-
-SSL/TLS servers usually provide certificates to clients in order to verify their identity to clients.
-
-Certificates/keys can be configured for servers in several ways:
-
-The first method is by specifying the location of a Java key-store which contains the certificate and private key.
-
-Java key stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
-utility which ships with the JDK.
-
-The password for the key store should also be provided:
+By default, it is disabled.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example17}
+{@link examples.NetExamples#sslServerConfiguration}
 ----
 
-Alternatively you can read the key store yourself as a buffer and provide that directly:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example18}
-----
-
-Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
-extension can also be loaded in a similar fashion than JKS key stores:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example19}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example20}
-----
-
-Another way of providing server private key and certificate separately using `.pem` files.
-
-[source,$lang]
-----
-{@link examples.NetExamples#example21}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example22}
-----
-
-Vert.x supports reading of unencrypted RSA and/or ECC based private keys from PKCS8 PEM files.
-RSA based private keys can also be read from PKCS1 PEM files.
-X.509 certificates can be read from PEM files containing a textual encoding of the certificate as defined by
-https://tools.ietf.org/html/rfc7468#section-5[RFC 7468, Section 5].
-
-WARNING: Keep in mind that the keys contained in an unencrypted PKCS8 or a PKCS1 PEM file can be extracted by
-anybody who can read the file. Thus, make sure to put proper access restrictions on such PEM files in order to
-prevent misuse.
-
-Finally, you can also load generic Java keystore, it is useful for using other KeyStore implementations
-like Bouncy Castle:
-
-[source,$lang]
-----
-{@link examples.NetExamples#exampleBKS}
-----
-
-==== Specifying trust for the server
-
-SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
-
-Certificate authorities can be configured for servers in several ways:
-
-Java trust stores can be managed with the http://docs.oracle.com/javase/6/docs/technotes/tools/solaris/keytool.html[keytool]
-utility which ships with the JDK.
-
-The password for the trust store should also be provided:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example23}
-----
-
-Alternatively you can read the trust store yourself as a buffer and provide that directly:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example24}
-----
-
-Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
-extension can also be loaded in a similar fashion than JKS trust stores:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example25}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example26}
-----
-
-Another way of providing server certificate authority using a list `.pem` files.
-
-[source,$lang]
-----
-{@link examples.NetExamples#example27}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example28}
-----
+You can read more about <<server_ssl,SSL server configuration>>
 
 ==== Enabling SSL/TLS on the client
 
-Net Clients can also be easily configured to use SSL. They have the exact same API when using SSL as when using standard sockets.
+Client SSL/TLS is enabled with the `NetClientOptions` {@link io.vertx.core.net.NetClientOptions#setSsl(boolean) ssl} property or {@link io.vertx.core.net.ConnectOptions#setSsl(boolean) ssl} property.
 
-To enable SSL on a NetClient the function setSSL(true) is called.
+The former defines the default client behavior.
 
-==== Client trust configuration
-
-If the {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustALl} is set to true on the client, then the client will
-trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
-be sure who you are connecting to. Use this with caution. Default value is false.
+When enabled, the client performs an SSL/TLS handshake with the provided SSL configuration.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example29}
+{@link examples.NetExamples#sslClientConfiguration}
 ----
 
-If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
-configured and should contain the certificates of the servers that the client trusts.
+The latter provides a fine-grained per socket configuration
+
+[source,$lang]
+----
+{@link examples.NetExamples#sslClientSocketConfiguration}
+----
+
+You can also set {@link io.vertx.core.net.ClientSSLOptions} at connect time.
+
+[source,$lang]
+----
+{@link examples.NetExamples#sslClientSocketConfiguration2}
+----
+
+You can read more about <<client_ssl,SSL client configuration>>.
+
+==== Client Server Name Indication (SNI)
+
+The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
+
+You can provide an explicit server name when connecting a socket
+
+[source,$lang]
+----
+{@link examples.NetExamples#useSNIInClient}
+----
+
+It can be used for different purposes:
+
+* present a server name different than the server host
+* present a server name while connecting to an IP
+* force to present a server name when using shortname
+
+==== Client host verification
 
 By default, host verification is *not* configured on the client. This verifies the CN portion of the server certificate against the server hostname to avoid https://en.wikipedia.org/wiki/Man-in-the-middle_attack[Man-in-the-middle attacks].
 
@@ -582,108 +487,17 @@ You must configure it explicitly on your client
 
 NOTE: the Vert.x HTTP client uses the TCP client and configures with `"HTTPS"` the verification algorithm.
 
-Like server configuration, the client trust can be configured in several ways:
+==== Upgrading connections to SSL/TLS
 
-The first method is by specifying the location of a Java trust-store which contains the certificate authority.
-
-It is just a standard Java key store, the same as the key stores on the server side. The client
-trust store location is set by using the function {@link io.vertx.core.net.JksOptions#setPath path} on the
-{@link io.vertx.core.net.JksOptions jks options}. If a server presents a certificate during connection which is not
-in the client trust store, the connection attempt will not succeed.
+A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.net.NetSocket#upgradeToSsl()}.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example30}
+{@link examples.NetExamples#upgradeToSSL}
 ----
 
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example31}
-----
-
-Certificate authority in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
-extension can also be loaded in a similar fashion than JKS trust stores:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example32}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example33}
-----
-
-Another way of providing server certificate authority using a list `.pem` files.
-
-[source,$lang]
-----
-{@link examples.NetExamples#example34}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example35}
-----
-
-==== Specifying key/certificate for the client
-
-If the server requires client authentication then the client must present its own certificate to the server when
-connecting. The client can be configured in several ways:
-
-The first method is by specifying the location of a Java key-store which contains the key and certificate.
-Again it's just a regular Java key store. The client keystore location is set by using the function
-{@link io.vertx.core.net.JksOptions#setPath(java.lang.String) path} on the
-{@link io.vertx.core.net.JksOptions jks options}.
-
-[source,$lang]
-----
-{@link examples.NetExamples#example36}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example37}
-----
-
-Key/certificate in PKCS#12 format (http://en.wikipedia.org/wiki/PKCS_12), usually with the `.pfx`  or the `.p12`
-extension can also be loaded in a similar fashion than JKS key stores:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example38}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example39}
-----
-
-Another way of providing server private key and certificate separately using `.pem` files.
-
-[source,$lang]
-----
-{@link examples.NetExamples#example40}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example41}
-----
-
-Keep in mind that pem configuration, the private key is not crypted.
+NOTE: usually client and server perform the handshake upgrade simultaneously, this is usually known as StartTLS and
+it used in protocols that start a conversation in plain text and decide to upgrade the connection with a TLS handshake
 
 ==== Updating SSL/TLS configuration
 
@@ -701,63 +515,6 @@ NOTE: The options object is compared (using `equals`) against the existing optio
 are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
 the update.
 
-==== Revoking certificate authorities
-
-Trust can be configured to use a certificate revocation list (CRL) for revoked certificates that should no
-longer be trusted. The {@link io.vertx.core.net.NetClientOptions#addCrlPath(java.lang.String) crlPath} configures
-the crl list to use:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example42}
-----
-
-Buffer configuration is also supported:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example43}
-----
-
-==== Configuring the Cipher suite
-
-By default, the TLS configuration will use the list of Cipher suites of the SSL engine:
-
-- JDK SSL engine when {@link io.vertx.core.net.JdkSSLEngineOptions} is used
-- OpenSSL engine when {@link io.vertx.core.net.OpenSSLEngineOptions} is used
-
-This Cipher suite can be configured with a suite of enabled ciphers:
-
-[source,$lang]
-----
-{@link examples.NetExamples#example44}
-----
-
-When the enabled cipher suites is defined (i.e not empty), it takes precedence over the default cipher suites of the SSL engine.
-
-Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
-
-==== Configuring TLS protocol versions
-
-By default, the default TLS configuration enables the following protocols: TLSv1.2 and TLSv1.3. Protocol versions can be
-enabled by explicitly adding them:
-
-[source,$lang]
-----
-{@link examples.NetExamples#addEnabledTLSPrococol}
-----
-
-They can also be removed:
-
-[source,$lang]
-----
-{@link examples.NetExamples#removeEnabledTLSPrococol}
-----
-
-Protocol versions can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
-
-NOTE: TLS 1.0 (TLSv1) and TLS 1.1 (TLSv1.1) are widely deprecated and have been disabled by default since Vert.x 4.4.0.
-
 ==== SSL engine
 
 The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead of the JDK implementation.
@@ -773,75 +530,6 @@ The engine options to use is
 ----
 {@link examples.NetExamples#exampleSSLEngine}
 ----
-
-==== Server Name Indication (SNI)
-
-Server Name Indication (SNI) is a TLS extension by which a client specifies a hostname attempting to connect: during
-the TLS handshake the client gives a server name and the server can use it to respond with a specific certificate
-for this server name instead of the default deployed certificate.
-If the server requires client authentication the server can use a specific trusted CA certificate depending on the
-indicated server name.
-
-When SNI is active the server uses
-
-* the certificate CN or SAN DNS (Subject Alternative Name with DNS) to do an exact match, e.g `www.example.com`
-* the certificate CN or SAN DNS certificate to match a wildcard name, e.g `*.example.com`
-* otherwise the first certificate when the client does not present a server name or the presented server name cannot be matched
-
-When the server additionally requires client authentication:
-
-* when {@link io.vertx.core.net.JksOptions} is {@link io.vertx.core.net.NetServerOptions#setTrustOptions set on trust options} then an exact match with the trust store alias is done
-* otherwise the available CA certificates are used in the same way as if no SNI is in place
-
-CAUTION: the server fails to bind with an error reporting an incorrect alias
-
-You can enable SNI on the server by setting {@link io.vertx.core.net.NetServerOptions#setSni(boolean)} to `true` and
-configured the server with multiple key/certificate pairs.
-
-Java KeyStore files or PKCS12 files can store multiple key/cert pairs out of the box.
-
-[source,$lang]
-----
-{@link examples.NetExamples#configureSNIServer}
-----
-
-{@link io.vertx.core.net.PemKeyCertOptions} can be configured to hold multiple entries:
-
-[source,$lang]
-----
-{@link examples.NetExamples#configureSNIServerWithPems}
-----
-
-The client implicitly sends the connecting host as an SNI server name for Fully Qualified Domain Name (FQDN).
-
-You can provide an explicit server name when connecting a socket
-
-[source,$lang]
-----
-{@link examples.NetExamples#useSNIInClient}
-----
-
-It can be used for different purposes:
-
-* present a server name different than the server host
-* present a server name while connecting to an IP
-* force to present a server name when using shortname
-
-==== Application-Layer Protocol Negotiation (ALPN)
-
-Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application layer protocol negotiation. It is used by
-HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
-with a protocol it supports.
-
-Java TLS supports ALPN (Java 8 with the most recent versions).
-
-===== OpenSSL ALPN support
-
-OpenSSL also supports (native) ALPN.
-
-OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setSslEngineOptions(SSLEngineOptions)}
-and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
-OpenSSL to be installed on your OS depending on the tcnative implementation.
 
 === Using a proxy for client connections
 

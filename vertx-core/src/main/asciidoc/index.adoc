@@ -909,6 +909,16 @@ SEVERE: java.io.IOException: Connection reset by peer
 It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
 may have not consumed the complete payload (the connection was cut before you were able to).
 
+== Configuring SSL
+
+[[server_ssl]]
+include::server_ssl.adoc[]
+
+[[client_ssl]]
+include::client_ssl.adoc[]
+
+include::ssl.adoc[]
+
 == Host name resolution
 
 Vert.x uses an an address resolver for resolving host name into IP addresses instead of

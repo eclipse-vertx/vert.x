@@ -255,8 +255,6 @@ public interface NetSocket extends Socket {
    *
    * <p>The server name is sent in the client handshake, it should be {@code null} on a server.</p>
    *
-   * <p>Be aware that for this to work SSL must be configured.</p>
-   *
    * @param sslOptions the SSL options
    * @param serverName the server name
    * @param upgrade the upgrade message to send
