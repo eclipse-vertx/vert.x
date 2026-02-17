@@ -104,6 +104,17 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     return (ClientSSLOptions) super.getSslOptions();
   }
 
+  /**
+   * Set the SSL options to use.
+   *
+   * @param sslOptions the ssl options to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public ClientOptionsBase setSslOptions(ClientSSLOptions sslOptions) {
+    return (ClientOptionsBase) super.setSslOptions(sslOptions);
+  }
+
   @Override
   protected ClientSSLOptions getOrCreateSSLOptions() {
     return (ClientSSLOptions) super.getOrCreateSSLOptions();

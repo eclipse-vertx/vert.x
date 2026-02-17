@@ -47,10 +47,11 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
     this.proxyFilter = nonProxyHosts != null ? ProxyFilter.nonProxyHosts(nonProxyHosts) : ProxyFilter.DEFAULT_PROXY_FILTER;
   }
 
-  static void configureSSLOptions(boolean verifyHost, ClientSSLOptions sslOptions) {
+  static void configureSSLOptions(boolean verifyHost, boolean useAlpn, ClientSSLOptions sslOptions) {
     if (sslOptions.getHostnameVerificationAlgorithm() == null) {
       sslOptions.setHostnameVerificationAlgorithm(verifyHost ? "HTTPS" : "");
     }
+    sslOptions.setUseAlpn(useAlpn);
   }
 
   public Future<Void> closeFuture() {
@@ -78,11 +79,11 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
     return proxyOptions;
   }
 
-  protected static ClientSSLOptions sslOptions(boolean verifyHost, HttpConnectOptions connectOptions, ClientSSLOptions defaultSslOptions) {
+  protected static ClientSSLOptions sslOptions(boolean verifyHost, boolean useAlpn, HttpConnectOptions connectOptions, ClientSSLOptions defaultSslOptions) {
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions != null) {
       sslOptions = sslOptions.copy();
-      configureSSLOptions(verifyHost, sslOptions);
+      configureSSLOptions(verifyHost, useAlpn, sslOptions);
     } else {
       sslOptions = defaultSslOptions;
     }

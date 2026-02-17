@@ -51,7 +51,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
     ClientSSLOptions sslOptions = options.getSslOptions();
     if (sslOptions != null) {
-      configureSSLOptions(options.isVerifyHost(), sslOptions);
+      configureSSLOptions(options.isVerifyHost(), false, sslOptions);
     }
 
     this.options = wsOptions;
@@ -83,7 +83,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
   @Override
   protected void setDefaultSslOptions(ClientSSLOptions options) {
-    configureSSLOptions(this.options.isVerifyHost(), options);
+    configureSSLOptions(this.options.isVerifyHost(), false, options);
     this.defaultSslOptions = options;
   }
 
@@ -93,7 +93,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     HostAndPort peer = HostAndPort.create(host, port);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
-    ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), connectOptions, defaultSslOptions);
+    ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), false, connectOptions, defaultSslOptions);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), HttpVersion.HTTP_1_1, sslOptions, proxyOptions, addr, peer);
     // todo: cache
     Function<EndpointKey, WebSocketGroup> provider = (key_) -> {

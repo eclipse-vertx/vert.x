@@ -62,6 +62,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final EndpointResolverInternal originResolver;
   private final boolean followAlternativeServices;
   private final boolean verifyHost;
+  private final boolean useAlpn;
   private final boolean defaultSsl;
   private final String defaultHost;
   private final int defaultPort;
@@ -81,6 +82,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  boolean followAlternativeServices,
                  Duration resolverKeepAlive,
                  boolean verifyHost,
+                 boolean useAlpn,
                  boolean defaultSsl,
                  String defaultHost,
                  int defaultPort,
@@ -93,7 +95,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     super(vertx, httpMetrics, defaultProxyOptions, nonProxyHosts);
 
     if (sslOptions != null) {
-      configureSSLOptions(verifyHost, sslOptions);
+      configureSSLOptions(verifyHost, useAlpn, sslOptions);
     }
 
     boolean resolveAll = loadBalancer != null;
@@ -109,6 +111,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.redirectHandler = redirectHandler != null ? redirectHandler : DEFAULT_REDIRECT_HANDLER;
     this.followAlternativeServices = followAlternativeServices;
     this.verifyHost = verifyHost;
+    this.useAlpn = useAlpn;
     this.defaultSsl = defaultSsl;
     this.defaultHost = defaultHost;
     this.defaultPort = defaultPort;
@@ -237,7 +240,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   }
 
   protected void setDefaultSslOptions(ClientSSLOptions options) {
-    configureSSLOptions(verifyHost, options);
+    configureSSLOptions(verifyHost, useAlpn, options);
     this.sslOptions = options;
   }
 
@@ -327,7 +330,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       protocol = defaultProtocol;
     }
     HostAndPort authority = HostAndPort.create(host, port);
-    ClientSSLOptions sslOptions = sslOptions(verifyHost, connect, this.sslOptions);
+    ClientSSLOptions sslOptions = sslOptions(verifyHost, useAlpn, connect, this.sslOptions);
     ProxyOptions proxyOptions = computeProxyOptions(connect.getProxyOptions(), server);
     ClientMetrics clientMetrics = httpMetrics != null ? httpMetrics.createEndpointMetrics(server, 1) : null;
     Boolean ssl = connect.isSsl();
@@ -435,7 +438,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     if (protocolVersion == null) {
       protocolVersion = defaultProtocol;
     }
-    ClientSSLOptions sslOptions = sslOptions(verifyHost, request, this.sslOptions);
+    ClientSSLOptions sslOptions = sslOptions(verifyHost, useAlpn, request, this.sslOptions);
     if (server instanceof SocketAddress) {
       SocketAddress serverSocketAddress = (SocketAddress) server;
       ProxyOptions proxyOptions = computeProxyOptions(request.getProxyOptions(), serverSocketAddress);

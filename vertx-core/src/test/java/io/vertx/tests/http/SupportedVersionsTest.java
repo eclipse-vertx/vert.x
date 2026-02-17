@@ -221,13 +221,9 @@ public class SupportedVersionsTest extends VertxTestBase {
   @Test
   public void testConfigH2H3NoAlpn() {
     HttpClientConfig config = new HttpClientConfig(CLIENT_DEFAULT_TLS).setVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3));
+    // alpn ignored
     config.getSslOptions().setUseAlpn(false);
-    try {
-      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), config);
-      fail();
-    } catch (VertxException e) {
-      // Must enable ALPN
-    }
+    configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER_DEFAULT_TLS).setQuicPort(4043), config);
   }
 
   private HttpVersion configTest(HttpServerOptions serverOptions, HttpClientConfig clientConfig) {

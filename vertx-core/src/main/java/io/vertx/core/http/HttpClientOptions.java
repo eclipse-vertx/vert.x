@@ -277,6 +277,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setSslOptions(ClientSSLOptions sslOptions) {
+    return (HttpClientOptions) super.setSslOptions(sslOptions);
+  }
+
+  @Override
   public HttpClientOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;
@@ -808,8 +813,20 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public boolean isUseAlpn() {
+    return protocolVersion == HttpVersion.HTTP_2;
+  }
+
+  /**
+   * Alpn supported is automatically managed by the HTTP client depending on the client supported protocols.
+   *
+   * @param useAlpn ignored
+   * @return this object
+   */
+  @Deprecated(forRemoval = true)
+  @Override
   public HttpClientOptions setUseAlpn(boolean useAlpn) {
-    return (HttpClientOptions) super.setUseAlpn(useAlpn);
+    return this;
   }
 
   @Override
@@ -818,33 +835,22 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiation. When
-   * the list is empty, the client provides a best effort list according to {@link #setProtocolVersion}
+   * @return {@code null}
    */
   public List<HttpVersion> getAlpnVersions() {
-    List<String> applicationLayerProtocols = getOrCreateSSLOptions().getApplicationLayerProtocols();
-    return applicationLayerProtocols != null ? HttpUtils.toHttpAlpnVersions(applicationLayerProtocols ) : null;
+    return null;
   }
 
   /**
-   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
-   * When the list is empty, the client makes a best effort list according to {@link #setProtocolVersion}:
+   * Does nothing, the list of supported alpn versions is managed by the HTTP client depending on the
+   * client supported HTTP versions.
    *
-   * <ul>
-   *   <li>{@link HttpVersion#HTTP_2}: [ "h2", "http/1.1" ]</li>
-   *   <li>otherwise: [{@link #getProtocolVersion()}]</li>
-   * </ul>
-   *
-   * @param alpnVersions the versions
+   * @param alpnVersions ignored
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this should not be used anymore
    */
+  @Deprecated(forRemoval = true)
   public HttpClientOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
-    ClientSSLOptions sslOptions = getOrCreateSSLOptions();
-    if (alpnVersions != null) {
-      sslOptions.setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(alpnVersions));
-    } else {
-      sslOptions.setApplicationLayerProtocols(null);
-    }
     return this;
   }
 

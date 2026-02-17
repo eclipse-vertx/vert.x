@@ -14,6 +14,7 @@ package io.vertx.core.http.impl.tcp;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.CloseSequence;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.SysProps;
@@ -27,6 +28,7 @@ import io.vertx.core.net.impl.tcp.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -199,7 +201,8 @@ public class TcpHttpServer implements HttpServerInternal {
         .build();
     }
     HttpCompressionConfig compression = config.getCompression();
-    NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), config.getSslOptions())
+    ServerSSLOptions sslOptions = configureSSLOptions(config);
+    NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), sslOptions)
       .fileRegionEnabled(!compression.isCompressionEnabled())
       .cleanable(false)
       .protocol("http")
@@ -245,7 +248,7 @@ public class TcpHttpServer implements HttpServerInternal {
         config.getHttp2Config(),
         registerWebSocketWriteHandlers,
         config.getWebSocketConfig(),
-        config.isSsl() ? config.getSslOptions() : null,
+        config.isSsl() ? sslOptions : null,
         serverOrigin,
         handler,
         exceptionHandler,
@@ -268,6 +271,29 @@ public class TcpHttpServer implements HttpServerInternal {
       }
     });
     return result.future();
+  }
+
+  private static ServerSSLOptions configureSSLOptions(HttpServerConfig config) {
+    ServerSSLOptions sslOptions;
+    if ((sslOptions = config.getSslOptions()) != null && config.isSsl()) {
+      sslOptions = sslOptions.copy();
+      boolean h2 = config.getVersions().contains(HttpVersion.HTTP_2);
+      if (h2) {
+        sslOptions.setUseAlpn(true);
+        List<HttpVersion> versions = new ArrayList<>();
+        if (config.getVersions().contains(HttpVersion.HTTP_2)) {
+          versions.add(HttpVersion.HTTP_2);
+        }
+        if (config.getVersions().contains(HttpVersion.HTTP_1_1)) {
+          versions.add(HttpVersion.HTTP_1_1);
+        }
+        if (config.getVersions().contains(HttpVersion.HTTP_1_0)) {
+          versions.add(HttpVersion.HTTP_1_0);
+        }
+        sslOptions.setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(versions));
+      }
+    }
+    return sslOptions;
   }
 
   private void doShutdown(NetServer netServer, Completable<Void> p) {

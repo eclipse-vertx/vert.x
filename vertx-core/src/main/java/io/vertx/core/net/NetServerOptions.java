@@ -141,6 +141,17 @@ public class NetServerOptions extends TCPSSLOptions {
     return (ServerSSLOptions) super.getSslOptions();
   }
 
+  /**
+   * Set the SSL options to use.
+   *
+   * @param sslOptions the ssl options to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public NetServerOptions setSslOptions(ServerSSLOptions sslOptions) {
+    return (NetServerOptions) super.setSslOptions(sslOptions);
+  }
+
   @Override
   protected ServerSSLOptions getOrCreateSSLOptions() {
     return (ServerSSLOptions) super.getOrCreateSSLOptions();

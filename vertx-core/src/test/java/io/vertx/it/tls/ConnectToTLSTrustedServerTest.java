@@ -35,7 +35,7 @@ public class ConnectToTLSTrustedServerTest {
       HttpServer server = vertx.createHttpServer(serverOptions)
         .requestHandler(req -> req.response().end(req.isSSL() + "/" + req.version()));
       server.listen(8443, "localhost").await();
-      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setUseAlpn(true).setProtocolVersion(HttpVersion.HTTP_2));
+      HttpClient client = vertx.createHttpClient(clientOptions);
       Future<HttpClientRequest> fut = client.request(new RequestOptions().setAbsoluteURI("https://localhost:8443"));
       Future<Buffer> buff = fut.compose(req -> req.send().compose(HttpClientResponse::body));
       return buff.await().toString();
