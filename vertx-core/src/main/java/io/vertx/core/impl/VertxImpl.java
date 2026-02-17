@@ -373,24 +373,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetClientInternal createNetClient(NetClientOptions options) {
-    CloseFuture fut = resolveCloseFuture();
     TcpClientConfig config = new TcpClientConfig(options);
     TcpClientBuilder builder = new TcpClientBuilder(this, config)
       .sslOptions(options.getSslOptions())
+      .cleanable(true)
       .registerWriteHandler(options.isRegisterWriteHandler());
-    TcpClientInternal netClient = builder.build();
-    fut.add(netClient);
-    return new NetClientImpl(new CleanableTcpClient(netClient, cleaner));
+    return new NetClientImpl(builder.build());
   }
 
   @Override
   public TcpClientInternal createTcpClient(TcpClientConfig tcpConfig, ClientSSLOptions sslOptions) {
-    CloseFuture fut = resolveCloseFuture();
     TcpClientBuilder builder = new TcpClientBuilder(this, tcpConfig)
-      .sslOptions(sslOptions);
-    TcpClientInternal netClient = builder.build();
-    fut.add(netClient);
-    return new CleanableTcpClient(netClient, cleaner);
+      .sslOptions(sslOptions)
+      .cleanable(true);
+    return builder.build();
   }
 
   @Override

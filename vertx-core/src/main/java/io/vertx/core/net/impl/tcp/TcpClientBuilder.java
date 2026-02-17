@@ -10,6 +10,8 @@
  */
 package io.vertx.core.net.impl.tcp;
 
+import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.TcpClientInternal;
@@ -26,6 +28,7 @@ public class TcpClientBuilder {
   private String protocol;
   private ClientSSLOptions sslOptions;
   private boolean registerWriteHandler;
+  private boolean cleanable;
 
   public TcpClientBuilder(VertxInternal vertx, TcpClientConfig config) {
     this.vertx = vertx;
@@ -49,7 +52,19 @@ public class TcpClientBuilder {
     return this;
   }
 
+  public TcpClientBuilder cleanable(boolean cleanable) {
+    this.cleanable = cleanable;
+    return this;
+  }
+
   public TcpClientInternal build() {
-    return new TcpClientImpl(vertx, config, protocol, sslOptions, registerWriteHandler);
+    TcpClientInternal client = new TcpClientImpl(vertx, config, protocol, sslOptions, registerWriteHandler);
+    if (cleanable) {
+      ContextInternal context = vertx.getContext();
+      CloseFuture fut = context != null ? context.closeFuture() : vertx.closeFuture();
+      fut.add(client);
+      client = new CleanableTcpClient(client, vertx.cleaner());
+    }
+    return client;
   }
 }
