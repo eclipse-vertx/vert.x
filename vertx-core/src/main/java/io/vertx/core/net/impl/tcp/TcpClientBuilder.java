@@ -12,13 +12,14 @@ package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.TcpClientConfig;
 
 /**
- * A builder to configure NetClient plugins.
+ * A builder to configure TcpClient plugins.
  */
-public class NetClientBuilder {
+public class TcpClientBuilder {
 
   private VertxInternal vertx;
   private TcpClientConfig config;
@@ -26,29 +27,29 @@ public class NetClientBuilder {
   private ClientSSLOptions sslOptions;
   private boolean registerWriteHandler;
 
-  public NetClientBuilder(VertxInternal vertx, TcpClientConfig config) {
+  public TcpClientBuilder(VertxInternal vertx, TcpClientConfig config) {
     this.vertx = vertx;
     this.config = config;
     this.registerWriteHandler = false;
     this.protocol = null;
   }
 
-  public NetClientBuilder sslOptions(ClientSSLOptions sslOptions) {
+  public TcpClientBuilder sslOptions(ClientSSLOptions sslOptions) {
     this.sslOptions = sslOptions;
     return this;
   }
 
-  public NetClientBuilder registerWriteHandler(boolean registerWriteHandler) {
+  public TcpClientBuilder registerWriteHandler(boolean registerWriteHandler) {
     this.registerWriteHandler =  registerWriteHandler;
     return this;
   }
 
-  public NetClientBuilder protocol(String protocol) {
+  public TcpClientBuilder protocol(String protocol) {
     this.protocol = protocol;
     return this;
   }
 
-  public NetClientInternal build() {
+  public TcpClientInternal build() {
     return new TcpClientImpl(vertx, config, protocol, sslOptions, registerWriteHandler);
   }
 }

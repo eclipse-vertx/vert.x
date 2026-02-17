@@ -36,7 +36,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpHeadersInternal;
-import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
@@ -61,7 +61,7 @@ import static io.vertx.core.http.HttpMethod.OPTIONS;
  */
 public class TcpHttpClientTransport implements HttpClientTransport {
 
-  public static TcpHttpClientTransport create(NetClientInternal netClient,
+  public static TcpHttpClientTransport create(TcpClientInternal netClient,
                                               HttpClientConfig config,
                                               HttpClientMetrics httpMetrics) {
     return new TcpHttpClientTransport(netClient,
@@ -89,9 +89,9 @@ public class TcpHttpClientTransport implements HttpClientTransport {
   private final Duration readIdleTimeout;
   private final Duration writeIdleTimeout;
   private final WebSocketMetrics<?> webSocketMetrics;
-  private final NetClientInternal client;
+  private final TcpClientInternal client;
 
-  public TcpHttpClientTransport(NetClientInternal netClient,
+  public TcpHttpClientTransport(TcpClientInternal netClient,
                                 TracingPolicy tracingPolicy,
                                 boolean useDecompression,
                                 boolean logActivity,
@@ -121,7 +121,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     this.client = netClient;
   }
 
-  public NetClientInternal client() {
+  public TcpClientInternal client() {
     return client;
   }
 
@@ -138,7 +138,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     }
   }
 
-  private void connect(ContextInternal context, HttpConnectParams params, HostAndPort authority, SocketAddress server, Promise<NetSocket> promise) {
+  private void connect(ContextInternal context, HttpConnectParams params, HostAndPort authority, SocketAddress server, Promise<TcpSocket> promise) {
     ConnectOptions connectOptions = new ConnectOptions();
     connectOptions.setRemoteAddress(server);
     if (authority != null) {
@@ -169,7 +169,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     client.connectInternal(connectOptions, promise, context);
   }
 
-  public Future<HttpClientConnection> wrap(ContextInternal context, HttpConnectParams params, HostAndPort authority, ClientMetrics<?, ?, ?> clientMetrics, SocketAddress server, NetSocket so_) {
+  public Future<HttpClientConnection> wrap(ContextInternal context, HttpConnectParams params, HostAndPort authority, ClientMetrics<?, ?, ?> clientMetrics, SocketAddress server, TcpSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
     TransportMetrics<?> transportMetrics = so.metrics();
@@ -240,8 +240,8 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       }
     }
 
-    Promise<NetSocket> promise = context.promise();
-    Future<NetSocket> future = promise.future();
+    Promise<TcpSocket> promise = context.promise();
+    Future<TcpSocket> future = promise.future();
     // We perform the compose operation before calling connect to be sure that the composition happens
     // before the promise is completed by the connect operation
     Future<HttpClientConnection> ret = future.compose(so -> wrap(context, params, authority, clientMetrics, server, so));
@@ -338,7 +338,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    return client.shutdown(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    return client.shutdown(timeout);
   }
 
   @Override

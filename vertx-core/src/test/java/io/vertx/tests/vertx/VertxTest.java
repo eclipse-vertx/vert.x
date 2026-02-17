@@ -20,6 +20,7 @@ import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetSocketInternal;
@@ -167,7 +168,7 @@ public class VertxTest extends AsyncTestBase {
         req.send();
       });
       TcpHttpClientTransport channelConnector = (TcpHttpClientTransport)(((CleanableHttpClient) client).delegate).tcpTransport();
-      NetClientInternal netClient = channelConnector.client();
+      TcpClientInternal netClient = channelConnector.client();
       netClient.closeFuture().onComplete(ar -> {
         closed2.set(true);
       });

@@ -45,6 +45,7 @@ import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
@@ -362,12 +363,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public NetClient createNetClient(NetClientOptions options) {
     CloseFuture fut = resolveCloseFuture();
     TcpClientConfig config = new TcpClientConfig(options);
-    NetClientBuilder builder = new NetClientBuilder(this, config)
+    TcpClientBuilder builder = new TcpClientBuilder(this, config)
       .sslOptions(options.getSslOptions())
       .registerWriteHandler(options.isRegisterWriteHandler());
-    NetClientInternal netClient = builder.build();
+    TcpClientInternal netClient = builder.build();
     fut.add(netClient);
-    return new CleanableNetClient(netClient, cleaner);
+    return new CleanableNetClient(new NetClientImpl(netClient), cleaner);
   }
 
   @Override
@@ -458,7 +459,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     o.setProtocolVersion(HttpVersion.HTTP_1_1);
     HttpClientConfig config = new HttpClientConfig(o);
     HttpClientMetrics<?, ?> httpMetrics = metrics() != null ? metrics().createHttpClientMetrics(config) : null;
-    NetClientInternal tcpClient = new NetClientBuilder(this, config.getTcpConfig())
+    TcpClientInternal tcpClient = new TcpClientBuilder(this, config.getTcpConfig())
       .protocol("http")
       .sslOptions(options.getSslOptions())
       .build();

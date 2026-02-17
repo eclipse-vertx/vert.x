@@ -24,13 +24,13 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.tcp.NetClientBuilder;
+import io.vertx.core.net.impl.tcp.NetClientImpl;
+import io.vertx.core.net.impl.tcp.TcpClientBuilder;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.metrics.EventBusMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -130,10 +130,10 @@ public final class ClusteredEventBus extends EventBusImpl {
 
   private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
     TcpClientConfig config = new TcpClientConfig(clientOptions);
-    NetClientBuilder builder = new NetClientBuilder(vertx, config)
+    TcpClientBuilder builder = new TcpClientBuilder(vertx, config)
       .sslOptions(clientOptions.getSslOptions())
       .registerWriteHandler(clientOptions.isRegisterWriteHandler());
-    return builder.build();
+    return new NetClientImpl(builder.build());
   }
 
   private NetServerOptions getServerOptions() {

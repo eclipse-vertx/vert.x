@@ -16,13 +16,14 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.TcpClientConfig;
-import io.vertx.core.net.impl.tcp.NetClientBuilder;
+import io.vertx.core.net.impl.tcp.TcpClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
@@ -234,7 +235,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       shared = co.isShared() ? co.getName() : null;
       TcpClientConfig clientConfig = netClientConfig(co)
         .setProxyOptions(null);
-      NetClientInternal tcpClient = new NetClientBuilder(vertx, clientConfig)
+      TcpClientInternal tcpClient = new TcpClientBuilder(vertx, clientConfig)
         .protocol("http")
         .sslOptions(co.getSslOptions())
         .build();

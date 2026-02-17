@@ -27,6 +27,7 @@ import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.net.TcpClientInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
@@ -48,7 +49,7 @@ import java.util.function.Predicate;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class TcpClientImpl implements NetClientInternal {
+class TcpClientImpl implements TcpClientInternal {
 
   private static final Logger log = LoggerFactory.getLogger(TcpClientImpl.class);
   protected final Duration idleTimeout;
@@ -108,22 +109,22 @@ class TcpClientImpl implements NetClientInternal {
   }
 
   @Override
-  public Future<NetSocket> connect(int port, String host) {
+  public Future<TcpSocket> connect(int port, String host) {
     return connect(port, host, (String) null);
   }
 
   @Override
-  public Future<NetSocket> connect(int port, String host, String serverName) {
+  public Future<TcpSocket> connect(int port, String host, String serverName) {
     return connect(SocketAddress.inetSocketAddress(port, host), serverName);
   }
 
   @Override
-  public Future<NetSocket> connect(SocketAddress remoteAddress) {
+  public Future<TcpSocket> connect(SocketAddress remoteAddress) {
     return connect(remoteAddress, null);
   }
 
   @Override
-  public Future<NetSocket> connect(SocketAddress remoteAddress, String serverName) {
+  public Future<TcpSocket> connect(SocketAddress remoteAddress, String serverName) {
     ConnectOptions connectOptions = new ConnectOptions();
     connectOptions.setRemoteAddress(remoteAddress);
     String peerHost = remoteAddress.host();
@@ -141,15 +142,15 @@ class TcpClientImpl implements NetClientInternal {
   }
 
   @Override
-  public Future<NetSocket> connect(ConnectOptions connectOptions) {
+  public Future<TcpSocket> connect(ConnectOptions connectOptions) {
     ContextInternal context = vertx.getOrCreateContext();
-    Promise<NetSocket> promise = context.promise();
+    Promise<TcpSocket> promise = context.promise();
     connectInternal(connectOptions, registerWriteHandler, promise, context, config.getReconnectAttempts());
     return promise.future();
   }
 
   @Override
-  public void connectInternal(ConnectOptions connectOptions, Promise<NetSocket> connectHandler, ContextInternal context) {
+  public void connectInternal(ConnectOptions connectOptions, Promise<TcpSocket> connectHandler, ContextInternal context) {
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();
     if (sslOptions == null) {
       connectOptions.setSslOptions(this.sslOptions);
@@ -172,7 +173,6 @@ class TcpClientImpl implements NetClientInternal {
     }
   }
 
-  @Override
   public void close(Completable<Void> completion) {
     channelGroup.shutdown(0, TimeUnit.SECONDS).onComplete(completion);
   }
@@ -208,7 +208,7 @@ class TcpClientImpl implements NetClientInternal {
 
   private void connectInternal(ConnectOptions connectOptions,
                                boolean registerWriteHandlers,
-                               Promise<NetSocket> connectHandler,
+                               Promise<TcpSocket> connectHandler,
                                ContextInternal context,
                                int remainingAttempts) {
     if (channelGroup.isStarted()) {
@@ -242,7 +242,7 @@ class TcpClientImpl implements NetClientInternal {
                                 ClientSSLOptions sslOptions,
                                 SslContextProvider sslContextProvider,
                                 boolean registerWriteHandlers,
-                                Promise<NetSocket> connectHandler,
+                                Promise<TcpSocket> connectHandler,
                                 ContextInternal context,
                                 int remainingAttempts) {
     EventLoop eventLoop = context.nettyEventLoop();
@@ -375,7 +375,7 @@ class TcpClientImpl implements NetClientInternal {
   private void connected(ContextInternal context,
                          ClientSSLOptions sslOptions,
                          Channel ch,
-                         Promise<NetSocket> connectHandler,
+                         Promise<TcpSocket> connectHandler,
                          SocketAddress remoteAddress,
                          boolean ssl,
                          boolean registerWriteHandlers) {
@@ -400,7 +400,7 @@ class TcpClientImpl implements NetClientInternal {
     ch.pipeline().addLast("handler", handler);
   }
 
-  private void failed(ContextInternal context, Channel ch, Throwable th, Promise<NetSocket> connectHandler) {
+  private void failed(ContextInternal context, Channel ch, Throwable th, Promise<TcpSocket> connectHandler) {
     if (ch != null) {
       ch.close();
     }
