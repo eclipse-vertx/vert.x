@@ -105,10 +105,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private SSLEngineOptions sslEngineOptions;
   private SSLOptions sslOptions;
 
-  private Set<String> enabledCipherSuites;
-  private List<String> crlPaths;
-  private List<Buffer> crlValues;
-
   /**
    * Default constructor
    */
@@ -124,6 +120,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions(TCPSSLOptions other) {
     super(other);
+
+    SSLOptions sslOptions = other.sslOptions;
+
     this.idleTimeout = other.getIdleTimeout();
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.readIdleTimeout = other.getReadIdleTimeout();
@@ -131,16 +130,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.ssl = other.isSsl();
     this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.transportOptions = other.transportOptions != null ? other.transportOptions.copy() : new TcpConfig();
-
-    SSLOptions sslOptions = other.sslOptions;
-    if (sslOptions != null) {
-      this.sslOptions = sslOptions.copy();
-      if (this.sslOptions != null) {
-        enabledCipherSuites = this.sslOptions.enabledCipherSuites;
-        crlPaths = this.sslOptions.crlPaths;
-        crlValues = this.sslOptions.crlValues;
-      }
-    }
+    this.sslOptions = sslOptions != null ? sslOptions.copy() : null;
   }
 
   /**
@@ -227,22 +217,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   protected SSLOptions getOrCreateSSLOptions() {
     if (sslOptions == null) {
       sslOptions = createSSLOptions();
-      // Necessary hacks because we return lazy created collections so we need to care about that
-      if (enabledCipherSuites != null) {
-        sslOptions.enabledCipherSuites = enabledCipherSuites;
-      } else {
-        enabledCipherSuites = sslOptions.enabledCipherSuites;
-      }
-      if (crlPaths != null) {
-        sslOptions.crlPaths = crlPaths;
-      } else {
-        crlPaths = sslOptions.crlPaths;
-      }
-      if (crlValues != null) {
-        sslOptions.crlValues = crlValues;
-      } else {
-        crlValues = sslOptions.crlValues;
-      }
     }
     return sslOptions;
   }
@@ -259,6 +233,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   @GenIgnore
   public SSLOptions getSslOptions() {
     return sslOptions;
+  }
+
+  TCPSSLOptions setSslOptions(SSLOptions sslOptions) {
+    this.sslOptions = sslOptions;
+    return this;
   }
 
   @Override
@@ -556,10 +535,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the enabled cipher suites
    */
   public Set<String> getEnabledCipherSuites() {
-    if (enabledCipherSuites == null) {
-      enabledCipherSuites = new LinkedHashSet<>();
-    }
-    return enabledCipherSuites;
+    return getOrCreateSSLOptions().getEnabledCipherSuites();
   }
 
   /**
@@ -567,17 +543,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the CRL (Certificate revocation list) paths
    */
   public List<String> getCrlPaths() {
-    if (crlPaths == null) {
-      crlPaths = new ArrayList<>();
-    }
-    return crlPaths;
+    return getOrCreateSSLOptions().getCrlPaths();
   }
 
   /**
    * Add a CRL path
    * @param crlPath  the path
    * @return a reference to this, so the API can be used fluently
-   * @throws NullPointerException
    */
   public TCPSSLOptions addCrlPath(String crlPath) throws NullPointerException {
     getOrCreateSSLOptions().addCrlPath(crlPath);
@@ -590,10 +562,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return the list of values
    */
   public List<Buffer> getCrlValues() {
-    if (crlValues == null) {
-      crlValues =  new ArrayList<>();
-    }
-    return crlValues;
+    return getOrCreateSSLOptions().getCrlValues();
   }
 
   /**

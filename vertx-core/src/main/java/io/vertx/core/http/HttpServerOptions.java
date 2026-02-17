@@ -333,6 +333,11 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setSslOptions(ServerSSLOptions sslOptions) {
+    return (HttpServerOptions) super.setSslOptions(sslOptions);
+  }
+
+  @Override
   public HttpServerOptions setSendBufferSize(int sendBufferSize) {
     super.setSendBufferSize(sendBufferSize);
     return this;
@@ -411,8 +416,19 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public boolean isUseAlpn() {
+    return true;
+  }
+
+  /**
+   * Alpn supported is automatically managed by the HTTP server depending on the client supported protocols.
+   *
+   * @param useAlpn ignored
+   * @return this object
+   */
+  @Deprecated(forRemoval = true)
+  @Override
   public HttpServerOptions setUseAlpn(boolean useAlpn) {
-    super.setUseAlpn(useAlpn);
     return this;
   }
 
@@ -877,26 +893,21 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiation
+   * @return {@code null}
    */
   public List<HttpVersion> getAlpnVersions() {
-    List<String> applicationLayerProtocols = getOrCreateSSLOptions().getApplicationLayerProtocols();
-    return applicationLayerProtocols != null ? HttpUtils.toHttpAlpnVersions(applicationLayerProtocols ) : null;
+    return null;
   }
 
   /**
-   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
+   * Does nothing, the list of supported alpn versions is managed by the HTTP server.
    *
-   * @param alpnVersions the versions
+   * @param alpnVersions ignored
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this should not be used anymore
    */
+  @Deprecated(forRemoval = true)
   public HttpServerOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
-    ServerSSLOptions sslOptions = getOrCreateSSLOptions();
-    if (alpnVersions != null) {
-      sslOptions.setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(alpnVersions));
-    } else {
-      sslOptions.setApplicationLayerProtocols(null);
-    }
     return this;
   }
 

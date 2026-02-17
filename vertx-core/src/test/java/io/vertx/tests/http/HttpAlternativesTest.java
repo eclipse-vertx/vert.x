@@ -23,6 +23,7 @@ import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.Proxy;
@@ -36,6 +37,7 @@ import java.security.cert.CertificateException;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -63,15 +65,16 @@ public class HttpAlternativesTest extends VertxTestBase {
 
   private Consumer<Handler<HttpServerRequest>> startServer(int port, Cert<? extends KeyCertOptions> cert, HttpVersion... versions) {
     AtomicReference<Handler<HttpServerRequest>> handler = new AtomicReference<>();
-    List<HttpVersion> tcpVersions = Stream.of(versions).filter(v -> v != HttpVersion.HTTP_3).collect(Collectors.toList());
+    Set<HttpVersion> tcpVersions = Stream.of(versions).filter(v -> v != HttpVersion.HTTP_3).collect(Collectors.toSet());
     List<HttpVersion> quicVersions = Stream.of(versions).filter(v -> v == HttpVersion.HTTP_3).collect(Collectors.toList());
     if (!tcpVersions.isEmpty()) {
-      HttpServer server = vertx.createHttpServer(new HttpServerOptions()
+      HttpServer server = vertx.createHttpServer(new HttpServerConfig()
         .setSsl(true)
-        .setUseAlpn(true)
-        .setSni(true)
-        .setAlpnVersions(tcpVersions)
-        .setKeyCertOptions(cert.get()));
+        .setVersions(tcpVersions)
+        .setSslOptions(new ServerSSLOptions()
+          .setSni(true)
+          .setKeyCertOptions(cert.get()))
+      );
       server.requestHandler(request -> {
         Handler<HttpServerRequest> h = handler.get();
         if (h != null) {
