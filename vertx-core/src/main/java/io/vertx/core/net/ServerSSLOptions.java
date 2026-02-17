@@ -168,6 +168,16 @@ public class ServerSSLOptions extends SSLOptions {
     return (ServerSSLOptions) super.addEnabledSecureTransportProtocol(protocol);
   }
 
+  @Override
+  public ServerSSLOptions removeEnabledCipherSuite(String suite) {
+    return (ServerSSLOptions) super.removeEnabledCipherSuite(suite);
+  }
+
+  @Override
+  public ServerSSLOptions removeEnabledSecureTransportProtocol(String protocol) {
+    return (ServerSSLOptions) super.removeEnabledSecureTransportProtocol(protocol);
+  }
+
   /**
    * Convert to JSON
    *
