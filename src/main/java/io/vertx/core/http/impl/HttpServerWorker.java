@@ -33,9 +33,12 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -61,6 +64,7 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
   private final CompressionOptions[] compressionOptions;
   private final Function<String, String> encodingDetector;
   private final GlobalTrafficShapingHandler trafficShapingHandler;
+  private static final Logger log = LoggerFactory.getLogger(SslChannelProvider.class);
 
   public HttpServerWorker(ContextInternal context,
                           Supplier<ContextInternal> streamContextSupplier,
@@ -115,18 +119,28 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
           if (idle != null) {
             ch.pipeline().remove(idle);
           }
-          configurePipeline(future.getNow(), sslChannelProvider);
+          try {
+            configurePipeline(future.getNow(), sslChannelProvider);
+          } catch (Exception e) {
+            log.error(e.getMessage()+ ", now closing the channel");
+            ch.close();
+          }
         } else {
           //No need to close the channel.HAProxyMessageDecoder already did
           handleException(future.cause());
         }
       });
     } else {
-      configurePipeline(ch, sslChannelProvider);
+      try {
+        configurePipeline(ch, sslChannelProvider);
+      } catch (Exception e) {
+        log.error(e.getMessage()+ ", now closing the channel");
+        ch.close();
+      }
     }
   }
 
-  private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) {
+  private void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider) throws Exception {
     ChannelPipeline pipeline = ch.pipeline();
     if (options.isSsl()) {
       pipeline.addLast("ssl", sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));

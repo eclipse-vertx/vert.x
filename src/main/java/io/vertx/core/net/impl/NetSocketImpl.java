@@ -338,7 +338,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
           if (remoteAddress != null) {
             sslHandler = sslChannelProvider.createClientSslHandler(remoteAddress, serverName, false);
           } else {
-            sslHandler = sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
+            try {
+              sslHandler = sslChannelProvider.createServerHandler(HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
+            } catch (Exception e) {
+              promise.fail(e);
+              return;
+            }
           }
           chctx.pipeline().addFirst("ssl", sslHandler);
         } else {
