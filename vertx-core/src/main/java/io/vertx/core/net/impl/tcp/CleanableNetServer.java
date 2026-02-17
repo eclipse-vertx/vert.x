@@ -39,7 +39,7 @@ public class CleanableNetServer extends TcpServerImpl implements Closeable {
 
   @Override
   public void close(Completable<Void> completion) {
-    super.shutdown(0L, TimeUnit.SECONDS).onComplete(completion);
+    super.close().onComplete(completion);
   }
 
   @Override
