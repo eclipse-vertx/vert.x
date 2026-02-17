@@ -43,7 +43,7 @@ public class CleanableNetServer extends TcpServerImpl implements Closeable {
   }
 
   @Override
-  public Future<NetServer> listen(ContextInternal context, SocketAddress localAddress) {
+  public Future<SocketAddress> listen(ContextInternal context, SocketAddress localAddress) {
     synchronized (this) {
       if (listenContext != null) {
         return context.failedFuture(new IllegalStateException());

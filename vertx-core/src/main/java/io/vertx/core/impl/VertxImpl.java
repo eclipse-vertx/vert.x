@@ -45,6 +45,7 @@ import io.vertx.core.impl.verticle.VerticleManager;
 import io.vertx.core.internal.*;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.*;
@@ -149,7 +150,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
   private final EventExecutorProvider eventExecutorProvider;
-  private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
+  private final Map<ServerID, TcpServerInternal> sharedNetServers = new HashMap<>();
   private final ContextLocal<?>[] contextLocals;
   private final List<ContextLocal<?>> contextLocalsList;
   final WorkerPool workerPool;
@@ -595,7 +596,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return eventLoop;
   }
 
-  public Map<ServerID, NetServerInternal> sharedTcpServers() {
+  public Map<ServerID, TcpServerInternal> sharedTcpServers() {
     return sharedNetServers;
   }
 

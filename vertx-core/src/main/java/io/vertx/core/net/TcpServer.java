@@ -147,6 +147,14 @@ public interface TcpServer extends Measured {
   }
 
   /**
+   * The socket address the server is listening on. This is useful if you bound the server specifying 0 as port number
+   * signifying an ephemeral port
+   *
+   * @return the server bind address the server is listening on or {@code null}
+   */
+  SocketAddress bindAddress();
+
+  /**
    * <p>Update the server with new SSL {@code options}, the update happens if the options object is valid and different
    * from the existing options object.
    *

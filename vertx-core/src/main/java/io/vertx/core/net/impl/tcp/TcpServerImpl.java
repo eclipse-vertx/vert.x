@@ -38,6 +38,7 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
@@ -59,7 +60,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class TcpServerImpl implements NetServerInternal {
+public class TcpServerImpl implements TcpServerInternal {
 
   private static final Logger log = LoggerFactory.getLogger(TcpServerImpl.class);
 
@@ -69,7 +70,7 @@ public class TcpServerImpl implements NetServerInternal {
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
   private final String protocol;
-  private Handler<NetSocket> handler;
+  private Handler<TcpSocket> handler;
   private Handler<Throwable> exceptionHandler;
 
   // Per server
@@ -114,12 +115,7 @@ public class TcpServerImpl implements NetServerInternal {
   }
 
   @Override
-  public synchronized Handler<NetSocket> connectHandler() {
-    return handler;
-  }
-
-  @Override
-  public synchronized TcpServerImpl connectHandler(Handler<NetSocket> handler) {
+  public synchronized TcpServerImpl connectHandler(Handler<TcpSocket> handler) {
     if (isListening()) {
       throw new IllegalStateException("Cannot set connectHandler when server is listening");
     }
@@ -136,11 +132,6 @@ public class TcpServerImpl implements NetServerInternal {
     return this;
   }
 
-  public int actualPort() {
-    TcpServerImpl server = actualServer;
-    return server != null ? server.actualPort : actualPort;
-  }
-
   @Override
   public Future<Void> shutdown(Duration timeout) {
     ConnectionGroup group = channelGroup;
@@ -151,22 +142,22 @@ public class TcpServerImpl implements NetServerInternal {
   }
 
   @Override
-  public Future<NetServer> listen(SocketAddress localAddress) {
+  public Future<SocketAddress> listen(SocketAddress localAddress) {
     return listen(vertx.getOrCreateContext(), localAddress);
   }
 
-  public Future<NetServer> listen(ContextInternal context, SocketAddress localAddress) {
+  public Future<SocketAddress> listen(ContextInternal context, SocketAddress localAddress) {
     if (localAddress == null) {
       throw new NullPointerException("No null bind local address");
     }
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
-    return bind(context, localAddress).map(this);
+    return bind(context, localAddress);
   }
 
   @Override
-  public Future<NetServer> listen() {
+  public Future<SocketAddress> listen() {
     return listen(config.getPort(), config.getHost());
   }
 
@@ -177,11 +168,11 @@ public class TcpServerImpl implements NetServerInternal {
   private class NetSocketInitializer {
 
     private final ContextInternal context;
-    private final Handler<NetSocket> connectionHandler;
+    private final Handler<TcpSocket> connectionHandler;
     private final Handler<Throwable> exceptionHandler;
     private final GlobalTrafficShapingHandler trafficShapingHandler;
 
-    NetSocketInitializer(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
+    NetSocketInitializer(ContextInternal context, Handler<TcpSocket> connectionHandler, Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
       this.context = context;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
@@ -320,6 +311,18 @@ public class TcpServerImpl implements NetServerInternal {
     return sslContextManager.sniEntrySize();
   }
 
+  @Override
+  public SocketAddress bindAddress() {
+    Future<Channel> f;
+    TcpServerImpl server = actualServer;
+    Channel ch;
+    if (server != null && (f = server.bindFuture) != null && (ch = f.result()) != null) {
+      return vertx.transport().convert(ch.localAddress());
+    } else {
+      return null;
+    }
+  }
+
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
     TcpServerImpl server = actualServer;
     if (server != null && server != this) {
@@ -406,7 +409,7 @@ public class TcpServerImpl implements NetServerInternal {
     }
   }
 
-  private synchronized Future<Channel> bind(ContextInternal context, SocketAddress localAddress) {
+  private synchronized Future<SocketAddress> bind(ContextInternal context, SocketAddress localAddress) {
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
@@ -414,8 +417,9 @@ public class TcpServerImpl implements NetServerInternal {
     this.listening = true;
     this.eventLoop = context.nettyEventLoop();
 
+    PromiseInternal<Channel> promise = context.promise();
     SocketAddress bindAddress;
-    Map<ServerID, NetServerInternal> sharedNetServers = vertx.sharedTcpServers();
+    Map<ServerID, TcpServerInternal> sharedNetServers = (Map)vertx.sharedTcpServers();
     synchronized (sharedNetServers) {
       actualPort = localAddress.port();
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
@@ -451,7 +455,6 @@ public class TcpServerImpl implements NetServerInternal {
         }
       };
       channelGroup = group;
-      PromiseInternal<Channel> promise = context.promise();
       if (main == null) {
 
         SslContextManager helper;
@@ -508,8 +511,6 @@ public class TcpServerImpl implements NetServerInternal {
           }
           listening = false;
         });
-
-        return bindFuture;
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = main;
@@ -523,9 +524,10 @@ public class TcpServerImpl implements NetServerInternal {
         };
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         main.bindFuture.onComplete(promise);
-        return promise.future();
       }
     }
+    return promise.future()
+      .map(ch -> vertx.transport().convert(ch.localAddress()));
   }
 
   private void bind(
@@ -535,7 +537,7 @@ public class TcpServerImpl implements NetServerInternal {
     SocketAddress localAddress,
     boolean shared,
     Promise<Channel> promise,
-    Map<ServerID, NetServerInternal> sharedNetServers,
+    Map<ServerID, TcpServerInternal> sharedNetServers,
     ServerID id) {
     // Socket bind
     channelBalancer.addWorker(eventLoop, worker);
@@ -629,7 +631,7 @@ public class TcpServerImpl implements NetServerInternal {
       completion.succeed();
       return;
     }
-    Map<ServerID, NetServerInternal> servers = vertx.sharedTcpServers();
+    Map<ServerID, TcpServerInternal> servers = vertx.sharedTcpServers();
     boolean hasHandlers;
     synchronized (servers) {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;

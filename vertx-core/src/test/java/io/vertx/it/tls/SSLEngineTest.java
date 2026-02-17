@@ -15,6 +15,7 @@ import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
@@ -102,8 +103,8 @@ public class SSLEngineTest extends HttpTestBase {
         return;
       }
     }
-    NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
-    assertEquals(tcpServer.actualPort(), server.actualPort());
+    TcpServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
+    assertEquals(tcpServer.bindAddress().port(), server.actualPort());
     SslContextProvider provider = tcpServer.sslContextProvider();
     SslContext ctx = provider.createContext(false, null);
     switch (expectedSslContext != null ? expectedSslContext : "jdk") {

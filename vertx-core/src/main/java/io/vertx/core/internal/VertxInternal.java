@@ -17,6 +17,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.impl.*;
 import io.vertx.core.internal.deployment.DeploymentManager;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetServerOptions;
@@ -130,7 +131,7 @@ public interface VertxInternal extends Vertx {
 
   WorkerPool internalWorkerPool();
 
-  Map<ServerID, NetServerInternal> sharedTcpServers();
+  Map<ServerID, TcpServerInternal> sharedTcpServers();
 
   VertxMetrics metrics();
 

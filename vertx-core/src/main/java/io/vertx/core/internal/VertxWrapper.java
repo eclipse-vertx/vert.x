@@ -21,6 +21,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.internal.deployment.DeploymentManager;
+import io.vertx.core.internal.net.TcpServerInternal;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
 import io.vertx.core.net.NetClient;
@@ -257,7 +258,7 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public Map<ServerID, NetServerInternal> sharedTcpServers() {
+  public Map<ServerID, TcpServerInternal> sharedTcpServers() {
     return delegate.sharedTcpServers();
   }
 

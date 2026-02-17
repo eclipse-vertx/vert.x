@@ -65,7 +65,7 @@ public class NetServerBuilder {
   }
 
   public NetServerInternal build() {
-    NetServerInternal server;
+    TcpServerImpl server;
     if (cleanable) {
       server = new CleanableNetServer(vertx,
         config,
@@ -83,6 +83,6 @@ public class NetServerBuilder {
         registerWriteHandler
       );
     }
-    return server;
+    return new NetServerImpl(server);
   }
 }
