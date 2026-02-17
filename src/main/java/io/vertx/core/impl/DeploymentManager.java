@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
@@ -38,6 +39,8 @@ public class DeploymentManager {
 
   private static final Logger log = LoggerFactory.getLogger(DeploymentManager.class);
 
+  private static final AtomicLong nextId = new AtomicLong();
+
   private final VertxImpl vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
 
@@ -46,7 +49,11 @@ public class DeploymentManager {
   }
 
   private String generateDeploymentID() {
-    return UUID.randomUUID().toString();
+    if (vertx.isClustered() && vertx.haManager()!=null) {
+      // in this case we need a globally unique id
+      return UUID.randomUUID().toString();
+    }
+    return Long.valueOf(nextId.incrementAndGet()).toString();
   }
 
   public Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
