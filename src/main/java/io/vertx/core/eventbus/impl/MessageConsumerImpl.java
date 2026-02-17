@@ -138,28 +138,26 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       if (handler == null) {
         return false;
       }
-      if (demand == 0L) {
-        if (pending.size() < maxBufferedMessages) {
-          pending.add(message);
+      if (pending.size() < maxBufferedMessages) {
+        pending.add(message);
+        if (demand == 0) {
           return true;
         } else {
-          discard(message);
-          if (discardHandler != null) {
-            discardHandler.handle(message);
-          } else {
-            log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
+          if (demand != Long.MAX_VALUE) {
+            demand--;
           }
-        }
-        return true;
-      } else {
-        if (pending.size() > 0) {
-          pending.add(message);
           message = pending.poll();
+          theHandler = handler;
         }
-        if (demand != Long.MAX_VALUE) {
-          demand--;
+      } else {
+        discard(message);
+        if (discardHandler != null) {
+          discardHandler.handle(message);
+        } else {
+          String pause = demand == 0 ? "paused" : "NOT paused";
+          log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in " + pause + " consumer. address: " + address);
         }
-        theHandler = handler;
+        return false;
       }
     }
     deliver(theHandler, message);
@@ -171,7 +169,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     if (handler == null) {
       throw new NullPointerException();
     }
-    context.emit(msg, handler);
+    context.dispatch(msg, handler);
   }
 
   private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
@@ -183,8 +181,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
-    if (!pending.isEmpty() && demand > 0L) {
-      context.nettyEventLoop().execute(() -> {
+    if (demand > 0L && !pending.isEmpty()) {
+      context.execute(__ -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
         synchronized (MessageConsumerImpl.this) {
