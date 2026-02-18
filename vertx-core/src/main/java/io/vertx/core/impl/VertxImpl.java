@@ -150,8 +150,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final FileResolver fileResolver;
   private final EventExecutorProvider eventExecutorProvider;
   private final Map<ServerID, NetServerInternal> sharedNetServers = new HashMap<>();
-  private final ContextLocal<?>[] contextLocals;
-  private final List<ContextLocal<?>> contextLocalsList;
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   final WorkerPool virtualThreadWorkerPool;
@@ -211,8 +209,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ThreadFactory virtualThreadFactory = virtualThreadFactory();
     PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null && virtualThreadFactory != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", -1) : null;
 
-    contextLocals = LocalSeq.get();
-    contextLocalsList = Collections.unmodifiableList(Arrays.asList(contextLocals));
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
@@ -619,6 +615,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private Object[] createContextLocals() {
+    ContextLocal<?>[] contextLocals = LocalSeq.getArray();
     if (contextLocals.length == 0) {
       return EMPTY_CONTEXT_LOCALS;
     } else {
@@ -951,7 +948,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public List<ContextLocal<?>> contextLocals() {
-    return contextLocalsList;
+    return LocalSeq.getList();
   }
 
   @Override
@@ -1340,6 +1337,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   void duplicate(ContextBase src, ContextBase dst) {
+    ContextLocal<?>[] contextLocals = LocalSeq.getArray();
     for (int i = 0;i < contextLocals.length;i++) {
       ContextLocalImpl<?> contextLocal = (ContextLocalImpl<?>) contextLocals[i];
       Object local = AccessMode.CONCURRENT.get(src.locals, i);
