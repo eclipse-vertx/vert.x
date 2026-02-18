@@ -51,9 +51,17 @@ import io.vertx.core.http.WebSocketClient;
 import io.vertx.core.http.WebSocketConnectOptions;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ConnectOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.streams.Pipe;
@@ -1293,13 +1301,82 @@ public class HTTPExamples {
     }).listen(-1);
   }
 
-  public void setSSLPerRequest(HttpClient client) {
+  public void sslServerConfiguration(Vertx vertx) {
+    ServerSSLOptions sslOptions = new ServerSSLOptions()
+      .setKeyCertOptions(
+        new JksOptions().
+          setPath("/path/to/your/server-keystore.jks").
+          setPassword("password-of-your-keystore")
+      );
+
+    HttpServerOptions options = new HttpServerOptions()
+      .setSsl(true)
+      .setSslOptions(sslOptions);
+
+    HttpServer server = vertx.createHttpServer(options);
+  }
+
+  public void sslClientConfiguration(Vertx vertx) {
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(new JksOptions().
+        setPath("/path/to/your/truststore.jks").
+        setPassword("password-of-your-truststore")
+      );
+
+    HttpClientOptions options = new HttpClientOptions()
+      .setSsl(true)
+      .setSslOptions(sslOptions);
+
+    HttpClientAgent client = vertx.createHttpClient(options);
+  }
+
+  public void serverSNIConfig(Vertx vertx) {
+    ServerSSLOptions sslOptions = new ServerSSLOptions()
+      .setKeyCertOptions(new JksOptions().
+        setPath("/path/to/your/server-keystore.jks").
+        setPassword("password-of-your-keystore"))
+      .setSni(true);
+  }
+
+  public void sslClientRequestConfiguration(Vertx vertx, int port, String host) {
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(new JksOptions().
+        setPath("/path/to/your/truststore.jks").
+        setPassword("password-of-your-truststore")
+      );
+
+    HttpClientOptions options = new HttpClientOptions().setSslOptions(sslOptions);
+
+    HttpClientAgent client = vertx.createHttpClient(options);
+
     client
       .request(new RequestOptions()
         .setHost("localhost")
         .setPort(8080)
         .setURI("/")
         .setSsl(true))
+      .compose(request -> request.send())
+      .onSuccess(response -> {
+        System.out.println("Received response with status code " + response.statusCode());
+      });
+  }
+
+  public void sslClientRequestConfiguration2(Vertx vertx, int port, String host) {
+    HttpClientAgent client = vertx.createHttpClient();
+
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(new JksOptions().
+        setPath("/path/to/your/truststore.jks").
+        setPassword("password-of-your-truststore")
+      );
+
+    client
+      .request(new RequestOptions()
+        .setHost("localhost")
+        .setPort(8080)
+        .setURI("/")
+        .setSsl(true)
+        .setSslOptions(sslOptions))
       .compose(request -> request.send())
       .onSuccess(response -> {
         System.out.println("Received response with status code " + response.statusCode());

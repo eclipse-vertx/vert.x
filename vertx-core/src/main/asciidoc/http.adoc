@@ -2029,31 +2029,64 @@ on the same port value will share this random port.
 
 Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.
 
-Please see <<ssl, configuring net servers to use SSL>> for more information.
+==== HTTPS on the server
+
+HTTPS is enabled with the `HttpServerOptions` {@link io.vertx.core.http.HttpServerOptions#setSsl(boolean) ssl} setting.
+
+By default, it is disabled.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sslServerConfiguration}
+----
+
+You can read more about <<server_ssl,SSL server configuration>>
+
+==== HTTPS on the client
+
+Client SSL/TLS is enabled with the `HttpClientOptions` {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean) ssl} property or {@link io.vertx.core.http.RequestOptions#setSsl(java.lang.Boolean) ssl} property.
+
+{@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sslClientConfiguration}
+----
 
 SSL can also be enabled/disabled per request with {@link io.vertx.core.http.RequestOptions} or when
 specifying a scheme with {@link io.vertx.core.http.RequestOptions#setAbsoluteURI(java.lang.String)}
 method.
 
-[source,$lang]
-----
-{@link examples.HTTPExamples#setSSLPerRequest(io.vertx.core.http.HttpClient)}
-----
-
-The {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
-
-The {@link io.vertx.core.http.RequestOptions#setSsl(Boolean)} overrides the default client setting
+{@link io.vertx.core.http.RequestOptions#setSsl(Boolean)} overrides the default client setting.
 
 * setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
-* setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
-client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
+* setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
 
 Likewise {@link io.vertx.core.http.RequestOptions#setAbsoluteURI(java.lang.String)} scheme
 also overrides the default client setting.
 
+[source,$lang]
+----
+{@link examples.HTTPExamples#sslClientRequestConfiguration}
+----
+
+You can also set {@link io.vertx.core.net.ClientSSLOptions} at request time.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sslClientRequestConfiguration2}
+----
+
+You can read more about <<client_ssl,SSL client configuration>>.
+
 ==== Server Name Indication (SNI)
 
-Vert.x http servers can be configured to use SNI in exactly the same way as {@linkplain io.vertx.core.net net servers}.
+Vert.x http servers can be configured to use SNI.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#serverSNIConfig}
+----
 
 Vert.x http client will present the actual hostname as _server name_ during the TLS handshake.
 
