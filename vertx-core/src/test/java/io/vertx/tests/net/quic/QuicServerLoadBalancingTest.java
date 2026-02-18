@@ -41,7 +41,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     servers = new ArrayList<>();
-    client = QuicClient.create(vertx, clientOptions(), QuicClientTest.SSL_OPTIONS);
+    client = vertx.createQuicClient(clientOptions(), QuicClientTest.SSL_OPTIONS);
   }
 
   @Override
@@ -54,7 +54,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
   }
 
   private QuicServer server() {
-    QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setLoadBalanced(true), QuicServerTest.SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(new QuicServerConfig().setLoadBalanced(true), QuicServerTest.SSL_OPTIONS);
     servers.add(server);
     return server;
   }

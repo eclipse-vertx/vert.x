@@ -81,7 +81,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testBind() {
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     server.close().await();
   }
@@ -97,7 +97,7 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   private void testConnect(QuicServerConfig options, int port) throws Exception {
-    QuicServer server = QuicServer.create(vertx, options, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(options, SSL_OPTIONS);
     server.handler(conn -> {
       assertEquals("test-protocol", conn.applicationLayerProtocol());
       QuicTransportParams params = conn.transportParams();
@@ -147,7 +147,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testClientConnectionClose() throws Exception {
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     AtomicInteger inflights = new AtomicInteger();
     server.handler(conn -> {
       inflights.incrementAndGet();
@@ -173,7 +173,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testServerConnectionClose() throws Exception {
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     AtomicInteger beforeClose = new AtomicInteger();
     RuntimeException thrown = new RuntimeException();
     List<Throwable> caught = Collections.synchronizedList(new ArrayList<>());
@@ -225,7 +225,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerCreatesStream() throws Exception {
     QuicServerConfig options = new QuicServerConfig();
     options.getTransportConfig().setInitialMaxStreamDataBidiLocal(1_048_576L);
-    QuicServer server = QuicServer.create(vertx, options, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(options, SSL_OPTIONS);
     server.handler(conn -> {
       conn.openStream().onComplete(onSuccess2(stream -> {
         stream.write("ping");
@@ -253,7 +253,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testServerCreatesUniStream() throws Exception {
     disableThreadChecks();
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.handler(conn -> {
       conn.openStream(false).onComplete(onSuccess2(stream -> {
         assertFalse(stream.isBidirectional());
@@ -285,7 +285,7 @@ public class QuicServerTest extends VertxTestBase {
     config.getTransportConfig()
       .setInitialMaxStreamDataUni(1_048_576L)
       .setInitialMaxStreamsUni(256);
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         assertFalse(stream.isBidirectional());
@@ -323,7 +323,7 @@ public class QuicServerTest extends VertxTestBase {
     int numStreams = 5;
     int numConnections = 2;
     waitFor(numConnections * numStreams);
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     AtomicInteger connectionShutdown = new AtomicInteger();
     AtomicInteger streamShutdown = new AtomicInteger();
     AtomicInteger count = new AtomicInteger();
@@ -374,7 +374,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testClientReset() throws Exception {
     waitFor(2);
     disableThreadChecks();
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.resetHandler(code -> {
@@ -410,7 +410,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testClientAbortReading() throws Exception {
     waitFor(3);
     disableThreadChecks();
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     AtomicReference<QuicStream> streamRef = new AtomicReference<>();
     server.handler(conn -> {
       conn.handler(stream -> {
@@ -453,7 +453,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerAbortReading() throws Exception {
     waitFor(3);
     disableThreadChecks();
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     Promise<Void> writeLatch = Promise.promise();
     server.handler(conn -> {
       conn.handler(stream -> {
@@ -496,7 +496,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerReset() throws Exception {
     disableThreadChecks();
     waitFor(2);
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.handler(buff -> {
@@ -526,7 +526,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testServerResetHandler() throws Exception {
     disableThreadChecks();
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.handler(buff -> {
@@ -570,7 +570,7 @@ public class QuicServerTest extends VertxTestBase {
     waitFor(2);
     QuicServerConfig config = new QuicServerConfig();
     config.getTransportConfig().setEnableDatagrams(true);
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.writeDatagram(Buffer.buffer("ping")).onComplete(onSuccess2(v -> {
         complete();
@@ -595,7 +595,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testReceiveDatagram() throws Exception {
     QuicServerConfig config = new QuicServerConfig();
     config.getTransportConfig().setEnableDatagrams(true);
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.datagramHandler(dgram -> {
         assertEquals("ping", dgram.toString());
@@ -619,7 +619,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testMaxIdleTimeout() throws Exception {
     QuicServerConfig config = new QuicServerConfig();
     config.getTransportConfig().setMaxIdleTimeout(Duration.ofMillis(1000));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
       long now = System.currentTimeMillis();
       conn.closeHandler(v -> {
@@ -646,7 +646,7 @@ public class QuicServerTest extends VertxTestBase {
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey.copy().setPassword("incorrect"))
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost"))
@@ -678,7 +678,7 @@ public class QuicServerTest extends VertxTestBase {
       }
     })
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost"))
@@ -719,7 +719,7 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   private void testValidateToken(KeyCertOptions key) throws Exception {
-    QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setClientAddressValidationKey(key).setClientAddressValidationTimeWindow(Duration.ofSeconds(30)), SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(new QuicServerConfig().setClientAddressValidationKey(key).setClientAddressValidationTimeWindow(Duration.ofSeconds(30)), SSL_OPTIONS);
     AtomicInteger connections = new AtomicInteger();
     server.handler(conn -> {
       connections.incrementAndGet();
@@ -745,7 +745,7 @@ public class QuicServerTest extends VertxTestBase {
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey)
       .setClientAddressValidationTimeWindow(Duration.ofMillis(10));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     AtomicInteger connections = new AtomicInteger();
     server.handler(conn -> {
       connections.incrementAndGet();
@@ -779,7 +779,7 @@ public class QuicServerTest extends VertxTestBase {
       .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
       .setClientAddressValidationKey(macKey)
       .setClientAddressValidationTimeWindow(Duration.ofSeconds(30));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     AtomicInteger connections = new AtomicInteger();
     server.handler(conn -> {
       connections.incrementAndGet();
@@ -815,7 +815,7 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   private List<String> testKeyLogFile(File keyLogFile) throws Exception {
-    QuicServer server = QuicServer.create(vertx, new QuicServerConfig().setKeyLogFile(keyLogFile.getAbsolutePath()), SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(new QuicServerConfig().setKeyLogFile(keyLogFile.getAbsolutePath()), SSL_OPTIONS);
     server.handler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
@@ -855,7 +855,7 @@ public class QuicServerTest extends VertxTestBase {
 
   private void testWriteWhenClosed(boolean write) throws Exception {
     disableThreadChecks();
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         stream.closeHandler(v -> {
@@ -892,7 +892,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testRebind() {
     Deployable deployable = ctx -> {
-      QuicServer server = QuicServer.create(vertx, SSL_OPTIONS);
+      QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
       server.handler(connection -> {
 
       });
@@ -909,7 +909,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testStreamIdleTimeout() throws Exception {
     QuicServerConfig config = new QuicServerConfig()
       .setIdleTimeout(Duration.ofMillis(100));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         long now = System.currentTimeMillis();
@@ -947,7 +947,7 @@ public class QuicServerTest extends VertxTestBase {
     int numEvents = 10;
     QuicServerConfig config = new QuicServerConfig()
       .setIdleTimeout(Duration.ofMillis(100));
-    QuicServer server = QuicServer.create(vertx, config, SSL_OPTIONS);
+    QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.handler(conn -> {
       conn.handler(stream -> {
         long now = System.currentTimeMillis();
@@ -982,7 +982,7 @@ public class QuicServerTest extends VertxTestBase {
 
   @Test
   public void testServerNameIndication() throws Exception {
-    QuicServer server = QuicServer.create(vertx, SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get()));
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get()));
     AtomicReference<String> serverName = new AtomicReference<>();
     server.handler(conn -> {
       serverName.set(conn.indicatedServerName());

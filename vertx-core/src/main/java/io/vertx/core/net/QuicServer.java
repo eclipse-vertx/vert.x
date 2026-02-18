@@ -13,10 +13,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.SocketAddressImpl;
-import io.vertx.core.net.impl.quic.QuicServerImpl;
 
 /**
  * A Quic server.
@@ -25,26 +22,6 @@ import io.vertx.core.net.impl.quic.QuicServerImpl;
  */
 @VertxGen
 public interface QuicServer extends QuicEndpoint {
-
-  /**
-   * <p>Create a configured Quic server.</p>
-   *
-   * <p>The returned server can be bound, after setting a connection {@link #handler(Handler) handler}</p>
-   *
-   * @param vertx the vertx instance
-   * @param config the server configuration
-   * @return the server
-   */
-  static QuicServer create(Vertx vertx, QuicServerConfig config, ServerSSLOptions sslOptions) {
-    return QuicServerImpl.create((VertxInternal) vertx, config, sslOptions);
-  }
-
-  /**
-   * Like {@link #create(Vertx, QuicServerConfig, ServerSSLOptions)}, with the default server configuration.
-   */
-  static QuicServer create(Vertx vertx, ServerSSLOptions sslOptions) {
-    return create(vertx, new QuicServerConfig(), sslOptions);
-  }
 
   /**
    * Set the handler processing {@link QuicConnection}, the handler must be set before the server is bound.
