@@ -170,7 +170,10 @@ public class NetExamples {
 
   public void example10(NetSocket socket) {
 
-    socket.sendFile("myfile.dat");
+    socket
+      .sendFile("myfile.dat")
+      .onSuccess(v -> System.out.println("File successfully sent"))
+      .onFailure(err -> System.out.println("Could not send file: " + err.getMessage()));
   }
 
   public void example11(Vertx vertx) {
