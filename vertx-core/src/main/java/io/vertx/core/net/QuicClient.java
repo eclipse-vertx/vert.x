@@ -12,13 +12,7 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
-import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
-
-import java.util.function.BiFunction;
 
 /**
  * A Quic client.
@@ -27,37 +21,6 @@ import java.util.function.BiFunction;
  */
 @VertxGen
 public interface QuicClient extends QuicEndpoint {
-
-  /**
-   * <p>Create a configured Quic client.</p>
-   *
-   * @param vertx the vertx instance
-   * @param config the client configuration
-   * @return the client
-   */
-  static QuicClient create(Vertx vertx, QuicClientConfig config) {
-    return create(vertx, config, null);
-  }
-
-  /**
-   * <p>Create a configured Quic client.</p>
-   *
-   * @param vertx the vertx instance
-   * @param config the client configuration
-   * @param defaultSslOptions the default client SSL options
-   * @return the client
-   */
-  static QuicClient create(Vertx vertx, QuicClientConfig config, ClientSSLOptions defaultSslOptions) {
-    VertxInternal vertxInternal = (VertxInternal) vertx;
-    return QuicClientImpl.create(vertxInternal, config, defaultSslOptions);
-  }
-
-  /**
-   * Like {@link #create(Vertx, QuicClientConfig, ServerSSLOptions)}, with the default client configuration.
-   */
-  static QuicClient create(Vertx vertx, ClientSSLOptions defaultSslOptions) {
-    return create(vertx, new QuicClientConfig(), defaultSslOptions);
-  }
 
   /**
    * Connect to a Quic server.

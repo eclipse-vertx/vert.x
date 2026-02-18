@@ -39,8 +39,8 @@ public class QuicContextTest extends VertxTestBase {
     QuicClientConfig clientOptions = new QuicClientConfig();
     serverOptions.getTransportConfig().setEnableDatagrams(true);
     clientOptions.getTransportConfig().setEnableDatagrams(true);
-    server = QuicServer.create(vertx, serverOptions, QuicServerTest.SSL_OPTIONS);
-    client = QuicClient.create(vertx, clientOptions, QuicClientTest.SSL_OPTIONS);
+    server = vertx.createQuicServer(serverOptions, QuicServerTest.SSL_OPTIONS);
+    client = vertx.createQuicClient(clientOptions, QuicClientTest.SSL_OPTIONS);
     workerContext = ((VertxInternal) vertx).createWorkerContext();
   }
 

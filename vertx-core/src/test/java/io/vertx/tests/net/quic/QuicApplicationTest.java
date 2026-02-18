@@ -72,7 +72,7 @@ public class QuicApplicationTest extends VertxTestBase {
     QuicServerConfig serverOptions = new QuicServerConfig();
     serverOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
-    QuicServer server = QuicServer.create(vertx, serverOptions, serverSslOptions);
+    QuicServer server = vertx.createQuicServer(serverOptions, serverSslOptions);
     server.handler(conn -> {
       QuicConnectionInternal connInternal = (QuicConnectionInternal) conn;
       ChannelPipeline pipeline = connInternal.channelHandlerContext().pipeline();
@@ -116,7 +116,7 @@ public class QuicApplicationTest extends VertxTestBase {
     clientSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     clientOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     clientOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
-    QuicClient client = QuicClient.create(vertx, clientOptions, clientSslOptions);
+    QuicClient client = vertx.createQuicClient(clientOptions, clientSslOptions);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
 
     QuicConnectionInternal connection = (QuicConnectionInternal) client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
@@ -170,7 +170,7 @@ public class QuicApplicationTest extends VertxTestBase {
     serverSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     serverOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
-    QuicServer server = QuicServer.create(vertx, serverOptions, serverSslOptions);
+    QuicServer server = vertx.createQuicServer(serverOptions, serverSslOptions);
     server.handler(connection -> {
       connection.handler(stream -> {
         QuicStreamInternal streamInternal = (QuicStreamInternal) stream;
@@ -196,7 +196,7 @@ public class QuicApplicationTest extends VertxTestBase {
     clientSslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
     clientOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     clientOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
-    QuicClient client = QuicClient.create(vertx, clientOptions, clientSslOptions);
+    QuicClient client = vertx.createQuicClient(clientOptions, clientSslOptions);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnectionInternal connection = (QuicConnectionInternal) client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStreamInternal stream = (QuicStreamInternal) connection.openStream().await();

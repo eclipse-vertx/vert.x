@@ -23,13 +23,20 @@ import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.QuicClient;
+import io.vertx.core.net.QuicClientConfig;
+import io.vertx.core.net.QuicServer;
+import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.impl.quic.QuicClientImpl;
+import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -220,6 +227,54 @@ public interface Vertx extends Measured {
    */
   default NetClient createNetClient() {
     return createNetClient(new NetClientOptions());
+  }
+
+  /**
+   * <p>Create a configured Quic server.</p>
+   *
+   * <p>The returned server can be bound, after setting a connection {@link QuicServer#handler(Handler) handler}</p>
+   *
+   * @param config the server configuration
+   * @return the server
+   */
+  default QuicServer createQuicServer(QuicServerConfig config, ServerSSLOptions sslOptions) {
+    return QuicServerImpl.create((VertxInternal) this, config, sslOptions);
+  }
+
+  /**
+   * Like {@link Vertx#createQuicServer(QuicServerConfig, ServerSSLOptions)}, with the default server configuration.
+   */
+  default QuicServer createQuicServer(ServerSSLOptions sslOptions) {
+    return createQuicServer(new QuicServerConfig(), sslOptions);
+  }
+
+  /**
+   * <p>Create a configured Quic client.</p>
+   *
+   * @param config the client configuration
+   * @param defaultSslOptions the default client SSL options
+   * @return the client
+   */
+  default QuicClient createQuicClient(QuicClientConfig config, ClientSSLOptions defaultSslOptions) {
+    VertxInternal vertxInternal = (VertxInternal) this;
+    return QuicClientImpl.create(vertxInternal, config, defaultSslOptions);
+  }
+
+  /**
+   * Like {@link #createQuicClient(QuicClientConfig, ClientSSLOptions)}, with the default client configuration.
+   */
+  default QuicClient createQuicClient(ClientSSLOptions defaultSslOptions) {
+    return createQuicClient(new QuicClientConfig(), defaultSslOptions);
+  }
+
+  /**
+   * <p>Create a configured Quic client.</p>
+   *
+   * @param config the client configuration
+   * @return the client
+   */
+  default QuicClient createQuicClient(QuicClientConfig config) {
+    return createQuicClient(config, null);
   }
 
   /**

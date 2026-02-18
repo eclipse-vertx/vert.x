@@ -12,12 +12,10 @@ package io.vertx.tests.http;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.LinuxOrOsx;
@@ -42,7 +40,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
 
   @Test
   public void testFailQuic() throws Exception {
-    QuicServer quicServer = QuicServer.create(vertx, new QuicServerConfig().setPort(4043), new ServerSSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()));
+    QuicServer quicServer = vertx.createQuicServer(new QuicServerConfig().setPort(4043), new ServerSSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()));
     quicServer.listen().await();
     expectFail();
     quicServer.close().await();
