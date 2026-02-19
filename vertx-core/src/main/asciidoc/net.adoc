@@ -13,7 +13,7 @@ The simplest way to create a TCP server, using all default options is as follows
 
 === Configuring a TCP server
 
-If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.net.NetServerOptions}
+If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.net.TcpServerConfig}
 instance when creating it:
 
 [source,$lang]
@@ -254,7 +254,7 @@ The simplest way to create a TCP client, using all default options is as follows
 
 === Configuring a TCP client
 
-If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.NetClientOptions}
+If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.TcpClientConfig}
 instance when creating it:
 
 [source,$lang]
@@ -285,8 +285,8 @@ When running on JDK 16+, or using a <<_native_transports,native transport>>, a c
 === Configuring connection attempts
 
 A client can be configured to automatically retry connecting to the server in the event that it cannot connect.
-This is configured with {@link io.vertx.core.net.NetClientOptions#setReconnectInterval(long)} and
-{@link io.vertx.core.net.NetClientOptions#setReconnectAttempts(int)}.
+This is configured with {@link io.vertx.core.net.TcpClientConfig#setReconnectInterval(java.time.Duration)} and
+{@link io.vertx.core.net.TcpClientConfig#setReconnectAttempts(int)}.
 
 NOTE: Currently, Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
 only apply to creating initial connections.
@@ -377,7 +377,7 @@ You should read the <<netty-logging>> section.
 
 TCP server (Net/Http) can be configured with traffic shaping options to enable bandwidth limiting. Both inbound and outbound
 bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. For NetServer, traffic shaping options can be set
-through {@link io.vertx.core.net.NetServerOptions} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerOptions}.
+through {@link io.vertx.core.net.TcpServerConfig} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerOptions}.
 
 [source,$lang]
 ----
@@ -408,12 +408,12 @@ TCP clients and servers can be configured to use http://en.wikipedia.org/wiki/Tr
 - earlier versions of TLS were known as SSL.
 
 The APIs of the servers and clients are identical whether SSL/TLS is used, and it's enabled by configuring
-the {@link io.vertx.core.net.NetClientOptions} or {@link io.vertx.core.net.NetServerOptions} instances used
+the {@link io.vertx.core.net.TcpClientConfig} or {@link io.vertx.core.net.TcpServerConfig} instances used
 to create the servers or clients.
 
 ==== Enabling SSL/TLS on the server
 
-Server SSL/TLS is enabled with the `NetServerOptions` {@link io.vertx.core.net.NetServerOptions#setSsl(boolean) ssl} setting.
+Server SSL/TLS is enabled with the `TcpServerConfig` {@link io.vertx.core.net.TcpServerConfig#setSsl(boolean) ssl} setting.
 
 By default, it is disabled.
 
@@ -426,7 +426,7 @@ You can read more about <<server_ssl,SSL server configuration>>
 
 ==== Enabling SSL/TLS on the client
 
-Client SSL/TLS is enabled with the `NetClientOptions` {@link io.vertx.core.net.NetClientOptions#setSsl(boolean) ssl} property or {@link io.vertx.core.net.ConnectOptions#setSsl(boolean) ssl} property.
+Client SSL/TLS is enabled with the `TcpClientConfig` {@link io.vertx.core.net.TcpClientConfig#setSsl(boolean) ssl} property or {@link io.vertx.core.net.ConnectOptions#setSsl(boolean) ssl} property.
 
 The former defines the default client behavior.
 
@@ -535,7 +535,7 @@ The engine options to use is
 
 The {@link io.vertx.core.net.NetClient} supports either an HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
 
-The proxy can be configured in the {@link io.vertx.core.net.NetClientOptions} by setting a
+The proxy can be configured in the {@link io.vertx.core.net.TcpClientConfig} by setting a
 {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
 
 Here's an example:
@@ -549,7 +549,7 @@ Here's an example:
 The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
 to resolve the DNS address locally.
 
-You can use {@link io.vertx.core.net.NetClientOptions#setNonProxyHosts} to configure a list of host bypassing
+You can use {@link io.vertx.core.net.TcpClientConfig#setNonProxyHosts} to configure a list of host bypassing
 the proxy. The lists accepts `*` wildcard for matching domains:
 
 [source,$lang]
@@ -564,7 +564,7 @@ https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY protocol] p
 information such as a client's address across multiple layers of NAT or TCP
 proxies.
 
-HA PROXY protocol can be enabled by setting the option {@link io.vertx.core.net.NetServerOptions#setUseProxyProtocol(boolean)}
+HA PROXY protocol can be enabled by setting the option {@link io.vertx.core.net.TcpServerConfig#setUseProxyProtocol(boolean)}
 and adding the following dependency in your classpath:
 
 [source,xml]
