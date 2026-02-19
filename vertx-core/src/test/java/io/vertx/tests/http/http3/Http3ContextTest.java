@@ -17,6 +17,8 @@ import io.vertx.core.http.impl.HttpServerConnection;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -36,14 +38,10 @@ public class Http3ContextTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    HttpServerConfig serverConfig = new HttpServerConfig();
-    serverConfig.addVersion(HttpVersion.HTTP_3);
-    serverConfig.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     clientConfig = new HttpClientConfig();
     clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
-    clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    server = vertx.createHttpServer(serverConfig);
-    client = vertx.createHttpClient(clientConfig);
+    server = vertx.createHttpServer(new HttpServerConfig().addVersion(HttpVersion.HTTP_3), new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
+    client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()));
   }
 
   @Override

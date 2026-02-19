@@ -70,10 +70,10 @@ public class HttpAlternativesTest extends VertxTestBase {
     if (!tcpVersions.isEmpty()) {
       HttpServer server = vertx.createHttpServer(new HttpServerConfig()
         .setSsl(true)
-        .setVersions(tcpVersions)
-        .setSslOptions(new ServerSSLOptions()
+        .setVersions(tcpVersions),
+        new ServerSSLOptions()
           .setSni(true)
-          .setKeyCertOptions(cert.get()))
+          .setKeyCertOptions(cert.get())
       );
       server.requestHandler(request -> {
         Handler<HttpServerRequest> h = handler.get();
@@ -86,8 +86,7 @@ public class HttpAlternativesTest extends VertxTestBase {
     if (!quicVersions.isEmpty()) {
       HttpServerConfig config = new HttpServerConfig();
       config.addVersion(HttpVersion.HTTP_3);
-      config.getSslOptions().setKeyCertOptions(cert.get());
-      HttpServer server = vertx.createHttpServer(config);
+      HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(cert.get()));
       server.requestHandler(request -> {
         Handler<HttpServerRequest> h = handler.get();
         if (h != null) {
@@ -201,12 +200,12 @@ public class HttpAlternativesTest extends VertxTestBase {
           .response()
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient((new HttpClientConfig()
-        .setFollowAlternativeServices(true)
-        .setSsl(true)
-        .setSslOptions(new ClientSSLOptions().setTrustAll(true).setUseAlpn(true))
-        .setVersions(List.of(initialProtocol, upgradedProtocol))
-      ));
+    client = vertx.createHttpClient((
+        new HttpClientConfig()
+          .setFollowAlternativeServices(true)
+          .setSsl(true)
+          .setVersions(List.of(initialProtocol, upgradedProtocol))),
+      new ClientSSLOptions().setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
@@ -233,7 +232,7 @@ public class HttpAlternativesTest extends VertxTestBase {
           .putHeader(HttpHeaders.ALT_SVC, "h2=\"host2.com:4044\"")
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
@@ -265,7 +264,7 @@ public class HttpAlternativesTest extends VertxTestBase {
           .putHeader(HttpHeaders.ALT_SVC, "h2=\":4044\"")
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "localhost", "/")
       .compose(request -> request
         .send()
@@ -296,7 +295,7 @@ public class HttpAlternativesTest extends VertxTestBase {
       .accept(request -> {
         fail();
       });
-    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
@@ -332,7 +331,7 @@ public class HttpAlternativesTest extends VertxTestBase {
           .putHeader(HttpHeaders.ALT_SVC, "h2=\"host2.com:4044\"")
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(false).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(false).setSsl(true).setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
@@ -399,7 +398,7 @@ public class HttpAlternativesTest extends VertxTestBase {
           .putHeader(HttpHeaders.ALT_SVC, altSvc)
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true).setUseAlpn(true));
+    client = vertx.createHttpClient(new HttpClientOptions().setFollowAlternativeServices(true).setSsl(true).setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()

@@ -402,22 +402,35 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public HttpServer createHttpServer(HttpServerOptions serverOptions) {
     HttpServerConfig config = new HttpServerConfig(serverOptions);
-    return new CleanableHttpServer(this, new TcpHttpServer(this, config, null, serverOptions.isRegisterWebSocketWriteHandlers()));
+    ServerSSLOptions sslOptions = serverOptions.getSslOptions();
+    if (sslOptions != null) {
+      sslOptions = sslOptions.copy();
+    }
+    return new CleanableHttpServer(this, new TcpHttpServer(this, config, sslOptions, null, serverOptions.isRegisterWebSocketWriteHandlers()));
   }
 
   @Override
-  public HttpServer createHttpServer(HttpServerConfig config) {
+  public HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions) {
     boolean useTcp = config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0);
     boolean useQuic = config.getVersions().contains(HttpVersion.HTTP_3);
+    if (useQuic && sslOptions == null) {
+      throw new NullPointerException("SSL configuration is necessary for a QUIC server");
+    }
+    if (useTcp && config.isSsl() && sslOptions == null) {
+      throw new NullPointerException("SSL configuration is necessary for a TCP/SSL server");
+    }
     if (useTcp) {
       if (useQuic) {
-        HybridHttpServer compositeServer = new HybridHttpServer(this, config);
+        HybridHttpServer compositeServer = new HybridHttpServer(this, new HttpServerConfig(config), sslOptions.copy());
         return new CleanableHttpServer(this, compositeServer);
       } else {
-        return new CleanableHttpServer(this, new TcpHttpServer(this, new HttpServerConfig(config), null, false));
+        if (sslOptions != null) {
+          sslOptions = sslOptions.copy();
+        }
+        return new CleanableHttpServer(this, new TcpHttpServer(this, new HttpServerConfig(config), sslOptions, null, false));
       }
     } else if (useQuic) {
-      return new CleanableHttpServer(this, new QuicHttpServer(this, new HttpServerConfig(config), null));
+      return new CleanableHttpServer(this, new QuicHttpServer(this, new HttpServerConfig(config), sslOptions.copy(), null));
     } else {
       throw new IllegalArgumentException("You must set at least one supported HTTP version");
     }

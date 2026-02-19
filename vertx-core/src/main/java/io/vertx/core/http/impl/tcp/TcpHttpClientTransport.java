@@ -150,20 +150,21 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     }
     connectOptions.setSsl(params.ssl);
     if (params.ssl) {
+      ClientSSLOptions copy;
       if (params.sslOptions != null) {
-        ClientSSLOptions copy = params.sslOptions.copy();
-        if (params.sslOptions.isUseAlpn()) {
-          copy.setUseAlpn(true);
-          if (params.protocol == HttpVersion.HTTP_2) {
-            copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
-          } else {
-            copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_1_1.alpnName()));
-          }
-        }
-        connectOptions.setSslOptions(copy);
+        copy = params.sslOptions.copy();
       } else {
-        connectOptions.setSslOptions(new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS"));
+        // We might end up using javax.net.ssl.trustStore
+        copy = new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS");
       }
+      if (params.protocol == HttpVersion.HTTP_2) {
+        copy
+          .setUseAlpn(true)
+          .setApplicationLayerProtocols(List.of(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
+      } else {
+        copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_1_1.alpnName()));
+      }
+      connectOptions.setSslOptions(copy);
     }
     connectOptions.setProxyOptions(params.proxyOptions);
     client.connectInternal(connectOptions, promise, context);
@@ -190,18 +191,13 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     Channel ch = so.channelHandlerContext().channel();
     if (params.ssl) {
       String protocol = so.applicationLayerProtocol();
-      if (params.sslOptions != null && params.sslOptions.isUseAlpn()) {
-        if ("h2".equals(protocol)) {
-          applyHttp2ConnectionOptions(ch.pipeline());
-          http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
-        } else {
-          applyHttp1xConnectionOptions(ch.pipeline());
-          HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-          http1xConnected(fallbackProtocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
-        }
+      if ("h2".equals(protocol)) {
+        applyHttp2ConnectionOptions(ch.pipeline());
+        http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
       } else {
         applyHttp1xConnectionOptions(ch.pipeline());
-        http1xConnected(params.protocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
+        HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+        http1xConnected(fallbackProtocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
       }
     } else {
       if (params.protocol == HttpVersion.HTTP_2) {

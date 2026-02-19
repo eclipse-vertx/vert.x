@@ -27,9 +27,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp1Config());
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
-    assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
-    assertTrue(config.getSslOptions().isUseAlpn());
     assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
   }
 
@@ -39,9 +37,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp1Config());
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
-    assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
-    assertFalse(config.getSslOptions().isUseAlpn());
     assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
   }
 
@@ -51,9 +47,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp1Config());
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
-    assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
-    assertFalse(config.getSslOptions().isUseAlpn());
     assertEquals(List.of(HTTP_2, HTTP_1_1), config.getVersions());
   }
 
@@ -63,9 +57,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp1Config());
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
-    assertNotNull(config.getSslOptions());
     assertFalse(config.isSsl());
-    assertFalse(config.getSslOptions().isUseAlpn());
     assertEquals(List.of(HTTP_1_0), config.getVersions());
   }
 }

@@ -16,6 +16,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
@@ -34,6 +35,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private final VertxInternal vertx;
   private HttpClientConfig clientConfig;
   private HttpClientOptions clientOptions; // To be removed
+  private ClientSSLOptions sslOptions;
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
@@ -47,13 +49,14 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   public HttpClientBuilder with(HttpClientConfig config) {
-    this.clientConfig = new HttpClientConfig(config);
+    this.clientConfig = config;
     return this;
   }
 
   @Override
   public HttpClientBuilder with(HttpClientOptions options) {
     this.clientConfig = new HttpClientConfig(options);
+    this.sslOptions = options.getSslOptions();
     this.clientOptions = options;
     return this;
   }
@@ -61,6 +64,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   @Override
   public HttpClientBuilder with(PoolOptions options) {
     this.poolOptions = options;
+    return this;
+  }
+
+  @Override
+  public HttpClientBuilder with(ClientSSLOptions options) {
+    this.sslOptions = options;
     return this;
   }
 
@@ -113,7 +122,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     return null;
   }
 
-  private HttpClientImpl createHttpClientImpl(HttpClientConfig clientConfig,
+  private HttpClientImpl createHttpClientImpl(HttpClientConfig config,
+                                              ClientSSLOptions sslOptions,
                                               HttpClientMetrics<?, ?> httpMetrics,
                                               EndpointResolver resolver,
                                               Function<HttpClientResponse, Future<RequestOptions>> redirectHandler,
@@ -122,10 +132,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     boolean followAlternativeServices;
     ProxyOptions proxyOptions;
     List<String> nonProxyHosts;
-    if (clientConfig != null) {
-      proxyOptions = clientConfig.getTcpConfig().getProxyOptions();
-      nonProxyHosts = clientConfig.getTcpConfig().getNonProxyHosts();
-      followAlternativeServices = clientConfig.getFollowAlternativeServices();
+    if (config != null) {
+      proxyOptions = config.getTcpConfig().getProxyOptions();
+      nonProxyHosts = config.getTcpConfig().getNonProxyHosts();
+      followAlternativeServices = config.getFollowAlternativeServices();
     } else {
       proxyOptions = null;
       nonProxyHosts = null;
@@ -134,9 +144,9 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     PoolOptions po;
     po = poolOptions != null ? poolOptions : new PoolOptions();
     HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
-    Handler<HttpConnection> connectHandler = connectionHandler(clientConfig);
-    HttpVersion defaultVersion = clientConfig.getVersions().isEmpty() ? null : clientConfig.getVersions().get(0);
-    boolean useAlpn = clientConfig.getVersions().contains(HttpVersion.HTTP_2);
+    Handler<HttpConnection> connectHandler = connectionHandler(config);
+    HttpVersion defaultVersion = config.getVersions().isEmpty() ? null : config.getVersions().get(0);
+    boolean useAlpn = config.getVersions().contains(HttpVersion.HTTP_2);
     return new HttpClientImpl(
       vertx,
       resolver,
@@ -148,20 +158,20 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       loadBalancer,
       followAlternativeServices,
       resolverKeepAlive,
-      clientConfig.isVerifyHost(),
+      config.isVerifyHost(),
       useAlpn,
-      clientConfig.isSsl(),
-      clientConfig.getDefaultHost(),
-      clientConfig.getDefaultPort(),
-      clientConfig.getMaxRedirects(),
+      config.isSsl(),
+      config.getDefaultHost(),
+      config.getDefaultPort(),
+      config.getMaxRedirects(),
       defaultVersion,
-      clientConfig.getSslOptions(),
+      sslOptions,
       connectHandler,
       tcpTransport,
       quicTransport) {
       @Override
       public HttpClientConfig config() {
-        return new HttpClientConfig(clientConfig);
+        return new HttpClientConfig(config);
       }
       @Override
       public HttpClientOptions options() {
@@ -209,6 +219,13 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       co = new HttpClientConfig(new HttpClientOptions());
     }
 
+    ClientSSLOptions ssl;
+    if (sslOptions != null) {
+      ssl = sslOptions.copy();
+    } else {
+      ssl = null;
+    }
+
     if (co.getVersions().isEmpty()) {
       throw new IllegalStateException("HTTP client must be configured for at least one HTTP version");
     }
@@ -238,7 +255,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         .setProxyOptions(null);
       NetClientInternal tcpClient = new NetClientBuilder(vertx, clientConfig)
         .protocol("http")
-        .sslOptions(co.getSslOptions())
+        .sslOptions(sslOptions)
         .build();
       transport = new TcpHttpClientTransport(
         tcpClient,
@@ -268,14 +285,14 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     if (shared != null) {
       CloseFuture closeFuture = new CloseFuture();
       client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(co2, httpMetrics, resolver, redirectHandler, transport, quicTransport);
+        HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
       client = new CleanableHttpClient((HttpClientInternal) client, vertx.cleaner(), (timeout) -> closeFuture.close());
       closeable = closeFuture;
     } else {
-      HttpClientImpl impl = createHttpClientImpl(co2, httpMetrics, resolver, redirectHandler, transport, quicTransport);
+      HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
       closeable = impl;
       client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
     }

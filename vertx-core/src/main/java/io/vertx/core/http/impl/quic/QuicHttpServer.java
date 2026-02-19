@@ -37,6 +37,7 @@ public class QuicHttpServer implements HttpServerInternal {
 
   private final VertxInternal vertx;
   private final HttpServerConfig config;
+  private final ServerSSLOptions sslOptions;
   private final Http3ServerConfig http3Config;
   private final QuicServerConfig quicConfig;
   private final boolean manageMetrics;
@@ -46,9 +47,14 @@ public class QuicHttpServer implements HttpServerInternal {
   private HttpServerMetrics<?, ?> httpMetrics;
   private volatile int actualPort;
 
-  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config, HttpServerMetrics<?, ?> httpMetrics) {
+  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions, HttpServerMetrics<?, ?> httpMetrics) {
+
+    // We own the copy
+    sslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
+
     this.vertx = vertx;
-    this.config = new HttpServerConfig(config);
+    this.config = config;
+    this.sslOptions = sslOptions;
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
     this.quicConfig = config.getQuicConfig() != null ? config.getQuicConfig() : new QuicServerConfig();
     this.actualPort = 0;
@@ -205,9 +211,6 @@ public class QuicHttpServer implements HttpServerInternal {
 
   Handler<HttpServerRequest> requestHandler;
     Handler<HttpConnection> connectionHandler;
-
-    ServerSSLOptions sslOptions = config.getSslOptions().copy();
-    sslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
 
     synchronized (this) {
       if (quicServer != null) {

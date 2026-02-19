@@ -12,6 +12,8 @@ package io.vertx.tests.http.http3;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpServerConfig;
@@ -53,11 +55,11 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpServerConfig forServer() {
-    io.vertx.core.http.HttpServerConfig options = new io.vertx.core.http.HttpServerConfig();
-    options.setVersions(EnumSet.of(HttpVersion.HTTP_3));
-    options.setQuicPort(port);
-    options.setQuicHost(host);
-    options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
+    io.vertx.core.http.HttpServerConfig config = new io.vertx.core.http.HttpServerConfig();
+    config.setVersions(EnumSet.of(HttpVersion.HTTP_3));
+    config.setQuicPort(port);
+    config.setQuicHost(host);
+    ServerSSLOptions sslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
     return new HttpServerConfig() {
@@ -71,17 +73,17 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes) {
-        options.setMaxFormBufferedBytes(maxFormBufferedBytes);
+        config.setMaxFormBufferedBytes(maxFormBufferedBytes);
         return this;
       }
       @Override
       public HttpServerConfig setMaxFormAttributeSize(int maxSize) {
-        options.setMaxFormAttributeSize(maxSize);
+        config.setMaxFormAttributeSize(maxSize);
         return this;
       }
       @Override
       public HttpServerConfig setMaxFormFields(int maxFormFields) {
-        options.setMaxFormFields(maxFormFields);
+        config.setMaxFormFields(maxFormFields);
         return this;
       }
       @Override
@@ -90,17 +92,17 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpServerConfig setIdleTimeout(Duration timeout) {
-        options.getQuicConfig().setIdleTimeout(timeout);
+        config.getQuicConfig().setIdleTimeout(timeout);
         return this;
       }
       @Override
       public HttpServerConfig setHandle100ContinueAutomatically(boolean b) {
-        options.setHandle100ContinueAutomatically(b);
+        config.setHandle100ContinueAutomatically(b);
         return this;
       }
       @Override
       public HttpServer create(Vertx vertx) {
-        return vertx.createHttpServer(options);
+        return vertx.createHttpServer(config, sslOptions);
       }
     };
   }
@@ -111,8 +113,9 @@ public class Http3Config implements HttpConfig {
     config.setVersions(List.of(HttpVersion.HTTP_3));
     config.setDefaultHost(host);
     config.setDefaultPort(port);
-    config.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    config.getSslOptions().setHostnameVerificationAlgorithm("");
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setHostnameVerificationAlgorithm("");
     return new HttpClientConfig() {
       @Override
       public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
@@ -148,7 +151,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientBuilder builder(Vertx vertx) {
-        return vertx.httpClientBuilder().with(config);
+        return vertx.httpClientBuilder().with(config).with(sslOptions);
       }
     };
   }

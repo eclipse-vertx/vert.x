@@ -63,7 +63,6 @@ public class HttpServerConfig {
   private int maxFormFields;
   private int maxFormBufferedBytes;
   private boolean handle100ContinueAutomatically;
-  private ServerSSLOptions sslOptions;
   private boolean strictThreadMode;
   private String metricsName;
   private TracingPolicy tracingPolicy;
@@ -72,8 +71,8 @@ public class HttpServerConfig {
   private Http3ServerConfig http3Config;
   private WebSocketServerConfig webSocketConfig;
   private HttpCompressionConfig compression;
-  private TcpServerConfig tcpConfig;
-  private QuicServerConfig quicConfig;
+  private final TcpServerConfig tcpConfig;
+  private final QuicServerConfig quicConfig;
 
   public HttpServerConfig(HttpServerOptions options) {
 
@@ -93,7 +92,6 @@ public class HttpServerConfig {
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
-    this.sslOptions = options.getSslOptions() != null ? new ServerSSLOptions(options.getSslOptions()) : null;
     this.strictThreadMode = options.getStrictThreadMode();
     this.metricsName = options.getMetricsName();
     this.tracingPolicy = options.getTracingPolicy();
@@ -111,7 +109,6 @@ public class HttpServerConfig {
     this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
-    this.sslOptions = new ServerSSLOptions();
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
     this.metricsName = null;
     this.tracingPolicy = HttpServerOptions.DEFAULT_TRACING_POLICY;
@@ -130,7 +127,6 @@ public class HttpServerConfig {
     this.maxFormFields = other.maxFormFields;
     this.maxFormBufferedBytes = other.maxFormBufferedBytes;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
-    this.sslOptions = other.sslOptions != null ? other.sslOptions.copy() : new ServerSSLOptions();
     this.strictThreadMode = other.strictThreadMode;
     this.metricsName = other.metricsName;
     this.tracingPolicy = other.tracingPolicy;
@@ -214,24 +210,6 @@ public class HttpServerConfig {
    */
   public HttpServerConfig addVersion(HttpVersion version) {
     versions.add(version);
-    return this;
-  }
-
-  /**
-   * @return the server SSL options.
-   */
-  public ServerSSLOptions getSslOptions() {
-    return sslOptions;
-  }
-
-  /**
-   * Set the server SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerConfig setSslOptions(ServerSSLOptions sslOptions) {
-    this.sslOptions = sslOptions;
     return this;
   }
 

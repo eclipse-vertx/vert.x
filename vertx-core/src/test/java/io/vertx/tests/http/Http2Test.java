@@ -279,7 +279,9 @@ public class Http2Test extends HttpTest {
   public void testServerDoesNotSupportAlpn() throws Exception {
     waitFor(2);
     server.close();
-    server = vertx.createHttpServer(new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()).setVersions(Set.of(HttpVersion.HTTP_1_1)));
+    server = vertx.createHttpServer(
+      new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()).setVersions(Set.of(HttpVersion.HTTP_1_1)),
+      Http2TestBase.createHttp2ServerOptions().getSslOptions());
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
@@ -966,10 +968,11 @@ public class Http2Test extends HttpTest {
 
   private void testUnsupportedAlpnVersion(SSLEngineOptions engine, boolean accept) throws Exception {
     server.close();
-    server = vertx.createHttpServer(new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()
-      .setSslEngineOptions(engine))
-      .setVersions(Set.of(HttpVersion.HTTP_2))
-    );
+    server = vertx.createHttpServer(
+      new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()
+        .setSslEngineOptions(engine))
+        .setVersions(Set.of(HttpVersion.HTTP_2)),
+      Http2TestBase.createHttp2ServerOptions().getSslOptions());
     server.requestHandler(request -> {
       request.response().end();
     });

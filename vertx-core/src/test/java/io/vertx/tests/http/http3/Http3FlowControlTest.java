@@ -14,6 +14,8 @@ import io.vertx.core.Completable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
@@ -38,12 +40,12 @@ public class Http3FlowControlTest extends VertxTestBase {
     super.setUp();
     HttpServerConfig serverConfig = new HttpServerConfig();
     serverConfig.addVersion(HttpVersion.HTTP_3);
-    serverConfig.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     clientConfig = new HttpClientConfig();
     clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
-    clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    server = vertx.createHttpServer(serverConfig);
-    client = vertx.createHttpClient(clientConfig);
+    ClientSSLOptions clientSslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
+    server = vertx.createHttpServer(serverConfig, serverSslOptions);
+    client = vertx.createHttpClient(clientConfig, clientSslOptions);
   }
 
   @Override
