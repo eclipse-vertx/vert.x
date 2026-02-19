@@ -23,11 +23,15 @@ import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.threadchecker.BlockedThreadChecker;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.TcpClientConfig;
+import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
@@ -70,6 +74,16 @@ public abstract class VertxWrapper implements VertxInternal {
   @Override
   public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
     return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
+  }
+
+  @Override
+  public NetServer createNetServer(TcpServerConfig config, ServerSSLOptions sslOptions) {
+    return delegate.createNetServer(config, sslOptions);
+  }
+
+  @Override
+  public NetClient createNetClient(TcpClientConfig config, ClientSSLOptions sslOptions) {
+    return delegate.createNetClient(config, sslOptions);
   }
 
   @Override
