@@ -34,10 +34,11 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
+
 
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * A connection that attempts to perform a protocol upgrade to H2C. The connection might use HTTP/1 or H2C
@@ -899,6 +900,11 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   @Override
   public String indicatedServerName() {
     return current.indicatedServerName();
+  }
+
+  @Override
+  public Iterable<Map.Entry<Buffer, Buffer>> tlvs() {
+    return current.tlvs();
   }
 
   @Override

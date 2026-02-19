@@ -18,7 +18,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -29,6 +28,7 @@ import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a socket-like interface to a TCP connection on either the
@@ -313,6 +313,14 @@ public interface NetSocket extends Socket {
    * @return the application-level protocol negotiated during the TLS handshake
    */
   String applicationLayerProtocol();
+
+  /**
+   * @return the type-length-values present in the TCP header as an iterable of map entries
+   * where the key contains the TLV type and the value contains the TLV value.
+   * This is mainly used for HA Proxy Protocol v2
+   */
+  @GenIgnore()
+  Iterable<Map.Entry<Buffer, Buffer>> tlvs();
 
 }
 

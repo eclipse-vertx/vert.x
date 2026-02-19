@@ -23,6 +23,7 @@ import java.security.cert.Certificate;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -297,5 +298,15 @@ public interface HttpConnection {
    * @return the indicated server name
    */
   String indicatedServerName();
+
+  /**
+   * @return the type-length-values present in the TCP header as an iterable of map entries
+   * where the key contains the TLV type and the value contains the TLV value.
+   * This is mainly used for HA Proxy Protocol v2
+   */
+  @GenIgnore()
+  default Iterable<Map.Entry<Buffer, Buffer>> tlvs() {
+    return List.of();
+  }
 
 }
