@@ -35,6 +35,8 @@ import io.vertx.core.net.QuicClientConfig;
 import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.TcpClientConfig;
+import io.vertx.core.net.TcpServerConfig;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.shareddata.SharedData;
@@ -196,6 +198,25 @@ public interface Vertx extends Measured {
   Context getOrCreateContext();
 
   /**
+   * Create a TCP/SSL server using the specified config
+   *
+   * @param config  the config to use
+   * @return the server
+   */
+  default NetServer createNetServer(TcpServerConfig config) {
+    return createNetServer(config, null);
+  }
+
+  /**
+   * Create a TCP/SSL server using the specified config and the specified ssl options
+   *
+   * @param config  the config to use
+   * @param sslOptions the server SSL options
+   * @return the server
+   */
+  NetServer createNetServer(TcpServerConfig config, ServerSSLOptions sslOptions);
+
+  /**
    * Create a TCP/SSL server using the specified options
    *
    * @param options  the options to use
@@ -211,6 +232,25 @@ public interface Vertx extends Measured {
   default NetServer createNetServer() {
     return createNetServer(new NetServerOptions());
   }
+
+  /**
+   * Create a TCP/SSL client using the specified config
+   *
+   * @param config  the config to use
+   * @return the client
+   */
+  default NetClient createNetClient(TcpClientConfig config) {
+    return createNetClient(config, null);
+  }
+
+  /**
+   * Create a TCP/SSL client using the specified config and the specified ssl options
+   *
+   * @param config  the config to use
+   * @param sslOptions the default client SSL options
+   * @return the client
+   */
+  NetClient createNetClient(TcpClientConfig config, ClientSSLOptions sslOptions);
 
   /**
    * Create a TCP/SSL client using the specified options
@@ -235,6 +275,7 @@ public interface Vertx extends Measured {
    * <p>The returned server can be bound, after setting a connection {@link QuicServer#handler(Handler) handler}</p>
    *
    * @param config the server configuration
+   * @param sslOptions the server SSL options
    * @return the server
    */
   default QuicServer createQuicServer(QuicServerConfig config, ServerSSLOptions sslOptions) {
@@ -252,12 +293,12 @@ public interface Vertx extends Measured {
    * <p>Create a configured Quic client.</p>
    *
    * @param config the client configuration
-   * @param defaultSslOptions the default client SSL options
+   * @param sslOptions the default client SSL options
    * @return the client
    */
-  default QuicClient createQuicClient(QuicClientConfig config, ClientSSLOptions defaultSslOptions) {
+  default QuicClient createQuicClient(QuicClientConfig config, ClientSSLOptions sslOptions) {
     VertxInternal vertxInternal = (VertxInternal) this;
-    return QuicClientImpl.create(vertxInternal, config, defaultSslOptions);
+    return QuicClientImpl.create(vertxInternal, config, sslOptions);
   }
 
   /**
