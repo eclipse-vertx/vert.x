@@ -24,10 +24,12 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
@@ -234,7 +236,17 @@ public interface Vertx extends Measured {
    * @param config  the config to use
    * @return the server
    */
-  HttpServer createHttpServer(HttpServerConfig config);
+  default HttpServer createHttpServer(HttpServerConfig config) {
+    return createHttpServer(config, null);
+  }
+
+  /**
+   * Create an HTTP server using the specified config
+   *
+   * @param config  the config to use
+   * @return the server
+   */
+  HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions);
 
   /**
    * Create an HTTP/HTTPS server using default options
@@ -279,6 +291,29 @@ public interface Vertx extends Measured {
    */
   default HttpClientAgent createHttpClient(HttpClientConfig clientConfig, PoolOptions poolOptions) {
     return httpClientBuilder().with(clientConfig).with(poolOptions).build();
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client, ssl options and pool options
+   *
+   * @param clientConfig  the client config to use
+   * @param sslOptions the ssl options to use
+   * @param poolOptions  the pool options to use
+   * @return the client
+   */
+  default HttpClientAgent createHttpClient(HttpClientConfig clientConfig, ClientSSLOptions sslOptions,  PoolOptions poolOptions) {
+    return httpClientBuilder().with(clientConfig).with(sslOptions).with(poolOptions).build();
+  }
+
+  /**
+   * Create a HTTP/HTTPS client using the specified client and ssl options
+   *
+   * @param clientConfig  the client config to use
+   * @param sslOptions the ssl options to use
+   * @return the client
+   */
+  default HttpClientAgent createHttpClient(HttpClientConfig clientConfig, ClientSSLOptions sslOptions) {
+    return httpClientBuilder().with(clientConfig).with(sslOptions).build();
   }
 
   /**

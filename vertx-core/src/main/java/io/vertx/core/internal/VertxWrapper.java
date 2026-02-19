@@ -27,6 +27,7 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.internal.net.NetServerInternal;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.transport.Transport;
@@ -87,8 +88,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpServer createHttpServer(HttpServerConfig config) {
-    return delegate.createHttpServer(config);
+  public HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions) {
+    return delegate.createHttpServer(config, sslOptions);
   }
 
   @Override

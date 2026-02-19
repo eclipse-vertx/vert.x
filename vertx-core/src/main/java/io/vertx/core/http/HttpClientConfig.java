@@ -62,7 +62,6 @@ public class HttpClientConfig {
 
   private TcpClientConfig tcpConfig;
   private QuicClientConfig quicConfig;
-  private ClientSSLOptions sslOptions;
   private boolean ssl;
 
   private List<HttpVersion> versions;
@@ -84,7 +83,6 @@ public class HttpClientConfig {
   public HttpClientConfig() {
     this.tcpConfig = new TcpClientConfig();
     this.quicConfig = defaultQuicConfig();
-    this.sslOptions = new ClientSSLOptions().setUseAlpn(true);
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
     this.versions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = new Http1ClientConfig();
@@ -106,7 +104,6 @@ public class HttpClientConfig {
   public HttpClientConfig(HttpClientConfig other) {
     this.tcpConfig = other.tcpConfig != null ? new TcpClientConfig(other.tcpConfig) : null;
     this.quicConfig = other.quicConfig != null ? new QuicClientConfig(other.quicConfig) : null;
-    this.sslOptions = other.sslOptions != null ? new ClientSSLOptions(other.sslOptions) : null;
     this.ssl = other.ssl;
     this.versions = new ArrayList<>(other.versions != null ? other.versions : DEFAULT_SUPPORTED_VERSIONS);
     this.http1Config = other.http1Config != null ? new Http1ClientConfig(other.http1Config) : null;
@@ -128,7 +125,6 @@ public class HttpClientConfig {
   public HttpClientConfig(HttpClientOptions other) {
     this.tcpConfig = new TcpClientConfig(other);
     this.quicConfig = defaultQuicConfig();
-    this.sslOptions = other.getSslOptions() != null ? new ClientSSLOptions(other.getSslOptions()) : new ClientSSLOptions();
     this.ssl = other.isSsl();
     this.versions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
     this.http1Config = other.getHttp1Config();
@@ -159,24 +155,6 @@ public class HttpClientConfig {
    */
   public QuicClientConfig getQuicConfig() {
     return quicConfig;
-  }
-
-  /**
-   * @return the client SSL options.
-   */
-  public ClientSSLOptions getSslOptions() {
-    return sslOptions;
-  }
-
-  /**
-   * Set the client SSL options.
-   *
-   * @param sslOptions the options
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setSslOptions(ClientSSLOptions sslOptions) {
-    this.sslOptions = sslOptions;
-    return this;
   }
 
   /**

@@ -37,6 +37,7 @@ public class HybridHttpServer implements HttpServerInternal {
 
   private final VertxInternal vertx;
   private final HttpServerConfig config;
+  private final ServerSSLOptions sslOptions;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
@@ -47,23 +48,24 @@ public class HybridHttpServer implements HttpServerInternal {
   private HttpServerInternal quicServer;
   private HttpServerMetrics<?, ?> httpMetrics;
 
-  public HybridHttpServer(VertxInternal vertx, HttpServerConfig config) {
+  public HybridHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions) {
     this.vertx = vertx;
     this.config = config;
+    this.sslOptions = sslOptions;
   }
 
-  public HttpServerInternal tcpServer(HttpServerMetrics<?, ?> httpMetrics,  HttpServerConfig config) {
+  public HttpServerInternal tcpServer(HttpServerMetrics<?, ?> httpMetrics) {
     if (tcpServer == null) {
-      TcpHttpServer server = new TcpHttpServer(vertx, config, httpMetrics, false);
+      TcpHttpServer server = new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), httpMetrics, false);
       setHandlers(server);
       tcpServer = server;
     }
     return tcpServer;
   }
 
-  public HttpServerInternal quicServer(HttpServerMetrics<?, ?> httpMetrics,  HttpServerConfig config) {
+  public HttpServerInternal quicServer(HttpServerMetrics<?, ?> httpMetrics) {
     if (quicServer == null) {
-      QuicHttpServer server = new QuicHttpServer(vertx, config, httpMetrics);
+      QuicHttpServer server = new QuicHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), httpMetrics);
       setHandlers(server);
       quicServer = server;
     }
@@ -150,8 +152,8 @@ public class HybridHttpServer implements HttpServerInternal {
     SocketAddress tcpLocalAddress = SocketAddress.inetSocketAddress(config.getTcpPort(), config.getTcpHost());
     SocketAddress udpLocalAddress = SocketAddress.inetSocketAddress(config.getQuicPort(), config.getQuicHost());
     httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, tcpLocalAddress, udpLocalAddress) : null;
-    return listen(tcpServer(httpMetrics, config).listen(context),
-      quicServer(httpMetrics, config).listen(context));
+    return listen(tcpServer(httpMetrics).listen(context),
+      quicServer(httpMetrics).listen(context));
   }
 
   @Override
@@ -163,7 +165,7 @@ public class HybridHttpServer implements HttpServerInternal {
     config.setHost(address.host());
     config.setPort(address.port());
     httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address, address) : null;
-    return listen(tcpServer(httpMetrics, config).listen(context, address), quicServer(httpMetrics, config).listen(context, address));
+    return listen(tcpServer(httpMetrics).listen(context, address), quicServer(httpMetrics).listen(context, address));
   }
 
   private Future<HttpServer> listen(Future<HttpServer> f1, Future<HttpServer> f2) {

@@ -6,6 +6,8 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -22,8 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Http3ClientTest extends VertxTestBase {
 
   private HttpServerConfig serverOptions;
+  private ServerSSLOptions serverSslOptions;
   private HttpServer server;
   private HttpClientConfig clientConfig;
+  private ClientSSLOptions clientSSLOptions;
   private HttpClientAgent client;
 
   @Override
@@ -31,14 +35,14 @@ public class Http3ClientTest extends VertxTestBase {
     super.setUp();
     serverOptions = new HttpServerConfig();
     serverOptions.addVersion(HttpVersion.HTTP_3);
-    serverOptions.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
+    serverSslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");
     clientConfig = new HttpClientConfig();
     clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
-    clientConfig.getSslOptions().setTrustOptions(Trust.SERVER_JKS.get());
-    server = vertx.createHttpServer(serverOptions);
-    client = vertx.createHttpClient(clientConfig);
+    clientSSLOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
+    server = vertx.createHttpServer(serverOptions, serverSslOptions);
+    client = vertx.createHttpClient(clientConfig, clientSSLOptions);
   }
 
   @Override
@@ -396,7 +400,7 @@ public class Http3ClientTest extends VertxTestBase {
         .setQPackBlockedStreams(1024));
 
     server.close();
-    server = vertx.createHttpServer(serverConfig);
+    server = vertx.createHttpServer(serverConfig, serverSslOptions);
 
     server.connectionHandler(connection -> {
       connection.remoteSettingsHandler(settings -> {
@@ -420,7 +424,7 @@ public class Http3ClientTest extends VertxTestBase {
       .setQPackBlockedStreams(1024)
       .setQPackMaxTableCapacity(1024)
     );
-    client = vertx.createHttpClient(config);
+    client = vertx.createHttpClient(config, clientSSLOptions);
 
     HttpClientConnection connection = client.connect(new HttpConnectOptions()
       .setHost("localhost")

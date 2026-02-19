@@ -47,6 +47,7 @@ public class TcpHttpServer implements HttpServerInternal {
 
   private final VertxInternal vertx;
   final HttpServerConfig config;
+  private final ServerSSLOptions sslOptions;
   private final boolean registerWebSocketWriteHandlers;
   private final boolean manageMetrics;
   private Handler<HttpServerRequest> requestHandler;
@@ -60,9 +61,11 @@ public class TcpHttpServer implements HttpServerInternal {
   private CloseSequence closeSequence;
   private HttpServerMetrics<?, ?> httpMetrics;
 
-  public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
+  public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions,
+                       HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.config = config;
+    this.sslOptions = sslOptions;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.httpMetrics = httpMetrics;
     this.manageMetrics = httpMetrics == null;
@@ -201,7 +204,7 @@ public class TcpHttpServer implements HttpServerInternal {
         .build();
     }
     HttpCompressionConfig compression = config.getCompression();
-    ServerSSLOptions sslOptions = configureSSLOptions(config);
+    ServerSSLOptions sslOptions = configureSSLOptions(config, this.sslOptions);
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), sslOptions)
       .fileRegionEnabled(!compression.isCompressionEnabled())
       .cleanable(false)
@@ -273,9 +276,8 @@ public class TcpHttpServer implements HttpServerInternal {
     return result.future();
   }
 
-  private static ServerSSLOptions configureSSLOptions(HttpServerConfig config) {
-    ServerSSLOptions sslOptions;
-    if ((sslOptions = config.getSslOptions()) != null && config.isSsl()) {
+  private static ServerSSLOptions configureSSLOptions(HttpServerConfig config, ServerSSLOptions sslOptions) {
+    if (sslOptions != null && config.isSsl()) {
       sslOptions = sslOptions.copy();
       boolean h2 = config.getVersions().contains(HttpVersion.HTTP_2);
       if (h2) {

@@ -19,6 +19,7 @@ import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -42,15 +43,18 @@ import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 @RunWith(LinuxOrOsx.class)
 public class Http3ServerTest extends VertxTestBase {
 
-  public static HttpServerConfig serverOptions() {
+  public static HttpServerConfig serverConfig() {
     HttpServerConfig options = new HttpServerConfig();
     options.addVersion(HttpVersion.HTTP_3);
     options.setQuicPort(4043);
-    options.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
     return options;
 
+  }
+
+  public static ServerSSLOptions sslOptions() {
+    return new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
   }
 
   private HttpServer server;
@@ -60,7 +64,7 @@ public class Http3ServerTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     client = Http3NettyTest.client(new NioEventLoopGroup(1));
-    server = vertx.createHttpServer(serverOptions());
+    server = vertx.createHttpServer(serverConfig(), sslOptions());
   }
 
   @Override
@@ -361,9 +365,9 @@ public class Http3ServerTest extends VertxTestBase {
   @Test
   public void testStreamIdleTimeout() throws Exception {
 
-    HttpServerConfig config = serverOptions();
+    HttpServerConfig config = serverConfig();
     config.getQuicConfig().setIdleTimeout(Duration.ofMillis(200));
-    server = vertx.createHttpServer(config);
+    server = vertx.createHttpServer(config, sslOptions());
 
     server.requestHandler(req -> {
       long now = System.currentTimeMillis();
@@ -393,14 +397,14 @@ public class Http3ServerTest extends VertxTestBase {
 
   @Test
   public void testSettings() throws Exception {
-    HttpServerConfig config = serverOptions();
+    HttpServerConfig config = serverConfig();
     config.getHttp3Config()
       .setInitialSettings(new io.vertx.core.http.Http3Settings()
       .setMaxFieldSectionSize(1024)
       .setQPackBlockedStreams(1024)
       .setQPackMaxTableCapacity(1024)
     );
-    server = vertx.createHttpServer(config);
+    server = vertx.createHttpServer(config, sslOptions());
 
     server.connectionHandler(connection -> {
       connection.remoteSettingsHandler(settings -> {

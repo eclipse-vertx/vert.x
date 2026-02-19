@@ -62,8 +62,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
       .setSsl(true)
       .setPort(4043)
       .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
-    config.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
-    HttpServer server = vertx.createHttpServer(config);
+    HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
     Future<HttpServer> res = server.requestHandler(request -> request
         .response()
         .end(request.version().name()))
@@ -81,9 +80,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
       .setPort(4043)
       .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
 
-    config.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
-
-    HttpServer server = vertx.createHttpServer(config);
+    HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
 
     server.requestHandler(request -> request
         .response()
@@ -93,9 +90,8 @@ public class CompositeHttpServerTest extends VertxTestBase {
     HttpClientConfig clientConfig = new HttpClientConfig()
       .setVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3))
       .setSsl(true);
-    clientConfig.getSslOptions().setTrustAll(true);
 
-    HttpClient client = vertx.createHttpClient(clientConfig);
+    HttpClient client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustAll(true));
 
     for (HttpVersion version : List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)) {
       RequestOptions o = new RequestOptions().setHost("localhost").setPort(4043).setProtocolVersion(version);
@@ -116,9 +112,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
       .setPort(4043)
       .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
 
-    config.getSslOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
-
-    HttpServerInternal server = (HttpServerInternal)vertx.createHttpServer(config)
+    HttpServerInternal server = (HttpServerInternal)vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
       .requestHandler(request -> request
         .response()
         .end(request.version().name()));
