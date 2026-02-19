@@ -13,6 +13,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.compression.CompressionOptions;
 import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
@@ -32,6 +33,8 @@ public class HttpServerConfig {
    * Default port the server will listen on = 443
    */
   public static final int DEFAULT_HTTP3_PORT = 443;
+
+  public static final Set<HttpVersion> DEFAULT_VERSIONS = Collections.unmodifiableSet(EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2));
 
   public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10_485_760L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
@@ -74,6 +77,10 @@ public class HttpServerConfig {
   private final TcpServerConfig tcpConfig;
   private final QuicServerConfig quicConfig;
 
+  /**
+   * Copies the {@link HttpServerOptions}.
+   * @param options the options to copy
+   */
   public HttpServerConfig(HttpServerOptions options) {
 
     List<CompressionOptions> compressors = options.getCompression().getCompressors();
@@ -87,7 +94,7 @@ public class HttpServerConfig {
     compression.setContentSizeThreshold(options.getCompressionContentSizeThreshold());
     compression.setCompressors(compressors);
 
-    this.versions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+    this.versions = EnumSet.copyOf(DEFAULT_VERSIONS);
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
@@ -103,8 +110,11 @@ public class HttpServerConfig {
     this.quicConfig = defaultQuicConfig();
   }
 
+  /**
+   * Create a default configuration of a server accepting HTTP/1.1 and HTTP/2 protocols.
+   */
   public HttpServerConfig() {
-    this.versions = EnumSet.noneOf(HttpVersion.class);
+    this.versions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
     this.maxFormAttributeSize = HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
@@ -121,6 +131,11 @@ public class HttpServerConfig {
     this.quicConfig = defaultQuicConfig();
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param other the config to be copied
+   */
   public HttpServerConfig(HttpServerConfig other) {
     this.versions = EnumSet.copyOf(other.versions);
     this.maxFormAttributeSize = other.maxFormAttributeSize;
@@ -199,6 +214,20 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setVersions(Set<HttpVersion> versions) {
     this.versions = Objects.requireNonNull(versions);
+    return this;
+  }
+
+  /**
+   * Set the HTTP versions.
+   *
+   * @param versions the versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public HttpServerConfig setVersions(HttpVersion... versions) {
+    EnumSet<HttpVersion> s = EnumSet.noneOf(HttpVersion.class);
+    Collections.addAll(s, versions);
+    this.versions = s;
     return this;
   }
 

@@ -280,7 +280,7 @@ public class Http2Test extends HttpTest {
     waitFor(2);
     server.close();
     server = vertx.createHttpServer(
-      new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()).setVersions(Set.of(HttpVersion.HTTP_1_1)),
+      new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()).setVersions(HttpVersion.HTTP_1_1),
       Http2TestBase.createHttp2ServerOptions().getSslOptions());
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
@@ -971,7 +971,7 @@ public class Http2Test extends HttpTest {
     server = vertx.createHttpServer(
       new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()
         .setSslEngineOptions(engine))
-        .setVersions(Set.of(HttpVersion.HTTP_2)),
+        .setVersions(HttpVersion.HTTP_2),
       Http2TestBase.createHttp2ServerOptions().getSslOptions());
     server.requestHandler(request -> {
       request.response().end();

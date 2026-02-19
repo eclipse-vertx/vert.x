@@ -59,7 +59,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
     HttpServerConfig config = new HttpServerConfig()
       .setSsl(true)
       .setPort(4043)
-      .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
+      .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3);
     HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
     Future<HttpServer> res = server.requestHandler(request -> request
         .response()
@@ -76,7 +76,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
     HttpServerConfig config = new HttpServerConfig()
       .setSsl(true)
       .setPort(4043)
-      .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
+      .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3);
 
     HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
 
@@ -86,7 +86,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
       .listen().await();
 
     HttpClientConfig clientConfig = new HttpClientConfig()
-      .setVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3))
+      .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)
       .setSsl(true);
 
     HttpClient client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustAll(true));
@@ -108,7 +108,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
     HttpServerConfig config = new HttpServerConfig()
       .setSsl(true)
       .setPort(4043)
-      .setVersions(Set.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
+      .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3);
 
     HttpServerInternal server = (HttpServerInternal)vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
       .requestHandler(request -> request

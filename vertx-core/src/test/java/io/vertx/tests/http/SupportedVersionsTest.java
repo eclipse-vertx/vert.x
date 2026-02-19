@@ -38,7 +38,7 @@ public class SupportedVersionsTest extends VertxTestBase {
     .setKeyCertOptions(Cert.SNI_JKS.get());
   private static final HttpServerOptions TCP_SERVER_DEFAULT_TLS_WITH_ALPN = new HttpServerOptions(TCP_SERVER_DEFAULT_TLS);
   private static final HttpServerConfig QUIC_SERVER = new HttpServerConfig()
-    .setVersions(Set.of(HttpVersion.HTTP_3))
+    .setVersions(HttpVersion.HTTP_3)
     .setQuicPort(DEFAULT_HTTPS_PORT);
   private static final ServerSSLOptions DEFAULT_SERVER_TLS = new ServerSSLOptions().setKeyCertOptions(Cert.SNI_JKS.get());
   private static final ClientSSLOptions DEFAULT_CLIENT_TLS = new ClientSSLOptions().setTrustAll(true);
@@ -141,79 +141,79 @@ public class SupportedVersionsTest extends VertxTestBase {
 
   @Test
   public void testConfigHttp11Test() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(List.of(HttpVersion.HTTP_1_1)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(HttpVersion.HTTP_1_1));
     assertEquals(HttpVersion.HTTP_1_1, version);
   }
 
   @Test
   public void testConfigDefaultTlsTest() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS).setVersions(List.of(HttpVersion.HTTP_1_1)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS).setVersions(HttpVersion.HTTP_1_1));
     assertEquals(HttpVersion.HTTP_1_1, version);
   }
 
   @Test
   public void testConfigH2cWithUpgradeTest() {
     try {
-      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(List.of(HttpVersion.HTTP_2)).setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(true)));
+      configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(HttpVersion.HTTP_2).setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(true)));
       fail();
     } catch (Exception ignore) {
       // HTTP/1.1 is required
     }
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(true)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1).setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(true)));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH2cWithPriorKnowledgeTest() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(List.of(HttpVersion.HTTP_2)).setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(false)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpClientConfig().setVersions(HttpVersion.HTTP_2).setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(false)));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH2() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS_WITH_ALPN).setVersions(List.of(HttpVersion.HTTP_2)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS_WITH_ALPN).setVersions(HttpVersion.HTTP_2));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigHttp1H2() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN).setPort(4043), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS_WITH_ALPN).setVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN).setPort(4043), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS_WITH_ALPN).setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2));
     assertEquals(HttpVersion.HTTP_1_1, version);
   }
 
   @Test
   public void testConfigH2Http1() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN).setPort(4043), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS_WITH_ALPN).setVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN).setPort(4043), new HttpClientConfig(LEGACY_CLIENT_DEFAULT_TLS_WITH_ALPN).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH3() {
-    HttpVersion version = configTest(new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setVersions(List.of(HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setVersions(HttpVersion.HTTP_3));
     assertEquals(HttpVersion.HTTP_3, version);
   }
 
   @Test
   public void testConfigHttp1H3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setVersions(List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
     assertEquals(HttpVersion.HTTP_1_1, version);
   }
 
   @Test
   public void testConfigH2H3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setSsl(true).setVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setSsl(true).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_3));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH2CH3() {
-    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_3)));
+    HttpVersion version = configTest(new HttpServerOptions(TCP_SERVER_DEFAULT), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), new HttpClientConfig(CLIENT_DEFAULT).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_3));
     assertEquals(HttpVersion.HTTP_2, version);
   }
 
   @Test
   public void testConfigH2H3NoAlpn() {
-    HttpClientConfig config = new HttpClientConfig(CLIENT_DEFAULT_TLS).setVersions(List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_3));
+    HttpClientConfig config = new HttpClientConfig(CLIENT_DEFAULT_TLS).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_3);
     configTest(new HttpServerOptions(TCP_SERVER_DEFAULT_TLS_WITH_ALPN), new HttpServerConfig(QUIC_SERVER).setQuicPort(4043), DEFAULT_SERVER_TLS.copy(), config);
   }
 

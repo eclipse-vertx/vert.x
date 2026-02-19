@@ -11,6 +11,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
@@ -268,6 +269,18 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setVersions(List<HttpVersion> versions) {
     this.versions = Objects.requireNonNull(versions);
+    return this;
+  }
+
+  /**
+   * Like {@link #setVersions(List)} using an array.
+   *
+   * @param versions the ordered list of supported versions
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public HttpClientConfig setVersions(HttpVersion... versions) {
+    this.versions = List.of(versions);
     return this;
   }
 

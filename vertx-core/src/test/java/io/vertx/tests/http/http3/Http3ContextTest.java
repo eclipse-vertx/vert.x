@@ -40,8 +40,8 @@ public class Http3ContextTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     clientConfig = new HttpClientConfig();
-    clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
-    server = vertx.createHttpServer(new HttpServerConfig().setVersions(Set.of(HttpVersion.HTTP_3)), new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
+    clientConfig.setVersions(HttpVersion.HTTP_3);
+    server = vertx.createHttpServer(new HttpServerConfig().setVersions(HttpVersion.HTTP_3), new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
     client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()));
   }
 

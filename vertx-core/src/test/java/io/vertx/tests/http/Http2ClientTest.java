@@ -704,7 +704,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testFallbackOnHttp1() throws Exception {
     server.close();
-    server = vertx.createHttpServer(new HttpServerConfig(serverOptions).setVersions(Set.of(HttpVersion.HTTP_1_1)), serverOptions.getSslOptions());
+    server = vertx.createHttpServer(new HttpServerConfig(serverOptions).setVersions(HttpVersion.HTTP_1_1), serverOptions.getSslOptions());
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();

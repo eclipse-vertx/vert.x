@@ -40,10 +40,10 @@ public class Http3FlowControlTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     HttpServerConfig serverConfig = new HttpServerConfig();
-    serverConfig.setVersions(Set.of(HttpVersion.HTTP_3));
+    serverConfig.setVersions(HttpVersion.HTTP_3);
     ServerSSLOptions serverSslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     clientConfig = new HttpClientConfig();
-    clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
+    clientConfig.setVersions(HttpVersion.HTTP_3);
     ClientSSLOptions clientSslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
     server = vertx.createHttpServer(serverConfig, serverSslOptions);
     client = vertx.createHttpClient(clientConfig, clientSslOptions);
