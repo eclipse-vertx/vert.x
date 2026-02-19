@@ -423,6 +423,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(256, options.getDecoderInitialBufferSize());
     assertIllegalArgumentException(() -> options.setDecoderInitialBufferSize(-1));
 
+    assertEquals(HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS, options.getMaxQueryParams());
+    assertEquals(options, options.setMaxQueryParams(1025));
+    assertEquals(1025, options.getMaxQueryParams());
   }
 
   @Test
@@ -783,6 +786,7 @@ public class Http1xTest extends HttpTest {
     boolean decompressionSupported = rand.nextBoolean();
     boolean acceptUnmaskedFrames = rand.nextBoolean();
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
+    int maxQueryParams = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -814,6 +818,7 @@ public class Http1xTest extends HttpTest {
     options.setDecompressionSupported(decompressionSupported);
     options.setAcceptUnmaskedFrames(acceptUnmaskedFrames);
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
+    options.setMaxQueryParams(maxQueryParams);
 
     HttpServerOptions copy = new HttpServerOptions(options);
     checkCopyHttpServerOptions(options, copy);
@@ -916,6 +921,7 @@ public class Http1xTest extends HttpTest {
     boolean decompressionSupported = TestUtils.randomBoolean();
     boolean acceptUnmaskedFrames = TestUtils.randomBoolean();
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
+    int maxQueryParams = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
@@ -955,7 +961,8 @@ public class Http1xTest extends HttpTest {
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("decompressionSupported", decompressionSupported)
       .put("acceptUnmaskedFrames", acceptUnmaskedFrames)
-      .put("decoderInitialBufferSize", decoderInitialBufferSize);
+      .put("decoderInitialBufferSize", decoderInitialBufferSize)
+      .put("maxQueryParams", maxQueryParams);
 
     HttpServerOptions options = new HttpServerOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());
@@ -1006,6 +1013,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(decompressionSupported, options.isDecompressionSupported());
     assertEquals(acceptUnmaskedFrames, options.isAcceptUnmaskedFrames());
     assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
+    assertEquals(maxQueryParams, options.getMaxQueryParams());
 
     // Test other keystore/truststore types
     json.remove("keyStoreOptions");

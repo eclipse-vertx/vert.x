@@ -52,6 +52,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   private final int maxFormAttributeSize;
   private final int maxFormFields;
   private final int maxFormBufferedBytes;
+  private final int maxQueryParams;
   private final Handler<HttpServerRequest> handler;
 
   // Accessed on context thread
@@ -79,6 +80,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
                                int maxFormAttributeSize,
                                int maxFormFields,
                                int maxFormBufferedBytes,
+                               int maxQueryParams,
                                String serverOrigin) {
     this.handler = handler;
     this.context = context;
@@ -89,6 +91,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
     this.handle100ContinueAutomatically = handle100ContinueAutomatically;
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
+    this.maxQueryParams = maxQueryParams;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
   }
 
@@ -397,7 +400,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   public MultiMap params(boolean semicolonIsNormalChar) {
     synchronized (connection) {
       if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
-        params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
+        params = HttpUtils.params(uri(), paramsCharset, maxQueryParams, semicolonIsNormalChar);
         semicolonIsNormalCharInParams = semicolonIsNormalChar;
       }
       return params;

@@ -78,6 +78,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private final boolean eagerCreateRequestQueue;
   private final int maxFormAttributeSize;
   private final int maxFormFields;
+  private final int maxQueryParams;
   private final int maxFormBufferedBytes;
   private final Http1ServerConfig serverConfig;
   private final boolean registerWebSocketWriteHandlers;
@@ -104,6 +105,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
                                SslContextManager sslContextManager,
                                int maxFormAttributeSize,
                                int maxFormFields,
+                               int maxQueryParams,
                                int maxFormBufferedBytes,
                                Http1ServerConfig serverConfig,
                                boolean registerWebSocketWriteHandlers,
@@ -119,6 +121,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     this.streamContextSupplier = streamContextSupplier;
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
+    this.maxQueryParams = maxQueryParams;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.serverConfig = serverConfig;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
@@ -140,6 +143,10 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
 
   int maxFormFields() {
     return maxFormFields;
+  }
+
+  int maxQueryParams() {
+    return maxQueryParams;
   }
 
   int maxFormBufferedBytes() {
