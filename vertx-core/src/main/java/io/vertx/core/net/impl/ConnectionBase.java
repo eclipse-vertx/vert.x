@@ -19,6 +19,7 @@ import io.netty.handler.traffic.AbstractTrafficShapingHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -32,6 +33,8 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract base class for connections managed by a vertx instance. This base implementation does not handle
@@ -53,6 +56,7 @@ public abstract class ConnectionBase {
   public static final VertxException CLOSED_EXCEPTION = NetSocketInternal.CLOSED_EXCEPTION;
   public static final AttributeKey<SocketAddress> REMOTE_ADDRESS_OVERRIDE = AttributeKey.valueOf("RemoteAddressOverride");
   public static final AttributeKey<SocketAddress> LOCAL_ADDRESS_OVERRIDE = AttributeKey.valueOf("LocalAddressOverride");
+  public static final AttributeKey<Iterable<Map.Entry<Buffer, Buffer>>> TLVS = AttributeKey.valueOf("TLVS");
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
 
   protected final VertxInternal vertx;
@@ -424,6 +428,10 @@ public abstract class ConnectionBase {
     } else {
       return localAddress();
     }
+  }
+
+  public Iterable<Map.Entry<Buffer, Buffer>> tlvs() {
+    return channel.hasAttr(TLVS) ? channel.attr(TLVS).getAndSet(List.of()) : List.of();
   }
 
 }

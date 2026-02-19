@@ -16,7 +16,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClosedException;
-import io.vertx.core.http.StreamResetException;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SSLOptions;
@@ -26,6 +25,7 @@ import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -227,6 +227,11 @@ public class HttpNetSocket implements NetSocket {
   @Override
   public SocketAddress localAddress(boolean real) {
     return stream.connection().localAddress(real);
+  }
+
+  @Override
+  public Iterable<Map.Entry<Buffer, Buffer>> tlvs() {
+    return stream.connection().tlvs();
   }
 
   @Override
