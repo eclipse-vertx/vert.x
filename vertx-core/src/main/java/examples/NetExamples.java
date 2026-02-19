@@ -17,13 +17,11 @@ import io.vertx.core.Future;
 import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.*;
 
-import java.security.cert.CertificateException;
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,8 +36,10 @@ public class NetExamples {
 
   public void example2(Vertx vertx) {
 
-    NetServerOptions options = new NetServerOptions().setPort(4321);
-    NetServer server = vertx.createNetServer(options);
+    TcpServerConfig config = new TcpServerConfig()
+      .setPort(4321);
+
+    NetServer server = vertx.createNetServer(config);
   }
 
   public void example3(Vertx vertx) {
@@ -206,13 +206,16 @@ public class NetExamples {
 
   public void example14(Vertx vertx) {
 
-    NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
-    NetClient client = vertx.createNetClient(options);
+    TcpClientConfig config = new TcpClientConfig()
+      .setConnectTimeout(Duration.ofSeconds(10));
+
+    NetClient client = vertx.createNetClient(config);
   }
 
   public void example15(Vertx vertx) {
 
-    NetClientOptions options = new NetClientOptions().setConnectTimeout(10000);
+    TcpClientConfig options = new TcpClientConfig()
+      .setConnectTimeout(Duration.ofSeconds(10));
     NetClient client = vertx.createNetClient(options);
     client
       .connect(4321, "localhost")
@@ -228,32 +231,34 @@ public class NetExamples {
 
   public void example16(Vertx vertx) {
 
-    NetClientOptions options = new NetClientOptions().
+    TcpClientConfig options = new TcpClientConfig().
       setReconnectAttempts(10).
-      setReconnectInterval(500);
+      setReconnectInterval(Duration.ofMillis(500));
 
     NetClient client = vertx.createNetClient(options);
   }
 
   public void exampleNetworkActivityLoggingOnServer(Vertx vertx) {
 
-    NetServerOptions options = new NetServerOptions().setLogActivity(true);
+    TcpServerConfig options = new TcpServerConfig()
+      .setNetworkLogging(new NetworkLogging());
 
     NetServer server = vertx.createNetServer(options);
   }
 
   public void exampleNetworkActivityLoggingFormat(Vertx vertx) {
 
-    NetServerOptions options = new NetServerOptions()
-      .setLogActivity(true)
-      .setActivityLogDataFormat(ByteBufFormat.SIMPLE);
+    TcpServerConfig options = new TcpServerConfig()
+      .setNetworkLogging(new NetworkLogging()
+        .setDataFormat(ByteBufFormat.SIMPLE));
 
     NetServer server = vertx.createNetServer(options);
   }
 
   public void exampleNetworkActivityLoggingOnClient(Vertx vertx) {
 
-    NetClientOptions options = new NetClientOptions().setLogActivity(true);
+    TcpClientConfig options = new TcpClientConfig()
+      .setNetworkLogging(new NetworkLogging());
 
     NetClient client = vertx.createNetClient(options);
   }
@@ -266,18 +271,18 @@ public class NetExamples {
           setPassword("password-of-your-keystore")
       );
 
-    NetServerOptions options = new NetServerOptions()
-      .setSsl(true)
-      .setSslOptions(sslOptions);
+    TcpServerConfig config = new TcpServerConfig()
+      .setSsl(true);
 
-    NetServer server = vertx.createNetServer(options);
+    NetServer server = vertx.createNetServer(config, sslOptions);
   }
 
   public void example29(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setTrustAll(true);
-    NetClient client = vertx.createNetClient(options);
+    TcpClientConfig config = new TcpClientConfig()
+      .setSsl(true);
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustAll(true);
+    NetClient client = vertx.createNetClient(config, sslOptions);
   }
 
   public void sslClientConfiguration(Vertx vertx) {
@@ -287,11 +292,10 @@ public class NetExamples {
         setPassword("password-of-your-truststore")
       );
 
-    NetClientOptions options = new NetClientOptions()
-      .setSsl(true)
-      .setSslOptions(sslOptions);
+    TcpClientConfig config = new TcpClientConfig()
+      .setSsl(true);
 
-    NetClient client = vertx.createNetClient(options);
+    NetClient client = vertx.createNetClient(config, sslOptions);
   }
 
   public void sslClientSocketConfiguration(Vertx vertx, int port, String host) {
@@ -301,9 +305,9 @@ public class NetExamples {
         setPassword("password-of-your-truststore")
       );
 
-    NetClientOptions options = new NetClientOptions().setSslOptions(sslOptions);
+    TcpClientConfig config = new TcpClientConfig();
 
-    NetClient client = vertx.createNetClient(options);
+    NetClient client = vertx.createNetClient(config, sslOptions);
 
     Future<NetSocket> future = client.connect(new ConnectOptions()
       .setHost(host)
@@ -358,60 +362,53 @@ public class NetExamples {
   public void exampleSSLEngine(Vertx vertx, JksOptions keyStoreOptions) {
 
     // Use JDK SSL engine
-    NetServerOptions options = new NetServerOptions().
-      setSsl(true).
-      setKeyCertOptions(keyStoreOptions);
+    TcpServerConfig options = new TcpServerConfig().
+      setSsl(true);
 
     // Use JDK SSL engine explicitly
-    options = new NetServerOptions().
+    options = new TcpServerConfig().
       setSsl(true).
-      setKeyCertOptions(keyStoreOptions).
       setSslEngineOptions(new JdkSSLEngineOptions());
 
     // Use OpenSSL engine
-    options = new NetServerOptions().
+    options = new TcpServerConfig().
       setSsl(true).
-      setKeyCertOptions(keyStoreOptions).
       setSslEngineOptions(new OpenSSLEngineOptions());
   }
 
-  public void example46(Vertx vertx, String verificationAlgorithm, ClientSSLOptions sslOptions) {
-    NetClientOptions options = new NetClientOptions().
-      setSsl(true).
-      setSslOptions(sslOptions).
-      setHostnameVerificationAlgorithm(verificationAlgorithm);
+  public void example46(Vertx vertx, String verificationAlgorithm, TrustOptions trustOptions) {
+    TcpClientConfig config = new TcpClientConfig().
+      setSsl(true);
 
-    NetClient client = vertx.createNetClient(options);
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(trustOptions)
+      .setHostnameVerificationAlgorithm(verificationAlgorithm);
+
+    NetClient client = vertx.createNetClient(config, sslOptions);
   }
 
   public void example47(Vertx vertx) {
-    NetClientOptions options = new NetClientOptions()
+    TcpClientConfig config = new TcpClientConfig()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
         .setHost("localhost").setPort(1080)
         .setUsername("username").setPassword("secret"));
-    NetClient client = vertx.createNetClient(options);
+    NetClient client = vertx.createNetClient(config);
   }
 
   public void nonProxyHosts(Vertx vertx) {
 
-    NetClientOptions options = new NetClientOptions()
+    TcpClientConfig config = new TcpClientConfig()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
         .setHost("localhost").setPort(1080)
         .setUsername("username").setPassword("secret"))
       .addNonProxyHost("*.foo.com")
       .addNonProxyHost("localhost");
-    NetClient client = vertx.createNetClient(options);
-  }
-
-  public void example49() {
-    NetClientOptions clientOptions = new NetClientOptions()
-      .setSsl(true)
-      .setTrustAll(true);
+    NetClient client = vertx.createNetClient(config);
   }
 
   public void example51(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions().setUseProxyProtocol(true);
-    NetServer server = vertx.createNetServer(options);
+    TcpServerConfig config = new TcpServerConfig().setUseProxyProtocol(true);
+    NetServer server = vertx.createNetServer(config);
     server.connectHandler(so -> {
       // Print the actual client address provided by the HA proxy protocol instead of the proxy address
       System.out.println(so.remoteAddress());
@@ -421,34 +418,11 @@ public class NetExamples {
     });
   }
 
-  public void configureSNIServer(Vertx vertx) {
-    JksOptions keyCertOptions = new JksOptions().setPath("keystore.jks").setPassword("wibble");
-
-    NetServer netServer = vertx.createNetServer(new NetServerOptions()
-        .setKeyCertOptions(keyCertOptions)
-        .setSsl(true)
-        .setSni(true)
-    );
-  }
-
-  public void configureSNIServerWithPems(Vertx vertx) {
-    PemKeyCertOptions keyCertOptions = new PemKeyCertOptions()
-        .setKeyPaths(Arrays.asList("default-key.pem", "host1-key.pem", "etc..."))
-        .setCertPaths(Arrays.asList("default-cert.pem", "host2-key.pem", "etc...")
-        );
-
-    NetServer netServer = vertx.createNetServer(new NetServerOptions()
-        .setKeyCertOptions(keyCertOptions)
-        .setSsl(true)
-        .setSni(true)
-    );
-  }
-
   public void useSNIInClient(Vertx vertx, JksOptions trustOptions) {
 
-    NetClient client = vertx.createNetClient(new NetClientOptions()
-        .setTrustOptions(trustOptions)
-        .setSsl(true)
+    NetClient client = vertx.createNetClient(
+      new TcpClientConfig().setSsl(true),
+      new ClientSSLOptions().setTrustOptions(trustOptions)
     );
 
     // Connect to 'localhost' and present 'server.name' server name
@@ -465,25 +439,25 @@ public class NetExamples {
   }
 
   public void configureTrafficShapingForNetServer(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions()
+    TcpServerConfig config = new TcpServerConfig()
       .setHost("localhost")
       .setPort(1234)
       .setTrafficShapingOptions(new TrafficShapingOptions()
         .setInboundGlobalBandwidth(64 * 1024)
         .setOutboundGlobalBandwidth(128 * 1024));
 
-    NetServer server = vertx.createNetServer(options);
+    NetServer server = vertx.createNetServer(config);
   }
 
   public void dynamicallyUpdateTrafficShapingForNetServer(Vertx vertx) {
-    NetServerOptions options = new NetServerOptions()
+    TcpServerConfig config = new TcpServerConfig()
       .setHost("localhost")
       .setPort(1234)
       .setTrafficShapingOptions(new TrafficShapingOptions()
         .setInboundGlobalBandwidth(64 * 1024)
         .setOutboundGlobalBandwidth(128 * 1024));
 
-    NetServer server = vertx.createNetServer(options);
+    NetServer server = vertx.createNetServer(config);
 
     TrafficShapingOptions update = new TrafficShapingOptions()
       .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
