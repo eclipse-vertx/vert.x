@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @RunWith(LinuxOrOsx.class)
@@ -39,7 +40,7 @@ public class Http3FlowControlTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     HttpServerConfig serverConfig = new HttpServerConfig();
-    serverConfig.addVersion(HttpVersion.HTTP_3);
+    serverConfig.setVersions(Set.of(HttpVersion.HTTP_3));
     ServerSSLOptions serverSslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
     clientConfig = new HttpClientConfig();
     clientConfig.setVersions(List.of(HttpVersion.HTTP_3));

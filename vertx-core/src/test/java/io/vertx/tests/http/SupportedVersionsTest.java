@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Set;
 
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTP_PORT;
@@ -37,7 +38,7 @@ public class SupportedVersionsTest extends VertxTestBase {
     .setKeyCertOptions(Cert.SNI_JKS.get());
   private static final HttpServerOptions TCP_SERVER_DEFAULT_TLS_WITH_ALPN = new HttpServerOptions(TCP_SERVER_DEFAULT_TLS);
   private static final HttpServerConfig QUIC_SERVER = new HttpServerConfig()
-    .addVersion(HttpVersion.HTTP_3)
+    .setVersions(Set.of(HttpVersion.HTTP_3))
     .setQuicPort(DEFAULT_HTTPS_PORT);
   private static final ServerSSLOptions DEFAULT_SERVER_TLS = new ServerSSLOptions().setKeyCertOptions(Cert.SNI_JKS.get());
   private static final ClientSSLOptions DEFAULT_CLIENT_TLS = new ClientSSLOptions().setTrustAll(true);

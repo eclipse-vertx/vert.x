@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Set;
 
 @RunWith(LinuxOrOsx.class)
 public class Http3ContextTest extends VertxTestBase {
@@ -40,7 +41,7 @@ public class Http3ContextTest extends VertxTestBase {
     super.setUp();
     clientConfig = new HttpClientConfig();
     clientConfig.setVersions(List.of(HttpVersion.HTTP_3));
-    server = vertx.createHttpServer(new HttpServerConfig().addVersion(HttpVersion.HTTP_3), new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server = vertx.createHttpServer(new HttpServerConfig().setVersions(Set.of(HttpVersion.HTTP_3)), new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
     client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()));
   }
 

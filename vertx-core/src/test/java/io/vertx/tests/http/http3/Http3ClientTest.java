@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,7 +35,7 @@ public class Http3ClientTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     serverOptions = new HttpServerConfig();
-    serverOptions.addVersion(HttpVersion.HTTP_3);
+    serverOptions.setVersions(Set.of(HttpVersion.HTTP_3));
     serverSslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
 //    serverOptions.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    serverOptions.setKeyLogFile("/Users/julien/keylogfile.txt");

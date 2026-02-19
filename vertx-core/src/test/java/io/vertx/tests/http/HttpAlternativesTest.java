@@ -85,7 +85,7 @@ public class HttpAlternativesTest extends VertxTestBase {
     }
     if (!quicVersions.isEmpty()) {
       HttpServerConfig config = new HttpServerConfig();
-      config.addVersion(HttpVersion.HTTP_3);
+      config.setVersions(Set.of(HttpVersion.HTTP_3));
       HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(cert.get()));
       server.requestHandler(request -> {
         Handler<HttpServerRequest> h = handler.get();

@@ -203,17 +203,6 @@ public class HttpServerConfig {
   }
 
   /**
-   * Add an HTTP version.
-   *
-   * @param version an additional version to support
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerConfig addVersion(HttpVersion version) {
-    versions.add(version);
-    return this;
-  }
-
-  /**
    *
    * @return is SSL/TLS enabled?
    */
