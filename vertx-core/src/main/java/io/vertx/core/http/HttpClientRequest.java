@@ -18,6 +18,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -370,6 +371,8 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
    * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
    *
+   * <p>When the {@code body} stream fails, the request is reset with the CANCEL {@literal 0x8} error code.f</p>
+   *
    * @return a future notified when the HTTP response is available
    */
   default Future<HttpClientResponse> send(ReadStream<Buffer> body) {
@@ -377,7 +380,11 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
     if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       setChunked(true);
     }
-    body.pipeTo(this);
+    Future<Void> result = body
+      .pipe()
+      .endOnFailure(false)
+      .to(this);
+    result.onFailure(err -> reset(0x8, err)); // CANCEL
     return response();
   }
 
