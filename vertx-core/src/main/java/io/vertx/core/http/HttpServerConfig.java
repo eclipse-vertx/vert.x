@@ -112,9 +112,9 @@ public class HttpServerConfig {
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
     this.metricsName = null;
     this.tracingPolicy = HttpServerOptions.DEFAULT_TRACING_POLICY;
-    this.http1Config = new Http1ServerConfig();
-    this.http2Config = new Http2ServerConfig();
-    this.http3Config = new Http3ServerConfig();
+    this.http1Config = null;
+    this.http2Config = null;
+    this.http3Config = null;
     this.webSocketConfig = new WebSocketServerConfig();
     this.compression = new HttpCompressionConfig();
     this.tcpConfig = defaultTcpServerConfig();

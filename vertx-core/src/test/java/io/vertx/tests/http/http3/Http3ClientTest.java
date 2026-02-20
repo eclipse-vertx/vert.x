@@ -419,11 +419,11 @@ public class Http3ClientTest extends VertxTestBase {
 
     client.close();
     HttpClientConfig config = new HttpClientConfig(clientConfig);
-    config.getHttp3Config().setInitialSettings(new Http3Settings()
-      .setMaxFieldSectionSize(1024)
-      .setQPackBlockedStreams(1024)
-      .setQPackMaxTableCapacity(1024)
-    );
+    config.setHttp3Config(new Http3ClientConfig()
+      .setInitialSettings(new Http3Settings()
+        .setMaxFieldSectionSize(1024)
+        .setQPackBlockedStreams(1024)
+        .setQPackMaxTableCapacity(1024)));
     client = vertx.createHttpClient(config, clientSSLOptions);
 
     HttpClientConnection connection = client.connect(new HttpConnectOptions()

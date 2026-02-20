@@ -24,9 +24,9 @@ public class HttpClientConfigTest {
   @Test
   public void testDefaultConfig() {
     HttpClientConfig config = new HttpClientConfig();
-    assertNotNull(config.getHttp1Config());
-    assertNotNull(config.getHttp2Config());
-    assertNotNull(config.getHttp3Config());
+    assertNull(config.getHttp1Config());
+    assertNull(config.getHttp2Config());
+    assertNull(config.getHttp3Config());
     assertFalse(config.isSsl());
     assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
   }

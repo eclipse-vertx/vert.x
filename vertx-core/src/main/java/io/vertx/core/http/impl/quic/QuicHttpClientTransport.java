@@ -12,6 +12,7 @@ package io.vertx.core.http.impl.quic;
 
 import io.netty.handler.codec.http3.Http3;
 import io.vertx.core.Future;
+import io.vertx.core.http.Http3ClientConfig;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.HttpClientConnection;
@@ -43,7 +44,12 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
     quicConfig.setMetricsName(config.getMetricsName());
 
-    Http3Settings localSettings = config.getHttp3Config().getInitialSettings();
+    Http3ClientConfig http3Config = config.getHttp3Config();
+    if (http3Config == null) {
+      http3Config = new Http3ClientConfig();
+    }
+
+    Http3Settings localSettings = http3Config.getInitialSettings();
     if (localSettings == null) {
       localSettings = new Http3Settings();
     }
@@ -51,7 +57,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     QuicClient client = new QuicClientImpl(vertx, quicConfig, "http", null);
 
     this.vertx = vertx;
-    this.keepAliveTimeoutMillis = config.getHttp3Config().getKeepAliveTimeout() == null ? 0L : config.getHttp3Config().getKeepAliveTimeout().toMillis();
+    this.keepAliveTimeoutMillis = http3Config.getKeepAliveTimeout() == null ? 0L : http3Config.getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
     this.client = client;
   }

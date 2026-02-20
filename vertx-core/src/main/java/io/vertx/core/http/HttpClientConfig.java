@@ -85,9 +85,9 @@ public class HttpClientConfig {
     this.quicConfig = defaultQuicConfig();
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
     this.versions = new ArrayList<>(DEFAULT_SUPPORTED_VERSIONS);
-    this.http1Config = new Http1ClientConfig();
-    this.http2Config = new Http2ClientConfig();
-    this.http3Config = new Http3ClientConfig();
+    this.http1Config = null;
+    this.http2Config = null;
+    this.http3Config = null;
     this.verifyHost = HttpClientOptions.DEFAULT_VERIFY_HOST;
     this.decompressionEnabled = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;

@@ -397,13 +397,12 @@ public class Http3ServerTest extends VertxTestBase {
 
   @Test
   public void testSettings() throws Exception {
-    HttpServerConfig config = serverConfig();
-    config.getHttp3Config()
-      .setInitialSettings(new io.vertx.core.http.Http3Settings()
-      .setMaxFieldSectionSize(1024)
-      .setQPackBlockedStreams(1024)
-      .setQPackMaxTableCapacity(1024)
-    );
+    HttpServerConfig config = serverConfig()
+      .setHttp3Config(new Http3ServerConfig()
+        .setInitialSettings(new io.vertx.core.http.Http3Settings()
+          .setMaxFieldSectionSize(1024)
+          .setQPackBlockedStreams(1024)
+          .setQPackMaxTableCapacity(1024)));
     server = vertx.createHttpServer(config, sslOptions());
 
     server.connectionHandler(connection -> {

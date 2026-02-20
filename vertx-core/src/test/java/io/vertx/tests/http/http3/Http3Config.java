@@ -109,10 +109,12 @@ public class Http3Config implements HttpConfig {
 
   @Override
   public HttpClientConfig forClient() {
+    Http3ClientConfig http3Config = new Http3ClientConfig();
     io.vertx.core.http.HttpClientConfig config = new io.vertx.core.http.HttpClientConfig();
     config.setVersions(List.of(HttpVersion.HTTP_3));
     config.setDefaultHost(host);
     config.setDefaultPort(port);
+    config.setHttp3Config(http3Config);
     ClientSSLOptions sslOptions = new ClientSSLOptions()
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setHostnameVerificationAlgorithm("");
@@ -146,7 +148,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientConfig setKeepAliveTimeout(Duration timeout) {
-        config.getHttp3Config().setKeepAliveTimeout(timeout.toMillis() > 0 ? timeout : null);
+        http3Config.setKeepAliveTimeout(timeout.toMillis() > 0 ? timeout : null);
         return this;
       }
       @Override
