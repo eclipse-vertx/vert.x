@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.impl.SysProps;
+import io.vertx.core.net.impl.UncloseableFileRegion;
 
 /**
  * {@link io.netty.handler.codec.http.HttpResponseEncoder} which forces the usage of direct buffers for max performance.
@@ -60,7 +61,7 @@ public final class VertxHttpResponseEncoder extends HttpResponseEncoder {
       msgClazz == VertxAssembledHttpResponse.class ||
       msgClazz == DefaultHttpContent.class ||
       msgClazz == VertxLastHttpContent.class ||
-      msgClazz == DefaultFileRegion.class) {
+      msgClazz == UncloseableFileRegion.class) {
       return true;
     }
     // Netty slow-path
