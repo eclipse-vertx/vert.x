@@ -83,16 +83,21 @@ public class HttpServerConfig {
    */
   public HttpServerConfig(HttpServerOptions options) {
 
-    List<CompressionOptions> compressors = options.getCompression().getCompressors();
-    if (compressors == null) {
-      int compressionLevel = options.getCompressionLevel();
-      compressors = Arrays.asList(StandardCompressionOptions.gzip(compressionLevel, 15, 8), StandardCompressionOptions.deflate(compressionLevel, 15, 8));
+    HttpCompressionConfig compression;
+    if (options.isCompressionSupported() || options.isDecompressionSupported()) {
+      List<CompressionOptions> compressors = options.getCompression().getCompressors();
+      if (compressors == null) {
+        int compressionLevel = options.getCompressionLevel();
+        compressors = Arrays.asList(StandardCompressionOptions.gzip(compressionLevel, 15, 8), StandardCompressionOptions.deflate(compressionLevel, 15, 8));
+      }
+      compression = new HttpCompressionConfig();
+      compression.setCompressionEnabled(options.isCompressionSupported());
+      compression.setDecompressionEnabled(options.isDecompressionSupported());
+      compression.setContentSizeThreshold(options.getCompressionContentSizeThreshold());
+      compression.setCompressors(compressors);
+    } else {
+      compression = null;
     }
-    HttpCompressionConfig compression = new HttpCompressionConfig();
-    compression.setCompressionEnabled(options.isCompressionSupported());
-    compression.setDecompressionEnabled(options.isDecompressionSupported());
-    compression.setContentSizeThreshold(options.getCompressionContentSizeThreshold());
-    compression.setCompressors(compressors);
 
     this.versions = EnumSet.copyOf(DEFAULT_VERSIONS);
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
@@ -125,8 +130,8 @@ public class HttpServerConfig {
     this.http1Config = null;
     this.http2Config = null;
     this.http3Config = null;
-    this.webSocketConfig = new WebSocketServerConfig();
-    this.compression = new HttpCompressionConfig();
+    this.webSocketConfig = null;
+    this.compression = null;
     this.tcpConfig = defaultTcpServerConfig();
     this.quicConfig = defaultQuicConfig();
   }

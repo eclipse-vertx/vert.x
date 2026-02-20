@@ -206,7 +206,7 @@ public class TcpHttpServer implements HttpServerInternal {
     HttpCompressionConfig compression = config.getCompression();
     ServerSSLOptions sslOptions = configureSSLOptions(config, this.sslOptions);
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), sslOptions)
-      .fileRegionEnabled(!compression.isCompressionEnabled())
+      .fileRegionEnabled(compression == null || !compression.isCompressionEnabled())
       .cleanable(false)
       .protocol("http")
       .build();
@@ -230,7 +230,7 @@ public class TcpHttpServer implements HttpServerInternal {
         exceptionHandler,
         config.getHttp2Config().getConnectionWindowSize());
 
-      List<CompressionOptions> compressors = compression.getCompressors();
+      List<CompressionOptions> compressors = compression != null ? compression.getCompressors() : null;
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
         context.threadingModel(),
@@ -242,7 +242,7 @@ public class TcpHttpServer implements HttpServerInternal {
         config.getTracingPolicy(),
         config.getTcpConfig().getNetworkLogging() != null,
         compressors != null ? compressors.toArray(new CompressionOptions[0]) : null,
-        compression.getContentSizeThreshold(),
+        compression != null ? compression.getContentSizeThreshold() : 0,
         config.isHandle100ContinueAutomatically(),
         config.getMaxFormAttributeSize(),
         config.getMaxFormFields(),
