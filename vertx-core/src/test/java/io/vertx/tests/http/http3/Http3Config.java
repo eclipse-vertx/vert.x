@@ -56,7 +56,7 @@ public class Http3Config implements HttpConfig {
   @Override
   public HttpServerConfig forServer() {
     io.vertx.core.http.HttpServerConfig config = new io.vertx.core.http.HttpServerConfig();
-    config.setVersions(EnumSet.of(HttpVersion.HTTP_3));
+    config.setVersions(HttpVersion.HTTP_3);
     config.setQuicPort(port);
     config.setQuicHost(host);
     ServerSSLOptions sslOptions = new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get());
@@ -111,7 +111,7 @@ public class Http3Config implements HttpConfig {
   public HttpClientConfig forClient() {
     Http3ClientConfig http3Config = new Http3ClientConfig();
     io.vertx.core.http.HttpClientConfig config = new io.vertx.core.http.HttpClientConfig();
-    config.setVersions(List.of(HttpVersion.HTTP_3));
+    config.setVersions(HttpVersion.HTTP_3);
     config.setDefaultHost(host);
     config.setDefaultPort(port);
     config.setHttp3Config(http3Config);

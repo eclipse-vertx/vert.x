@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +46,7 @@ public class Http3ServerTest extends VertxTestBase {
 
   public static HttpServerConfig serverConfig() {
     HttpServerConfig options = new HttpServerConfig();
-    options.addVersion(HttpVersion.HTTP_3);
+    options.setVersions(HttpVersion.HTTP_3);
     options.setQuicPort(4043);
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");

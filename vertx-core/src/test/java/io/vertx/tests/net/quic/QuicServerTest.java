@@ -1006,7 +1006,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerLogging() throws Exception {
     TestLoggerFactory fact = TestUtils.testLogging(() -> {
       try {
-        testConnect(new QuicServerConfig().setNetworkLogging(new NetworkLogging()), 9999);
+        testConnect(new QuicServerConfig().setNetworkLogging(new NetworkLogging().setEnabled(true)), 9999);
       } catch (Exception e) {
         fail(e);
       }

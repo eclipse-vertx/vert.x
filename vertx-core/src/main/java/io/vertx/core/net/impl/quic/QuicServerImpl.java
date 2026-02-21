@@ -157,7 +157,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
               protected void initChannel(Channel ch) {
                 connectionGroup.add(ch);
                 QuicChannel channel = (QuicChannel) ch;
-                ByteBufFormat activityLogging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
+                NetworkLogging networkLogging = config.getNetworkLogging();
+                ByteBufFormat activityLogging = networkLogging != null && networkLogging.isEnabled() ? networkLogging.getDataFormat() : null;
                 QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
                   config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging,
                   vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);

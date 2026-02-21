@@ -23,14 +23,35 @@ import java.util.Objects;
 @DataObject
 public class NetworkLogging {
 
+  private boolean enabled;
   private ByteBufFormat dataFormat;
 
   public NetworkLogging() {
+    enabled = NetworkOptions.DEFAULT_LOG_ENABLED;
     dataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
   }
 
   public NetworkLogging(NetworkLogging other) {
+    enabled = other.enabled;
     dataFormat = other.dataFormat;
+  }
+
+  /**
+   * @return {@code} when network logging is enabled
+   */
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  /**
+   * Set to true to enable network logging: Netty's pipeline is configured for logging on Netty's logger.
+   *
+   * @param enabled true for logging the network activity
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetworkLogging setEnabled(boolean enabled) {
+    this.enabled = enabled;
+    return this;
   }
 
   /**

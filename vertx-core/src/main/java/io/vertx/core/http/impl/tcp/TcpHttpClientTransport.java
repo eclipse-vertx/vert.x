@@ -67,7 +67,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     return new TcpHttpClientTransport(netClient,
       config.getTracingPolicy(),
       config.isDecompressionEnabled(),
-      config.getTcpConfig().getNetworkLogging() != null,
+      config.getTcpConfig().getNetworkLogging() != null && config.getTcpConfig().getNetworkLogging().isEnabled(),
       config.getTcpConfig().getNetworkLogging() != null ? config.getTcpConfig().getNetworkLogging().getDataFormat() : null,
       config.isForceSni(),
       config.getHttp1Config(),
