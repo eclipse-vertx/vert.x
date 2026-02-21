@@ -11,6 +11,9 @@
 package io.vertx.core.http.impl.http3;
 
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.util.collection.LongObjectHashMap;
@@ -33,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -41,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class Http3Connection implements HttpConnection {
 
   private final LongObjectMap<Http3Stream<?, ?>> streams;
+  private final Http3FrameLogger frameLogger;
   final ContextInternal context;
   final QuicConnectionInternal connection;
   private QuicStreamInternal controlStream;
@@ -53,8 +56,9 @@ public abstract class Http3Connection implements HttpConnection {
   private Http3Settings remoteSettings;
   private Handler<HttpSettings> remoteSettingsHandler;
 
-  public Http3Connection(QuicConnectionInternal connection, Http3Settings localSettings) {
+  public Http3Connection(QuicConnectionInternal connection, Http3Settings localSettings, Http3FrameLogger frameLogger) {
     this.streams = new LongObjectHashMap<>();
+    this.frameLogger = frameLogger;
     this.context = connection.context();
     this.connection = connection;
     this.remoteGoAway = -1L;
@@ -77,9 +81,6 @@ public abstract class Http3Connection implements HttpConnection {
     return nSettings;
   }
 
-  void handleStream(QuicStreamInternal quicStream) {
-  }
-
   void registerStream(Http3Stream<?, ?> stream) {
     streams.put(stream.id(), stream);
   }
@@ -88,7 +89,32 @@ public abstract class Http3Connection implements HttpConnection {
     streams.remove(stream.id());
   }
 
-  private void handleControlStream(QuicStreamInternal  quicStream) {
+  void setupFrameLogger(QuicStreamInternal quicStream) {
+    if (frameLogger != null) {
+      ChannelHandlerContext chctx = quicStream.channelHandlerContext();
+      ChannelPipeline pipeline = chctx.pipeline();
+      pipeline.addBefore("handler", "logging", frameLogger);
+    }
+  }
+
+  void handleRequestStream(QuicStreamInternal quicStream) {
+  }
+
+  protected void handleOutboundControlStream(QuicStreamChannel  quicStream) {
+    if (frameLogger != null) {
+      ChannelPipeline pipeline = quicStream.pipeline();
+      for (Map.Entry<String, ChannelHandler> handler : pipeline) {
+        String name = handler.getValue().getClass().getName();
+        if (name.equals("io.netty.handler.codec.http3.Http3FrameCodec")) {
+          pipeline.addAfter(handler.getKey(), "logging", frameLogger);
+          break;
+        }
+      }
+    }
+  }
+
+  protected void handleInboundControlStream(QuicStreamInternal  quicStream) {
+    setupFrameLogger(quicStream);
     quicStream.idleHandler(idle -> {
       // Keep stream alive
     });
@@ -121,13 +147,13 @@ public abstract class Http3Connection implements HttpConnection {
       if (isStream) {
         if (localGoAway == -1L) {
           mostRecentRemoteStreamId = stream.id();
-          handleStream(quicStream);
+          handleRequestStream(quicStream);
         } else {
           quicStream.reset(Http3ErrorCode.H3_REQUEST_REJECTED.code());
         }
       } else {
         controlStream = quicStream;
-        handleControlStream(quicStream);
+        handleInboundControlStream(quicStream);
       }
     });
     connection.shutdownHandler(timeout -> {
@@ -145,6 +171,9 @@ public abstract class Http3Connection implements HttpConnection {
     connection.closeHandler(v -> {
       handleClosed();
     });
+
+    QuicStreamChannel inboundControlStream = Http3.getLocalControlStream(connection.channelHandlerContext().channel());
+    handleOutboundControlStream(inboundControlStream);
   }
 
   @Override

@@ -23,6 +23,9 @@ import io.vertx.core.http.impl.observability.ServerStreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
+import io.vertx.core.net.QuicStream;
+import io.vertx.core.net.impl.VertxConnection;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -37,18 +40,18 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
   private final Supplier<ContextInternal> streamContextProvider;
   private final HttpServerMetrics<?, ?> httpMetrics;
   private Handler<HttpServerStream> streamHandler;
-  private QuicStreamChannel outboundControlStream;
 
   public Http3ServerConnection(QuicConnectionInternal connection,
                                Http3Settings localSettings,
-                               HttpServerMetrics<?, ?> httpMetrics) {
-    super(connection, localSettings);
+                               HttpServerMetrics<?, ?> httpMetrics,
+                               Http3FrameLogger frameLogger) {
+    super(connection, localSettings, frameLogger);
 
     this.streamContextProvider = connection.context()::duplicate;
     this.httpMetrics = httpMetrics;
   }
 
-  void handleStream(QuicStreamInternal quicStream) {
+  void handleRequestStream(QuicStreamInternal quicStream) {
     ContextInternal streamContext = streamContextProvider.get();
     VertxTracer<?, ?> tracer = context.owner().tracer();
     ServerStreamObserver observer;
@@ -63,11 +66,10 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
     registerStream(httpStream);
     Handler<HttpServerStream> handler = streamHandler;
     streamContext.emit(httpStream, handler);
+    super.handleRequestStream(quicStream);
   }
 
   public void init() {
-
-    super.init();
 
     io.netty.handler.codec.http3.Http3Settings nSettings = nettyLocalSettings();
 
@@ -81,7 +83,7 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
       new ChannelInitializer<QuicStreamChannel>() {
         @Override
         protected void initChannel(QuicStreamChannel ch) {
-          outboundControlStream = ch;
+          // Nothing to do
         }
       },
       null,
@@ -91,6 +93,8 @@ public class Http3ServerConnection extends Http3Connection implements HttpServer
 
     ChannelPipeline pipeline = connection.channelHandlerContext().pipeline();
     pipeline.addBefore("handler", "http3", http3Handler);
+
+    super.init();
   }
 
   @Override

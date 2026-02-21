@@ -56,8 +56,9 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
                                HostAndPort authority,
                                ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics,
                                long keepAliveTimeoutMillis,
-                               Http3Settings localSettings) {
-    super(connection, localSettings);
+                               Http3Settings localSettings,
+                               Http3FrameLogger frameLogger) {
+    super(connection, localSettings, frameLogger);
 
     this.authority = authority;
     this.clientMetrics = clientMetrics;
@@ -66,8 +67,6 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
   }
 
   public void init() {
-
-    super.init();
 
     io.netty.handler.codec.http3.Http3Settings nSettings = nettyLocalSettings();
 
@@ -86,6 +85,8 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
     if (clientMetrics != null) {
       clientMetrics.connected();
     }
+
+    super.init();
   }
 
   @Override
