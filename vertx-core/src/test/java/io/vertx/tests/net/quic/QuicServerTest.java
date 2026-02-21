@@ -900,8 +900,15 @@ public class QuicServerTest extends VertxTestBase {
     };
     int num = 4;
     for (int i = 0;i < num;i++) {
-      String id = vertx.deployVerticle(deployable).await();
-      vertx.undeploy(id).await();
+      try {
+        String id = vertx.deployVerticle(deployable).await();
+        // Undeploying the verticle is expected to close the QuicServer as it is bound to that context, see CleanableQuicServer
+        vertx.undeploy(id).await();
+      } catch (Exception e) {
+        // Show in which iteration it failed.
+        // If it fails in iteration 0, we know that another test didn't properly clean up.
+        throw new RuntimeException("failed in iteration " + i, e);
+      }
     }
   }
 
