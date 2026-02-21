@@ -212,6 +212,8 @@ public abstract class Http3Stream<S extends Http3Stream<S, C>, C extends Http3Co
     stream.shutdownHandler(v -> {
       // Not used at the moment
     });
+
+    connection.setupFrameLogger(stream);
   }
 
   public final S customFrameHandler(Handler<HttpFrame> handler) {

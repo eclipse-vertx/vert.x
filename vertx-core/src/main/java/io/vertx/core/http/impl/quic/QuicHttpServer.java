@@ -11,11 +11,13 @@
 package io.vertx.core.http.impl.quic;
 
 import io.netty.handler.codec.http3.Http3;
+import io.netty.util.internal.logging.InternalLogLevel;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.impl.HttpServerRequestImpl;
+import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.http.impl.http3.Http3ServerConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -143,6 +145,7 @@ public class QuicHttpServer implements HttpServerInternal {
     private final int maxFormFields;
     private final int maxFormBufferedSize;
     private final Http3Settings localSettings;
+    private final boolean logEnabled;
 
     public ConnectionHandler(QuicServer transport,
                              HttpServerMetrics<?, ?> httpMetrics,
@@ -152,7 +155,8 @@ public class QuicHttpServer implements HttpServerInternal {
                              int maxFormAttributeSize,
                              int maxFormFields,
                              int maxFormBufferedSize,
-                             Http3Settings localSettings) {
+                             Http3Settings localSettings,
+                             boolean logEnabled) {
       this.transport = transport;
       this.httpMetrics = httpMetrics;
       this.requestHandler = requestHandler;
@@ -162,6 +166,7 @@ public class QuicHttpServer implements HttpServerInternal {
       this.maxFormFields = maxFormFields;
       this.maxFormBufferedSize = maxFormBufferedSize;
       this.localSettings = localSettings;
+      this.logEnabled = logEnabled;
     }
 
     @Override
@@ -172,7 +177,9 @@ public class QuicHttpServer implements HttpServerInternal {
 
       QuicConnectionInternal connectionInternal = (QuicConnectionInternal) connection;
 
-      Http3ServerConnection http3Connection = new Http3ServerConnection(connectionInternal, localSettings, httpMetrics);
+      Http3FrameLogger frameLogger = logEnabled ? new Http3FrameLogger(InternalLogLevel.DEBUG) : null;
+
+      Http3ServerConnection http3Connection = new Http3ServerConnection(connectionInternal, localSettings, httpMetrics, frameLogger);
 
       http3Connection.init();
 
@@ -228,9 +235,12 @@ public class QuicHttpServer implements HttpServerInternal {
       return current.failedFuture(new IllegalStateException("Set request handler first"));
     }
 
+    boolean logEnabled = quicConfig.getNetworkLogging() != null && quicConfig.getNetworkLogging().isEnabled();
+    quicConfig.setNetworkLogging(null);
+
     quicServer.handler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
-      config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
-      config.getMaxFormBufferedBytes(), http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings()));
+      config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),
+      http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled));
     return quicServer
       .bind(current, address)
       .map(port -> {

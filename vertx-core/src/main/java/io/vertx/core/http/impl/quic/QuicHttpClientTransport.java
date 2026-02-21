@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl.quic;
 
 import io.netty.handler.codec.http3.Http3;
+import io.netty.util.internal.logging.InternalLogLevel;
 import io.vertx.core.Future;
 import io.vertx.core.http.Http3ClientConfig;
 import io.vertx.core.http.Http3Settings;
@@ -18,6 +19,7 @@ import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpConnectParams;
 import io.vertx.core.http.impl.http3.Http3ClientConnection;
+import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
@@ -38,6 +40,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   private final QuicClient client;
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
+  private final Http3FrameLogger frameLogger;
 
   public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
 
@@ -54,12 +57,16 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       localSettings = new Http3Settings();
     }
 
+    boolean logEnabled = quicConfig.getNetworkLogging() != null && quicConfig.getNetworkLogging().isEnabled();
+    quicConfig.setNetworkLogging(null);
+
     QuicClient client = new QuicClientImpl(vertx, quicConfig, "http", null);
 
     this.vertx = vertx;
     this.keepAliveTimeoutMillis = http3Config.getKeepAliveTimeout() == null ? 0L : http3Config.getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
     this.client = client;
+    this.frameLogger = logEnabled ? new Http3FrameLogger(InternalLogLevel.DEBUG) : null;
   }
 
   public QuicClientImpl client() {
@@ -86,7 +93,8 @@ public class QuicHttpClientTransport implements HttpClientTransport {
         authority,
         (ClientMetrics<Object, HttpRequest, HttpResponse>) clientMetrics,
         keepAliveTimeoutMillis,
-        localSettings);
+        localSettings,
+        frameLogger);
       c.init();
       return c;
     });

@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.http.http3;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.http3.DefaultHttp3Headers;
 import io.netty.handler.codec.http3.Http3ErrorCode;
@@ -19,9 +20,13 @@ import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.http3.Http3FrameLogger;
+import io.vertx.core.net.NetworkLogging;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,6 +43,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 
@@ -457,5 +465,48 @@ public class Http3ServerTest extends VertxTestBase {
     Http3NettyTest.Client.Stream stream = connection.stream();
     stream.write(new DefaultHttp3Headers().method("CONNECT").authority("whatever.com"), true, false);
     await();
+  }
+
+  @Test
+  public void testNetworkLogging() {
+    TestLoggerFactory factory = TestUtils.testLogging(() -> {
+      server.close();
+      server = vertx.createHttpServer(serverConfig().setNetworkLogging(new NetworkLogging().setEnabled(true)), sslOptions());
+      server.requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+      server.listen(8443, "localhost").await();
+      try {
+        Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+        Http3NettyTest.Client.Stream stream = connection.stream();
+        stream.POST("/", "Hello World".getBytes());
+        assertEquals("Hello World", new String(stream.responseBody()));
+        server.shutdown(Duration.ofMillis(100)).await();
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    assertTrue(factory.hasName(Http3FrameLogger.class.getName()));
+    assertEquals(7, factory
+      .logs(Http3FrameLogger.class)
+      .count());
+    assertEquals(2, factory.
+      logs(Http3FrameLogger.class).
+      filter(record -> record.getMessage().contains("HEADERS")).count());
+    assertEquals(2, factory.
+      logs(Http3FrameLogger.class).
+      filter(record -> record.getMessage().contains("DATA")).count());
+    factory.
+      logs(Http3FrameLogger.class).
+      filter(record -> record.getMessage().contains("DATA"))
+      .map(record -> record.getParameters()[4]).forEach(o -> {
+        assertEquals(ByteBufUtil.hexDump("Hello World".getBytes()), o);
+      });
+    assertEquals(1, factory.
+      logs(Http3FrameLogger.class).
+      filter(record -> record.getMessage().contains("SETTINGS")).count());
+    assertEquals(2, factory.
+      logs(Http3FrameLogger.class).
+      filter(record -> record.getMessage().contains("GO_AWAY")).count());
   }
 }

@@ -1,20 +1,28 @@
 package io.vertx.tests.http.http3;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.http3.Http3ErrorCode;
+import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.NetworkLogging;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -440,5 +448,50 @@ public class Http3ClientTest extends VertxTestBase {
     assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.MAX_FIELD_SECTION_SIZE));
     assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_BLOCKED_STREAMS));
     assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_MAX_TABLE_CAPACITY));
+  }
+
+  @Test
+  public void testNetworkLogging() {
+    TestLoggerFactory factory = TestUtils.testLogging(() -> {
+      server.close();
+      server.requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+      server.listen(8443, "localhost").await();
+      client.close();
+      HttpClientConfig config = new HttpClientConfig(clientConfig);
+      config.getQuicConfig().setNetworkLogging(new NetworkLogging().setEnabled(true));
+      client = vertx.createHttpClient(config, clientSSLOptions);
+      Buffer body = client.request(HttpMethod.POST, 8443, "localhost", "/")
+        .compose(request -> request
+          .send("Hello World")
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body))
+        .await();
+      assertEquals("Hello World", body.toString());
+      client.shutdown(Duration.ofMillis(100)).await();
+    });
+    assertTrue(factory.hasName(Http3FrameLogger.class.getName()));
+    assertEquals(7, factory
+      .logs(Http3FrameLogger.class)
+      .count());
+//    assertEquals(2, factory.
+//      logs(Http3FrameLogger.class).
+//      filter(record -> record.getMessage().contains("HEADERS")).count());
+//    assertEquals(2, factory.
+//      logs(Http3FrameLogger.class).
+//      filter(record -> record.getMessage().contains("DATA")).count());
+//    factory.
+//      logs(Http3FrameLogger.class).
+//      filter(record -> record.getMessage().contains("DATA"))
+//      .map(record -> record.getParameters()[4]).forEach(o -> {
+//        assertEquals(ByteBufUtil.hexDump("Hello World".getBytes()), o);
+//      });
+//    assertEquals(1, factory.
+//      logs(Http3FrameLogger.class).
+//      filter(record -> record.getMessage().contains("SETTINGS")).count());
+//    assertEquals(2, factory.
+//      logs(Http3FrameLogger.class).
+//      filter(record -> record.getMessage().contains("GO_AWAY")).count());
   }
 }

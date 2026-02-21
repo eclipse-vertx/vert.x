@@ -205,6 +205,20 @@ public class HttpServerConfig {
   }
 
   /**
+   * <p>Configure the per stream networking logging: Netty's stream pipeline is configured for logging on Netty's logger.</p>
+   * <p>This configures both TCP and QUIC nested configurations, you can configure each of them separately
+   * if you need to.</p>
+   *
+   * @param config the stream network logging config, {@code null} means disabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setNetworkLogging(NetworkLogging config) {
+    tcpConfig.setNetworkLogging(config);
+    quicConfig.setNetworkLogging(config);
+    return this;
+  }
+
+  /**
    * @return the HTTP versions
    */
   public Set<HttpVersion> getVersions() {
