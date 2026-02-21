@@ -47,7 +47,7 @@ public abstract class TcpEndpointConfig extends EndpointConfig {
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    setNetworkLogging(options.getLogActivity() ? new NetworkLogging().setDataFormat(options.getActivityLogDataFormat()) : null);
+    setNetworkLogging(options.getLogActivity() ? new NetworkLogging().setEnabled(true).setDataFormat(options.getActivityLogDataFormat()) : null);
     setSsl(options.isSsl());
   }
 

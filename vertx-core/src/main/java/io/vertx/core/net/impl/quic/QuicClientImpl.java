@@ -187,7 +187,8 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         @Override
         protected void initChannel(Channel ch) {
           connectionGroup.add(ch);
-          ByteBufFormat activityLogging = config.getNetworkLogging() != null ? config.getNetworkLogging().getDataFormat() : null;
+          NetworkLogging networkLogging = config.getNetworkLogging();
+          ByteBufFormat activityLogging = networkLogging != null && networkLogging.isEnabled()? networkLogging.getDataFormat() : null;
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
             config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, remoteAddress, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
