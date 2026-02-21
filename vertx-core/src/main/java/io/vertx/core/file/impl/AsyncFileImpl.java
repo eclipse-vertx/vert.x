@@ -31,6 +31,8 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
@@ -43,13 +45,14 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class AsyncFileImpl implements AsyncFile {
+
+  private static final VarHandle SEND_FAILURE = MethodHandles.arrayElementVarHandle(boolean[].class);
 
   private static final Logger log = LoggerFactory.getLogger(AsyncFile.class);
 
@@ -332,7 +335,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doWrite(ByteBuffer[] buffers, long position, Handler<AsyncResult<Void>> handler) {
     AtomicInteger cnt = new AtomicInteger();
-    AtomicBoolean sentFailure = new AtomicBoolean();
+    boolean[] sentFailure = new boolean[1];
     for (ByteBuffer b: buffers) {
       int limit = b.limit();
       doWrite(b, position, limit, ar -> {
@@ -341,7 +344,7 @@ public class AsyncFileImpl implements AsyncFile {
             handler.handle(ar);
           }
         } else {
-          if (sentFailure.compareAndSet(false, true)) {
+          if (SEND_FAILURE.compareAndSet(sentFailure, 0, false, true)) {
             handler.handle(ar);
           }
         }
