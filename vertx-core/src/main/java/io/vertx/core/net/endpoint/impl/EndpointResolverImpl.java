@@ -128,7 +128,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
   private class ManagedEndpoint extends ManagedResource {
 
     private final Future<EndpointImpl> endpoint;
-    private final AtomicBoolean disposed = new AtomicBoolean();
+    private volatile boolean disposed;
 
     public ManagedEndpoint(Future<EndpointImpl> endpoint) {
       super();
@@ -145,10 +145,18 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     @Override
     protected void checkExpired() {
       if (endpoint.succeeded() && keepAliveMillis > 0 && System.currentTimeMillis() - endpoint.result().lastAccessed.get() >= keepAliveMillis) {
-        if (disposed.compareAndSet(false, true)) {
+        if (markDisposed()) {
           decRefCount();
         }
       }
+    }
+
+    private synchronized boolean markDisposed() {
+      if (disposed) {
+        return false;
+      }
+      disposed = true;
+      return true;
     }
 
     @Override
@@ -215,7 +223,7 @@ public class EndpointResolverImpl<S, A extends Address, N> implements EndpointRe
     }, fn);
     if (sFuture.created) {
       sFuture.fut.onFailure(err -> {
-        if (sFuture.endpoint.disposed.compareAndSet(false, true)) {
+        if (sFuture.endpoint.markDisposed()) {
           // We need to call decRefCount outside the withEndpoint method, hence we need
           // the Result class workaround
           sFuture.endpoint.decRefCount();

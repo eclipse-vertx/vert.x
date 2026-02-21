@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.*;
 import static java.util.stream.Collectors.*;
@@ -103,10 +102,10 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
   @Override
   public Future<Boolean> removeIfPresent(K k, V v) {
     ContextInternal ctx = vertx.getOrCreateContext();
-    AtomicBoolean result = new AtomicBoolean();
+    boolean[] result = new boolean[1];
     map.computeIfPresent(k, (key, holder) -> {
       if (holder.value.equals(v)) {
-        result.compareAndSet(false, true);
+        result[0] = true;
         if (holder.expires()) {
           vertx.cancelTimer(holder.timerId);
         }
@@ -114,7 +113,7 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
       }
       return holder;
     });
-    return ctx.succeededFuture(result.get());
+    return ctx.succeededFuture(result[0]);
   }
 
   @Override

@@ -16,16 +16,27 @@ import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.shareddata.Lock;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Thomas Segismont
  */
 public class LocalAsyncLocks {
+
+  private static final VarHandle ASYNC_LOCK_INVOKED;
+
+  static {
+    try {
+      ASYNC_LOCK_INVOKED = MethodHandles.lookup().findVarHandle(AsyncLock.class, "invoked", boolean.class);
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
 
   private class LockWaiter {
 
@@ -77,7 +88,7 @@ public class LocalAsyncLocks {
   private class AsyncLock implements LockInternal {
 
     final String lockName;
-    final AtomicBoolean invoked = new AtomicBoolean();
+    private volatile boolean invoked;
 
     AsyncLock(String lockName) {
       this.lockName = lockName;
@@ -85,7 +96,7 @@ public class LocalAsyncLocks {
 
     @Override
     public void release() {
-      if (invoked.compareAndSet(false, true)) {
+      if (ASYNC_LOCK_INVOKED.compareAndSet(this, false, true)) {
         nextWaiter(lockName);
       }
     }
