@@ -146,8 +146,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     po = poolOptions != null ? poolOptions : new PoolOptions();
     HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
     Handler<HttpConnection> connectHandler = connectionHandler(config);
-    HttpVersion defaultVersion = config.getVersions().isEmpty() ? null : config.getVersions().get(0);
-    boolean useAlpn = config.getVersions().contains(HttpVersion.HTTP_2);
+    List<HttpVersion> versions = config.getVersions();
     return new HttpClientImpl(
       vertx,
       resolver,
@@ -160,12 +159,11 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       followAlternativeServices,
       resolverKeepAlive,
       config.isVerifyHost(),
-      useAlpn,
       config.isSsl(),
       config.getDefaultHost(),
       config.getDefaultPort(),
       config.getMaxRedirects(),
-      defaultVersion,
+      versions,
       sslOptions,
       connectHandler,
       tcpTransport,

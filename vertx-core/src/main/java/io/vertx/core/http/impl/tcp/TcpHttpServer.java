@@ -213,6 +213,8 @@ public class TcpHttpServer implements HttpServerInternal {
     Handler<Throwable> h = exceptionHandler;
     Handler<Throwable> exceptionHandler = h != null ? h : DEFAULT_EXCEPTION_HANDLER;
     server.exceptionHandler(exceptionHandler);
+    Http1ServerConfig http1Config = config.getVersions().contains(HttpVersion.HTTP_1_0) || config.getVersions().contains(HttpVersion.HTTP_1_1) ? config.getHttp1Config() != null ? config.getHttp1Config() : new Http1ServerConfig() : null;
+    Http2ServerConfig http2Config = config.getVersions().contains(HttpVersion.HTTP_2) ? config.getHttp2Config() != null ? config.getHttp2Config() : new Http2ServerConfig() : null;
     server.connectHandler(so -> {
       NetSocketImpl soi = (NetSocketImpl) so;
       Supplier<ContextInternal> streamContextSupplier = context::duplicate;
@@ -228,7 +230,7 @@ public class TcpHttpServer implements HttpServerInternal {
         webSocketHandhakeHandler,
         connectionHandler,
         exceptionHandler,
-        config.getHttp2Config().getConnectionWindowSize());
+        http2Config != null ? http2Config.getConnectionWindowSize() : HttpServerOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE);
 
       List<CompressionOptions> compressors = compression != null ? compression.getCompressors() : null;
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
@@ -247,8 +249,8 @@ public class TcpHttpServer implements HttpServerInternal {
         config.getMaxFormAttributeSize(),
         config.getMaxFormFields(),
         config.getMaxFormBufferedBytes(),
-        config.getHttp1Config(),
-        config.getHttp2Config(),
+        http1Config,
+        http2Config,
         registerWebSocketWriteHandlers,
         config.getWebSocketConfig(),
         config.isSsl() ? sslOptions : null,

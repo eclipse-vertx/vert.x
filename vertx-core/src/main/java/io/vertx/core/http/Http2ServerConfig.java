@@ -25,7 +25,6 @@ import static io.vertx.core.http.HttpServerOptions.*;
 public class Http2ServerConfig {
 
   private Http2Settings initialSettings;
-  private boolean clearTextEnabled;
   private int connectionWindowSize;
   private boolean multiplexImplementation;
   private int rstFloodMaxRstFramePerWindow;
@@ -33,7 +32,6 @@ public class Http2ServerConfig {
 
   public Http2ServerConfig() {
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
-    clearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
     connectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     rstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
     rstFloodWindowDuration = Duration.of(DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION, DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT.toChronoUnit());
@@ -42,7 +40,6 @@ public class Http2ServerConfig {
 
   public Http2ServerConfig(Http2ServerConfig other) {
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
-    this.clearTextEnabled = other.clearTextEnabled;
     this.connectionWindowSize = other.connectionWindowSize;
     this.rstFloodMaxRstFramePerWindow = other.rstFloodMaxRstFramePerWindow;
     this.rstFloodWindowDuration = other.rstFloodWindowDuration;
@@ -84,24 +81,6 @@ public class Http2ServerConfig {
    */
   public Http2ServerConfig setRstFloodWindowDuration(Duration rstFloodWindowDuration) {
     this.rstFloodWindowDuration = rstFloodWindowDuration;
-    return this;
-  }
-
-  /**
-   * @return whether the server accepts HTTP/2 over clear text connections
-   */
-  public boolean isClearTextEnabled() {
-    return clearTextEnabled;
-  }
-
-  /**
-   * Set whether HTTP/2 over clear text is enabled or disabled, default is enabled.
-   *
-   * @param clearTextEnabled whether to accept HTTP/2 over clear text
-   * @return a reference to this, so the API can be used fluently
-   */
-  public Http2ServerConfig setClearTextEnabled(boolean clearTextEnabled) {
-    this.clearTextEnabled = clearTextEnabled;
     return this;
   }
 

@@ -51,7 +51,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
     ClientSSLOptions sslOptions = options.getSslOptions();
     if (sslOptions != null) {
-      configureSSLOptions(options.isVerifyHost(), false, sslOptions);
+      configureSSLOptions(options.isVerifyHost(), sslOptions);
     }
 
     this.options = wsOptions;
@@ -83,7 +83,7 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
 
   @Override
   protected void setDefaultSslOptions(ClientSSLOptions options) {
-    configureSSLOptions(this.options.isVerifyHost(), false, options);
+    configureSSLOptions(this.options.isVerifyHost(), options);
     this.defaultSslOptions = options;
   }
 
@@ -93,14 +93,14 @@ public class WebSocketClientImpl extends HttpClientBase implements WebSocketClie
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     HostAndPort peer = HostAndPort.create(host, port);
     ProxyOptions proxyOptions = computeProxyOptions(connectOptions.getProxyOptions(), addr);
-    ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), false, connectOptions, defaultSslOptions);
+    ClientSSLOptions sslOptions = sslOptions(options.isVerifyHost(), connectOptions, defaultSslOptions);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), HttpVersion.HTTP_1_1, sslOptions, proxyOptions, addr, peer);
     // todo: cache
     Function<EndpointKey, WebSocketGroup> provider = (key_) -> {
       int maxPoolSize = options.getMaxConnections();
       ClientMetrics clientMetrics = WebSocketClientImpl.this.httpMetrics != null ? WebSocketClientImpl.this.httpMetrics.createEndpointMetrics(key_.server, maxPoolSize) : null;
       PoolMetrics queueMetrics = WebSocketClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("ws", key_.server.toString(), maxPoolSize) : null;
-      HttpConnectParams params = new HttpConnectParams(HttpVersion.HTTP_1_1, sslOptions, key_.proxyOptions, key_.ssl);
+      HttpConnectParams params = new HttpConnectParams(List.of(HttpVersion.HTTP_1_1), sslOptions, key_.proxyOptions, key_.ssl);
       return new WebSocketGroup(key_.server, httpMetrics, clientMetrics, queueMetrics, options, maxPoolSize, connector, params, key_.authority, 0L);
     };
     webSocketCM

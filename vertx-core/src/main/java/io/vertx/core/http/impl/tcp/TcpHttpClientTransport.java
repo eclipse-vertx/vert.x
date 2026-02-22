@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static io.vertx.core.http.HttpMethod.OPTIONS;
 
@@ -157,12 +158,15 @@ public class TcpHttpClientTransport implements HttpClientTransport {
         // We might end up using javax.net.ssl.trustStore
         copy = new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS");
       }
-      if (params.protocol == HttpVersion.HTTP_2) {
+      boolean useAlpn = params.protocols.contains(HttpVersion.HTTP_2);
+      copy.setUseAlpn(useAlpn);
+      if (useAlpn) {
+        List<String> list = params.protocols
+          .stream()
+          .map(HttpVersion::alpnName)
+          .collect(Collectors.toList());
         copy
-          .setUseAlpn(true)
-          .setApplicationLayerProtocols(List.of(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName()));
-      } else {
-        copy.setApplicationLayerProtocols(List.of(HttpVersion.HTTP_1_1.alpnName()));
+          .setApplicationLayerProtocols(list);
       }
       connectOptions.setSslOptions(copy);
     }
@@ -191,26 +195,48 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     Channel ch = so.channelHandlerContext().channel();
     if (params.ssl) {
       String protocol = so.applicationLayerProtocol();
-      if ("h2".equals(protocol)) {
-        applyHttp2ConnectionOptions(ch.pipeline());
-        http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
-      } else {
-        applyHttp1xConnectionOptions(ch.pipeline());
-        HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-        http1xConnected(fallbackProtocol, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
+      if (protocol == null) {
+        protocol = "";
+      }
+      switch (protocol) {
+        case "h2":
+          if (http2Config != null) {
+            applyHttp2ConnectionOptions(ch.pipeline());
+            http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
+          } else {
+            so.close();
+            promise.tryFail(new IllegalStateException("HTTP/2 not supported"));
+          }
+          break;
+        case "http/1.1":
+        case "http/1.0":
+        case "":
+          if (http1Config != null) {
+            applyHttp1xConnectionOptions(ch.pipeline());
+            HttpVersion version = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
+            http1xConnected(version, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
+          } else {
+            so.close();
+            promise.tryFail(new IllegalStateException("HTTP/1.1 not supported"));
+          }
+          break;
+        default:
+          so.close();
+          promise.tryFail(new IllegalStateException("Unsupported protocol <" + protocol + ">"));
+          break;
       }
     } else {
-      if (params.protocol == HttpVersion.HTTP_2) {
+      if (params.protocols.get(0) == HttpVersion.HTTP_2) {
         if (http2Config.isClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
-          http1xConnected(params.protocol, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
+          http1xConnected(HttpVersion.HTTP_2, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
         } else {
           applyHttp2ConnectionOptions(pipeline);
           http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
         }
       } else {
         applyHttp1xConnectionOptions(pipeline);
-        http1xConnected(params.protocol, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
+        http1xConnected(params.protocols.get(0), server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
       }
     }
     return promise.future();
@@ -226,13 +252,24 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
   public Future<HttpClientConnection> connect(ContextInternal context, SocketAddress server, HostAndPort authority, HttpConnectParams params, ClientMetrics<?, ?, ?> clientMetrics) {
 
-    if (params.sslOptions != null && !params.sslOptions.isUseAlpn() && params.ssl && params.protocol == HttpVersion.HTTP_2) {
-      return context.failedFuture("Must enable ALPN when using H2");
-    }
-
-    if (!params.ssl && params.protocol == HttpVersion.HTTP_2) {
-      if (http2Config.isClearTextUpgrade() && http1Config == null) {
-        return context.failedFuture("Must enable HTTP/1.1 when using H2C with upgrade");
+    if (params.protocols.size() == 1) {
+      switch (params.protocols.get(0)) {
+        case HTTP_1_0:
+        case HTTP_1_1:
+          if (http1Config == null) {
+            return context.failedFuture(new IllegalStateException("The client does not support HTTP/1.x"));
+          }
+          break;
+        case HTTP_2:
+          if (http2Config == null) {
+            return context.failedFuture(new IllegalStateException("The client does not support HTTP/2"));
+          }
+          if (!params.ssl && http2Config.isClearTextUpgrade() && http1Config == null) {
+            return context.failedFuture(new IllegalStateException("Must enable HTTP/1.1 when using H2C with upgrade"));
+          }
+          break;
+        case HTTP_3:
+          return context.failedFuture(new IllegalStateException("Cannot handle HTTP/3"));
       }
     }
 

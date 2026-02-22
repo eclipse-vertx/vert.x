@@ -34,7 +34,7 @@ public class HttpClientConfig {
       case HTTP_1_0:
         return List.of(HttpVersion.HTTP_1_0);
       case HTTP_1_1:
-        return List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+        return List.of(HttpVersion.HTTP_1_1);
       case HTTP_2:
         return List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
       default:

@@ -402,11 +402,12 @@ public class Http3ClientTest extends VertxTestBase {
   @Test
   public void testSettings() throws Exception {
 
-    HttpServerConfig serverConfig = new HttpServerConfig(serverOptions);
-    serverConfig.getHttp3Config().setInitialSettings(new Http3Settings()
-        .setMaxFieldSectionSize(1024)
-        .setQPackMaxTableCapacity(1024)
-        .setQPackBlockedStreams(1024));
+    HttpServerConfig serverConfig = new HttpServerConfig(serverOptions)
+      .setHttp3Config(new Http3ServerConfig()
+        .setInitialSettings(new Http3Settings()
+          .setMaxFieldSectionSize(1024)
+          .setQPackMaxTableCapacity(1024)
+          .setQPackBlockedStreams(1024)));
 
     server.close();
     server = vertx.createHttpServer(serverConfig, serverSslOptions);

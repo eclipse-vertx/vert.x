@@ -29,9 +29,6 @@ public final class EndpointKey {
   final ClientSSLOptions sslOptions;
 
   public EndpointKey(boolean ssl, HttpVersion protocol, ClientSSLOptions sslOptions, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
-    if (protocol == null) {
-      throw new NullPointerException("No null protocol");
-    }
     if (server == null) {
       throw new NullPointerException("No null server address");
     }
@@ -50,7 +47,7 @@ public final class EndpointKey {
     }
     if (o instanceof EndpointKey) {
       EndpointKey that = (EndpointKey) o;
-      return ssl == that.ssl && protocol == that.protocol && server.equals(that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
+      return ssl == that.ssl && Objects.equals(protocol, that.protocol) && server.equals(that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
     }
     return false;
   }
@@ -58,7 +55,7 @@ public final class EndpointKey {
   @Override
   public int hashCode() {
     int result = ssl ? 1 : 0;
-    result = 31 * result + protocol.hashCode();
+    result = 31 * result + (protocol == null ? 0 : protocol.hashCode());
     result = 31 * result + server.hashCode();
     if (authority != null) {
       result = 31 * result + authority.hashCode();

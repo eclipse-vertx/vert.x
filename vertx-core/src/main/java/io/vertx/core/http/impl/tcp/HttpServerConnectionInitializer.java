@@ -56,7 +56,6 @@ public class HttpServerConnectionInitializer {
   private final Supplier<ContextInternal> streamContextSupplier;
   private final TcpHttpServer server;
   private final String serverOrigin;
-  private final boolean disableH2C;
   private final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
   private final HttpServerMetrics<?, ?> httpMetrics;
@@ -112,36 +111,40 @@ public class HttpServerConnectionInitializer {
       compressionManager = null;
     }
 
-    Http2ServerChannelInitializer http2ChannelInitalizer;
-    if (http2Config.getMultiplexImplementation()) {
-      http2ChannelInitalizer = new Http2MultiplexServerChannelInitializer(
-        context,
-        compressionManager,
-        useDecompression,
-        server.getMetrics(),
-        transportMetrics,
-        metric,
-        streamContextSupplier,
-        connectionHandler,
-        HttpUtils.fromVertxInitialSettings(true, http2Config.getInitialSettings()),
-        http2Config.getRstFloodMaxRstFramePerWindow(),
-        (int)http2Config.getRstFloodWindowDuration().toSeconds(),
-        logEnabled);
+    Http2ServerChannelInitializer http2ChannelInitializer;
+    if (http2Config != null) {
+      if (http2Config.getMultiplexImplementation()) {
+        http2ChannelInitializer = new Http2MultiplexServerChannelInitializer(
+          context,
+          compressionManager,
+          useDecompression,
+          server.getMetrics(),
+          transportMetrics,
+          metric,
+          streamContextSupplier,
+          connectionHandler,
+          HttpUtils.fromVertxInitialSettings(true, http2Config.getInitialSettings()),
+          http2Config.getRstFloodMaxRstFramePerWindow(),
+          (int)http2Config.getRstFloodWindowDuration().toSeconds(),
+          logEnabled);
+      } else {
+        http2ChannelInitializer = new Http2CodecServerChannelInitializer(
+          this,
+          tracingPolicy,
+          httpMetrics,
+          transportMetrics,
+          useDecompression,
+          useCompression,
+          http2Config,
+          compressionManager,
+          streamContextSupplier,
+          connectionHandler,
+          metric,
+          logEnabled
+        );
+      }
     } else {
-      http2ChannelInitalizer = new Http2CodecServerChannelInitializer(
-        this,
-        tracingPolicy,
-        httpMetrics,
-        transportMetrics,
-        useDecompression,
-        useCompression,
-        http2Config,
-        compressionManager,
-        streamContextSupplier,
-        connectionHandler,
-        metric,
-        logEnabled
-      );
+      http2ChannelInitializer = null;
     }
 
     this.context = context;
@@ -157,7 +160,6 @@ public class HttpServerConnectionInitializer {
     this.maxFormBufferedBytes = maxFormBufferedBytes;
     this.http1Config = http1Config;
     this.http2Config = http2Config;
-    this.disableH2C = !http2Config.isClearTextEnabled();
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.metric = metric;
@@ -170,7 +172,7 @@ public class HttpServerConnectionInitializer {
     this.compressionContentSizeThreshold = compressionContentSizeThreshold;
     this.httpMetrics = httpMetrics;
     this.transportMetrics = transportMetrics;
-    this.http2ChannelInitializer = http2ChannelInitalizer;
+    this.http2ChannelInitializer = http2ChannelInitializer;
   }
 
   public void configurePipeline(Channel ch, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager, TransportMetrics<?> transportMetrics) {
@@ -186,22 +188,28 @@ public class HttpServerConnectionInitializer {
               break;
             case "http/1.1":
             case "http/1.0":
-              configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+              configureHttp1Pipeline(ch.pipeline());
               configureHttp1Handler(ch.pipeline(), sslContextManager);
               break;
+            default:
+              throw new AssertionError();
           }
         } else {
           // No alpn presented or OpenSSL
-          configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
-          configureHttp1Handler(ch.pipeline(), sslContextManager);
+          if (http1Config != null) {
+            configureHttp1Pipeline(ch.pipeline());
+            configureHttp1Handler(ch.pipeline(), sslContextManager);
+          } else {
+            ch.close();
+          }
         }
       } else {
-        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+        configureHttp1Pipeline(ch.pipeline());
         configureHttp1Handler(ch.pipeline(), sslContextManager);
       }
     } else {
-      if (disableH2C) {
-        configureHttp1Pipeline(ch.pipeline(), sslChannelProvider, sslContextManager);
+      if (http2Config == null) {
+        configureHttp1Pipeline(ch.pipeline());
         configureHttp1Handler(ch.pipeline(), sslContextManager);
       } else {
         Http1xOrH2CHandler handler = new Http1xOrH2CHandler() {
@@ -210,7 +218,7 @@ public class HttpServerConnectionInitializer {
             if (h2c) {
               configureHttp2(ctx.pipeline(), false);
             } else {
-              configureHttp1Pipeline(ctx.pipeline(), sslChannelProvider, sslContextManager);
+              configureHttp1Pipeline(ctx.pipeline());
               http2ChannelInitializer.configureHttp1OrH2CUpgradeHandler(context, ctx.pipeline(), sslChannelProvider, sslContextManager);
             }
           }
@@ -270,7 +278,7 @@ public class HttpServerConnectionInitializer {
     }
   }
 
-  private void configureHttp1Pipeline(ChannelPipeline pipeline, SslChannelProvider sslChannelProvider, SslContextManager sslContextManager) {
+  private void configureHttp1Pipeline(ChannelPipeline pipeline) {
     String name = computeChannelName(pipeline);
     pipeline.addBefore(name, "httpDecoder", new VertxHttpRequestDecoder(http1Config));
     pipeline.addBefore(name, "httpEncoder", new VertxHttpResponseEncoder());

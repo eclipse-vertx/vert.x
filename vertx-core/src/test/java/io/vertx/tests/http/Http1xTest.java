@@ -243,16 +243,16 @@ public class Http1xTest extends HttpTest {
 
     assertEquals(false, options.isUseAlpn());
     assertEquals(options, options.setUseAlpn(true));
-    assertEquals(options.getProtocolVersion() == HttpVersion.HTTP_2, options.isUseAlpn());
+    assertEquals(true, options.isUseAlpn());
 
     assertNull(options.getSslEngineOptions());
     assertEquals(options, options.setSslEngineOptions(new JdkSSLEngineOptions()));
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.HTTP_1_1);
-    assertEquals(null, options.getAlpnVersions());
+    assertEquals(HttpClientOptions.DEFAULT_ALPN_VERSIONS, options.getAlpnVersions());
     assertEquals(options, options.setAlpnVersions(alpnVersions));
-    assertEquals(null, options.getAlpnVersions());
+    assertEquals(alpnVersions, options.getAlpnVersions());
 
     assertEquals(true, options.isHttp2ClearTextUpgrade());
     assertEquals(options, options.setHttp2ClearTextUpgrade(false));
@@ -389,7 +389,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHandle100ContinueAutomatically(true));
     assertTrue(options.isHandle100ContinueAutomatically());
 
-    assertEquals(true, options.isUseAlpn());
+    assertEquals(false, options.isUseAlpn());
     assertEquals(options, options.setUseAlpn(true));
     assertEquals(true, options.isUseAlpn());
 
@@ -403,9 +403,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(initialSettings, options.getInitialSettings());
 
     List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.HTTP_1_1);
-    assertEquals(null, options.getAlpnVersions());
+    assertEquals(HttpServerOptions.DEFAULT_ALPN_VERSIONS, options.getAlpnVersions());
     assertEquals(options, options.setAlpnVersions(alpnVersions));
-    assertEquals(null, options.getAlpnVersions());
+    assertEquals(alpnVersions, options.getAlpnVersions());
 
     assertEquals(HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
     rand = TestUtils.randomPositiveInt();
@@ -615,7 +615,9 @@ public class Http1xTest extends HttpTest {
     int maxHeaderSize = TestUtils.randomPositiveInt();
     int maxWaitQueueSize = TestUtils.randomPositiveInt();
     Http2Settings initialSettings = randomHttp2Settings();
+    boolean useAlpn = TestUtils.randomBoolean();
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean h2cUpgrade = rand.nextBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
@@ -662,7 +664,9 @@ public class Http1xTest extends HttpTest {
           .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
           .put("initialWindowSize", initialSettings.getInitialWindowSize())
           .put("maxFrameSize", initialSettings.getMaxFrameSize()))
+      .put("useAlpn", useAlpn)
       .put(sslEngine, new JsonObject())
+      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("http2ClearTextUpgrade", h2cUpgrade)
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("localAddress", localAddress)
@@ -706,7 +710,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
     assertEquals(maxHeaderSize, options.getMaxHeaderSize());
     assertEquals(initialSettings, options.getInitialSettings());
-    assertEquals(options.getProtocolVersion() == HttpVersion.HTTP_2, options.isUseAlpn());
+    assertEquals(useAlpn, options.isUseAlpn());
     switch (sslEngine) {
       case "jdkSslEngineOptions":
         assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
@@ -718,7 +722,7 @@ public class Http1xTest extends HttpTest {
         fail();
         break;
     }
-    assertEquals(null, options.getAlpnVersions());
+    assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
     assertEquals(localAddress, options.getLocalAddress());
     assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
@@ -910,8 +914,10 @@ public class Http1xTest extends HttpTest {
     int maxHeaderSize = rand.nextInt(10000);
     HttpVersion enabledProtocol = HttpVersion.values()[rand.nextInt(HttpVersion.values().length)];
     Http2Settings initialSettings = TestUtils.randomHttp2Settings();
+    boolean useAlpn = TestUtils.randomBoolean();
     int http2ConnectionWindowSize = TestUtils.randomInt();
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
+    List<HttpVersion> alpnVersions = Collections.singletonList(HttpVersion.values()[TestUtils.randomPositiveInt() % 3]);
     boolean openSslSessionCacheEnabled = TestUtils.randomBoolean();
     boolean decompressionSupported = TestUtils.randomBoolean();
     boolean acceptUnmaskedFrames = TestUtils.randomBoolean();
@@ -950,8 +956,10 @@ public class Http1xTest extends HttpTest {
           .put("maxConcurrentStreams", initialSettings.getMaxConcurrentStreams())
           .put("initialWindowSize", initialSettings.getInitialWindowSize())
           .put("maxFrameSize", initialSettings.getMaxFrameSize()))
+      .put("useAlpn", useAlpn)
       .put("http2ConnectionWindowSize", http2ConnectionWindowSize)
       .put(sslEngine, new JsonObject())
+      .put("alpnVersions", new JsonArray().add(alpnVersions.get(0).name()))
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("decompressionSupported", decompressionSupported)
       .put("acceptUnmaskedFrames", acceptUnmaskedFrames)
@@ -989,7 +997,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
     assertEquals(maxHeaderSize, options.getMaxHeaderSize());
     assertEquals(initialSettings, options.getInitialSettings());
-    assertEquals(true, options.isUseAlpn());
+    assertEquals(useAlpn, options.isUseAlpn());
     assertEquals(http2ConnectionWindowSize, options.getHttp2ConnectionWindowSize());
     switch (sslEngine) {
       case "jdkSslEngineOptions":
@@ -1002,7 +1010,7 @@ public class Http1xTest extends HttpTest {
         fail();
         break;
     }
-    assertEquals(null, options.getAlpnVersions());
+    assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(decompressionSupported, options.isDecompressionSupported());
     assertEquals(acceptUnmaskedFrames, options.isAcceptUnmaskedFrames());
     assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
@@ -1462,16 +1470,14 @@ public class Http1xTest extends HttpTest {
     // We make sure we execute all the requests on the same context otherwise some responses can come beack when there
     // are no waiters resulting in it being closed so a a new connection is made for the next request resulting in the
     // number of total connections being > pool size (which is correct)
-    vertx.runOnContext(v -> {
-      for (int count = 0; count < requests; count++) {
-        client.request(requestOptions)
-          .compose(HttpClientRequest::send)
-          .onComplete(onSuccess(resp -> {
-            assertEquals(200, resp.statusCode());
-            reqLatch.countDown();
-          }));
-      }
-    });
+    for (int count = 0; count < requests; count++) {
+      client.request(new RequestOptions(requestOptions))
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          reqLatch.countDown();
+        }));
+    }
 
     awaitLatch(reqLatch);
 

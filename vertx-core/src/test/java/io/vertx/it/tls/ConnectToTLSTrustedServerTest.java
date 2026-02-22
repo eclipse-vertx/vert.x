@@ -23,7 +23,7 @@ public class ConnectToTLSTrustedServerTest {
   @Test
   public void testHTTP2() throws Exception {
     String val = testHTTP(
-      new HttpServerOptions().setSsl(true).setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()),
+      new HttpServerOptions().setSsl(true).setUseAlpn(true).setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get()),
       new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2)
     );
     assertEquals("true/HTTP_2", val);
@@ -35,7 +35,7 @@ public class ConnectToTLSTrustedServerTest {
       HttpServer server = vertx.createHttpServer(serverOptions)
         .requestHandler(req -> req.response().end(req.isSSL() + "/" + req.version()));
       server.listen(8443, "localhost").await();
-      HttpClient client = vertx.createHttpClient(clientOptions);
+      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setUseAlpn(true).setProtocolVersion(HttpVersion.HTTP_2));
       Future<HttpClientRequest> fut = client.request(new RequestOptions().setAbsoluteURI("https://localhost:8443"));
       Future<Buffer> buff = fut.compose(req -> req.send().compose(HttpClientResponse::body));
       return buff.await().toString();

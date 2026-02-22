@@ -258,7 +258,7 @@ public class SSLOptions {
    * @return the enabled protocols
    */
   public Set<String> getEnabledSecureTransportProtocols() {
-    return enabledSecureTransportProtocols;
+    return new LinkedHashSet<>(enabledSecureTransportProtocols);
   }
 
   /**

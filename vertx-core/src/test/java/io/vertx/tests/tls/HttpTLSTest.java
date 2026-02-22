@@ -1206,34 +1206,36 @@ public abstract class HttpTLSTest extends HttpTestBase {
         // The test with proxy that fails will not connect
         waitFor(2);
       }
-      ClientSSLOptions clientSSLOptions = new ClientSSLOptions();
-      clientSSLOptions.setTrustAll(clientTrustAll);
+      HttpClientOptions options = createBaseClientOptions();
+      options.setProtocolVersion(version);
+      options.setSsl(clientSSL);
+      options.setForceSni(clientForceSNI);
+      if (clientTrustAll) {
+        options.setTrustAll(true);
+      }
       if (clientUsesCrl) {
-        clientSSLOptions.addCrlPath("tls/root-ca/crl.pem");
+        options.addCrlPath("tls/root-ca/crl.pem");
       }
-      clientSSLOptions.setUseAlpn(clientUsesAlpn);
-      clientSSLOptions.setTrustOptions(clientTrust);
-      clientSSLOptions.setKeyCertOptions(clientCert);
-      for (String suite: clientEnabledCipherSuites) {
-        clientSSLOptions.addEnabledCipherSuite(suite);
-      }
-      if (clientEnabledSecureTransportProtocol.length > 0) {
-        clientSSLOptions.getEnabledSecureTransportProtocols().clear();
-        for (String protocol : clientEnabledSecureTransportProtocol) {
-          clientSSLOptions.addEnabledSecureTransportProtocol(protocol);
-        }
-      }
-      HttpClientOptions clientOptions = createBaseClientOptions();
-      clientOptions.setProtocolVersion(version);
-      clientOptions.setSsl(clientSSL);
-      clientOptions.setForceSni(clientForceSNI);
-      clientOptions.setVerifyHost(clientVerifyHost);
       if (clientOpenSSL) {
-        clientOptions.setSslEngineOptions(new OpenSSLEngineOptions());
+        options.setSslEngineOptions(new OpenSSLEngineOptions());
       } else {
-        clientOptions.setSslEngineOptions(new JdkSSLEngineOptions());
+        options.setSslEngineOptions(new JdkSSLEngineOptions());
       }
-      clientOptions.setSslOptions(clientSSLOptions);
+      if (clientUsesAlpn) {
+        options.setUseAlpn(true);
+      }
+      options.setVerifyHost(clientVerifyHost);
+      options.setTrustOptions(clientTrust);
+      options.setKeyCertOptions(clientCert);
+      for (String suite: clientEnabledCipherSuites) {
+        options.addEnabledCipherSuite(suite);
+      }
+      if(clientEnabledSecureTransportProtocol.length > 0) {
+        options.getEnabledSecureTransportProtocols().forEach(options::removeEnabledSecureTransportProtocol);
+      }
+      for (String protocol : clientEnabledSecureTransportProtocol) {
+        options.addEnabledSecureTransportProtocol(protocol);
+      }
       if (proxyType != null) {
         ProxyOptions proxyOptions;
         if (proxyType == ProxyType.SOCKS5) {
@@ -1244,35 +1246,37 @@ public abstract class HttpTLSTest extends HttpTestBase {
         if (useProxyAuth) {
           proxyOptions.setUsername("username").setPassword("username");
         }
-        clientOptions.setProxyOptions(proxyOptions);
+        options.setProxyOptions(proxyOptions);
       }
-      client = vertx.createHttpClient(clientOptions);
-      ServerSSLOptions serverSSLOptions = new ServerSSLOptions();
-      serverSSLOptions.setTrustOptions(serverTrust);
-      serverSSLOptions.setKeyCertOptions(serverCert);
-      serverSSLOptions.setClientAuth(requiresClientAuth ? ClientAuth.REQUIRED : ClientAuth.NONE);
-      serverSSLOptions.setSni(serverSNI);
-      if (serverUsesCrl) {
-        serverSSLOptions.addCrlPath("tls/root-ca/crl.pem");
-      }
-      serverSSLOptions.setUseAlpn(serverUsesAlpn == Boolean.TRUE);
-      for (String suite: serverEnabledCipherSuites) {
-        serverSSLOptions.addEnabledCipherSuite(suite);
-      }
-      if(serverEnabledSecureTransportProtocol.length > 0) {
-        serverSSLOptions.getEnabledSecureTransportProtocols().clear();
-        for (String protocol : serverEnabledSecureTransportProtocol) {
-          serverSSLOptions.addEnabledSecureTransportProtocol(protocol);
-        }
-      }
+      client = vertx.createHttpClient(options);
       HttpServerOptions serverOptions = createBaseServerOptions();
+      serverOptions.setTrustOptions(serverTrust);
       serverOptions.setAlpnVersions(Arrays.asList(version));
-      serverOptions.setSsl(serverSSL);
-      serverOptions.setUseProxyProtocol(serverUsesProxyProtocol);
+      serverOptions.setKeyCertOptions(serverCert);
+      if (requiresClientAuth) {
+        serverOptions.setClientAuth(ClientAuth.REQUIRED);
+      }
+      if (serverUsesCrl) {
+        serverOptions.addCrlPath("tls/root-ca/crl.pem");
+      }
       if (serverOpenSSL) {
         serverOptions.setSslEngineOptions(new OpenSSLEngineOptions());
       }
-      serverOptions.setSslOptions(serverSSLOptions);
+      if (serverUsesAlpn == Boolean.TRUE) {
+        serverOptions.setUseAlpn(serverUsesAlpn);
+      }
+      serverOptions.setSsl(serverSSL);
+      serverOptions.setSni(serverSNI);
+      serverOptions.setUseProxyProtocol(serverUsesProxyProtocol);
+      for (String suite: serverEnabledCipherSuites) {
+        serverOptions.addEnabledCipherSuite(suite);
+      }
+      if(serverEnabledSecureTransportProtocol.length > 0) {
+        serverOptions.getEnabledSecureTransportProtocols().forEach(serverOptions::removeEnabledSecureTransportProtocol);
+      }
+      for (String protocol : serverEnabledSecureTransportProtocol) {
+        serverOptions.addEnabledSecureTransportProtocol(protocol);
+      }
       server.close();
       server = vertx.createHttpServer(serverOptions.setPort(DEFAULT_HTTPS_PORT));
       server.connectionHandler(conn -> complete());

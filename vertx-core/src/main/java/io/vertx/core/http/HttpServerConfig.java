@@ -99,7 +99,20 @@ public class HttpServerConfig {
       compression = null;
     }
 
-    this.versions = EnumSet.copyOf(DEFAULT_VERSIONS);
+    Set<HttpVersion> versions;
+    if (options.isSsl()) {
+      if (options.isUseAlpn()) {
+        versions = EnumSet.copyOf(options.getAlpnVersions());
+      } else {
+        versions = EnumSet.of(HttpVersion.HTTP_1_1);
+      }
+    } else if (options.isHttp2ClearTextEnabled()) {
+      versions = EnumSet.copyOf(DEFAULT_VERSIONS);
+    } else {
+      versions = EnumSet.of(HttpVersion.HTTP_1_1);
+    }
+
+    this.versions = versions;
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
@@ -150,9 +163,9 @@ public class HttpServerConfig {
     this.strictThreadMode = other.strictThreadMode;
     this.metricsName = other.metricsName;
     this.tracingPolicy = other.tracingPolicy;
-    this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : new Http1ServerConfig();
-    this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : new Http2ServerConfig();
-    this.http3Config = other.http3Config != null ? new Http3ServerConfig(other.http3Config) : new Http3ServerConfig();
+    this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : null;
+    this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : null;
+    this.http3Config = other.http3Config != null ? new Http3ServerConfig(other.http3Config) : null;
     this.webSocketConfig = other.webSocketConfig != null ? new WebSocketServerConfig(other.webSocketConfig) : new WebSocketServerConfig();
     this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
     this.tcpConfig = other.tcpConfig != null ? new TcpServerConfig(other.tcpConfig) : defaultTcpServerConfig();

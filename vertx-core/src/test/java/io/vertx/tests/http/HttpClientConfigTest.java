@@ -38,7 +38,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
     assertFalse(config.isSsl());
-    assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
+    assertEquals(List.of(HTTP_1_1), config.getVersions());
   }
 
   @Test

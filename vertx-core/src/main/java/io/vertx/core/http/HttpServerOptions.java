@@ -225,6 +225,7 @@ public class HttpServerOptions extends NetServerOptions {
   private boolean registerWebSocketWriteHandlers;
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
   private boolean strictThreadMode;
+  private boolean http2ClearTextEnabled;
 
   /**
    * Default constructor
@@ -256,6 +257,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.registerWebSocketWriteHandlers = other.registerWebSocketWriteHandlers;
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
     this.strictThreadMode = other.strictThreadMode;
+    this.http2ClearTextEnabled = other.http2ClearTextEnabled;
   }
 
   /**
@@ -295,6 +297,7 @@ public class HttpServerOptions extends NetServerOptions {
     tracingPolicy = DEFAULT_TRACING_POLICY;
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
+    http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
   }
 
   /**
@@ -330,11 +333,6 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   protected ServerSSLOptions createSSLOptions() {
     return super.createSSLOptions().setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(DEFAULT_ALPN_VERSIONS));
-  }
-
-  @Override
-  public HttpServerOptions setSslOptions(ServerSSLOptions sslOptions) {
-    return (HttpServerOptions) super.setSslOptions(sslOptions);
   }
 
   @Override
@@ -416,19 +414,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public boolean isUseAlpn() {
-    return true;
-  }
-
-  /**
-   * Alpn supported is automatically managed by the HTTP server depending on the client supported protocols.
-   *
-   * @param useAlpn ignored
-   * @return this object
-   */
-  @Deprecated(forRemoval = true)
-  @Override
   public HttpServerOptions setUseAlpn(boolean useAlpn) {
+    super.setUseAlpn(useAlpn);
     return this;
   }
 
@@ -893,21 +880,26 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return {@code null}
+   * @return the list of protocol versions to provide during the Application-Layer Protocol Negotiation
    */
   public List<HttpVersion> getAlpnVersions() {
-    return null;
+    List<String> applicationLayerProtocols = getOrCreateSSLOptions().getApplicationLayerProtocols();
+    return applicationLayerProtocols != null ? HttpUtils.toHttpAlpnVersions(applicationLayerProtocols ) : null;
   }
 
   /**
-   * Does nothing, the list of supported alpn versions is managed by the HTTP server.
+   * Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
    *
-   * @param alpnVersions ignored
+   * @param alpnVersions the versions
    * @return a reference to this, so the API can be used fluently
-   * @deprecated this should not be used anymore
    */
-  @Deprecated(forRemoval = true)
   public HttpServerOptions setAlpnVersions(List<HttpVersion> alpnVersions) {
+    ServerSSLOptions sslOptions = getOrCreateSSLOptions();
+    if (alpnVersions != null) {
+      sslOptions.setApplicationLayerProtocols(HttpUtils.fromHttpAlpnVersions(alpnVersions));
+    } else {
+      sslOptions.setApplicationLayerProtocols(null);
+    }
     return this;
   }
 
@@ -915,7 +907,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return whether the server accepts HTTP/2 over clear text connections
    */
   public boolean isHttp2ClearTextEnabled() {
-    return http2Config.isClearTextEnabled();
+    return http2ClearTextEnabled;
   }
 
   /**
@@ -925,7 +917,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setHttp2ClearTextEnabled(boolean http2ClearTextEnabled) {
-    http2Config.setClearTextEnabled(http2ClearTextEnabled);
+    this.http2ClearTextEnabled = http2ClearTextEnabled;
     return this;
   }
 

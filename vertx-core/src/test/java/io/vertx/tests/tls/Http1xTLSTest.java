@@ -21,6 +21,7 @@ import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;

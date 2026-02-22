@@ -272,11 +272,6 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setMetricsName(metricsName);
   }
 
-  @Override
-  public NetClientOptions setSslOptions(ClientSSLOptions sslOptions) {
-    return (NetClientOptions) super.setSslOptions(sslOptions);
-  }
-
   /**
    * Set the value of reconnect attempts
    *

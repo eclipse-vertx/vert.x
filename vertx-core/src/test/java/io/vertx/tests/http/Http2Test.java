@@ -279,9 +279,7 @@ public class Http2Test extends HttpTest {
   public void testServerDoesNotSupportAlpn() throws Exception {
     waitFor(2);
     server.close();
-    server = vertx.createHttpServer(
-      new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()).setVersions(HttpVersion.HTTP_1_1),
-      Http2TestBase.createHttp2ServerOptions().getSslOptions());
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions().setUseAlpn(false));
     server.requestHandler(req -> {
       assertEquals(HttpVersion.HTTP_1_1, req.version());
       req.response().end();
@@ -958,45 +956,36 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testUnsupportedAlpnVersion() throws Exception {
-    testUnsupportedAlpnVersion(new JdkSSLEngineOptions(), false);
+    testUnsupportedAlpnVersion(new JdkSSLEngineOptions());
   }
 
   @Test
   public void testUnsupportedAlpnVersionOpenSSL() throws Exception {
-    testUnsupportedAlpnVersion(new OpenSSLEngineOptions(), true);
+    testUnsupportedAlpnVersion(new OpenSSLEngineOptions());
   }
 
-  private void testUnsupportedAlpnVersion(SSLEngineOptions engine, boolean accept) throws Exception {
+  private void testUnsupportedAlpnVersion(SSLEngineOptions engine) throws Exception {
     server.close();
-    server = vertx.createHttpServer(
-      new HttpServerConfig(Http2TestBase.createHttp2ServerOptions()
-        .setSslEngineOptions(engine))
-        .setVersions(HttpVersion.HTTP_2),
-      Http2TestBase.createHttp2ServerOptions().getSslOptions());
+    server = vertx.createHttpServer(Http2TestBase.createHttp2ServerOptions()
+      .setSslEngineOptions(engine)
+      .setAlpnVersions(Collections.singletonList(HttpVersion.HTTP_2))
+    );
     server.requestHandler(request -> {
       request.response().end();
     });
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(Http2TestBase.createHttp2ClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1));
-    client.request(requestOptions).onComplete(ar -> {
-      if (ar.succeeded()) {
-        if (accept) {
-          ar.result().send().onComplete(onSuccess(resp -> {
-            testComplete();
-          }));
-        } else {
-          fail();
-        }
-      } else {
-        if (accept) {
-          fail();
-        } else {
-          testComplete();
-        }
-      }
-    });
-    await();
+    try {
+      client.request(requestOptions).compose(request -> request.send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end)
+        .map(request.version()))
+        .await();
+      fail();
+    } catch (Exception ignore) {
+      // Expected
+    }
   }
 
   @Test
