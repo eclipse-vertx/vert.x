@@ -26,7 +26,7 @@ import javax.net.ssl.SSLSession;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 /**
  * An un-pooled HTTP client connection that maintains a queue for pending requests that cannot be served
@@ -205,6 +205,11 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
   @Override
   public String indicatedServerName() {
     return actual.indicatedServerName();
+  }
+
+  @Override
+  public Iterable<Map.Entry<Buffer, Buffer>> tlvs() {
+    return actual.tlvs();
   }
 
   /**
