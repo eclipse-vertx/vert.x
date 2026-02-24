@@ -3,17 +3,22 @@ package examples;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerConfig;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.TcpServerConfig;
 
 import java.util.Arrays;
 
@@ -303,5 +308,30 @@ public class SslExamples {
         .setCertPaths(Arrays.asList("default-cert.pem", "host2-key.pem", "etc...")
         ))
       .setSni(true);
+  }
+
+  public void exampleSSLEngine(Vertx vertx, JksOptions keyStoreOptions) {
+
+    ServerSSLOptions sslOptions = new ServerSSLOptions()
+      .setKeyCertOptions(keyStoreOptions);
+    HttpServerConfig config = new HttpServerConfig()
+      .setSsl(true);
+
+    // Use JDK SSL engine
+    HttpServer server = vertx.createHttpServer(config);
+
+    // Use JDK SSL engine explicitly
+    server = vertx.httpServerBuilder()
+      .with(config)
+      .with(sslOptions)
+      .with(new JdkSSLEngineOptions())
+      .build();
+
+    // Use OpenSSL engine
+    server = vertx.httpServerBuilder()
+      .with(config)
+      .with(sslOptions)
+      .with(new OpenSSLEngineOptions())
+      .build();
   }
 }

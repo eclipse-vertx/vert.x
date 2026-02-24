@@ -13,10 +13,6 @@ package io.vertx.core.net.impl.tcp;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
-
-import java.util.function.BiFunction;
 
 /**
  * A builder to configure NetServer plugins.
@@ -26,6 +22,7 @@ public class NetServerBuilder {
   private VertxInternal vertx;
   private TcpServerConfig config;
   private ServerSSLOptions sslOptions;
+  private SSLEngineOptions sslEngineOptions;
   private String protocol;
   private boolean fileRegionEnabled;
   private boolean registerWriteHandler;
@@ -48,6 +45,7 @@ public class NetServerBuilder {
     this.vertx = vertx;
     this.config = cfg;
     this.sslOptions = options.getSslOptions();
+    this.sslEngineOptions = options.getSslEngineOptions();
     this.fileRegionEnabled = options.isFileRegionEnabled();
     this.registerWriteHandler = options.isRegisterWriteHandler();
     this.cleanable = true;
@@ -68,6 +66,11 @@ public class NetServerBuilder {
     return this;
   }
 
+  public NetServerBuilder sslEngine(SSLEngineOptions options) {
+    this.sslEngineOptions = options;
+    return this;
+  }
+
   public NetServerInternal build() {
     NetServerInternal server;
     if (cleanable) {
@@ -75,6 +78,7 @@ public class NetServerBuilder {
         config,
         protocol,
         sslOptions,
+        sslEngineOptions,
         fileRegionEnabled,
         registerWriteHandler);
     } else {
@@ -83,6 +87,7 @@ public class NetServerBuilder {
         config,
         protocol,
         sslOptions,
+        sslEngineOptions,
         fileRegionEnabled,
         registerWriteHandler
       );

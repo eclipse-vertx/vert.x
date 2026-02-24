@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 
@@ -60,6 +61,14 @@ public interface HttpClientBuilder {
    */
   @Fluent
   HttpClientBuilder with(ClientSSLOptions options);
+
+  /**
+   * Configure the client with the given SSL {@code engine}.
+   * @param engine the SSL engine options
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientBuilder with(SSLEngineOptions engine);
 
   /**
    * Set a connection handler for the client. This handler is called when a new connection is established.

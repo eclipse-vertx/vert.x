@@ -66,6 +66,7 @@ public class NetServerImpl implements NetServerInternal {
   private final VertxInternal vertx;
   private final TcpServerConfig config;
   private final ServerSSLOptions sslOptions;
+  private final SSLEngineOptions sslEngineOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
   private final String protocol;
@@ -94,6 +95,7 @@ public class NetServerImpl implements NetServerInternal {
                        TcpServerConfig config,
                        String protocol,
                        ServerSSLOptions sslOptions,
+                       SSLEngineOptions sslEngineOptions,
                        boolean fileRegionEnabled,
                        boolean registerWriteHandler) {
 
@@ -107,6 +109,7 @@ public class NetServerImpl implements NetServerInternal {
     this.fileRegionEnabled = fileRegionEnabled;
     this.registerWriteHandler = registerWriteHandler;
     this.sslOptions = sslOptions;
+    this.sslEngineOptions = sslEngineOptions;
   }
 
   public SslContextProvider sslContextProvider() {
@@ -457,7 +460,7 @@ public class NetServerImpl implements NetServerInternal {
 
         SslContextManager helper;
         try {
-          helper = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions.isUseAlpn()));
+          helper = new SslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions.isUseAlpn()));
         } catch (Exception e) {
           return context.failedFuture(e);
         }

@@ -515,22 +515,6 @@ NOTE: The options object is compared (using `equals`) against the existing optio
 are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
 the update.
 
-==== SSL engine
-
-The engine implementation can be configured to use https://www.openssl.org[OpenSSL] instead of the JDK implementation.
-Before JDK started to use hardware intrinsics (CPU instructions) for AES in Java 8 and for RSA in Java 9,
-OpenSSL provided much better performances and CPU usage than the JDK engine.
-
-The engine options to use is
-
-- the {@link io.vertx.core.net.TCPSSLOptions#getSslEngineOptions()} options when it is set
-- otherwise {@link io.vertx.core.net.JdkSSLEngineOptions}
-
-[source,$lang]
-----
-{@link examples.NetExamples#exampleSSLEngine}
-----
-
 === Using a proxy for client connections
 
 The {@link io.vertx.core.net.NetClient} supports either an HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.

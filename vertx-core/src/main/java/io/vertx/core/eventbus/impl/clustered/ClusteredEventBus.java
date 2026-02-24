@@ -129,11 +129,7 @@ public final class ClusteredEventBus extends EventBusImpl {
   }
 
   private NetClient createNetClient(VertxInternal vertx, NetClientOptions clientOptions) {
-    TcpClientConfig config = new TcpClientConfig(clientOptions);
-    NetClientBuilder builder = new NetClientBuilder(vertx, config)
-      .sslOptions(clientOptions.getSslOptions())
-      .registerWriteHandler(clientOptions.isRegisterWriteHandler());
-    return builder.build();
+    return new NetClientBuilder(vertx, clientOptions).build();
   }
 
   private NetServerOptions getServerOptions() {

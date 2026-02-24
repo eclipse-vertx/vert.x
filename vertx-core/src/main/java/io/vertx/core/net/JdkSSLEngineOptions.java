@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -25,6 +26,7 @@ import javax.net.ssl.SSLEngine;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@JsonGen(publicConverter = false, inheritConverter = true)
 public class JdkSSLEngineOptions extends SSLEngineOptions {
 
   private static Boolean jdkAlpnAvailable;

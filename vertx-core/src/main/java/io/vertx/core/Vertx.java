@@ -19,6 +19,7 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpServerBuilderImpl;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.dns.impl.DnsAddressResolverProvider;
@@ -34,6 +35,7 @@ import io.vertx.core.net.QuicClient;
 import io.vertx.core.net.QuicClientConfig;
 import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.TcpServerConfig;
@@ -324,7 +326,25 @@ public interface Vertx extends Measured {
    * @param options  the options to use
    * @return the server
    */
-  HttpServer createHttpServer(HttpServerOptions options);
+  default HttpServer createHttpServer(HttpServerOptions options) {
+    HttpServerConfig config = new HttpServerConfig(options);
+    ServerSSLOptions sslOptions = options.getSslOptions();
+    if (sslOptions != null) {
+      sslOptions = sslOptions.copy();
+    } else if (options.isSsl()) {
+      sslOptions = new ServerSSLOptions();
+    }
+    SSLEngineOptions sslEngineOptions = options.getSslEngineOptions();
+    if (sslEngineOptions != null) {
+      sslEngineOptions = sslEngineOptions.copy();
+    }
+    HttpServerBuilder builder = ((HttpServerBuilderImpl)httpServerBuilder())
+      .with(config)
+      .with(sslOptions)
+      .with(sslEngineOptions)
+      .registerWebSocketWriteHandlers(options.isRegisterWebSocketWriteHandlers());
+    return builder.build();
+  }
 
   /**
    * Create an HTTP server using the specified config
@@ -342,7 +362,9 @@ public interface Vertx extends Measured {
    * @param config  the config to use
    * @return the server
    */
-  HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions);
+  default HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions) {
+    return httpServerBuilder().with(config).with(sslOptions).build();
+  }
 
   /**
    * Create an HTTP/HTTPS server using default options
@@ -352,6 +374,14 @@ public interface Vertx extends Measured {
   default HttpServer createHttpServer() {
     return createHttpServer(new HttpServerOptions());
   }
+
+  /**
+   * Provide a builder for {@link HttpServer}, it can be used to configure advanced
+   * HTTP servre settings like a connection handler.
+   * <p>
+   * Example usage: {@code HttpServer server = vertx.httpServerBuilder().with(options).withConnectHandler(conn -> ...).build()}
+   */
+  HttpServerBuilder httpServerBuilder();
 
   /**
    * Create a WebSocket client using default options

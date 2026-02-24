@@ -37,6 +37,8 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.*;
 
+import io.netty.handler.ssl.OpenSslServerContext;
+import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
@@ -1292,6 +1294,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
         indicatedServerName = req.connection().indicatedServerName();
         assertEquals(version, req.version());
         assertEquals(serverSSL, req.isSSL());
+        if (serverSSL && serverOpenSSL) {
+          String name = req.sslSession().getSessionContext().getClass().getSimpleName();
+          assertTrue(name.contains("OpenSslServerSessionContext"));
+        }
         if (req.method() == HttpMethod.GET || req.method() == HttpMethod.HEAD) {
           req.response().end();
         } else {
@@ -1316,6 +1322,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
               try {
                 clientPeerCert = conn.peerCertificates().get(0);
               } catch (SSLPeerUnverifiedException ignore) {
+              }
+              if (clientSSL && clientOpenSSL) {
+                String name = req.connection().sslSession().getSessionContext().getClass().getSimpleName();
+                assertTrue(name.contains("OpenSslClientSessionContext"));
               }
             }
             if (shouldPass) {

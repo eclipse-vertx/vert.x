@@ -71,6 +71,7 @@ class NetClientImpl implements NetClientInternal {
                        TcpClientConfig config,
                        String protocol,
                        ClientSSLOptions sslOptions,
+                       SSLEngineOptions sslEngineOptions,
                        boolean registerWriteHandler) {
 
     this.vertx = vertx;
@@ -83,7 +84,7 @@ class NetClientImpl implements NetClientInternal {
     NetworkLogging networkLogging = config.getNetworkLogging();
     this.config = config;
     this.registerWriteHandler = registerWriteHandler;
-    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(config.getSslEngineOptions(), sslOptions != null && sslOptions.isUseAlpn()));
+    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions != null && sslOptions.isUseAlpn()));
     this.metrics = vertx.metrics() != null ? vertx.metrics().createTcpClientMetrics(config, protocol) : null;
     this.logging = networkLogging != null && networkLogging.isEnabled() ? networkLogging.getDataFormat() : null;
     this.idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout() : Duration.ofMillis(0L);

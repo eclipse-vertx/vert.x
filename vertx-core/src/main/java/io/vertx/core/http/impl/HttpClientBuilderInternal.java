@@ -19,6 +19,7 @@ import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetworkLogging;
 import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.AddressResolver;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
@@ -37,6 +38,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private HttpClientConfig clientConfig;
   private HttpClientOptions clientOptions; // To be removed
   private ClientSSLOptions sslOptions;
+  private SSLEngineOptions sslEngineOptions;
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
@@ -58,6 +60,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   public HttpClientBuilder with(HttpClientOptions options) {
     this.clientConfig = new HttpClientConfig(options);
     this.sslOptions = options.getSslOptions();
+    this.sslEngineOptions = options.getSslEngineOptions();
     this.clientOptions = options;
     return this;
   }
@@ -71,6 +74,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   @Override
   public HttpClientBuilder with(ClientSSLOptions options) {
     this.sslOptions = options;
+    return this;
+  }
+
+  @Override
+  public HttpClientBuilder with(SSLEngineOptions engine) {
+    this.sslEngineOptions = engine;
     return this;
   }
 
@@ -255,6 +264,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       NetClientInternal tcpClient = new NetClientBuilder(vertx, clientConfig)
         .protocol("http")
         .sslOptions(sslOptions)
+        .sslEngineOptions(sslEngineOptions)
         .build();
       NetworkLogging networkLogging = co.getTcpConfig().getNetworkLogging();
       transport = new TcpHttpClientTransport(

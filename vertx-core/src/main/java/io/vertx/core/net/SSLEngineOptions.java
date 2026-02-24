@@ -11,6 +11,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -19,6 +20,7 @@ import io.vertx.core.spi.tls.SslContextFactory;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@DataObject
 public abstract class SSLEngineOptions {
 
   /**

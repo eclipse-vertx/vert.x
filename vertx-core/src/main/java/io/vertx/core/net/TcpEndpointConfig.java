@@ -24,26 +24,22 @@ import static io.vertx.core.net.ClientOptionsBase.DEFAULT_METRICS_NAME;
 @DataObject
 public abstract class TcpEndpointConfig extends EndpointConfig {
 
-  private SSLEngineOptions sslEngineOptions;
   private boolean ssl;
 
   public TcpEndpointConfig() {
     super();
     setTransportConfig(new TcpConfig());
-    this.sslEngineOptions = TCPSSLOptions.DEFAULT_SSL_ENGINE;
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
   }
 
   public TcpEndpointConfig(TcpEndpointConfig other) {
     super(other);
-    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.ssl = other.ssl;
   }
 
   public TcpEndpointConfig(TCPSSLOptions options) {
     super();
     setTransportConfig(new TcpConfig(options.getTransportOptions()));
-    setSslEngineOptions(options.getSslEngineOptions() != null ? options.getSslEngineOptions().copy() : null);
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
@@ -66,24 +62,6 @@ public abstract class TcpEndpointConfig extends EndpointConfig {
    */
   public TcpEndpointConfig setTransportConfig(TcpConfig transportConfig) {
     return (TcpEndpointConfig) super.setTransportConfig(transportConfig);
-  }
-
-  /**
-   * @return the SSL engine implementation to use
-   */
-  public SSLEngineOptions getSslEngineOptions() {
-    return sslEngineOptions;
-  }
-
-  /**
-   * Set to use SSL engine implementation to use.
-   *
-   * @param sslEngineOptions the ssl engine to use
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TcpEndpointConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
-    this.sslEngineOptions = sslEngineOptions;
-    return this;
   }
 
   /**

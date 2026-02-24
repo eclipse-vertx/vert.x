@@ -374,10 +374,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    NetClientInternal netClient = new NetClientBuilder(this, new TcpClientConfig(options))
-      .sslOptions(options.getSslOptions())
-      .registerWriteHandler(options.isRegisterWriteHandler())
-      .build();
+    NetClientInternal netClient = new NetClientBuilder(this, options).build();
     CloseFuture fut = resolveCloseFuture();
     fut.add(netClient);
     return new CleanableNetClient(netClient, cleaner);
@@ -414,40 +411,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return sharedData;
   }
 
-  public HttpServer createHttpServer(HttpServerOptions serverOptions) {
-    HttpServerConfig config = new HttpServerConfig(serverOptions);
-    ServerSSLOptions sslOptions = serverOptions.getSslOptions();
-    if (sslOptions != null) {
-      sslOptions = sslOptions.copy();
-    }
-    return new CleanableHttpServer(this, new TcpHttpServer(this, config, sslOptions, null, serverOptions.isRegisterWebSocketWriteHandlers()));
-  }
-
   @Override
-  public HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions) {
-    boolean useTcp = config.getVersions().contains(HttpVersion.HTTP_1_1) || config.getVersions().contains(HttpVersion.HTTP_2) || config.getVersions().contains(HttpVersion.HTTP_1_0);
-    boolean useQuic = config.getVersions().contains(HttpVersion.HTTP_3);
-    if (useQuic && sslOptions == null) {
-      throw new NullPointerException("SSL configuration is necessary for a QUIC server");
-    }
-    if (useTcp && config.isSsl() && sslOptions == null) {
-      throw new NullPointerException("SSL configuration is necessary for a TCP/SSL server");
-    }
-    if (useTcp) {
-      if (useQuic) {
-        HybridHttpServer compositeServer = new HybridHttpServer(this, new HttpServerConfig(config), sslOptions.copy());
-        return new CleanableHttpServer(this, compositeServer);
-      } else {
-        if (sslOptions != null) {
-          sslOptions = sslOptions.copy();
-        }
-        return new CleanableHttpServer(this, new TcpHttpServer(this, new HttpServerConfig(config), sslOptions, null, false));
-      }
-    } else if (useQuic) {
-      return new CleanableHttpServer(this, new QuicHttpServer(this, new HttpServerConfig(config), sslOptions.copy(), null));
-    } else {
-      throw new IllegalArgumentException("You must set at least one supported HTTP version");
-    }
+  public HttpServerBuilderImpl httpServerBuilder() {
+    return new HttpServerBuilderImpl(this);
   }
 
   @Override

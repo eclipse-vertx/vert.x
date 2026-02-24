@@ -73,10 +73,6 @@ public class TcpClientConfig extends TcpEndpointConfig {
     return (TcpClientConfig)super.setTransportConfig(transportConfig);
   }
 
-  public TcpClientConfig setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
-    return (TcpClientConfig)super.setSslEngineOptions(sslEngineOptions);
-  }
-
   public TcpClientConfig setIdleTimeout(Duration idleTimeout) {
     return (TcpClientConfig)super.setIdleTimeout(idleTimeout);
   }

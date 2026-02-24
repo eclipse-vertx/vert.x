@@ -48,6 +48,7 @@ public class TcpHttpServer implements HttpServerInternal {
   private final VertxInternal vertx;
   final HttpServerConfig config;
   private final ServerSSLOptions sslOptions;
+  private final SSLEngineOptions engineOptions;
   private final boolean registerWebSocketWriteHandlers;
   private final boolean manageMetrics;
   private Handler<HttpServerRequest> requestHandler;
@@ -62,10 +63,11 @@ public class TcpHttpServer implements HttpServerInternal {
   private HttpServerMetrics<?, ?> httpMetrics;
 
   public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions,
-                       HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
+                       SSLEngineOptions engineOptions, HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.config = config;
     this.sslOptions = sslOptions;
+    this.engineOptions = engineOptions;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.httpMetrics = httpMetrics;
     this.manageMetrics = httpMetrics == null;
@@ -206,6 +208,7 @@ public class TcpHttpServer implements HttpServerInternal {
     HttpCompressionConfig compression = config.getCompression();
     ServerSSLOptions sslOptions = configureSSLOptions(config, this.sslOptions);
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), sslOptions)
+      .sslEngine(engineOptions)
       .fileRegionEnabled(compression == null || !compression.isCompressionEnabled())
       .cleanable(false)
       .protocol("http")

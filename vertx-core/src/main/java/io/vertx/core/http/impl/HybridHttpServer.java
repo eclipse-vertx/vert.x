@@ -19,6 +19,7 @@ import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpServerInternal;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrafficShapingOptions;
@@ -38,6 +39,7 @@ public class HybridHttpServer implements HttpServerInternal {
   private final VertxInternal vertx;
   private final HttpServerConfig config;
   private final ServerSSLOptions sslOptions;
+  private final SSLEngineOptions engineOptions;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
@@ -48,15 +50,16 @@ public class HybridHttpServer implements HttpServerInternal {
   private HttpServerInternal quicServer;
   private HttpServerMetrics<?, ?> httpMetrics;
 
-  public HybridHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions) {
+  public HybridHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions, SSLEngineOptions engineOptions) {
     this.vertx = vertx;
     this.config = config;
     this.sslOptions = sslOptions;
+    this.engineOptions = engineOptions;
   }
 
   public HttpServerInternal tcpServer(HttpServerMetrics<?, ?> httpMetrics) {
     if (tcpServer == null) {
-      TcpHttpServer server = new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), httpMetrics, false);
+      TcpHttpServer server = new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), engineOptions, httpMetrics, false);
       setHandlers(server);
       tcpServer = server;
     }

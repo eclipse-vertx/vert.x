@@ -362,23 +362,6 @@ public class NetExamples {
           setPassword("password-of-your-keystore")));
   }
 
-  public void exampleSSLEngine(Vertx vertx, JksOptions keyStoreOptions) {
-
-    // Use JDK SSL engine
-    TcpServerConfig options = new TcpServerConfig().
-      setSsl(true);
-
-    // Use JDK SSL engine explicitly
-    options = new TcpServerConfig().
-      setSsl(true).
-      setSslEngineOptions(new JdkSSLEngineOptions());
-
-    // Use OpenSSL engine
-    options = new TcpServerConfig().
-      setSsl(true).
-      setSslEngineOptions(new OpenSSLEngineOptions());
-  }
-
   public void example46(Vertx vertx, String verificationAlgorithm, TrustOptions trustOptions) {
     TcpClientConfig config = new TcpClientConfig().
       setSsl(true);

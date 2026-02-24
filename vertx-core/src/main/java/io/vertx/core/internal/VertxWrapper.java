@@ -97,13 +97,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public HttpServer createHttpServer(HttpServerOptions options) {
-    return delegate.createHttpServer(options);
-  }
-
-  @Override
-  public HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions) {
-    return delegate.createHttpServer(config, sslOptions);
+  public HttpServerBuilder httpServerBuilder() {
+    return delegate.httpServerBuilder();
   }
 
   @Override

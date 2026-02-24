@@ -14,6 +14,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
@@ -26,6 +27,7 @@ public class NetClientBuilder {
   private TcpClientConfig config;
   private String protocol;
   private ClientSSLOptions sslOptions;
+  private SSLEngineOptions sslEngineOptions;
   private boolean registerWriteHandler;
 
   public NetClientBuilder(VertxInternal vertx, TcpClientConfig config) {
@@ -35,13 +37,22 @@ public class NetClientBuilder {
     this.protocol = null;
   }
 
+  public NetClientBuilder(VertxInternal vertx, NetClientOptions options) {
+    this.vertx = vertx;
+    this.config = new TcpClientConfig(options);
+    this.registerWriteHandler = options.isRegisterWriteHandler();
+    this.sslOptions = options.getSslOptions();
+    this.sslEngineOptions = options.getSslEngineOptions();
+    this.protocol = null;
+  }
+
   public NetClientBuilder sslOptions(ClientSSLOptions sslOptions) {
     this.sslOptions = sslOptions;
     return this;
   }
 
-  public NetClientBuilder registerWriteHandler(boolean registerWriteHandler) {
-    this.registerWriteHandler =  registerWriteHandler;
+  public NetClientBuilder sslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    this.sslEngineOptions = sslEngineOptions;
     return this;
   }
 
@@ -51,6 +62,6 @@ public class NetClientBuilder {
   }
 
   public NetClientInternal build() {
-    return new NetClientImpl(vertx, config, protocol, sslOptions, registerWriteHandler);
+    return new NetClientImpl(vertx, config, protocol, sslOptions, sslEngineOptions, registerWriteHandler);
   }
 }
