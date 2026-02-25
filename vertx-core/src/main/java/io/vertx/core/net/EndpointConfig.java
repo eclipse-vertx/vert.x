@@ -28,7 +28,7 @@ public abstract class EndpointConfig {
   private Duration readIdleTimeout;
   private Duration writeIdleTimeout;
   private String metricsName;
-  private NetworkLogging networkLogging;
+  private LogConfig logConfig;
 
   EndpointConfig() {
     this.transportConfig = null;
@@ -36,7 +36,7 @@ public abstract class EndpointConfig {
     this.readIdleTimeout = null;
     this.writeIdleTimeout = null;
     this.metricsName = null;
-    this.networkLogging = null;
+    this.logConfig = null;
   }
 
   public EndpointConfig(EndpointConfig other) {
@@ -45,7 +45,7 @@ public abstract class EndpointConfig {
     this.readIdleTimeout = other.readIdleTimeout;
     this.writeIdleTimeout = other.writeIdleTimeout;
     this.metricsName = other.metricsName;
-    this.networkLogging = other.networkLogging != null ? new NetworkLogging(other.networkLogging) : null;
+    this.logConfig = other.logConfig != null ? new LogConfig(other.logConfig) : null;
   }
 
   /**
@@ -147,20 +147,20 @@ public abstract class EndpointConfig {
   }
 
   /**
-   * @return the stream network logging config, {@code null} means disabled
+   * @return the log config
    */
-  public NetworkLogging getNetworkLogging() {
-    return networkLogging;
+  public LogConfig getLogConfig() {
+    return logConfig;
   }
 
   /**
-   * Configure the per stream networking logging: Netty's stream pipeline is configured for logging on Netty's logger.
+   * Configure the log config: Netty's stream pipeline is configured for logging on Netty's logger.
    *
-   * @param config the stream network logging config, {@code null} means disabled
+   * @param config the log config
    * @return a reference to this, so the API can be used fluently
    */
-  public EndpointConfig setNetworkLogging(NetworkLogging config) {
-    this.networkLogging = config;
+  public EndpointConfig setLogConfig(LogConfig config) {
+    this.logConfig = config;
     return this;
   }
 }

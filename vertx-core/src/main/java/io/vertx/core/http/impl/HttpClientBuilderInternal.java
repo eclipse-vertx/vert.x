@@ -17,7 +17,7 @@ import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.NetworkLogging;
+import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
@@ -266,13 +266,13 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         .sslOptions(sslOptions)
         .sslEngineOptions(sslEngineOptions)
         .build();
-      NetworkLogging networkLogging = co.getTcpConfig().getNetworkLogging();
+      LogConfig logConfig = co.getTcpConfig().getLogConfig();
       transport = new TcpHttpClientTransport(
         tcpClient,
         co.getTracingPolicy(),
         co.isDecompressionEnabled(),
-        networkLogging != null && networkLogging.isEnabled(),
-        networkLogging != null ? networkLogging.getDataFormat() : null,
+        logConfig != null && logConfig.isEnabled(),
+        logConfig != null ? logConfig.getDataFormat() : null,
         co.isForceSni(),
         supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_1_0) ? (co.getHttp1Config() != null ? co.getHttp1Config() : new Http1ClientConfig()) : null,
         supportedVersions.contains(HttpVersion.HTTP_2) ? (co.getHttp2Config() != null ? co.getHttp2Config() : new Http2ClientConfig()) : null,

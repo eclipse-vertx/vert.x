@@ -11,8 +11,6 @@
 
 package examples;
 
-import io.netty.handler.codec.compression.GzipOptions;
-import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
@@ -58,7 +56,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.NetworkLogging;
+import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.ServerSSLOptions;
@@ -100,7 +98,7 @@ public class HTTPExamples {
   public void exampleServerLogging(Vertx vertx) {
 
     HttpServerConfig config = new HttpServerConfig()
-      .setNetworkLogging(new NetworkLogging()
+      .setLogConfig(new LogConfig()
         .setEnabled(true));
 
     HttpServer server = vertx.createHttpServer(config);
@@ -388,7 +386,7 @@ public class HTTPExamples {
 
   public void exampleClientLogging(Vertx vertx) {
     HttpClientConfig config = new HttpClientConfig()
-      .setNetworkLogging(new NetworkLogging()
+      .setLogConfig(new LogConfig()
         .setEnabled(true));
     HttpClientAgent client = vertx.createHttpClient(config);
   }

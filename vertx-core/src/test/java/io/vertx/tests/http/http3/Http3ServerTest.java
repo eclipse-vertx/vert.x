@@ -21,7 +21,7 @@ import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.http3.Http3FrameLogger;
-import io.vertx.core.net.NetworkLogging;
+import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
@@ -38,14 +38,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 
@@ -471,7 +467,7 @@ public class Http3ServerTest extends VertxTestBase {
   public void testNetworkLogging() {
     TestLoggerFactory factory = TestUtils.testLogging(() -> {
       server.close();
-      server = vertx.createHttpServer(serverConfig().setNetworkLogging(new NetworkLogging().setEnabled(true)), sslOptions());
+      server = vertx.createHttpServer(serverConfig().setLogConfig(new LogConfig().setEnabled(true)), sslOptions());
       server.requestHandler(req -> {
         req.response().end("Hello World");
       });

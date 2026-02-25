@@ -235,8 +235,8 @@ public class QuicHttpServer implements HttpServerInternal {
       return current.failedFuture(new IllegalStateException("Set request handler first"));
     }
 
-    boolean logEnabled = quicConfig.getNetworkLogging() != null && quicConfig.getNetworkLogging().isEnabled();
-    quicConfig.setNetworkLogging(null);
+    boolean logEnabled = quicConfig.getLogConfig() != null && quicConfig.getLogConfig().isEnabled();
+    quicConfig.setLogConfig(null);
 
     quicServer.handler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),

@@ -21,35 +21,35 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
-public class NetworkLogging {
+public class LogConfig {
 
   private boolean enabled;
   private ByteBufFormat dataFormat;
 
-  public NetworkLogging() {
+  public LogConfig() {
     enabled = NetworkOptions.DEFAULT_LOG_ENABLED;
     dataFormat = NetworkOptions.DEFAULT_LOG_ACTIVITY_FORMAT;
   }
 
-  public NetworkLogging(NetworkLogging other) {
+  public LogConfig(LogConfig other) {
     enabled = other.enabled;
     dataFormat = other.dataFormat;
   }
 
   /**
-   * @return {@code} when network logging is enabled
+   * @return {@code} when logging is enabled
    */
   public boolean isEnabled() {
     return enabled;
   }
 
   /**
-   * Set to true to enable network logging: Netty's pipeline is configured for logging on Netty's logger.
+   * Set to true to enable logging: Netty's pipeline is configured for logging on Netty's logger.
    *
    * @param enabled true for logging the network activity
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkLogging setEnabled(boolean enabled) {
+  public LogConfig setEnabled(boolean enabled) {
     this.enabled = enabled;
     return this;
   }
@@ -67,7 +67,7 @@ public class NetworkLogging {
    * @param dataFormat the format to use
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkLogging setDataFormat(ByteBufFormat dataFormat) {
+  public LogConfig setDataFormat(ByteBufFormat dataFormat) {
     this.dataFormat = Objects.requireNonNull(dataFormat);
     return this;
   }

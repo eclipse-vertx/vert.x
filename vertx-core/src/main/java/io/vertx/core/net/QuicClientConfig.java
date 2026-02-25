@@ -94,8 +94,8 @@ public class QuicClientConfig extends QuicEndpointConfig {
   }
 
   @Override
-  public QuicClientConfig setNetworkLogging(NetworkLogging config) {
-    return (QuicClientConfig) super.setNetworkLogging(config);
+  public QuicClientConfig setLogConfig(LogConfig config) {
+    return (QuicClientConfig) super.setLogConfig(config);
   }
 
   /**

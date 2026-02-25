@@ -245,7 +245,7 @@ public class TcpHttpServer implements HttpServerInternal {
         compressors != null && !compressors.isEmpty() && compression.isCompressionEnabled(),
         compressors != null && !compressors.isEmpty() && compression.isDecompressionEnabled(),
         config.getTracingPolicy(),
-        config.getTcpConfig().getNetworkLogging() != null,
+        config.getTcpConfig().getLogConfig() != null,
         compressors != null ? compressors.toArray(new CompressionOptions[0]) : null,
         compression != null ? compression.getContentSizeThreshold() : 0,
         config.isHandle100ContinueAutomatically(),

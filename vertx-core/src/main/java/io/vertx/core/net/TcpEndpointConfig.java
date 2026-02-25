@@ -14,8 +14,6 @@ import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
-import static io.vertx.core.net.ClientOptionsBase.DEFAULT_METRICS_NAME;
-
 /**
  * Should this be {@code TcpConfig} instead ?
  *
@@ -43,7 +41,7 @@ public abstract class TcpEndpointConfig extends EndpointConfig {
     setIdleTimeout(Duration.of(options.getIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setReadIdleTimeout(Duration.of(options.getReadIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
     setWriteIdleTimeout(Duration.of(options.getWriteIdleTimeout(), options.getIdleTimeoutUnit().toChronoUnit()));
-    setNetworkLogging(options.getLogActivity() ? new NetworkLogging().setEnabled(true).setDataFormat(options.getActivityLogDataFormat()) : null);
+    setLogConfig(options.getLogActivity() ? new LogConfig().setEnabled(true).setDataFormat(options.getActivityLogDataFormat()) : null);
     setSsl(options.isSsl());
   }
 
@@ -99,7 +97,7 @@ public abstract class TcpEndpointConfig extends EndpointConfig {
     return (TcpEndpointConfig) super.setMetricsName(metricsName);
   }
 
-  public TcpEndpointConfig setNetworkLogging(NetworkLogging config) {
-    return (TcpEndpointConfig) super.setNetworkLogging(config);
+  public TcpEndpointConfig setLogConfig(LogConfig config) {
+    return (TcpEndpointConfig) super.setLogConfig(config);
   }
 }

@@ -27,7 +27,6 @@ import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -57,8 +56,8 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       localSettings = new Http3Settings();
     }
 
-    boolean logEnabled = quicConfig.getNetworkLogging() != null && quicConfig.getNetworkLogging().isEnabled();
-    quicConfig.setNetworkLogging(null);
+    boolean logEnabled = quicConfig.getLogConfig() != null && quicConfig.getLogConfig().isEnabled();
+    quicConfig.setLogConfig(null);
 
     QuicClient client = new QuicClientImpl(vertx, quicConfig, "http", null);
 

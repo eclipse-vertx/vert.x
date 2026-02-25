@@ -91,8 +91,8 @@ public class TcpClientConfig extends TcpEndpointConfig {
   }
 
   @Override
-  public TcpClientConfig setNetworkLogging(NetworkLogging config) {
-    return (TcpClientConfig)super.setNetworkLogging(config);
+  public TcpClientConfig setLogConfig(LogConfig config) {
+    return (TcpClientConfig)super.setLogConfig(config);
   }
 
   public TcpClientConfig setSsl(boolean ssl) {

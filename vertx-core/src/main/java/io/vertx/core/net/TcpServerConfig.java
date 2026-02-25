@@ -84,8 +84,8 @@ public class TcpServerConfig extends TcpEndpointConfig {
   }
 
   @Override
-  public TcpServerConfig setNetworkLogging(NetworkLogging config) {
-    return (TcpServerConfig)super.setNetworkLogging(config);
+  public TcpServerConfig setLogConfig(LogConfig config) {
+    return (TcpServerConfig)super.setLogConfig(config);
   }
 
   public TcpServerConfig setSsl(boolean ssl) {

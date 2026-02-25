@@ -278,9 +278,9 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
-    NetworkLogging networkLogging = config.getNetworkLogging();
-    if (networkLogging != null && networkLogging.isEnabled()) {
-      pipeline.addLast("logging", new LoggingHandler(networkLogging.getDataFormat()));
+    LogConfig logConfig = config.getLogConfig();
+    if (logConfig != null && logConfig.isEnabled()) {
+      pipeline.addLast("logging", new LoggingHandler(logConfig.getDataFormat()));
     }
     long idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout().toMillis() : 0L;
     long readIdleTimeout = config.getReadIdleTimeout() != null ? config.getReadIdleTimeout().toMillis() : 0L;

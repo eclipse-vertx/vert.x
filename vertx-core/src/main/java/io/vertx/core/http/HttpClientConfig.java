@@ -242,9 +242,9 @@ public class HttpClientConfig {
    * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setNetworkLogging(NetworkLogging config) {
-    tcpConfig.setNetworkLogging(config);
-    quicConfig.setNetworkLogging(config);
+  public HttpClientConfig setLogConfig(LogConfig config) {
+    tcpConfig.setLogConfig(config);
+    quicConfig.setLogConfig(config);
     return this;
   }
 

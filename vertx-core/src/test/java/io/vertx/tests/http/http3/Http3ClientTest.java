@@ -1,8 +1,6 @@
 package io.vertx.tests.http.http3;
 
-import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.http3.Http3ErrorCode;
-import io.netty.util.NetUtil;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -10,7 +8,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.NetworkLogging;
+import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
@@ -21,10 +19,7 @@ import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -461,7 +456,7 @@ public class Http3ClientTest extends VertxTestBase {
       server.listen(8443, "localhost").await();
       client.close();
       HttpClientConfig config = new HttpClientConfig(clientConfig);
-      config.getQuicConfig().setNetworkLogging(new NetworkLogging().setEnabled(true));
+      config.getQuicConfig().setLogConfig(new LogConfig().setEnabled(true));
       client = vertx.createHttpClient(config, clientSSLOptions);
       Buffer body = client.request(HttpMethod.POST, 8443, "localhost", "/")
         .compose(request -> request

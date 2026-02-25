@@ -241,7 +241,7 @@ public class NetExamples {
   public void exampleNetworkActivityLoggingOnServer(Vertx vertx) {
 
     TcpServerConfig options = new TcpServerConfig()
-      .setNetworkLogging(new NetworkLogging()
+      .setLogConfig(new LogConfig()
         .setEnabled(true));
 
     NetServer server = vertx.createNetServer(options);
@@ -250,7 +250,7 @@ public class NetExamples {
   public void exampleNetworkActivityLoggingFormat(Vertx vertx) {
 
     TcpServerConfig options = new TcpServerConfig()
-      .setNetworkLogging(new NetworkLogging()
+      .setLogConfig(new LogConfig()
         .setEnabled(true)
         .setDataFormat(ByteBufFormat.SIMPLE));
 
@@ -260,7 +260,7 @@ public class NetExamples {
   public void exampleNetworkActivityLoggingOnClient(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig()
-      .setNetworkLogging(new NetworkLogging()
+      .setLogConfig(new LogConfig()
         .setEnabled(true));
 
     NetClient client = vertx.createNetClient(options);

@@ -13,7 +13,6 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Configuration of a Quic client.
@@ -113,7 +112,7 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
     return (QuicEndpointConfig) super.setMetricsName(metricsName);
   }
 
-  public QuicEndpointConfig setNetworkLogging(NetworkLogging config) {
-    return (QuicEndpointConfig) super.setNetworkLogging(config);
+  public QuicEndpointConfig setLogConfig(LogConfig config) {
+    return (QuicEndpointConfig) super.setLogConfig(config);
   }
 }

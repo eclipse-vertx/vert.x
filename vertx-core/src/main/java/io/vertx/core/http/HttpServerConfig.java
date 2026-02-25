@@ -11,7 +11,6 @@
 package io.vertx.core.http;
 
 import io.netty.handler.codec.compression.CompressionOptions;
-import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
@@ -227,9 +226,9 @@ public class HttpServerConfig {
    * @param config the stream network logging config, {@code null} means disabled
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerConfig setNetworkLogging(NetworkLogging config) {
-    tcpConfig.setNetworkLogging(config);
-    quicConfig.setNetworkLogging(config);
+  public HttpServerConfig setLogConfig(LogConfig config) {
+    tcpConfig.setLogConfig(config);
+    quicConfig.setLogConfig(config);
     return this;
   }
 
