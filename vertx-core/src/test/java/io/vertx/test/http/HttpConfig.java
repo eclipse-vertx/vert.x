@@ -94,7 +94,7 @@ public interface HttpConfig {
           return this;
         }
         @Override
-        public HttpServerConfig setCompression(HttpCompressionConfig compression) {
+        public HttpServerConfig setCompression(CompressionConfig compression) {
           if (compression != null) {
             options.setCompression(compression);
             options.setCompressionSupported(true);

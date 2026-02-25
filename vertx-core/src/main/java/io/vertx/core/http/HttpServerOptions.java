@@ -218,7 +218,7 @@ public class HttpServerOptions extends NetServerOptions {
   private Http2ServerConfig http2Config;
   private WebSocketServerConfig webSocketConfig;
   private int compressionLevel;
-  private HttpCompressionConfig compression;
+  private CompressionConfig compression;
   private boolean handle100ContinueAutomatically;
   private String metricsName;
   private TracingPolicy tracingPolicy;
@@ -247,7 +247,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxFormFields = other.getMaxFormFields();
     this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
     this.compressionLevel = other.getCompressionLevel();
-    this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
+    this.compression = other.compression != null ? new CompressionConfig(other.compression) : new CompressionConfig();
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.http1Config = new Http1ServerConfig(other.http1Config);
     this.http2Config = new Http2ServerConfig(other.http2Config);
@@ -288,7 +288,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
-    compression = new HttpCompressionConfig();
+    compression = new CompressionConfig();
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     http1Config = new Http1ServerConfig();
     http2Config = new Http2ServerConfig();
@@ -550,7 +550,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * @return the compression configuration
    */
-  public HttpCompressionConfig getCompression() {
+  public CompressionConfig getCompression() {
     return compression;
   }
 
@@ -560,8 +560,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @param compression the new configuration
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setCompression(HttpCompressionConfig compression) {
-    this.compression = compression == null ? new HttpCompressionConfig() : compression;
+  public HttpServerOptions setCompression(CompressionConfig compression) {
+    this.compression = compression == null ? new CompressionConfig() : compression;
     return this;
   }
 

@@ -43,14 +43,14 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
   @Parameterized.Parameters(name = "{index}: algorithm = {0}")
   public static Collection<Object[]> data() {
     List<Object[]> list = new ArrayList<>();
-    list.add(new Object[] { CompressionConfig.gzip(1) });
-    list.add(new Object[] { CompressionConfig.gzip(6) });
-    list.add(new Object[] { CompressionConfig.gzip(9) });
+    list.add(new Object[] { io.vertx.tests.http.compression.CompressionConfig.gzip(1) });
+    list.add(new Object[] { io.vertx.tests.http.compression.CompressionConfig.gzip(6) });
+    list.add(new Object[] { io.vertx.tests.http.compression.CompressionConfig.gzip(9) });
     if (Zstd.isAvailable()) {
-      list.add(new Object[] { CompressionConfig.zstd() });
+      list.add(new Object[] { io.vertx.tests.http.compression.CompressionConfig.zstd() });
     }
-    list.add(new Object[] { CompressionConfig.snappy() });
-    list.add(new Object[] { CompressionConfig.brotli() });
+    list.add(new Object[] { io.vertx.tests.http.compression.CompressionConfig.snappy() });
+    list.add(new Object[] { io.vertx.tests.http.compression.CompressionConfig.brotli() });
     return list;
   }
 
@@ -72,14 +72,14 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
   }
 
   @Override
-  protected final Optional<HttpCompressionConfig> serverCompressionConfig() {
-    return Optional.of(new HttpCompressionConfig().addCompressor(compressionConfig.compressor));
+  protected final Optional<io.vertx.core.http.CompressionConfig> serverCompressionConfig() {
+    return Optional.of(new io.vertx.core.http.CompressionConfig().addCompressor(compressionConfig.compressor));
   }
 
   @Test
   public void testSkipEncoding() throws Exception {
     server.close();
-    server = config.forServer().setCompression(new HttpCompressionConfig().addCompressor(CompressionConfig.gzip(6).compressor)).create(vertx);
+    server = config.forServer().setCompression(new io.vertx.core.http.CompressionConfig().addCompressor(io.vertx.tests.http.compression.CompressionConfig.gzip(6).compressor)).create(vertx);
     server.requestHandler(req -> {
       assertNotNull(req.headers().get(HttpHeaders.ACCEPT_ENCODING));
       req.response()

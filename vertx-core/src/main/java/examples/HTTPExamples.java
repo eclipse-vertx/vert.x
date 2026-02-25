@@ -25,6 +25,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.ClientForm;
 import io.vertx.core.http.ClientMultipartForm;
+import io.vertx.core.http.CompressionConfig;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.Http1ClientConfig;
 import io.vertx.core.http.HttpClient;
@@ -33,7 +34,6 @@ import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpCompressionConfig;
 import io.vertx.core.http.HttpConnectOptions;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -1429,7 +1429,7 @@ public class HTTPExamples {
 
   public static void setCompressors() {
     new HttpServerConfig()
-      .setCompression(new HttpCompressionConfig()
+      .setCompression(new CompressionConfig()
         .setCompressionEnabled(true)
         .addGzip()
         .addDeflate()
@@ -1438,7 +1438,7 @@ public class HTTPExamples {
 
   public static void compressorConfig() {
     new HttpServerConfig()
-      .setCompression(new HttpCompressionConfig()
+      .setCompression(new CompressionConfig()
         .addGzip(6, 15, 8));
   }
 

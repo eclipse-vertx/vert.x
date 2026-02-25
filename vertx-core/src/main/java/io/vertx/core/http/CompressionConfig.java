@@ -27,21 +27,21 @@ import java.util.List;
  * HTTP compression configuration.
  */
 @DataObject
-public class HttpCompressionConfig {
+public class CompressionConfig {
 
   private boolean compressionEnabled;
   private boolean decompressionEnabled;
   private int contentSizeThreshold;
   private List<CompressionOptions> compressors;
 
-  public HttpCompressionConfig() {
+  public CompressionConfig() {
     this.compressionEnabled = HttpServerOptions.DEFAULT_COMPRESSION_SUPPORTED;
     this.decompressionEnabled = HttpServerOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.contentSizeThreshold = HttpServerOptions.DEFAULT_COMPRESSION_CONTENT_SIZE_THRESHOLD;
     this.compressors = null;
   }
 
-  public HttpCompressionConfig(HttpCompressionConfig other) {
+  public CompressionConfig(CompressionConfig other) {
     this.compressionEnabled = other.compressionEnabled;
     this.decompressionEnabled = other.decompressionEnabled;
     this.contentSizeThreshold = other.contentSizeThreshold;
@@ -62,7 +62,7 @@ public class HttpCompressionConfig {
    * @param compressionEnabled {@code true} to enable compression support
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpCompressionConfig setCompressionEnabled(boolean compressionEnabled) {
+  public CompressionConfig setCompressionEnabled(boolean compressionEnabled) {
     this.compressionEnabled = compressionEnabled;
     return this;
   }
@@ -80,7 +80,7 @@ public class HttpCompressionConfig {
    * @param decompressionEnabled {@code true} if decompression supported
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpCompressionConfig setDecompressionEnabled(boolean decompressionEnabled) {
+  public CompressionConfig setDecompressionEnabled(boolean decompressionEnabled) {
     this.decompressionEnabled = decompressionEnabled;
     return this;
   }
@@ -99,7 +99,7 @@ public class HttpCompressionConfig {
    * @param contentSizeThreshold integer greater than or equal to 0.
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpCompressionConfig setContentSizeThreshold(int contentSizeThreshold) {
+  public CompressionConfig setContentSizeThreshold(int contentSizeThreshold) {
     Arguments.require(contentSizeThreshold >= 0, "compressionContentSizeThreshold must be >= 0");
     this.contentSizeThreshold = contentSizeThreshold;
     return this;
@@ -118,7 +118,7 @@ public class HttpCompressionConfig {
    * @param compressors the list of compressors
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpCompressionConfig setCompressors(List<CompressionOptions> compressors) {
+  public CompressionConfig setCompressors(List<CompressionOptions> compressors) {
     this.compressors = compressors;
     return this;
   }
@@ -128,7 +128,7 @@ public class HttpCompressionConfig {
    *
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpCompressionConfig addCompressor(CompressionOptions compressor) {
+  public CompressionConfig addCompressor(CompressionOptions compressor) {
     if (compressors != null) {
       for (int i = 0;i < compressors.size();i++) {
         CompressionOptions c = compressors.get(i);
@@ -150,7 +150,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addGzip() {
+  public CompressionConfig addGzip() {
     return addCompressor(StandardCompressionOptions.gzip());
   }
 
@@ -162,7 +162,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addGzip(int compressionLevel) {
+  public CompressionConfig addGzip(int compressionLevel) {
     GzipOptions def = StandardCompressionOptions.gzip();
     return addCompressor(StandardCompressionOptions.gzip(compressionLevel, def.windowBits(), def.memLevel()));
   }
@@ -177,7 +177,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addGzip(int compressionLevel, int windowBits, int memLevel) {
+  public CompressionConfig addGzip(int compressionLevel, int windowBits, int memLevel) {
     return addCompressor(StandardCompressionOptions.gzip(compressionLevel, windowBits, memLevel));
   }
 
@@ -187,7 +187,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addDeflate() {
+  public CompressionConfig addDeflate() {
     return addCompressor(StandardCompressionOptions.deflate());
   }
 
@@ -198,7 +198,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addDeflate(int compressionLevel) {
+  public CompressionConfig addDeflate(int compressionLevel) {
     DeflateOptions def = StandardCompressionOptions.deflate();
     return addCompressor(StandardCompressionOptions.deflate(compressionLevel, def.windowBits(), def.memLevel()));
   }
@@ -213,7 +213,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addDeflate(int compressionLevel, int windowBits, int memLevel) {
+  public CompressionConfig addDeflate(int compressionLevel, int windowBits, int memLevel) {
     return addCompressor(StandardCompressionOptions.deflate(compressionLevel, windowBits, memLevel));
   }
 
@@ -223,7 +223,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addSnappy() {
+  public CompressionConfig addSnappy() {
     return addCompressor(StandardCompressionOptions.snappy());
   }
 
@@ -233,7 +233,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addZstd() {
+  public CompressionConfig addZstd() {
     return addCompressor(StandardCompressionOptions.zstd());
   }
 
@@ -245,7 +245,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addZstd(int compressionLevel) {
+  public CompressionConfig addZstd(int compressionLevel) {
     ZstdOptions def = StandardCompressionOptions.zstd();
     return addCompressor(StandardCompressionOptions.zstd(compressionLevel, def.blockSize(), def.maxEncodeSize()));
   }
@@ -260,7 +260,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addZstd(int compressionLevel, int blockSize, int maxEncodeSize) {
+  public CompressionConfig addZstd(int compressionLevel, int blockSize, int maxEncodeSize) {
     ZstdOptions def = StandardCompressionOptions.zstd();
     return addCompressor(StandardCompressionOptions.zstd(compressionLevel, blockSize, maxEncodeSize));
   }
@@ -271,7 +271,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addBrotli() {
+  public CompressionConfig addBrotli() {
     return addCompressor(StandardCompressionOptions.brotli());
   }
 
@@ -283,7 +283,7 @@ public class HttpCompressionConfig {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  public HttpCompressionConfig addBrotli(int quality) {
+  public CompressionConfig addBrotli(int quality) {
     return addCompressor(StandardCompressionOptions.brotli(quality, 4, BrotliMode.TEXT));
   }
 }

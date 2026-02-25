@@ -21,8 +21,6 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
 import java.time.Duration;
-import java.util.EnumSet;
-import java.util.List;
 
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_PORT;
@@ -68,7 +66,7 @@ public class Http3Config implements HttpConfig {
         throw new UnsupportedOperationException();
       }
       @Override
-      public HttpServerConfig setCompression(HttpCompressionConfig compression) {
+      public HttpServerConfig setCompression(CompressionConfig compression) {
         throw new UnsupportedOperationException();
       }
       @Override

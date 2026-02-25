@@ -16,7 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.CompressionConfig;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.SimpleHttpTest;
@@ -55,7 +55,7 @@ public abstract class HttpCompressionTestBase extends SimpleHttpTest {
   /**
    * @return the default configuration
    */
-  protected Optional<HttpCompressionConfig> serverCompressionConfig() {
+  protected Optional<CompressionConfig> serverCompressionConfig() {
     throw new UnsupportedOperationException();
   }
 

@@ -72,7 +72,7 @@ public class HttpServerConfig {
   private Http2ServerConfig http2Config;
   private Http3ServerConfig http3Config;
   private WebSocketServerConfig webSocketConfig;
-  private HttpCompressionConfig compression;
+  private CompressionConfig compression;
   private final TcpServerConfig tcpConfig;
   private final QuicServerConfig quicConfig;
 
@@ -82,10 +82,10 @@ public class HttpServerConfig {
    */
   public HttpServerConfig(HttpServerOptions options) {
 
-    HttpCompressionConfig compression;
+    CompressionConfig compression;
     if (options.isCompressionSupported() || options.isDecompressionSupported()) {
       Collection<CompressionOptions> compressors = options.getCompression().getCompressors();
-      compression = new HttpCompressionConfig();
+      compression = new CompressionConfig();
       if (compressors == null) {
         int compressionLevel = options.getCompressionLevel();
         compression.addGzip(compressionLevel);
@@ -168,7 +168,7 @@ public class HttpServerConfig {
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : null;
     this.http3Config = other.http3Config != null ? new Http3ServerConfig(other.http3Config) : null;
     this.webSocketConfig = other.webSocketConfig != null ? new WebSocketServerConfig(other.webSocketConfig) : new WebSocketServerConfig();
-    this.compression = other.compression != null ? new HttpCompressionConfig(other.compression) : new HttpCompressionConfig();
+    this.compression = other.compression != null ? new CompressionConfig(other.compression) : new CompressionConfig();
     this.tcpConfig = other.tcpConfig != null ? new TcpServerConfig(other.tcpConfig) : defaultTcpServerConfig();
     this.quicConfig = other.quicConfig != null ? new QuicServerConfig(other.quicConfig) : defaultQuicConfig();
   }
@@ -579,7 +579,7 @@ public class HttpServerConfig {
   /**
    * @return the compression configuration
    */
-  public HttpCompressionConfig getCompression() {
+  public CompressionConfig getCompression() {
     return compression;
   }
 
@@ -589,8 +589,8 @@ public class HttpServerConfig {
    * @param compression the new configuration
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerConfig setCompression(HttpCompressionConfig compression) {
-    this.compression = compression == null ? new HttpCompressionConfig() : compression;
+  public HttpServerConfig setCompression(CompressionConfig compression) {
+    this.compression = compression == null ? new CompressionConfig() : compression;
     return this;
   }
 
