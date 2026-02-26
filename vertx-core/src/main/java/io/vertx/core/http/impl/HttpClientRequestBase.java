@@ -236,7 +236,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
       }
     }
     cause = timeoutEx(timeoutMs, method, authority, uri);
-    reset(0x08L, cause);
+    cancel(cause);
   }
 
   static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, HostAndPort peer, String uri) {
@@ -259,14 +259,19 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
     return stream.writeReset(code);
   }
 
-  public Future<Boolean> cancel() {
+  private Future<Boolean> cancel(Throwable cause) {
     synchronized (this) {
       if (reset != null) {
-        return context.failedFuture("Already reset");
+        return context.failedFuture("Already cancelled");
       }
-      reset = new StreamResetException(0x08);
+      int code = version() == HttpVersion.HTTP_3 ? 0x10c : 0x08;
+      reset = new StreamResetException(code, cause);
     }
     return stream.cancel();
+  }
+
+  public Future<Boolean> cancel() {
+    return cancel(null);
   }
 
   @Override

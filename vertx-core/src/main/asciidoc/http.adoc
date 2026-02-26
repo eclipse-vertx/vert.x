@@ -672,34 +672,31 @@ Here's an example:
 These frames are sent immediately and are not subject to flow control - when such frame is sent there it may be done
 before other `DATA` frames.
 
-==== Stream reset
+==== Stream cancellation
 
-HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads
-a resource already present on the server, the server needs to accept the entire response.
+{@link io.vertx.core.http.HttpServerResponse#cancel()} is a best effort to cancel a stream by the underlying HTTP protocol.
 
-HTTP/2 supports stream reset at any time during the request/response:
-
-[source,$lang]
-----
-{@link examples.HTTP2Examples#example3}
-----
-
-By default, the `NO_ERROR` (0) error code is sent, another code can sent instead:
+- HTTP/1.x does not allow a clean cancellation of a request or a response stream, for example when a client uploads a resource already
+present on the server, the server needs to accept the entire response: the implementation closes the connection when the current
+request is inflight.
+- HTTP/2 supports stream reset at any time during the request/response: the implementation sends an HTTP/2 reset frame with the error `0x08`
+- HTTP/3 relies on QUIC capabilities: the implementation performs a QUIC reset or abort reading with the code `0x10c`
 
 [source,$lang]
 ----
-{@link examples.HTTP2Examples#example4}
+{@link examples.HTTP2Examples#serverResponseCancellation}
 ----
-
-The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
 
 The request handler are notified of stream reset events with the {@link io.vertx.core.http.HttpServerRequest#exceptionHandler request handler} and
 {@link io.vertx.core.http.HttpServerResponse#exceptionHandler response handler}:
 
 [source,$lang]
 ----
-{@link examples.HTTP2Examples#example5}
+{@link examples.HTTP2Examples#serverResponseCancellationException}
 ----
+
+NOTE: stream reset should be avoided because the implementation works partially for HTTP/3 and reset error codes depends on
+the version of the protocol.
 
 ==== Handling exceptions
 
@@ -1137,7 +1134,7 @@ If you want to upload files and send attributes, you can create a {@link io.vert
 
 ==== Request timeouts
 
-You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#idleTimeout(long)}. When the request does not return any data within the timeout period an exception will fail the result and the request will be reset.
+You can set an idle timeout to prevent your application from unresponsive servers using {@link io.vertx.core.http.RequestOptions#setIdleTimeout(long)} or {@link io.vertx.core.http.HttpClientRequest#idleTimeout(long)}. When the request does not return any data within the timeout the request will be {@link io.vertx.core.http.HttpClientRequest#cancel() cancelled}.
 
 [source,$lang]
 ----
@@ -1171,34 +1168,30 @@ To send such frames, you can use the {@link io.vertx.core.http.HttpClientRequest
 {@link examples.HTTP2Examples#example9}
 ----
 
-==== Stream reset
+==== Stream cancellation
 
-HTTP/1.x does not allow a clean reset of a request or a response stream, for example when a client uploads a resource already
-present on the server, the server needs to accept the entire response.
+{@link io.vertx.core.http.HttpClientRequest#cancel()} is a best effort to cancel a stream by the underlying HTTP protocol.
 
-HTTP/2 supports stream reset at any time during the request/response:
-
-[source,$lang]
-----
-{@link examples.HTTP2Examples#example10}
-----
-
-By default the NO_ERROR (0) error code is sent, another code can sent instead:
+- HTTP/1.x does not allow a clean cancellation of a request or a response stream, for example when a client uploads a resource already
+present on the server, the server needs to accept the entire response: the implementation closes the connection when the current
+request is inflight.
+- HTTP/2 supports stream reset at any time during the request/response: the implementation sends an HTTP/2 reset frame with the error `0x08`
+- HTTP/3 relies on QUIC capabilities: the implementation performs a QUIC reset or abort reading with the code `0x10c`
 
 [source,$lang]
 ----
-{@link examples.HTTP2Examples#example11}
+{@link examples.HTTP2Examples#clientRequestCancellation}
 ----
 
-The HTTP/2 specification defines the list of http://httpwg.org/specs/rfc7540.html#ErrorCodes[error codes] one can use.
-
-The request handler are notified of stream reset events with the {@link io.vertx.core.http.HttpClientRequest#exceptionHandler request handler} and
-{@link io.vertx.core.http.HttpClientResponse#exceptionHandler response handler}:
+The request handler are notified of stream cancellation events with the {@link io.vertx.core.http.HttpClientRequest#exceptionHandler request handler} and {@link io.vertx.core.http.HttpClientResponse#exceptionHandler response handler}:
 
 [source,$lang]
 ----
-{@link examples.HTTP2Examples#example12}
+{@link examples.HTTP2Examples#clientRequestCancellationException}
 ----
+
+NOTE: stream reset should be avoided because the implementation works partially for HTTP/3 and reset error codes depends on
+the version of the protocol.
 
 === HTTP/2 RST flood protection
 

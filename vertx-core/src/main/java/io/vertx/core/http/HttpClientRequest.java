@@ -476,6 +476,10 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * <p/>
    * When the request has not yet been sent, the request will be aborted and false is returned as indicator.
    * <p/>
+   * <p>
+   * Stream reset should be avoided because the implementation works partially for HTTP/3 and reset error codes depends on
+   * the version of the protocol, {@link #cancel()} should be used instead.
+   * </p>
    *
    * @param code the error code
    * @return {@code true} when reset has been performed

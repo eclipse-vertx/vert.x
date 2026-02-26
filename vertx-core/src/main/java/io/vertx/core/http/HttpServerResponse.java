@@ -607,6 +607,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * This is a terminal action, like {@link #end()} and {@link #sendFile(String)}, so you can only call one of the three
    * methods as the last step in dealing with your response.
    * </p>
+   * <p>
+   * Stream reset should be avoided because the implementation works partially for HTTP/3 and reset error codes depends on
+   * the version of the protocol, {@link #cancel()} should be used instead.
+   * </p>
    *
    * @param code the error code
    * @return {@code true} when reset has been performed

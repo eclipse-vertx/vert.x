@@ -52,19 +52,13 @@ public class HTTP2Examples {
     response.writeCustomFrame(frameType, frameStatus, payload);
   }
 
-  public void example3(HttpServerRequest request) {
-
-    // Reset the stream
-    request.response().reset();
-  }
-
-  public void example4(HttpServerRequest request) {
+  public void serverResponseCancellation(HttpServerRequest request) {
 
     // Cancel the stream
-    request.response().reset(8);
+    request.response().cancel();
   }
 
-  public void example5(HttpServerRequest request) {
+  public void serverResponseCancellationException(HttpServerRequest request) {
 
     request.response().exceptionHandler(err -> {
       if (err instanceof StreamResetException) {
@@ -103,19 +97,13 @@ public class HTTP2Examples {
     request.writeCustomFrame(frameType, frameStatus, payload);
   }
 
-  public void example10(HttpClientRequest request) {
+  public void clientRequestCancellation(HttpClientRequest request) {
 
-    request.reset();
-
-  }
-
-  public void example11(HttpClientRequest request) {
-
-    request.reset(8);
+    request.cancel();
 
   }
 
-  public void example12(HttpClientRequest request) {
+  public void clientRequestCancellationException(HttpClientRequest request) {
 
     request.exceptionHandler(err -> {
       if (err instanceof StreamResetException) {
