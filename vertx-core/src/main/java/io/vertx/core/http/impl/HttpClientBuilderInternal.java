@@ -27,6 +27,7 @@ import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
 import java.util.List;
@@ -192,7 +193,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     TcpClientConfig config = new TcpClientConfig(httpConfig.getTcpConfig());
     config.setProxyOptions(null);
     config.setSsl(false);
-    config.setMetricsName(httpConfig.getMetricsName());
+    ObservabilityConfig observabilityConfig = httpConfig.getObservabilityConfig();
+    if (observabilityConfig != null) {
+      config.setMetricsName(observabilityConfig.getMetricsName());
+    }
     return config;
   }
 
@@ -267,9 +271,10 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         .sslEngineOptions(sslEngineOptions)
         .build();
       LogConfig logConfig = co.getTcpConfig().getLogConfig();
+      ObservabilityConfig observabilityConfig = co.getObservabilityConfig();
       transport = new TcpHttpClientTransport(
         tcpClient,
-        co.getTracingPolicy(),
+        observabilityConfig != null ? observabilityConfig.getTracingPolicy() : null,
         co.isDecompressionEnabled(),
         logConfig != null && logConfig.isEnabled(),
         logConfig != null ? logConfig.getDataFormat() : null,

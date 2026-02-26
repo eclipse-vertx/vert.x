@@ -75,8 +75,7 @@ public class HttpClientConfig {
   private int defaultPort;
   private int maxRedirects;
   private boolean forceSni;
-  private String metricsName;
-  private TracingPolicy tracingPolicy;
+  private ObservabilityConfig observabilityConfig;
   private boolean shared;
   private String name;
   private boolean followAlternativeServices;
@@ -95,8 +94,7 @@ public class HttpClientConfig {
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
     this.forceSni = HttpClientOptions.DEFAULT_FORCE_SNI;
-    this.metricsName = null;
-    this.tracingPolicy = HttpClientOptions.DEFAULT_TRACING_POLICY;
+    this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
     this.followAlternativeServices = HttpClientOptions.DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
@@ -116,32 +114,38 @@ public class HttpClientConfig {
     this.defaultPort = other.defaultPort;
     this.maxRedirects = other.maxRedirects;
     this.forceSni = other.forceSni;
-    this.metricsName = other.metricsName;
-    this.tracingPolicy = other.tracingPolicy;
+    this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.shared = other.shared;
     this.name = other.name;
     this.followAlternativeServices = other.followAlternativeServices;
   }
 
-  public HttpClientConfig(HttpClientOptions other) {
-    this.tcpConfig = new TcpClientConfig(other);
+  public HttpClientConfig(HttpClientOptions options) {
+
+    ObservabilityConfig observabilityConfig = null;
+    if (options.getMetricsName() != null || options.getTracingPolicy() != HttpServerOptions.DEFAULT_TRACING_POLICY) {
+      observabilityConfig = new ObservabilityConfig()
+        .setMetricsName(options.getMetricsName())
+        .setTracingPolicy(options.getTracingPolicy());
+    }
+
+    this.tcpConfig = new TcpClientConfig(options);
     this.quicConfig = defaultQuicConfig();
-    this.ssl = other.isSsl();
-    this.versions = new ArrayList<>(toSupportedVersion(other.getProtocolVersion()));
-    this.http1Config = other.getHttp1Config();
-    this.http2Config = other.getHttp2Config();
+    this.ssl = options.isSsl();
+    this.versions = new ArrayList<>(toSupportedVersion(options.getProtocolVersion()));
+    this.http1Config = options.getHttp1Config();
+    this.http2Config = options.getHttp2Config();
     this.http3Config = new Http3ClientConfig();
-    this.verifyHost = other.isVerifyHost();
-    this.decompressionEnabled = other.isDecompressionSupported();
-    this.defaultHost = other.getDefaultHost();
-    this.defaultPort = other.getDefaultPort();
-    this.maxRedirects = other.getMaxRedirects();
-    this.forceSni = other.isForceSni();
-    this.metricsName = other.getMetricsName();
-    this.tracingPolicy = other.getTracingPolicy();
-    this.shared = other.isShared();
-    this.name = other.getName();
-    this.followAlternativeServices = other.getFollowAlternativeServices();
+    this.verifyHost = options.isVerifyHost();
+    this.decompressionEnabled = options.isDecompressionSupported();
+    this.defaultHost = options.getDefaultHost();
+    this.defaultPort = options.getDefaultPort();
+    this.maxRedirects = options.getMaxRedirects();
+    this.forceSni = options.isForceSni();
+    this.observabilityConfig = observabilityConfig;
+    this.shared = options.isShared();
+    this.name = options.getName();
+    this.followAlternativeServices = options.getFollowAlternativeServices();
   }
 
   /**
@@ -466,39 +470,19 @@ public class HttpClientConfig {
   }
 
   /**
-   * @return the metrics name identifying the reported metrics
+   * @return the client observability config.
    */
-  public String getMetricsName() {
-    return metricsName;
+  public ObservabilityConfig getObservabilityConfig() {
+    return observabilityConfig;
   }
 
   /**
-   * Set the metrics name identifying the reported metrics, useful for grouping metrics
-   * with the same name.
-   *
-   * @param metricsName the metrics name
+   * Set the client observability config.
+   * @param observabilityConfig the server observability config
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setMetricsName(String metricsName) {
-    this.metricsName = metricsName;
-    return this;
-  }
-
-  /**
-   * @return the tracing policy
-   */
-  public TracingPolicy getTracingPolicy() {
-    return tracingPolicy;
-  }
-
-  /**
-   * Set the tracing policy for the client behavior when Vert.x has tracing enabled.
-   *
-   * @param tracingPolicy the tracing policy
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setTracingPolicy(TracingPolicy tracingPolicy) {
-    this.tracingPolicy = tracingPolicy;
+  public HttpClientConfig setObservabilityConfig(ObservabilityConfig observabilityConfig) {
+    this.observabilityConfig = observabilityConfig;
     return this;
   }
 

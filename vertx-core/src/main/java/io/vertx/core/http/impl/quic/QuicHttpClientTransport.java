@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.Http3ClientConfig;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.http.ObservabilityConfig;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.http.impl.HttpConnectParams;
 import io.vertx.core.http.impl.http3.Http3ClientConnection;
@@ -44,7 +45,11 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
 
     QuicClientConfig quicConfig = new QuicClientConfig(config.getQuicConfig());
-    quicConfig.setMetricsName(config.getMetricsName());
+
+    ObservabilityConfig observabilityConfig = config.getObservabilityConfig();
+    if (observabilityConfig != null) {
+      quicConfig.setMetricsName(observabilityConfig.getMetricsName());
+    }
 
     Http3ClientConfig http3Config = config.getHttp3Config();
     if (http3Config == null) {

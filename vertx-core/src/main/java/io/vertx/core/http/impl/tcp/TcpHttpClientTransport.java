@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.Http1ClientConfig;
 import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.http.ObservabilityConfig;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.http1.Http1ClientConnection;
 import io.vertx.core.http.impl.http2.Http2ClientChannelInitializer;
@@ -65,8 +66,9 @@ public class TcpHttpClientTransport implements HttpClientTransport {
   public static TcpHttpClientTransport create(NetClientInternal netClient,
                                               HttpClientConfig config,
                                               HttpClientMetrics httpMetrics) {
+    ObservabilityConfig observabilityConfig = config.getObservabilityConfig();
     return new TcpHttpClientTransport(netClient,
-      config.getTracingPolicy(),
+      observabilityConfig != null ? observabilityConfig.getTracingPolicy() : null,
       config.isDecompressionEnabled(),
       config.getTcpConfig().getLogConfig() != null && config.getTcpConfig().getLogConfig().isEnabled(),
       config.getTcpConfig().getLogConfig() != null ? config.getTcpConfig().getLogConfig().getDataFormat() : null,

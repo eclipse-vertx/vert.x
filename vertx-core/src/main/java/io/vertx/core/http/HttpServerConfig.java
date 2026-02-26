@@ -66,8 +66,7 @@ public class HttpServerConfig {
   private int maxFormBufferedBytes;
   private boolean handle100ContinueAutomatically;
   private boolean strictThreadMode;
-  private String metricsName;
-  private TracingPolicy tracingPolicy;
+  private ObservabilityConfig observabilityConfig;
   private Http1ServerConfig http1Config;
   private Http2ServerConfig http2Config;
   private Http3ServerConfig http3Config;
@@ -113,14 +112,20 @@ public class HttpServerConfig {
       versions = EnumSet.of(HttpVersion.HTTP_1_1);
     }
 
+    ObservabilityConfig observabilityConfig = null;
+    if (options.getMetricsName() != null || options.getTracingPolicy() != HttpServerOptions.DEFAULT_TRACING_POLICY) {
+      observabilityConfig = new ObservabilityConfig()
+        .setMetricsName(options.getMetricsName())
+        .setTracingPolicy(options.getTracingPolicy());
+    }
+
     this.versions = versions;
     this.maxFormAttributeSize = options.getMaxFormAttributeSize();
     this.maxFormFields = options.getMaxFormFields();
     this.maxFormBufferedBytes = options.getMaxFormBufferedBytes();
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.strictThreadMode = options.getStrictThreadMode();
-    this.metricsName = options.getMetricsName();
-    this.tracingPolicy = options.getTracingPolicy();
+    this.observabilityConfig = observabilityConfig;
     this.http1Config = new Http1ServerConfig(options.getHttp1Config());
     this.http2Config = new Http2ServerConfig(options.getHttp2Config());
     this.webSocketConfig = new WebSocketServerConfig(options.getWebSocketConfig());
@@ -139,8 +144,7 @@ public class HttpServerConfig {
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
-    this.metricsName = null;
-    this.tracingPolicy = HttpServerOptions.DEFAULT_TRACING_POLICY;
+    this.observabilityConfig = null;
     this.http1Config = null;
     this.http2Config = null;
     this.http3Config = null;
@@ -162,8 +166,7 @@ public class HttpServerConfig {
     this.maxFormBufferedBytes = other.maxFormBufferedBytes;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.strictThreadMode = other.strictThreadMode;
-    this.metricsName = other.metricsName;
-    this.tracingPolicy = other.tracingPolicy;
+    this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.http1Config = other.http1Config != null ? new Http1ServerConfig(other.http1Config) : null;
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : null;
     this.http3Config = other.http3Config != null ? new Http3ServerConfig(other.http3Config) : null;
@@ -470,38 +473,19 @@ public class HttpServerConfig {
   }
 
   /**
-   * @return the metrics name identifying the reported metrics.
+   * @return the server observability config.
    */
-  public String getMetricsName() {
-    return metricsName;
+  public ObservabilityConfig getObservabilityConfig() {
+    return observabilityConfig;
   }
 
   /**
-   * Set the metrics name identifying the reported metrics, useful for naming the server metrics.
-   *
-   * @param metricsName the metrics name
+   * Set the server observability config.
+   * @param observabilityConfig the server observability config
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerConfig setMetricsName(String metricsName) {
-    this.metricsName = metricsName;
-    return this;
-  }
-
-  /**
-   * @return the tracing policy
-   */
-  public TracingPolicy getTracingPolicy() {
-    return tracingPolicy;
-  }
-
-  /**
-   * Set the tracing policy for the server behavior when Vert.x has tracing enabled.
-   *
-   * @param tracingPolicy the tracing policy
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerConfig setTracingPolicy(TracingPolicy tracingPolicy) {
-    this.tracingPolicy = tracingPolicy;
+  public HttpServerConfig setObservabilityConfig(ObservabilityConfig observabilityConfig) {
+    this.observabilityConfig = observabilityConfig;
     return this;
   }
 

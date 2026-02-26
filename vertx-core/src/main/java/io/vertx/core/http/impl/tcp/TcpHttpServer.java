@@ -235,6 +235,8 @@ public class TcpHttpServer implements HttpServerInternal {
         exceptionHandler,
         http2Config != null ? http2Config.getConnectionWindowSize() : HttpServerOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE);
 
+      ObservabilityConfig observabilityConfig = config.getObservabilityConfig();
+
       List<CompressionOptions> compressors = compression != null ? compression.getCompressors() : null;
       HttpServerConnectionInitializer initializer = new HttpServerConnectionInitializer(
         listenContext,
@@ -244,7 +246,7 @@ public class TcpHttpServer implements HttpServerInternal {
         this,
         compressors != null && !compressors.isEmpty() && compression.isCompressionEnabled(),
         compressors != null && !compressors.isEmpty() && compression.isDecompressionEnabled(),
-        config.getTracingPolicy(),
+        observabilityConfig != null ? observabilityConfig.getTracingPolicy() : null,
         config.getTcpConfig().getLogConfig() != null,
         compressors != null ? compressors.toArray(new CompressionOptions[0]) : null,
         compression != null ? compression.getContentSizeThreshold() : 0,

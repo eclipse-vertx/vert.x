@@ -116,6 +116,8 @@ public class Http3Config implements HttpConfig {
     ClientSSLOptions sslOptions = new ClientSSLOptions()
       .setTrustOptions(Trust.SERVER_JKS.get())
       .setHostnameVerificationAlgorithm("");
+    ObservabilityConfig observabilityConfig = new ObservabilityConfig();
+    config.setObservabilityConfig(observabilityConfig);
     return new HttpClientConfig() {
       @Override
       public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
@@ -136,7 +138,7 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientConfig setMetricsName(String name) {
-        config.setMetricsName(name);
+        observabilityConfig.setMetricsName(name);
         return this;
       }
       @Override
