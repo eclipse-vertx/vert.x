@@ -74,7 +74,7 @@ public class Http2ClientConfig {
    */
   public Http2ClientConfig setMultiplexingLimit(int limit) {
     if (limit == 0 || limit < -1) {
-      throw new IllegalArgumentException("maxPoolSize must be > 0 or -1 (disabled)");
+      throw new IllegalArgumentException("multiplexingLimit must be > 0 or -1 (disabled)");
     }
     this.multiplexingLimit = limit;
     return this;

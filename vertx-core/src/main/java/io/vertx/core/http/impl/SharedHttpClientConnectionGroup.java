@@ -12,7 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.impl.http1.Http1ClientConnection;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.http.HttpClientTransport;
@@ -212,6 +212,25 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
         .contextProvider(contextProvider);
     }
 
+    Pool(SharedHttpClientConnectionGroup owner,
+         HttpClientTransport connector,
+         int queueMaxSize,
+         int http3MaxSize,
+         long maxLifetimeMillis,
+         HttpConnectParams connectParams,
+         Function<ContextInternal,
+           ContextInternal> contextProvider) {
+      this.owner = owner;
+      this.connector = Objects.requireNonNull(connector);
+      this.maxLifetimeMillis = maxLifetimeMillis;
+      this.connectParams = connectParams;
+      this.poolKind = 0;
+      this.pool = ConnectionPool
+        .pool(this, new int[]{http3MaxSize}, queueMaxSize)
+        .connectionSelector(LIFO_SELECTOR)
+        .contextProvider(contextProvider);
+    }
+
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
       return connector
@@ -224,12 +243,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
           connection.concurrencyChangeHandler(listener::onConcurrencyChange);
           owner.init(connection);
           long capacity = connection.concurrency();
-          int idx;
-          if (connection instanceof Http1ClientConnection) {
-            idx = 0;
-          } else {
-            idx = 1;
-          }
+          int idx = connection.protocolVersion() != HttpVersion.HTTP_2 ? 0: 1;
           return new ConnectResult<>(connection, capacity, idx);
         });
     }

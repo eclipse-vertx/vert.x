@@ -1325,6 +1325,9 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
             } else {
               metric = null;
             }
+            if (pending.size() >= concurrency()) {
+              return;
+            }
             Stream stream = new StreamImpl(context, this, seq++, metric);
             pending.addLast(stream);
             if (pending.size() > 1 || ((current = inflight.peekLast()) != null && !current.requestEnded)) {

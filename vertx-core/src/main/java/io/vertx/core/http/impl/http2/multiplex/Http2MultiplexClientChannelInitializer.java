@@ -37,9 +37,9 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 public class Http2MultiplexClientChannelInitializer implements Http2ClientChannelInitializer {
 
-  private Http2Settings initialSettings;
-  private long keepAliveTimeoutMillis; // TimeUnit.SECONDS.toMillis(client.options.getHttp2KeepAliveTimeout())
-  private int multiplexingLimit; // client.options.getHttp2MultiplexingLimit()
+  private final Http2Settings initialSettings;
+  private final long keepAliveTimeoutMillis;
+  private final int multiplexingLimit;
   private final boolean decompressionSupported;
   private final boolean logEnabled;
 

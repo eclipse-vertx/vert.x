@@ -20,7 +20,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.HttpClientConnection;
-import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.http2.Http2ClientConnection;
@@ -28,22 +27,24 @@ import io.vertx.core.http.impl.http2.Http2ClientStream;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
+
+import java.time.Duration;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements HttpClientConnection, Http2ClientConnection {
 
-  private final Http2ClientConfig config;
   private final TracingPolicy tracingPolicy;
   private final boolean useDecompression;
   private final TransportMetrics<?> transportMetrics;
   private final ClientMetrics<?, ?, ?> clientMetrics;
   private final HostAndPort authority;
+  private final long keepAliveTimeout;
   private final long creationTimestamp;
+  private final long maxConcurrency;
   private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private Handler<AltSvcEvent> alternativeServicesHandler;
@@ -56,13 +57,15 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
                             VertxHttp2ConnectionHandler connHandler,
                             TransportMetrics<?> transportMetrics,
                             ClientMetrics<?, ?, ?> clientMetrics,
-                            Http2ClientConfig config,
+                            Duration keepAliveTimeout,
+                            long maxConcurrency,
                             TracingPolicy tracingPolicy,
                             boolean useDecompression) {
     super(context, connHandler);
+    this.keepAliveTimeout = keepAliveTimeout == null ? 0L : keepAliveTimeout.toMillis();
     this.clientMetrics = clientMetrics;
     this.transportMetrics = transportMetrics;
-    this.config = config;
+    this.maxConcurrency = maxConcurrency <= 0 ? Long.MAX_VALUE : maxConcurrency;
     this.tracingPolicy = tracingPolicy;
     this.useDecompression = useDecompression;
     this.authority = authority;
@@ -105,11 +108,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   public long concurrency() {
     long concurrency = remoteSettings().getLongOrDefault(Http2Settings.MAX_CONCURRENT_STREAMS);
-    long http2MaxConcurrency = config.getMultiplexingLimit() <= 0 ? Long.MAX_VALUE : config.getMultiplexingLimit();
-    if (http2MaxConcurrency > 0) {
-      concurrency = Math.min(concurrency, http2MaxConcurrency);
-    }
-    return concurrency;
+    return Math.min(concurrency, maxConcurrency);
   }
 
   @Override
@@ -151,11 +150,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    int limit = config.getMultiplexingLimit();
-    if (limit > 0) {
-      concurrency = Math.min(concurrency, limit);
-    }
-    concurrencyChangeHandler.handle(concurrency);
+    concurrencyChangeHandler.handle(Math.min(concurrency, maxConcurrency));
   }
 
   @Override
@@ -199,8 +194,7 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   private void recycle() {
-    long timeoutMillis = config.getKeepAliveTimeout() == null ? 0 : config.getKeepAliveTimeout().toMillis();
-    expirationTimestamp = timeoutMillis > 0 ? System.currentTimeMillis() + timeoutMillis : Long.MAX_VALUE;
+    expirationTimestamp = keepAliveTimeout > 0 ? System.currentTimeMillis() + keepAliveTimeout : Long.MAX_VALUE;
   }
 
   @Override
@@ -305,24 +299,25 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   }
 
   public static VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> createHttp2ConnectionHandler(
-    Http2ClientConfig config,
+    Http2Settings settings,
     TracingPolicy tracingPolicy,
     boolean useDecompression,
     boolean logActivity,
+    long multiplexingLimit,
+    Duration keepAliveTimeout,
     TransportMetrics<?> transportMetrics,
-    ClientMetrics clientMetrics,
+    ClientMetrics<?, ?, ?> clientMetrics,
     ContextInternal context,
-    boolean upgrade,
     Object socketMetric,
     HostAndPort authority) {
     VertxHttp2ConnectionHandler<Http2ClientConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnectionImpl>()
       .server(false)
       .useDecompression(useDecompression)
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
-      .initialSettings(config.getInitialSettings())
+      .initialSettings(settings)
       .connectionFactory(connHandler -> {
         Http2ClientConnectionImpl conn = new Http2ClientConnectionImpl(context, authority, connHandler, transportMetrics,
-          clientMetrics, config, tracingPolicy, useDecompression);
+          clientMetrics, keepAliveTimeout, multiplexingLimit, tracingPolicy, useDecompression);
         if (clientMetrics != null) {
           Object m = socketMetric;
           conn.metric(m);

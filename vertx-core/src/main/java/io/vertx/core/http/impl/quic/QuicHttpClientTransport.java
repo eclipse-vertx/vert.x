@@ -41,6 +41,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   private final long keepAliveTimeoutMillis;
   private final Http3Settings localSettings;
   private final Http3FrameLogger frameLogger;
+  private final long maxConcurrency;
 
   public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
 
@@ -61,11 +62,14 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       localSettings = new Http3Settings();
     }
 
+    long maxConcurrency = http3Config.getMultiplexingLimit() <= 0 ? Long.MAX_VALUE : http3Config.getMultiplexingLimit();
+
     boolean logEnabled = quicConfig.getLogConfig() != null && quicConfig.getLogConfig().isEnabled();
     quicConfig.setLogConfig(null);
 
     QuicClient client = new QuicClientImpl(vertx, quicConfig, "http", null);
 
+    this.maxConcurrency = maxConcurrency;
     this.vertx = vertx;
     this.keepAliveTimeoutMillis = http3Config.getKeepAliveTimeout() == null ? 0L : http3Config.getKeepAliveTimeout().toMillis();
     this.localSettings = localSettings;
@@ -92,13 +96,15 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     connectOptions.setSslOptions(sslOptions);
     Future<QuicConnection> f = client.connect(server, connectOptions);
     return f.map(res -> {
+      long concurrency = Math.min(res.transportParams().initialMaxStreamsBidi(), maxConcurrency);
       Http3ClientConnection c = new Http3ClientConnection(
         (QuicConnectionInternal) res,
         authority,
         (ClientMetrics<Object, HttpRequest, HttpResponse>) clientMetrics,
         keepAliveTimeoutMillis,
         localSettings,
-        frameLogger);
+        frameLogger,
+        concurrency);
       c.init();
       return c;
     });
