@@ -22,17 +22,47 @@ import java.time.Duration;
 @DataObject
 public class Http3ClientConfig {
 
+  private int multiplexingLimit;
   private Duration keepAliveTimeout;
   private Http3Settings initialSettings;
 
   public Http3ClientConfig() {
+    multiplexingLimit = HttpClientOptions.DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
     keepAliveTimeout = Duration.ofSeconds(HttpClientOptions.DEFAULT_HTTP2_KEEP_ALIVE_TIMEOUT);
     initialSettings = null;
   }
 
   public Http3ClientConfig(Http3ClientConfig config) {
+    this.multiplexingLimit = config.multiplexingLimit;
     this.keepAliveTimeout = config.keepAliveTimeout;
     this.initialSettings = config.initialSettings != null ? config.initialSettings.copy() : null;
+  }
+
+  /**
+   * @return the maximum number of concurrent streams for an HTTP/3 connection, {@code -1} means
+   * the value sent by the server
+   */
+  public int getMultiplexingLimit() {
+    return multiplexingLimit;
+  }
+
+  /**
+   * Set a client limit of the number concurrent streams for each HTTP/3 connection, this limits the number
+   * of streams the client can create for a connection. The effective number of streams for a
+   * connection is the min of this value and the server's initial settings.
+   * <p/>
+   * Setting the value to {@code -1} means to use the value sent by the server's initial settings.
+   * {@code -1} is the default value.
+   *
+   * @param limit the maximum concurrent for an HTTP/3 connection
+   * @return a reference to this, so the API can be used fluently
+   */
+  public Http3ClientConfig setMultiplexingLimit(int limit) {
+    if (limit == 0 || limit < -1) {
+      throw new IllegalArgumentException("multiplexingLimit must be > 0 or -1 (disabled)");
+    }
+    this.multiplexingLimit = limit;
+    return this;
   }
 
   /**

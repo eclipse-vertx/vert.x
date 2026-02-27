@@ -31,7 +31,6 @@ import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -49,21 +48,24 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
   private final ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics;
   private Handler<Void> evictionHandler;
   private final long keepAliveTimeoutMillis;
-  private final long creationTimetstamp;
+  private final long creationTimestamp;
   private long expirationTimestampMillis;
+  private final long concurrency;
 
   public Http3ClientConnection(QuicConnectionInternal connection,
                                HostAndPort authority,
                                ClientMetrics<Object, HttpRequest, HttpResponse> clientMetrics,
                                long keepAliveTimeoutMillis,
                                Http3Settings localSettings,
-                               Http3FrameLogger frameLogger) {
+                               Http3FrameLogger frameLogger,
+                               long concurrency) {
     super(connection, localSettings, frameLogger);
 
     this.authority = authority;
     this.clientMetrics = clientMetrics;
     this.keepAliveTimeoutMillis = keepAliveTimeoutMillis;
-    this.creationTimetstamp = System.currentTimeMillis();
+    this.creationTimestamp = System.currentTimeMillis();
+    this.concurrency = concurrency;
   }
 
   public void init() {
@@ -101,8 +103,7 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
 
   @Override
   public long concurrency() {
-    // For now hardcode
-    return 10;
+    return concurrency;
   }
 
   @Override
@@ -191,7 +192,7 @@ public class Http3ClientConnection extends Http3Connection implements HttpClient
 
   @Override
   public long creationTimestamp() {
-    return creationTimetstamp;
+    return creationTimestamp;
   }
 
   @Override

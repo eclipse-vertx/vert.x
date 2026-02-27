@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -204,10 +205,15 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       HttpConnectParams params = new HttpConnectParams(protocols, sslOptions, proxyOptions, key.ssl);
       Function<SharedHttpClientConnectionGroup, SharedHttpClientConnectionGroup.Pool> p = group -> {
         int queueMaxSize = poolOptions.getMaxWaitQueueSize();
-        int http1MaxSize = poolOptions.getHttp1MaxSize();
-        int http2MaxSize = poolOptions.getHttp2MaxSize();
-        int initialPoolKind = protocol == HttpVersion.HTTP_1_1 || protocol == HttpVersion.HTTP_1_0 ? 0 : 1;
-        return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http1MaxSize, http2MaxSize, maxLifetime, initialPoolKind, params, contextProvider);
+        if (transport instanceof TcpHttpClientTransport) {
+          int http1MaxSize = poolOptions.getHttp1MaxSize();
+          int http2MaxSize = poolOptions.getHttp2MaxSize();
+          int initialPoolKind = protocol == HttpVersion.HTTP_1_1 || protocol == HttpVersion.HTTP_1_0 ? 0 : 1;
+          return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http1MaxSize, http2MaxSize, maxLifetime, initialPoolKind, params, contextProvider);
+        } else {
+          int http3MaxSize = poolOptions.getHttp3MaxSize();
+          return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http3MaxSize, maxLifetime, params, contextProvider);
+        }
       };
       return new SharedHttpClientConnectionGroup(
         clientMetrics,

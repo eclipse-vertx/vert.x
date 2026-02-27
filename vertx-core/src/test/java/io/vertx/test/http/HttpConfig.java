@@ -222,8 +222,8 @@ public interface HttpConfig {
 
   class H2 extends Http2 {
 
-    public static HttpConfig CODEC = new H2(false);
-    public static HttpConfig MULTIPLEX = new H2(true);
+    public static H2 CODEC = new H2(false);
+    public static H2 MULTIPLEX = new H2(true);
 
     public H2(boolean multiplex) {
       super(multiplex);

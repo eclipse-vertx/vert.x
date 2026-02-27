@@ -137,7 +137,8 @@ public class TcpHttpClientTransport implements HttpClientTransport {
         useDecompression,
         logActivity);
     } else {
-      return new Http2CodecClientChannelInitializer(http2Config, tracingPolicy, useDecompression, logActivity);
+      return new Http2CodecClientChannelInitializer(http2Config.getInitialSettings(), tracingPolicy, useDecompression, logActivity,
+        http2Config.getMultiplexingLimit(), http2Config.getKeepAliveTimeout(), http2Config.getUpgradeMaxContentLength());
     }
   }
 

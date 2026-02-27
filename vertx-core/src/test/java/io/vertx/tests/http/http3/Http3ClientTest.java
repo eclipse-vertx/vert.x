@@ -9,7 +9,9 @@ import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.LogConfig;
+import io.vertx.core.net.QuicTransportParams;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -20,8 +22,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(LinuxOrOsx.class)
@@ -489,5 +494,35 @@ public class Http3ClientTest extends VertxTestBase {
 //    assertEquals(2, factory.
 //      logs(Http3FrameLogger.class).
 //      filter(record -> record.getMessage().contains("GO_AWAY")).count());
+  }
+
+  @Test
+  public void testMaxActiveStreams() throws Exception {
+    server.requestHandler(req -> {
+    });
+    server.listen(8443, "localhost").await();
+
+    HttpClientConnection connection = client.connect(new HttpConnectOptions()
+      .setHost("localhost")
+      .setPort(8443)).await();
+    long maxStreams = connection.maxActiveStreams();
+    assertEquals(new HttpServerConfig().getQuicConfig().getTransportConfig().getInitialMaxStreamsBidi(), maxStreams);
+    connection.close().await();
+    RequestOptions request = new RequestOptions()
+      .setPort(8443)
+      .setHost("localhost")
+      .setConnectTimeout(250);
+    for (int i = 0;i < maxStreams;i++) {
+      client
+        .request(request)
+        .compose(HttpClientRequest::end).await();
+    }
+    try {
+      Future<HttpClientRequest> fut = client.request(new RequestOptions(request));
+      fut.await();
+      fail();
+    } catch (Throwable e) {
+      assertTrue(e instanceof TimeoutException);
+    }
   }
 }

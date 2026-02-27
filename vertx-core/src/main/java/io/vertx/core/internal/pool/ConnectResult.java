@@ -17,12 +17,12 @@ public class ConnectResult<C> {
 
   private final C conn;
   private final long concurrency;
-  private final long capacity;
+  private final long weight;
 
-  public ConnectResult(C connection, long concurrency, long capacity) {
+  public ConnectResult(C connection, long concurrency, long weight) {
     this.conn = connection;
     this.concurrency = concurrency;
-    this.capacity = capacity;
+    this.weight = weight;
   }
 
   /**
@@ -43,13 +43,6 @@ public class ConnectResult<C> {
    * @return the connection weight, i.e how much the connection accounts when it is managed by a pool
    */
   public long weight() {
-    return capacity;
-  }
-
-  /**
-   * @return the connection capacity, i.e how much the connection accounts when it is managed by a pool
-   */
-  public long capacity() {
-    return capacity;
+    return weight;
   }
 }

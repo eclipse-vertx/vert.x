@@ -37,6 +37,11 @@ public class PoolOptions {
   public static final int DEFAULT_HTTP2_MAX_POOL_SIZE = 1;
 
   /**
+   * The default maximum number of connections an HTTP/3 client will pool = 1
+   */
+  public static final int DEFAULT_HTTP3_MAX_POOL_SIZE = 1;
+
+  /**
    * Default max wait queue size = -1 (unbounded)
    */
   public static final int DEFAULT_MAX_WAIT_QUEUE_SIZE = -1;
@@ -63,6 +68,7 @@ public class PoolOptions {
 
   private int http1MaxSize;
   private int http2MaxSize;
+  private int http3MaxSize;
   private int maxLifetime;
   private TimeUnit maxLifetimeUnit;
   private int cleanerPeriod;
@@ -75,6 +81,7 @@ public class PoolOptions {
   public PoolOptions() {
     http1MaxSize = DEFAULT_MAX_POOL_SIZE;
     http2MaxSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
+    http3MaxSize = DEFAULT_HTTP2_MAX_POOL_SIZE;
     maxLifetime = DEFAULT_MAXIMUM_LIFETIME;
     maxLifetimeUnit = DEFAULT_MAXIMUM_LIFETIME_TIME_UNIT;
     cleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
@@ -90,8 +97,9 @@ public class PoolOptions {
   public PoolOptions(PoolOptions other) {
     this.http1MaxSize = other.http1MaxSize;
     this.http2MaxSize = other.http2MaxSize;
-    maxLifetime = other.maxLifetime;
-    maxLifetimeUnit = other.maxLifetimeUnit;
+    this.http3MaxSize = other.http3MaxSize;
+    this.maxLifetime = other.maxLifetime;
+    this.maxLifetimeUnit = other.maxLifetimeUnit;
     this.cleanerPeriod = other.cleanerPeriod;
     this.eventLoopSize = other.eventLoopSize;
     this.maxWaitQueueSize = other.maxWaitQueueSize;
@@ -149,6 +157,29 @@ public class PoolOptions {
       throw new IllegalArgumentException("http2MaxPoolSize must be > 0");
     }
     this.http2MaxSize = max;
+    return this;
+  }
+
+  /**
+   * Get the maximum pool size for HTTP/3 connections
+   *
+   * @return  the maximum pool size
+   */
+  public int getHttp3MaxSize() {
+    return http3MaxSize;
+  }
+
+  /**
+   * Set the maximum pool size for HTTP/3 connections
+   *
+   * @param max  the maximum pool size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public PoolOptions setHttp3MaxSize(int max) {
+    if (max < 1) {
+      throw new IllegalArgumentException("http3MaxPoolSize must be > 0");
+    }
+    this.http3MaxSize = max;
     return this;
   }
 
