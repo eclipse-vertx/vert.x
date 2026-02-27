@@ -1798,59 +1798,7 @@ implementing  protocols on top of HTTP/2.
 
 NOTE: this only applies to the HTTP/2 protocol
 
-==== Connection shutdown and go away
-
-Calling {@link io.vertx.core.http.HttpConnection#shutdown()} will send a `GOAWAY` frame to the
-remote side of the connection, asking it to stop creating streams: a client will stop doing new requests
-and a server will stop pushing responses. After the `GOAWAY` frame is sent, the connection
-waits some time (30 seconds by default) until all current streams closed and close the connection:
-
-[source,$lang]
-----
-{@link examples.HTTP2Examples#example25}
-----
-
-The {@link io.vertx.core.http.HttpConnection#shutdownHandler} notifies when all streams have been closed, the
-connection is not yet closed.
-
-It's possible to just send a `GOAWAY` frame, the main difference with a shutdown is that
-it will just tell the remote side of the connection to stop creating new streams without scheduling a connection
-close:
-
-[source,$lang]
-----
-{@link examples.HTTP2Examples#example26}
-----
-
-Conversely, it is also possible to be notified when `GOAWAY` are received:
-
-[source,$lang]
-----
-{@link examples.HTTP2Examples#example27}
-----
-
-The {@link io.vertx.core.http.HttpConnection#shutdownHandler} will be called when all current streams
-have been closed and the connection can be closed:
-
-[source,$lang]
-----
-{@link examples.HTTP2Examples#example28}
-----
-
-This applies also when a `GOAWAY` is received.
-
-NOTE: this only applies to the HTTP/2 protocol
-
-==== Connection close
-
-Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
-
-- it closes the socket for HTTP/1.x
-- a shutdown with no delay for HTTP/2, the `GOAWAY` frame will still be sent before the connection is closed.
-
-The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
-
-=== Graceful shutdown
+=== Connection shutdown
 
 HTTP server and client support graceful shutdown.
 
@@ -1864,14 +1812,15 @@ Calling `shutdown` initiates the shut-down phase whereby the server or client ar
 
 When all connections inflight requests are processed, the server or client is then closed.
 
-In addition, HTTP/2 connections send a `GOAWAY` frame to signal the remote endpoint that the connection cannot be used anymore.
+In addition, HTTP/2 and HTTP/3 connections send a `GOAWAY` frame to signal the remote endpoint that the connection
+cannot be used anymore.
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#serverShutdown}
 ----
 
-Shut-down waits until all sockets are closed or the shut-down timeout fires. When the timeout fires, all sockets are
+Shutdown waits until all sockets are closed or the shutdown timeout fires. When the timeout fires, all sockets are
 forcibly closed.
 
 Each opened HTTP connections is notified with a shutdown event, allowing to perform cleanup before the
@@ -1889,6 +1838,16 @@ The default shut-down timeout is 30 seconds, you can override the timeout
 {@link examples.HTTPExamples#serverShutdownWithAmountOfTime}
 ----
 
+==== Connection close
+
+Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection:
+
+- it closes the socket for HTTP/1.x
+- a shutdown with no delay for HTTP/2 and HTTP/3, the `GOAWAY` frame will still be sent before the connection is closed
+
+NOTE: a close is equivalent to a connection shutdown without a grace period
+
+The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
 === Client sharing
 

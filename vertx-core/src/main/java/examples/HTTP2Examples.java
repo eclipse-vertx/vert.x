@@ -179,29 +179,6 @@ public class HTTP2Examples {
     });
   }
 
-  public void example25(HttpConnection connection) {
-    connection.shutdown();
-  }
-
-  public void example26(HttpConnection connection) {
-    connection.goAway(0);
-  }
-
-  public void example27(HttpConnection connection) {
-    connection.goAwayHandler(goAway -> {
-      System.out.println("Received a go away frame");
-    });
-  }
-
-  public void example28(HttpConnection connection) {
-    connection.goAway(0);
-    connection.shutdownHandler(v -> {
-
-      // All streams are closed, close the connection
-      connection.close();
-    });
-  }
-
   public void useMaxStreams(Vertx vertx) {
 
     // Uses up to 3 connections and up to 10 streams per connection

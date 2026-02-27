@@ -69,7 +69,9 @@ public interface HttpConnection {
 
   /**
    * Like {@link #goAway(long, int)} with a last stream id {@code -1} which means to disallow any new stream creation.
+   * @deprecated instead use {@link #shutdown()}
    */
+  @Deprecated
   @Fluent
   default HttpConnection goAway(long errorCode) {
     return goAway(errorCode, -1);
@@ -77,7 +79,9 @@ public interface HttpConnection {
 
   /**
    * Like {@link #goAway(long, int, Buffer)} with no buffer.
+   * @deprecated instead use {@link #shutdown()}
    */
+  @Deprecated
   @Fluent
   default HttpConnection goAway(long errorCode, int lastStreamId) {
     return goAway(errorCode, lastStreamId, null);
@@ -98,7 +102,9 @@ public interface HttpConnection {
    * @param lastStreamId the last stream id
    * @param debugData additional debug data sent to the remote endpoint
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #shutdown()}
    */
+  @Deprecated
   @Fluent
   HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData);
 
