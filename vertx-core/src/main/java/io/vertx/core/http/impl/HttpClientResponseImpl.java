@@ -62,6 +62,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.stream = stream;
     this.conn = stream.connection();
     this.headers = headers;
+    this.eventHandler = new HttpEventHandler(request.context);
   }
 
   private HttpEventHandler eventHandler(boolean create) {
