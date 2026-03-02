@@ -14,7 +14,10 @@ import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.LinuxOrOsx;
@@ -461,5 +464,137 @@ public class QuicClientTest extends VertxTestBase {
     stream.end();
     assertWaitUntil(() -> received.get() == buffer.length());
     assertWaitUntil(() -> ended.get() > 0);
+  }
+
+  @Test
+  public void testQuicStreamParking() {
+    server.close();
+    int maxStreams = 100;
+    QuicServerConfig config = new QuicServerConfig();
+    config.getTransportConfig().setInitialMaxStreamsBidi(maxStreams);
+    server = vertx.createQuicServer(config, QuicServerTest.SSL_OPTIONS);
+    server.handler(connection -> {
+      connection.handler(stream -> {
+        stream.endHandler(v -> {
+          int delay = 1 + TestUtils.randomPositiveInt() % 10;
+          vertx.setTimer(delay, id -> {
+            stream.end();
+          });
+        });
+      });
+    });
+    SocketAddress addr = SocketAddress.inetSocketAddress(9999, "localhost");
+    server
+      .listen(addr)
+      .await();
+    client.close();
+    int numStreams = 1000;
+    client = vertx.createQuicClient(new QuicClientConfig().setMaxStreamBidiRequests(numStreams), SSL_OPTIONS);
+    QuicConnection connection = client.connect(addr).await();
+    AtomicInteger inflight = new AtomicInteger(numStreams);
+    AtomicInteger remaining = new AtomicInteger(numStreams);
+    Promise<Void> done = Promise.promise();
+    for (int i = 0;i < numStreams;i++) {
+      tryOpenStream(inflight, remaining, connection, done);
+    }
+    done.future().await();
+  }
+
+  private void tryOpenStream(AtomicInteger inflight, AtomicInteger remaining, QuicConnection connection, Promise<Void> done) {
+    int val = remaining.decrementAndGet();
+    if (val >= 0) {
+      connection.openStream()
+        .onComplete(ar -> {
+          if (ar.succeeded()) {
+            QuicStream stream = ar.result();
+            stream.endHandler(v -> {
+              if (inflight.decrementAndGet() == 0) {
+                done.tryComplete();
+              } else {
+                tryOpenStream(inflight, remaining, connection, done);
+              }
+            });
+            stream.end();
+          } else {
+            done.tryFail(ar.cause());
+          }
+        });
+    }
+  }
+
+  @Test
+  public void testQuicStreamParkingFailure() throws Exception {
+    server.close();
+    int maxStreams = 100;
+    QuicServerConfig config = new QuicServerConfig();
+    config.getTransportConfig().setInitialMaxStreamsBidi(maxStreams);
+    server = vertx.createQuicServer(config, QuicServerTest.SSL_OPTIONS);
+    AtomicInteger count = new AtomicInteger();
+    server.handler(connection -> {
+      connection.handler(stream -> {
+        if (count.incrementAndGet() == maxStreams) {
+          connection.close();
+        }
+      });
+    });
+    SocketAddress addr = SocketAddress.inetSocketAddress(9999, "localhost");
+    server
+      .listen(addr)
+      .await();
+    QuicConnection connection = client.connect(addr).await();
+    CountDownLatch close = new CountDownLatch(1);
+    connection.closeHandler(v -> close.countDown());
+    int numStreams = 100 + 1;
+    List<Future<QuicStream>> futures = new ArrayList<>();
+    for (int i = 0;i < numStreams;i++) {
+      Future<QuicStream> fut = connection.openStream();
+      fut.onComplete(ar -> {
+        if (ar.succeeded()) {
+          ar.result()
+            .end();
+        }
+      });
+      futures.add(fut);
+    }
+    awaitLatch(close);
+    assertWaitUntil(() -> futures.get(maxStreams).isComplete());
+    assertTrue(futures.get(maxStreams).failed());
+    assertTrue(futures.get(maxStreams).cause() == NetSocketInternal.CLOSED_EXCEPTION);
+  }
+
+  @Test
+  public void testQuicStreamParkingLimit() throws Exception {
+    server.close();
+    int maxStreams = 100;
+    QuicServerConfig config = new QuicServerConfig();
+    config.getTransportConfig().setInitialMaxStreamsBidi(maxStreams);
+    server = vertx.createQuicServer(config, QuicServerTest.SSL_OPTIONS);
+    AtomicInteger count = new AtomicInteger();
+    server.handler(connection -> {
+      connection.handler(stream -> {
+        if (count.incrementAndGet() == maxStreams) {
+          connection.close();
+        }
+      });
+    });
+    SocketAddress addr = SocketAddress.inetSocketAddress(9999, "localhost");
+    server
+      .listen(addr)
+      .await();
+    client.close();
+    client = vertx.createQuicClient(new QuicClientConfig().setMaxStreamBidiRequests(0), SSL_OPTIONS);
+    QuicConnection connection = client.connect(addr).await();
+    int numStreams = 100;
+    for (int i = 0;i < numStreams;i++) {
+      Future<QuicStream> fut = connection.openStream();
+      fut.await();
+    }
+    Future<QuicStream> fut = connection.openStream();
+    try {
+      fut.await();
+      fail();
+    } catch (VertxException ignore) {
+      // Expected
+    }
   }
 }

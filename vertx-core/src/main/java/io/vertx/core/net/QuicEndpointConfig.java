@@ -22,13 +22,24 @@ import java.time.Duration;
 @DataObject
 public abstract class QuicEndpointConfig extends EndpointConfig {
 
+  /**
+   * The default maximum value of pending stream requests.
+   */
+  public static final int DEFAULT_MAX_STREAM_BIDI_REQUESTS = 1024;
+  public static final int DEFAULT_MAX_STREAM_UNI_REQUESTS = 1024;
+
   private QLogConfig qlogConfig;
   private String keyLogFile;
+  private int maxStreamBidiRequests;
+  private int maxStreamUniRequests;
 
   public QuicEndpointConfig() {
     super();
     setTransportConfig(new QuicConfig());
     this.qlogConfig = null;
+    this.keyLogFile = null;
+    this.maxStreamBidiRequests = DEFAULT_MAX_STREAM_BIDI_REQUESTS;
+    this.maxStreamUniRequests = DEFAULT_MAX_STREAM_UNI_REQUESTS;
   }
 
   public QuicEndpointConfig(QuicEndpointConfig other) {
@@ -38,6 +49,8 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
 
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
+    this.maxStreamBidiRequests = other.maxStreamBidiRequests;
+    this.maxStreamUniRequests = other.maxStreamUniRequests;
   }
 
   /**
@@ -114,5 +127,45 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
 
   public QuicEndpointConfig setLogConfig(LogConfig config) {
     return (QuicEndpointConfig) super.setLogConfig(config);
+  }
+
+  /**
+   * @return the number of maximum bidi stream requests awaiting in the queue of a connection
+   */
+  public int getMaxStreamBidiRequests() {
+    return maxStreamBidiRequests;
+  }
+
+  /**
+   * Set the maximum number of bidi stream requests per connection that can be queued when the connection stream bidi limit is reached.
+   *
+   * @param maxStreamRequests the maximum value
+   */
+  public QuicEndpointConfig setMaxStreamBidiRequests(int maxStreamRequests) {
+    if (maxStreamRequests < 0L) {
+      throw new IllegalArgumentException("maxStreamBidiRequests must be >= 0");
+    }
+    this.maxStreamBidiRequests = maxStreamRequests;
+    return this;
+  }
+
+  /**
+   * @return the number of maximum uni stream requests awaiting in the queue of a connection
+   */
+  public int getMaxStreamUniRequests() {
+    return maxStreamUniRequests;
+  }
+
+  /**
+   * Set the maximum number of unit stream requests per connection that can be queued when the connection stream uni limit is reached.
+   *
+   * @param maxStreamRequests the maximum value
+   */
+  public QuicEndpointConfig setMaxStreamUniRequests(int maxStreamRequests) {
+    if (maxStreamRequests < 0L) {
+      throw new IllegalArgumentException("maxStreamUniRequests must be >= 0");
+    }
+    this.maxStreamUniRequests = maxStreamRequests;
+    return this;
   }
 }

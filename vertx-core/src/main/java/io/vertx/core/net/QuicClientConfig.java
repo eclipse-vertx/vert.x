@@ -94,6 +94,16 @@ public class QuicClientConfig extends QuicEndpointConfig {
   }
 
   @Override
+  public QuicClientConfig setMaxStreamBidiRequests(int maxStreamRequests) {
+    return (QuicClientConfig) super.setMaxStreamBidiRequests(maxStreamRequests);
+  }
+
+  @Override
+  public QuicClientConfig setMaxStreamUniRequests(int maxStreamRequests) {
+    return (QuicClientConfig) super.setMaxStreamUniRequests(maxStreamRequests);
+  }
+
+  @Override
   public QuicClientConfig setLogConfig(LogConfig config) {
     return (QuicClientConfig) super.setLogConfig(config);
   }

@@ -111,6 +111,21 @@ public class QuicServerConfig extends QuicEndpointConfig {
     return (QuicServerConfig) super.setLogConfig(config);
   }
 
+  @Override
+  public QuicServerConfig setMetricsName(String metricsName) {
+    return (QuicServerConfig) super.setMetricsName(metricsName);
+  }
+
+  @Override
+  public QuicServerConfig setMaxStreamBidiRequests(int maxStreamRequests) {
+    return (QuicServerConfig) super.setMaxStreamBidiRequests(maxStreamRequests);
+  }
+
+  @Override
+  public QuicServerConfig setMaxStreamUniRequests(int maxStreamRequests) {
+    return (QuicServerConfig) super.setMaxStreamUniRequests(maxStreamRequests);
+  }
+
   /**
    * @return the port
    */

@@ -25,10 +25,12 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -39,6 +41,10 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 import javax.net.ssl.SSLEngine;
 import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -65,11 +71,17 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final NetworkMetrics<?> streamMetrics;
   private final SocketAddress remoteAddress;
   private QuicTransportParams transportParams;
+  private final Map<QuicStreamType, StreamOpenRequestQueue> pendingStreamOpenRequestsMap;
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
-                            long readIdleTimeout,  long writeIdleTimeout, ByteBufFormat activityLogging, QuicChannel channel,
-                            SocketAddress remoteAddress, ChannelHandlerContext chctx) {
+                            long readIdleTimeout,  long writeIdleTimeout, ByteBufFormat activityLogging, int maxStreamBidiRequests,
+                            int maxStreamUniRequests, QuicChannel channel, SocketAddress remoteAddress, ChannelHandlerContext chctx) {
     super(context, chctx);
+
+    Map<QuicStreamType, StreamOpenRequestQueue> pendingStreamRequestsMap = new EnumMap<>(QuicStreamType.class);
+    pendingStreamRequestsMap.put(QuicStreamType.BIDIRECTIONAL, new StreamOpenRequestQueue(maxStreamBidiRequests));
+    pendingStreamRequestsMap.put(QuicStreamType.UNIDIRECTIONAL, new StreamOpenRequestQueue(maxStreamUniRequests));
+
     this.channel = channel;
     this.metrics = metrics;
     this.idleTimeout = idleTimeout;
@@ -78,6 +90,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.activityLogging = activityLogging;
     this.context = context;
     this.remoteAddress = remoteAddress;
+    this.pendingStreamOpenRequestsMap = pendingStreamRequestsMap;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
       @Override
       protected void handleShutdown(Duration timeout, Completable<Void> completion) {
@@ -165,6 +178,21 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     }
   }
 
+  void handleQuicStreamLimitChanged() {
+    trySatisfyPendingStreamOpenRequests(QuicStreamType.BIDIRECTIONAL);
+    trySatisfyPendingStreamOpenRequests(QuicStreamType.UNIDIRECTIONAL);
+  }
+
+  private void trySatisfyPendingStreamOpenRequests(QuicStreamType type) {
+    long maxBidStreams = channel.peerAllowedStreams(type);
+    Deque<StreamOpenRequest> pendingStreamOpenRequests = pendingStreamOpenRequestsMap.get(type);
+    StreamOpenRequest streamOpenRequest;
+    while (maxBidStreams > 0 && (streamOpenRequest = pendingStreamOpenRequests.poll()) != null) {
+      maxBidStreams--;
+      openStream(streamOpenRequest, type);
+    }
+  }
+
   @Override
   public QuicConnectionImpl closeHandler(Handler<Void> handler) {
     return (QuicConnectionImpl) super.closeHandler(handler);
@@ -177,6 +205,12 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
 
   void handleClosed(QuicConnectionClose payload) {
     this.closePayload = payload;
+    for (Deque<StreamOpenRequest> pendingStreamOpenRequests : pendingStreamOpenRequestsMap.values()) {
+      StreamOpenRequest pendingStreamOpenRequest;
+      while ((pendingStreamOpenRequest = pendingStreamOpenRequests.poll()) != null) {
+        pendingStreamOpenRequest.promise.fail(NetSocketInternal.CLOSED_EXCEPTION);
+      }
+    }
     handleClosed();
   }
 
@@ -241,29 +275,51 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
-  public Future<QuicStream> openStream(ContextInternal context, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider) {
-    Promise<QuicStream> promise = context.promise();
-    VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, context, (QuicStreamChannel) chctx.channel(), streamMetrics, chctx));
+  public Future<QuicStream> openStream(ContextInternal streamContext, boolean bidirectional, Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider) {
+    Promise<QuicStream> promise = streamContext.promise();
+    StreamOpenRequest streamOpenRequest = new StreamOpenRequest(streamContext, initializerProvider, promise);
+    if (context.inThread()) {
+      tryOpenStream(streamOpenRequest, bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL);
+    } else {
+      context.execute(() -> {
+        tryOpenStream(streamOpenRequest, bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL);
+      });
+    }
+    return promise.future();
+  }
+
+  private void tryOpenStream(StreamOpenRequest streamOpenRequest, QuicStreamType type) {
+    long allowedStreams = channel.peerAllowedStreams(type);
+    if (allowedStreams == 0) {
+      StreamOpenRequestQueue streamOpenRequests = pendingStreamOpenRequestsMap.get(type);
+      if (!streamOpenRequests.offerLast(streamOpenRequest)) {
+        streamOpenRequest.promise.fail(new VertxException("QUIC connection pending stream request limit reached"));
+      }
+    } else {
+      openStream(streamOpenRequest, type);
+    }
+  }
+
+  private void openStream(StreamOpenRequest streamOpenRequest, QuicStreamType streamType) {
+    VertxHandler<QuicStreamImpl> handler = VertxHandler.create(chctx -> new QuicStreamImpl(this, streamOpenRequest.context, (QuicStreamChannel) chctx.channel(), streamMetrics, chctx));
     handler.addHandler(stream -> {
       if (metrics != null) {
         metrics.streamOpened(metric());
       }
-      promise.tryComplete(stream);
+      streamOpenRequest.promise.tryComplete(stream);
     });
-    QuicStreamType type = bidirectional ? QuicStreamType.BIDIRECTIONAL : QuicStreamType.UNIDIRECTIONAL;
-    ChannelInitializer<QuicStreamChannel> initializer = initializerProvider.apply(ch -> {
+    ChannelInitializer<QuicStreamChannel> initializer = streamOpenRequest.initializerProvider.apply(ch -> {
       ChannelPipeline pipeline = ch.pipeline();
       configureStreamChannelPipeline(pipeline);
       pipeline.addLast("handler", handler);
       streamGroup.add(ch);
     });
-    io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(type, initializer);
-    future.addListener(future1 -> {
-      if (!future1.isSuccess()) {
-        promise.tryFail(future1.cause());
+    io.netty.util.concurrent.Future<QuicStreamChannel> future = channel.createStream(streamType, initializer);
+    future.addListener(f -> {
+      if (!f.isSuccess()) {
+        streamOpenRequest.promise.tryFail(f.cause());
       }
     });
-    return promise.future();
   }
 
   private void configureStreamChannelPipeline(ChannelPipeline pipeline) {
@@ -329,5 +385,44 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   @Override
   protected SocketAddress channelRemoteAddress() {
     return remoteAddress;
+  }
+
+  /**
+   * A queue of stream open requests.
+   */
+  private static class StreamOpenRequestQueue extends ArrayDeque<StreamOpenRequest> {
+
+    final int maxSize;
+
+    StreamOpenRequestQueue(int maxSize) {
+      super(10);
+      this.maxSize = maxSize;
+    }
+
+    @Override
+    public boolean offerLast(StreamOpenRequest request) {
+      if (size() < maxSize) {
+        return super.offerLast(request);
+      } else {
+        return false;
+      }
+    }
+  }
+
+  /**
+   * A request to open a stream.
+   */
+  private static class StreamOpenRequest {
+
+    private final ContextInternal context;
+    private final Function<Consumer<QuicStreamChannel>, ChannelInitializer<QuicStreamChannel>> initializerProvider;
+    private final Promise<QuicStream> promise;
+
+    StreamOpenRequest(ContextInternal context, Function<Consumer<QuicStreamChannel>,
+      ChannelInitializer<QuicStreamChannel>> initializerProvider, Promise<QuicStream> promise) {
+      this.context = context;
+      this.initializerProvider = initializerProvider;
+      this.promise = promise;
+    }
   }
 }

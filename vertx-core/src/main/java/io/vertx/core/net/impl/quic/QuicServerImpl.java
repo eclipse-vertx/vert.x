@@ -160,8 +160,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
                 LogConfig logConfig = config.getLogConfig();
                 ByteBufFormat activityLogging = logConfig != null && logConfig.isEnabled() ? logConfig.getDataFormat() : null;
                 QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
-                  config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging,
-                  vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
+                  config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, config.getMaxStreamBidiRequests(),
+                  config.getMaxStreamUniRequests(), vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
                 ChannelPipeline pipeline = channel.pipeline();
                 pipeline.addLast("handler", handler);
               }
