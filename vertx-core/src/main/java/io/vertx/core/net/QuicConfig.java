@@ -42,7 +42,7 @@ public class QuicConfig extends TransportConfig {
   public static final long DEFAULT_MAX_STREAMS_DATA_BIDI = 0L;
   public static final long DEFAULT_MAX_STREAM_DATA_UNI = 0L;
   public static final boolean DEFAULT_DISABLE_ACTIVE_MIGRATION = true;
-  public static final Duration DEFAULT_MAX_IDLE_TIMEOUT = null;
+  public static final Duration DEFAULT_MAX_IDLE_TIMEOUT = Duration.ofSeconds(40);
   public static final boolean DEFAULT_ENABLE_DATAGRAMS = false;
   public static final int DEFAULT_DATAGRAM_SEND_QUEUE_LENGTH = 128;
   public static final int DEFAULT_DATAGRAM_RECEIVE_QUEUE_LENGTH = 128;
