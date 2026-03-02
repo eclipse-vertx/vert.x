@@ -10,10 +10,13 @@
  */
 package io.vertx.tests.http.http3;
 
+import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.tests.http.fileupload.HttpServerFileUploadTest;
+import org.junit.runner.RunWith;
 
 /**
  */
+@RunWith(LinuxOrOsx.class)
 public class Http3ServerFileUploadTest extends HttpServerFileUploadTest {
 
   public Http3ServerFileUploadTest() {
