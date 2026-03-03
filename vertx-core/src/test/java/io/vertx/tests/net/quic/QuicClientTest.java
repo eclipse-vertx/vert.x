@@ -11,6 +11,7 @@
 package io.vertx.tests.net.quic;
 
 import io.netty.channel.ConnectTimeoutException;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.Future;
@@ -32,6 +33,7 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -596,5 +598,32 @@ public class QuicClientTest extends VertxTestBase {
     } catch (VertxException ignore) {
       // Expected
     }
+  }
+
+  @Test
+  public void testDatagrams() throws Exception {
+    QuicServerConfig serverConfig = new QuicServerConfig();
+    serverConfig.getTransportConfig().setEnableDatagrams(true);
+    server.close();
+    server = vertx.createQuicServer(serverConfig, QuicServerTest.SSL_OPTIONS);
+    server.handler(conn -> {
+      conn.datagramHandler(dgram -> {
+        assertEquals("ping", dgram.toString());
+        conn.writeDatagram(Buffer.buffer("pong"));
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    client.close();
+    QuicClientConfig clientConfig = new QuicClientConfig();
+    clientConfig.getTransportConfig().setEnableDatagrams(true);
+    client = vertx.createQuicClient(clientConfig, SSL_OPTIONS);
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    connection.datagramHandler(dgram -> {
+      assertEquals("pong", dgram.toString());
+      testComplete();
+    });
+    connection.writeDatagram(Buffer.buffer("ping")).await();
+    await();
   }
 }
