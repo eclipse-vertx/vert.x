@@ -71,6 +71,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final NetworkMetrics<?> streamMetrics;
   private final SocketAddress remoteAddress;
   private QuicTransportParams transportParams;
+  private int maxDatagramLength;
   private final Map<QuicStreamType, StreamOpenRequestQueue> pendingStreamOpenRequestsMap;
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
@@ -91,6 +92,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.context = context;
     this.remoteAddress = remoteAddress;
     this.pendingStreamOpenRequestsMap = pendingStreamRequestsMap;
+    this.maxDatagramLength = 0;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
       @Override
       protected void handleShutdown(Duration timeout, Completable<Void> completion) {
@@ -176,6 +178,10 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     } else {
       byteBuf.release();
     }
+  }
+
+  void enableDatagramExtension(int maxDatagramLength) {
+    this.maxDatagramLength = Math.max(0, maxDatagramLength);
   }
 
   void handleQuicStreamLimitChanged() {
@@ -375,6 +381,11 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
       }
     }
     return transportParams;
+  }
+
+  @Override
+  public int maxDatagramLength() {
+    return maxDatagramLength;
   }
 
   @Override

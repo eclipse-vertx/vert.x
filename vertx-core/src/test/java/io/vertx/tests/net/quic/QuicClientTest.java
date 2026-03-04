@@ -601,16 +601,13 @@ public class QuicClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testDatagrams() throws Exception {
+  public void testDatagrams() {
     QuicServerConfig serverConfig = new QuicServerConfig();
     serverConfig.getTransportConfig().setEnableDatagrams(true);
     server.close();
     server = vertx.createQuicServer(serverConfig, QuicServerTest.SSL_OPTIONS);
     server.handler(conn -> {
-      conn.datagramHandler(dgram -> {
-        assertEquals("ping", dgram.toString());
-        conn.writeDatagram(Buffer.buffer("pong"));
-      });
+      conn.datagramHandler(conn::writeDatagram);
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.close();
@@ -619,11 +616,19 @@ public class QuicClientTest extends VertxTestBase {
     client = vertx.createQuicClient(clientConfig, SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    int maxLen = connection.maxDatagramLength();
+    Buffer datagram = Buffer.buffer(TestUtils.randomAlphaString(maxLen));
     connection.datagramHandler(dgram -> {
-      assertEquals("pong", dgram.toString());
+      assertEquals(datagram.toString(), dgram.toString());
       testComplete();
     });
-    connection.writeDatagram(Buffer.buffer("ping")).await();
+    try {
+      connection.writeDatagram(Buffer.buffer(TestUtils.randomAlphaString(maxLen + 1))).await();
+      fail();
+    } catch (java.nio.BufferUnderflowException ignore) {
+      // Expected
+    }
+    connection.writeDatagram(datagram).await();
     await();
   }
 }

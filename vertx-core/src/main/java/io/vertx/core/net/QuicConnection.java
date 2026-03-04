@@ -154,6 +154,11 @@ public interface QuicConnection {
   QuicTransportParams transportParams();
 
   /**
+   * @return the maximum number of bytes the datagram payload can be or {@code 0} when the datagram extension is disabled
+   */
+  int maxDatagramLength();
+
+  /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is
    *         not SSL.
    * @see javax.net.ssl.SSLSession
