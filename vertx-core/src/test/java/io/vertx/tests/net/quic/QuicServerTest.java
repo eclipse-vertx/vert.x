@@ -12,7 +12,6 @@ package io.vertx.tests.net.quic;
 
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ChannelOutputShutdownException;
 import io.netty.handler.codec.quic.QuicClosedChannelException;
 import io.netty.handler.timeout.IdleStateEvent;
@@ -121,9 +120,9 @@ public class QuicServerTest extends VertxTestBase {
     } else {
       assertEquals(port, actualPort);
     }
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));
       QuicTestClient.Stream stream = connection.newStream();
       List<String> received = Collections.synchronizedList(new ArrayList<>());
@@ -153,9 +152,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       assertWaitUntil(() -> inflights.get() == 1);
       connection.close(3, "done".getBytes(StandardCharsets.UTF_8));
@@ -192,9 +191,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       CountDownLatch closeLatch = new CountDownLatch(1);
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       connection.closeHandler(v -> closeLatch.countDown());
@@ -231,7 +230,7 @@ public class QuicServerTest extends VertxTestBase {
       }));
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
       QuicTestClient.Connection connection = client.connection();
       connection.handler(stream -> {
@@ -257,7 +256,7 @@ public class QuicServerTest extends VertxTestBase {
       }));
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
       QuicTestClient.Connection connection = client.connection();
       connection.handler(stream -> {
@@ -292,7 +291,7 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       connection.newStream().create(false).write("ping");
@@ -337,7 +336,7 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
       List<QuicTestClient.Connection> connections = new ArrayList<>();
       for (int  j = 0;j < numConnections;j++) {
@@ -382,9 +381,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.create();
@@ -416,9 +415,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.create();
@@ -460,9 +459,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.create();
@@ -500,9 +499,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.resetHandler(code -> {
@@ -537,9 +536,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.create();
@@ -572,9 +571,9 @@ public class QuicServerTest extends VertxTestBase {
       }));
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       client.connection().datagramHandler(datagram -> {
         assertEquals("ping", new String(datagram));
         complete();
@@ -598,9 +597,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       connection.writeDatagram("ping".getBytes(StandardCharsets.UTF_8));
       await();
@@ -624,9 +623,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       await();
     } finally {
@@ -720,7 +719,7 @@ public class QuicServerTest extends VertxTestBase {
       connections.incrementAndGet();
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     AtomicReference<byte[]> tokenRef = new AtomicReference<>();
     client.tokenHandler((token) -> tokenRef.set(ByteBufUtil.getBytes(token)));
     try {
@@ -746,7 +745,7 @@ public class QuicServerTest extends VertxTestBase {
       connections.incrementAndGet();
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     AtomicBoolean executed = new AtomicBoolean();
     client.tokenHandler((token) -> {
       if (executed.compareAndSet(false, true)) {
@@ -780,7 +779,7 @@ public class QuicServerTest extends VertxTestBase {
       connections.incrementAndGet();
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     client.tokenHandler((token) -> token.setLong(0, 0L));
     try {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
@@ -814,9 +813,9 @@ public class QuicServerTest extends VertxTestBase {
     server.handler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       connection.close();
       Pattern pattern = Pattern.compile("([^ ]+).*");
@@ -870,9 +869,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.create();
@@ -924,9 +923,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream().create();
       stream.write("ping");
@@ -962,9 +961,9 @@ public class QuicServerTest extends VertxTestBase {
       });
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream().create();
       stream.write("ping");
@@ -983,9 +982,9 @@ public class QuicServerTest extends VertxTestBase {
       serverName.set(conn.indicatedServerName());
     });
     int actualPort = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    QuicTestClient client = new QuicTestClient(new NioEventLoopGroup(1));
+    QuicTestClient client = new QuicTestClient();
     try {
-      client = new QuicTestClient(new NioEventLoopGroup(1));
+      client = new QuicTestClient();
       QuicTestClient.Connection connection = client.connection()
         .serverName("host2.com")
         .connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));

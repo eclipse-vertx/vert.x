@@ -54,12 +54,12 @@ public class Http3ServerTest extends VertxTestBase {
   }
 
   private HttpServer server;
-  private Http3NettyTest.Client client;
+  private Http3TestClient.Client client;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    client = Http3NettyTest.client();
+    client = Http3TestClient.client();
     server = vertx.createHttpServer(serverConfig(), sslOptions());
   }
 
@@ -82,8 +82,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
     assertEquals("Hello World", new String(stream.responseBody()));
   }
@@ -100,8 +100,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.POST("/", "Hello World".getBytes(StandardCharsets.UTF_8));
     assertEquals("Hello World", new String(stream.responseBody()));
   }
@@ -118,8 +118,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
 
     stream.write(new DefaultHttp3Headers().method("GET").path("/"));
     stream.write("chunk".getBytes(StandardCharsets.UTF_8));
@@ -146,8 +146,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
 
     stream.write(new DefaultHttp3Headers().method("GET").path("/"));
     stream.writeUnknownFrame(64, "ping".getBytes(StandardCharsets.UTF_8));
@@ -196,9 +196,9 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
     connection.goAwayHandler(id -> complete());
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
     assertEquals("Hello World", new String(stream.responseBody()));
 
@@ -226,7 +226,7 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
     List<Long> goAways = Collections.synchronizedList(new ArrayList<>());
     connection.goAwayHandler(id -> {
       goAways.add(id);
@@ -234,7 +234,7 @@ public class Http3ServerTest extends VertxTestBase {
         complete();
       }
     });
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.resetHandler(code -> {
       assertEquals(H3_REQUEST_CANCELLED.code(), code);
       assertEquals(1, goAways.size());
@@ -272,18 +272,18 @@ public class Http3ServerTest extends VertxTestBase {
     server.listen(8443, "localhost").await();
 
     CompletableFuture<Void> cont = new CompletableFuture<>();
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
     connection.goAwayHandler(id -> {
       if (id > 0) {
         cont.complete(null);
       }
     });
-    Http3NettyTest.Client.Stream stream1 = connection.stream();
+    Http3TestClient.Client.Stream stream1 = connection.stream();
     stream1.GET("/");
 
     cont.get(10, TimeUnit.SECONDS);
 
-    Http3NettyTest.Client.Stream stream2 = connection.stream();
+    Http3TestClient.Client.Stream stream2 = connection.stream();
     // Remove validation to simulate a race pretending we have not yet received the go away frame
     stream2.channel().pipeline().remove("Http3RequestStreamValidationHandler#0");
     stream2.GET("/");
@@ -312,8 +312,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
     try {
       stream.responseBody();
@@ -341,8 +341,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.write(new DefaultHttp3Headers());
 
     awaitLatch(latch);
@@ -378,8 +378,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
     try {
       stream.responseBody();
@@ -420,8 +420,8 @@ public class Http3ServerTest extends VertxTestBase {
       .maxFieldSectionSize(1024)
       .qpackBlockedStreams(1024)
       .qpackMaxTableCapacity(1024);
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443), clientSettings);
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443), clientSettings);
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
     stream.responseBody();
     await();
@@ -448,8 +448,8 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.listen(8443, "localhost").await();
 
-    Http3NettyTest.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
-    Http3NettyTest.Client.Stream stream = connection.stream();
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
     stream.write(new DefaultHttp3Headers().method("CONNECT").authority("whatever.com"), true, false);
     await();
   }

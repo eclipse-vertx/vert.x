@@ -15,14 +15,11 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.handler.ssl.util.SelfSignedCertificate;
-import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -35,87 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
-import static org.junit.Assert.assertTrue;
-
-public class Http3NettyTest {
-
-  private static final byte[] CONTENT = "Hello World!\r\n".getBytes(CharsetUtil.US_ASCII);
-  static final int PORT = 9999;
-
-  public static void main(String[] args) throws Exception {
-    EventLoopGroup group = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
-
-
-//    try {
-//      Channel channel = server(group, PORT);
-//      client(group, PORT);
-//    } finally {
-//      group.shutdownGracefully();
-//    }
-
-  }
-
-  public static Channel server(EventLoopGroup group, int port) throws Exception {
-    SelfSignedCertificate cert = new SelfSignedCertificate();
-
-    QuicSslContext sslContext = QuicSslContextBuilder.forServer(cert.key(), null, cert.cert())
-      .applicationProtocols(Http3.supportedApplicationProtocols()).build();
-
-    ChannelHandler codec = Http3.newQuicServerCodecBuilder()
-      .sslContext(sslContext)
-      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-      .initialMaxData(10000000)
-      .initialMaxStreamDataBidirectionalLocal(1000000)
-      .initialMaxStreamDataBidirectionalRemote(1000000)
-      .initialMaxStreamsBidirectional(100)
-      .tokenHandler(InsecureQuicTokenHandler.INSTANCE)
-      .handler(new ChannelInitializer<QuicChannel>() {
-        @Override
-        protected void initChannel(QuicChannel ch) {
-          // Called for each connection
-          Http3ServerConnectionHandler http3Handler = new Http3ServerConnectionHandler(
-            new ChannelInitializer<QuicStreamChannel>() {
-              // Called for each request-stream,
-              @Override
-              protected void initChannel(QuicStreamChannel ch) {
-                ch.pipeline().addLast(new Http3RequestStreamInboundHandler() {
-
-                  @Override
-                  protected void channelRead(
-                    ChannelHandlerContext ctx, Http3HeadersFrame frame) {
-                    ReferenceCountUtil.release(frame);
-                  }
-
-                  @Override
-                  protected void channelRead(
-                    ChannelHandlerContext ctx, Http3DataFrame frame) {
-                    ReferenceCountUtil.release(frame);
-                  }
-
-                  @Override
-                  protected void channelInputClosed(ChannelHandlerContext ctx) {
-                    Http3HeadersFrame headersFrame = new DefaultHttp3HeadersFrame();
-                    headersFrame.headers().status("404");
-                    headersFrame.headers().add("server", "netty");
-                    headersFrame.headers().addInt("content-length", CONTENT.length);
-                    ctx.write(headersFrame);
-                    ctx.writeAndFlush(new DefaultHttp3DataFrame(
-                        Unpooled.wrappedBuffer(CONTENT)))
-                      .addListener(QuicStreamChannel.SHUTDOWN_OUTPUT);
-                  }
-                });
-              }
-            });
-          ch.pipeline().addLast(http3Handler);
-        }
-      }).build();
-    Bootstrap bs = new Bootstrap();
-    Channel channel = bs.group(group)
-      .channel(NioDatagramChannel.class)
-      .handler(codec)
-      .bind(new InetSocketAddress(port)).sync().channel();
-    return channel;
-  }
+public class Http3TestClient {
 
   public static Client client() throws Exception {
     Client client = new Client();
