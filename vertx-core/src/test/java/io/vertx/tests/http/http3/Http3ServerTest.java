@@ -65,7 +65,7 @@ public class Http3ServerTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    client = Http3NettyTest.client(new NioEventLoopGroup(1));
+    client = Http3NettyTest.client();
     server = vertx.createHttpServer(serverConfig(), sslOptions());
   }
 

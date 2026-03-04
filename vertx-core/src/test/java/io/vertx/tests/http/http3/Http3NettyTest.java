@@ -14,6 +14,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -116,20 +117,19 @@ public class Http3NettyTest {
     return channel;
   }
 
-  public static Client client(EventLoopGroup group) throws Exception {
-    Client client = new Client(group);
+  public static Client client() throws Exception {
+    Client client = new Client();
     client.bind(0);
     return client;
   }
 
   public static class Client {
 
-
     private final EventLoopGroup group;
     private Channel channel;
 
-    public Client(EventLoopGroup group) {
-      this.group = group;
+    public Client() {
+      this.group = new NioEventLoopGroup(1);
     }
 
     public Client bind(int port) throws Exception {
@@ -156,6 +156,7 @@ public class Http3NettyTest {
       if (channel != null) {
         channel.close().sync();
       }
+      group.shutdownGracefully();
     }
 
     public Connection connect(InetSocketAddress server) throws Exception {

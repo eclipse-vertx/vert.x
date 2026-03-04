@@ -30,6 +30,8 @@ import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
 /**
+ * This class should be used in integration tests only.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TestLoggerFactory extends InternalLoggerFactory {
