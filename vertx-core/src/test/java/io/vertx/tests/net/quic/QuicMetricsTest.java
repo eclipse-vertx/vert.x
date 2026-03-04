@@ -13,14 +13,12 @@ package io.vertx.tests.net.quic;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.FakeQuicEndpointMetrics;
 import io.vertx.test.fakemetrics.FakeTransportMetrics;
 import io.vertx.test.fakemetrics.ConnectionMetric;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +26,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-@RunWith(LinuxOrOsx.class)
 public class QuicMetricsTest extends VertxTestBase {
 
   @Override

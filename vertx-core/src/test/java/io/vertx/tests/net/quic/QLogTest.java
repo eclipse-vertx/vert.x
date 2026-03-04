@@ -12,10 +12,8 @@ package io.vertx.tests.net.quic;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,7 +23,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@RunWith(LinuxOrOsx.class)
 public class QLogTest extends VertxTestBase {
 
   private QuicServer server;

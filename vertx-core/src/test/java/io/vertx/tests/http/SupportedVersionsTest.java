@@ -14,11 +14,9 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +26,6 @@ import java.util.function.Supplier;
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_PORT;
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTP_PORT;
 
-@RunWith(LinuxOrOsx.class)
 public class SupportedVersionsTest extends VertxTestBase {
 
   private static final HttpServerOptions TCP_SERVER_DEFAULT = new HttpServerOptions()

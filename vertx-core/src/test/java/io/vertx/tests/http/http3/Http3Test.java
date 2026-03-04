@@ -10,13 +10,10 @@
  */
 package io.vertx.tests.http.http3;
 
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.tests.http.HttpTest;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-@RunWith(LinuxOrOsx.class)
 public class Http3Test extends HttpTest {
 
   public Http3Test() {

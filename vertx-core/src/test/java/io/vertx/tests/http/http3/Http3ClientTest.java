@@ -9,27 +9,20 @@ import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.LogConfig;
-import io.vertx.core.net.QuicTransportParams;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.core.spi.observability.HttpRequest;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-@RunWith(LinuxOrOsx.class)
 public class Http3ClientTest extends VertxTestBase {
 
   private HttpServerConfig serverOptions;

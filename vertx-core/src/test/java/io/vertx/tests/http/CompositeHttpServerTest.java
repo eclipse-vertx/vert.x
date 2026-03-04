@@ -18,19 +18,15 @@ import io.vertx.core.internal.http.HttpServerInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.net.ServerSocket;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-@RunWith(LinuxOrOsx.class)
 public class CompositeHttpServerTest extends VertxTestBase {
 
   @Test
