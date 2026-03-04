@@ -40,7 +40,6 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.SimpleHttpTest;
-import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.tests.http.http3.Http3Test;
 import org.junit.Test;
 
@@ -3372,36 +3371,6 @@ public abstract class HttpTest extends SimpleHttpTest {
   }
 
   @Test
-  public void testNoLogging() throws Exception {
-    TestLoggerFactory factory = testLogging();
-    assertFalse(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
-  }
-
-  @Test
-  public void testServerLogging() throws Exception {
-    server.close();
-    server = config.forServer().setLogActivity(true).create(vertx);
-    TestLoggerFactory factory = testLogging();
-    if (this instanceof Http1xTest) {
-      assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-    } else {
-      assertTrue(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
-    }
-  }
-
-  @Test
-  public void testClientLogging() throws Exception {
-    client.close();
-    client = config.forClient().setLogActivity(true).create(vertx);
-    TestLoggerFactory factory = testLogging();
-    if (this instanceof Http1xTest) {
-      assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-    } else {
-      assertTrue(factory.hasName("io.netty.handler.codec.http2.Http2FrameLogger"));
-    }
-  }
-
-  @Test
   public void testClientLocalAddress() throws Exception {
     String expectedAddress = TestUtils.loopbackAddress();
     client.close();
@@ -4356,25 +4325,6 @@ public abstract class HttpTest extends SimpleHttpTest {
       }));
     }));
     await();
-  }
-
-  private TestLoggerFactory testLogging() throws Exception {
-    return TestUtils.testLogging(() -> {
-       try {
-        server.requestHandler(req -> {
-          req.response().end();
-        });
-        startServer(testAddress);
-        client.request(requestOptions).onComplete(onSuccess(req -> {
-          req.send().onComplete(onSuccess(resp -> {
-            testComplete();
-          }));
-        }));
-        await();
-       } catch (Exception e) {
-         throw new RuntimeException(e);
-       }
-    });
   }
 
   @Test

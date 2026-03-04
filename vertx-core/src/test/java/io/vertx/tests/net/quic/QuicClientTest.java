@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class QuicClientTest extends VertxTestBase {
 
-  static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()
+  public static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()
     .setTrustOptions(Trust.SERVER_JKS.get())
     .setApplicationLayerProtocols(List.of("test-protocol"));
 

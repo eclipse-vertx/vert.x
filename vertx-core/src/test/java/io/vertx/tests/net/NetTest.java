@@ -46,7 +46,6 @@ import io.vertx.core.transport.Transport;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -3051,42 +3050,6 @@ public class NetTest extends VertxTestBase {
       complete();
     }));
     await();
-  }
-
-  @Test
-  public void testNoLogging() throws Exception {
-    TestLoggerFactory factory = testLogging();
-    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
-
-  @Test
-  public void testServerLogging() throws Exception {
-    server.close();
-    server = vertx.createNetServer(new NetServerOptions().setLogActivity(true));
-    TestLoggerFactory factory = testLogging();
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
-
-  @Test
-  public void testClientLogging() throws Exception {
-    client.close();
-    client = vertx.createNetClient(new NetClientOptions().setLogActivity(true));
-    TestLoggerFactory factory = testLogging();
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
-
-  private TestLoggerFactory testLogging() throws Exception {
-    return TestUtils.testLogging(() -> {
-      server.connectHandler(so -> {
-        so.end(Buffer.buffer("fizzbuzz"));
-      });
-      server.listen(testAddress).onComplete(onSuccess(v1 -> {
-        client.connect(testAddress).onComplete(onSuccess(so -> {
-          so.closeHandler(v2 -> testComplete());
-        }));
-      }));
-      await();
-    });
   }
 
   /**

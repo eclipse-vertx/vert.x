@@ -501,6 +501,9 @@ public class TestUtils {
       .map(p -> "" + p.getName(0)).collect(Collectors.joining("/"));
   }
 
+  /**
+   * This class should be used in integration tests only.
+   */
   public static TestLoggerFactory testLogging(Runnable runnable) {
     InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
     TestLoggerFactory factory = new TestLoggerFactory();

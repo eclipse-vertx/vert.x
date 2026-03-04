@@ -22,9 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
@@ -53,7 +51,7 @@ import java.util.regex.Pattern;
 
 public class QuicServerTest extends VertxTestBase {
 
-  static final ServerSSLOptions SSL_OPTIONS = new ServerSSLOptions()
+  public static final ServerSSLOptions SSL_OPTIONS = new ServerSSLOptions()
     .setKeyCertOptions(Cert.SERVER_JKS.get())
     .setApplicationLayerProtocols(List.of("test-protocol"));
 
@@ -997,18 +995,6 @@ public class QuicServerTest extends VertxTestBase {
       client.close();
       server.close().await();
     }
-  }
-
-  @Test
-  public void testServerLogging() throws Exception {
-    TestLoggerFactory fact = TestUtils.testLogging(() -> {
-      try {
-        testConnect(new QuicServerConfig().setLogConfig(new LogConfig().setEnabled(true)), 9999);
-      } catch (Exception e) {
-        fail(e);
-      }
-    });
-    assertTrue(fact.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
   /*  @Test
