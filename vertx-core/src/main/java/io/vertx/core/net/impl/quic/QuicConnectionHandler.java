@@ -15,6 +15,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.quic.QuicChannel;
 import io.netty.handler.codec.quic.QuicConnectionCloseEvent;
+import io.netty.handler.codec.quic.QuicDatagramExtensionEvent;
 import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamLimitChangedEvent;
 import io.netty.handler.logging.ByteBufFormat;
@@ -131,6 +132,10 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
       }
     } else if (evt instanceof QuicStreamLimitChangedEvent) {
       connection.handleQuicStreamLimitChanged();
+    } else if (evt instanceof QuicDatagramExtensionEvent) {
+      QuicDatagramExtensionEvent datagramExtensionEvent = (QuicDatagramExtensionEvent) evt;
+      QuicConnectionImpl c = connection;
+      c.enableDatagramExtension(datagramExtensionEvent.maxLength());
     }
     super.userEventTriggered(ctx, evt);
   }
