@@ -36,7 +36,7 @@ public class CompositeHttpServerTest extends VertxTestBase {
 
   @Test
   public void testFailQuic() throws Exception {
-    QuicServer quicServer = vertx.createQuicServer(new QuicServerConfig().setPort(4043), new ServerSSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()));
+    QuicServer quicServer = vertx.createQuicServer(new QuicServerConfig().setPort(4043).setReuseAddress(false), new ServerSSLOptions().setKeyCertOptions(Cert.SNI_PEM.get()));
     quicServer.listen().await();
     expectFail();
     quicServer.close().await();
@@ -61,7 +61,8 @@ public class CompositeHttpServerTest extends VertxTestBase {
         .response()
         .end(request.version().name()))
       .listen();
-    assertWaitUntil(res::failed);
+    assertWaitUntil(res::isComplete);
+    assertTrue(res.failed());
   }
 
   public void expectSucceed() throws Exception {

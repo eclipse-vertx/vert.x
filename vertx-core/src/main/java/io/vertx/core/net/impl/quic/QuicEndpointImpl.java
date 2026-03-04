@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelOption;
 import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.FlushStrategy;
 import io.netty.handler.codec.quic.QuicCodecBuilder;
@@ -127,15 +128,16 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   private Future<Channel> bind(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) {
-   Bootstrap bootstrap = new Bootstrap()
+    Bootstrap bootstrap = new Bootstrap()
       .group(context.nettyEventLoop())
+      .option(ChannelOption.SO_REUSEADDR, config.isReuseAddress())
       .channelFactory(vertx.transport().datagramChannelFactory());
-   InetSocketAddress addr;
-   if (bindAddr.hostAddress() != null) {
-     addr = new InetSocketAddress(bindAddr.hostAddress(), bindAddr.port());
-   } else {
-     addr = new InetSocketAddress(bindAddr.hostName(), bindAddr.port());
-   }
+    InetSocketAddress addr;
+    if (bindAddr.hostAddress() != null) {
+      addr = new InetSocketAddress(bindAddr.hostAddress(), bindAddr.port());
+    } else {
+      addr = new InetSocketAddress(bindAddr.hostName(), bindAddr.port());
+    }
     Future<ChannelHandler> f;
     try {
       f = channelHandler(context, bindAddr, metrics);

@@ -126,6 +126,11 @@ public class QuicServerConfig extends QuicEndpointConfig {
     return (QuicServerConfig) super.setMaxStreamUniRequests(maxStreamRequests);
   }
 
+  @Override
+  public QuicServerConfig setReuseAddress(boolean reuseAddress) {
+    return (QuicServerConfig) super.setReuseAddress(reuseAddress);
+  }
+
   /**
    * @return the port
    */
