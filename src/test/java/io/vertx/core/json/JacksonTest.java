@@ -19,8 +19,6 @@ import org.junit.Test;
 
 import static com.fasterxml.jackson.core.StreamReadConstraints.*;
 import static io.vertx.test.core.TestUtils.repeat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -78,13 +76,15 @@ public class JacksonTest extends VertxTestBase {
       DEFAULT_MAX_DEPTH,
       DEFAULT_MAX_NUM_LEN,
       DEFAULT_MAX_STRING_LEN,
-      DEFAULT_MAX_NAME_LEN);
+      DEFAULT_MAX_NAME_LEN,
+      DEFAULT_MAX_DOC_LEN);
   }
 
   public static void testReadConstraints(int defaultMaxDepth,
                                          int maxNumberLength,
                                          int defaultMaxStringLength,
-                                         int defaultMaxNameLength) {
+                                         int defaultMaxNameLength,
+                                         long defaultMaxDocumentLength) {
     testMaxNestingDepth(defaultMaxDepth);
     try {
       testMaxNestingDepth(defaultMaxDepth + 1);
@@ -111,6 +111,15 @@ public class JacksonTest extends VertxTestBase {
       Assert.fail();
     } catch (DecodeException expected) {
     }
+
+    if (defaultMaxDocumentLength >= 0) {
+      testMaxDocumentLength(defaultMaxDocumentLength);
+      try {
+        testMaxDocumentLength(defaultMaxDocumentLength + 1);
+        Assert.fail();
+      } catch (DecodeException expected) {
+      }
+    }
   }
 
   private static JsonArray testMaxNestingDepth(int depth) {
@@ -131,5 +140,18 @@ public class JacksonTest extends VertxTestBase {
   private static JsonObject testMaxNameLength(int len) {
     String json = "{\"" + repeat("a", len) + "\":3}";
     return new JsonObject(json);
+  }
+
+  private static JsonArray testMaxDocumentLength(long len) {
+    String prefix = len % 2 == 0 ? "[ " : "[";
+    int num = (int) ((len - prefix.length()) / 2);
+    StringBuilder sb = new StringBuilder((int) len);
+    sb.append(prefix);
+    for (int i = 0; i < num;i++) {
+      sb.append("0,");
+    }
+    sb.setCharAt((int) (len - 1), ']');
+    String json = sb.toString();
+    return new JsonArray(json);
   }
 }
