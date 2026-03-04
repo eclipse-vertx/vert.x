@@ -22,6 +22,6 @@ public class JacksonConfigOverrideTest extends VertxTestBase {
 
   @Test
   public void testReadConstraints() {
-    JacksonTest.testReadConstraints(100,  100, 100, 100);
+    JacksonTest.testReadConstraints(100,  100, 100, 100, 1000);
   }
 }
