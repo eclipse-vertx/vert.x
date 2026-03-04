@@ -17,15 +17,12 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.CompletableFuture;
 
-@RunWith(LinuxOrOsx.class)
 public class QuicFlowControlTest extends VertxTestBase {
 
   private QuicServer server;

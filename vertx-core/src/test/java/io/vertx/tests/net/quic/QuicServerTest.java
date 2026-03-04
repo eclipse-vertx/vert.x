@@ -22,13 +22,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -53,7 +51,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@RunWith(LinuxOrOsx.class)
 public class QuicServerTest extends VertxTestBase {
 
   static final ServerSSLOptions SSL_OPTIONS = new ServerSSLOptions()

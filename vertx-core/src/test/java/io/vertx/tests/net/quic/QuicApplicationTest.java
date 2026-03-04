@@ -48,17 +48,14 @@ import io.vertx.core.net.QuicClientConfig;
 import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.impl.quic.QuicConnectionHandler;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
 
-@RunWith(LinuxOrOsx.class)
 public class QuicApplicationTest extends VertxTestBase {
 
   @Test

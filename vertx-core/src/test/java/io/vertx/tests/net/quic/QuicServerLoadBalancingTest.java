@@ -15,10 +15,8 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.shareddata.LocalMap;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
 
-@RunWith(LinuxOrOsx.class)
 public class QuicServerLoadBalancingTest extends VertxTestBase {
 
   private List<QuicServer> servers;

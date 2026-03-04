@@ -11,7 +11,6 @@
 package io.vertx.tests.net.quic;
 
 import io.netty.channel.ConnectTimeoutException;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.Future;
@@ -21,19 +20,16 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-@RunWith(LinuxOrOsx.class)
 public class QuicClientTest extends VertxTestBase {
 
   static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()

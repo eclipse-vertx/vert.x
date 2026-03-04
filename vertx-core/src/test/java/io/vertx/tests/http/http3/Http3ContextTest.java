@@ -19,17 +19,11 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import java.util.List;
-import java.util.Set;
-
-@RunWith(LinuxOrOsx.class)
 public class Http3ContextTest extends VertxTestBase {
 
   private HttpServer server;

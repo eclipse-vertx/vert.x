@@ -23,14 +23,12 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.http3.Http3FrameLogger;
 import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.test.core.LinuxOrOsx;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +43,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 
-@RunWith(LinuxOrOsx.class)
 public class Http3ServerTest extends VertxTestBase {
 
   public static HttpServerConfig serverConfig() {
