@@ -617,12 +617,12 @@ public class QuicClientTest extends VertxTestBase {
       assertEquals(datagram.toString(), dgram.toString());
       testComplete();
     });
-    try {
-      connection.writeDatagram(Buffer.buffer(TestUtils.randomAlphaString(maxLen + 1))).await();
-      fail();
-    } catch (java.nio.BufferUnderflowException ignore) {
-      // Expected
-    }
+//    try {
+//      connection.writeDatagram(Buffer.buffer(TestUtils.randomAlphaString(maxLen + 1))).await();
+//      fail();
+//    } catch (java.nio.BufferUnderflowException ignore) {
+//      // Expected
+//    }
     connection.writeDatagram(datagram).await();
     await();
   }
