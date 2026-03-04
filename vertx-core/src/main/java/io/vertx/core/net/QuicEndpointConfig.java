@@ -14,6 +14,8 @@ import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 
+import static io.vertx.core.net.NetworkOptions.DEFAULT_REUSE_ADDRESS;
+
 /**
  * Configuration of a Quic client.
  *
@@ -32,6 +34,7 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
   private String keyLogFile;
   private int maxStreamBidiRequests;
   private int maxStreamUniRequests;
+  private boolean reuseAddress;
 
   public QuicEndpointConfig() {
     super();
@@ -40,6 +43,7 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
     this.keyLogFile = null;
     this.maxStreamBidiRequests = DEFAULT_MAX_STREAM_BIDI_REQUESTS;
     this.maxStreamUniRequests = DEFAULT_MAX_STREAM_UNI_REQUESTS;
+    this.reuseAddress = DEFAULT_REUSE_ADDRESS;
   }
 
   public QuicEndpointConfig(QuicEndpointConfig other) {
@@ -51,6 +55,7 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
     this.keyLogFile = other.keyLogFile;
     this.maxStreamBidiRequests = other.maxStreamBidiRequests;
     this.maxStreamUniRequests = other.maxStreamUniRequests;
+    this.reuseAddress = other.reuseAddress;
   }
 
   /**
@@ -166,6 +171,24 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
       throw new IllegalArgumentException("maxStreamUniRequests must be >= 0");
     }
     this.maxStreamUniRequests = maxStreamRequests;
+    return this;
+  }
+
+  /**
+   * @return  the value of reuse address
+   */
+  public boolean isReuseAddress() {
+    return reuseAddress;
+  }
+
+  /**
+   * Set the value of reuse address, used to bind the UDP socket underpinning the QUIC transport.
+   *
+   * @param reuseAddress  the value of reuse address
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicEndpointConfig setReuseAddress(boolean reuseAddress) {
+    this.reuseAddress = reuseAddress;
     return this;
   }
 }

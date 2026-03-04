@@ -108,6 +108,11 @@ public class QuicClientConfig extends QuicEndpointConfig {
     return (QuicClientConfig) super.setLogConfig(config);
   }
 
+  @Override
+  public QuicServerConfig setReuseAddress(boolean reuseAddress) {
+    return (QuicServerConfig) super.setReuseAddress(reuseAddress);
+  }
+
   /**
    * @return the value of connect timeout
    */
