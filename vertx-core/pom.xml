@@ -427,7 +427,7 @@
               </includes>
               <systemProperties>
                 <vertx.jackson.defaultReadMaxNestingDepth>100</vertx.jackson.defaultReadMaxNestingDepth>
-                <vertx.jackson.defaultReadMaxDocumentLength>100</vertx.jackson.defaultReadMaxDocumentLength>
+                <vertx.jackson.defaultReadMaxDocumentLength>1000</vertx.jackson.defaultReadMaxDocumentLength>
                 <vertx.jackson.defaultReadMaxNumberLength>100</vertx.jackson.defaultReadMaxNumberLength>
                 <vertx.jackson.defaultReadMaxStringLength>100</vertx.jackson.defaultReadMaxStringLength>
                 <vertx.jackson.defaultReadMaxNameLength>100</vertx.jackson.defaultReadMaxNameLength>
