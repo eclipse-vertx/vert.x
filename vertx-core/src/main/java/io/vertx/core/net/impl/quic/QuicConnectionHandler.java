@@ -76,15 +76,12 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
     channel = ch;
     connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging,
       maxStreamBidiRequests, maxStreamUniRequests, ch, remoteAddress, ctx);
-    if (ch.isActive()) {
-      activate();
-    }
   }
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    activate();
     super.channelActive(ctx);
+    activate();
   }
 
   private void activate() {
@@ -136,6 +133,10 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
       QuicDatagramExtensionEvent datagramExtensionEvent = (QuicDatagramExtensionEvent) evt;
       QuicConnectionImpl c = connection;
       c.enableDatagramExtension(datagramExtensionEvent.maxLength());
+
+      // Activate at this moment, since the handler activation happens before we get relevant information
+      // datagram extension event is last, see QuicheQuicChannel
+      activate();
     }
     super.userEventTriggered(ctx, evt);
   }

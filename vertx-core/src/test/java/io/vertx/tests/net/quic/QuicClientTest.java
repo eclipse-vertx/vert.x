@@ -611,18 +611,19 @@ public class QuicClientTest extends VertxTestBase {
     client = vertx.createQuicClient(clientConfig, SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    assertWaitUntil(() -> connection.maxDatagramLength() > 0);
     int maxLen = connection.maxDatagramLength();
     Buffer datagram = Buffer.buffer(TestUtils.randomAlphaString(maxLen));
     connection.datagramHandler(dgram -> {
       assertEquals(datagram.toString(), dgram.toString());
       testComplete();
     });
-//    try {
-//      connection.writeDatagram(Buffer.buffer(TestUtils.randomAlphaString(maxLen + 1))).await();
-//      fail();
-//    } catch (java.nio.BufferUnderflowException ignore) {
-//      // Expected
-//    }
+    try {
+      connection.writeDatagram(Buffer.buffer(TestUtils.randomAlphaString(maxLen + 1))).await();
+      fail();
+    } catch (java.nio.BufferUnderflowException ignore) {
+      // Expected
+    }
     connection.writeDatagram(datagram).await();
     await();
   }
