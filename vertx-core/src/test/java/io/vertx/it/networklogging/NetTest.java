@@ -58,11 +58,15 @@ public class NetTest extends VertxTestBase {
     client = vertx.createNetClient(clientOptions);
     TestUtils.testLogging(factory -> {
       server.connectHandler(so -> {
+        so.endHandler(v -> {
+          so.end();
+        });
         so.end(Buffer.buffer("fizzbuzz"));
       });
       server.listen(0, "localhost").await();
       NetSocket so = client.connect(server.actualPort(), "localhost").await();
       so.closeHandler(v2 -> testComplete());
+      so.end().await();
       await();
     });
   }
