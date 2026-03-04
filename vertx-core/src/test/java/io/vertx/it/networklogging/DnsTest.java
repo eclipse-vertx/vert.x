@@ -31,7 +31,7 @@ public class DnsTest extends VertxTestBase {
 
       final String ip = "10.0.0.1";
       mockDnsServer.testResolveA(ip);
-      TestLoggerFactory factory = TestUtils.testLogging(() -> {
+      TestUtils.testLogging(factory -> {
         try {
           client
             .resolveA(ip)
@@ -40,9 +40,8 @@ public class DnsTest extends VertxTestBase {
         } catch (Exception e) {
           fail(e);
         }
+        assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
       });
-
-      assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
     } finally {
       mockDnsServer.stop();
     }

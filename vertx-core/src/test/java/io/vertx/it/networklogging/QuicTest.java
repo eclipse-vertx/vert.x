@@ -8,6 +8,7 @@ import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.QuicStream;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
@@ -18,9 +19,10 @@ import static io.vertx.tests.net.quic.QuicServerTest.SSL_OPTIONS;
 
 public class QuicTest extends VertxTestBase {
 
+  @Repeat(times = 1000)
   @Test
   public void testLogging() {
-    TestLoggerFactory fact = TestUtils.testLogging(() -> {
+    TestUtils.testLogging(factory -> {
       try {
         QuicServer server = vertx.createQuicServer(
           new QuicServerConfig().setLogConfig(new LogConfig().setEnabled(true)),
@@ -39,7 +41,7 @@ public class QuicTest extends VertxTestBase {
       } catch (Exception e) {
         fail(e);
       }
+      assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
     });
-    assertTrue(fact.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 }

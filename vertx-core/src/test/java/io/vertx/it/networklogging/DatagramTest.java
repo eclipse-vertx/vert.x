@@ -18,10 +18,14 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Test;
 
+import java.util.function.Predicate;
+
 public class DatagramTest extends VertxTestBase {
 
-  private TestLoggerFactory testLogging(DatagramSocketOptions sendOptions, DatagramSocketOptions listenOptions) throws Exception {
-    return TestUtils.testLogging(() -> {
+  private void testLogging(DatagramSocketOptions sendOptions,
+                           DatagramSocketOptions listenOptions,
+                           Predicate<TestLoggerFactory> checker) throws Exception {
+    TestUtils.testLogging(factory -> {
       DatagramSocket peer1 = vertx.createDatagramSocket(sendOptions);
       DatagramSocket peer2 = vertx.createDatagramSocket(listenOptions);
       try {
@@ -38,25 +42,23 @@ public class DatagramTest extends VertxTestBase {
         peer1.close().await();
         peer2.close().await();
       }
+      assertTrue(checker.test(factory));
     });
   }
 
   @Test
   public void testNoLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions());
-    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    testLogging(new DatagramSocketOptions(), new DatagramSocketOptions(), factory -> !factory.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
   @Test
   public void testSendLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new DatagramSocketOptions().setLogActivity(true), new DatagramSocketOptions());
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    testLogging(new DatagramSocketOptions().setLogActivity(true), new DatagramSocketOptions(), factory -> factory.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
   @Test
   public void testListenLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions().setLogActivity(true));
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    testLogging(new DatagramSocketOptions(), new DatagramSocketOptions().setLogActivity(true), factory -> factory.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
 }

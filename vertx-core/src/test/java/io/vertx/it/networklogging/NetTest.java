@@ -30,34 +30,33 @@ import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.tests.net.quic.QuicClientTest;
 import org.junit.Test;
 
+import java.util.function.Predicate;
+
 import static io.vertx.tests.net.quic.QuicServerTest.SSL_OPTIONS;
 
 public class NetTest extends VertxTestBase {
 
   @Test
   public void testNoLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new NetServerOptions(), new NetClientOptions());
-    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    testLogging(new NetServerOptions(), new NetClientOptions(), factory -> !factory.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
   @Test
   public void testServerLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new NetServerOptions().setLogActivity(true), new NetClientOptions());
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    testLogging(new NetServerOptions().setLogActivity(true), new NetClientOptions(), factory -> factory.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
   @Test
   public void testClientLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new NetServerOptions(), new NetClientOptions().setLogActivity(true));
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
+    testLogging(new NetServerOptions(), new NetClientOptions().setLogActivity(true), factory -> factory.hasName("io.netty.handler.logging.LoggingHandler"));
   }
 
-  public TestLoggerFactory testLogging(NetServerOptions serverOptions,  NetClientOptions clientOptions) throws Exception {
+  public void testLogging(NetServerOptions serverOptions, NetClientOptions clientOptions, Predicate<TestLoggerFactory> checker) throws Exception {
     NetServer server;
     NetClient client;
     server = vertx.createNetServer(serverOptions);
     client = vertx.createNetClient(clientOptions);
-    return TestUtils.testLogging(() -> {
+    TestUtils.testLogging(factory -> {
       server.connectHandler(so -> {
         so.end(Buffer.buffer("fizzbuzz"));
       });

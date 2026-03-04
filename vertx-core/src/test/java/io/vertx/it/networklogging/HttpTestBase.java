@@ -23,6 +23,8 @@ import io.vertx.test.http.HttpConfig;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Test;
 
+import java.util.function.Predicate;
+
 public abstract class HttpTestBase extends VertxTestBase {
 
   private final HttpConfig config;
@@ -37,24 +39,21 @@ public abstract class HttpTestBase extends VertxTestBase {
 
   @Test
   public void testNoLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(false, false);
-    assertFalse(check(factory));
+    testLogging(false, false, ((Predicate<TestLoggerFactory>) this::check).negate());
   }
 
   @Test
   public void testServerLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(true, false);
-    assertTrue(check(factory));
+    testLogging(true, false, this::check);
   }
 
   @Test
   public void testClientLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(false, true);
-    assertTrue(check(factory));
+    testLogging(false, true, this::check);
   }
 
-  private TestLoggerFactory testLogging(boolean logServerActivity, boolean logClientActivity) throws Exception {
-    return TestUtils.testLogging(() -> {
+  private void testLogging(boolean logServerActivity, boolean logClientActivity, Predicate<TestLoggerFactory> checker) throws Exception {
+    TestUtils.testLogging(factory -> {
       server = config.forServer().setLogActivity(logServerActivity).create(vertx);
       client = config.forClient().setLogActivity(logClientActivity).create(vertx);
       try {
@@ -75,6 +74,7 @@ public abstract class HttpTestBase extends VertxTestBase {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
+      assertTrue(checker.test(factory));
     });
   }
 }

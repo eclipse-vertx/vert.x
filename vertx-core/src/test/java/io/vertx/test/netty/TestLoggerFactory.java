@@ -36,8 +36,23 @@ public class TestLoggerFactory extends InternalLoggerFactory {
   private ConcurrentMap<String, String> names = new ConcurrentHashMap<>();
   private Deque<Map.Entry<String, LogRecord>> logs = new ConcurrentLinkedDeque<>();
 
+  public TestLoggerFactory() {
+  }
+
   public boolean hasName(String name) {
-    return names.containsKey(name);
+    int retries = 3;
+    while (retries-- > 0) {
+      if (names.containsKey(name)) {
+        return true;
+      }
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+    return false;
   }
 
   public Stream<LogRecord> logs(Class<?> cls) {
