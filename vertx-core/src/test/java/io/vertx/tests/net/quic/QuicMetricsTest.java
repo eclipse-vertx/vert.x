@@ -18,7 +18,6 @@ import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.FakeQuicEndpointMetrics;
 import io.vertx.test.fakemetrics.FakeTransportMetrics;
 import io.vertx.test.fakemetrics.ConnectionMetric;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -48,7 +47,6 @@ public class QuicMetricsTest extends VertxTestBase {
     super.tearDown();
   }
 
-  @Ignore("this fails sporadically in CI")
   @Test
   public void testSingleServer() throws Exception {
     testMetrics(1);
