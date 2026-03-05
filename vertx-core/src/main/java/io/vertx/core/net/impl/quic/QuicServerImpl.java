@@ -86,9 +86,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) throws Exception {
+  protected Future<ChannelHandler> channelHandler(ContextInternal context, ServerID serverID, TransportMetrics<?> metrics) throws Exception {
     if (config.isLoadBalanced()) {
-      ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
       Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
       return f.<ChannelHandler>map(sslContextProvider -> {
@@ -110,7 +109,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
         };
       });
     } else {
-      return super.channelHandler(context, bindAddr, metrics);
+      return super.channelHandler(context, serverID, metrics);
     }
   }
 

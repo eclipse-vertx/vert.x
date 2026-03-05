@@ -29,6 +29,7 @@ import io.vertx.core.internal.quic.QuicEndpointInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectionGroup;
+import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
@@ -103,7 +104,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
 
   protected abstract Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception;
 
-  protected Future<ChannelHandler> channelHandler(ContextInternal context, SocketAddress bindAddr, TransportMetrics<?> metrics) throws Exception {
+  protected Future<ChannelHandler> channelHandler(ContextInternal context, ServerID serverID, TransportMetrics<?> metrics) throws Exception {
     return codecBuilder(context, metrics).map(codecBuilder -> {
       try {
         initQuicCodecBuilder(codecBuilder, metrics);
@@ -121,15 +122,20 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
       .group(context.nettyEventLoop())
       .option(ChannelOption.SO_REUSEADDR, config.isReuseAddress())
       .channelFactory(vertx.transport().datagramChannelFactory());
+    int port = bindAddr.port();
+    if (port < 0) {
+      port = 0;
+    }
     InetSocketAddress addr;
     if (bindAddr.hostAddress() != null) {
-      addr = new InetSocketAddress(bindAddr.hostAddress(), bindAddr.port());
+      addr = new InetSocketAddress(bindAddr.hostAddress(), port);
     } else {
-      addr = new InetSocketAddress(bindAddr.hostName(), bindAddr.port());
+      addr = new InetSocketAddress(bindAddr.hostName(), port);
     }
+    ServerID serverID = new ServerID(bindAddr.port(), bindAddr.host());
     Future<ChannelHandler> f;
     try {
-      f = channelHandler(context, bindAddr, metrics);
+      f = channelHandler(context, serverID, metrics);
     } catch (Exception e) {
       return context.failedFuture(e);
     }

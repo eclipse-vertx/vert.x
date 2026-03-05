@@ -60,7 +60,9 @@ public class QuicMetricsTest extends VertxTestBase {
   private void testMetrics(int numberOfServers) throws Exception {
     client = vertx.createQuicClient(new QuicClientConfig().setMetricsName("the-metrics"), QuicClientTest.SSL_OPTIONS);
     AtomicReference<ConnectionMetric> serverConnectionMetric = new AtomicReference<>();
-    for (int i = 0;i < numberOfServers;i++) {
+    int port;
+    int i = 0;
+    do {
       QuicServer server = vertx.createQuicServer(new QuicServerConfig().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
       server.handler(conn -> {
         FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(server);
@@ -72,11 +74,12 @@ public class QuicMetricsTest extends VertxTestBase {
           stream.endHandler(v -> stream.end());
         });
       });
-      server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+      port = server.bind(SocketAddress.sharedRandomPort(1, "localhost")).await();
       servers.add(server);
     }
+    while (i++ < numberOfServers);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
-    QuicConnection clientConnection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicConnection clientConnection = client.connect(SocketAddress.inetSocketAddress(port, "localhost")).await();
     FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.quicMetricsOf(client);
     assertNull(clientMetrics.protocol());
     assertEquals("the-metrics", clientMetrics.name());
