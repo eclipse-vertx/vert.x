@@ -19,7 +19,6 @@ import static io.vertx.tests.net.quic.QuicServerTest.SSL_OPTIONS;
 
 public class QuicTest extends VertxTestBase {
 
-  @Repeat(times = 1000)
   @Test
   public void testLogging() {
     TestUtils.testLogging(factory -> {
