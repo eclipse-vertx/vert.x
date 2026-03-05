@@ -15,12 +15,9 @@ import io.netty.util.internal.logging.AbstractInternalLogger;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.MessageFormatter;
-import io.vertx.tests.net.quic.QuicTestClient;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -30,6 +27,8 @@ import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
 /**
+ * This class should be used in integration tests only.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class TestLoggerFactory extends InternalLoggerFactory {
@@ -37,8 +36,23 @@ public class TestLoggerFactory extends InternalLoggerFactory {
   private ConcurrentMap<String, String> names = new ConcurrentHashMap<>();
   private Deque<Map.Entry<String, LogRecord>> logs = new ConcurrentLinkedDeque<>();
 
+  public TestLoggerFactory() {
+  }
+
   public boolean hasName(String name) {
-    return names.containsKey(name);
+    int retries = 3;
+    while (retries-- > 0) {
+      if (names.containsKey(name)) {
+        return true;
+      }
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      }
+    }
+    return false;
   }
 
   public Stream<LogRecord> logs(Class<?> cls) {

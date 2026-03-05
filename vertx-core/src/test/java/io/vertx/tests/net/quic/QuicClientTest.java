@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class QuicClientTest extends VertxTestBase {
 
-  static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()
+  public static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()
     .setTrustOptions(Trust.SERVER_JKS.get())
     .setApplicationLayerProtocols(List.of("test-protocol"));
 
@@ -611,6 +611,7 @@ public class QuicClientTest extends VertxTestBase {
     client = vertx.createQuicClient(clientConfig, SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    assertWaitUntil(() -> connection.maxDatagramLength() > 0);
     int maxLen = connection.maxDatagramLength();
     Buffer datagram = Buffer.buffer(TestUtils.randomAlphaString(maxLen));
     connection.datagramHandler(dgram -> {

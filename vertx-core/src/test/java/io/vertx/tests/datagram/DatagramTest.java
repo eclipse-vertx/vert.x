@@ -24,7 +24,6 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -507,41 +506,6 @@ public class DatagramTest extends VertxTestBase {
         .listen(1234, "127.0.0.1"))
       .onComplete(onSuccess(v -> testComplete()));
     await();
-  }
-
-  @Test
-  public void testNoLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions());
-    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
-
-  @Test
-  public void testSendLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new DatagramSocketOptions().setLogActivity(true), new DatagramSocketOptions());
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
-
-  @Test
-  public void testListenLogging() throws Exception {
-    TestLoggerFactory factory = testLogging(new DatagramSocketOptions(), new DatagramSocketOptions().setLogActivity(true));
-    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
-
-  private TestLoggerFactory testLogging(DatagramSocketOptions sendOptions, DatagramSocketOptions listenOptions) throws Exception {
-    return TestUtils.testLogging(() -> {
-      peer1 = vertx.createDatagramSocket(sendOptions);
-      peer2 = vertx.createDatagramSocket(listenOptions);
-      peer2.exceptionHandler(t -> fail(t.getMessage()));
-      peer2.listen(1234, "127.0.0.1").onComplete(onSuccess(ar -> {
-        Buffer buffer = TestUtils.randomBuffer(128);
-        peer2.handler(packet -> {
-          assertEquals(buffer, packet.data());
-          testComplete();
-        });
-        peer1.send(buffer, 1234, "127.0.0.1").onComplete(onSuccess(v -> {}));
-      }));
-      await();
-    });
   }
 
   @Test

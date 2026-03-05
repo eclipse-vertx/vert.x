@@ -323,8 +323,8 @@ public class QuicTestClient {
   private Channel channel;
   private Consumer<ByteBuf> tokenHandler;
 
-  public QuicTestClient(NioEventLoopGroup group) {
-    this.group = group;
+  public QuicTestClient() {
+    this.group = new NioEventLoopGroup(1);
   }
 
   public QuicTestClient tokenHandler(Consumer<ByteBuf> tokenHandler) {
@@ -426,5 +426,6 @@ public class QuicTestClient {
 
   public void close() throws Exception {
     channel.close().sync();
+    group.shutdownGracefully();
   }
 }

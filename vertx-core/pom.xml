@@ -683,6 +683,27 @@
               </systemProperties>
             </configuration>
           </execution>
+          <execution>
+            <id>network-logging</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/networklogging/DatagramTest.java</include>
+                <include>io/vertx/it/networklogging/Dns.java</include>
+                <include>io/vertx/it/networklogging/Http1Test.java</include>
+                <include>io/vertx/it/networklogging/Http2Test.java</include>
+                <include>io/vertx/it/networklogging/Http3Test.java</include>
+                <include>io/vertx/it/networklogging/NetTest.java</include>
+                <include>io/vertx/it/networklogging/QuicTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
+              </systemProperties>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 

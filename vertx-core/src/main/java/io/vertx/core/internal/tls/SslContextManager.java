@@ -49,12 +49,14 @@ public class SslContextManager {
   private final boolean useWorkerPool;
   private final Map<ConfigKey, Future<Config>> configMap;
   private final Map<ConfigKey, Future<SslContextProvider>> sslContextProviderMap;
+  private boolean closed;
 
   public SslContextManager(SSLEngineOptions sslEngineOptions, int cacheMaxSize) {
     this.configMap = new LruCache<>(cacheMaxSize);
     this.sslContextProviderMap = new LruCache<>(cacheMaxSize);
     this.supplier = sslEngineOptions::sslContextFactory;
     this.useWorkerPool = sslEngineOptions.getUseWorkerThread();
+    this.closed = false;
   }
 
   /**
@@ -145,6 +147,9 @@ public class SslContextManager {
     Promise<SslContextProvider> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
+      if (closed) {
+        return ctx.failedFuture("SslContextManager closed");
+      }
       if (force) {
         sslContextProviderMap.remove(k);
       } else {
@@ -209,6 +214,9 @@ public class SslContextManager {
     Promise<Config> promise;
     ConfigKey k = new ConfigKey(sslOptions);
     synchronized (this) {
+      if (closed) {
+        return ctx.failedFuture("SslContextManager closed");
+      }
       if (force) {
         configMap.remove(k);
       } else {
@@ -253,6 +261,16 @@ public class SslContextManager {
       return new Config(keyManagerFactory, trustManagerFactory, keyManagerFactoryMapper, trustManagerMapper, crls);
     }).onComplete(promise);
     return promise.future();
+  }
+
+  public synchronized void close() {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    // Clear map which might references transitively QuicheQuicSslContext that overrides finalize that releases
+    // the native ssl context
+    sslContextProviderMap.clear();
   }
 
   private static class LruCache<K, V> extends LinkedHashMap<K, V> {

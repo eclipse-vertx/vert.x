@@ -32,8 +32,6 @@ import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.tls.QuicSslContextFactory;
-import io.vertx.core.spi.tls.SslContextFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,16 +98,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     this.config = config;
     this.protocol = protocol;
     this.vertx = Objects.requireNonNull(vertx);
-    this.manager = new SslContextManager(new SSLEngineOptions() {
-      @Override
-      public SSLEngineOptions copy() {
-        return this;
-      }
-      @Override
-      public SslContextFactory sslContextFactory() {
-        return new QuicSslContextFactory(keylog);
-      }
-    });
+    this.manager = new SslContextManager(new BoringSslEngineOptions(keylog));
   }
 
   protected abstract Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception;
@@ -186,15 +175,18 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     this.connectionGroup = new ConnectionGroup(channel.eventLoop()) {
       @Override
       protected void handleClose(Completable<Void> completion) {
-        PromiseInternal<Void> promise = (PromiseInternal<Void>) completion;
         Channel ch = channel;
         ch.close().addListener((ChannelFutureListener) future -> {
-          ContextInternal ctx;
           synchronized (QuicEndpointImpl.this) {
-            ctx = context;
             context = null;
           }
-        }).addListener(promise);
+        }).addListener((ChannelFutureListener) future -> {
+          try {
+            manager.close();
+          } finally {
+            completion.succeed();
+          }
+        });
       }
     };
   }

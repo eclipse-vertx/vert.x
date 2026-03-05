@@ -20,11 +20,9 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.MxRecord;
 import io.vertx.core.dns.SrvRecord;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.MockDnsServer;
 import io.vertx.test.fakedns.MockDnsServer.RecordStore;
-import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -468,32 +466,11 @@ public class DNSTest extends VertxTestBase {
     await();
   }
 
-  private TestLoggerFactory testLogging(DnsClientOptions options) {
-    final String ip = "10.0.0.1";
-    mockDnsServer.testResolveA(ip);
-    return TestUtils.testLogging(() -> {
-      try {
-        prepareDns(options)
-          .resolveA(ip)
-          .onComplete(fut -> testComplete());
-        await();
-      } catch (Exception e) {
-        fail(e);
-      }
-    });
-  }
-
 //  @Test
 //  public void testLogActivity() throws Exception {
 //    TestLoggerFactory factory = testLogging(new DnsClientOptions().setLogActivity(true));
 //    assertTrue(factory.hasName("io.netty.handler.logging.LoggingHandler"));
 //  }
-
-  @Test
-  public void testDoNotLogActivity() throws Exception {
-    TestLoggerFactory factory = testLogging(new DnsClientOptions().setLogActivity(false));
-    assertFalse(factory.hasName("io.netty.handler.logging.LoggingHandler"));
-  }
 
   @Test
   public void testRecursionDesired() throws Exception {

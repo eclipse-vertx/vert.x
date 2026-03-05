@@ -13,6 +13,7 @@ package io.vertx.tests.http.http3;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
@@ -86,7 +87,8 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpServerConfig setLogActivity(boolean logActivity) {
-        throw new UnsupportedOperationException();
+        config.getQuicConfig().setLogConfig(new LogConfig().setEnabled(logActivity));
+        return this;
       }
       @Override
       public HttpServerConfig setIdleTimeout(Duration timeout) {
@@ -134,7 +136,8 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientConfig setLogActivity(boolean logActivity) {
-        return null;
+        config.getQuicConfig().setLogConfig(new LogConfig().setEnabled(logActivity));
+        return this;
       }
       @Override
       public HttpClientConfig setMetricsName(String name) {

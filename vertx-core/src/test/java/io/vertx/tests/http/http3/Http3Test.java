@@ -50,18 +50,6 @@ public class Http3Test extends HttpTest {
   public void testListenInvalidHost() {
   }
 
-  @Ignore("Requires an HTTP/3 frame logger")
-  @Test
-  @Override
-  public void testClientLogging() {
-  }
-
-  @Ignore("Requires an HTTP/3 frame logger")
-  @Test
-  @Override
-  public void testServerLogging() {
-  }
-
   @Ignore("Does it make sense for HTTP/3 ?")
   @Test
   @Override

@@ -26,6 +26,7 @@ import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -501,12 +502,15 @@ public class TestUtils {
       .map(p -> "" + p.getName(0)).collect(Collectors.joining("/"));
   }
 
-  public static TestLoggerFactory testLogging(Runnable runnable) {
+  /**
+   * This class should be used in integration tests only.
+   */
+  public static TestLoggerFactory testLogging(Consumer<TestLoggerFactory> runnable) {
     InternalLoggerFactory prev = InternalLoggerFactory.getDefaultFactory();
     TestLoggerFactory factory = new TestLoggerFactory();
     InternalLoggerFactory.setDefaultFactory(factory);
     try {
-      runnable.run();
+      runnable.accept(factory);
     } finally {
       InternalLoggerFactory.setDefaultFactory(prev);
     }

@@ -82,17 +82,17 @@ public class QuicMetricsTest extends VertxTestBase {
     assertEquals("the-metrics", clientMetrics.name());
     assertEquals(1, clientMetrics.connectionCount());
     ConnectionMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
-    QuicStream clientStream = clientConnection.openStream().await();
     List<Buffer> received = Collections.synchronizedList(new ArrayList<>());
-    clientStream.handler(buff -> received.add(buff));
     CountDownLatch latch = new CountDownLatch(1);
+    QuicStream clientStream = clientConnection.openStream().await();
+    clientStream.handler(buff -> received.add(buff));
     clientStream.endHandler(v -> {
       latch.countDown();
     });
-    clientStream.write(Buffer.buffer("ping"));
+    clientStream.write(Buffer.buffer("ping")).await();
     assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 1);
     assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 1);
-    clientStream.end();
+    clientStream.end().await();
     assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 0);
     assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 0);
     awaitLatch(latch);
