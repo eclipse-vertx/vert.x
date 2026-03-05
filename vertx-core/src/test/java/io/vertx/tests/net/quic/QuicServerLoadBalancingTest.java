@@ -11,7 +11,9 @@
 package io.vertx.tests.net.quic;
 
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.shareddata.LocalMap;
@@ -25,6 +27,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
@@ -102,5 +106,41 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
     }
     LocalMap<Object, Object> map = vertx.sharedData().getLocalMap(QuicServerImpl.QUIC_SERVER_MAP_KEY);
     assertWaitUntil(() -> map.isEmpty());
+  }
+
+  @Test
+  public void testAddServers() throws Exception {
+    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
+    Map<QuicServer, Context> servers = new HashMap<>();
+    VertxInternal vxi = (VertxInternal) vertx;
+    int num = 3;
+    List<QuicConnection> connections = new ArrayList<>();
+    for (int i = 0;i < num;i++) {
+      QuicServer server = server();
+      server.handler(conn -> {
+        conn.handler(stream -> {
+          stream.endHandler(v -> {
+            stream.end();
+          });
+        });
+        servers.put(server, Vertx.currentContext());
+      });
+      Context ctx = vxi.createEventLoopContext();
+      Future.future(p -> ctx.runOnContext(v -> server
+        .bind(SocketAddress.inetSocketAddress(9999, "localhost"))
+        .onComplete(p)))
+        .await();
+      QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+      connections.add(connection);
+    }
+    for (QuicConnection connection : connections) {
+      QuicStream stream = connection.openStream().await();
+      CountDownLatch latch = new CountDownLatch(1);
+      stream.endHandler(v -> {
+        latch.countDown();
+      });
+      stream.end().await();
+      awaitLatch(latch, 10, TimeUnit.SECONDS);
+    }
   }
 }

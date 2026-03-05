@@ -126,7 +126,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     });
   }
 
-  protected QuicCodecBuilder<?> codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
+  protected QuicServerCodecBuilder codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
     List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
     Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(applicationProtocols);
     QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
@@ -257,7 +257,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       for (Map.Entry<Channel, ServerRegistration> entry : registrations.entrySet()) {
         if (entry.getKey() == channel) {
           ServerRegistration registration = entry.getValue();
-          QuicCodecBuilder<?> codecBuilder = registration.server.codecBuilder(registration.context, sslContextProvider, registration.metrics);
+          QuicServerCodecBuilder codecBuilder = registration.server.codecBuilder(registration.context, sslContextProvider, registration.metrics);
+          codecBuilder.localConnectionIdLength(localConnectionIdLength);
+          codecBuilder.connectionIdAddressGenerator(idGenerator);
           registration.server.initQuicCodecBuilder(codecBuilder, registration.metrics);
           channel.pipeline().addLast(codecBuilder.build());
           return;
