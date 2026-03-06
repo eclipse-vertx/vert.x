@@ -109,7 +109,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
   }
 
   @Test
-  public void testAddServers() throws Exception {
+  public void testAddServer() throws Exception {
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     Map<QuicServer, Context> servers = new HashMap<>();
     VertxInternal vxi = (VertxInternal) vertx;

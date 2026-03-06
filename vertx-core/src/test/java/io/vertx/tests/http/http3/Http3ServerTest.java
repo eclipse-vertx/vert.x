@@ -15,10 +15,17 @@ import io.netty.handler.codec.http3.Http3ErrorCode;
 import io.netty.handler.codec.http3.Http3Settings;
 import io.netty.handler.codec.quic.QuicStreamResetException;
 import io.netty.util.NetUtil;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.net.QuicConnection;
+import io.vertx.core.net.QuicServer;
+import io.vertx.core.net.QuicStream;
 import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;
@@ -29,7 +36,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -454,7 +465,38 @@ public class Http3ServerTest extends VertxTestBase {
     await();
   }
 
-//  @Test
+  @Test
+  public void testServerSharing() throws Exception {
+    VertxInternal vxi = (VertxInternal) vertx;
+    int num = 3;
+    List<Http3TestClient.Client.Connection> connections = new ArrayList<>();
+    Set<HttpConnection> serverConnections = Collections.synchronizedSet(new HashSet<>());
+    for (int i = 0;i < num;i++) {
+      HttpServerConfig config = serverConfig();
+      config.getQuicConfig().setLoadBalanced(true);
+      HttpServer server = vertx.createHttpServer(config, sslOptions());
+      server.connectionHandler(serverConnections::add);
+      server.requestHandler(request -> {
+        request.response().end("Hello World " + request.connection().localAddress().port());
+      });
+      Context ctx = vxi.createEventLoopContext();
+      Future.future(p -> ctx.runOnContext(v -> server
+          .listen(SocketAddress.inetSocketAddress(8443, "localhost"))
+          .onComplete(p)))
+        .await();
+      Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress("localhost", 8443));
+      connections.add(connection);
+    }
+    assertEquals(num, serverConnections.size());
+    for (Http3TestClient.Client.Connection connection : connections) {
+      Http3TestClient.Client.Stream stream = connection.stream();
+      stream.GET("/");
+      byte[] body = stream.responseBody();
+      assertEquals("Hello World 8443", new String(body));
+    }
+  }
+
+  //  @Test
 //  public void testNetworkLogging() {
 //    TestLoggerFactory factory = TestUtils.testLogging(() -> {
 //      server.close();
