@@ -1,19 +1,26 @@
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.codec.haproxy.HAProxyProxiedProtocol;
+import io.netty.handler.codec.haproxy.HAProxyTLV;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class HAProxyMessageCompletionHandler extends MessageToMessageDecoder<HAProxyMessage> {
   //Public because its used in tests
@@ -71,6 +78,11 @@ public class HAProxyMessageCompletionHandler extends MessageToMessageDecoder<HAP
           ctx.channel().attr(ConnectionBase.LOCAL_ADDRESS_OVERRIDE)
             .set(createAddress(protocol, msg.destinationAddress(), msg.destinationPort()));
         }
+
+        if (msg.tlvs() != null) {
+          ctx.channel().attr(ConnectionBase.TLVS)
+            .set(createTLVs(msg.tlvs()));
+        }
       }
       ctx.pipeline().remove(this);
       promise.setSuccess(ctx.channel());
@@ -102,5 +114,13 @@ public class HAProxyMessageCompletionHandler extends MessageToMessageDecoder<HAP
       default:
         throw new IllegalStateException("Should never happen");
     }
+  }
+
+  private Iterable<Map.Entry<Buffer, Buffer>> createTLVs(List<HAProxyTLV> haProxyTLVs) {
+    return haProxyTLVs.stream()
+      .filter(Objects::nonNull)
+      .map(tlv -> new AbstractMap.SimpleEntry<>(Buffer.buffer().appendByte(tlv.typeByteValue()),
+        Buffer.buffer(ByteBufUtil.getBytes(tlv.content()))))
+      .collect(Collectors.toList());
   }
 }

@@ -20,8 +20,15 @@ import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.HAProxy;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assume.assumeTrue;
 
 public abstract class HAProxyTest extends HttpTestBase {
@@ -158,6 +165,7 @@ public abstract class HAProxyTest extends HttpTestBase {
             proxy.getConnectionRemoteAddress() :
             local,
           req.localAddress());
+        assertUniqueIdTLV(header, req.connection().tlvs());
         req.response().end();
         complete();
       });
@@ -276,5 +284,23 @@ public abstract class HAProxyTest extends HttpTestBase {
       assertEquals(address1.hostAddress(), address2.hostAddress());
       assertEquals(address1.port(), address2.port());
     }
+  }
+
+  private void assertUniqueIdTLV(Buffer header, Iterable<Map.Entry<Buffer, Buffer>> tlvsIterable) {
+    // only supported for v2 header and protocol family != unknown
+    if (header.length() < 12 || header.getByte(12) != 0x21 || header.getByte(13) == 0x00) {
+      return;
+    }
+
+    List<Map.Entry<Buffer, Buffer>> tlvs = StreamSupport.stream(tlvsIterable.spliterator(), false)
+      .collect(Collectors.toList());
+
+    assertThat(tlvs, hasSize(1));
+
+    Map.Entry<Buffer, Buffer> uniqueIdTLV = tlvs.stream().findFirst().orElse(null);
+    assertThat(uniqueIdTLV.getKey().getByte(0), equalTo((byte)0x05));
+
+    UUID uuid = new UUID(uniqueIdTLV.getValue().getLong(0), uniqueIdTLV.getValue().getLong(Long.BYTES));
+    assertThat(uuid, equalTo(UUID.fromString("1f29a3b5-7cc4-4592-a8f1-879ff1f47124")));
   }
 }
