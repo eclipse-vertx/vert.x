@@ -38,6 +38,11 @@ public class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionImpl> e
     return this;
   }
 
+  @Override
+  protected boolean isServer() {
+    return server;
+  }
+
   public VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
     HttpUtils.fromVertxInitialSettings(server, settings, initialSettings());
     return this;
