@@ -997,7 +997,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   class TLSTest {
 
-    HttpVersion version;
     KeyCertOptions clientCert;
     TrustOptions clientTrust;
     boolean clientTrustAll;
@@ -1049,16 +1048,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
     String indicatedServerName;
 
     public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
-      this.version = HttpVersion.HTTP_1_1;
       this.clientCert = clientCert.get();
       this.clientTrust = clientTrust.get();
       this.serverCert = serverCert.get();
       this.serverTrust = serverTrust.get();
-    }
-
-    TLSTest version(HttpVersion version) {
-      this.version = version;
-      return this;
     }
 
     TLSTest requiresClientAuth() {
@@ -1209,7 +1202,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
         waitFor(2);
       }
       HttpClientOptions options = createBaseClientOptions();
-      options.setProtocolVersion(version);
       options.setSsl(clientSSL);
       options.setForceSni(clientForceSNI);
       if (clientTrustAll) {
@@ -1253,7 +1245,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
       client = vertx.createHttpClient(options);
       HttpServerOptions serverOptions = createBaseServerOptions();
       serverOptions.setTrustOptions(serverTrust);
-      serverOptions.setAlpnVersions(Arrays.asList(version));
       serverOptions.setKeyCertOptions(serverCert);
       if (requiresClientAuth) {
         serverOptions.setClientAuth(ClientAuth.REQUIRED);
@@ -1292,7 +1283,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       });
       server.requestHandler(req -> {
         indicatedServerName = req.connection().indicatedServerName();
-        assertEquals(version, req.version());
+        assertEquals(options.getProtocolVersion(), req.version());
         assertEquals(serverSSL, req.isSSL());
         if (serverSSL && serverOpenSSL) {
           String name = req.sslSession().getSessionContext().getClass().getSimpleName();
