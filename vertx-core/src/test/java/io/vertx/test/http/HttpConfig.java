@@ -12,14 +12,21 @@ package io.vertx.test.http;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
+import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.tests.http.Http2TestBase;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static io.vertx.test.http.HttpTestBase.*;
+import static org.junit.Assert.assertTrue;
 
 public interface HttpConfig {
+
+  HttpVersion version();
 
   int port();
 
@@ -39,6 +46,26 @@ public interface HttpConfig {
     public HttpClientConfig forClient() {
       HttpClientOptions options = createBaseClientOptions();
       return new HttpClientConfig() {
+        @Override
+        public HttpClientConfig setSsl(boolean ssl) {
+          options.setSsl(ssl);
+          return this;
+        }
+        @Override
+        public HttpClientConfig setVerifyHost(boolean verify) {
+          options.setVerifyHost(verify);
+          return this;
+        }
+        @Override
+        public HttpClientConfig setForceSni(boolean forceSni) {
+          options.setForceSni(forceSni);
+          return this;
+        }
+        @Override
+        public HttpClientConfig setProxyOptions(ProxyOptions proxyOptions) {
+          options.setProxyOptions(proxyOptions);
+          return this;
+        }
         @Override
         public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
           options.setConnectTimeout((int)connectTimeout.toMillis());
@@ -78,6 +105,13 @@ public interface HttpConfig {
           return this;
         }
         @Override
+        public HttpClientConfig configureSsl(Consumer<ClientSSLOptions> configurator) {
+          // Trigger creation of lazy SSL options
+          options.setKeyCertOptions(options.getKeyCertOptions());
+          configurator.accept(options.getSslOptions());
+          return this;
+        }
+        @Override
         public HttpClientBuilder builder(Vertx vertx) {
           return vertx.httpClientBuilder().with(options);
         }
@@ -88,6 +122,16 @@ public interface HttpConfig {
     public HttpServerConfig forServer() {
       HttpServerOptions options = createBaseServerOptions();
       return new HttpServerConfig() {
+        @Override
+        public HttpServerConfig setSsl(boolean ssl) {
+          options.setSsl(ssl);
+          return this;
+        }
+        @Override
+        public HttpServerConfig setUseProxyProtocol(boolean useProxyProtocol) {
+          options.setUseProxyProtocol(useProxyProtocol);
+          return this;
+        }
         @Override
         public HttpServerConfig setDecompressionSupported(boolean supported) {
           options.setDecompressionSupported(supported);
@@ -136,8 +180,17 @@ public interface HttpConfig {
           return this;
         }
         @Override
-        public HttpServer create(Vertx vertx) {
-          return vertx.createHttpServer(options);
+        public HttpServerConfig configureSsl(Consumer<ServerSSLOptions> configurator) {
+          // Trigger creation of lazy SSL options
+          options.setKeyCertOptions(options.getKeyCertOptions());
+          configurator.accept(options.getSslOptions());
+          return this;
+        }
+        @Override
+        public HttpServerBuilder builder(Vertx vertx) {
+          return vertx.httpServerBuilder()
+            .with(new io.vertx.core.http.HttpServerConfig(options))
+            .with(options.getSslOptions());
         }
       };
     }
@@ -145,7 +198,7 @@ public interface HttpConfig {
 
   class Http1x extends Http1xOr2Config {
 
-    public static HttpConfig DEFAULT = new HttpConfig.Http1x();
+    public static HttpConfig DEFAULT = new HttpConfig.Http1x(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
 
     private final int port;
     private final String host;
@@ -155,8 +208,9 @@ public interface HttpConfig {
       this.host = host;
     }
 
-    private Http1x() {
-      this(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
+    @Override
+    public HttpVersion version() {
+      return HttpVersion.HTTP_1_1;
     }
 
     @Override
@@ -186,7 +240,7 @@ public interface HttpConfig {
     private final int port;
     private final String host;
 
-    Http2(boolean multiplex) {
+    protected Http2(boolean multiplex) {
       this(multiplex, DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
     }
 
@@ -194,6 +248,11 @@ public interface HttpConfig {
       this.multiplex = multiplex;
       this.port = port;
       this.host = host;
+    }
+
+    @Override
+    public HttpVersion version() {
+      return HttpVersion.HTTP_2;
     }
 
     @Override
@@ -206,8 +265,8 @@ public interface HttpConfig {
       return host;
     }
 
-    abstract HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex);
-    abstract HttpClientOptions createBaseClientOptions(int port, String host, boolean multiplex);
+    protected abstract HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex);
+    protected abstract HttpClientOptions createBaseClientOptions(int port, String host, boolean multiplex);
 
     @Override
     public HttpServerOptions createBaseServerOptions() {
