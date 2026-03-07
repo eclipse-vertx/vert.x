@@ -40,6 +40,7 @@ import io.vertx.core.spi.metrics.NetworkMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -362,6 +363,11 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     ChannelFuture future = channel.writeAndFlush(byteBuf);
     future.addListener(promise);
     return promise.future();
+  }
+
+  @Override
+  public SSLSession sslSession() {
+    return channel.sslEngine().getSession();
   }
 
   @Override

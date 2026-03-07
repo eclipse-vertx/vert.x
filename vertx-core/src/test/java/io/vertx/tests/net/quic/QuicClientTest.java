@@ -627,4 +627,25 @@ public class QuicClientTest extends VertxTestBase {
     connection.writeDatagram(datagram).await();
     await();
   }
+
+  @Test
+  public void testInvalidTLSVersion() {
+    server.handler(conn -> {
+    });
+    SocketAddress serverAddr = SocketAddress.inetSocketAddress(9999, "localhost");
+    server.bind(serverAddr).await();
+    ClientSSLOptions sslOptions = SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get());
+    while (!sslOptions.getEnabledSecureTransportProtocols().isEmpty()) {
+      sslOptions.removeEnabledSecureTransportProtocol(sslOptions.getEnabledSecureTransportProtocols().iterator().next());
+    }
+    sslOptions.addEnabledSecureTransportProtocol("TLSv1.2");
+    client.close();
+    client = vertx.createQuicClient(sslOptions);
+    try {
+      client.connect(serverAddr).await();
+      fail();
+    } catch (Exception e) {
+      assertTrue(e.getMessage().contains("Only TLSv1.3 supported"));
+    }
+  }
 }

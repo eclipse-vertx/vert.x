@@ -110,6 +110,9 @@ public class QuicSslContextFactory implements SslContextFactory {
   }
 
   private SslContext createContext(boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
+    if (!enabledProtocols.contains("TLSv1.3")) {
+      throw new SSLException("Only TLSv1.3 supported");
+    }
     QuicSslContextBuilder builder;
     if (client) {
       builder = QuicSslContextBuilder.forClient();
