@@ -547,26 +547,6 @@ public class CoreExamples {
       });
   }
 
-  public void httpServerWithDomainSockets(Vertx vertx) {
-    HttpServer httpServer = vertx.createHttpServer();
-
-    // Only available when running on JDK16+, or using a native transport
-    SocketAddress address = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
-
-    httpServer
-      .requestHandler(req -> {
-        // Handle application
-      })
-      .listen(address)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Bound to socket
-        } else {
-          // Handle failure
-        }
-      });
-  }
-
   public void tcpClientWithDomainSockets(Vertx vertx) {
     NetClient netClient = vertx.createNetClient();
 
@@ -579,28 +559,6 @@ public class CoreExamples {
       .onComplete(ar -> {
         if (ar.succeeded()) {
           // Connected
-        } else {
-          // Handle failure
-        }
-      });
-  }
-
-  public void httpClientWithDomainSockets(Vertx vertx) {
-    HttpClient httpClient = vertx.createHttpClient();
-
-    // Only available when running on JDK16+, or using a native transport
-    SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
-
-    // Send request to the server
-    httpClient.request(new RequestOptions()
-      .setServer(addr)
-      .setHost("localhost")
-      .setPort(8080)
-      .setURI("/"))
-      .compose(request -> request.send().compose(HttpClientResponse::body))
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Process response
         } else {
           // Handle failure
         }
