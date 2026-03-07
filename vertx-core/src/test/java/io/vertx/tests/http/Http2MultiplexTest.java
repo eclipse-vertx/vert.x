@@ -10,8 +10,6 @@
  */
 package io.vertx.tests.http;
 
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
