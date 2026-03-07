@@ -124,6 +124,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
 
+  private static boolean disposedCAS(InternalTimerHandler handler) {
+    return INTERNAL_TIMER_HANDLER_DISPOSED.compareAndSet(handler, false, true);
+  }
+
   // Not cached for graalvm
   private static ThreadFactory virtualThreadFactory() {
     try {
@@ -1098,7 +1102,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         if (!disposed) {
           handler.handle(id);
         }
-      } else if (compareAndSetDisposed()) {
+      } else if (disposedCAS(this)) {
         timeouts.remove(id);
         try {
           handler.handle(id);
@@ -1120,7 +1124,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     private boolean tryCancel() {
-      if  (compareAndSetDisposed()) {
+      if  (disposedCAS(this)) {
         timeouts.remove(id);
         future.cancel(false);
         return true;
@@ -1133,10 +1137,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     public void close(Completable<Void> completion) {
       tryCancel();
       completion.succeed();
-    }
-
-    private boolean compareAndSetDisposed() {
-      return INTERNAL_TIMER_HANDLER_DISPOSED.compareAndSet(this, false, true);
     }
   }
 
