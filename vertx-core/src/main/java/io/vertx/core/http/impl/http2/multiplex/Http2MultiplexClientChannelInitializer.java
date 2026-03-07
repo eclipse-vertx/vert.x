@@ -61,7 +61,8 @@ public class Http2MultiplexClientChannelInitializer implements Http2ClientChanne
                              PromiseInternal<HttpClientConnection> promise) {
     Http2MultiplexConnectionFactory connectionFactory = connectionFactory(context, authority, transportMetrics, connectionMetric, clientMetrics, promise);
     io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler handler = new io.vertx.core.http.impl.http2.multiplex.Http2MultiplexHandler(channel, context, connectionFactory, initialSettings);
-    Http2FrameCodec http2FrameCodec = new Http2CustomFrameCodecBuilder(null, decompressionSupported).server(false)
+    Http2FrameCodec http2FrameCodec = new Http2CustomFrameCodecBuilder(null, decompressionSupported)
+      .server(false)
       .initialSettings(initialSettings)
       .logEnabled(logEnabled)
       .build();
