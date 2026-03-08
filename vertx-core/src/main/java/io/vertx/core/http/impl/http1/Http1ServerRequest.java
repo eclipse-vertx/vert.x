@@ -337,7 +337,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
     if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
-      params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
+      params = HttpUtils.params(uri(), paramsCharset, this.conn.maxQueryParams(), semicolonIsNormalChar);
       semicolonIsNormalCharInParams = semicolonIsNormalChar;
     }
     return params;

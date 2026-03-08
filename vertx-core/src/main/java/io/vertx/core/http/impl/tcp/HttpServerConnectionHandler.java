@@ -101,7 +101,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
         HttpServerConfig config = server.config;
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
           config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
-          config.getMaxFormBufferedBytes(), serverOrigin);
+          config.getMaxFormBufferedBytes(), config.getMaxQueryParams(), serverOrigin);
         request.init();
       });
     }
