@@ -742,6 +742,9 @@ public interface Future<T> extends AsyncResult<T> {
    * @throws IllegalStateException when called from a vertx event-loop or worker thread
    */
   default T await() {
+    if (isComplete()) {
+      return getOrFail();
+    }
     CountDownLatch continuation = trySuspend();
     if (continuation != null) {
       try {
@@ -766,6 +769,9 @@ public interface Future<T> extends AsyncResult<T> {
   default T await(long timeout, TimeUnit unit) throws TimeoutException {
     if (unit == null) {
       throw new NullPointerException("Unit must not be null");
+    }
+    if (isComplete()) {
+      return getOrFail();
     }
     CountDownLatch continuation = trySuspend();
     if (continuation != null) {
