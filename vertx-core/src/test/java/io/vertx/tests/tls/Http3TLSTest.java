@@ -18,9 +18,9 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http3TlsTest extends HttpTLSTest {
+public class Http3TLSTest extends HttpTLSTest {
 
-  public Http3TlsTest() {
+  public Http3TLSTest() {
     super(new Http3Config(DEFAULT_HTTPS_PORT, "localhost"));
   }
 
