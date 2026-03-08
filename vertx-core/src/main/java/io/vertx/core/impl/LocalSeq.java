@@ -15,7 +15,6 @@ import io.vertx.core.spi.context.storage.ContextLocal;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -38,7 +37,11 @@ public class LocalSeq {
     locals.add(ContextInternal.LOCAL_MAP);
   }
 
-  synchronized static ContextLocal<?>[] get() {
+  synchronized static ContextLocal<?>[] getArray() {
     return locals.toArray(new ContextLocal[0]);
+  }
+
+  synchronized static List<ContextLocal<?>> getList() {
+    return List.copyOf(locals);
   }
 }
