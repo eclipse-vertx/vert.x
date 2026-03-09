@@ -34,6 +34,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
@@ -97,13 +98,13 @@ public final class ChannelProvider {
     return applicationProtocol;
   }
 
-  public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions) {
+  public Future<Channel> connect(SocketAddress remoteAddress, HostAndPort peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions) {
     Promise<Channel> p = context.nettyEventLoop().newPromise();
     connect(handler, remoteAddress, peerAddress, serverName, ssl, sslOptions, p);
     return p;
   }
 
-  private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> p) {
+  private void connect(Handler<Channel> handler, SocketAddress remoteAddress, HostAndPort peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> p) {
     try {
       bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
     } catch (Exception e) {
@@ -117,7 +118,8 @@ public final class ChannelProvider {
     }
   }
 
-  private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Channel ch, Promise<Channel> channelHandler) {
+  private void initSSL(Handler<Channel> handler, HostAndPort peerAddress, String serverName, boolean ssl,
+                       ClientSSLOptions sslOptions, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
       List<String> applicationProtocols;
       if (sslOptions.isUseAlpn()) {
@@ -160,7 +162,7 @@ public final class ChannelProvider {
   }
 
 
-  private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
+  private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, HostAndPort peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nameResolver().nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
@@ -198,7 +200,7 @@ public final class ChannelProvider {
   /**
    * A channel provider that connects via a Proxy : HTTP or SOCKS
    */
-  private void handleProxyConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
+  private void handleProxyConnect(Handler<Channel> handler, SocketAddress remoteAddress, HostAndPort peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions, Promise<Channel> channelHandler) {
 
     final VertxInternal vertx = context.owner();
     final String proxyHost = proxyOptions.getHost();
