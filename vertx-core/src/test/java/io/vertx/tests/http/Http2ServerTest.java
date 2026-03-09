@@ -89,6 +89,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2252,6 +2253,88 @@ public class Http2ServerTest extends Http2TestBase {
       });
       int id = request.nextStreamId();
       request.encoder.writeHeaders(request.context, id, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
+      request.context.flush();
+    });
+    await();
+  }
+
+  @Test
+  public void testResponseCompressionEnabledMixedStreams() throws Exception {
+    waitFor(6);
+    String expected = TestUtils.randomAlphaString(1000);
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setCompressionSupported(true));
+    server.requestHandler(req -> {
+      req.response().end(expected);
+    });
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      // Stream 1: with compression
+      int id1 = request.nextStreamId();
+      // Stream 2: without compression
+      int id2 = request.nextStreamId();
+      // Stream 3: with compression
+      int id3 = request.nextStreamId();
+      Map<Integer, ByteArrayOutputStream> streamData = new ConcurrentHashMap<>();
+      streamData.put(id1, new ByteArrayOutputStream());
+      streamData.put(id2, new ByteArrayOutputStream());
+      streamData.put(id3, new ByteArrayOutputStream());
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            if (streamId == id1 || streamId == id3) {
+              // Stream with accept-encoding: gzip should be compressed
+              Assert.assertEquals("gzip", headers.get(HttpHeaderNames.CONTENT_ENCODING).toString());
+            } else {
+              // Stream without accept-encoding should not be compressed
+              Assert.assertFalse(headers.contains(HttpHeaderNames.CONTENT_ENCODING));
+            }
+            complete();
+          });
+        }
+        @Override
+        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
+          byte[] bytes = new byte[data.readableBytes()];
+          data.readBytes(bytes);
+          ByteArrayOutputStream buf = streamData.get(streamId);
+          buf.write(bytes, 0, bytes.length);
+          if (endOfStream) {
+            byte[] allBytes = buf.toByteArray();
+            vertx.runOnContext(v -> {
+              if (streamId == id1 || streamId == id3) {
+                // Compressed stream - decode gzip
+                String decoded;
+                try {
+                  GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(allBytes));
+                  ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                  while (true) {
+                    int i = in.read();
+                    if (i == -1) {
+                      break;
+                    }
+                    baos.write(i);
+                  }
+                  decoded = baos.toString();
+                } catch (IOException e) {
+                  fail(e);
+                  return;
+                }
+                Assert.assertEquals(expected, decoded);
+              } else {
+                // Uncompressed stream - plain text
+                Assert.assertEquals(expected, new String(allBytes, StandardCharsets.UTF_8));
+              }
+              complete();
+            });
+          }
+          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
+        }
+      });
+      request.encoder.writeHeaders(request.context, id1, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
+      request.encoder.writeHeaders(request.context, id2, GET("/"), 0, true, request.context.newPromise());
+      request.encoder.writeHeaders(request.context, id3, GET("/").add("accept-encoding", "gzip"), 0, true, request.context.newPromise());
       request.context.flush();
     });
     await();
