@@ -264,7 +264,7 @@ class NetClientImpl implements NetClientInternal {
         remoteAddress = SocketAddress.inetSocketAddress(port, host);
       }
 
-      SocketAddress peerAddress = peerAddress(remoteAddress, connectOptions);
+      HostAndPort peerAddress = peerAddress(remoteAddress, connectOptions);
 
       int connectTimeout = connectOptions.getTimeout();
       if (connectTimeout < 0) {
@@ -353,7 +353,7 @@ class NetClientImpl implements NetClientInternal {
     }
   }
 
-  private static SocketAddress peerAddress(SocketAddress remoteAddress, ConnectOptions connectOptions) {
+  private static HostAndPort peerAddress(SocketAddress remoteAddress, ConnectOptions connectOptions) {
     if (!connectOptions.isSsl()) {
       return null;
     }
@@ -362,7 +362,7 @@ class NetClientImpl implements NetClientInternal {
     if (remoteAddress.isInetSocket()) {
       if ((peerHost == null || peerHost.equals(remoteAddress.host()))
         && (peerPort == null || peerPort.intValue() == remoteAddress.port())) {
-        return remoteAddress;
+        return HostAndPort.create(remoteAddress.host(), remoteAddress.port());
       }
       if (peerHost == null) {
         peerHost = remoteAddress.host();;
@@ -371,7 +371,7 @@ class NetClientImpl implements NetClientInternal {
         peerPort = remoteAddress.port();
       }
     }
-    return peerHost != null && peerPort != null ? SocketAddress.inetSocketAddress(peerPort, peerHost) : null;
+    return peerHost != null && peerPort != null ? HostAndPort.create(peerHost, peerPort) : null;
   }
 
   private void connected(ContextInternal context,
