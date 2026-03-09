@@ -12,6 +12,8 @@
 package io.vertx.core.impl;
 
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * Simple generic utility methods and constants
@@ -57,5 +59,15 @@ public class Utils {
   @SuppressWarnings("unchecked")
   public static <E extends Throwable> void throwAsUnchecked(Throwable t) throws E {
     throw (E) t;
+  }
+
+  public static HostAndPort peerAddress(SocketAddress remoteAddress, String peerHost, Integer peerPort) {
+    if (peerHost == null) {
+      peerHost = remoteAddress.host();;
+    }
+    if (peerPort == null) {
+      peerPort = remoteAddress.port();
+    }
+    return HostAndPort.create(peerHost, peerPort);
   }
 }
