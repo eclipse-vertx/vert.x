@@ -14,6 +14,7 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import java.util.List;
@@ -51,7 +52,7 @@ public interface SslContextFactory {
    * @param serverName the optional server name
    * @return a reference to this, so the API can be used fluently
    */
-  default SslContextFactory forClient(String serverName, String endpointIdentificationAlgorithm) {
+  default SslContextFactory forClient(SNIServerName serverName, String endpointIdentificationAlgorithm) {
     return this;
   }
 

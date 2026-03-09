@@ -89,11 +89,11 @@ public class SslContextProvider {
     return sslContextMaps.size();
   }
 
-  public SslContext createContext(boolean server,
-                                       KeyManagerFactory keyManagerFactory,
-                                       TrustManager[] trustManagers,
-                                       String serverName,
-                                       List<String> applicationProtocols) {
+  private SslContext createContext(boolean server,
+                                   KeyManagerFactory keyManagerFactory,
+                                   TrustManager[] trustManagers,
+                                   SNIHostName serverName,
+                                   List<String> applicationProtocols) {
     if (keyManagerFactory == null) {
       keyManagerFactory = defaultKeyManagerFactory();
     }
@@ -101,7 +101,7 @@ public class SslContextProvider {
       trustManagers = defaultTrustManagers();
     }
     if (server) {
-      return createServerContext(keyManagerFactory, trustManagers, serverName, applicationProtocols);
+      return createServerContext(keyManagerFactory, trustManagers, applicationProtocols);
     } else {
       return createClientContext(keyManagerFactory, trustManagers, serverName, applicationProtocols);
     }
@@ -120,7 +120,7 @@ public class SslContextProvider {
       KeyManagerFactory kmf = resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
-        return sslContextMaps.computeIfAbsent(serverName, s -> createContext(server, kmf, trustManagers, s, applicationProtocols));
+        return sslContextMaps.computeIfAbsent(serverName, s -> createContext(server, kmf, trustManagers, new SNIHostName(s), applicationProtocols));
       }
     }
     String alpnKey;
@@ -140,7 +140,7 @@ public class SslContextProvider {
     }
     SslContext context = sslContexts.get(alpnKey);
     if (context == null) {
-      context = createContext(server, null, null, serverName, applicationProtocols);
+      context = createContext(server, null, null, serverName != null ? new SNIHostName(serverName) : null, applicationProtocols);
       sslContexts.putIfAbsent(alpnKey, context);
     }
     return context;
@@ -193,7 +193,7 @@ public class SslContextProvider {
   public SslContext createClientContext(
     KeyManagerFactory keyManagerFactory,
     TrustManager[] trustManagers,
-    String serverName,
+    SNIHostName serverName,
     List<String> applicationProtocols) {
     try {
       SslContextFactory factory = provider.get()
@@ -217,7 +217,6 @@ public class SslContextProvider {
 
   public SslContext createServerContext(KeyManagerFactory keyManagerFactory,
                                         TrustManager[] trustManagers,
-                                        String serverName,
                                         List<String> applicationProtocols) {
     try {
       SslContextFactory factory = provider.get()
