@@ -25,7 +25,6 @@ public class QuicConnectOptions {
   private ClientSSLOptions sslOptions;
   private QLogConfig qlogConfig;
   private Duration timeout;
-  private String serverName;
 
   public QuicConnectOptions() {
   }
@@ -101,24 +100,6 @@ public class QuicConnectOptions {
       throw new IllegalArgumentException("Timeout must be >= 0");
     }
     this.timeout = timeout;
-    return this;
-  }
-
-  /**
-   * @return the server name presented during the TLS handshake by the SNI extension
-   */
-  public String getServerName() {
-    return serverName;
-  }
-
-  /**
-   * Set the server name presented during the TLS handshake by the SNI extension.
-   *
-   * @param serverName the server name to indicate
-   * @return a reference to this, so the API can be used fluently
-   */
-  public QuicConnectOptions setServerName(String serverName) {
-    this.serverName = serverName;
     return this;
   }
 }
