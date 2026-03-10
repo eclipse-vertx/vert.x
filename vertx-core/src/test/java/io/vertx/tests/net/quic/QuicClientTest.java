@@ -24,10 +24,12 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -370,8 +372,18 @@ public class QuicClientTest extends VertxTestBase {
   }
 
   @Test
-  public void testServerNameIndication() {
-    server = vertx.createQuicServer(QuicServerTest.SSL_OPTIONS.copy().setKeyCertOptions(Cert.SNI_JKS.get()));
+  public void testServerNameIndication() throws Exception {
+    testServerNameIndication2(Cert.SNI_JKS.get(), "host2.com");
+  }
+
+  @Ignore("Not implemented by SSL engine")
+  @Test
+  public void testServerNameIndicationShortName() throws Exception {
+    testServerNameIndication2(Cert.SERVER_JKS.get(), "localhost");
+  }
+
+  private void testServerNameIndication2(KeyCertOptions cert, String host) throws Exception {
+    server = vertx.createQuicServer(QuicServerTest.SSL_OPTIONS.copy().setKeyCertOptions(cert));
     AtomicReference<String> serverName = new AtomicReference<>();
     server.handler(conn -> {
       serverName.set(conn.indicatedServerName());
@@ -379,14 +391,14 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnectOptions connectOptions = new QuicConnectOptions()
-      .setServerName("host2.com")
       .setSslOptions(new ClientSSLOptions()
         .setTrustAll(true)
         .setApplicationLayerProtocols(List.of("test-protocol")));
-    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"),
+    SocketAddress connectAddr = SocketAddress.inetSocketAddress(new InetSocketAddress(InetAddress.getByAddress(host, NetUtil.LOCALHOST4.getAddress()), 9999));
+    QuicConnection connection = client.connect(connectAddr,
       connectOptions).await();
     connection.close().await();
-    assertEquals("host2.com", serverName.get());
+    assertEquals(host, serverName.get());
   }
 
   @Test
