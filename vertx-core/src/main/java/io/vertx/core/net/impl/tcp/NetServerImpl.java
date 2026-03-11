@@ -27,7 +27,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.*;
-import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
@@ -65,8 +64,8 @@ public class NetServerImpl implements NetServerInternal {
 
   private final VertxInternal vertx;
   private final TcpServerConfig config;
-  private final ServerSSLOptions sslOptions;
   private final SSLEngineOptions sslEngineOptions;
+  private final ServerSSLOptions sslOptions;
   private final boolean fileRegionEnabled;
   private final boolean registerWriteHandler;
   private final String protocol;
@@ -83,8 +82,7 @@ public class NetServerImpl implements NetServerInternal {
 
   // Main
   private SslContextManager sslContextManager;
-  private volatile Future<SslContextProvider> sslContextProvider;
-  private Future<SslContextProvider> updateInProgress;
+  private DynamicSslContextProvider sslContextProvider;
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
@@ -113,7 +111,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   public SslContextProvider sslContextProvider() {
-    return sslContextProvider.result();
+    return sslContextProvider.provider();
   }
 
   @Override
@@ -317,9 +315,6 @@ public class NetServerImpl implements NetServerInternal {
     return trafficShapingHandler;
   }
 
-  protected void configure(SSLOptions options) {
-  }
-
   public int sniEntrySize() {
     return sslContextManager.sniEntrySize();
   }
@@ -330,37 +325,7 @@ public class NetServerImpl implements NetServerInternal {
       return server.updateSSLOptions(options, force);
     } else {
       ContextInternal ctx = vertx.getOrCreateContext();
-      Future<SslContextProvider> fut;
-      SslContextProvider current;
-      synchronized (this) {
-        current = sslContextProvider.result();
-        if (updateInProgress == null) {
-          ServerSSLOptions sslOptions = options.copy();
-          configure(sslOptions);
-          ClientAuth clientAuth = sslOptions.getClientAuth();
-          if (clientAuth == null) {
-            clientAuth = ClientAuth.NONE;
-          }
-          updateInProgress = sslContextManager.resolveSslContextProvider(
-            sslOptions,
-            null,
-            clientAuth,
-            force,
-            ctx);
-          fut = updateInProgress;
-        } else {
-          return updateInProgress.mapEmpty().transform(ar -> updateSSLOptions(options, force));
-        }
-      }
-      fut.onComplete(ar -> {
-        synchronized (this) {
-          updateInProgress = null;
-          if (ar.succeeded()) {
-            sslContextProvider = fut;
-          }
-        }
-      });
-      return fut.map(res -> res != current);
+      return sslContextProvider.update(options, ctx, force);
     }
   }
 
@@ -467,6 +432,7 @@ public class NetServerImpl implements NetServerInternal {
 
         // The first server binds the socket
         actualServer = this;
+        sslContextProvider = new DynamicSslContextProvider(helper);
         bindFuture = promise;
         sslContextManager = helper;
         trafficShapingHandler = createTrafficShapingHandler();
@@ -474,8 +440,7 @@ public class NetServerImpl implements NetServerInternal {
         worker = ch -> {
           // Should close if the channel group is closed actually or check that
           channelGroup.add(ch);
-          Future<SslContextProvider> scp = sslContextProvider;
-          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, sslOptions);
+          initializer.accept(ch, sslContextProvider != null ? sslContextProvider.provider() : null, sslContextManager, sslOptions);
         };
         channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 
@@ -491,15 +456,15 @@ public class NetServerImpl implements NetServerInternal {
 
         // Initialize SSL before binding
         if (config.isSsl()) {
-          ServerSSLOptions sslOptions = this.sslOptions;
-          configure(sslOptions);
-          sslContextProvider = sslContextManager.resolveSslContextProvider(sslOptions, context).onComplete(ar -> {
-            if (ar.succeeded()) {
-              bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
-            } else {
-              promise.fail(ar.cause());
-            }
-          });
+          sslContextProvider
+            .update(sslOptions, context)
+            .onComplete(ar -> {
+              if (ar.succeeded()) {
+                bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
+              } else {
+                promise.fail(ar.cause());
+              }
+            });
         } else {
           bind(hostOrPath, context, bindAddress, localAddress, shared, promise, sharedNetServers, id);
         }
@@ -522,8 +487,7 @@ public class NetServerImpl implements NetServerInternal {
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           group.add(ch);
-          Future<SslContextProvider> scp = actualServer.sslContextProvider;
-          initializer.accept(ch, scp != null ? scp.result() : null, sslContextManager, sslOptions);
+          initializer.accept(ch, actualServer.sslContextProvider.provider(), sslContextManager, sslOptions);
         };
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         main.bindFuture.onComplete(promise);

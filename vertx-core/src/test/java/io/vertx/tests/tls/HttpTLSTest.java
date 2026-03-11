@@ -1743,7 +1743,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
     HttpClientAgent client2 = vertx.createHttpClient(createBaseClientOptions().setVerifyHost(false).setTrustOptions(bluh.apply(0)));
     request.apply(client1).onComplete(onSuccess(body1 -> {
       assertEquals("Hello World", body1.toString());
-      server.updateSSLOptions(createBaseServerOptions().setKeyCertOptions(blah.apply(1)).getSslOptions(), force).onComplete(onSuccess(updateOccurred -> {
+      ServerSSLOptions optionsUpdate = createBaseServerOptions().setKeyCertOptions(blah.apply(1)).getSslOptions();
+      Future<Boolean> res = server.updateSSLOptions(optionsUpdate, force);
+      res.onComplete(onSuccess(updateOccurred -> {
         request.apply(client2).onComplete(ar -> {
           assertEquals(!updateTrust, ar.succeeded());
           if (updateTrust) {
