@@ -30,8 +30,6 @@ public interface HttpClientTransport {
 
   Future<HttpClientConnection> connect(ContextInternal context,
                                        SocketAddress server,
-
-                                       // TODO : try remove this, it does not see strictly necessary
                                        HostAndPort authority,
                                        HttpConnectParams params,
                                        ClientMetrics<?, ?, ?> clientMetrics);
