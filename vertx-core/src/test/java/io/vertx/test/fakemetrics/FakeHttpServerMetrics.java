@@ -31,6 +31,11 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   private final ConcurrentMap<String, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
+  private final SocketAddress socketAddress;
+
+  public FakeHttpServerMetrics(SocketAddress socketAddress) {
+    this.socketAddress = socketAddress;
+  }
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
     return webSockets.get(ws.path());
@@ -42,6 +47,10 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   public HttpServerMetric getResponseMetric(String uri) {
     return requests.stream().filter(m -> m.uri.equals(uri)).findFirst().orElse(null);
+  }
+
+  public SocketAddress getSocketAddress() {
+    return socketAddress;
   }
 
   @Override
