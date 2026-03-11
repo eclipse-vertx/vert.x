@@ -206,4 +206,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   public Metrics getMetrics() {
     return metrics;
   }
+
+  @Override
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
+    return Future.succeededFuture(false);
+  }
 }

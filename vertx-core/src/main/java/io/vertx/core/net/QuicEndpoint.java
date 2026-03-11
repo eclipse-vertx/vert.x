@@ -42,6 +42,35 @@ public interface QuicEndpoint extends Measured {
   Future<Integer> bind(SocketAddress address);
 
   /**
+   * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
+   *
+   * <p>The boolean succeeded future result indicates whether the update occurred.
+   *
+   * @param options the new SSL options
+   * @return a future signaling the update success
+   */
+  default Future<Boolean> updateSSLOptions(ClientSSLOptions options) {
+    return updateSSLOptions(options, false);
+  }
+
+  /**
+   * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different
+   * from the existing options object.
+   *
+   * <p>The {@code options} object is compared using its {@code equals} method against the existing options to prevent
+   * an update when the objects are equals since loading options can be costly, this can happen for share TCP servers.
+   * When object are equals, setting {@code force} to {@code true} forces the update.
+   *
+   * <p>The boolean succeeded future result indicates whether the update occurred.
+   *
+   * @param options the new SSL options
+   * @param force force the update when options are equals
+   * @return a future signaling the update success
+   */
+  Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force);
+
+  /**
    * Close the endpoint and release all associated resources.
    *
    * @return a future completed with the close operation result

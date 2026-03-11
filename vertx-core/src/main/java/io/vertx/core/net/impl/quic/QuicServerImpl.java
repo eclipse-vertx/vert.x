@@ -273,4 +273,9 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   public Future<Integer> listen() {
     return listen(config.getPort(), config.getHost());
   }
+
+  @Override
+  public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
+    return Future.succeededFuture(false);
+  }
 }
