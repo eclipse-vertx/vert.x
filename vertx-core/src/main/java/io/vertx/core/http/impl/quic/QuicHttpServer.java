@@ -126,7 +126,7 @@ public class QuicHttpServer implements HttpServerInternal {
 
   @Override
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
-    return vertx.failedFuture("HTTP/3 server options cannot be updated");
+    return quicServer.updateSSLOptions(options, force);
   }
 
   @Override

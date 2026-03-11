@@ -50,6 +50,7 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -82,7 +83,7 @@ public class NetServerImpl implements NetServerInternal {
 
   // Main
   private SslContextManager sslContextManager;
-  private DynamicSslContextProvider sslContextProvider;
+  private SslContextProviderReference sslContextProviderRef;
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
@@ -111,7 +112,7 @@ public class NetServerImpl implements NetServerInternal {
   }
 
   public SslContextProvider sslContextProvider() {
-    return sslContextProvider.provider();
+    return sslContextProviderRef.get();
   }
 
   @Override
@@ -325,7 +326,9 @@ public class NetServerImpl implements NetServerInternal {
       return server.updateSSLOptions(options, force);
     } else {
       ContextInternal ctx = vertx.getOrCreateContext();
-      return sslContextProvider.update(options, ctx, force);
+      return sslContextProviderRef
+        .update(options, ctx, force)
+        .map(Objects::nonNull);
     }
   }
 
@@ -432,7 +435,7 @@ public class NetServerImpl implements NetServerInternal {
 
         // The first server binds the socket
         actualServer = this;
-        sslContextProvider = new DynamicSslContextProvider(helper);
+        sslContextProviderRef = new SslContextProviderReference(helper);
         bindFuture = promise;
         sslContextManager = helper;
         trafficShapingHandler = createTrafficShapingHandler();
@@ -440,7 +443,7 @@ public class NetServerImpl implements NetServerInternal {
         worker = ch -> {
           // Should close if the channel group is closed actually or check that
           channelGroup.add(ch);
-          initializer.accept(ch, sslContextProvider != null ? sslContextProvider.provider() : null, sslContextManager, sslOptions);
+          initializer.accept(ch, sslContextProviderRef != null ? sslContextProviderRef.get() : null, sslContextManager, sslOptions);
         };
         channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 
@@ -456,7 +459,7 @@ public class NetServerImpl implements NetServerInternal {
 
         // Initialize SSL before binding
         if (config.isSsl()) {
-          sslContextProvider
+          sslContextProviderRef
             .update(sslOptions, context)
             .onComplete(ar -> {
               if (ar.succeeded()) {
@@ -487,7 +490,7 @@ public class NetServerImpl implements NetServerInternal {
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           group.add(ch);
-          initializer.accept(ch, actualServer.sslContextProvider.provider(), sslContextManager, sslOptions);
+          initializer.accept(ch, actualServer.sslContextProviderRef.get(), sslContextManager, sslOptions);
         };
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         main.bindFuture.onComplete(promise);

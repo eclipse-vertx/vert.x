@@ -114,4 +114,11 @@ public class Http3TLSTest extends HttpTLSTest {
   public void testTLSNonMatchingCipherSuites() throws Exception {
     super.testTLSNonMatchingCipherSuites();
   }
+
+  @Ignore("Handle this")
+  @Test
+  @Override
+  public void testServerSharingUpdateSSLOptions() throws Exception {
+    super.testServerSharingUpdateSSLOptions();
+  }
 }

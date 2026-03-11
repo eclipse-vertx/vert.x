@@ -132,7 +132,13 @@ public class HybridHttpServer implements HttpServerInternal {
 
   @Override
   public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
-    return tcpServer.updateSSLOptions(options, force);
+    return tcpServer.updateSSLOptions(options, force).compose(res -> {
+      if (res) {
+        return quicServer.updateSSLOptions(options, force);
+      } else {
+        return Future.succeededFuture(res);
+      }
+    });
   }
 
   @Override
