@@ -17,11 +17,14 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientAgent;
 import io.vertx.core.http.HttpClientBuilder;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerBuilder;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
@@ -61,7 +64,10 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManagerFactorySpi;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509KeyManager;
+import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -72,6 +78,8 @@ import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -1597,6 +1605,239 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     @Override
     public PrivateKey getPrivateKey(String s) {
       return delegate.getPrivateKey(s);
+    }
+  }
+
+  @Test
+  public void testUpdateSSLOptions() throws Exception {
+    testUpdateSSLOptions(idx -> {
+      switch (idx) {
+        case 0:
+          return Cert.SERVER_JKS.get();
+        case 1:
+          return Cert.SERVER_JKS_ROOT_CA.get();
+      }
+      return null;
+    }, idx -> {
+      switch (idx) {
+        case 0:
+          return Trust.SERVER_JKS.get();
+        case 1:
+          return Trust.SERVER_JKS_ROOT_CA.get();
+      }
+      return null;
+    }, false, true);
+  }
+
+  @Test
+  public void testUpdateSSLOptionsSamePath() throws Exception {
+    testUpdateSSLOptionsSamePath(false);
+  }
+
+  @Test
+  public void testUpdateSSLOptionsSamePathAndForce() throws Exception {
+    testUpdateSSLOptionsSamePath(true);
+  }
+
+  private void testUpdateSSLOptionsSamePath(boolean force) throws Exception {
+    Path cert = Files.createTempFile("vertx", ".jks").toAbsolutePath();
+    Buffer serverJks = vertx.fileSystem().readFileBlocking(Cert.SERVER_JKS.get().getPath());
+    Buffer serverJksRootCA = vertx.fileSystem().readFileBlocking(Cert.SERVER_JKS_ROOT_CA.get().getPath());
+    testUpdateSSLOptions(idx -> {
+      try {
+        switch (idx) {
+          case 0:
+            Files.write(cert, serverJks.getBytes());
+            return Cert.SERVER_JKS.get().copy().setPath(cert.toFile().getAbsolutePath());
+          case 1:
+            Files.write(cert, serverJksRootCA.getBytes());
+            return Cert.SERVER_JKS.get().copy().setPath(cert.toFile().getAbsolutePath());
+        }
+      } catch (IOException e) {
+        fail(e);
+      }
+      return null;
+    }, idx -> {
+      switch (idx) {
+        case 0:
+          return Trust.SERVER_JKS.get();
+        case 1:
+          return Trust.SERVER_JKS_ROOT_CA.get();
+      }
+      return null;
+    }, force, force);
+  }
+
+  private void testUpdateSSLOptions(Function<Integer, JksOptions> certProvider, Function<Integer, JksOptions> trustProvider,
+                                    boolean force, boolean updateTrust) throws Exception {
+    server = config
+      .forServer()
+      .setSsl(true)
+      .configureSsl(sslOptions -> sslOptions.setKeyCertOptions(certProvider.apply(0)))
+      .create(vertx)
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    Function<HttpClient, Future<Buffer>> request = client -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
+    HttpClientConfig clientCfg = config
+      .forClient()
+      .setSsl(true)
+      .setVerifyHost(false)
+      .configureSsl(sslOptions -> sslOptions
+        .setTrustOptions(trustProvider.apply(0))
+      );
+    HttpClientAgent client1 = clientCfg.create(vertx);
+    HttpClientAgent client2 = clientCfg.create(vertx);
+    request.apply(client1).onComplete(onSuccess(body1 -> {
+      assertEquals("Hello World", body1.toString());
+      ServerSSLOptions certUpdate = new ServerSSLOptions().setKeyCertOptions(certProvider.apply(1));
+      server.updateSSLOptions(certUpdate, force).onComplete(onSuccess(updateOccurred -> {
+        request.apply(client2).onComplete(ar -> {
+          assertEquals(!updateTrust, ar.succeeded());
+          if (updateTrust) {
+            assertTrue(updateOccurred);
+            ClientSSLOptions trustUpdate = new ClientSSLOptions().setTrustOptions(trustProvider.apply(1));
+            client2.updateSSLOptions(trustUpdate, force)
+              .onComplete(onSuccess(v2 -> {
+              request.apply(client2).onComplete(onSuccess(body2 -> {
+                assertEquals("Hello World", body2.toString());
+                testComplete();
+              }));
+            }));
+          } else {
+            // Same trust options since update did not occur
+            assertFalse(updateOccurred);
+            testComplete();
+          }
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testUpdateWithInvalidSSLOptions() throws Exception {
+    server = config
+      .forServer()
+      .setSsl(true)
+      .configureSsl(sslOptions -> sslOptions.setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .create(vertx)
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    client = config
+      .forClient()
+      .setSsl(true)
+      .setVerifyHost(false)
+      .configureSsl(sslOptions -> sslOptions.setTrustOptions(Trust.SERVER_JKS.get()))
+      .create(vertx);
+    ServerSSLOptions certUpdate = new ServerSSLOptions()
+      .setKeyCertOptions(new JksOptions()
+        .setValue(TestUtils.randomBuffer(20))
+        .setPassword("invalid"));
+    Future<Boolean> last = server.updateSSLOptions(certUpdate);
+    last.onComplete(onFailure(err -> {
+      client
+        .request(requestOptions)
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .onComplete(onSuccess(body -> {
+          assertEquals("Hello World", body.toString());
+          testComplete();
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testConcurrentUpdateSSLOptions() throws Exception {
+    server = config
+      .forServer()
+      .setSsl(true)
+      .configureSsl(sslOptions -> sslOptions.setKeyCertOptions(Cert.SERVER_JKS.get()))
+      .create(vertx)
+      .requestHandler(req -> {
+        req.response().end("Hello World");
+      });
+    startServer(testAddress);
+    client = config
+      .forClient()
+      .setSsl(true)
+      .setVerifyHost(false)
+      .configureSsl(sslOptions -> sslOptions.setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get()))
+      .create(vertx);
+    List<KeyCertOptions> list = Arrays.asList(
+      Cert.SERVER_PKCS12.get(),
+      Cert.SERVER_PEM.get(),
+      Cert.SERVER_PEM.get(),
+      Cert.SERVER_JKS_ROOT_CA.get()
+    );
+    AtomicInteger seq = new AtomicInteger();
+    Future<Boolean> last = null;
+    for (int i = 0;i < list.size();i++) {
+      int val = i;
+      last = server.updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(list.get(i)));
+      last.onComplete(onSuccess(v -> {
+        assertEquals(val, seq.getAndIncrement());
+      }));
+    }
+    last.onComplete(onSuccess(v -> {
+      client
+        .request(requestOptions)
+        .compose(req -> req.send().compose(HttpClientResponse::body))
+        .onComplete(onSuccess(body -> {
+          assertEquals("Hello World", body.toString());
+          testComplete();
+        }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerSharingUpdateSSLOptions() throws Exception {
+    int num = 4;
+    HttpServer[] servers = new HttpServer[num];
+    for (int i = 0;i < num;i++) {
+      String msg = "Hello World " + i;
+      servers[i] = config
+        .forServer()
+        .setSsl(true)
+        .configureSsl(sslOptions -> sslOptions.setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .create(vertx)
+        .requestHandler(req -> {
+          req.response().end(msg);
+        });
+      awaitFuture(servers[i].listen(testAddress));
+    }
+    HttpClient[] clients = new HttpClient[num];
+    for (int i = 0;i < num;i++) {
+      clients[i] = config
+        .forClient()
+        .setSsl(true)
+        .setVerifyHost(false)
+        .configureSsl(sslOptions -> sslOptions.setTrustOptions(Trust.SERVER_JKS.get()))
+        .create(vertx);
+    }
+    for (int i = 0;i < num;i++) {
+      Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).await();
+      assertEquals("Hello World " + i, body.toString());
+    }
+    for (int i = 0;i < num;i++) {
+      servers[i].updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get())).await();
+    }
+    for (int i = 0;i < num;i++) {
+      clients[i].close().await();
+      clients[i] = config
+        .forClient()
+        .setSsl(true)
+        .setVerifyHost(false)
+        .configureSsl(sslOptions -> sslOptions.setTrustOptions(Trust.SERVER_JKS.get()))
+        .create(vertx);
+    }
+    for (int i = 0;i < num;i++) {
+      Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).await();
+      assertEquals("Hello World " + i, body.toString());
     }
   }
 }
