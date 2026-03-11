@@ -55,7 +55,7 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   public HttpServerMetrics<?, ?, ?> createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
-    return new FakeHttpServerMetrics();
+    return new FakeHttpServerMetrics(localAddress);
   }
 
   public HttpClientMetrics<?, ?, ?> createHttpClientMetrics(HttpClientOptions options) {
