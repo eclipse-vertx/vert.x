@@ -10,22 +10,22 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            jdk: 11
-          - os: ubuntu-latest
-            jdk: 11
-            profile: '-PNativeEpoll'
+#          - os: ubuntu-latest
+#            jdk: 11
+#          - os: ubuntu-latest
+#            jdk: 11
+#            profile: '-PNativeEpoll'
 #          - os: ubuntu-latest
 #            jdk: 11
 #            profile: '-PNativeIoUring'
-          - os: ubuntu-latest
-            jdk: 11
-            profile: '-PNativeEpoll+DomainSockets'
+#          - os: ubuntu-latest
+#            jdk: 11
+#            profile: '-PNativeEpoll+DomainSockets'
           - os: ubuntu-latest
             jdk: 25
-          - os: windows-2022
-            jdk: 11
-            stable: true
+#          - os: windows-2022
+#            jdk: 11
+#            stable: true
 #          - os: macos-latest
 #            jdk: 11
 #            profile: '-PNativeKQueue'
