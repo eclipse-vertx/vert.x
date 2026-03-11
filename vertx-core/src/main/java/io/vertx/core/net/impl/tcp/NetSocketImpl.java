@@ -147,7 +147,8 @@ public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocke
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
               ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
-              sslHandler = provider.createClientSslHandler(remoteAddress, serverName, applicationProtocols, clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
+              HostAndPort peer = remoteAddress.isInetSocket() ? HostAndPort.create(remoteAddress.host(), remoteAddress.port()) : null;
+              sslHandler = provider.createClientSslHandler(peer, serverName, applicationProtocols, clientSSLOptions.getSslHandshakeTimeout(), clientSSLOptions.getSslHandshakeTimeoutUnit());
             } else {
               sslHandler = provider.createServerHandler(applicationProtocols, sslOptions.getSslHandshakeTimeout(),
                 sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));

@@ -33,6 +33,14 @@ public class SocketAddressImpl implements SocketAddress{
   private final int port;
   private final String path;
 
+  public SocketAddressImpl(String hostName, int port, InetAddress ipAddress) {
+    this.host = hostName;
+    this.hostName = hostName;
+    this.ipAddress = ipAddress;
+    this.port = port;
+    this.path = null;
+  }
+
   public SocketAddressImpl(InetSocketAddress address) {
     Arguments.requireInRange(address.getPort(), 0, 65535, "port p must be in range 0 <= p <= 65535");
     this.path = null;

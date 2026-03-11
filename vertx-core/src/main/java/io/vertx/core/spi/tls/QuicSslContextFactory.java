@@ -42,7 +42,7 @@ public class QuicSslContextFactory implements SslContextFactory {
   private Set<String> enabledCipherSuites;
   private List<String> applicationProtocols;
   private String endpointIdentificationAlgorithm;
-  private String serverName;
+  private SNIServerName serverName;
   private boolean useAlpn;
   private ClientAuth clientAuth;
   private KeyManagerFactory kmf;
@@ -67,7 +67,7 @@ public class QuicSslContextFactory implements SslContextFactory {
   }
 
   @Override
-  public SslContextFactory forClient(String serverName, String endpointIdentificationAlgorithm) {
+  public SslContextFactory forClient(SNIServerName serverName, String endpointIdentificationAlgorithm) {
     this.forClient = true;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     this.serverName = serverName;
@@ -110,6 +110,9 @@ public class QuicSslContextFactory implements SslContextFactory {
   }
 
   private SslContext createContext(boolean client, KeyManagerFactory kmf, TrustManagerFactory tmf) throws SSLException {
+    if (!enabledProtocols.contains("TLSv1.3")) {
+      throw new SSLException("Only TLSv1.3 supported");
+    }
     QuicSslContextBuilder builder;
     if (client) {
       builder = QuicSslContextBuilder.forClient();

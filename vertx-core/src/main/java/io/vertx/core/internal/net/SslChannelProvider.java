@@ -48,12 +48,16 @@ public class SslChannelProvider {
     return sslContextProvider;
   }
 
-  public SslHandler createClientSslHandler(SocketAddress peerAddress, String serverName, List<String> applicationProtocols, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit) {
+  public SslHandler createClientSslHandler(HostAndPort peer,
+                                           String serverName,
+                                           List<String> applicationProtocols,
+                                           long sslHandshakeTimeout,
+                                           TimeUnit sslHandshakeTimeoutUnit) {
     SslContext sslContext = sslContextProvider.sslClientContext(serverName, applicationProtocols);
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    if (peerAddress != null && peerAddress.isInetSocket()) {
-      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peerAddress.host(), peerAddress.port(), delegatedTaskExec);
+    if (peer != null) {
+      sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peer.host(), peer.port(), delegatedTaskExec);
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }

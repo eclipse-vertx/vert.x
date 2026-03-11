@@ -44,7 +44,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   public static final QuicConnectOptions DEFAULT_CONNECT_OPTIONS = new QuicConnectOptions();
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
-  private static final AttributeKey<HostAndPort> SSL_SERVER_NAME_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
+  private static final AttributeKey<HostAndPort> SSL_PEER_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
   private static final AttributeKey<List<String>> APPLICATION_PROTOCOLS_KEY = AttributeKey.newInstance("io.vertx.net.quic.client.application_protocols");
 
   public static QuicClient create(VertxInternal vertx, QuicClientConfig config, ClientSSLOptions sslOptions) {
@@ -77,13 +77,9 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         SslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
         Attribute<List<String>> applicationProtocols = q.attr(APPLICATION_PROTOCOLS_KEY);
         QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, applicationProtocols.get());
-        if (q.hasAttr(SSL_SERVER_NAME_KEY)) {
-          Attribute<HostAndPort> serverName = q.attr(SSL_SERVER_NAME_KEY);
-          HostAndPort peer = serverName.get();
-          return sslContext.newEngine(q.alloc(), peer.host(), peer.port());
-        } else {
-          return sslContext.newEngine(q.alloc());
-        }
+        Attribute<HostAndPort> peerAttr = q.attr(SSL_PEER_KEY);
+        HostAndPort peer = peerAttr.get();
+        return sslContext.newEngine(q.alloc(), peer.host(), peer.port());
       })
       .maxIdleTimeout(5000, TimeUnit.MILLISECONDS));
   }
@@ -110,7 +106,6 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       return context.failedFuture(new IllegalArgumentException("Application protocols must be set on client SSL options"));
     }
     Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
-    String serverName = connectOptions.getServerName();
     return fut.compose(sslContextProvider -> {
       Duration connectTimeout = connectOptions.getTimeout();
       if (connectTimeout == null) {
@@ -120,12 +115,11 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       if (qlogConfig == null) {
         qlogConfig = config.getQLogConfig();
       }
-      return connect(address, serverName, qlogConfig, context, connectTimeout, applicationProtocols, sslContextProvider);
+      return connect(address, qlogConfig, context, connectTimeout, applicationProtocols, sslContextProvider);
     });
   }
 
   private Future<QuicConnection> connect(SocketAddress remoteAddress,
-                                         String serverName,
                                          QLogConfig qLogConfig,
                                          ContextInternal context,
                                          Duration connectTimeout,
@@ -133,13 +127,12 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          SslContextProvider sslContextProvider) {
     NameResolver resolver = vertx.nameResolver();
     Future<java.net.SocketAddress> f = resolver.resolve(remoteAddress);
-    return f.compose(res -> connect(remoteAddress, res, serverName, qLogConfig, context, connectTimeout,
+    return f.compose(res -> connect(remoteAddress, res, qLogConfig, context, connectTimeout,
       applicationProtocols, sslContextProvider));
   }
 
   private Future<QuicConnection> connect(SocketAddress remoteAddress,
                                          java.net.SocketAddress resolvedAddress,
-                                         String serverName,
                                          QLogConfig qLogConfig,
                                          ContextInternal context,
                                          Duration connectTimeout,
@@ -147,7 +140,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          SslContextProvider sslContextProvider) {
     Channel ch = channel;
     if (ch != null) {
-      return connect(ch, remoteAddress, resolvedAddress, serverName, qLogConfig, context, connectTimeout,
+      return connect(ch, remoteAddress, resolvedAddress, qLogConfig, context, connectTimeout,
         applicationProtocols, sslContextProvider);
     }
     Future<Integer> cf;
@@ -163,7 +156,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       }
     }
     return cf
-      .compose(port -> connect(channel, remoteAddress, resolvedAddress, serverName, qLogConfig, context,
+      .compose(port -> connect(channel, remoteAddress, resolvedAddress, qLogConfig, context,
         connectTimeout, applicationProtocols, sslContextProvider));
   }
 
@@ -171,7 +164,6 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private Future<QuicConnection> connect(Channel ch,
                                          SocketAddress remoteAddress,
                                          java.net.SocketAddress resolvedAddress,
-                                         String serverName,
                                          QLogConfig qLogConfig,
                                          ContextInternal context,
                                          Duration connectTimeout,
@@ -195,9 +187,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         }
       })
       .remoteAddress(resolvedAddress);
-    if (serverName != null && !serverName.isEmpty()) {
-      bootstrap.attr(SSL_SERVER_NAME_KEY, HostAndPort.authority(serverName, remoteAddress.port()));
-    }
+    bootstrap.attr(SSL_PEER_KEY, HostAndPort.create(remoteAddress.host(), remoteAddress.port()));
     if (qLogConfig != null) {
       bootstrap.option(QuicChannelOption.QLOG, new QLogConfiguration(qLogConfig.getPath(), qLogConfig.getTitle(), qLogConfig.getDescription()));
     }

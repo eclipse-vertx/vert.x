@@ -14,6 +14,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.LogConfig;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
@@ -22,9 +23,12 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_PORT;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class Http3Config implements HttpConfig {
 
@@ -40,6 +44,11 @@ public class Http3Config implements HttpConfig {
   public Http3Config(int port, String host) {
     this.port = port;
     this.host = host;
+  }
+
+  @Override
+  public HttpVersion version() {
+    return HttpVersion.HTTP_3;
   }
 
   @Override
@@ -62,6 +71,16 @@ public class Http3Config implements HttpConfig {
 //    options.setClientAddressValidation(QuicClientAddressValidation.NONE);
 //    options.setKeyLogFile("/Users/julien/keylogfile.txt");
     return new HttpServerConfig() {
+      @Override
+      public HttpServerConfig setSsl(boolean ssl) {
+        assertTrue(ssl);
+        return this;
+      }
+      @Override
+      public HttpServerConfig setUseProxyProtocol(boolean useProxyProtocol) {
+        assertFalse(useProxyProtocol);
+        return this;
+      }
       @Override
       public HttpServerConfig setDecompressionSupported(boolean supported) {
         throw new UnsupportedOperationException();
@@ -101,8 +120,13 @@ public class Http3Config implements HttpConfig {
         return this;
       }
       @Override
-      public HttpServer create(Vertx vertx) {
-        return vertx.createHttpServer(config, sslOptions);
+      public HttpServerConfig configureSsl(Consumer<ServerSSLOptions> configurator) {
+        configurator.accept(sslOptions);
+        return this;
+      }
+      @Override
+      public HttpServerBuilder builder(Vertx vertx) {
+        return vertx.httpServerBuilder().with(config).with(sslOptions);
       }
     };
   }
@@ -115,12 +139,29 @@ public class Http3Config implements HttpConfig {
     config.setDefaultHost(host);
     config.setDefaultPort(port);
     config.setHttp3Config(http3Config);
-    ClientSSLOptions sslOptions = new ClientSSLOptions()
-      .setTrustOptions(Trust.SERVER_JKS.get())
-      .setHostnameVerificationAlgorithm("");
+    ClientSSLOptions sslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
     ObservabilityConfig observabilityConfig = new ObservabilityConfig();
     config.setObservabilityConfig(observabilityConfig);
     return new HttpClientConfig() {
+      @Override
+      public HttpClientConfig setSsl(boolean ssl) {
+        assertTrue(ssl);
+        return this;
+      }
+      @Override
+      public HttpClientConfig setVerifyHost(boolean verify) {
+        config.setVerifyHost(verify);
+        return this;
+      }
+      @Override
+      public HttpClientConfig setForceSni(boolean forceSni) {
+        config.setForceSni(forceSni);
+        return this;
+      }
+      @Override
+      public HttpClientConfig setProxyOptions(ProxyOptions proxyOptions) {
+        throw new UnsupportedOperationException();
+      }
       @Override
       public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
         config.setConnectTimeout(connectTimeout);
@@ -142,6 +183,11 @@ public class Http3Config implements HttpConfig {
       @Override
       public HttpClientConfig setMetricsName(String name) {
         observabilityConfig.setMetricsName(name);
+        return this;
+      }
+      @Override
+      public HttpClientConfig configureSsl(Consumer<ClientSSLOptions> configurator) {
+        configurator.accept(sslOptions);
         return this;
       }
       @Override

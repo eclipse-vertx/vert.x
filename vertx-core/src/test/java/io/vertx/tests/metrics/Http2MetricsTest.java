@@ -52,6 +52,10 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   public Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions, ThreadingModel threadingModel) {
     super(new HttpConfig.Http1xOr2Config() {
       @Override
+      public HttpVersion version() {
+        return HttpVersion.HTTP_2;
+      }
+      @Override
       public int port() {
         return serverOptions.getPort();
       }
