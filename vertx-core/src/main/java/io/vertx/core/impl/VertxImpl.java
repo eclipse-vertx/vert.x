@@ -73,6 +73,8 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -80,7 +82,6 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -107,11 +108,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   // https://github.com/eclipse-vertx/vert.x/issues/4611
 
   private static final Logger log = LoggerFactory.getLogger(VertxImpl.class);
+  private static final VarHandle INTERNAL_TIMER_HANDLER_DISPOSED;
+
+  static {
+    try {
+      INTERNAL_TIMER_HANDLER_DISPOSED = MethodHandles.lookup()
+        .findVarHandle(InternalTimerHandler.class, "disposed", boolean.class);
+    } catch (NoSuchFieldException | IllegalAccessException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
 
   static final Object[] EMPTY_CONTEXT_LOCALS = new Object[0];
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
+
+  private static boolean disposedCAS(InternalTimerHandler handler) {
+    return INTERNAL_TIMER_HANDLER_DISPOSED.compareAndSet(handler, false, true);
+  }
 
   // Not cached for graalvm
   private static ThreadFactory virtualThreadFactory() {
@@ -1029,7 +1044,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final boolean periodic;
     private final long id;
     private final ContextInternal context;
-    private final AtomicBoolean disposed = new AtomicBoolean();
+    private volatile boolean disposed;
     private volatile java.util.concurrent.Future<?> future;
 
     InternalTimerHandler(long id, Handler<Long> runnable, boolean periodic, ContextInternal context) {
@@ -1050,10 +1065,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     public void handle(Void v) {
       if (periodic) {
-        if (!disposed.get()) {
+        if (!disposed) {
           handler.handle(id);
         }
-      } else if (disposed.compareAndSet(false, true)) {
+      } else if (disposedCAS(this)) {
         timeouts.remove(id);
         try {
           handler.handle(id);
@@ -1075,7 +1090,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     private boolean tryCancel() {
-      if  (disposed.compareAndSet(false, true)) {
+      if  (disposedCAS(this)) {
         timeouts.remove(id);
         future.cancel(false);
         return true;
