@@ -86,6 +86,11 @@ public class Http3Config implements HttpConfig {
         return this;
       }
       @Override
+      public HttpServerConfig setMaxQueryParams(int maxQueryParams) {
+        config.setMaxQueryParams(maxQueryParams);
+        return this;
+      }
+      @Override
       public HttpServerConfig setLogActivity(boolean logActivity) {
         config.getQuicConfig().setLogConfig(new LogConfig().setEnabled(logActivity));
         return this;

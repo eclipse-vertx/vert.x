@@ -344,7 +344,11 @@ public final class HttpUtils {
   }
 
   public static MultiMap params(String uri, Charset charset, boolean semicolonIsNormalChar) {
-    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset, true, 1024, semicolonIsNormalChar);
+    return params(uri, charset, 1024, semicolonIsNormalChar);
+  }
+
+  public static MultiMap params(String uri, Charset charset, int maxParams, boolean semicolonIsNormalChar) {
+    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset, true, maxParams, semicolonIsNormalChar);
     Map<String, List<String>> prms = queryStringDecoder.parameters();
     MultiMap params = MultiMap.caseInsensitiveMultiMap();
     if (!prms.isEmpty()) {

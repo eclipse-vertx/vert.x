@@ -120,6 +120,11 @@ public interface HttpConfig {
           return this;
         }
         @Override
+        public HttpServerConfig setMaxQueryParams(int maxQueryParams) {
+          options.setMaxQueryParams(maxQueryParams);
+          return this;
+        }
+        @Override
         public HttpServerConfig setLogActivity(boolean logActivity) {
           options.setLogActivity(logActivity);
           return this;

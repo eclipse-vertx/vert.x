@@ -236,6 +236,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         null,
         HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE,
         HttpServerOptions.DEFAULT_MAX_FORM_FIELDS,
+        HttpServerOptions.DEFAULT_MAX_QUERY_PARAMS,
         HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE,
         new Http1ServerConfig(),
         false,

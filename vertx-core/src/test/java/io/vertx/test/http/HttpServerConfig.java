@@ -13,6 +13,7 @@ public interface HttpServerConfig {
   HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes);
   HttpServerConfig setMaxFormAttributeSize(int maxSize);
   HttpServerConfig setMaxFormFields(int maxFormFields);
+  HttpServerConfig setMaxQueryParams(int maxQueryParams);
   HttpServerConfig setIdleTimeout(Duration timeout);
   HttpServerConfig setLogActivity(boolean logActivity);
   HttpServerConfig setHandle100ContinueAutomatically(boolean b);
