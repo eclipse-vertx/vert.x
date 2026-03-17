@@ -436,12 +436,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     Objects.requireNonNull(requestURI, "no null requestURI accepted");
     checkClosed();
     HostAndPort authority;
-    // should we do that here ? it might create issues with address resolver that resolves this later
     if (host != null && port != null) {
       String peerHost = host;
-//      if (peerHost.endsWith(".")) {
-//        peerHost = peerHost.substring(0, peerHost.length() -  1);
-//      }
+      if (peerHost.endsWith(".")) {
+        peerHost = peerHost.substring(0, peerHost.length() -  1);
+      }
       authority = HostAndPort.create(peerHost, port);
     } else {
       authority = null;

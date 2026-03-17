@@ -34,13 +34,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Ignore("Handle this")
   @Test
   @Override
-  public void testTLSTrailingDotHost() throws Exception {
-    super.testTLSTrailingDotHost();
-  }
-
-  @Ignore("Handle this")
-  @Test
-  @Override
   public void testSNIServerIgnoresExtension2() throws Exception {
     super.testSNIServerIgnoresExtension2();
   }
@@ -50,13 +43,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   public void testTLSServerSSLEnginePeerHost() throws Exception {
     super.testTLSServerSSLEnginePeerHost();
-  }
-
-  @Ignore("Handle this")
-  @Test
-  @Override
-  public void testSniWithTrailingDotHost() throws Exception {
-    super.testSniWithTrailingDotHost();
   }
 
   @Ignore("https://github.com/netty/netty/pull/16178")
