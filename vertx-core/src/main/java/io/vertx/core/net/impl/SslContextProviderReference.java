@@ -23,21 +23,27 @@ import io.vertx.core.net.ServerSSLOptions;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class DynamicSslContextProvider {
+public class SslContextProviderReference {
 
   private final SslContextManager sslContextManager;
   private volatile SslContextProvider sslContextProvider;
-  private Future<Boolean> updateInProgress;
+  private Future<SslContextProvider> updateInProgress;
 
-  public DynamicSslContextProvider(SslContextManager sslContextManager) {
+  public SslContextProviderReference(SslContextManager sslContextManager) {
     this.sslContextManager = sslContextManager;
   }
 
-  public SslContextProvider provider() {
+  /**
+   * @return the most recent {@link SslContextProvider} version.
+   */
+  public SslContextProvider get() {
     return sslContextProvider;
   }
 
-  public Future<Boolean> update(ServerSSLOptions options, ContextInternal ctx) {
+  /**
+   * Like {@link #computeUpdate(ServerSSLOptions, ContextInternal, boolean)} with {@code force = false}.
+   */
+  public Future<SslContextProvider> update(ServerSSLOptions options, ContextInternal ctx) {
     return update(options, ctx, false);
   }
 
@@ -49,8 +55,8 @@ public class DynamicSslContextProvider {
    * @param force force the update when options are equals
    * @return a future signaling the update success
    */
-  public Future<Boolean> update(ServerSSLOptions update, ContextInternal ctx, boolean force) {
-    Future<Boolean> fut;
+  public Future<SslContextProvider> update(ServerSSLOptions update, ContextInternal ctx, boolean force) {
+    Future<SslContextProvider> fut;
     synchronized (this) {
       if (updateInProgress == null) {
         fut = computeUpdate(update, ctx, force);
@@ -62,7 +68,7 @@ public class DynamicSslContextProvider {
     return fut;
   }
 
-  private Future<Boolean> computeUpdate(ServerSSLOptions options, ContextInternal ctx, boolean force) {
+  private Future<SslContextProvider> computeUpdate(ServerSSLOptions options, ContextInternal ctx, boolean force) {
     ServerSSLOptions sslOptions = options.copy();
     ClientAuth clientAuth = sslOptions.getClientAuth();
     if (clientAuth == null) {
@@ -76,11 +82,11 @@ public class DynamicSslContextProvider {
       ctx);
     return res.map(update -> {
       boolean updated;
-      synchronized (DynamicSslContextProvider.this) {
+      synchronized (SslContextProviderReference.this) {
         updated = sslContextProvider != update;
         sslContextProvider = update;
       }
-      return updated;
+      return updated ? update : null;
     });
   }
 }

@@ -26,6 +26,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.quic.QuicClientImpl;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -42,6 +43,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   private final Http3Settings localSettings;
   private final Http3FrameLogger frameLogger;
   private final long maxConcurrency;
+  private final boolean forceSni;
 
   public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
 
@@ -75,6 +77,7 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     this.localSettings = localSettings;
     this.client = client;
     this.frameLogger = logEnabled ? new Http3FrameLogger(InternalLogLevel.DEBUG) : null;
+    this.forceSni = config.isForceSni();
   }
 
   public QuicClientImpl client() {
@@ -91,8 +94,12 @@ public class QuicHttpClientTransport implements HttpClientTransport {
       .copy()
       .setUseAlpn(true)
       .setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
+
+    // Merge server and authority
+    SocketAddressImpl tmp = (SocketAddressImpl)server;
+    server = new SocketAddressImpl(authority.host(), server.port(), tmp.ipAddress());
+
     QuicConnectOptions connectOptions = new QuicConnectOptions();
-    connectOptions.setServerName(authority.host());
     connectOptions.setSslOptions(sslOptions);
     Future<QuicConnection> f = client.connect(server, connectOptions);
     return f.map(res -> {

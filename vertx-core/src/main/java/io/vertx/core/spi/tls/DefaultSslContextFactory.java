@@ -21,7 +21,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -49,7 +49,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
 
   private boolean forClient;
   private boolean forServer;
-  private String serverName;
+  private SNIServerName serverName;
   private String endpointIdentificationAlgorithm;
   private Set<String> enabledProtocols;
   private Set<String> enabledCipherSuites;
@@ -73,7 +73,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
   }
 
   @Override
-  public SslContextFactory forClient(String serverName, String endpointIdentificationAlgorithm) {
+  public SslContextFactory forClient(SNIServerName serverName, String endpointIdentificationAlgorithm) {
     this.forClient = true;
     this.serverName = serverName;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
@@ -179,7 +179,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
     }
     if (client) {
       if (serverName != null) {
-        builder.serverName(new SNIHostName(serverName));
+        builder.serverName(serverName);
       }
       builder.endpointIdentificationAlgorithm(endpointIdentificationAlgorithm == null ? "" : endpointIdentificationAlgorithm);
     } else {

@@ -11,25 +11,14 @@
 
 package io.vertx.tests.tls;
 
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.test.http.HttpTestBase;
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
+import io.vertx.test.http.HttpConfig;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2MultiplexTLSTest extends Http2TLSTest {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return super.createBaseServerOptions().setHttp2MultiplexImplementation(true);
-  }
-
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return super.createBaseClientOptions().setHttp2MultiplexImplementation(true);
+  public Http2MultiplexTLSTest() {
+    super(true);
   }
 }

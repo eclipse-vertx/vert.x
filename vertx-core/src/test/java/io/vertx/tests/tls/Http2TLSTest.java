@@ -14,33 +14,32 @@ package io.vertx.tests.tls;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2TLSTest extends HttpTLSTest {
+public class Http2TLSTest extends HttpTCPTLSTest {
 
-  @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return new HttpServerOptions()
-      .setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
-      .setUseAlpn(true)
-      .setSsl(true);
+  public Http2TLSTest() {
+    this(false);
   }
 
-  @Override
-  protected HttpClientOptions createBaseClientOptions() {
-    return new HttpClientOptions()
-      .setUseAlpn(true)
-      .setSsl(true)
-      .setProtocolVersion(HttpVersion.HTTP_2);
-  }
-
-  @Override
-  protected TLSTest testTLS(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) throws Exception {
-    return super.testTLS(clientCert, clientTrust, serverCert, serverTrust).version(HttpVersion.HTTP_2);
+  protected Http2TLSTest(boolean multiplex) {
+    super(new HttpConfig.Http2(multiplex) {
+      @Override
+      protected HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex) {
+        return new HttpServerOptions()
+          .setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
+          .setUseAlpn(true);
+      }
+      @Override
+      protected HttpClientOptions createBaseClientOptions(int port, String host, boolean multiplex) {
+        return new HttpClientOptions()
+          .setUseAlpn(true)
+          .setProtocolVersion(HttpVersion.HTTP_2);
+      }
+    });
   }
 }

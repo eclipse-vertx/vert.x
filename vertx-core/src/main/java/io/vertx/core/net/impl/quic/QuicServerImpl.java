@@ -1,3 +1,5 @@
+
+
 /*
  * Copyright (c) 2011-2025 Contributors to the Eclipse Foundation
  *
@@ -36,6 +38,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicServerInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.SslContextProviderReference;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
@@ -46,6 +49,7 @@ import java.nio.channels.DatagramChannel;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -64,6 +68,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   private final QuicServerConfig config;
   private final ServerSSLOptions sslOptions;
+  private SslContextProviderReference sslContextProviderRef;
   private Handler<QuicConnection> handler;
   private QuicTokenHandler tokenHandler;
 
@@ -89,24 +94,32 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   protected Future<ChannelHandler> channelHandler(ContextInternal context, ServerID serverID, TransportMetrics<?> metrics) throws Exception {
     if (config.isLoadBalanced()) {
       LocalMap<String, QuicDispatcher> map = vertx.sharedData().getLocalMap(QUIC_SERVER_MAP_KEY);
-      Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
-      return f.<ChannelHandler>map(sslContextProvider -> {
-        QuicDispatcher dispatcher;
-        synchronized (map) {
-          QuicDispatcher attempt = map.get(serverID.toString());
-          if (attempt == null) {
-            attempt = new QuicDispatcher(serverID, sslContextProvider);
-            map.put(serverID.toString(), attempt);
-          }
-          dispatcher = attempt;
+      QuicDispatcher dispatcher;
+      boolean init;
+      synchronized (map) {
+        QuicDispatcher attempt = map.get(serverID.toString());
+        if (attempt == null) {
+          init = true;
+          attempt = new QuicDispatcher(serverID, new SslContextProviderReference(manager));
+          map.put(serverID.toString(), attempt);
+        } else {
+          init = false;
         }
-        return new ChannelInitializer<>() {
-          @Override
-          protected void initChannel(Channel ch) {
-            dispatcher.register(ch, context, QuicServerImpl.this, metrics);
-            ch.pipeline().addLast(dispatcher);
-          }
-        };
+        dispatcher = attempt;
+      }
+      Future<SslContextProvider> fut;
+      if (init) {
+        fut = dispatcher.sslContextProviderRef.update(sslOptions, context);
+      } else {
+        fut = context.succeededFuture();
+      }
+      sslContextProviderRef = dispatcher.sslContextProviderRef;
+      return fut.<ChannelHandler>map(sslContextProvider -> new ChannelInitializer<>() {
+        @Override
+        protected void initChannel(Channel ch) {
+          dispatcher.register(ch, context, QuicServerImpl.this, metrics);
+          ch.pipeline().addLast(dispatcher);
+        }
       });
     } else {
       return super.channelHandler(context, serverID, metrics);
@@ -115,10 +128,12 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
-    Future<SslContextProvider> f = manager.resolveSslContextProvider(sslOptions, context);
-    return f.map(sslContextProvider -> {
+    SslContextProviderReference ref = new SslContextProviderReference(manager);
+    Future<SslContextProvider> fut = ref.update(sslOptions, context);
+    return fut.map(sslContextProvider -> {
       try {
-        return codecBuilder(context, sslContextProvider, metrics);
+        sslContextProviderRef = ref;
+        return createCodecBuilder(context, metrics);
       } catch (Exception e) {
         PlatformDependent.throwException(e);
         throw new AssertionError();
@@ -126,10 +141,13 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
     });
   }
 
-  protected QuicServerCodecBuilder codecBuilder(ContextInternal context, SslContextProvider sslContextProvider, TransportMetrics<?> metrics) throws Exception {
+  private QuicServerCodecBuilder createCodecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
     List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
-    Mapping<? super String, ? extends SslContext> mapping = sslContextProvider.serverNameMapping(applicationProtocols);
-    QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> (QuicSslContext) mapping.map(name));
+    QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> {
+      SslContextProvider provider = sslContextProviderRef.get();
+      Mapping<? super String, ? extends SslContext> mapping = provider.serverNameMapping(applicationProtocols);
+      return (QuicSslContext) mapping.map(name);
+    });
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {
       switch (config.getClientAddressValidation()) {
@@ -149,21 +167,21 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       }
     }
     QuicServerCodecBuilder builder = new QuicServerCodecBuilder().sslContext(sslContext)
-            .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
-            .tokenHandler(qtc)
-            .handler(new ChannelInitializer<>() {
-              @Override
-              protected void initChannel(Channel ch) {
-                connectionGroup.add(ch);
-                QuicChannel channel = (QuicChannel) ch;
-                LogConfig logConfig = config.getLogConfig();
-                ByteBufFormat activityLogging = logConfig != null && logConfig.isEnabled() ? logConfig.getDataFormat() : null;
-                QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
-                  config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, config.getMaxStreamBidiRequests(),
-                  config.getMaxStreamUniRequests(), vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
-                ChannelPipeline pipeline = channel.pipeline();
-                pipeline.addLast("handler", handler);
-              }
+      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
+      .tokenHandler(qtc)
+      .handler(new ChannelInitializer<>() {
+        @Override
+        protected void initChannel(Channel ch) {
+          connectionGroup.add(ch);
+          QuicChannel channel = (QuicChannel) ch;
+          LogConfig logConfig = config.getLogConfig();
+          ByteBufFormat activityLogging = logConfig != null && logConfig.isEnabled() ? logConfig.getDataFormat() : null;
+          QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
+            config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, config.getMaxStreamBidiRequests(),
+            config.getMaxStreamUniRequests(), vertx.transport().convert(channel.remoteSocketAddress()), QuicServerImpl.this.handler);
+          ChannelPipeline pipeline = channel.pipeline();
+          pipeline.addLast("handler", handler);
+        }
 
 /*
 
@@ -178,7 +196,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
           });
         }
 */
-            });
+      });
 
     QLogConfig qlogCfg = config.getQLogConfig();
     if (qlogCfg != null) {
@@ -192,8 +210,8 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
         throw new IllegalArgumentException("Missing QLog description configuration");
       }
       QLogConfiguration qLogConfiguration = new QLogConfiguration(qlogCfg.getPath(),
-              qlogCfg.getTitle(),
-              qlogCfg.getDescription());
+        qlogCfg.getTitle(),
+        qlogCfg.getDescription());
       builder.option(QuicChannelOption.QLOG, qLogConfiguration);
     }
     return builder;
@@ -202,12 +220,12 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   private class QuicDispatcher extends QuicCodecDispatcher implements Shareable {
 
     private final ServerID serverID;
-    private final SslContextProvider sslContextProvider;
+    private final SslContextProviderReference sslContextProviderRef;
     private Map<Channel, ServerRegistration> registrations;
 
-    public QuicDispatcher(ServerID serverID, SslContextProvider sslContextProvider) {
+    public QuicDispatcher(ServerID serverID, SslContextProviderReference sslContextProviderRef) {
       this.serverID = serverID;
-      this.sslContextProvider = sslContextProvider;
+      this.sslContextProviderRef = sslContextProviderRef;
       this.registrations = new ConcurrentHashMap<>();
     }
 
@@ -257,7 +275,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       for (Map.Entry<Channel, ServerRegistration> entry : registrations.entrySet()) {
         if (entry.getKey() == channel) {
           ServerRegistration registration = entry.getValue();
-          QuicServerCodecBuilder codecBuilder = registration.server.codecBuilder(registration.context, sslContextProvider, registration.metrics);
+          QuicServerCodecBuilder codecBuilder = registration.server.createCodecBuilder(registration.context, registration.metrics);
           codecBuilder.localConnectionIdLength(localConnectionIdLength);
           codecBuilder.connectionIdAddressGenerator(idGenerator);
           registration.server.initQuicCodecBuilder(codecBuilder, registration.metrics);
@@ -272,5 +290,16 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   @Override
   public Future<Integer> listen() {
     return listen(config.getPort(), config.getHost());
+  }
+
+  @Override
+  public Future<Boolean> updateSSLOptions(ServerSSLOptions options, boolean force) {
+    SslContextProviderReference ref = sslContextProviderRef;
+    if (ref == null) {
+      return vertx.failedFuture("Server not listening");
+    }
+    return ref
+      .update(options, vertx.getOrCreateContext(), force)
+      .map(Objects::nonNull);
   }
 }

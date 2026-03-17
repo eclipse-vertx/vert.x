@@ -21,6 +21,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
@@ -263,8 +264,25 @@ class NetClientImpl implements NetClientInternal {
         }
         remoteAddress = SocketAddress.inetSocketAddress(port, host);
       }
-
-      SocketAddress peerAddress = peerAddress(remoteAddress, connectOptions);
+      HostAndPort peerAddress;
+      String serverName;
+      if (connectOptions.isSsl()) {
+        if (remoteAddress.isInetSocket()) {
+          peerAddress = Utils.peerAddress(remoteAddress, connectOptions.getHost(), connectOptions.getPort());
+        } else {
+          String peerHost = connectOptions.getHost();
+          Integer peerPort = connectOptions.getPort();
+          if (peerHost != null && peerPort != null) {
+            peerAddress = HostAndPort.create(peerHost, peerPort);
+          } else {
+            peerAddress = null;
+          }
+        }
+        serverName = connectOptions.getSniServerName();
+      } else {
+        peerAddress = null;
+        serverName = null;
+      }
 
       int connectTimeout = connectOptions.getTimeout();
       if (connectTimeout < 0) {
@@ -322,7 +340,7 @@ class NetClientImpl implements NetClientInternal {
       io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(
         remoteAddress,
         peerAddress,
-        connectOptions.getSniServerName(),
+        serverName,
         connectOptions.isSsl(),
         sslOptions);
       fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
@@ -351,27 +369,6 @@ class NetClientImpl implements NetClientInternal {
     } else {
       eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
-  }
-
-  private static SocketAddress peerAddress(SocketAddress remoteAddress, ConnectOptions connectOptions) {
-    if (!connectOptions.isSsl()) {
-      return null;
-    }
-    String peerHost = connectOptions.getHost();
-    Integer peerPort = connectOptions.getPort();
-    if (remoteAddress.isInetSocket()) {
-      if ((peerHost == null || peerHost.equals(remoteAddress.host()))
-        && (peerPort == null || peerPort.intValue() == remoteAddress.port())) {
-        return remoteAddress;
-      }
-      if (peerHost == null) {
-        peerHost = remoteAddress.host();;
-      }
-      if (peerPort == null) {
-        peerPort = remoteAddress.port();
-      }
-    }
-    return peerHost != null && peerPort != null ? SocketAddress.inetSocketAddress(peerPort, peerHost) : null;
   }
 
   private void connected(ContextInternal context,
