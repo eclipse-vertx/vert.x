@@ -744,4 +744,17 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return the cookie, if it existed, or {@code null}
    */
   @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate);
+
+  /**
+   * <p>Write an <a href="https://datatracker.ietf.org/doc/html/rfc7838"HTTP Alternative Services</a> advertisement for
+   * the given request and its authority, according to the underlying protocol.</p>
+   *
+   * <p>For HTTP/1.x this sets an {@link HttpHeaders#ALT_SVC} header, otherwise it writes a
+   * <a href="https://datatracker.ietf.org/doc/html/rfc7838#section-7.2">custom frame</a>.</p>
+   *
+   * <p>Example usage: {@code response.writeAltSvc("h3=\":443\"")}</p>
+   *
+   * @param advertisement the advertisement
+   */
+  Future<Void> writeAltSvc(String advertisement);
 }
