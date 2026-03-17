@@ -849,4 +849,10 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
+
+  @Override
+  public Future<Void> writeAltSvc(String advertisement) {
+    putHeader(io.vertx.core.http.HttpHeaders.ALT_SVC, advertisement);
+    return context.succeededFuture();
+  }
 }

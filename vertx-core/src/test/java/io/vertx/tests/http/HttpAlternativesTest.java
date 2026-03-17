@@ -42,8 +42,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.vertx.core.http.impl.HttpUtils.writeAltSvc;
-
 public class HttpAlternativesTest extends VertxTestBase {
 
   @Rule
@@ -233,8 +231,9 @@ public class HttpAlternativesTest extends VertxTestBase {
       .handler(request -> {
         assertNull(request.getHeader(HttpHeaders.ALT_USED));
         assertEquals("host2.com", request.connection().indicatedServerName());
-        writeAltSvc(request, advertisement.get())
-          .end(request.authority().toString(false));
+        HttpServerResponse response = request.response();
+        response.writeAltSvc(advertisement.get());
+        response.end(request.authority().toString(false));
       });
     Server alternative = startServer(4044, Cert.SNI_JKS, upgradedProtocol)
       .handler(request -> {

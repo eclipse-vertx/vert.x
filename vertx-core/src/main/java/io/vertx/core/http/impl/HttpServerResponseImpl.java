@@ -847,4 +847,17 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
+
+  @Override
+  public Future<Void> writeAltSvc(String advertisement) {
+    switch (stream.version()) {
+      case HTTP_2:
+      case HTTP_3:
+        Buffer value = Buffer.buffer();
+        value.appendShort((short)0);
+        value.appendString(advertisement);
+        return writeCustomFrame(0xA, 0, value);
+    }
+    return context.succeededFuture();
+  }
 }
