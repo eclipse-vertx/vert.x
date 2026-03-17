@@ -1,4 +1,4 @@
-package io.vertx.core.jacksonv3;
+package io.vertx.core.json.jackson.v3;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
