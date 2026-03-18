@@ -172,7 +172,7 @@ public class TcpExamples {
 
   public void gracefullyShuttingDownAServerWithTimeout(NetServer server) {
     server
-      .shutdown(60, TimeUnit.SECONDS)
+      .shutdown(Duration.ofSeconds(60))
       .onSuccess(res -> {
         System.out.println("Server is now closed");
       });
@@ -248,7 +248,7 @@ public class TcpExamples {
       });
   }
 
-  public void configuringTcpReconnectAttempts(Vertx vertx) {
+  public void configurationOfTcpClientReconnect(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig().
       setReconnectAttempts(10).
@@ -257,7 +257,7 @@ public class TcpExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  public void configurationOfATCPServerLogging(Vertx vertx) {
+  public void configurationOfTcpServerLogging(Vertx vertx) {
 
     TcpServerConfig options = new TcpServerConfig()
       .setLogConfig(new LogConfig()
@@ -266,7 +266,7 @@ public class TcpExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
-  public void configurationOfATcpServerLoggingFormat(Vertx vertx) {
+  public void configurationOfTcpServerLoggingFormat(Vertx vertx) {
 
     TcpServerConfig options = new TcpServerConfig()
       .setLogConfig(new LogConfig()
@@ -276,7 +276,7 @@ public class TcpExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
-  public void configurationOfATcpClientLogging(Vertx vertx) {
+  public void configurationOfTcpClientLogging(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig()
       .setLogConfig(new LogConfig()
@@ -285,7 +285,7 @@ public class TcpExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  public void configurationOfATcpServerTrafficShaping(Vertx vertx) {
+  public void configurationOfTcpServerTrafficShaping(Vertx vertx) {
     TcpServerConfig config = new TcpServerConfig()
       .setHost("localhost")
       .setPort(1234)
@@ -296,7 +296,7 @@ public class TcpExamples {
     NetServer server = vertx.createNetServer(config);
   }
 
-  public void updateOfATcpServerTrafficShaping(Vertx vertx) {
+  public void updateOfTcpServerTrafficShaping(Vertx vertx) {
     TcpServerConfig config = new TcpServerConfig()
       .setHost("localhost")
       .setPort(1234)
@@ -435,7 +435,7 @@ public class TcpExamples {
           setPassword("password-of-your-keystore")));
   }
 
-  public void configurationOfClientProxy(Vertx vertx) {
+  public void configurationOfTcpClientProxy(Vertx vertx) {
     TcpClientConfig config = new TcpClientConfig()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
         .setHost("localhost").setPort(1080)
@@ -454,7 +454,7 @@ public class TcpExamples {
     NetClient client = vertx.createNetClient(config);
   }
 
-  public void configurationOfServerHAProxy(Vertx vertx) {
+  public void configurationOfTcpServerHAProxy(Vertx vertx) {
     TcpServerConfig config = new TcpServerConfig().setUseProxyProtocol(true);
     NetServer server = vertx.createNetServer(config);
     server.connectHandler(so -> {

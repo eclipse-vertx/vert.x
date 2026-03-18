@@ -182,14 +182,15 @@ actual socket close.
 {@link examples.TcpExamples#gettingNotifiedOnSocketShutdown}
 ----
 
+Any socket without a shutdown handler is closed immediately
+
+
 The default shut-down timeout is 30 seconds, you can override the amount of time
 
 [source,$lang]
 ----
 {@link examples.TcpExamples#gracefullyShuttingDownAServerWithTimeout}
 ----
-
-NOTE: any socket without a shutdown handler is closed immediately
 
 === TCP close
 
@@ -265,8 +266,7 @@ instance when creating it:
 === Making connections
 
 To make a connection to a server you use {@link io.vertx.core.net.NetClient#connect(int,java.lang.String)},
-specifying the port and host of the server and a handler that will be called with a result containing the
-{@link io.vertx.core.net.NetSocket} when connection is successful or with a failure if connection failed.
+specifying the port and host of the server, returning a future completed with the {@link io.vertx.core.net.NetSocket}
 
 [source,$lang]
 ----
@@ -293,7 +293,7 @@ only apply to creating initial connections.
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#configuringTcpReconnectAttempts}
+{@link examples.TcpExamples#configurationOfTcpClientReconnect}
 ----
 
 By default, multiple connection attempts are disabled.
@@ -305,7 +305,7 @@ For debugging purposes, network activity can be logged:
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#configurationOfATCPServerLogging}
+{@link examples.TcpExamples#configurationOfTcpServerLogging}
 ----
 
 Here is the output of a simple HTTP server
@@ -342,7 +342,7 @@ You can reduce the data format verbosity to only print the buffer length instead
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#configurationOfATcpServerLoggingFormat}
+{@link examples.TcpExamples#configurationOfTcpServerLoggingFormat}
 ----
 
 Here is the same output with simple buffer format
@@ -362,7 +362,7 @@ Clients can also log network activity
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#configurationOfATcpClientLogging}
+{@link examples.TcpExamples#configurationOfTcpClientLogging}
 ----
 
 Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
@@ -380,14 +380,14 @@ bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#configurationOfATcpServerTrafficShaping}
+{@link examples.TcpExamples#configurationOfTcpServerTrafficShaping}
 ----
 
 These traffic shaping options can also be dynamically updated after server start.
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#updateOfATcpServerTrafficShaping}
+{@link examples.TcpExamples#updateOfTcpServerTrafficShaping}
 ----
 
 [[ssl]]
@@ -516,7 +516,7 @@ Here's an example:
 [source,$lang]
 
 ----
-{@link examples.TcpExamples#configurationOfClientProxy}
+{@link examples.TcpExamples#configurationOfTcpClientProxy}
 ----
 
 The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
@@ -551,5 +551,5 @@ and adding the following dependency in your classpath:
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#configurationOfServerHAProxy}
+{@link examples.TcpExamples#configurationOfTcpServerHAProxy}
 ----

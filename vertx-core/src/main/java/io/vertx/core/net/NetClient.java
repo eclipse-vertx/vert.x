@@ -36,8 +36,7 @@ public interface NetClient extends Measured {
   /**
    * Open a connection to a server at the specific {@code port} and {@code host}.
    * <p>
-   * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
-   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   * {@code host} can be a valid host name or IP address.
    *
    * @param port  the port
    * @param host  the host
@@ -48,8 +47,7 @@ public interface NetClient extends Measured {
   /**
    * Open a connection to a server at the specific {@code port} and {@code host}.
    * <p>
-   * {@code host} can be a valid host name or IP address. The connect is done asynchronously and on success, a
-   * {@link NetSocket} instance is supplied via the {@code connectHandler} instance
+   * {@code host} can be a valid host name or IP address.
    *
    * @param port the port
    * @param host the host
@@ -60,8 +58,6 @@ public interface NetClient extends Measured {
 
   /**
    * Open a connection to a server at the specific {@code remoteAddress}.
-   * <p>
-   * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    *
    * @param remoteAddress the remote address
    * @return a future notified when the socket is connected
@@ -70,8 +66,6 @@ public interface NetClient extends Measured {
 
   /**
    * Open a connection to a server at the specific {@code remoteAddress}.
-   * <p>
-   * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    *
    * @param remoteAddress the remote address
    * @param serverName the SNI server name
@@ -81,8 +75,6 @@ public interface NetClient extends Measured {
 
   /**
    * Open a connection to a server at the specific {@code connectOptions}.
-   * <p>
-   * The connect is done asynchronously and on success, a {@link NetSocket} instance is supplied via the {@code connectHandler} instance
    *
    * @param connectOptions the options describing how to connect to the remote server
    * @return a future notified when the socket is connected
