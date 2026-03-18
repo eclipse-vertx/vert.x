@@ -70,7 +70,7 @@ public class QuicApplicationTest extends VertxTestBase {
     serverOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
     QuicServer server = vertx.createQuicServer(serverOptions, serverSslOptions);
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
       QuicConnectionInternal connInternal = (QuicConnectionInternal) conn;
       ChannelPipeline pipeline = connInternal.channelHandlerContext().pipeline();
       pipeline.remove(QuicConnectionHandler.class);
@@ -168,8 +168,8 @@ public class QuicApplicationTest extends VertxTestBase {
     serverOptions.getTransportConfig().setInitialMaxStreamsUni(3L);
     serverOptions.getTransportConfig().setInitialMaxStreamDataUni(1024L);
     QuicServer server = vertx.createQuicServer(serverOptions, serverSslOptions);
-    server.handler(connection -> {
-      connection.handler(stream -> {
+    server.connectHandler(connection -> {
+      connection.streamHandler(stream -> {
         QuicStreamInternal streamInternal = (QuicStreamInternal) stream;
         ChannelPipeline pipeline = streamInternal.channelHandlerContext().pipeline();
         pipeline.addBefore("handler", "http", new HttpServerCodec());

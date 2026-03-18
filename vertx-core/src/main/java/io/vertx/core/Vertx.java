@@ -274,7 +274,7 @@ public interface Vertx extends Measured {
   /**
    * <p>Create a configured Quic server.</p>
    *
-   * <p>The returned server can be bound, after setting a connection {@link QuicServer#handler(Handler) handler}</p>
+   * <p>The returned server can be bound, after setting a connection {@link QuicServer#connectHandler(Handler) handler}</p>
    *
    * @param config the server configuration
    * @param sslOptions the server SSL options

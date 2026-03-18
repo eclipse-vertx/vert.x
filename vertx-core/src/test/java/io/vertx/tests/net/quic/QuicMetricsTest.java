@@ -64,12 +64,12 @@ public class QuicMetricsTest extends VertxTestBase {
     int i = 0;
     do {
       QuicServer server = vertx.createQuicServer(new QuicServerConfig().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
-      server.handler(conn -> {
+      server.connectHandler(conn -> {
         FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(server);
         assertNull(serverMetrics.protocol());
         assertEquals(1, serverMetrics.connectionCount());
         serverConnectionMetric.set(serverMetrics.firstMetric(conn.remoteAddress()));
-        conn.handler(stream -> {
+        conn.streamHandler(stream -> {
           stream.handler(buff -> stream.write(buff));
           stream.endHandler(v -> stream.end());
         });

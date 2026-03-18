@@ -8,10 +8,8 @@ import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.QuicStream;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.tests.net.quic.QuicClientTest;
 import org.junit.Test;
 
@@ -26,8 +24,8 @@ public class QuicTest extends VertxTestBase {
         QuicServer server = vertx.createQuicServer(
           new QuicServerConfig().setLogConfig(new LogConfig().setEnabled(true)),
           SSL_OPTIONS);
-        server.handler(conn -> {
-          conn.handler(stream -> {
+        server.connectHandler(conn -> {
+          conn.streamHandler(stream -> {
 
           });
         });

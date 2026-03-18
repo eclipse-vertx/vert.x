@@ -79,7 +79,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  public QuicServer handler(Handler<QuicConnection> handler) {
+  public QuicServer connectHandler(Handler<QuicConnection> handler) {
     this.handler = handler;
     return this;
   }
