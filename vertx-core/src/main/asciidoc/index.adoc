@@ -648,7 +648,7 @@ include::json-pointers.adoc[]
 
 include::buffers.adoc[]
 
-include::net.adoc[]
+include::tcp.adoc[]
 
 include::http.adoc[]
 
