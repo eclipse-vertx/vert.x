@@ -18,22 +18,19 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.StreamResetException;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.impl.MessageWrite;
-import io.vertx.core.net.impl.SocketBase;
+import io.vertx.core.net.impl.StreamChannelBase;
 import io.vertx.core.net.QuicConnection;
 import io.vertx.core.net.QuicStream;
 import io.vertx.core.spi.metrics.NetworkMetrics;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class QuicStreamImpl extends SocketBase<QuicStreamImpl> implements QuicStreamInternal {
+public class QuicStreamImpl extends StreamChannelBase<QuicStreamImpl> implements QuicStreamInternal {
 
   private final QuicConnection connection;
   private final ContextInternal context;

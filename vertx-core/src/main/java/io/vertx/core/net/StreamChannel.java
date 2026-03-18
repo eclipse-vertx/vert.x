@@ -23,7 +23,7 @@ import io.vertx.core.streams.WriteStream;
 import java.time.Duration;
 
 /**
- * Represents a socket-like interface on either the client or the server side.
+ * Represents a channel interface modelling a duplex flow controlled byte oriented stream.
  * <p>
  * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
@@ -31,37 +31,37 @@ import java.time.Duration;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen(concrete = false)
-public interface Socket extends ReadStream<Buffer>, WriteStream<Buffer> {
+public interface StreamChannel extends ReadStream<Buffer>, WriteStream<Buffer> {
 
   @Override
-  Socket exceptionHandler(Handler<Throwable> handler);
+  StreamChannel exceptionHandler(Handler<Throwable> handler);
 
   @Override
-  Socket handler(Handler<Buffer> handler);
+  StreamChannel handler(Handler<Buffer> handler);
 
   @Override
-  Socket pause();
+  StreamChannel pause();
 
   @Override
-  Socket resume();
+  StreamChannel resume();
 
   @Override
-  Socket fetch(long amount);
+  StreamChannel fetch(long amount);
 
   /**
    * {@inheritDoc}
    * <p>
-   * This handler might be called after the close handler when the socket is paused and there are still
+   * This handler might be called after the close handler when the channel is paused and there are still
    * buffers to deliver.
    */
   @Override
-  Socket endHandler(Handler<Void> endHandler);
+  StreamChannel endHandler(Handler<Void> endHandler);
 
   @Override
-  Socket setWriteQueueMaxSize(int maxSize);
+  StreamChannel setWriteQueueMaxSize(int maxSize);
 
   @Override
-  Socket drainHandler(Handler<Void> handler);
+  StreamChannel drainHandler(Handler<Void> handler);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8.
@@ -123,31 +123,31 @@ public interface Socket extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> end();
 
   /**
-   * Close the socket
+   * Close the channel
    *
    * @return a future completed with the result
    */
   Future<Void> close();
 
   /**
-   * Set a {@code handler} notified when the socket is closed
+   * Set a {@code handler} notified when the channel is closed
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  Socket closeHandler(@Nullable Handler<Void> handler);
+  StreamChannel closeHandler(@Nullable Handler<Void> handler);
 
   /**
-   * Set a {@code handler} notified when the socket is shutdown: the client or server will close the connection
-   * within a certain amount of time. This gives the opportunity to the {@code handler} to close the socket gracefully before
-   * the socket is closed.
+   * Set a {@code handler} notified when the channel is shutdown: the client or server will close the connection
+   * within a certain amount of time. This gives the opportunity to the {@code handler} to close the channel gracefully before
+   * the channel is closed.
    *
    * @param handler  the handler notified
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
-  Socket shutdownHandler(@Nullable Handler<Duration> handler);
+  StreamChannel shutdownHandler(@Nullable Handler<Duration> handler);
 
 }

@@ -18,7 +18,6 @@ import io.vertx.core.VerticleBase;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerConfig;
 import io.vertx.core.net.*;
 
 import java.time.Duration;
@@ -121,7 +120,7 @@ public class TcpExamples {
   }
 
 
-  public void writingDataToASocket(Socket socket) {
+  public void writingDataToASocket(StreamChannel socket) {
 
     // Write a buffer
     Buffer buffer = Buffer.buffer().appendFloat(12.34f).appendInt(123);
@@ -136,14 +135,14 @@ public class TcpExamples {
 
   }
 
-  public void gettingNotifiedOnSocketClose(Socket socket) {
+  public void gettingNotifiedOnSocketClose(StreamChannel socket) {
 
     socket.closeHandler(v -> {
       System.out.println("The socket has been closed");
     });
   }
 
-  public void sendingAFile(Socket socket) {
+  public void sendingAFile(StreamChannel socket) {
 
     socket
       .sendFile("myfile.dat")

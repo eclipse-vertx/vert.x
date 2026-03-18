@@ -31,7 +31,7 @@ import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.net.*;
 import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.core.net.impl.SocketBase;
+import io.vertx.core.net.impl.StreamChannelBase;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.List;
@@ -40,7 +40,7 @@ import java.util.UUID;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetSocketImpl extends SocketBase<NetSocketImpl> implements NetSocketInternal {
+public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements NetSocketInternal {
 
   private final String writeHandlerID;
   private final SslContextManager sslContextManager;
