@@ -30,8 +30,20 @@ public class QuicClientConfig extends QuicEndpointConfig {
    */
   public static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(60);
 
+  /**
+   * The default value for reconnect attempts = 0
+   */
+  public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;
+
+  /**
+   * The default value for reconnect interval = 1000 ms
+   */
+  public static final Duration DEFAULT_RECONNECT_INTERVAL = Duration.ofSeconds(1);
+
   private Duration connectTimeout;
   private SocketAddress localAddress;
+  private int reconnectAttempts;
+  private Duration reconnectInterval;
 
   public QuicClientConfig() {
 
@@ -39,6 +51,8 @@ public class QuicClientConfig extends QuicEndpointConfig {
 
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.localAddress = null;
+    this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
+    this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
   }
 
   public QuicClientConfig(QuicClientConfig other) {
@@ -46,6 +60,8 @@ public class QuicClientConfig extends QuicEndpointConfig {
 
     this.connectTimeout = other.connectTimeout;
     this.localAddress = other.localAddress;
+    this.reconnectAttempts = other.reconnectAttempts;
+    this.reconnectInterval = other.reconnectInterval;
   }
 
   private static void configureClient(QuicConfig cfg) {
@@ -150,6 +166,48 @@ public class QuicClientConfig extends QuicEndpointConfig {
    */
   public QuicClientConfig setLocalAddress(SocketAddress localAddress) {
     this.localAddress = localAddress;
+    return this;
+  }
+
+  /**
+   * @return  the value of reconnect attempts
+   */
+  public int getReconnectAttempts() {
+    return reconnectAttempts;
+  }
+
+  /**
+   * Set the value of reconnect attempts
+   *
+   * @param attempts  the maximum number of reconnect attempts
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicClientConfig setReconnectAttempts(int attempts) {
+    if (attempts < -1) {
+      throw new IllegalArgumentException("reconnect attempts must be >= -1");
+    }
+    this.reconnectAttempts = attempts;
+    return this;
+  }
+
+  /**
+   * @return  the value of reconnect interval
+   */
+  public Duration getReconnectInterval() {
+    return reconnectInterval;
+  }
+
+  /**
+   * Set the reconnect interval
+   *
+   * @param interval  the reconnect interval
+   * @return a reference to this, so the API can be used fluently
+   */
+  public QuicClientConfig setReconnectInterval(Duration interval) {
+    if (interval.isNegative() || interval.isZero()) {
+      throw new IllegalArgumentException("reconnect interval must be >= 1");
+    }
+    this.reconnectInterval = interval;
     return this;
   }
 }

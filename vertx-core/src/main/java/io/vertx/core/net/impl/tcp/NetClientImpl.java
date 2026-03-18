@@ -24,6 +24,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
@@ -32,6 +33,7 @@ import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.ConnectRetry;
 import io.vertx.core.net.impl.ConnectionGroup;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.impl.ProxyFilter;
@@ -39,12 +41,11 @@ import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
-import java.io.FileNotFoundException;
-import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -230,25 +231,45 @@ class NetClientImpl implements NetClientInternal {
           fut = sslContextManager.resolveSslContextProvider(sslOptions, context);
           fut.onComplete(ar -> {
             if (ar.succeeded()) {
-              connectInternal2(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
+              connectInternal_(connectOptions, sslOptions, ar.result(), registerWriteHandlers, connectHandler, context, remainingAttempts);
             } else {
               connectHandler.fail(ar.cause());
             }
           });
         }
       } else {
-        connectInternal2(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts);
+        connectInternal_(connectOptions, connectOptions.getSslOptions(), null, registerWriteHandlers, connectHandler, context, remainingAttempts);
       }
     }
   }
 
-  private void connectInternal2(ConnectOptions connectOptions,
+  private void connectInternal_(ConnectOptions connectOptions,
                                 ClientSSLOptions sslOptions,
                                 SslContextProvider sslContextProvider,
                                 boolean registerWriteHandlers,
                                 Promise<NetSocket> connectHandler,
                                 ContextInternal context,
                                 int remainingAttempts) {
+    Supplier<Future<NetSocket>> supplier = () -> connectInternal(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, context);
+    ConnectRetry.connectWithRetries(log, supplier, context, connectHandler, config.getReconnectInterval(), remainingAttempts);
+  }
+
+    private Future<NetSocket> connectInternal(ConnectOptions connectOptions,
+                                              ClientSSLOptions sslOptions,
+                                              SslContextProvider sslContextProvider,
+                                              boolean registerWriteHandlers,
+                                              ContextInternal context) {
+    PromiseInternal<NetSocket> p = context.promise();
+    connectInternal(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, p, context);
+    return p.future();
+  }
+
+  private void connectInternal(ConnectOptions connectOptions,
+                               ClientSSLOptions sslOptions,
+                               SslContextProvider sslContextProvider,
+                               boolean registerWriteHandlers,
+                               Promise<NetSocket> connectHandler,
+                               ContextInternal context) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
@@ -330,14 +351,6 @@ class NetClientImpl implements NetClientInternal {
 
       SocketAddress captured = remoteAddress;
 
-      channelProvider.handler(ch -> connected(
-        context,
-        sslOptions,
-        ch,
-        connectHandler,
-        captured,
-        connectOptions.isSsl(),
-        registerWriteHandlers));
       io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(
         remoteAddress,
         peerAddress,
@@ -345,30 +358,21 @@ class NetClientImpl implements NetClientInternal {
         connectOptions.isSsl(),
         sslOptions);
       fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
-        if (!future.isSuccess()) {
-          Throwable cause = future.cause();
-          // FileNotFoundException for domain sockets
-          boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
-          if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
-            context.emit(v -> {
-              log.debug("Failed to create connection. Will retry in " + config.getReconnectInterval() + " milliseconds");
-              //Set a timer to retry connection
-              vertx.setTimer(config.getReconnectInterval().toMillis(), tid ->
-                connectInternal(
-                  connectOptions,
-                  registerWriteHandlers,
-                  connectHandler,
-                  context,
-                  remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
-              );
-            });
-          } else {
-            failed(context, null, cause, connectHandler);
-          }
+        if (future.isSuccess()) {
+          connected(
+            context,
+            sslOptions,
+            future.getNow(),
+            connectHandler,
+            captured,
+            connectOptions.isSsl(),
+            registerWriteHandlers);
+        } else {
+          failed(context, null, future.cause(), connectHandler);
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal2(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal(connectOptions, sslOptions, sslContextProvider, registerWriteHandlers, connectHandler, context));
     }
   }
 
