@@ -40,7 +40,7 @@ public class CleanableQuicServer extends QuicServerImpl implements Closeable {
   }
 
   @Override
-  public Future<Integer> bind(ContextInternal current, SocketAddress address) {
+  public Future<SocketAddress> bind(ContextInternal current, SocketAddress address) {
     synchronized (this) {
       if (listenContext != null) {
         return current.failedFuture(new IllegalStateException());

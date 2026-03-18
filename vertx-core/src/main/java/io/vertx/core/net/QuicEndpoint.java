@@ -36,10 +36,10 @@ public interface QuicEndpoint extends Measured {
    * </ul>
    *
    * @param address the bind address
-   * @return a future signaling the success or failure of the bind operation, the future completion is the bound this
-   *         endpoint was bound to
+   * @return a future signaling the success or failure of the bind operation, the result is socket address
+   *        this endpoint is bound to
    */
-  Future<Integer> bind(SocketAddress address);
+  Future<SocketAddress> bind(SocketAddress address);
 
   /**
    * Close the endpoint and release all associated resources.

@@ -198,11 +198,11 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   }
 
   @Override
-  public Future<Integer> bind(SocketAddress address) {
+  public Future<SocketAddress> bind(SocketAddress address) {
     return bind(vertx.getOrCreateContext(), address);
   }
 
-  public Future<Integer> bind(ContextInternal current, SocketAddress address) {
+  public Future<SocketAddress> bind(ContextInternal current, SocketAddress address) {
     synchronized (this) {
       if (context != null) {
         return current.failedFuture("Already bound");
@@ -218,7 +218,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     return bind(current, address, metrics)
       .map(ch -> {
         handleBind(ch, metrics);
-        return ((InetSocketAddress)ch.localAddress()).getPort();
+        return vertx.transport().convert(ch.localAddress());
       });
   }
 
