@@ -248,7 +248,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   }
 
   @Override
-  public QuicConnection handler(Handler<QuicStream> handler) {
+  public QuicConnection streamHandler(Handler<QuicStream> handler) {
     this.handler = handler;
     return this;
   }

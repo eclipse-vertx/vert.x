@@ -65,7 +65,7 @@ public class QLogTest extends VertxTestBase {
 
   @Test
   public void testClientQLog() throws Exception {
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
@@ -89,7 +89,7 @@ public class QLogTest extends VertxTestBase {
     assertTrue(qlogDir.delete());
     assertTrue(qlogDir.mkdirs());
     server = vertx.createQuicServer(new QuicServerConfig().setQLogConfig(qlogConfig(qlogDir, "the title", "the description")), QuicServerTest.SSL_OPTIONS);
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();

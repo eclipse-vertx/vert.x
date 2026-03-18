@@ -24,7 +24,7 @@ import java.time.Duration;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface QuicStream extends Socket {
+public interface QuicStream extends StreamChannel {
 
   long id();
 

@@ -28,7 +28,24 @@ public interface QuicServer extends QuicEndpoint {
    * @param handler the connection handler
    * @return this object instance
    */
-  QuicServer handler(Handler<QuicConnection> handler);
+  QuicServer connectHandler(Handler<QuicConnection> handler);
+
+  /**
+   * Set a handler processing incoming Quic streams, this is a short-cut of
+   * {@code server.connectHandler(connection -> connection.streamHandler(stream))}.
+   *
+   * @param handler the handler processing streams
+   * @return this object instance
+   */
+  default QuicServer streamHandler(Handler<QuicStream> handler) {
+    if (handler != null) {
+      return connectHandler(connection -> {
+        connection.streamHandler(handler);
+      });
+    } else {
+      return connectHandler(null);
+    }
+  }
 
   /**
    * Start listening on the {@code port} and {@code host} as configured in the {@link io.vertx.core.net.QuicServerConfig} used when

@@ -30,7 +30,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.concurrent.InboundMessageQueue;
-import io.vertx.core.internal.net.SocketInternal;
+import io.vertx.core.internal.net.StreamChannelInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
@@ -42,7 +42,7 @@ import java.time.Duration;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnection implements SocketInternal {
+public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends VertxConnection implements StreamChannelInternal {
 
   private final InboundMessageQueue<Object> pending;
   private Handler<Void> endHandler;
@@ -53,7 +53,7 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
   private Handler<Object> eventHandler;
   private Handler<Duration> shutdownHandler;
 
-  public SocketBase(ContextInternal context, ChannelHandlerContext channel) {
+  public StreamChannelBase(ContextInternal context, ChannelHandlerContext channel) {
     super(context, channel);
 
     EventLoopExecutor executor;
@@ -67,11 +67,11 @@ public abstract class SocketBase<S extends SocketBase<S>> extends VertxConnectio
     this.pending = new InboundMessageQueue<>(executor, context.executor()) {
       @Override
       protected void handleResume() {
-        SocketBase.this.doResume();
+        StreamChannelBase.this.doResume();
       }
       @Override
       protected void handlePause() {
-        SocketBase.this.doPause();
+        StreamChannelBase.this.doPause();
       }
       @Override
       protected void handleMessage(Object msg) {

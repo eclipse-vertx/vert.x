@@ -15,16 +15,14 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
-import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.Socket;
+import io.vertx.core.net.StreamChannel;
 
 /**
  * Extends to expose Netty interactions for reusing existing Netty codecs:
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface SocketInternal extends Socket {
+public interface StreamChannelInternal extends StreamChannel {
 
   /**
    * Returns the {@link ChannelHandlerContext} of the last handler (named {@code handler}) of the pipeline that
@@ -63,7 +61,7 @@ public interface SocketInternal extends Socket {
    * @param handler the handler to set
    * @return a reference to this, so the API can be used fluently
    */
-  SocketInternal messageHandler(Handler<Object> handler);
+  StreamChannelInternal messageHandler(Handler<Object> handler);
 
   /**
    * Set a {@code handler} on this socket to process the read complete event produced by this socket. This handler
@@ -75,7 +73,7 @@ public interface SocketInternal extends Socket {
    * @param handler the handler to set
    * @return a reference to this, so the API can be used fluently
    */
-  SocketInternal readCompletionHandler(Handler<Void> handler);
+  StreamChannelInternal readCompletionHandler(Handler<Void> handler);
 
   /**
    * Set a handler to process pipeline user events.
@@ -85,6 +83,6 @@ public interface SocketInternal extends Socket {
    * @param handler the handler to set
    * @return a reference to this, so the API can be used fluently
    */
-  SocketInternal eventHandler(Handler<Object> handler);
+  StreamChannelInternal eventHandler(Handler<Object> handler);
 
 }

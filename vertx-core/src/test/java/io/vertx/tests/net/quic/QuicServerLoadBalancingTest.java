@@ -64,7 +64,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
   public void testSingleServer() {
     AtomicInteger inflight = new AtomicInteger();
     QuicServer server = server();
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
       inflight.getAndIncrement();
       conn.closeHandler(v -> {
         inflight.getAndDecrement();
@@ -84,7 +84,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
     int num = 3;
     for (int i = 0;i < num;i++) {
       QuicServer server = server();
-      server.handler(conn -> {
+      server.connectHandler(conn -> {
         servers.put(server, Vertx.currentContext());
       });
       server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
@@ -117,8 +117,8 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
     List<QuicConnection> connections = new ArrayList<>();
     for (int i = 0;i < num;i++) {
       QuicServer server = server();
-      server.handler(conn -> {
-        conn.handler(stream -> {
+      server.connectHandler(conn -> {
+        conn.streamHandler(stream -> {
           stream.endHandler(v -> {
             stream.end();
           });

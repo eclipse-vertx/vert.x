@@ -13,6 +13,7 @@
 package io.vertx.core.net.impl.quic;
 
 import io.netty.channel.*;
+import io.netty.channel.Channel;
 import io.netty.channel.nio.AbstractNioChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.unix.UnixChannelOption;
@@ -79,7 +80,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  public QuicServer handler(Handler<QuicConnection> handler) {
+  public QuicServer connectHandler(Handler<QuicConnection> handler) {
     this.handler = handler;
     return this;
   }

@@ -11,10 +11,7 @@
 
 package io.vertx.core.internal.net;
 
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.net.NetSocket;
 
@@ -33,7 +30,7 @@ import io.vertx.core.net.NetSocket;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface NetSocketInternal extends NetSocket, SocketInternal {
+public interface NetSocketInternal extends NetSocket, StreamChannelInternal {
 
   /**
    * Common reusable connection closed exception.

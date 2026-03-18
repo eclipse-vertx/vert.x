@@ -12,6 +12,7 @@
 package io.vertx.tests.http;
 
 import io.netty.channel.*;
+import io.netty.channel.Channel;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponse;

@@ -44,7 +44,7 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface NetSocket extends Socket {
+public interface NetSocket extends StreamChannel {
 
   @Override
   NetSocket exceptionHandler(Handler<Throwable> handler);

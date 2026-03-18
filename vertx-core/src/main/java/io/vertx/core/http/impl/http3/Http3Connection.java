@@ -132,7 +132,7 @@ public abstract class Http3Connection implements HttpConnection {
   }
 
   public void init() {
-    connection.handler(stream -> {
+    connection.streamHandler(stream -> {
       QuicStreamInternal quicStream = (QuicStreamInternal) stream;
 
       boolean isStream = false;

@@ -51,9 +51,9 @@ public class QuicContextTest extends VertxTestBase {
   @Test
   public void testServerConnectionScoped() {
 
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
       assertSame(Vertx.currentContext(), workerContext);
-      conn.handler(stream -> {
+      conn.streamHandler(stream -> {
         assertSame(Vertx.currentContext(), workerContext);
         stream.handler(buff -> {
           assertSame(Vertx.currentContext(), workerContext);
@@ -79,9 +79,9 @@ public class QuicContextTest extends VertxTestBase {
   @Test
   public void testServerStreamScoped() {
 
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
       assertSame(Vertx.currentContext(), workerContext);
-      conn.handler(stream -> {
+      conn.streamHandler(stream -> {
         assertSame(Vertx.currentContext(), workerContext);
         stream.handler(buff -> {
           assertSame(Vertx.currentContext(), workerContext);
@@ -106,7 +106,7 @@ public class QuicContextTest extends VertxTestBase {
   @Test
   public void testClientConnectionScoped() {
 
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
       conn.datagramHandler(conn::writeDatagram);
     });
 
@@ -127,8 +127,8 @@ public class QuicContextTest extends VertxTestBase {
   @Test
   public void testClientStreamScoped() {
 
-    server.handler(conn -> {
-      conn.handler(stream -> {
+    server.connectHandler(conn -> {
+      conn.streamHandler(stream -> {
         stream.handler(buff -> stream.write(buff));
         stream.endHandler(v -> stream.end());
       });
@@ -160,11 +160,11 @@ public class QuicContextTest extends VertxTestBase {
   @Test
   public void testStreamContextProvider() {
 
-    server.handler(conn -> {
+    server.connectHandler(conn -> {
       assertNotSame(Vertx.currentContext(), workerContext);
       Context connectionCtx = vertx.getOrCreateContext();
       ((QuicConnectionInternal)conn).streamContextProvider(ctx -> workerContext);
-      conn.handler(stream -> {
+      conn.streamHandler(stream -> {
         assertSame(Vertx.currentContext(), connectionCtx);
         stream.handler(buff -> {
           assertSame(Vertx.currentContext(), workerContext);
@@ -189,8 +189,8 @@ public class QuicContextTest extends VertxTestBase {
   @Test
   public void testStreamContextProvided() {
 
-    server.handler(conn -> {
-      conn.handler(stream -> {
+    server.connectHandler(conn -> {
+      conn.streamHandler(stream -> {
         stream.handler(buff -> stream.write(buff));
         stream.endHandler(v -> stream.end());
       });

@@ -238,7 +238,7 @@ public class QuicHttpServer implements HttpServerInternal {
     boolean logEnabled = quicConfig.getLogConfig() != null && quicConfig.getLogConfig().isEnabled();
     quicConfig.setLogConfig(null);
 
-    quicServer.handler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
+    quicServer.connectHandler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),
       http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled));
     return quicServer
