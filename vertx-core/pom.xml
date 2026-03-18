@@ -781,6 +781,29 @@
     </profile>
 
     <profile>
+      <id>NativeIoUring+DomainSockets</id>
+      <properties>
+        <vertx.surefire.nettyTransport>io_uring</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>true</vertx.surefire.useDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!-- TODO: enable all tests later when NativeIoUring profile is re-enabled in CI  -->
+              <test>
+                io.vertx.tests.net.NetBandwidthLimitingTest,io.vertx.tests.net.NetTest#testListenDomainSocketAddressNative,HttpDomainSocketTest#testListenDomainSocketAddressNative,
+              </test>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
       <id>NativeKQueue</id>
       <properties>
         <vertx.surefire.nettyTransport>kqueue</vertx.surefire.nettyTransport>
