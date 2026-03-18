@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
@@ -24,6 +25,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -658,6 +660,66 @@ public class QuicClientTest extends VertxTestBase {
       fail();
     } catch (Exception e) {
       assertTrue(e.getMessage().contains("Only TLSv1.3 supported"));
+    }
+  }
+
+  @Test
+  public void testReconnectAttemptsInfinite() throws Exception {
+    reconnectAttempts(-1);
+  }
+
+  @Test
+  public void testReconnectAttemptsMany() throws Exception {
+    reconnectAttempts(100000);
+  }
+
+  private void reconnectAttempts(int attempts) throws Exception {
+    QuicClientConfig config = new QuicClientConfig()
+      .setConnectTimeout(Duration.ofMillis(250))
+      .setReconnectAttempts(attempts)
+      .setReconnectInterval(Duration.ofMillis(10));
+
+    client.close();
+    client = vertx.createQuicClient(config, SSL_OPTIONS);
+
+    //The server delays starting for a a few seconds, but it should still connect
+    SocketAddress serverAddr = SocketAddress.inetSocketAddress(9999, "localhost");
+    Future<QuicConnection> fut = client.connect(serverAddr);
+
+    // Start the server after a delay
+    Thread.sleep(2000);
+    assertFalse(fut.isComplete());
+
+    server.connectHandler(conn -> {
+      conn.streamHandler(stream -> {
+        stream.handler(stream::write);
+        stream.endHandler(v -> stream.end());
+      });
+    });
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+
+    QuicConnection connection = fut.await();
+    QuicStream stream = connection.openStream().await();
+    Future<?> end = Future.future(p -> stream.endHandler(v -> p.succeed()));
+    stream.end(Buffer.buffer("ping"));
+    end.await();
+  }
+
+  @Test
+  public void testReconnectAttemptsNotEnough() {
+    QuicClientConfig config = new QuicClientConfig()
+      .setConnectTimeout(Duration.ofMillis(250))
+      .setReconnectAttempts(10)
+      .setReconnectInterval(Duration.ofMillis(10));
+
+    client.close();
+    client = vertx.createQuicClient(config, SSL_OPTIONS);
+
+    SocketAddress serverAddr = SocketAddress.inetSocketAddress(9999, "localhost");
+    try {
+      client.connect(serverAddr).await();
+    } catch (Exception expected) {
+      assertEquals(ConnectTimeoutException.class, expected.getClass());
     }
   }
 }

@@ -27,21 +27,26 @@ import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.ConnectRetry;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
+  private static final Logger log = LoggerFactory.getLogger(QuicClientImpl.class);
   public static final QuicConnectOptions DEFAULT_CONNECT_OPTIONS = new QuicConnectOptions();
   private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
   private static final AttributeKey<HostAndPort> SSL_PEER_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
@@ -162,6 +167,25 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
 
   private Future<QuicConnection> connect(Channel ch,
+                                         SocketAddress remoteAddress,
+                                         java.net.SocketAddress resolvedAddress,
+                                         QLogConfig qLogConfig,
+                                         ContextInternal context,
+                                         Duration connectTimeout,
+                                         List<String> applicationProtocols,
+                                         SslContextProvider sslContextProvider) {
+    int reconnectAttempts = config.getReconnectAttempts();
+    if (reconnectAttempts == 0) {
+      return connect_(ch, remoteAddress, resolvedAddress, qLogConfig, context, connectTimeout, applicationProtocols, sslContextProvider);
+    } else {
+      Supplier<Future<QuicConnection>> connect = () -> connect_(ch, remoteAddress, resolvedAddress, qLogConfig, context, connectTimeout, applicationProtocols, sslContextProvider);
+      PromiseInternal<QuicConnection> res = context.promise();
+      ConnectRetry.connectWithRetries(log, connect, context, res, config.getReconnectInterval(), reconnectAttempts);
+      return res.future();
+    }
+  }
+
+  private Future<QuicConnection> connect_(Channel ch,
                                          SocketAddress remoteAddress,
                                          java.net.SocketAddress resolvedAddress,
                                          QLogConfig qLogConfig,
