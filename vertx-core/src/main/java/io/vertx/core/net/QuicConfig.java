@@ -108,8 +108,6 @@ public class QuicConfig extends TransportConfig {
    * for the whole connection (that is, data that is not yet read by the application) and will allow more data to be
    * received as the buffer is consumed by the application.</p>
    *
-   * <p>The default value is {@code 0}</p>
-   *
    * @param initialMaxData the value to set
    * @return this instance
    */
@@ -136,8 +134,6 @@ public class QuicConfig extends TransportConfig {
    * to be buffered for each locally-initiated bidirectional stream (that is, data that is not yet read by the application) and will
    * allow more data to be received as the buffer is consumed by the application.</p>
    *
-   * <p>The default value is {@code 0}.</p>
-   *
    * @param initialMaxStreamDataBidiLocal the value to set
    * @return this instance
    */
@@ -163,8 +159,6 @@ public class QuicConfig extends TransportConfig {
    * <p>When set to a non-zero value it will only allow at most {@code initialMaxStreamDataBidiRemote} bytes of incoming
    * stream data to be buffered for each remotely-initiated bidirectional stream (that is, data that is not yet read by the application)
    * and will allow more data to be received as the buffer is consumed by the application.</p>
-   *
-   * <p>The default value is {@code 0}.</p>
    *
    * @param initialMaxStreamDataBidiRemote the value to set
    * @return this instance
@@ -196,8 +190,6 @@ public class QuicConfig extends TransportConfig {
    * or the stream's read direction has been shutdown, and all outgoing data has been acked by the peer (up to the fin offset)
    * or the stream's write direction has been shutdown.</p>
    *
-   * <p>The default value is {@code 0}.</p>
-   *
    * @param initialMaxStreamsBidi the value to set
    * @return this instance
    */
@@ -227,8 +219,6 @@ public class QuicConfig extends TransportConfig {
    * <p>A unidirectional stream is considered completed when all incoming data has been read by the application (up to the fin offset)
    * or the stream's read direction has been shutdown.</p>
    *
-   * <p>The default value is {@code 0}.</p>
-   *
    * @param initialMaxStreamsUni the value to set
    * @return this instance
    */
@@ -255,8 +245,6 @@ public class QuicConfig extends TransportConfig {
    * stream data to be buffered for each unidirectional stream (that is, data that is not yet read by the application) and
    * will allow more data to be received as the buffer is consumed by the application.</p>
    *
-   * <p>The default value is {@code 0}.</p>
-   *
    * @param initialMaxStreamDataUni the value to set
    * @return this instance
    */
@@ -279,8 +267,6 @@ public class QuicConfig extends TransportConfig {
   /**
    * <p>Set whether to allow active migration.</p>
    *
-   * <p>The default value is {@code false}.</p>
-   *
    * @param disableActiveMigration the value to set
    * @return this instance
    */
@@ -300,7 +286,7 @@ public class QuicConfig extends TransportConfig {
   /**
    * <p>Sets the {@code maxIdleTimeout} transport parameter.</p>
    *
-   * <p>The default value {@code null} means infinite, that is, no timeout is used.</p>
+   * <p>The default value is {@code 40} seconds.</p>
    *
    * @param maxIdleTimeout the value to set
    * @return this instance

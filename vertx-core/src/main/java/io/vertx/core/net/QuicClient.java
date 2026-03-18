@@ -23,6 +23,28 @@ import io.vertx.core.net.impl.quic.QuicClientImpl;
 public interface QuicClient extends QuicEndpoint {
 
   /**
+   * Connect to a Quic server at the specific {@code port} and {@code host}.
+   *
+   * @param port  the port
+   * @param host  the host
+   * @return a Quic connection as a future
+   */
+  default Future<QuicConnection> connect(int port, String host) {
+    return connect(SocketAddress.inetSocketAddress(port, host));
+  }
+
+  /**
+   * Connect to a Quic server at the specific {@code port} and {@code host}, with specific {@code options}.
+   *
+   * @param port  the port
+   * @param host  the host
+   * @return a Quic connection as a future
+   */
+  default Future<QuicConnection> connect(int port, String host, QuicConnectOptions options) {
+    return connect(SocketAddress.inetSocketAddress(port, host), options);
+  }
+
+  /**
    * Connect to a Quic server.
    *
    * @param address the server address
@@ -33,7 +55,7 @@ public interface QuicClient extends QuicEndpoint {
   }
 
   /**
-   * Connect to a Quic server with a specific {@code sslOptions}.
+   * Connect to a Quic server with specific {@code options}.
    *
    * @param address the server address
    * @param options the connect options
