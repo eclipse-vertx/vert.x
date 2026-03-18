@@ -1,0 +1,408 @@
+== Writing QUIC servers and clients
+
+Vert.x allows you to easily write non-blocking QUIC clients and servers.
+
+=== Creating a QUIC server
+
+The simplest way to create a QUIC server, is as follows:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#defaultQuicServer}
+----
+
+Unlike TCP, QUIC always requires the usage of TLS and thus requires to provide SSL configuration.
+
+QUIC mandates the usage of application layer protocol negotiation (ALPN) and therefore an application protocol should be set with {@link io.vertx.core.net.SSLOptions#setApplicationLayerProtocols}, without it, no client will be capable of handshaking with this server, the protocol is a simple string that identifies the protocol such as `h3` for HTTP/3.
+
+NOTE: there is no need to explicitly enable ALPN since it is mandatory
+
+You can read more about <<server_ssl,SSL server configuration>>.
+
+=== Configuring a QUIC server
+
+If you don't want the default, a server can be configured by passing in a {@link io.vertx.core.net.QuicServerConfig}
+instance when creating it:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfAQuicServer}
+----
+
+=== Start the Server Listening
+
+To tell the server to listen for incoming requests you use one of the {@link io.vertx.core.net.QuicServer#listen}
+alternatives.
+
+To tell the server to listen at the host and port as specified in the options:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#startingAQuicServer}
+----
+
+Or to specify the host and port in the call to listen, ignoring what is configured in the options:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#startingAQuicServerWithHostAndPort}
+----
+
+The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `0`, which is a
+special value that instructs the server to find a random unused local port and use that.
+
+The actual bind is asynchronous, so the server might not actually be listening until some time *after* the call to
+listen has returned.
+
+If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
+For example:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedWhenStartingAQuicServer}
+----
+
+=== Listening on a random port
+
+If `0` is used as the listening port, the server will find an unused random port to listen on.
+
+To find out the real port the server is listening on you can use the asynchronous result of {@link io.vertx.core.net.QuicServer#listen()}.
+
+[source,$lang]
+----
+{@link examples.TcpExamples#startingATcpServerOnARandomPort}
+----
+
+=== Getting notified of incoming connections
+
+To be notified when a connection is made you need to set a {@link io.vertx.core.net.QuicServer#connectHandler(io.vertx.core.Handler)}:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOfIncomingConnections}
+----
+
+=== Getting notified of incoming streams
+
+When a connection is made the handler will be called with an instance of {@link io.vertx.core.net.QuicConnection}.
+
+A QUIC connection multiplexes QUIC streams which is what your application actually interacts with.
+
+You can then set a {@link io.vertx.core.net.QuicConnection#streamHandler(io.vertx.core.Handler)} to handle incoming streams
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOfIncomingStreams}
+----
+
+This is a channel-like interface to the actual connection, and allows you to read and write data as well as do various
+other things like close the stream.
+
+=== Reading data from the stream
+
+To read data from the stream you set the {@link io.vertx.core.net.QuicStream#handler(io.vertx.core.Handler)} on the
+stream.
+
+This handler will be called with an instance of {@link io.vertx.core.buffer.Buffer} every time data is received on
+the socket.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#readingDataFromAStream}
+----
+
+=== Writing data to a stream
+
+You write to a stream using one of {@link io.vertx.core.net.QuicStream#write}.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#writingDataToAStream}
+----
+
+Write operations are asynchronous and may not occur until some time after the call to write has returned.
+
+=== Closed handler
+
+If you want to be notified when a stream is closed, you can set a {@link io.vertx.core.net.QuicStream#closeHandler(io.vertx.core.Handler)} on it:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOnStreamClose}
+----
+
+=== Handling exceptions
+
+You can set an {@link io.vertx.core.net.QuicStream#exceptionHandler(io.vertx.core.Handler)} to receive any
+exceptions that happen on the stream.
+
+=== Local and remote addresses
+
+The local address of a {@link io.vertx.core.net.QuicConnection} can be retrieved using {@link io.vertx.core.net.QuicConnection#localAddress()}.
+
+The remote address, (i.e. the address of the other end of the connection) of a {@link io.vertx.core.net.QuicConnection}
+can be retrieved using {@link io.vertx.core.net.QuicConnection#remoteAddress()}.
+
+=== Sending files or resources from the classpath
+
+Files and classpath resources can be written to the socket directly using {@link io.vertx.core.net.QuicStream#sendFile}.
+
+Please see the chapter about <<classpath, serving files from the classpath>> for restrictions of the
+classpath resolution or disabling it.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#sendingAFile}
+----
+
+=== Streaming
+
+Instances of {@link io.vertx.core.net.QuicStream} are also {@link io.vertx.core.streams.ReadStream} and
+{@link io.vertx.core.streams.WriteStream} instances, so they can be used to pipe data to or from other
+read and write streams.
+
+See the chapter on <<streams, streams >> for more information.
+
+=== QUIC graceful shut down
+
+You can shut down a {@link io.vertx.core.net.QuicServer#shutdown() server} or {@link io.vertx.core.net.QuicClient#shutdown() client}.
+
+Calling `shutdown` initiates the shut-down phase whereby the server or client are given the opportunity to perform clean-up actions
+and handle shutdown at the protocol level.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gracefullyShuttingDownAServer}
+----
+
+Shut-down waits until all connections/streams are closed or the shut-down timeout fires. When the timeout fires, all resources are forcibly closed.
+
+Each opened connection and stream is notified with a shutdown event, allowing to perform a protocol level close before the
+actual close.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOnStreamShutdown}
+----
+
+Any stream without a shutdown handler is closed immediately
+
+The default shut-down timeout is 30 seconds, you can override the amount of time
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gracefullyShuttingDownAServerWithTimeout}
+----
+
+You can also shut down QUIC connection individually
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gracefullyShuttingDownAConnection}
+----
+
+=== QUIC close
+
+You can close a {@link io.vertx.core.net.QuicServer#close() server} or {@link io.vertx.core.net.QuicClient#close() client} to  immediately close all open connections/streams and releases all resources. Unlike `shutdown` there is not grace period.
+
+The close is actually asynchronous and might not complete until some time after the call has returned.
+You can use the returned future to be notified when the actual close has completed.
+
+This future is completed when the close has fully completed.
+
+[source,$lang]
+----
+{@link examples.TcpExamples#closingAServer}
+----
+
+=== Automatic clean-up in verticles
+
+If you're creating QUIC servers and clients from inside verticles, those servers and clients will be automatically closed
+when the verticle is undeployed.
+
+=== Creating a QUIC client
+
+The simplest way to create a QUIC client, using all default options is as follows:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#defaultQuicClient}
+----
+
+QUIC mandates the usage of application layer protocol negotiation (ALPN) and therefore an application protocol should be set with {@link io.vertx.core.net.SSLOptions#setApplicationLayerProtocols}, without it, this client will not be capable of handshaking with any server.
+
+=== Configuring a QUIC client
+
+If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.QuicClientConfig}
+instance when creating it:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfAQuicClient}
+----
+
+=== Making connections
+
+To make a connection to a server you use {@link io.vertx.core.net.QuicClient#connect(int,java.lang.String)},
+specifying the port and host of the server, returning a future completed with the {@link io.vertx.core.net.QuicConnection}
+
+[source,$lang]
+----
+{@link examples.QuicExamples#connectingToAServer}
+----
+
+=== Opening streams
+
+A QUIC connection multiplexes QUIC streams which is what your application actually interacts with.
+
+To open a stream you use {@link io.vertx.core.net.QuicConnection#openStream()}, returning a future completed with the {@link io.vertx.core.net.QuicStream}
+
+[source,$lang]
+----
+{@link examples.QuicExamples#openingAStream}
+----
+
+=== Configuring connection attempts
+
+A client can be configured to automatically retry connecting to the server in the event that it cannot connect.
+This is configured with {@link io.vertx.core.net.QuicClientConfig#setReconnectInterval(java.time.Duration)} and
+{@link io.vertx.core.net.QuicClientConfig#setReconnectAttempts(int)}.
+
+NOTE: Currently, Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
+only apply to creating initial connections.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicClientReconnect}
+----
+
+By default, multiple connection attempts are disabled.
+
+[[logging_network_activity]]
+=== Logging network activity
+
+For debugging purposes, stream network activity can be logged:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicServerLogging}
+----
+
+Here is the output of a simple QUIC server
+
+[literal]
+----
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] REGISTERED
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] ACTIVE
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] READ: 58B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 4c 6f 72 65 6d 20 69 70 73 75 6d 20 64 6f 6c 6f |Lorem ipsum dolo|
+|00000010| 72 20 73 69 74 20 61 6d 65 74 2c 20 63 6f 6e 73 |r sit amet, cons|
+|00000020| 65 63 74 65 74 75 72 20 61 64 69 70 69 73 63 69 |ectetur adipisci|
+|00000030| 6e 67 20 65 6c 69 74 2e 2e 2e                   |ng elit...      |
++--------+-------------------------------------------------+----------------+
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] WRITE: 58B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 4c 6f 72 65 6d 20 69 70 73 75 6d 20 64 6f 6c 6f |Lorem ipsum dolo|
+|00000010| 72 20 73 69 74 20 61 6d 65 74 2c 20 63 6f 6e 73 |r sit amet, cons|
+|00000020| 65 63 74 65 74 75 72 20 61 64 69 70 69 73 63 69 |ectetur adipisci|
+|00000030| 6e 67 20 65 6c 69 74 2e 2e 2e                   |ng elit...      |
++--------+-------------------------------------------------+----------------+
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] READ COMPLETE
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] FLUSH
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] USER_EVENT: io.netty.channel.socket.ChannelInputShutdownEvent@78311b8
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] USER_EVENT: io.netty.channel.socket.ChannelInputShutdownReadComplete@6932d2cd
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] INACTIVE
+[id: 0x7eb26864, QuicStreamAddress{streamId=0}] UNREGISTERED
+----
+
+By default, binary data is logged in hex format.
+
+You can reduce the data format verbosity to only print the buffer length instead of the entire data by setting the log data format.
+
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicServerLoggingFormat}
+----
+
+Here is the same output with simple buffer format
+
+[literal]
+----
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] REGISTERED
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] ACTIVE
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] READ: 58B
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] WRITE: 58B
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] READ COMPLETE
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] FLUSH
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] USER_EVENT: io.netty.channel.socket.ChannelInputShutdownEvent@78311b8
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] USER_EVENT: io.netty.channel.socket.ChannelInputShutdownReadComplete@6932d2cd
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] INACTIVE
+[id: 0x681541d4, QuicStreamAddress{streamId=0}] UNREGISTERED
+----
+
+Clients can also log network activity
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicClientLogging}
+----
+
+Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
+name. When using network activity logging there are a few things to keep in mind:
+
+- logging is not performed by Vert.x logging but by Netty
+- this is *not* a production feature
+
+You should read the <<netty-logging>> section.
+
+=== Configuring SSL/TLS
+
+==== Configuring SSL/TLS per connection
+
+The client performs an SSL/TLS handshake with the client provided SSL configuration.
+
+You can perform a fine-grained per connection configuration
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfAQuicClientConnection}
+----
+
+==== Client host verification
+
+By default, host verification is *not* configured on the client. This verifies the CN portion of the server certificate against the server hostname to avoid https://en.wikipedia.org/wiki/Man-in-the-middle_attack[Man-in-the-middle attacks].
+
+You must configure it explicitly on your client
+
+- `""` (empty string) disables host verification
+- `"HTTPS"` enables HTTP over TLS https://datatracker.ietf.org/doc/html/rfc2818#section-3.1[verification]
+- `LDAPS` enables LDAP v3 extension for TLS https://datatracker.ietf.org/doc/html/rfc2830#section-3.6[verification]
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicClientHostVerification}
+----
+
+NOTE: the Vert.x HTTP client uses the QUIC client and configures with `"HTTPS"` the verification algorithm.
+
+==== Updating SSL/TLS configuration
+
+You can use the `updateSSLOptions` method to update the key/certifications or trust on a QUIC server or client (e.g. to
+implement certificate rotation).
+
+[source,$lang]
+----
+{@link examples.QuicExamples#updateSslOptionsOfAQuicServer}
+----
+
+When the update succeeds the new SSL configuration is used, otherwise the previous configuration is preserved.
+
+NOTE: The options object is compared (using `equals`) against the existing options to prevent an update when the objects
+are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
+the update.
