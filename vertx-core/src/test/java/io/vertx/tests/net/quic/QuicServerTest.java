@@ -76,7 +76,9 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testBind() {
     QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
-    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    SocketAddress addr = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    assertEquals(9999, addr.port());
+    assertEquals("127.0.0.1", addr.host());
     server.close().await();
   }
 
@@ -114,7 +116,7 @@ public class QuicServerTest extends VertxTestBase {
         });
       });
     });
-    int actualPort = server.bind(SocketAddress.inetSocketAddress(port, "localhost")).await();
+    int actualPort = server.bind(SocketAddress.inetSocketAddress(port, "localhost")).await().port();
     if (port == 0) {
       assertTrue(actualPort > 0);
     } else {
@@ -981,7 +983,7 @@ public class QuicServerTest extends VertxTestBase {
     server.handler(conn -> {
       serverName.set(conn.indicatedServerName());
     });
-    int actualPort = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    int actualPort = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await().port();
     QuicTestClient client = new QuicTestClient();
     try {
       client = new QuicTestClient();

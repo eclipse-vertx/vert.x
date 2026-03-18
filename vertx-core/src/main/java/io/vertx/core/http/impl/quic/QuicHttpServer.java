@@ -243,8 +243,8 @@ public class QuicHttpServer implements HttpServerInternal {
       http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled));
     return quicServer
       .bind(current, address)
-      .map(port -> {
-        actualPort = port;
+      .map(addr -> {
+        actualPort = addr.port();
         return this;
       });
   }

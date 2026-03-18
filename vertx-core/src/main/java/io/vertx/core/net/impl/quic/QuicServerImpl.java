@@ -288,7 +288,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   }
 
   @Override
-  public Future<Integer> listen() {
+  public Future<SocketAddress> listen() {
     return listen(config.getPort(), config.getHost());
   }
 

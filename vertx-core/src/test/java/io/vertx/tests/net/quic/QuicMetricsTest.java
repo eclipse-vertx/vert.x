@@ -74,7 +74,7 @@ public class QuicMetricsTest extends VertxTestBase {
           stream.endHandler(v -> stream.end());
         });
       });
-      port = server.bind(SocketAddress.sharedRandomPort(1, "localhost")).await();
+      port = server.bind(SocketAddress.sharedRandomPort(1, "localhost")).await().port();
       servers.add(server);
     }
     while (i++ < numberOfServers);

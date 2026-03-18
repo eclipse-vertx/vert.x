@@ -54,7 +54,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   private final QuicClientConfig config;
   private final ClientSSLOptions sslOptions;
   private TransportMetrics<?> metrics;
-  private Future<Integer> clientFuture;
+  private Future<SocketAddress> clientFuture;
   private volatile Channel channel;
 
   public QuicClientImpl(VertxInternal vertx, QuicClientConfig config, String protocol, ClientSSLOptions sslOptions) {
@@ -143,7 +143,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
       return connect(ch, remoteAddress, resolvedAddress, qLogConfig, context, connectTimeout,
         applicationProtocols, sslContextProvider);
     }
-    Future<Integer> cf;
+    Future<SocketAddress> cf;
     synchronized (this) {
       cf = clientFuture;
       if (cf == null) {

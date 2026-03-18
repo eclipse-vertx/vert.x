@@ -34,9 +34,10 @@ public interface QuicServer extends QuicEndpoint {
    * Start listening on the {@code port} and {@code host} as configured in the {@link io.vertx.core.net.QuicServerConfig} used when
    * creating the server.
    *
-   * @return a future completed with the listen operation result
+   * @return a future signaling the success or failure of the listen operation, the result is socket address
+   *        this endpoint is bound to
    */
-  Future<Integer> listen();
+  Future<SocketAddress> listen();
 
   /**
    * Start listening on the specified {@code port} and {@code host}.
@@ -45,9 +46,10 @@ public interface QuicServer extends QuicEndpoint {
    * <p>
    * Host {@code 0.0.0.0} can be specified meaning "listen on all available interfaces".
    *
-   * @return a future completed with the port the server is bound to
+   * @return a future signaling the success or failure of the listen operation, the result is socket address
+   *        this endpoint is bound to
    */
-  default Future<Integer> listen(int port, String host) {
+  default Future<SocketAddress> listen(int port, String host) {
     return listen(new SocketAddressImpl(port, host));
   }
 
@@ -56,9 +58,10 @@ public interface QuicServer extends QuicEndpoint {
    * <p>
    * Port {@code 0} can be specified meaning "choose an random port".
    *
-   * @return a future completed with the port the server is bound to
+   * @return a future signaling the success or failure of the listen operation, the result is socket address
+   *        this endpoint is bound to
    */
-  default Future<Integer> listen(int port) {
+  default Future<SocketAddress> listen(int port) {
     return listen(port, "0.0.0.0");
   }
 
@@ -66,9 +69,10 @@ public interface QuicServer extends QuicEndpoint {
    * Start listening on the specified local address.
    *
    * @param localAddress the local address to listen on
-   * @return a future completed with the port the server is bound to
+   * @return a future signaling the success or failure of the listen operation, the result is socket address
+   *        this endpoint is bound to
    */
-  default Future<Integer> listen(SocketAddress localAddress) {
+  default Future<SocketAddress> listen(SocketAddress localAddress) {
     return bind(localAddress);
   }
 

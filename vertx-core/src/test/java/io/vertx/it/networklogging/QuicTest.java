@@ -31,7 +31,7 @@ public class QuicTest extends VertxTestBase {
 
           });
         });
-        Integer port = server.listen().await();
+        int port = server.listen().await().port();
         QuicClient client = vertx.createQuicClient(new QuicClientConfig(), QuicClientTest.SSL_OPTIONS);
         QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(port, "localhost")).await();
         QuicStream stream = connection.openStream().await();
