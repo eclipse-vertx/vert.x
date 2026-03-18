@@ -8,7 +8,7 @@ The simplest way to create a TCP server, using all default options is as follows
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example1}
+{@link examples.TcpExamples#defaultTcpServer}
 ----
 
 === Configuring a TCP server
@@ -18,7 +18,7 @@ instance when creating it:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example2}
+{@link examples.TcpExamples#configurationOfATcpServer}
 ----
 
 === Start the Server Listening
@@ -30,14 +30,14 @@ To tell the server to listen at the host and port as specified in the options:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example3}
+{@link examples.TcpExamples#startingATcpServer}
 ----
 
 Or to specify the host and port in the call to listen, ignoring what is configured in the options:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example4}
+{@link examples.TcpExamples#startingATcpServerWithHostAndPort}
 ----
 
 The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `0`, which is a
@@ -51,7 +51,7 @@ For example:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example5}
+{@link examples.TcpExamples#gettingNotifiedWhenStartingATcpServer}
 ----
 
 === Listening on a random port
@@ -62,7 +62,7 @@ To find out the real port the server is listening on you can call {@link io.vert
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example5_1}
+{@link examples.TcpExamples#startingATcpServerOnARandomPort}
 ----
 
 === Listening to Unix domain sockets
@@ -71,7 +71,7 @@ When running on JDK 16+, or using a <<_native_transports,native transport>>, a s
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#tcpServerWithDomainSockets}
+{@link examples.TcpExamples#startingAUnixDomainSocketSServer}
 ----
 
 === Getting notified of incoming connections
@@ -80,7 +80,7 @@ To be notified when a connection is made you need to set a {@link io.vertx.core.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example6}
+{@link examples.TcpExamples#gettingNotifiedOfIncomingConnections}
 ----
 
 When a connection is made the handler will be called with an instance of {@link io.vertx.core.net.NetSocket}.
@@ -98,7 +98,7 @@ the socket.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example7}
+{@link examples.TcpExamples#readingDataFromASocket}
 ----
 
 === Writing data to a socket
@@ -107,7 +107,7 @@ You write to a socket using one of {@link io.vertx.core.net.NetSocket#write}.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example8}
+{@link examples.TcpExamples#writingDataToASocket}
 ----
 
 Write operations are asynchronous and may not occur until some time after the call to write has returned.
@@ -119,7 +119,7 @@ on it:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example9_1}
+{@link examples.TcpExamples#gettingNotifiedOnSocketClose}
 ----
 
 === Handling exceptions
@@ -148,7 +148,7 @@ classpath resolution or disabling it.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example10}
+{@link examples.TcpExamples#sendingAFile}
 ----
 
 === Streaming sockets
@@ -168,7 +168,7 @@ and handle shutdown at the protocol level.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#serverShutdown}
+{@link examples.TcpExamples#gracefullyShuttingDownAServer}
 ----
 
 Shut-down waits until all sockets are closed or the shut-down timeout fires. When the timeout fires, all sockets are
@@ -179,14 +179,14 @@ actual socket close.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#shutdownHandler}
+{@link examples.TcpExamples#gettingNotifiedOnSocketShutdown}
 ----
 
 The default shut-down timeout is 30 seconds, you can override the amount of time
 
 [source,$lang]
 ----
-{@link examples.NetExamples#serverShutdownWithAmountOfTime}
+{@link examples.TcpExamples#gracefullyShuttingDownAServerWithTimeout}
 ----
 
 NOTE: any socket without a shutdown handler is closed immediately
@@ -203,7 +203,7 @@ This future is completed when the close has fully completed.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example9}
+{@link examples.TcpExamples#closingAServer}
 ----
 
 === Automatic clean-up in verticles
@@ -224,7 +224,7 @@ You can instantiate more instances programmatically in your code:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example11}
+{@link examples.TcpExamples#scalingATcpServerWithLoadBalancing}
 ----
 
 Once you do this you will find the echo server works functionally identically to before, but all your cores on your
@@ -249,7 +249,7 @@ The simplest way to create a TCP client, using all default options is as follows
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example13}
+{@link examples.TcpExamples#defaultTcpClient}
 ----
 
 === Configuring a TCP client
@@ -259,7 +259,7 @@ instance when creating it:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example14}
+{@link examples.TcpExamples#configurationOfATcpClient}
 ----
 
 === Making connections
@@ -270,7 +270,7 @@ specifying the port and host of the server and a handler that will be called wit
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example15}
+{@link examples.TcpExamples#connectingToAServer}
 ----
 
 === Making connections to Unix domain sockets
@@ -293,7 +293,7 @@ only apply to creating initial connections.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example16}
+{@link examples.TcpExamples#configuringTcpReconnectAttempts}
 ----
 
 By default, multiple connection attempts are disabled.
@@ -305,7 +305,7 @@ For debugging purposes, network activity can be logged:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#exampleNetworkActivityLoggingOnServer}
+{@link examples.TcpExamples#configurationOfATCPServerLogging}
 ----
 
 Here is the output of a simple HTTP server
@@ -342,7 +342,7 @@ You can reduce the data format verbosity to only print the buffer length instead
 
 [source,$lang]
 ----
-{@link examples.NetExamples#exampleNetworkActivityLoggingFormat}
+{@link examples.TcpExamples#configurationOfATcpServerLoggingFormat}
 ----
 
 Here is the same output with simple buffer format
@@ -362,7 +362,7 @@ Clients can also log network activity
 
 [source,$lang]
 ----
-{@link examples.NetExamples#exampleNetworkActivityLoggingOnClient}
+{@link examples.TcpExamples#configurationOfATcpClientLogging}
 ----
 
 Network activity is logged by Netty with the `DEBUG` level and with the `io.netty.handler.logging.LoggingHandler`
@@ -375,30 +375,19 @@ You should read the <<netty-logging>> section.
 
 === Throttling inbound and outbound bandwidth of TCP connections
 
-TCP server (Net/Http) can be configured with traffic shaping options to enable bandwidth limiting. Both inbound and outbound
-bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. For NetServer, traffic shaping options can be set
-through {@link io.vertx.core.net.TcpServerConfig} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerConfig#getTcpConfig()}.
+TCP server can be configured with traffic shaping options to enable bandwidth limiting. Both inbound and outbound
+bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. You can set traffic shaping options through {@link io.vertx.core.net.TcpServerConfig}.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#configureTrafficShapingForNetServer}
-----
-
-[source,$lang]
-----
-{@link examples.NetExamples#configureTrafficShapingForHttpServer}
+{@link examples.TcpExamples#configurationOfATcpServerTrafficShaping}
 ----
 
 These traffic shaping options can also be dynamically updated after server start.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#dynamicallyUpdateTrafficShapingForNetServer}
-----
-
-[source,$lang]
-----
-{@link examples.NetExamples#dynamicallyUpdateTrafficShapingForHttpServer}
+{@link examples.TcpExamples#updateOfATcpServerTrafficShaping}
 ----
 
 [[ssl]]
@@ -419,7 +408,7 @@ By default, it is disabled.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#sslServerConfiguration}
+{@link examples.TcpExamples#configurationOfAnSslTcpServer}
 ----
 
 You can read more about <<server_ssl,SSL server configuration>>
@@ -434,21 +423,21 @@ When enabled, the client performs an SSL/TLS handshake with the provided SSL con
 
 [source,$lang]
 ----
-{@link examples.NetExamples#sslClientConfiguration}
+{@link examples.TcpExamples#configurationOfAnSslTcpClient}
 ----
 
 The latter provides a fine-grained per socket configuration
 
 [source,$lang]
 ----
-{@link examples.NetExamples#sslClientSocketConfiguration}
+{@link examples.TcpExamples#enablingSslOnATcpSocket}
 ----
 
 You can also set {@link io.vertx.core.net.ClientSSLOptions} at connect time.
 
 [source,$lang]
 ----
-{@link examples.NetExamples#sslClientSocketConfiguration2}
+{@link examples.TcpExamples#configurationOfAnSslClientSocket}
 ----
 
 You can read more about <<client_ssl,SSL client configuration>>.
@@ -461,7 +450,7 @@ You can provide an explicit server name when connecting a socket
 
 [source,$lang]
 ----
-{@link examples.NetExamples#useSNIInClient}
+{@link examples.TcpExamples#useSniInClient}
 ----
 
 It can be used for different purposes:
@@ -482,7 +471,7 @@ You must configure it explicitly on your client
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example46}
+{@link examples.TcpExamples#configurationOfClientHostVerification}
 ----
 
 NOTE: the Vert.x HTTP client uses the TCP client and configures with `"HTTPS"` the verification algorithm.
@@ -493,7 +482,7 @@ A non SSL/TLS connection can be upgraded to SSL/TLS using {@link io.vertx.core.n
 
 [source,$lang]
 ----
-{@link examples.NetExamples#upgradeToSSL}
+{@link examples.TcpExamples#upgradeASocketToTls}
 ----
 
 NOTE: usually client and server perform the handshake upgrade simultaneously, this is usually known as StartTLS and
@@ -506,7 +495,7 @@ implement certificate rotation).
 
 [source,$lang]
 ----
-{@link examples.NetExamples#updateSSLOptions}
+{@link examples.TcpExamples#updateSslOptionsOfATcpServer}
 ----
 
 When the update succeeds the new SSL configuration is used, otherwise the previous configuration is preserved.
@@ -527,7 +516,7 @@ Here's an example:
 [source,$lang]
 
 ----
-{@link examples.NetExamples#example47}
+{@link examples.TcpExamples#configurationOfClientProxy}
 ----
 
 The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
@@ -538,7 +527,7 @@ the proxy. The lists accepts `*` wildcard for matching domains:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#nonProxyHosts}
+{@link examples.TcpExamples#nonProxyHosts}
 ----
 
 
@@ -562,5 +551,5 @@ and adding the following dependency in your classpath:
 
 [source,$lang]
 ----
-{@link examples.NetExamples#example51}
+{@link examples.TcpExamples#configurationOfServerHAProxy}
 ----

@@ -27,14 +27,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by tim on 19/01/15.
  */
-public class NetExamples {
+public class TcpExamples {
 
-  public void example1(Vertx vertx) {
+  public void defaultTcpServer(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
   }
 
-  public void example2(Vertx vertx) {
+  public void configurationOfATcpServer(Vertx vertx) {
 
     TcpServerConfig config = new TcpServerConfig()
       .setPort(4321);
@@ -42,19 +42,19 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(config);
   }
 
-  public void example3(Vertx vertx) {
+  public void startingATcpServer(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
     server.listen();
   }
 
-  public void example4(Vertx vertx) {
+  public void startingATcpServerWithHostAndPort(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
     server.listen(1234, "localhost");
   }
 
-  public void example5(Vertx vertx) {
+  public void gettingNotifiedWhenStartingATcpServer(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
     server
@@ -68,7 +68,7 @@ public class NetExamples {
       });
   }
 
-  public void example5_1(Vertx vertx) {
+  public void startingATcpServerOnARandomPort(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
     server
@@ -82,7 +82,27 @@ public class NetExamples {
       });
   }
 
-  public void example6(Vertx vertx) {
+  public void startingAUnixDomainSocketSServer(Vertx vertx) {
+    NetServer netServer = vertx.createNetServer();
+
+    // Only available when running on JDK16+, or using a native transport
+    SocketAddress address = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
+
+    netServer
+      .connectHandler(so -> {
+        // Handle application
+      })
+      .listen(address)
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          // Bound to socket
+        } else {
+          // Handle failure
+        }
+      });
+  }
+
+  public void gettingNotifiedOfIncomingConnections(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
     server.connectHandler(socket -> {
@@ -90,7 +110,7 @@ public class NetExamples {
     });
   }
 
-  public void example7(Vertx vertx) {
+  public void readingDataFromASocket(Vertx vertx) {
 
     NetServer server = vertx.createNetServer();
     server.connectHandler(socket -> {
@@ -101,7 +121,7 @@ public class NetExamples {
   }
 
 
-  public void example8(NetSocket socket) {
+  public void writingDataToASocket(Socket socket) {
 
     // Write a buffer
     Buffer buffer = Buffer.buffer().appendFloat(12.34f).appendInt(123);
@@ -116,7 +136,22 @@ public class NetExamples {
 
   }
 
-  public void serverShutdown(NetServer server) {
+  public void gettingNotifiedOnSocketClose(Socket socket) {
+
+    socket.closeHandler(v -> {
+      System.out.println("The socket has been closed");
+    });
+  }
+
+  public void sendingAFile(Socket socket) {
+
+    socket
+      .sendFile("myfile.dat")
+      .onSuccess(v -> System.out.println("File successfully sent"))
+      .onFailure(err -> System.out.println("Could not send file: " + err.getMessage()));
+  }
+
+  public void gracefullyShuttingDownAServer(NetServer server) {
     server
       .shutdown()
       .onSuccess(res -> {
@@ -124,7 +159,19 @@ public class NetExamples {
       });
   }
 
-  public void serverShutdownWithAmountOfTime(NetServer server) {
+  public void gettingNotifiedOnSocketShutdown(NetSocket socket) {
+    socket.shutdownHandler(v -> {
+      socket
+        // Write close frame
+        .write(closeFrame())
+        // Wait until we receive the remote close frame
+        .compose(success -> closeFrameHandler(socket))
+        // Close the socket
+        .eventually(() -> socket.close());
+    });
+  }
+
+  public void gracefullyShuttingDownAServerWithTimeout(NetServer server) {
     server
       .shutdown(60, TimeUnit.SECONDS)
       .onSuccess(res -> {
@@ -132,7 +179,7 @@ public class NetExamples {
       });
   }
 
-  public void example9(NetServer server) {
+  public void closingAServer(NetServer server) {
 
     server
       .close()
@@ -149,34 +196,7 @@ public class NetExamples {
     return null;
   }
 
-  public void shutdownHandler(NetSocket socket) {
-    socket.shutdownHandler(v -> {
-      socket
-        // Write close frame
-        .write(closeFrame())
-        // Wait until we receive the remote close frame
-        .compose(success -> closeFrameHandler(socket))
-        // Close the socket
-        .eventually(() -> socket.close());
-    });
-  }
-
-  public void example9_1(NetSocket socket) {
-
-    socket.closeHandler(v -> {
-      System.out.println("The socket has been closed");
-    });
-  }
-
-  public void example10(NetSocket socket) {
-
-    socket
-      .sendFile("myfile.dat")
-      .onSuccess(v -> System.out.println("File successfully sent"))
-      .onFailure(err -> System.out.println("Could not send file: " + err.getMessage()));
-  }
-
-  public void example11(Vertx vertx) {
+  public void scalingATcpServerWithLoadBalancing(Vertx vertx) {
 
     class MyVerticle extends VerticleBase {
 
@@ -199,12 +219,12 @@ public class NetExamples {
     vertx.deployVerticle(MyVerticle.class, new DeploymentOptions().setInstances(10));
   }
 
-  public void example13(Vertx vertx) {
+  public void defaultTcpClient(Vertx vertx) {
 
     NetClient client = vertx.createNetClient();
   }
 
-  public void example14(Vertx vertx) {
+  public void configurationOfATcpClient(Vertx vertx) {
 
     TcpClientConfig config = new TcpClientConfig()
       .setConnectTimeout(Duration.ofSeconds(10));
@@ -212,7 +232,7 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(config);
   }
 
-  public void example15(Vertx vertx) {
+  public void connectingToAServer(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig()
       .setConnectTimeout(Duration.ofSeconds(10));
@@ -229,7 +249,7 @@ public class NetExamples {
       });
   }
 
-  public void example16(Vertx vertx) {
+  public void configuringTcpReconnectAttempts(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig().
       setReconnectAttempts(10).
@@ -238,7 +258,7 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  public void exampleNetworkActivityLoggingOnServer(Vertx vertx) {
+  public void configurationOfATCPServerLogging(Vertx vertx) {
 
     TcpServerConfig options = new TcpServerConfig()
       .setLogConfig(new LogConfig()
@@ -247,7 +267,7 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
-  public void exampleNetworkActivityLoggingFormat(Vertx vertx) {
+  public void configurationOfATcpServerLoggingFormat(Vertx vertx) {
 
     TcpServerConfig options = new TcpServerConfig()
       .setLogConfig(new LogConfig()
@@ -257,7 +277,7 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
-  public void exampleNetworkActivityLoggingOnClient(Vertx vertx) {
+  public void configurationOfATcpClientLogging(Vertx vertx) {
 
     TcpClientConfig options = new TcpClientConfig()
       .setLogConfig(new LogConfig()
@@ -266,7 +286,38 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(options);
   }
 
-  public void sslServerConfiguration(Vertx vertx) {
+  public void configurationOfATcpServerTrafficShaping(Vertx vertx) {
+    TcpServerConfig config = new TcpServerConfig()
+      .setHost("localhost")
+      .setPort(1234)
+      .setTrafficShapingOptions(new TrafficShapingOptions()
+        .setInboundGlobalBandwidth(64 * 1024)
+        .setOutboundGlobalBandwidth(128 * 1024));
+
+    NetServer server = vertx.createNetServer(config);
+  }
+
+  public void updateOfATcpServerTrafficShaping(Vertx vertx) {
+    TcpServerConfig config = new TcpServerConfig()
+      .setHost("localhost")
+      .setPort(1234)
+      .setTrafficShapingOptions(new TrafficShapingOptions()
+        .setInboundGlobalBandwidth(64 * 1024)
+        .setOutboundGlobalBandwidth(128 * 1024));
+
+    NetServer server = vertx.createNetServer(config);
+
+    TrafficShapingOptions update = new TrafficShapingOptions()
+      .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
+      .setOutboundGlobalBandwidth(128 * 1024); // unchanged
+
+    server
+      .listen(1234, "localhost")
+      // wait until traffic shaping handler is created for updates
+      .onSuccess(v -> server.updateTrafficShapingOptions(update));
+  }
+
+  public void configurationOfAnSslTcpServer(Vertx vertx) {
     ServerSSLOptions sslOptions = new ServerSSLOptions()
       .setKeyCertOptions(
         new JksOptions().
@@ -280,15 +331,7 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(config, sslOptions);
   }
 
-  public void example29(Vertx vertx) {
-    TcpClientConfig config = new TcpClientConfig()
-      .setSsl(true);
-    ClientSSLOptions sslOptions = new ClientSSLOptions()
-      .setTrustAll(true);
-    NetClient client = vertx.createNetClient(config, sslOptions);
-  }
-
-  public void sslClientConfiguration(Vertx vertx) {
+  public void configurationOfAnSslTcpClient(Vertx vertx) {
     ClientSSLOptions sslOptions = new ClientSSLOptions()
       .setTrustOptions(new JksOptions().
         setPath("/path/to/your/truststore.jks").
@@ -301,7 +344,7 @@ public class NetExamples {
     NetClient client = vertx.createNetClient(config, sslOptions);
   }
 
-  public void sslClientSocketConfiguration(Vertx vertx, int port, String host) {
+  public void enablingSslOnATcpSocket(Vertx vertx, int port, String host) {
     ClientSSLOptions sslOptions = new ClientSSLOptions()
       .setTrustOptions(new JksOptions().
         setPath("/path/to/your/truststore.jks").
@@ -319,7 +362,7 @@ public class NetExamples {
     );
   }
 
-  public void sslClientSocketConfiguration2(Vertx vertx, int port, String host) {
+  public void configurationOfAnSslClientSocket(Vertx vertx, int port, String host) {
     NetClient client = vertx.createNetClient();
 
     ClientSSLOptions sslOptions = new ClientSSLOptions()
@@ -336,75 +379,7 @@ public class NetExamples {
     );
   }
 
-  public void upgradeToSSL(NetSocket socket, SSLOptions sslOptions) {
-    // Use the default SSL options of the client or the server
-    socket.upgradeToSsl()
-      .onSuccess(v -> {
-        // Upgrade worked
-      }).onFailure(err -> {
-        // Upgrade failed
-      });
-
-    // Use the specified SSL options
-    socket.upgradeToSsl(sslOptions)
-      .onSuccess(v -> {
-        // Upgrade worked
-      }).onFailure(err -> {
-        // Upgrade failed
-      });
-  }
-
-  public void updateSSLOptions(HttpServer server) {
-    Future<Boolean> fut = server.updateSSLOptions(new ServerSSLOptions()
-      .setKeyCertOptions(
-        new JksOptions()
-          .setPath("/path/to/your/server-keystore.jks").
-          setPassword("password-of-your-keystore")));
-  }
-
-  public void example46(Vertx vertx, String verificationAlgorithm, TrustOptions trustOptions) {
-    TcpClientConfig config = new TcpClientConfig().
-      setSsl(true);
-
-    ClientSSLOptions sslOptions = new ClientSSLOptions()
-      .setTrustOptions(trustOptions)
-      .setHostnameVerificationAlgorithm(verificationAlgorithm);
-
-    NetClient client = vertx.createNetClient(config, sslOptions);
-  }
-
-  public void example47(Vertx vertx) {
-    TcpClientConfig config = new TcpClientConfig()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
-        .setHost("localhost").setPort(1080)
-        .setUsername("username").setPassword("secret"));
-    NetClient client = vertx.createNetClient(config);
-  }
-
-  public void nonProxyHosts(Vertx vertx) {
-
-    TcpClientConfig config = new TcpClientConfig()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
-        .setHost("localhost").setPort(1080)
-        .setUsername("username").setPassword("secret"))
-      .addNonProxyHost("*.foo.com")
-      .addNonProxyHost("localhost");
-    NetClient client = vertx.createNetClient(config);
-  }
-
-  public void example51(Vertx vertx) {
-    TcpServerConfig config = new TcpServerConfig().setUseProxyProtocol(true);
-    NetServer server = vertx.createNetServer(config);
-    server.connectHandler(so -> {
-      // Print the actual client address provided by the HA proxy protocol instead of the proxy address
-      System.out.println(so.remoteAddress());
-
-      // Print the address of the proxy
-      System.out.println(so.localAddress());
-    });
-  }
-
-  public void useSNIInClient(Vertx vertx, JksOptions trustOptions) {
+  public void useSniInClient(Vertx vertx, JksOptions trustOptions) {
 
     NetClient client = vertx.createNetClient(
       new TcpClientConfig().setSsl(true),
@@ -424,69 +399,71 @@ public class NetExamples {
       });
   }
 
-  public void configureTrafficShapingForNetServer(Vertx vertx) {
-    TcpServerConfig config = new TcpServerConfig()
-      .setHost("localhost")
-      .setPort(1234)
-      .setTrafficShapingOptions(new TrafficShapingOptions()
-        .setInboundGlobalBandwidth(64 * 1024)
-        .setOutboundGlobalBandwidth(128 * 1024));
+  public void configurationOfClientHostVerification(Vertx vertx, String verificationAlgorithm, TrustOptions trustOptions) {
+    TcpClientConfig config = new TcpClientConfig().
+      setSsl(true);
 
+    ClientSSLOptions sslOptions = new ClientSSLOptions()
+      .setTrustOptions(trustOptions)
+      .setHostnameVerificationAlgorithm(verificationAlgorithm);
+
+    NetClient client = vertx.createNetClient(config, sslOptions);
+  }
+
+  public void upgradeASocketToTls(NetSocket socket, SSLOptions sslOptions) {
+    // Use the default SSL options of the client or the server
+    socket.upgradeToSsl()
+      .onSuccess(v -> {
+        // Upgrade worked
+      }).onFailure(err -> {
+        // Upgrade failed
+      });
+
+    // Use the specified SSL options
+    socket.upgradeToSsl(sslOptions)
+      .onSuccess(v -> {
+        // Upgrade worked
+      }).onFailure(err -> {
+        // Upgrade failed
+      });
+  }
+
+  public void updateSslOptionsOfATcpServer(HttpServer server) {
+    Future<Boolean> fut = server.updateSSLOptions(new ServerSSLOptions()
+      .setKeyCertOptions(
+        new JksOptions()
+          .setPath("/path/to/your/server-keystore.jks").
+          setPassword("password-of-your-keystore")));
+  }
+
+  public void configurationOfClientProxy(Vertx vertx) {
+    TcpClientConfig config = new TcpClientConfig()
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+        .setHost("localhost").setPort(1080)
+        .setUsername("username").setPassword("secret"));
+    NetClient client = vertx.createNetClient(config);
+  }
+
+  public void nonProxyHosts(Vertx vertx) {
+
+    TcpClientConfig config = new TcpClientConfig()
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+        .setHost("localhost").setPort(1080)
+        .setUsername("username").setPassword("secret"))
+      .addNonProxyHost("*.foo.com")
+      .addNonProxyHost("localhost");
+    NetClient client = vertx.createNetClient(config);
+  }
+
+  public void configurationOfServerHAProxy(Vertx vertx) {
+    TcpServerConfig config = new TcpServerConfig().setUseProxyProtocol(true);
     NetServer server = vertx.createNetServer(config);
-  }
+    server.connectHandler(so -> {
+      // Print the actual client address provided by the HA proxy protocol instead of the proxy address
+      System.out.println(so.remoteAddress());
 
-  public void dynamicallyUpdateTrafficShapingForNetServer(Vertx vertx) {
-    TcpServerConfig config = new TcpServerConfig()
-      .setHost("localhost")
-      .setPort(1234)
-      .setTrafficShapingOptions(new TrafficShapingOptions()
-        .setInboundGlobalBandwidth(64 * 1024)
-        .setOutboundGlobalBandwidth(128 * 1024));
-
-    NetServer server = vertx.createNetServer(config);
-
-    TrafficShapingOptions update = new TrafficShapingOptions()
-      .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
-      .setOutboundGlobalBandwidth(128 * 1024); // unchanged
-
-    server
-      .listen(1234, "localhost")
-      // wait until traffic shaping handler is created for updates
-      .onSuccess(v -> server.updateTrafficShapingOptions(update));
-  }
-
-  public void configureTrafficShapingForHttpServer(Vertx vertx) {
-    HttpServerConfig config = new HttpServerConfig()
-      .setHost("localhost")
-      .setPort(1234);
-
-    config.getTcpConfig()
-      .setTrafficShapingOptions(new TrafficShapingOptions()
-        .setInboundGlobalBandwidth(64 * 1024)
-        .setOutboundGlobalBandwidth(128 * 1024));
-
-    HttpServer server = vertx.createHttpServer(config);
-  }
-
-
-  public void dynamicallyUpdateTrafficShapingForHttpServer(Vertx vertx) {
-    HttpServerConfig config = new HttpServerConfig()
-      .setHost("localhost")
-      .setPort(1234);
-
-    config.getTcpConfig()
-      .setTrafficShapingOptions(new TrafficShapingOptions()
-        .setInboundGlobalBandwidth(64 * 1024)
-        .setOutboundGlobalBandwidth(128 * 1024));
-
-    HttpServer server = vertx.createHttpServer(config);
-    TrafficShapingOptions update = new TrafficShapingOptions()
-      .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
-      .setOutboundGlobalBandwidth(128 * 1024); // unchanged
-
-    server
-      .listen(1234, "localhost")
-      // wait until traffic shaping handler is created for updates
-      .onSuccess(v -> server.updateTrafficShapingOptions(update));
+      // Print the address of the proxy
+      System.out.println(so.localAddress());
+    });
   }
 }

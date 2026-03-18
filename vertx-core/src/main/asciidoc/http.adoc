@@ -2139,6 +2139,22 @@ and adding the following dependency in your classpath:
 {@link examples.HttpExamples#configurationOfAnHttpClientHaProxy}
 ----
 
+=== Throttling inbound and outbound bandwidth of TCP connections
+
+Like for TCP servers, you can set traffic shaping options through {@link io.vertx.core.http.HttpServerConfig#getTcpConfig()}.
+
+[source,$lang]
+----
+{@link examples.HttpExamples#configurationOfAnHttpServerTrafficShaping}
+----
+
+These traffic shaping options can also be dynamically updated after server start.
+
+[source,$lang]
+----
+{@link examples.HttpExamples#updateOfAnHttpServerTrafficShaping}
+----
+
 === HTTP/2 features
 
 ==== Connection ping

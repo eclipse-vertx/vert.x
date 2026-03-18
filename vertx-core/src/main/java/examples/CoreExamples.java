@@ -527,26 +527,6 @@ public class CoreExamples {
     vertx.createHttpServer(config);
   }
 
-  public void tcpServerWithDomainSockets(Vertx vertx) {
-    NetServer netServer = vertx.createNetServer();
-
-    // Only available when running on JDK16+, or using a native transport
-    SocketAddress address = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
-
-    netServer
-      .connectHandler(so -> {
-      // Handle application
-      })
-      .listen(address)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          // Bound to socket
-        } else {
-          // Handle failure
-        }
-      });
-  }
-
   public void tcpClientWithDomainSockets(Vertx vertx) {
     NetClient netClient = vertx.createNetClient();
 

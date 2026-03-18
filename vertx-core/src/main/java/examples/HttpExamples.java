@@ -60,6 +60,7 @@ import io.vertx.core.net.QuicConfig;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.ServerEndpoint;
 import io.vertx.core.streams.Pipe;
@@ -1559,6 +1560,40 @@ public class HttpExamples {
       // Print the address of the proxy
       System.out.println(request.localAddress());
     });
+  }
+
+  public void configurationOfAnHttpServerTrafficShaping(Vertx vertx) {
+    HttpServerConfig config = new HttpServerConfig()
+      .setHost("localhost")
+      .setPort(1234);
+
+    config.getTcpConfig()
+      .setTrafficShapingOptions(new TrafficShapingOptions()
+        .setInboundGlobalBandwidth(64 * 1024)
+        .setOutboundGlobalBandwidth(128 * 1024));
+
+    HttpServer server = vertx.createHttpServer(config);
+  }
+
+  public void updateOfAnHttpServerTrafficShaping(Vertx vertx) {
+    HttpServerConfig config = new HttpServerConfig()
+      .setHost("localhost")
+      .setPort(1234);
+
+    config.getTcpConfig()
+      .setTrafficShapingOptions(new TrafficShapingOptions()
+        .setInboundGlobalBandwidth(64 * 1024)
+        .setOutboundGlobalBandwidth(128 * 1024));
+
+    HttpServer server = vertx.createHttpServer(config);
+    TrafficShapingOptions update = new TrafficShapingOptions()
+      .setInboundGlobalBandwidth(2 * 64 * 1024) // twice
+      .setOutboundGlobalBandwidth(128 * 1024); // unchanged
+
+    server
+      .listen(1234, "localhost")
+      // wait until traffic shaping handler is created for updates
+      .onSuccess(v -> server.updateTrafficShapingOptions(update));
   }
 
   public void connectionWritePing(HttpConnection connection) {
