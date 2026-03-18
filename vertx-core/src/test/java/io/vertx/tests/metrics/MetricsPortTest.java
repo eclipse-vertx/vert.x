@@ -39,7 +39,7 @@ public class MetricsPortTest extends HttpTestBase {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
 
-      assertEquals(server.actualPort(), metrics.getServerAddress().port());
+      assertEquals(server.actualPort(), metrics.socketAddress().port());
 
       req.response().end();
       testComplete();
