@@ -14,20 +14,7 @@ import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.LogConfig;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicClientConfig;
-import io.vertx.core.net.QuicConnectOptions;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicServerConfig;
-import io.vertx.core.net.QuicStream;
-import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.StreamChannel;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 
 import java.time.Duration;
 import java.util.List;
@@ -117,6 +104,15 @@ public class QuicExamples {
     });
   }
 
+  public void gettingNotifiedOfIncomingStreamsFromServer(Vertx vertx) {
+
+    QuicServer server = vertx.createQuicServer(sslOptions);
+    server.streamHandler(stream -> {
+      // Handle streams here
+      QuicConnection connection = stream.connection();
+    });
+  }
+
   public void readingDataFromAStream(Vertx vertx, QuicConnection connection) {
 
     connection.streamHandler(stream -> {
@@ -139,6 +135,27 @@ public class QuicExamples {
     stream.write("some data", "UTF-16");
   }
 
+  public void sendingAFile(QuicStream stream) {
+
+    stream
+      .sendFile("myfile.dat")
+      .onSuccess(v -> System.out.println("File successfully sent"))
+      .onFailure(err -> System.out.println("Could not send file: " + err.getMessage()));
+  }
+
+  public void sendingStreamCleanTermination(StreamChannel stream) {
+
+    // Clean termination (sends a STREAM frame with the FIN bit)
+    stream.end();
+  }
+
+  public void gettingNotifiedOnStreamCleanTermination(StreamChannel stream) {
+
+    stream.endHandler(v -> {
+      // Clean termination (received a STREAM frame with the FIN bit)
+    });
+  }
+
   public void gettingNotifiedOnStreamClose(StreamChannel stream) {
 
     stream.closeHandler(v -> {
@@ -146,12 +163,23 @@ public class QuicExamples {
     });
   }
 
-  public void sendingAFile(QuicStream stream) {
+  public void sendingStreamReset(QuicStream stream, int ERROR_CODE) {
 
-    stream
-      .sendFile("myfile.dat")
-      .onSuccess(v -> System.out.println("File successfully sent"))
-      .onFailure(err -> System.out.println("Could not send file: " + err.getMessage()));
+    // Reset the stream (sends a STREAM_RESET frame)
+    stream.reset(ERROR_CODE);
+  }
+
+  public void sendingStreamAbort(QuicStream stream, int ERROR_CODE) {
+
+    // Abort the stream (sends a STOP_SENDING frame)
+    stream.abort(ERROR_CODE);
+  }
+
+  public void gettingNotifiedOnStreamReset(QuicStream stream) {
+
+    stream.resetHandler(errorCode -> {
+      System.out.println("The stream has been reset with error code " + errorCode);
+    });
   }
 
   public void gracefullyShuttingDownAServer(QuicServer server) {
@@ -254,19 +282,6 @@ public class QuicExamples {
       });
   }
 
-  public void openingAStream(QuicConnection connection) {
-
-    connection
-      .openStream()
-      .onComplete(res -> {
-        if (res.succeeded()) {
-          QuicStream stream = res.result();
-        } else {
-          System.out.println("Failed to open: " + res.cause().getMessage());
-        }
-      });
-  }
-
   public void configurationOfQuicClientReconnect(Vertx vertx, ClientSSLOptions sslOptions) {
 
     QuicClientConfig options = new QuicClientConfig().
@@ -274,6 +289,67 @@ public class QuicExamples {
       setReconnectInterval(Duration.ofMillis(500));
 
     QuicClient client = vertx.createQuicClient(options, sslOptions);
+  }
+
+  public void openingAStream(QuicConnection connection) {
+
+    connection
+      .openStream()
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          QuicStream stream = res.result();
+          stream.write("hello");
+        } else {
+          System.out.println("Failed to open: " + res.cause().getMessage());
+        }
+      });
+  }
+
+  public void openingAUniStream(QuicConnection connection) {
+
+    connection
+      .openStream(false)
+      .onComplete(res -> {
+        if (res.succeeded()) {
+          // Obtained a write-only streams
+          QuicStream stream = res.result();
+          stream.write("hello");
+        } else {
+          System.out.println("Failed to open: " + res.cause().getMessage());
+        }
+      });
+  }
+
+  public void configurationOfQuicDatagrams(QuicServerConfig endpointConfig) {
+    endpointConfig
+      .getTransportConfig()
+      .setDatagramConfig(new QuicDatagramConfig()
+        .setEnabled(true));
+  }
+
+  public void handlingQuicDatagrams(QuicConnection connection) {
+    long maxLength = connection.maxDatagramLength();
+    if (maxLength > 0) {
+      connection.datagramHandler(dgram -> {
+        connection.writeDatagram(dgram);
+      });
+    }
+  }
+
+  public void configurationOfQuicServerAddressValidation(Vertx vertx) {
+    QuicServerConfig config = new QuicServerConfig()
+      .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
+      .setClientAddressValidationKey(new JksOptions()
+        .setPath("/path/to/your/key.jks")
+        .setPassword("wibble")
+      );
+  }
+
+  public void configurationOfQuicServerAddressValidationDuration(Vertx vertx, KeyCertOptions key) {
+    QuicServerConfig config = new QuicServerConfig()
+      .setClientAddressValidation(QuicClientAddressValidation.CRYPTO)
+      .setClientAddressValidationKey(key)
+      .setClientAddressValidationTimeWindow(Duration.ofSeconds(15));
   }
 
   public void configurationOfQuicServerLogging(Vertx vertx) {
@@ -302,6 +378,14 @@ public class QuicExamples {
         .setEnabled(true));
 
     QuicClient client = vertx.createQuicClient(options, sslOptions);
+  }
+
+  public void configurationOfQLog() {
+    QuicServerConfig cfg = new QuicServerConfig()
+      .setQLogConfig(new QLogConfig()
+        .setPath("/path/to/log/dir/")
+        .setTitle("Server logging")
+        .setDescription("Logging of QUIC server"));
   }
 
   public void configurationOfAQuicClientConnection(QuicClient client, int port, String host) {
@@ -333,6 +417,12 @@ public class QuicExamples {
           .setPath("/path/to/your/server-keystore.jks").
           setPassword("password-of-your-keystore"))
       .setApplicationLayerProtocols(List.of(APPLICATION_PROTOCOL)));
+  }
+
+  public void configurationOfKeyLogging() {
+    QuicServerConfig serverCfg = new QuicServerConfig()
+      .setClientAddressValidation(QuicClientAddressValidation.NONE)
+      .setKeyLogFile("/path/to/keylogfile.txt");
   }
 
   private static Buffer closeFrame() {

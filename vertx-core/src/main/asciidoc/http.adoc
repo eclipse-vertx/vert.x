@@ -113,6 +113,10 @@ can handle:
 {@link examples.HttpExamples#configurationOfH3ServerConcurrency}
 ----
 
+QUIC servers can be subject to https://www.cloudflare.com/learning/ddos/dns-amplification-ddos-attack/[amplification attacks].
+
+By default, a server is configured with a basic token validation which works well for development purpose, we recommend configuring token validation based on <<quic_client_address_validation,cryptography>> instead.
+
 === Hybrid HTTP server
 
 A server can handle both TCP (HTTP/1.x and HTTP/2) and QUIC (HTTP/3).

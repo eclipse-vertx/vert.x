@@ -2,6 +2,30 @@
 
 Vert.x allows you to easily write non-blocking QUIC clients and servers.
 
+[[native_quic]]
+=== Configuration of native dependency
+
+The implementation of QUIC relies on Netty and https://github.com/cloudflare/quiche[QUICHE], a savoury implementation of QUIC which requires native dependencies depending on OS/platform selection.
+
+You need to add the following dependency:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-codec-native-quic</artifactId>
+  <classifier>linux-x86_64</classifier>
+</dependency>
+----
+
+OS/platform can be
+
+- linux-aarch_64
+- linux-x86_64
+- osx-aarch_64
+- osx-x86_64
+- windows-x86_64
+
 === Creating a QUIC server
 
 The simplest way to create a QUIC server, is as follows:
@@ -98,7 +122,14 @@ You can then set a {@link io.vertx.core.net.QuicConnection#streamHandler(io.vert
 This is a channel-like interface to the actual connection, and allows you to read and write data as well as do various
 other things like close the stream.
 
-=== Reading data from the stream
+A stream handler can be set on the server directly, the connection can still be obtained
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOfIncomingStreamsFromServer}
+----
+
+=== Reading data from a stream
 
 To read data from the stream you set the {@link io.vertx.core.net.QuicStream#handler(io.vertx.core.Handler)} on the
 stream.
@@ -122,26 +153,13 @@ You write to a stream using one of {@link io.vertx.core.net.QuicStream#write}.
 
 Write operations are asynchronous and may not occur until some time after the call to write has returned.
 
-=== Closed handler
+=== Streaming
 
-If you want to be notified when a stream is closed, you can set a {@link io.vertx.core.net.QuicStream#closeHandler(io.vertx.core.Handler)} on it:
+Instances of {@link io.vertx.core.net.QuicStream} are also {@link io.vertx.core.streams.ReadStream} and
+{@link io.vertx.core.streams.WriteStream} instances, so they can be used to pipe data to or from other
+read and write streams.
 
-[source,$lang]
-----
-{@link examples.QuicExamples#gettingNotifiedOnStreamClose}
-----
-
-=== Handling exceptions
-
-You can set an {@link io.vertx.core.net.QuicStream#exceptionHandler(io.vertx.core.Handler)} to receive any
-exceptions that happen on the stream.
-
-=== Local and remote addresses
-
-The local address of a {@link io.vertx.core.net.QuicConnection} can be retrieved using {@link io.vertx.core.net.QuicConnection#localAddress()}.
-
-The remote address, (i.e. the address of the other end of the connection) of a {@link io.vertx.core.net.QuicConnection}
-can be retrieved using {@link io.vertx.core.net.QuicConnection#remoteAddress()}.
+See the chapter on <<streams, streams >> for more information.
 
 === Sending files or resources from the classpath
 
@@ -155,13 +173,61 @@ classpath resolution or disabling it.
 {@link examples.QuicExamples#sendingAFile}
 ----
 
-=== Streaming
+=== Lifecycle of a stream
 
-Instances of {@link io.vertx.core.net.QuicStream} are also {@link io.vertx.core.streams.ReadStream} and
-{@link io.vertx.core.streams.WriteStream} instances, so they can be used to pipe data to or from other
-read and write streams.
+Any side of a stream can cleanly terminate its output, signaling no more data will be emitted.
 
-See the chapter on <<streams, streams >> for more information.
+[source,$lang]
+----
+{@link examples.QuicExamples#sendingStreamCleanTermination}
+----
+
+You can set an end handler to be notified when the opposite side has terminated its output.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOnStreamCleanTermination}
+----
+
+A stream is closed when output is shut down on both sides.
+
+If you want to be notified when a stream is closed, you can set a {@link io.vertx.core.net.QuicStream#closeHandler(io.vertx.core.Handler)} on it:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOnStreamClose}
+----
+
+Any side of a stream can abruptly terminate the stream, {@link io.vertx.core.net.QuicStream#reset} sends a reset frame signaling no more data will be emitted. Reset requires an error code argument used to convey application level error.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#sendingStreamReset}
+----
+
+Likewise, {@link io.vertx.core.net.QuicStream#abort} instructs the other side that no more data should be emitted: aborting asks the other side to reset the stream with the provided code.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#sendingStreamAbort}
+----
+
+If you want to be notified when a stream is reset, you can set a {@link io.vertx.core.net.QuicStream#resetHandler(io.vertx.core.Handler)} on it:
+
+[source,$lang]
+----
+{@link examples.QuicExamples#gettingNotifiedOnStreamReset}
+----
+
+You can set an {@link io.vertx.core.net.QuicStream#exceptionHandler(io.vertx.core.Handler)} to receive any
+exceptions that happen on the stream.
+
+=== Local and remote addresses
+
+The local address of a {@link io.vertx.core.net.QuicConnection} can be retrieved using {@link io.vertx.core.net.QuicConnection#localAddress()}.
+
+The remote address, (i.e. the address of the other end of the connection) of a {@link io.vertx.core.net.QuicConnection}
+can be retrieved using {@link io.vertx.core.net.QuicConnection#remoteAddress()}.
 
 === QUIC graceful shut down
 
@@ -251,17 +317,6 @@ specifying the port and host of the server, returning a future completed with th
 {@link examples.QuicExamples#connectingToAServer}
 ----
 
-=== Opening streams
-
-A QUIC connection multiplexes QUIC streams which is what your application actually interacts with.
-
-To open a stream you use {@link io.vertx.core.net.QuicConnection#openStream()}, returning a future completed with the {@link io.vertx.core.net.QuicStream}
-
-[source,$lang]
-----
-{@link examples.QuicExamples#openingAStream}
-----
-
 === Configuring connection attempts
 
 A client can be configured to automatically retry connecting to the server in the event that it cannot connect.
@@ -277,6 +332,129 @@ only apply to creating initial connections.
 ----
 
 By default, multiple connection attempts are disabled.
+
+=== Opening streams
+
+A QUIC connection multiplexes QUIC streams which is what your application actually interacts with.
+
+To open a stream you use {@link io.vertx.core.net.QuicConnection#openStream()}, returning a future completed with the {@link io.vertx.core.net.QuicStream}
+
+[source,$lang]
+----
+{@link examples.QuicExamples#openingAStream}
+----
+
+WARNING: Opening the stream only allocates it locally, the remote side of the connection is not aware of the presence of the stream until you actually send data.
+
+By default, the connection opens a bidirectional stream.
+
+QUIC supports unidirectional streams too, you can open them as well when the remote side allows it.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#openingAUniStream}
+----
+
+=== QUIC transport configuration
+
+QUIC uses transport parameters to determine the connection behavior, e.g. the maximum number of streams an endpoint
+allows.
+
+{@link io.vertx.core.net.QuicConfig} configures transport parameters, you should be aware of a few of them.
+
+The following parameters are client/server sensitive and configure the limit per connection:
+
+- `initial_max_streams_bidi`: the maximum number of bidirectional streams the endpoint can receive
+- `initial_max_streams_uni`: the maximum number of unidirectional streams the endpoint can receive
+- `initial_max_data`: the maximum number of bytes that can be sent on a connection
+- `initial_max_stream_data_bidi_local`: the flow control limit for locally initiated bidirectional streams
+- `initial_max_stream_data_bidi_remote`: the flow control limit for peer initiated bidirectional streams
+- `initial_max_stream_data_uni`: the flow control limit for unidirectional streams
+
+|===
+|parameter|default value|default client|default server
+
+|initial_max_streams_bidi
+|0
+|0
+|256
+
+|initial_max_streams_uni
+|0
+|0
+|0
+
+|initial_max_data
+|10_485_760
+|10_485_760
+|10_485_760
+
+|initial_max_stream_data_bidi_local
+|0
+|1_048_576
+|0
+
+|initial_max_stream_data_bidi_bemote
+|0
+|0
+|1_048_576
+
+|initial_max_stream_data_uni
+|0
+|0
+|0
+|===
+
+These default parameters model a traditional client / server in which the client opens bidirectional streams like TCP does.
+
+Each protocol should define proper defaults, e.g. HTTP/3 relies on unidirectional streams and therefore configures a few parameters differently for this purpose.
+
+=== QUIC datagram extension
+
+You can configure your endpoint to support the https://datatracker.ietf.org/doc/html/rfc9221[QUIC Datagram Extension].
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicDatagrams}
+----
+
+Once your endpoint is started, you should check the extension is available.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#handlingQuicDatagrams}
+----
+
+[[quic_client_address_validation]]
+=== QUIC client address validation
+
+QUIC is based on UDP and can be subject to https://www.cloudflare.com/learning/ddos/dns-amplification-ddos-attack/[amplification attacks].
+
+Address validations ensures that a QUIC server cannot be used for such attacks.
+
+By default, Vert.x performs basic address validation, but this is not sufficient for production.
+
+We recommend configuring address validation based on cryptographic key instead for production.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicServerAddressValidation}
+----
+
+Depending on the nature of the key, either symmetric (MAC) or asymmetric (Digital Signature) is achieved.
+
+The following signing algorithms are supported:
+
+- HS256: HmacSHA256/HmacSHA384/HmacSHA512
+- RSA: SHA256withRSA/SHA384withRSA/SHA512withRSA
+- ECDSA: SHA256withECDSA/SHA384withECDSA/SHA512withECDSA
+
+By default, a validation token is valid for 30 seconds, you can configure also configure it.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQuicServerAddressValidationDuration}
+----
 
 [[logging_network_activity]]
 === Logging network activity
@@ -361,6 +539,23 @@ name. When using network activity logging there are a few things to keep in mind
 
 You should read the <<netty-logging>> section.
 
+=== QLog configuration
+
+Vert.x QUIC implementation is based on Netty and https://github.com/cloudflare/quiche[QUICHE], a savoury implementation of QUIC.
+
+QUICHE logs in the https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-13.html[QLog] JSON-SEQ format, QUICHE output is file based. It is configured independently of your JVM logging.
+
+You can use {@link io.vertx.core.net.QLogConfig} to configure QLog.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfQLog}
+----
+
+The logging granularity is per connection, that is, each connection will be logged in its own file.
+
+CAUTION: this should not be used in production, only for the purpose of logging QUICHE
+
 === Configuring SSL/TLS
 
 ==== Configuring SSL/TLS per connection
@@ -406,3 +601,16 @@ When the update succeeds the new SSL configuration is used, otherwise the previo
 NOTE: The options object is compared (using `equals`) against the existing options to prevent an update when the objects
 are equals since loading options can be costly. When object are equals, you can use the `force` parameter to force
 the update.
+
+==== SSL/TLS key logging
+
+QUICHE relies on BoringSSL and supports SSL/TLS key logging.
+
+[source,$lang]
+----
+{@link examples.QuicExamples#configurationOfKeyLogging}
+----
+
+NOTE: this requires to disable client address validation to work properly.
+
+When configured, BoringSSL logs keys for decrypting SSL/TLS in the configured log, which can be then used by tools such as Wireshark to decrypt QUIC traffic.
