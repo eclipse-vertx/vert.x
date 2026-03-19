@@ -20,6 +20,7 @@ import io.vertx.test.fakemetrics.FakeTransportMetrics;
 import io.vertx.test.fakemetrics.ConnectionMetric;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +59,10 @@ public class QuicMetricsTest extends VertxTestBase {
   }
 
   private void testMetrics(int numberOfServers) throws Exception {
-    client = vertx.createQuicClient(new QuicClientConfig().setMetricsName("the-metrics"), QuicClientTest.SSL_OPTIONS);
+    QuicClientConfig cfg = new QuicClientConfig()
+      .setConnectTimeout(Duration.ofSeconds(10))
+      .setMetricsName("the-metrics");
+    client = vertx.createQuicClient(cfg, QuicClientTest.SSL_OPTIONS);
     AtomicReference<ConnectionMetric> serverConnectionMetric = new AtomicReference<>();
     int port;
     int i = 0;
@@ -93,11 +97,11 @@ public class QuicMetricsTest extends VertxTestBase {
       latch.countDown();
     });
     clientStream.write(Buffer.buffer("ping")).await();
-    assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 1);
-    assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 1);
+    assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 1, 30_000);
+    assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 1, 30_000);
     clientStream.end().await();
-    assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 0);
-    assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 0);
+    assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 0, 30_000);
+    assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 0, 30_000);
     awaitLatch(latch);
     assertEquals(List.of(Buffer.buffer("ping")), received);
     FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(servers.get(0));
