@@ -40,7 +40,7 @@ public class HttpServerConfig {
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE = 1_048_576L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_UNI = 1_048_576L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_BIDI = 256L;
-  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 1L;
+  public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_UNI = 3L;
 
   private static QuicServerConfig defaultQuicConfig() {
     QuicServerConfig config = new QuicServerConfig();
