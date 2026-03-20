@@ -85,7 +85,7 @@ public class HttpExamples {
       .setMaxFormFields(512)
       .setHttp1Config(new Http1ServerConfig()
         .setMaxInitialLineLength(1024))
-      .setCompression(new CompressionConfig()
+      .setCompressionConfig(new CompressionConfig()
         .setCompressionEnabled(true)
         .addGzip());
 
@@ -489,7 +489,7 @@ public class HttpExamples {
 
   public static void serverConfigureCompressors() {
     new HttpServerConfig()
-      .setCompression(new CompressionConfig()
+      .setCompressionConfig(new CompressionConfig()
         .setCompressionEnabled(true)
         .addGzip()
         .addDeflate()
@@ -498,7 +498,7 @@ public class HttpExamples {
 
   public static void serverConfigureCompressor() {
     new HttpServerConfig()
-      .setCompression(new CompressionConfig()
+      .setCompressionConfig(new CompressionConfig()
         .addGzip(6, 15, 8));
   }
 
