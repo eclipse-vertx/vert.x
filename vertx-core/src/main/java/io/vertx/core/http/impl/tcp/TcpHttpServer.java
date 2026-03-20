@@ -205,7 +205,7 @@ public class TcpHttpServer implements HttpServerInternal {
         .withThreadingModel(ThreadingModel.EVENT_LOOP)
         .build();
     }
-    CompressionConfig compression = config.getCompression();
+    CompressionConfig compression = config.getCompressionConfig();
     ServerSSLOptions sslOptions = configureSSLOptions(config, this.sslOptions);
     NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), sslOptions)
       .sslEngine(engineOptions)

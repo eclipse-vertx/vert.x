@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.*;
-import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
 import java.util.*;
@@ -71,7 +70,7 @@ public class HttpServerConfig {
   private Http2ServerConfig http2Config;
   private Http3ServerConfig http3Config;
   private WebSocketServerConfig webSocketConfig;
-  private CompressionConfig compression;
+  private CompressionConfig compressionConfig;
   private final TcpServerConfig tcpConfig;
   private final QuicServerConfig quicConfig;
 
@@ -129,7 +128,7 @@ public class HttpServerConfig {
     this.http1Config = new Http1ServerConfig(options.getHttp1Config());
     this.http2Config = new Http2ServerConfig(options.getHttp2Config());
     this.webSocketConfig = new WebSocketServerConfig(options.getWebSocketConfig());
-    this.compression = compression;
+    this.compressionConfig = compression;
     this.tcpConfig = new TcpServerConfig(options);
     this.quicConfig = defaultQuicConfig();
   }
@@ -149,7 +148,7 @@ public class HttpServerConfig {
     this.http2Config = null;
     this.http3Config = null;
     this.webSocketConfig = null;
-    this.compression = null;
+    this.compressionConfig = null;
     this.tcpConfig = defaultTcpServerConfig();
     this.quicConfig = defaultQuicConfig();
   }
@@ -171,7 +170,7 @@ public class HttpServerConfig {
     this.http2Config = other.http2Config != null ? new Http2ServerConfig(other.http2Config) : null;
     this.http3Config = other.http3Config != null ? new Http3ServerConfig(other.http3Config) : null;
     this.webSocketConfig = other.webSocketConfig != null ? new WebSocketServerConfig(other.webSocketConfig) : new WebSocketServerConfig();
-    this.compression = other.compression != null ? new CompressionConfig(other.compression) : new CompressionConfig();
+    this.compressionConfig = other.compressionConfig != null ? new CompressionConfig(other.compressionConfig) : new CompressionConfig();
     this.tcpConfig = other.tcpConfig != null ? new TcpServerConfig(other.tcpConfig) : defaultTcpServerConfig();
     this.quicConfig = other.quicConfig != null ? new QuicServerConfig(other.quicConfig) : defaultQuicConfig();
   }
@@ -563,18 +562,18 @@ public class HttpServerConfig {
   /**
    * @return the compression configuration
    */
-  public CompressionConfig getCompression() {
-    return compression;
+  public CompressionConfig getCompressionConfig() {
+    return compressionConfig;
   }
 
   /**
    * Configure the server compression, this overwrites any previously configuration.
    *
-   * @param compression the new configuration
+   * @param compressionConfig the new configuration
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerConfig setCompression(CompressionConfig compression) {
-    this.compression = compression == null ? new CompressionConfig() : compression;
+  public HttpServerConfig setCompressionConfig(CompressionConfig compressionConfig) {
+    this.compressionConfig = compressionConfig == null ? new CompressionConfig() : compressionConfig;
     return this;
   }
 
