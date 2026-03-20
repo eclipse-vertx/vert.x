@@ -565,7 +565,7 @@ public class QuicServerTest extends VertxTestBase {
     disableThreadChecks();
     waitFor(2);
     QuicServerConfig config = new QuicServerConfig();
-    config.getTransportConfig().setEnableDatagrams(true);
+    config.getTransportConfig().setDatagramConfig(new QuicDatagramConfig().setEnabled(true));
     QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.connectHandler(conn -> {
       conn.writeDatagram(Buffer.buffer("ping")).onComplete(onSuccess2(v -> {
@@ -590,7 +590,7 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testReceiveDatagram() throws Exception {
     QuicServerConfig config = new QuicServerConfig();
-    config.getTransportConfig().setEnableDatagrams(true);
+    config.getTransportConfig().setDatagramConfig(new QuicDatagramConfig().setEnabled(true));
     QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.connectHandler(conn -> {
       conn.datagramHandler(dgram -> {

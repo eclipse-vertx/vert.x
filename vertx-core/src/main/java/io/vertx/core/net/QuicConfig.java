@@ -43,9 +43,6 @@ public class QuicConfig extends TransportConfig {
   public static final long DEFAULT_MAX_STREAM_DATA_UNI = 0L;
   public static final boolean DEFAULT_DISABLE_ACTIVE_MIGRATION = true;
   public static final Duration DEFAULT_MAX_IDLE_TIMEOUT = Duration.ofSeconds(40);
-  public static final boolean DEFAULT_ENABLE_DATAGRAMS = false;
-  public static final int DEFAULT_DATAGRAM_SEND_QUEUE_LENGTH = 128;
-  public static final int DEFAULT_DATAGRAM_RECEIVE_QUEUE_LENGTH = 128;
   public static final Duration DEFAULT_MAX_ACK_DELAY = Duration.ofMillis(25);
   public static final int DEFAULT_ACK_DELAY_EXPONENT = 3;
   public static final QuicCongestionControlAlgorithm DEFAULT_CONGESTION_CONTROL_ALGORITHM = QuicCongestionControlAlgorithm.CUBIC;
@@ -61,9 +58,7 @@ public class QuicConfig extends TransportConfig {
   private long initialMaxStreamsUni = DEFAULT_MAX_STREAM_DATA_UNI;
   private boolean disableActiveMigration = DEFAULT_DISABLE_ACTIVE_MIGRATION;
   private Duration maxIdleTimeout = DEFAULT_MAX_IDLE_TIMEOUT;
-  private boolean enableDatagrams = DEFAULT_ENABLE_DATAGRAMS;
-  private int datagramSendQueueLength = DEFAULT_DATAGRAM_SEND_QUEUE_LENGTH;
-  private int datagramReceiveQueueLength = DEFAULT_DATAGRAM_RECEIVE_QUEUE_LENGTH;
+  private QuicDatagramConfig datagramConfig;
   private Duration maxAckDelay = DEFAULT_MAX_ACK_DELAY;
   private int ackDelayExponent = DEFAULT_ACK_DELAY_EXPONENT;
   private QuicCongestionControlAlgorithm congestionControlAlgorithm = DEFAULT_CONGESTION_CONTROL_ALGORITHM;
@@ -83,9 +78,7 @@ public class QuicConfig extends TransportConfig {
     this.initialMaxStreamDataUni = other.initialMaxStreamDataUni;
     this.disableActiveMigration = other.disableActiveMigration;
     this.maxIdleTimeout = other.maxIdleTimeout;
-    this.enableDatagrams = other.enableDatagrams;
-    this.datagramSendQueueLength = other.datagramSendQueueLength;
-    this.datagramReceiveQueueLength = other.datagramReceiveQueueLength;
+    this.datagramConfig = other.datagramConfig != null ? new QuicDatagramConfig(other.datagramConfig) : null;
     this.maxAckDelay = other.maxAckDelay;
     this.ackDelayExponent = other.ackDelayExponent;
     this.congestionControlAlgorithm = other.congestionControlAlgorithm;
@@ -320,71 +313,20 @@ public class QuicConfig extends TransportConfig {
   }
 
   /**
-   * @return whether to support datagrams frames
-   * @see #setEnableDatagrams(boolean)
+   * @return the datagram extension config
    */
-  public boolean isEnableDatagrams() {
-    return enableDatagrams;
+  public QuicDatagramConfig getDatagramConfig() {
+    return datagramConfig;
   }
 
   /**
-   * <p>Set whether to support datagrams frames.</p>
+   * Set the configuration of the datagram extension.
    *
-   * <p>The default value is {@code false} (disabled).</p>
-   *
-   * @param enableDatagrams the value to set
+   * @param datagramConfig the configuration of the
    * @return this instance
    */
-  public QuicConfig setEnableDatagrams(boolean enableDatagrams) {
-    this.enableDatagrams = enableDatagrams;
-    return this;
-  }
-
-  /**
-   * @return the datagram send queue length
-   * @see #setDatagramSendQueueLength(int)
-   */
-  public int getDatagramSendQueueLength() {
-    return datagramSendQueueLength;
-  }
-
-  /**
-   * <p>Set the datagram receive queue length.</p>
-   *
-   * <p>The default value is {@code 128}.</p>
-   *
-   * @param datagramSendQueueLength the value to use
-   * @return this instance
-   */
-  public QuicConfig setDatagramSendQueueLength(int datagramSendQueueLength) {
-    if (datagramSendQueueLength <= 0) {
-      throw new IllegalArgumentException("datagramSendQueueLength must be > 0");
-    }
-    this.datagramSendQueueLength = datagramSendQueueLength;
-    return this;
-  }
-
-  /**
-   * @return the datagram receive queue length
-   * @see #setDatagramReceiveQueueLength(int)
-   */
-  public int getDatagramReceiveQueueLength() {
-    return datagramReceiveQueueLength;
-  }
-
-  /**
-   * <p>Set the datagram send queue length.</p>
-   *
-   * <p>The default value is {@code 128}.</p>
-   *
-   * @param datagramReceiveQueueLength the value to use
-   * @return this instance
-   */
-  public QuicConfig setDatagramReceiveQueueLength(int datagramReceiveQueueLength) {
-    if (datagramReceiveQueueLength <= 0) {
-      throw new IllegalArgumentException("datagramReceiveQueueLength must be > 0");
-    }
-    this.datagramReceiveQueueLength = datagramReceiveQueueLength;
+  public QuicConfig setDatagramConfig(QuicDatagramConfig datagramConfig) {
+    this.datagramConfig = datagramConfig;
     return this;
   }
 

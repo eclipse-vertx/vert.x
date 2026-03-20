@@ -160,8 +160,9 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     if (transportOptions.getMaxIdleTimeout() != null) {
       codecBuilder.maxIdleTimeout(transportOptions.getMaxIdleTimeout().toMillis(), TimeUnit.MILLISECONDS);
     }
-    if (transportOptions.isEnableDatagrams()) {
-      codecBuilder.datagram(transportOptions.getDatagramReceiveQueueLength(), transportOptions.getDatagramSendQueueLength());
+    QuicDatagramConfig datagramConfig = transportOptions.getDatagramConfig();
+    if (datagramConfig != null && datagramConfig.isEnabled()) {
+      codecBuilder.datagram(datagramConfig.getReceiveQueueLength(), datagramConfig.getSendQueueLength());
     }
     codecBuilder.maxAckDelay(transportOptions.getMaxAckDelay().toMillis(), TimeUnit.MILLISECONDS);
     codecBuilder.ackDelayExponent(transportOptions.getAckDelayExponent());
