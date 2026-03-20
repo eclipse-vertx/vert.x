@@ -26,6 +26,7 @@ OS/platform can be
 - osx-x86_64
 - windows-x86_64
 
+[[quic_server]]
 === Creating a QUIC server
 
 The simplest way to create a QUIC server, is as follows:
@@ -297,6 +298,7 @@ The simplest way to create a QUIC client, using all default options is as follow
 
 QUIC mandates the usage of application layer protocol negotiation (ALPN) and therefore an application protocol should be set with {@link io.vertx.core.net.SSLOptions#setApplicationLayerProtocols}, without it, this client will not be capable of handshaking with any server.
 
+[[quic_client]]
 === Configuring a QUIC client
 
 If you don't want the default, a client can be configured by passing in a {@link io.vertx.core.net.QuicClientConfig}
@@ -355,6 +357,7 @@ QUIC supports unidirectional streams too, you can open them as well when the rem
 {@link examples.QuicExamples#openingAUniStream}
 ----
 
+[[quic_transport_configuration]]
 === QUIC transport configuration
 
 QUIC uses transport parameters to determine the connection behavior, e.g. the maximum number of streams an endpoint
@@ -408,6 +411,8 @@ The following parameters are client/server sensitive and configure the limit per
 These default parameters model a traditional client / server in which the client opens bidirectional streams like TCP does.
 
 Each protocol should define proper defaults, e.g. HTTP/3 relies on unidirectional streams and therefore configures a few parameters differently for this purpose.
+
+Vert.x HTTP/3 provides sensitive QUIC transport configuration as well.
 
 === QUIC datagram extension
 
