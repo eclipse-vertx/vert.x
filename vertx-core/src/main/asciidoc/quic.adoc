@@ -7,7 +7,7 @@ Vert.x allows you to easily write non-blocking QUIC clients and servers.
 
 The implementation of QUIC relies on Netty and https://github.com/cloudflare/quiche[QUICHE], a savoury implementation of QUIC which requires native dependencies depending on OS/platform selection.
 
-You need to add the following dependency:
+You need to add the following dependency at *runtime*:
 
 [source,xml]
 ----
@@ -94,7 +94,7 @@ To find out the real port the server is listening on you can use the asynchronou
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#startingATcpServerOnARandomPort}
+{@link examples.QuicExamples#startingAQuicServerOnARandomPort}
 ----
 
 === Getting notified of incoming connections
@@ -278,7 +278,7 @@ This future is completed when the close has fully completed.
 
 [source,$lang]
 ----
-{@link examples.TcpExamples#closingAServer}
+{@link examples.QuicExamples#closingAServer}
 ----
 
 === Automatic clean-up in verticles
