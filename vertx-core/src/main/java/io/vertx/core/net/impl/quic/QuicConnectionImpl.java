@@ -63,6 +63,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   private final long writeIdleTimeout;
   private final ByteBufFormat activityLogging;
   private final ConnectionGroup streamGroup;
+  private final boolean server;
   private Function<ContextInternal, ContextInternal> streamContextProvider;
   private Handler<QuicStream> handler;
   private Handler<Duration> shutdownHandler;
@@ -77,7 +78,8 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
                             long readIdleTimeout,  long writeIdleTimeout, ByteBufFormat activityLogging, int maxStreamBidiRequests,
-                            int maxStreamUniRequests, QuicChannel channel, SocketAddress remoteAddress, ChannelHandlerContext chctx) {
+                            int maxStreamUniRequests, QuicChannel channel, SocketAddress remoteAddress, ChannelHandlerContext chctx,
+                            boolean server) {
     super(context, chctx);
 
     Map<QuicStreamType, StreamOpenRequestQueue> pendingStreamRequestsMap = new EnumMap<>(QuicStreamType.class);
@@ -92,6 +94,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.activityLogging = activityLogging;
     this.context = context;
     this.remoteAddress = remoteAddress;
+    this.server = server;
     this.pendingStreamOpenRequestsMap = pendingStreamRequestsMap;
     this.maxDatagramLength = 0;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
@@ -142,6 +145,22 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
   @Override
   public TransportMetrics<?> metrics() {
     return metrics;
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    if (server) {
+      // Avoid caching remote address in case of connection migration
+      return super.channelRemoteAddress();
+    } else {
+      return super.remoteAddress();
+    }
+  }
+
+  @Override
+  public SocketAddress remoteAddress(boolean real) {
+    // No proxy
+    return remoteAddress();
   }
 
   void handleStream(QuicStreamChannel streamChannel) {

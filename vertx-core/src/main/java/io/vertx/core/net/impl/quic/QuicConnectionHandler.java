@@ -50,6 +50,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private final ByteBufFormat activityLogging;
   private final int maxStreamBidiRequests;
   private final int maxStreamUniRequests;
+  private final boolean server;
   private Handler<QuicConnection> handler;
   private QuicChannel channel;
   private QuicConnectionImpl connection;
@@ -57,7 +58,8 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
                                Duration readIdleTimeout, Duration writeIdleTimeout, ByteBufFormat activityLogging,
-                               int maxStreamBidiRequests, int maxStreamUniRequests, SocketAddress remoteAddress, Handler<QuicConnection> handler) {
+                               int maxStreamBidiRequests, int maxStreamUniRequests, SocketAddress remoteAddress,
+                               boolean server, Handler<QuicConnection> handler) {
     this.context = context;
     this.metrics = metrics;
     this.idleTimeout = timeoutMillis(idleTimeout);
@@ -68,6 +70,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
     this.maxStreamUniRequests = maxStreamUniRequests;
     this.handler = handler;
     this.remoteAddress = remoteAddress;
+    this.server = server;
   }
 
   @Override
@@ -75,7 +78,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
     QuicChannel ch = (QuicChannel) ctx.channel();
     channel = ch;
     connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging,
-      maxStreamBidiRequests, maxStreamUniRequests, ch, remoteAddress, ctx);
+      maxStreamBidiRequests, maxStreamUniRequests, ch, remoteAddress, ctx, server);
   }
 
   @Override

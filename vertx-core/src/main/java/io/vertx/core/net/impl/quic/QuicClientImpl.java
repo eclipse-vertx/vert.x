@@ -206,7 +206,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
           ByteBufFormat activityLogging = logConfig != null && logConfig.isEnabled()? logConfig.getDataFormat() : null;
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
             config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, config.getMaxStreamBidiRequests(),
-            config.getMaxStreamUniRequests(), remoteAddress, promise::tryComplete);
+            config.getMaxStreamUniRequests(), remoteAddress, false, promise::tryComplete);
           ch.pipeline().addLast("handler", handler);
         }
       })
