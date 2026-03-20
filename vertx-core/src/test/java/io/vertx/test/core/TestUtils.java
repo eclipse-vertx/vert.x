@@ -49,6 +49,7 @@ import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.netty.TestLoggerFactory;
+import junit.framework.AssertionFailedError;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -72,6 +73,16 @@ public class TestUtils {
     } catch (URISyntaxException e) {
       return new File("target");
     }
+  }
+
+  public static File createTmpDirectory(String name) {
+    for (int i = 0;i < 1000;i++) {
+      File f = new File(MAVEN_TARGET_DIR, name + "-" + i);
+      if (!f.exists() && f.mkdirs()) {
+        return f;
+      }
+    }
+    throw new AssertionFailedError("Could not create a tmp directory");
   }
 
   /**
