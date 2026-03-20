@@ -612,7 +612,7 @@ public class QuicClientTest extends VertxTestBase {
   @Test
   public void testDatagrams() {
     QuicServerConfig serverConfig = new QuicServerConfig();
-    serverConfig.getTransportConfig().setEnableDatagrams(true);
+    serverConfig.getTransportConfig().setDatagramConfig(new QuicDatagramConfig().setEnabled(true));
     server.close();
     server = vertx.createQuicServer(serverConfig, QuicServerTest.SSL_OPTIONS);
     server.connectHandler(conn -> {
@@ -621,7 +621,7 @@ public class QuicClientTest extends VertxTestBase {
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.close();
     QuicClientConfig clientConfig = new QuicClientConfig();
-    clientConfig.getTransportConfig().setEnableDatagrams(true);
+    clientConfig.getTransportConfig().setDatagramConfig(new QuicDatagramConfig().setEnabled(true));
     client = vertx.createQuicClient(clientConfig, SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
