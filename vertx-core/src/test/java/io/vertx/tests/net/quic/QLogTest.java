@@ -12,6 +12,7 @@ package io.vertx.tests.net.quic;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -31,8 +32,6 @@ public class QLogTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    server = vertx.createQuicServer(QuicServerTest.SSL_OPTIONS);
-    client = vertx.createQuicClient(QuicClientTest.SSL_OPTIONS);
   }
 
   @Override
@@ -65,41 +64,38 @@ public class QLogTest extends VertxTestBase {
 
   @Test
   public void testClientQLog() throws Exception {
-    server.connectHandler(conn -> {
-    });
-    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
-    // Test client with a qlog file
-    File qlogFile = File.createTempFile("vertx", ".qlog");
-    assertTrue(qlogFile.delete());
-    QuicConnectOptions connectOptions = new QuicConnectOptions().setQLogConfig(qlogConfig(qlogFile, "the title", "the description"));
-    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
-    connection.close().await();
-    List<JsonObject> qlog = parseQLog(qlogFile);
-    assertTrue(!qlog.isEmpty());
-    JsonObject data = qlog.get(0);
-    assertEquals("the title", data.getString("title"));
-    assertTrue(data.getString("description").contains("the description"));
+    File dir = TestUtils.createTmpDirectory("client-qlog");
+    testQLog(new QuicServerConfig(), new QuicClientConfig().setQLogConfig(qlogConfig(dir, "the title", "the description")));
+    int count =  checkQLog(dir);
+    assertEquals(10, count);
   }
 
   @Test
   public void testServerQLog() throws Exception {
-    // Test server with a qlog dir
-    File qlogDir = File.createTempFile("vertx", "qlog");
-    assertTrue(qlogDir.delete());
-    assertTrue(qlogDir.mkdirs());
-    server = vertx.createQuicServer(new QuicServerConfig().setQLogConfig(qlogConfig(qlogDir, "the title", "the description")), QuicServerTest.SSL_OPTIONS);
+    File dir = TestUtils.createTmpDirectory("server-qlog");
+    testQLog(new QuicServerConfig().setQLogConfig(qlogConfig(dir, "the title", "the description")), new QuicClientConfig());
+    int count =  checkQLog(dir);
+    assertEquals(10, count);
+  }
+
+  private void testQLog(QuicServerConfig serverConfig,  QuicClientConfig clientConfig) throws Exception {
+    server = vertx.createQuicServer(serverConfig, QuicServerTest.SSL_OPTIONS);
     server.connectHandler(conn -> {
     });
+    client = vertx.createQuicClient(clientConfig, QuicClientTest.SSL_OPTIONS);
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
-    QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    connection.close().await();
+    for (int i = 0;i < 10;i++) {
+      QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+      connection.close().await();
+    }
     server.close().await();
     server = null;
-    String[] a = qlogDir.list();
+  }
+
+  private int checkQLog(File dir) throws IOException {
     int count = 0;
-    for (File qlogFile : qlogDir.listFiles()) {
+    for (File qlogFile : dir.listFiles()) {
       if (qlogFile.getName().endsWith(".qlog")) {
         count++;
         List<JsonObject> qlog = parseQLog(qlogFile);
@@ -109,6 +105,6 @@ public class QLogTest extends VertxTestBase {
         assertTrue(data.getString("description").contains("the description"));
       }
     }
-    assertTrue(count > 0);
+    return count;
   }
 }

@@ -34,14 +34,14 @@ public class QLogConfig {
   }
 
   /**
-   * @return the path of the log file
+   * @return the path of the log directory
    */
   public String getPath() {
     return path;
   }
 
   /**
-   * The path to the log file to use, this file must not exist yet. If the path is a directory the filename will be generated.
+   * The path to the log directory to use.
    *
    * @param path the path
    * @return this object instance
