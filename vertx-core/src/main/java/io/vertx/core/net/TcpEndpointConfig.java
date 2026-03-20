@@ -13,6 +13,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * Should this be {@code TcpConfig} instead ?
@@ -22,16 +23,18 @@ import java.time.Duration;
 @DataObject
 public abstract class TcpEndpointConfig extends EndpointConfig {
 
+  private TcpConfig transportConfig;
   private boolean ssl;
 
   public TcpEndpointConfig() {
     super();
-    setTransportConfig(new TcpConfig());
+    this.transportConfig = new TcpConfig();
     this.ssl = TCPSSLOptions.DEFAULT_SSL;
   }
 
   public TcpEndpointConfig(TcpEndpointConfig other) {
     super(other);
+    this.transportConfig = other.transportConfig.copy();
     this.ssl = other.ssl;
   }
 
@@ -49,7 +52,7 @@ public abstract class TcpEndpointConfig extends EndpointConfig {
    * @return the client TCP transport options
    */
   public TcpConfig getTransportConfig() {
-    return (TcpConfig) super.getTransportConfig();
+    return transportConfig;
   }
 
   /**
@@ -59,7 +62,8 @@ public abstract class TcpEndpointConfig extends EndpointConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public TcpEndpointConfig setTransportConfig(TcpConfig transportConfig) {
-    return (TcpEndpointConfig) super.setTransportConfig(transportConfig);
+    this.transportConfig = Objects.requireNonNull(transportConfig);
+    return this;
   }
 
   /**

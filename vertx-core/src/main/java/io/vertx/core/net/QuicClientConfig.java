@@ -46,8 +46,7 @@ public class QuicClientConfig extends QuicEndpointConfig {
   private Duration reconnectInterval;
 
   public QuicClientConfig() {
-
-    configureClient(getTransportConfig());
+    super(QuicConfig.forClient());
 
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.localAddress = null;
@@ -62,16 +61,6 @@ public class QuicClientConfig extends QuicEndpointConfig {
     this.localAddress = other.localAddress;
     this.reconnectAttempts = other.reconnectAttempts;
     this.reconnectInterval = other.reconnectInterval;
-  }
-
-  private static void configureClient(QuicConfig cfg) {
-    cfg.setInitialMaxData(QuicConfig.DEFAULT_CLIENT_MAX_INITIAL_DATA);
-    cfg.setInitialMaxStreamDataBidiLocal(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_LOCAL);
-    cfg.setInitialMaxStreamDataBidiRemote(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_REMOTE);
-    cfg.setInitialMaxStreamDataUni(QuicConfig.DEFAULT_CLIENT_MAX_STREAMS_DATA_UNI);
-    cfg.setInitialMaxStreamsBidi(QuicConfig.DEFAULT_CLIENT_MAX_STREAMS_DATA_BIDI);
-    cfg.setInitialMaxStreamsUni(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_UNI);
-    cfg.setDisableActiveMigration(QuicConfig.DEFAULT_CLIENT_DISABLE_ACTIVE_MIGRATION);
   }
 
   @Override

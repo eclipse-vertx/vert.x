@@ -67,10 +67,6 @@ public class TcpServerConfig extends TcpEndpointConfig {
     this.trafficShapingOptions = null;
   }
 
-  public TcpServerConfig setTransportConfig(TcpConfig transportConfig) {
-    return (TcpServerConfig)super.setTransportConfig(transportConfig);
-  }
-
   public TcpServerConfig setIdleTimeout(Duration idleTimeout) {
     return (TcpServerConfig)super.setIdleTimeout(idleTimeout);
   }
