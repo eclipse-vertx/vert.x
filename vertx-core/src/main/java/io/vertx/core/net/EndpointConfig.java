@@ -23,7 +23,6 @@ import java.util.Objects;
 @DataObject
 public abstract class EndpointConfig {
 
-  private TransportConfig transportConfig;
   private Duration idleTimeout;
   private Duration readIdleTimeout;
   private Duration writeIdleTimeout;
@@ -31,7 +30,6 @@ public abstract class EndpointConfig {
   private LogConfig logConfig;
 
   EndpointConfig() {
-    this.transportConfig = null;
     this.idleTimeout = null;
     this.readIdleTimeout = null;
     this.writeIdleTimeout = null;
@@ -40,7 +38,6 @@ public abstract class EndpointConfig {
   }
 
   public EndpointConfig(EndpointConfig other) {
-    this.transportConfig = other.transportConfig.copy();
     this.idleTimeout = other.idleTimeout;
     this.readIdleTimeout = other.readIdleTimeout;
     this.writeIdleTimeout = other.writeIdleTimeout;
@@ -51,14 +48,7 @@ public abstract class EndpointConfig {
   /**
    * @return the endpoint transport config
    */
-  public TransportConfig getTransportConfig() {
-    return transportConfig;
-  }
-
-  EndpointConfig setTransportConfig(TransportConfig transportConfig) {
-    this.transportConfig = Objects.requireNonNull(transportConfig);
-    return this;
-  }
+  public abstract TransportConfig getTransportConfig();
 
   /**
    * Set the stream idle timeout, zero or {@code null} means don't time out.

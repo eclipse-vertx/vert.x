@@ -19,29 +19,30 @@ import java.time.Duration;
  */
 public class QuicConfig extends TransportConfig {
 
-  public static final long DEFAULT_CLIENT_MAX_INITIAL_DATA = 10_485_760L;
-  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_LOCAL = 1_048_576L;
-  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_REMOTE = 0L;
-  public static final long DEFAULT_CLIENT_MAX_STREAMS_DATA_UNI = 0L;
-  public static final long DEFAULT_CLIENT_MAX_STREAMS_DATA_BIDI = 0L;
-  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_UNI = 0L;
-  public static final boolean DEFAULT_CLIENT_DISABLE_ACTIVE_MIGRATION = true;
-
-  public static final long DEFAULT_SERVER_MAX_INITIAL_DATA = 10_485_760L;
-  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
-  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_REMOTE = 1_048_576L;
-  public static final long DEFAULT_SERVER_MAX_STREAMS_DATA_UNI = 0L;
-  public static final long DEFAULT_SERVER_MAX_STREAMS_DATA_BIDI = 256L;
-  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_UNI = 0L;
-  public static final boolean DEFAULT_SERVER_DISABLE_ACTIVE_MIGRATION = true;
-
-  public static final long DEFAULT_MAX_INITIAL_DATA = 0L;
+  public static final long DEFAULT_MAX_INITIAL_DATA = 10_485_760L;
   public static final long DEFAULT_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
   public static final long DEFAULT_MAX_STREAM_DATA_BIDI_REMOTE = 0L;
   public static final long DEFAULT_MAX_STREAMS_DATA_UNI = 0L;
   public static final long DEFAULT_MAX_STREAMS_DATA_BIDI = 0L;
   public static final long DEFAULT_MAX_STREAM_DATA_UNI = 0L;
   public static final boolean DEFAULT_DISABLE_ACTIVE_MIGRATION = true;
+
+  public static final long DEFAULT_CLIENT_MAX_INITIAL_DATA = DEFAULT_MAX_INITIAL_DATA;
+  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_LOCAL = 1_048_576L;
+  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_REMOTE = DEFAULT_MAX_STREAM_DATA_BIDI_REMOTE;
+  public static final long DEFAULT_CLIENT_MAX_STREAMS_DATA_UNI = DEFAULT_MAX_STREAMS_DATA_UNI;
+  public static final long DEFAULT_CLIENT_MAX_STREAMS_DATA_BIDI = DEFAULT_MAX_STREAMS_DATA_BIDI;
+  public static final long DEFAULT_CLIENT_MAX_STREAM_DATA_UNI = DEFAULT_MAX_STREAM_DATA_UNI;
+  public static final boolean DEFAULT_CLIENT_DISABLE_ACTIVE_MIGRATION = false;
+
+  public static final long DEFAULT_SERVER_MAX_INITIAL_DATA = DEFAULT_MAX_INITIAL_DATA;
+  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_LOCAL = DEFAULT_MAX_STREAM_DATA_BIDI_LOCAL;
+  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_REMOTE = 1_048_576L;
+  public static final long DEFAULT_SERVER_MAX_STREAMS_DATA_UNI = DEFAULT_MAX_STREAMS_DATA_UNI;
+  public static final long DEFAULT_SERVER_MAX_STREAMS_DATA_BIDI = 256L;
+  public static final long DEFAULT_SERVER_MAX_STREAM_DATA_UNI = DEFAULT_MAX_STREAM_DATA_UNI;
+  public static final boolean DEFAULT_SERVER_DISABLE_ACTIVE_MIGRATION = DEFAULT_DISABLE_ACTIVE_MIGRATION;
+
   public static final Duration DEFAULT_MAX_IDLE_TIMEOUT = Duration.ofSeconds(40);
   public static final Duration DEFAULT_MAX_ACK_DELAY = Duration.ofMillis(25);
   public static final int DEFAULT_ACK_DELAY_EXPONENT = 3;
@@ -466,5 +467,35 @@ public class QuicConfig extends TransportConfig {
     }
     this.initialCongestionWindowPackets = initialCongestionWindowPackets;
     return this;
+  }
+
+  /**
+   * @return a sensitive default client configuration
+   */
+  public static QuicConfig forClient() {
+    QuicConfig cfg =  new QuicConfig();
+    cfg.setInitialMaxData(QuicConfig.DEFAULT_CLIENT_MAX_INITIAL_DATA);
+    cfg.setInitialMaxStreamDataBidiLocal(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_LOCAL);
+    cfg.setInitialMaxStreamDataBidiRemote(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_BIDI_REMOTE);
+    cfg.setInitialMaxStreamDataUni(QuicConfig.DEFAULT_CLIENT_MAX_STREAMS_DATA_UNI);
+    cfg.setInitialMaxStreamsBidi(QuicConfig.DEFAULT_CLIENT_MAX_STREAMS_DATA_BIDI);
+    cfg.setInitialMaxStreamsUni(QuicConfig.DEFAULT_CLIENT_MAX_STREAM_DATA_UNI);
+    cfg.setDisableActiveMigration(QuicConfig.DEFAULT_CLIENT_DISABLE_ACTIVE_MIGRATION);
+    return cfg;
+  }
+
+  /**
+   * @return a sensitive default server configuration
+   */
+  public static QuicConfig forServer() {
+    QuicConfig cfg =  new QuicConfig();
+    cfg.setInitialMaxData(QuicConfig.DEFAULT_SERVER_MAX_INITIAL_DATA);
+    cfg.setInitialMaxStreamDataBidiLocal(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_LOCAL);
+    cfg.setInitialMaxStreamDataBidiRemote(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_REMOTE);
+    cfg.setInitialMaxStreamDataUni(QuicConfig.DEFAULT_SERVER_MAX_STREAMS_DATA_UNI);
+    cfg.setInitialMaxStreamsBidi(QuicConfig.DEFAULT_SERVER_MAX_STREAMS_DATA_BIDI);
+    cfg.setInitialMaxStreamsUni(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_UNI);
+    cfg.setDisableActiveMigration(QuicConfig.DEFAULT_SERVER_DISABLE_ACTIVE_MIGRATION);
+    return cfg;
   }
 }

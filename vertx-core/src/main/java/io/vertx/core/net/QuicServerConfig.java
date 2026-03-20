@@ -42,8 +42,7 @@ public class QuicServerConfig extends QuicEndpointConfig {
   private KeyCertOptions clientAddressValidationKey;
 
   public QuicServerConfig() {
-
-    configureServer(getTransportConfig());
+    super(QuicConfig.forServer());
 
     port = DEFAULT_PORT;
     host = DEFAULT_HOST;
@@ -64,16 +63,6 @@ public class QuicServerConfig extends QuicEndpointConfig {
     this.clientAddressValidation = other.clientAddressValidation;
     this.clientAddressValidationTimeWindow = other.clientAddressValidationTimeWindow;
     this.clientAddressValidationKey = tokenValidationKey != null ? tokenValidationKey.copy() : null;
-  }
-
-  private static void configureServer(QuicConfig cfg) {
-    cfg.setInitialMaxData(QuicConfig.DEFAULT_SERVER_MAX_INITIAL_DATA);
-    cfg.setInitialMaxStreamDataBidiLocal(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_LOCAL);
-    cfg.setInitialMaxStreamDataBidiRemote(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_BIDI_REMOTE);
-    cfg.setInitialMaxStreamDataUni(QuicConfig.DEFAULT_SERVER_MAX_STREAMS_DATA_UNI);
-    cfg.setInitialMaxStreamsBidi(QuicConfig.DEFAULT_SERVER_MAX_STREAMS_DATA_BIDI);
-    cfg.setInitialMaxStreamsUni(QuicConfig.DEFAULT_SERVER_MAX_STREAM_DATA_UNI);
-    cfg.setDisableActiveMigration(QuicConfig.DEFAULT_SERVER_DISABLE_ACTIVE_MIGRATION);
   }
 
   @Override

@@ -13,6 +13,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
+import java.util.Objects;
 
 import static io.vertx.core.net.NetworkOptions.DEFAULT_REUSE_ADDRESS;
 
@@ -30,15 +31,15 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
   public static final int DEFAULT_MAX_STREAM_BIDI_REQUESTS = 1024;
   public static final int DEFAULT_MAX_STREAM_UNI_REQUESTS = 1024;
 
+  private QuicConfig transportConfig;
   private QLogConfig qlogConfig;
   private String keyLogFile;
   private int maxStreamBidiRequests;
   private int maxStreamUniRequests;
   private boolean reuseAddress;
 
-  public QuicEndpointConfig() {
-    super();
-    setTransportConfig(new QuicConfig());
+  protected QuicEndpointConfig(QuicConfig transportConfig) {
+    this.transportConfig = transportConfig;
     this.qlogConfig = null;
     this.keyLogFile = null;
     this.maxStreamBidiRequests = DEFAULT_MAX_STREAM_BIDI_REQUESTS;
@@ -51,6 +52,7 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
 
     QLogConfig qLogConfig = other.qlogConfig;
 
+    this.transportConfig = other.transportConfig.copy();
     this.qlogConfig = qLogConfig != null ? new QLogConfig(qLogConfig) : null;
     this.keyLogFile = other.keyLogFile;
     this.maxStreamBidiRequests = other.maxStreamBidiRequests;
@@ -58,15 +60,16 @@ public abstract class QuicEndpointConfig extends EndpointConfig {
     this.reuseAddress = other.reuseAddress;
   }
 
+  public QuicEndpointConfig setTransportConfig(QuicConfig transportConfig) {
+    this.transportConfig = Objects.requireNonNull(transportConfig);
+    return this;
+  }
+
   /**
    * @return the endpoint transport config
    */
   public QuicConfig getTransportConfig() {
-    return (QuicConfig)super.getTransportConfig();
-  }
-
-  public QuicEndpointConfig setTransportConfig(QuicConfig transportConfig) {
-    return (QuicEndpointConfig)super.setTransportConfig(transportConfig);
+    return transportConfig;
   }
 
   /**
