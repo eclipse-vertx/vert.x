@@ -650,6 +650,8 @@ include::buffers.adoc[]
 
 include::tcp.adoc[]
 
+include::quic.adoc[]
+
 include::http.adoc[]
 
 include::shareddata.adoc[]

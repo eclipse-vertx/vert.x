@@ -90,11 +90,6 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   }
 
   @Override
-  public Future<QuicConnection> connect(SocketAddress address) {
-    return connect(address, new QuicConnectOptions());
-  }
-
-  @Override
   public Future<QuicConnection> connect(SocketAddress address, QuicConnectOptions connectOptions) {
     ContextInternal context = vertx.getOrCreateContext();
     ClientSSLOptions sslOptions = connectOptions.getSslOptions();

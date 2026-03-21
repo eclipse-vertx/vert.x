@@ -94,9 +94,11 @@ When a server accepts an HTTP/2 connection, it sends to the client its {@link io
 
 === Configuring an HTTP/3 server
 
-Vert.x supports HTTP/3 over QUIC (todo : make link to QUIC)
+Vert.x supports HTTP/3 over QUIC, we recommend reading the <<quic_server,QUIC server section>>.
 
 QUIC is new transport layer for HTTP that replaces TCP and has TLS built-in, in fact TLS is mandatory.
+
+The implementation of QUIC relies on Netty and https://github.com/cloudflare/quiche[QUICHE], a savoury implementation of QUIC which requires native dependencies depending on OS/platform selection, you can learn more about running <<native_quic,native QUIC>>.
 
 [source,$lang]
 ----
@@ -112,6 +114,10 @@ can handle:
 ----
 {@link examples.HttpExamples#configurationOfH3ServerConcurrency}
 ----
+
+QUIC servers can be subject to https://www.cloudflare.com/learning/ddos/dns-amplification-ddos-attack/[amplification attacks].
+
+By default, a server is configured with a basic token validation which works well for development purpose, we recommend configuring token validation based on <<quic_client_address_validation,cryptography>> instead.
 
 === Hybrid HTTP server
 
@@ -968,7 +974,9 @@ To perform `h2` requests, TLS must be enabled:
 
 === Configuring an HTTP/3 client
 
-Vert.x supports HTTP/3 over QUIC (todo : make link to QUIC)
+Vert.x supports HTTP/3 over QUIC, we recommend reading the <<quic_client,QUIC client section>>.
+
+The implementation of QUIC relies on Netty and https://github.com/cloudflare/quiche[QUICHE], a savoury implementation of QUIC which requires native dependencies depending on OS/platform selection, you can learn more about running <<native_quic,native QUIC>>.
 
 [source,$lang]
 ----
@@ -1942,6 +1950,8 @@ are configured by
 ----
 {@link examples.HttpExamples#connectionSettings}
 ----
+
+IMPORTANT: a few HTTP/2 settings such as MAX_CONCURRENT_STREAMS are implemented by QUIC at the transport level for HTTP/3, you can refer to the QUIC transport <<quic_transport_configuration,configuration>>.
 
 === Connection shutdown
 
