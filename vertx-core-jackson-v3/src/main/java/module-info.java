@@ -2,9 +2,8 @@ module io.vertx.core.jacksonv3 {
 
   requires io.vertx.core;
   requires tools.jackson.core;
-    requires io.netty.buffer;
 
-    // API
+  // API
 
   // Internal API
 

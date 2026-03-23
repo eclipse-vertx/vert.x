@@ -15,17 +15,17 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.io.SegmentedStringWriter;
 import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.ByteArrayBuilder;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.SysProps;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.json.JsonCodec;
-import io.vertx.core.spi.json.JsonList;
-import io.vertx.core.spi.json.JsonMap;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -126,7 +126,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public <T> T fromBuffer(ByteBuf json, Class<T> clazz) throws DecodeException {
+  public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
     return fromParser(createParser(json), clazz);
   }
 
@@ -151,7 +151,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public byte[] toBuffer(Object object, boolean pretty) throws EncodeException {
+  public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     BufferRecycler br = factory._getBufferRecycler();
     try (ByteArrayBuilder bb = new ByteArrayBuilder(br)) {
       JsonGenerator generator = createGenerator(bb, pretty);
@@ -159,7 +159,7 @@ public class JacksonCodec implements JsonCodec {
       generator.close();
       byte[] result = bb.toByteArray();
       bb.release();
-      return result;
+      return Buffer.buffer(result);
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
@@ -175,9 +175,9 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
-  public static JsonParser createParser(ByteBuf buf) {
+  public static JsonParser createParser(Buffer buf) {
     try {
-      return factory.createParser((InputStream) new ByteBufInputStream(buf));
+      return factory.createParser((InputStream) new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
@@ -211,7 +211,7 @@ public class JacksonCodec implements JsonCodec {
     return fromParser(createParser(str), Object.class);
   }
 
-  public Object fromBuffer(ByteBuf buf) throws DecodeException {
+  public Object fromBuffer(Buffer buf) throws DecodeException {
     return fromParser(createParser(buf), Object.class);
   }
 
@@ -348,10 +348,10 @@ public class JacksonCodec implements JsonCodec {
   // In recursive calls, the callee is in charge of opening and closing the data structure
   public static void encodeJson(Object json, JsonGenerator generator) throws EncodeException {
     try {
-      if (json instanceof JsonMap) {
-        json = ((JsonMap)json).getMap();
-      } else if (json instanceof JsonList) {
-        json = ((JsonList)json).getList();
+      if (json instanceof JsonObject) {
+        json = ((JsonObject)json).getMap();
+      } else if (json instanceof JsonArray) {
+        json = ((JsonArray)json).getList();
       }
       if (json instanceof Map) {
         generator.writeStartObject();
@@ -381,10 +381,10 @@ public class JacksonCodec implements JsonCodec {
    */
   private static void encodeJson0(Object json, JsonGenerator generator) throws EncodeException {
     try {
-      if (json instanceof JsonMap) {
-        json = ((JsonMap)json).getMap();
-      } else if (json instanceof JsonList) {
-        json = ((JsonList)json).getList();
+      if (json instanceof JsonObject) {
+        json = ((JsonObject)json).getMap();
+      } else if (json instanceof JsonArray) {
+        json = ((JsonArray)json).getList();
       }
       if (json instanceof Map) {
         generator.writeStartObject();
@@ -462,10 +462,16 @@ public class JacksonCodec implements JsonCodec {
       if (!clazz.isAssignableFrom(Map.class)) {
         throw new DecodeException("Failed to decode");
       }
+      if (clazz == Object.class) {
+        o = new JsonObject((Map) o);
+      }
       return clazz.cast(o);
     } else if (o instanceof List) {
       if (!clazz.isAssignableFrom(List.class)) {
         throw new DecodeException("Failed to decode");
+      }
+      if (clazz == Object.class) {
+        o = new JsonArray((List) o);
       }
       return clazz.cast(o);
     } else if (o instanceof String) {

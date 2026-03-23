@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -65,7 +64,7 @@ public class JacksonDatabindTest extends VertxTestBase {
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = databindCodec.fromBuffer(BufferInternal.buffer(json, "UTF8").getByteBuf(), new TypeReference<List<Pojo>>() {
+    correct = databindCodec.fromBuffer(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {
     });
     assertTrue(((List) correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);

@@ -1,6 +1,5 @@
 package io.vertx.core.jacksonv3;
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
@@ -55,7 +54,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public <T> T fromBuffer(ByteBuf json, Class<T> clazz) throws DecodeException {
+  public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
     throw new UnsupportedOperationException();
   }
 
@@ -80,7 +79,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public ByteBuf toBuffer(Object object, boolean pretty) throws EncodeException {
+  public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     throw new UnsupportedOperationException();
   }
 

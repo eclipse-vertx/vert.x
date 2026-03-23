@@ -144,11 +144,11 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
 
   @CompilerControl(INLINE)
   private Buffer bufferJackson(JsonObject jsonObject) {
-    return Buffer.buffer(jacksonCodec.toBuffer(jsonObject));
+    return jacksonCodec.toBuffer(jsonObject);
   }
 
   @CompilerControl(INLINE)
   private Buffer bufferDatabind(JsonObject jsonObject) {
-    return Buffer.buffer(databindCodec.toBuffer(jsonObject));
+    return databindCodec.toBuffer(jsonObject);
   }
 }

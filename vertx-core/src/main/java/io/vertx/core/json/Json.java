@@ -12,12 +12,8 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -59,7 +55,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    return Buffer.buffer(CODEC.toBuffer(obj));
+    return CODEC.toBuffer(obj);
   }
 
   /**
@@ -94,13 +90,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(String str) throws DecodeException {
-    Object val = decodeValue(str, Object.class);
-    if (val instanceof List) {
-      return new JsonArray((List<Object>)val);
-    } else if (val instanceof Map) {
-      return new JsonObject((Map<String, Object>)val);
-    }
-    return val;
+    return decodeValue(str, Object.class);
   }
 
   /**
@@ -124,6 +114,6 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    return CODEC.fromBuffer(((BufferInternal)buf).getByteBuf(), clazz);
+    return CODEC.fromBuffer(buf, clazz);
   }
 }

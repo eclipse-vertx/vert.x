@@ -12,11 +12,9 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
-import io.vertx.core.spi.json.JsonList;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,7 +40,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonArray implements JsonList, Iterable<Object>, ClusterSerializable, Shareable {
+public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareable {
 
   private List<Object> list;
 
@@ -601,7 +599,7 @@ public class JsonArray implements JsonList, Iterable<Object>, ClusterSerializabl
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return Buffer.buffer(Json.CODEC.toBuffer(this, false));
+    return Json.CODEC.toBuffer(this, false);
   }
 
   /**
@@ -726,7 +724,7 @@ public class JsonArray implements JsonList, Iterable<Object>, ClusterSerializabl
   }
 
   private void fromBuffer(Buffer buf) {
-    list = Json.CODEC.fromBuffer(((BufferInternal)buf).getByteBuf(), List.class);
+    list = Json.CODEC.fromBuffer(buf, List.class);
   }
 
   private static class Iter implements Iterator<Object> {

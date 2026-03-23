@@ -12,7 +12,6 @@
 package io.vertx.benchmarks;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
@@ -140,6 +139,6 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
   }
 
   private void bufferDatabind(Buffer buffer, Blackhole blackhole) throws Exception {
-    blackhole.consume(jacksonCodec.fromBuffer(((BufferInternal)buffer).getByteBuf(), JsonObject.class));
+    blackhole.consume(jacksonCodec.fromBuffer(buffer, JsonObject.class));
   }
 }
