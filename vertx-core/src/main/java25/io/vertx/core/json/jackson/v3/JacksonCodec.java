@@ -108,11 +108,11 @@ public class JacksonCodec implements JsonCodec {
   }
 
   private static JsonParser createParser(Buffer buf) {
-    return factory.createParser(new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
+    return factory.createParser(ObjectReadContext.empty(), (InputStream) new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
   }
 
   private static JsonParser createParser(String str) {
-    return factory.createParser(str);
+    return factory.createParser(ObjectReadContext.empty(), str);
   }
 
   private static ObjectWriteContext owc(boolean pretty) {
@@ -189,9 +189,7 @@ public class JacksonCodec implements JsonCodec {
       parser.nextToken();
       res = parseAny(parser);
       remaining = parser.nextToken();
-    } catch (JacksonException e) {
-      throw new DecodeException(e.getMessage(), e);
-    } catch (IOException e) {
+    } catch (JacksonException | IOException e) {
       throw new DecodeException(e.getMessage(), e);
     } finally {
       close(parser);
@@ -209,7 +207,7 @@ public class JacksonCodec implements JsonCodec {
       case JsonTokenId.ID_START_ARRAY:
         return parseArray(parser);
       case JsonTokenId.ID_STRING:
-        return parser.getText();
+        return parser.getString();
       case JsonTokenId.ID_NUMBER_FLOAT:
       case JsonTokenId.ID_NUMBER_INT:
         return parser.getNumberValue();
