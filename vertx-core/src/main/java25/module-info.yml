@@ -92,6 +92,7 @@ exports:
   - package: io.vertx.core.internal.streams
   - package: io.vertx.core.internal.deployment
   - package: io.vertx.core.internal.resolver
+  - package: io.vertx.core.json.jackson.v3
 uses:
   - io.vertx.core.spi.VertxServiceProvider
   - io.vertx.core.spi.VerticleFactory
