@@ -12,7 +12,7 @@
 package io.vertx.it.json;
 
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.tests.json.JacksonTest;
+import io.vertx.tests.json.jackson.JacksonTest;
 import org.junit.Test;
 
 /**

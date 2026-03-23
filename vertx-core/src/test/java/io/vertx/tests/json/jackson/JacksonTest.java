@@ -9,20 +9,29 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.tests.json;
+package io.vertx.tests.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonTokenId;
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static com.fasterxml.jackson.core.StreamReadConstraints.*;
@@ -31,6 +40,15 @@ import static com.fasterxml.jackson.core.StreamReadConstraints.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class JacksonTest extends VertxTestBase {
+
+  private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};
+  private static final TypeReference<Long> LONG_TYPE_REF = new TypeReference<Long>() {};
+  private static final TypeReference<String> STRING_TYPE_REF = new TypeReference<String>() {};
+  private static final TypeReference<Float> FLOAT_TYPE_REF = new TypeReference<Float>() {};
+  private static final TypeReference<Double> DOUBLE_TYPE_REF = new TypeReference<Double>() {};
+  private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<Map<String, Object>>() {};
+  private static final TypeReference<List<Object>> LIST_TYPE_REF = new TypeReference<List<Object>>() {};
+  private static final TypeReference<Boolean> BOOLEAN_TYPE_REF = new TypeReference<Boolean>() {};
 
   private final JacksonCodec codec = new JacksonCodec();
 
@@ -199,5 +217,34 @@ public class JacksonTest extends VertxTestBase {
     assertEquals(JsonTokenId.ID_FIELD_NAME, parser.nextToken().id());
     assertEquals(JsonTokenId.ID_NUMBER_INT, parser.nextToken().id());
     assertEquals(JsonTokenId.ID_END_OBJECT, parser.nextToken().id());
+  }
+
+  @Test
+  public void testDecodeValue() {
+    Assume.assumeTrue(codec instanceof DatabindCodec);
+    assertDecodeValue(Buffer.buffer("42"), 42, INTEGER_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("42"), 42L, LONG_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("\"foobar\""), "foobar", STRING_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("3.4"), 3.4f, FLOAT_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("3.4"), 3.4d, DOUBLE_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("{\"foo\":4}"), Collections.singletonMap("foo", 4), MAP_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("[0,1,2]"), Arrays.asList(0, 1, 2), LIST_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("true"), true, BOOLEAN_TYPE_REF);
+    assertDecodeValue(Buffer.buffer("false"), false, BOOLEAN_TYPE_REF);
+  }
+
+  private <T> void assertDecodeValue(Buffer buffer, T expected, TypeReference<T> ref) {
+    DatabindCodec databindCodec = (DatabindCodec) codec;
+    Type type = ref.getType();
+    Class<?> clazz = type instanceof Class ? (Class<?>) type : (Class<?>) ((ParameterizedType) type).getRawType();
+    assertEquals(expected, codec.fromBuffer(buffer, clazz));
+    assertEquals(expected, databindCodec.fromBuffer(buffer, ref));
+    assertEquals(expected, codec.fromString(buffer.toString(StandardCharsets.UTF_8), clazz));
+    assertEquals(expected, databindCodec.fromString(buffer.toString(StandardCharsets.UTF_8), ref));
+    Buffer nullValue = Buffer.buffer("null");
+    assertNull(codec.fromBuffer(nullValue, clazz));
+    assertNull(databindCodec.fromBuffer(nullValue, ref));
+    assertNull(codec.fromString(nullValue.toString(StandardCharsets.UTF_8), clazz));
+    assertNull(databindCodec.fromString(nullValue.toString(StandardCharsets.UTF_8), ref));
   }
 }
