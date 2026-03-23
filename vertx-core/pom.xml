@@ -802,6 +802,30 @@
             </plugin>
           </plugins>
         </pluginManagement>
+        <plugins>
+          <plugin>
+            <groupId>io.github.dmlloyd.module-info</groupId>
+            <artifactId>module-info</artifactId>
+            <version>2.2</version>
+            <executions>
+              <execution>
+                <id>module-info</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>generate</goal>
+                </goals>
+                <configuration>
+                  <addPackages>false</addPackages>
+                  <addExports>false</addExports>
+                  <detectUses>false</detectUses>
+                  <detectProvides>false</detectProvides>
+                  <moduleInfoYml>${project.basedir}/src/main/java25/module-info.yml</moduleInfoYml>
+                  <outputDirectory>${project.build.outputDirectory}/META-INF/versions/25</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
     </profile>
 
