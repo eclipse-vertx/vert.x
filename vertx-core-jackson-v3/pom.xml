@@ -27,6 +27,7 @@
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
+    <maven.install.skip>true</maven.install.skip>
   </properties>
 
   <dependencies>
@@ -72,6 +73,13 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <skip>true</skip>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
