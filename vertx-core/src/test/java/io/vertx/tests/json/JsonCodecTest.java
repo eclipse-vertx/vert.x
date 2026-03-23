@@ -11,10 +11,12 @@
 package io.vertx.tests.json;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.WebSocketVersion;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
@@ -145,8 +147,8 @@ public class JsonCodecTest {
     Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
 
-    Buffer json = codec.toBuffer(jsonObject);
-    assertArrayEquals(expected.getBytes(), json.getBytes());
+    byte[] json = codec.toBuffer(jsonObject);
+    assertArrayEquals(expected.getBytes(), json);
   }
 
   @Test
@@ -166,8 +168,8 @@ public class JsonCodecTest {
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = TestUtils.toBase64String(bytes);
     Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
-    Buffer json = codec.toBuffer(jsonArray);
-    assertArrayEquals(expected.getBytes(), json.getBytes());
+    byte[] json = codec.toBuffer(jsonArray);
+    assertArrayEquals(expected.getBytes(), json);
   }
 
 
@@ -342,7 +344,7 @@ public class JsonCodecTest {
       } catch (DecodeException ignore) {
       }
       try {
-        codec.fromBuffer(Buffer.buffer(test), Map.class);
+        codec.fromBuffer(Unpooled.copiedBuffer(test, StandardCharsets.UTF_8), Map.class);
         fail();
       } catch (DecodeException ignore) {
       }
@@ -358,7 +360,7 @@ public class JsonCodecTest {
       } catch (DecodeException ignore) {
       }
       try {
-        codec.fromBuffer(Buffer.buffer(test), List.class);
+        codec.fromBuffer(Unpooled.copiedBuffer(test, StandardCharsets.UTF_8), List.class);
         fail();
       } catch (DecodeException ignore) {
       }
@@ -412,17 +414,17 @@ public class JsonCodecTest {
 
   @Test
   public void encodeToBuffer() {
-    Buffer json = codec.toBuffer("Hello World!");
+    byte[] json = codec.toBuffer("Hello World!");
     assertNotNull(json);
     // json strings are always UTF8
-    assertEquals("\"Hello World!\"", json.toString());
+    assertEquals("\"Hello World!\"", new String(json, StandardCharsets.UTF_8));
   }
 
   @Test
   public void encodeNullToBuffer() {
-    Buffer json = codec.toBuffer(null);
+    byte[] json = codec.toBuffer(null);
     assertNotNull(json);
-    assertEquals("null", json.toString());
+    assertEquals("null", new String(json, StandardCharsets.UTF_8));
   }
 
   @Test
@@ -442,33 +444,33 @@ public class JsonCodecTest {
   @Test
   public void testEnumValue() {
     // just a random enum
-    Buffer json = codec.toBuffer(WebSocketVersion.V13);
+    byte[] json = codec.toBuffer(WebSocketVersion.V13);
     assertNotNull(json);
-    assertEquals("\"V13\"", json.toString());
-    codec.fromBuffer(json, WebSocketVersion.class);
+    assertEquals("\"V13\"", new String(json, StandardCharsets.UTF_8));
+    codec.fromBuffer(Unpooled.copiedBuffer(json), WebSocketVersion.class);
   }
 
   @Test
   public void testBigNumberValues() {
-    Buffer json = codec.toBuffer(new BigDecimal("124567890124567890.09876543210987654321"));
+    byte[] json = codec.toBuffer(new BigDecimal("124567890124567890.09876543210987654321"));
     assertNotNull(json);
-    assertEquals("124567890124567890.09876543210987654321", json.toString());
-    Buffer json2 = codec.toBuffer(new BigInteger("12456789009876543211245678900987654321"));
+    assertEquals("124567890124567890.09876543210987654321", new String(json, StandardCharsets.UTF_8));
+    byte[] json2 = codec.toBuffer(new BigInteger("12456789009876543211245678900987654321"));
     assertNotNull(json2);
-    assertEquals("12456789009876543211245678900987654321", json2.toString());
+    assertEquals("12456789009876543211245678900987654321", new String(json2, StandardCharsets.UTF_8));
   }
 
   private <T> void assertDecodeValue(Buffer buffer, T expected, TypeReference<T> ref) {
     DatabindCodec databindCodec = (DatabindCodec) codec;
     Type type = ref.getType();
     Class<?> clazz = type instanceof Class ? (Class<?>) type : (Class<?>) ((ParameterizedType) type).getRawType();
-    assertEquals(expected, codec.fromBuffer(buffer, clazz));
-    assertEquals(expected, databindCodec.fromBuffer(buffer, ref));
+    assertEquals(expected, codec.fromBuffer(((BufferInternal)buffer).getByteBuf(), clazz));
+    assertEquals(expected, databindCodec.fromBuffer(((BufferInternal)buffer).getByteBuf(), ref));
     assertEquals(expected, codec.fromString(buffer.toString(StandardCharsets.UTF_8), clazz));
     assertEquals(expected, databindCodec.fromString(buffer.toString(StandardCharsets.UTF_8), ref));
     Buffer nullValue = Buffer.buffer("null");
-    assertNull(codec.fromBuffer(nullValue, clazz));
-    assertNull(databindCodec.fromBuffer(nullValue, ref));
+    assertNull(codec.fromBuffer(((BufferInternal)nullValue).getByteBuf(), clazz));
+    assertNull(databindCodec.fromBuffer(((BufferInternal)nullValue).getByteBuf(), ref));
     assertNull(codec.fromString(nullValue.toString(StandardCharsets.UTF_8), clazz));
     assertNull(databindCodec.fromString(nullValue.toString(StandardCharsets.UTF_8), ref));
   }
@@ -485,27 +487,27 @@ public class JsonCodecTest {
 
   private void testDecodeUnknowContent(boolean asBuffer) {
     String number = String.valueOf(1);
-    assertEquals(1, asBuffer ? codec.fromBuffer(Buffer.buffer(number)) : codec.fromString(number));
+    assertEquals(1, asBuffer ? codec.fromBuffer(Unpooled.copiedBuffer(number, StandardCharsets.UTF_8)) : codec.fromString(number));
 
     String bool = Boolean.TRUE.toString();
-    assertEquals(true, asBuffer ? codec.fromBuffer(Buffer.buffer(bool)) : codec.fromString(bool));
+    assertEquals(true, asBuffer ? codec.fromBuffer(Unpooled.copiedBuffer(bool, StandardCharsets.UTF_8)) : codec.fromString(bool));
 
     String text = "\"whatever\"";
-    assertEquals("whatever", asBuffer ? codec.fromBuffer(Buffer.buffer(text)) : codec.fromString(text));
+    assertEquals("whatever", asBuffer ? codec.fromBuffer(Unpooled.copiedBuffer(text, StandardCharsets.UTF_8)) : codec.fromString(text));
 
     String nullText = "null";
-    assertNull(asBuffer ? codec.fromBuffer(Buffer.buffer(nullText)) : codec.fromString(nullText));
+    assertNull(asBuffer ? codec.fromBuffer(Unpooled.copiedBuffer(nullText, StandardCharsets.UTF_8)) : codec.fromString(nullText));
 
     JsonObject obj = new JsonObject().put("foo", "bar");
-    assertEquals(obj, asBuffer ? codec.fromBuffer(obj.toBuffer()) : codec.fromString(obj.toString()));
+    assertEquals(obj.getMap(), asBuffer ? codec.fromBuffer(((BufferInternal)obj.toBuffer()).getByteBuf()) : codec.fromString(obj.toString()));
 
-    JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
-    assertEquals(arr, asBuffer ? codec.fromBuffer(arr.toBuffer()) : codec.fromString(arr.toString()));
+    JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj.getMap());
+    assertEquals(arr.getList(), asBuffer ? codec.fromBuffer(((BufferInternal)arr.toBuffer()).getByteBuf()) : codec.fromString(arr.toString()));
 
     String invalidText = "\"invalid";
     try {
       if (asBuffer) {
-        codec.fromBuffer(Buffer.buffer(invalidText));
+        codec.fromBuffer(Unpooled.copiedBuffer(invalidText, StandardCharsets.UTF_8));
       } else {
         codec.fromString(invalidText);
       }

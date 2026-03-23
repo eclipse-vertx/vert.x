@@ -11,7 +11,7 @@
 
 package io.vertx.core.spi.json;
 
-import io.vertx.core.buffer.Buffer;
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 
@@ -31,9 +31,9 @@ public interface JsonCodec {
   <T> T fromString(String json, Class<T> clazz) throws DecodeException;
 
   /**
-   * Like {@link #fromString(String, Class)} but with a json {@link Buffer}
+   * Like {@link #fromString(String, Class)} but with a json {@link ByteBuf}
    */
-  <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException;
+  <T> T fromBuffer(ByteBuf json, Class<T> clazz) throws DecodeException;
 
   /**
    * Like {@link #fromString(String, Class)} but with a json {@code Object}
@@ -58,14 +58,14 @@ public interface JsonCodec {
   String toString(Object object, boolean pretty) throws EncodeException;
 
   /**
-   * Like {@link #toString(Object, boolean)} but with a json {@link Buffer}
+   * Like {@link #toString(Object, boolean)} but with a json {@link ByteBuf}
    */
-  Buffer toBuffer(Object object, boolean pretty) throws EncodeException;
+  byte[] toBuffer(Object object, boolean pretty) throws EncodeException;
 
   /**
-   * Like {@link #toString(Object)} but with a json {@link Buffer}
+   * Like {@link #toString(Object)} but with a json {@link ByteBuf}
    */
-  default Buffer toBuffer(Object object) throws EncodeException {
+  default byte[] toBuffer(Object object) throws EncodeException {
     return toBuffer(object, false);
   }
 }

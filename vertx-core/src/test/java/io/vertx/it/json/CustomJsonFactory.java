@@ -11,6 +11,7 @@
 
 package io.vertx.it.json;
 
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
@@ -34,7 +35,7 @@ public class CustomJsonFactory implements JsonFactory {
       throw new UnsupportedOperationException();
     }
     @Override
-    public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
+    public <T> T fromBuffer(ByteBuf json, Class<T> clazz) throws DecodeException {
       throw new UnsupportedOperationException();
     }
     @Override
@@ -56,8 +57,8 @@ public class CustomJsonFactory implements JsonFactory {
       }
     }
     @Override
-    public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-      return Buffer.buffer(toString(object));
+    public byte[] toBuffer(Object object, boolean pretty) throws EncodeException {
+      return Buffer.buffer(toString(object)).getBytes();
     }
   };
 

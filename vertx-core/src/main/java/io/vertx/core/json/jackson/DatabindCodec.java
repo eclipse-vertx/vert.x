@@ -15,13 +15,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,17 +78,17 @@ public class DatabindCodec extends JacksonCodec {
   }
 
   @Override
-  public <T> T fromBuffer(Buffer buf, Class<T> clazz) throws DecodeException {
+  public <T> T fromBuffer(ByteBuf buf, Class<T> clazz) throws DecodeException {
     return fromParser(createParser(buf), clazz);
   }
 
-  public <T> T fromBuffer(Buffer buf, TypeReference<T> typeRef) throws DecodeException {
+  public <T> T fromBuffer(ByteBuf buf, TypeReference<T> typeRef) throws DecodeException {
     return fromParser(createParser(buf), typeRef);
   }
 
-  public static JsonParser createParser(BufferInternal buf) {
+  public static JsonParser createParser(ByteBuf buf) {
     try {
-      return DatabindCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
+      return DatabindCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf));
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
@@ -156,7 +153,7 @@ public class DatabindCodec extends JacksonCodec {
   }
 
   @Override
-  public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
+  public byte[] toBuffer(Object object, boolean pretty) throws EncodeException {
     try {
       byte[] result;
       if (pretty) {
@@ -164,7 +161,7 @@ public class DatabindCodec extends JacksonCodec {
       } else {
         result = mapper.writeValueAsBytes(object);
       }
-      return Buffer.buffer(result);
+      return result;
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
@@ -174,11 +171,11 @@ public class DatabindCodec extends JacksonCodec {
     try {
       if (o instanceof List) {
         List list = (List) o;
-        return new JsonArray(list);
+        return list;
       } else if (o instanceof Map) {
         @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) o;
-        return new JsonObject(map);
+        return map;
       }
       return o;
     } catch (Exception e) {

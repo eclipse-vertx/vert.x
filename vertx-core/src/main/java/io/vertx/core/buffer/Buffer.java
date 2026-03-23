@@ -12,6 +12,7 @@
 package io.vertx.core.buffer;
 
 
+import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
@@ -135,7 +136,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return a Json value which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ... if the buffer contains an array, object, string, ...etc
    */
   default Object toJsonValue() {
-    return Json.CODEC.fromBuffer(this, Object.class);
+    return Json.CODEC.fromBuffer(((BufferInternal) this).getByteBuf(), Object.class);
   }
 
   /**
