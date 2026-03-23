@@ -26,7 +26,7 @@
   <name>Vert.x Core Jackson v3 plugin</name>
 
   <properties>
-    <maven.compiler.release>25</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
   </properties>
 
   <dependencies>

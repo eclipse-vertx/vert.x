@@ -1,5 +1,6 @@
 package io.vertx.tests.jacksonv3;
 
+import io.vertx.core.jacksonv3.JacksonCodec;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import org.junit.Test;
@@ -20,7 +21,7 @@ public class JsonTest {
 
   @Test
   public void testFactory() {
-    assertEquals("io.vertx.core.json.jackson.v3.JacksonCodec", Json.CODEC.getClass().getName());
+    assertEquals(JacksonCodec.class, Json.CODEC.getClass());
   }
 
   @Test

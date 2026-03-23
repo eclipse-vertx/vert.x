@@ -131,12 +131,6 @@
       <artifactId>jackson-databind</artifactId>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>tools.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>3.0.0-rc1</version>
-      <optional>true</optional>
-    </dependency>
 
     <!-- Loggers -->
     <dependency>
@@ -247,19 +241,6 @@
                     <classifier>processor</classifier>
                   </annotationProcessorPath>
                 </annotationProcessorPaths>
-              </configuration>
-            </execution>
-            <execution>
-              <id>jdk25</id>
-              <goals>
-                <goal>compile</goal>
-              </goals>
-              <configuration>
-                <release>25</release>
-                <compileSourceRoots>
-                  <compileSourceRoot>${project.basedir}/src/main/java25</compileSourceRoot>
-                </compileSourceRoots>
-                <multiReleaseOutput>true</multiReleaseOutput>
               </configuration>
             </execution>
           </executions>
