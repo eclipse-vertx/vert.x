@@ -249,19 +249,6 @@
                 </annotationProcessorPaths>
               </configuration>
             </execution>
-            <execution>
-              <id>jdk25</id>
-              <goals>
-                <goal>compile</goal>
-              </goals>
-              <configuration>
-                <release>25</release>
-                <compileSourceRoots>
-                  <compileSourceRoot>${project.basedir}/src/main/java25</compileSourceRoot>
-                </compileSourceRoots>
-                <multiReleaseOutput>true</multiReleaseOutput>
-              </configuration>
-            </execution>
           </executions>
         </plugin>
 
@@ -467,6 +454,9 @@
                 <vertx.jackson.defaultReadMaxNameLength>100</vertx.jackson.defaultReadMaxNameLength>
                 <vertx.jackson.defaultReadMaxTokenCount>100</vertx.jackson.defaultReadMaxTokenCount>
               </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
@@ -482,6 +472,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -512,6 +503,7 @@
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -531,6 +523,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -780,6 +773,37 @@
   </build>
 
   <profiles>
+
+    <profile>
+      <id>Java25</id>
+      <activation>
+        <jdk>[25,)</jdk>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>Java25</id>
+                  <goals>
+                    <goal>compile</goal>
+                  </goals>
+                  <configuration>
+                    <release>25</release>
+                    <compileSourceRoots>
+                      <compileSourceRoot>${project.basedir}/src/main/java25</compileSourceRoot>
+                    </compileSourceRoots>
+                    <multiReleaseOutput>true</multiReleaseOutput>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
 
     <profile>
       <id>NativeEpoll</id>

@@ -68,7 +68,20 @@
   <modules>
     <module>vertx-core-logging</module>
     <module>vertx-core</module>
-    <module>vertx-core-jackson-v3</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>Java25</id>
+      <activation>
+        <jdk>[25,)</jdk>
+      </activation>
+      <modules>
+        <module>vertx-core-logging</module>
+        <module>vertx-core</module>
+        <module>vertx-core-jackson-v3</module>
+      </modules>
+    </profile>
+  </profiles>
 
 </project>
