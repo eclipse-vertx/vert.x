@@ -1,29 +1,30 @@
 package io.vertx.core.json.jackson.v3;
 
+import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.SysProps;
+import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.json.JsonCodec;
-import tools.jackson.core.JsonGenerator;
-import tools.jackson.core.JsonParser;
-import tools.jackson.core.JsonToken;
-import tools.jackson.core.JsonTokenId;
+import tools.jackson.core.*;
 import tools.jackson.core.io.SegmentedStringWriter;
 import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.json.JsonFactoryBuilder;
+import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.core.util.BufferRecycler;
+import tools.jackson.core.util.ByteArrayBuilder;
+import tools.jackson.core.util.DefaultPrettyPrinter;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
@@ -31,21 +32,107 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 public class JacksonCodec implements JsonCodec {
 
-  private static final JsonFactory factory = new JsonFactory();
+  private static final Logger log = LoggerFactory.getLogger(io.vertx.core.json.jackson.JacksonCodec.class);
+
+  private static JsonFactory buildFactory() {
+    JsonFactoryBuilder tsfBuilder = JsonFactory.builder();
+
+    // Build stream read constraints
+    StreamReadConstraints.Builder readConstraintsBuilder = StreamReadConstraints.builder();
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxNestingDepth(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_NESTING_DEPTH.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_DEPTH + " instead");
+    }
+    try {
+      OptionalLong override = SysProps.JACKSON_DEFAULT_READ_MAX_DOC_LEN.getAsLong();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxDocumentLength(override.getAsLong());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_DOC_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_DOC_LEN + " instead");
+    }
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_NUM_LEN.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxNumberLength(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_NUM_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_NUM_LEN + " instead");
+    }
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_STRING_LEN.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxStringLength(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_STRING_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_STRING_LEN + " instead");
+    }
+    try {
+      OptionalInt override = SysProps.JACKSON_DEFAULT_READ_MAX_NAME_LEN.getAsInt();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxNameLength(override.getAsInt());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_NAME_LEN.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_NAME_LEN + " instead");
+    }
+    try {
+      OptionalLong override = SysProps.JACKSON_DEFAULT_READ_MAX_TOKEN_COUNT.getAsLong();
+      if (override.isPresent()) {
+        readConstraintsBuilder.maxTokenCount(override.getAsLong());
+      }
+    } catch (IllegalArgumentException e) {
+      log.warn("Invalid " + SysProps.JACKSON_DEFAULT_READ_MAX_TOKEN_COUNT.name + " system property value, use " +
+        StreamReadConstraints.DEFAULT_MAX_TOKEN_COUNT + " instead");
+    }
+
+    tsfBuilder.streamReadConstraints(readConstraintsBuilder.build());
+
+    // Non-standard JSON but we allow C style comments in our JSON
+    tsfBuilder.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true);
+
+    return tsfBuilder.build();
+  }
+
+  private static final JsonFactory factory = buildFactory();
 
   public JacksonCodec() {
+  }
+
+  private static JsonParser createParser(Buffer buf) {
+    return factory.createParser(new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
   }
 
   private static JsonParser createParser(String str) {
     return factory.createParser(str);
   }
 
-  private static JsonGenerator createGenerator(Writer out, boolean pretty) {
-    JsonGenerator generator = factory.createGenerator(out);
+  private static ObjectWriteContext owc(boolean pretty) {
     if (pretty) {
-      throw new UnsupportedOperationException();
+      PrettyPrinter prettyPrinter = new DefaultPrettyPrinter();
+      return new ObjectWriteContext.Base() {
+        @Override
+        public PrettyPrinter getPrettyPrinter() { return prettyPrinter; }
+      };
+    } else {
+      return ObjectWriteContext.empty();
     }
-    return generator;
+  }
+
+  private static JsonGenerator createGenerator(OutputStream out, boolean pretty) {
+    return factory.createGenerator(owc(pretty), out);
+  }
+
+  private static JsonGenerator createGenerator(Writer out, boolean pretty) {
+    return factory.createGenerator(owc(pretty), out);
   }
 
   @Override
@@ -55,7 +142,7 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
-    throw new UnsupportedOperationException();
+    return fromParser(createParser(json), clazz);
   }
 
   @Override
@@ -80,7 +167,19 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-    throw new UnsupportedOperationException();
+    BufferRecycler br = factory._getBufferRecycler();
+    try (ByteArrayBuilder bb = new ByteArrayBuilder(br)) {
+      JsonGenerator generator = createGenerator(bb, pretty);
+      encodeJson(object, generator);
+      generator.close();
+      byte[] result = bb.toByteArray();
+      bb.release();
+      return Buffer.buffer(result);
+    } catch (Exception e) {
+      throw new EncodeException(e.getMessage(), e);
+    } finally {
+      br.releaseToPool();
+    }
   }
 
   public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
@@ -90,6 +189,8 @@ public class JacksonCodec implements JsonCodec {
       parser.nextToken();
       res = parseAny(parser);
       remaining = parser.nextToken();
+    } catch (JacksonException e) {
+      throw new DecodeException(e.getMessage(), e);
     } catch (IOException e) {
       throw new DecodeException(e.getMessage(), e);
     } finally {
