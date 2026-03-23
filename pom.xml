@@ -67,7 +67,6 @@
 
   <modules>
     <module>vertx-core-logging</module>
-    <module>vertx-core-json-spi</module>
     <module>vertx-core</module>
     <module>vertx-core-jackson-v3</module>
   </modules>
