@@ -6419,7 +6419,7 @@ public abstract class HttpTest extends SimpleHttpTest {
     client.close();
     client = ((HttpClientBuilderInternal)httpClientBuilder()
       .with(new PoolOptions().setCleanerPeriod(50)))
-      .resolverTtl(Duration.ofMillis(50))
+      .resolverIdleTimeout(Duration.ofMillis(50))
       .build();
     server.requestHandler(request -> {
       request.response().end();

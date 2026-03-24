@@ -5,6 +5,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
+import io.vertx.core.http.impl.HttpClientBuilderInternal;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.net.endpoint.LoadBalancer;
@@ -22,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -584,9 +586,9 @@ public class ResolvingHttpClientTest extends VertxTestBase {
     FakeAddressResolver resolver = new FakeAddressResolver();
     SocketAddress addr1 = SocketAddress.inetSocketAddress(HttpTestBase.DEFAULT_HTTP_PORT, "localhost");
     FakeRegistration registration = resolver.registerAddress("example.com", Arrays.asList(addr1));
-    HttpClientInternal client = (HttpClientInternal) vertx.httpClientBuilder()
-      .with(new HttpClientOptions().setKeepAliveTimeout(1))
+    HttpClientInternal client = ((HttpClientBuilderInternal) vertx.httpClientBuilder())
       .withAddressResolver(resolver)
+      .resolverIdleTimeout(Duration.ofSeconds(1))
       .build();
     String res = awaitFuture(client.request(new RequestOptions().setServer(new FakeAddress("example.com"))).compose(req -> req
       .send()

@@ -27,7 +27,6 @@ import io.vertx.core.net.endpoint.EndpointResolver;
 import io.vertx.core.net.TcpClientConfig;
 import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
 import java.util.List;
@@ -45,20 +44,20 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private AddressResolver<?> addressResolver;
   private LoadBalancer loadBalancer;
-  private Duration resolverKeepAlive;
+  private Duration resolverIdleTimeout;
 
   public HttpClientBuilderInternal(VertxInternal vertx) {
     this.vertx = vertx;
-    this.resolverKeepAlive = Duration.ofSeconds(10);
+    this.resolverIdleTimeout = Duration.ofSeconds(10);
   }
 
-  public HttpClientBuilder with(HttpClientConfig config) {
+  public HttpClientBuilderInternal with(HttpClientConfig config) {
     this.clientConfig = config;
     return this;
   }
 
   @Override
-  public HttpClientBuilder with(HttpClientOptions options) {
+  public HttpClientBuilderInternal with(HttpClientOptions options) {
     this.clientConfig = new HttpClientConfig(options);
     this.sslOptions = options.getSslOptions();
     this.sslEngineOptions = options.getSslEngineOptions();
@@ -67,52 +66,52 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientBuilder with(PoolOptions options) {
+  public HttpClientBuilderInternal with(PoolOptions options) {
     this.poolOptions = options;
     return this;
   }
 
   @Override
-  public HttpClientBuilder with(ClientSSLOptions options) {
+  public HttpClientBuilderInternal with(ClientSSLOptions options) {
     this.sslOptions = options;
     return this;
   }
 
   @Override
-  public HttpClientBuilder with(SSLEngineOptions engine) {
+  public HttpClientBuilderInternal with(SSLEngineOptions engine) {
     this.sslEngineOptions = engine;
     return this;
   }
 
   @Override
-  public HttpClientBuilder withConnectHandler(Handler<HttpConnection> handler) {
+  public HttpClientBuilderInternal withConnectHandler(Handler<HttpConnection> handler) {
     this.connectHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientBuilder withRedirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
+  public HttpClientBuilderInternal withRedirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     this.redirectHandler = handler;
     return this;
   }
 
   @Override
-  public HttpClientBuilder withAddressResolver(AddressResolver<?> resolver) {
+  public HttpClientBuilderInternal withAddressResolver(AddressResolver<?> resolver) {
     this.addressResolver = resolver;
     return this;
   }
 
   @Override
-  public HttpClientBuilder withLoadBalancer(LoadBalancer loadBalancer) {
+  public HttpClientBuilderInternal withLoadBalancer(LoadBalancer loadBalancer) {
     this.loadBalancer = loadBalancer;
     return this;
   }
 
-  public HttpClientBuilderInternal resolverTtl(Duration ttl) {
-    if (ttl.isNegative() || ttl.isZero()) {
-      throw new IllegalArgumentException("Invalid TTL");
+  public HttpClientBuilderInternal resolverIdleTimeout(Duration timeout) {
+    if (timeout.isNegative() || timeout.isZero()) {
+      throw new IllegalArgumentException("Invalid resolver idle timeout");
     }
-    this.resolverKeepAlive = ttl;
+    this.resolverIdleTimeout = timeout;
     return this;
   }
 
@@ -128,7 +127,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       if (_loadBalancer == null) {
         _loadBalancer = LoadBalancer.ROUND_ROBIN;
       }
-      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer, co.getHttp1Config().getKeepAliveTimeout().toMillis());
+      return new EndpointResolverImpl<>(vertx, _addressResolver.endpointResolver(vertx), _loadBalancer, resolverIdleTimeout.toMillis());
     }
     return null;
   }
@@ -167,7 +166,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       nonProxyHosts,
       loadBalancer,
       followAlternativeServices,
-      resolverKeepAlive,
+      resolverIdleTimeout,
       config.isVerifyHost(),
       config.isSsl(),
       config.getDefaultHost(),
@@ -223,7 +222,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   }
 
   @Override
-  public HttpClientAgent build() {
+  public HttpClientInternal build() {
 
     HttpClientConfig co = clientConfig;
     if (co == null) {
@@ -295,7 +294,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
     HttpClientConfig co2 = co;
     CloseFuture cf = resolveCloseFuture();
-    HttpClientAgent client;
+    HttpClientInternal client;
     Closeable closeable;
     if (shared != null) {
       CloseFuture closeFuture = new CloseFuture();
