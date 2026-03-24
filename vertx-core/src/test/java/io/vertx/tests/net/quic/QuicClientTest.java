@@ -48,6 +48,7 @@ public class QuicClientTest extends VertxTestBase {
 
   public static final ClientSSLOptions SSL_OPTIONS = new ClientSSLOptions()
     .setTrustOptions(Trust.SERVER_JKS.get())
+    .setHostnameVerificationAlgorithm("")
     .setApplicationLayerProtocols(List.of("test-protocol"));
 
   static QuicClientConfig clientOptions() {
@@ -395,6 +396,7 @@ public class QuicClientTest extends VertxTestBase {
     QuicConnectOptions connectOptions = new QuicConnectOptions()
       .setSslOptions(new ClientSSLOptions()
         .setTrustAll(true)
+        .setHostnameVerificationAlgorithm("")
         .setApplicationLayerProtocols(List.of("test-protocol")));
     SocketAddress connectAddr = SocketAddress.inetSocketAddress(new InetSocketAddress(InetAddress.getByAddress(host, NetUtil.LOCALHOST4.getAddress()), 9999));
     QuicConnection connection = client.connect(connectAddr,

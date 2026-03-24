@@ -17,6 +17,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.tls.ClientSslContextProvider;
+import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
@@ -53,7 +55,7 @@ public class SslChannelProvider {
                                            List<String> applicationProtocols,
                                            long sslHandshakeTimeout,
                                            TimeUnit sslHandshakeTimeoutUnit) {
-    SslContext sslContext = sslContextProvider.sslClientContext(serverName, applicationProtocols);
+    SslContext sslContext = ((ClientSslContextProvider)sslContextProvider).sslClientContext(serverName, applicationProtocols);
     SslHandler sslHandler;
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     if (peer != null) {
@@ -74,7 +76,7 @@ public class SslChannelProvider {
   }
 
   private SslHandler createServerSslHandler(List<String> applicationProtocols, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
-    SslContext sslContext = sslContextProvider.sslServerContext(applicationProtocols);
+    SslContext sslContext = ((ServerSslContextProvider)sslContextProvider).sslServerContext(applicationProtocols);
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     SslHandler sslHandler;
     if (remoteAddress != null) {
@@ -88,7 +90,7 @@ public class SslChannelProvider {
 
   private SniHandler createSniHandler(List<String> applicationProtocols, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(sslContextProvider.serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, remoteAddress);
+    return new VertxSniHandler(((ServerSslContextProvider)sslContextProvider).serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, remoteAddress);
   }
 
 }

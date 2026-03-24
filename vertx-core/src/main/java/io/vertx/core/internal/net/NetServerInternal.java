@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -29,7 +30,7 @@ public interface NetServerInternal extends NetServer, MetricsProvider {
   @Override
   NetServerInternal exceptionHandler(Handler<Throwable> handler);
 
-  SslContextProvider sslContextProvider();
+  ServerSslContextProvider sslContextProvider();
 
   Future<NetServer> listen(ContextInternal context, SocketAddress localAddress);
 

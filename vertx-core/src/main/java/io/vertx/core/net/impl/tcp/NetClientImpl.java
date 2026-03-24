@@ -30,6 +30,8 @@ import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetClientInternal;
+import io.vertx.core.internal.tls.ClientSslContextManager;
+import io.vertx.core.internal.tls.ClientSslContextProvider;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
@@ -64,7 +66,7 @@ class NetClientImpl implements NetClientInternal {
   private final TcpConfig transportOptions;
   private final String protocol;
   private final boolean registerWriteHandler;
-  private final SslContextManager sslContextManager;
+  private final ClientSslContextManager sslContextManager;
   private volatile ClientSSLOptions sslOptions;
   public final ConnectionGroup channelGroup;
   private final TransportMetrics metrics;
@@ -87,7 +89,7 @@ class NetClientImpl implements NetClientInternal {
     LogConfig logConfig = config.getLogConfig();
     this.config = config;
     this.registerWriteHandler = registerWriteHandler;
-    this.sslContextManager = new SslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions != null && sslOptions.isUseAlpn()));
+    this.sslContextManager = new ClientSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions != null && sslOptions.isUseAlpn()));
     this.metrics = vertx.metrics() != null ? vertx.metrics().createTcpClientMetrics(config, protocol) : null;
     this.logging = logConfig != null && logConfig.isEnabled() ? logConfig.getDataFormat() : null;
     this.idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout() : Duration.ofMillis(0L);
@@ -227,7 +229,7 @@ class NetClientImpl implements NetClientInternal {
         } else if (sslOptions.getHostnameVerificationAlgorithm() == null) {
           connectHandler.fail("Missing hostname verification algorithm");
         } else {
-          Future<SslContextProvider> fut;
+          Future<ClientSslContextProvider> fut;
           fut = sslContextManager.resolveSslContextProvider(sslOptions, context);
           fut.onComplete(ar -> {
             if (ar.succeeded()) {

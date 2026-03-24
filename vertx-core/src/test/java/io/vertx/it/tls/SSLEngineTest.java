@@ -15,6 +15,7 @@ import io.netty.handler.ssl.OpenSslSessionContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
@@ -22,6 +23,7 @@ import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
+import org.apache.logging.log4j.core.jmx.Server;
 import org.junit.Test;
 
 import static io.vertx.test.core.AssertExpectations.that;
@@ -104,8 +106,8 @@ public class SSLEngineTest extends HttpTestBase {
     }
     NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
     assertEquals(tcpServer.actualPort(), server.actualPort());
-    SslContextProvider provider = tcpServer.sslContextProvider();
-    SslContext ctx = provider.createContext(false, null);
+    ServerSslContextProvider provider = tcpServer.sslContextProvider();
+    SslContext ctx = provider.createServerContext(null);
     switch (expectedSslContext != null ? expectedSslContext : "jdk") {
       case "jdk":
         assertTrue(ctx.sessionContext().getClass().getName().equals("sun.security.ssl.SSLSessionContextImpl"));

@@ -30,6 +30,9 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.resolver.NameResolver;
+import io.vertx.core.internal.tls.ClientSslContextManager;
+import io.vertx.core.internal.tls.ClientSslContextProvider;
+import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectRetry;
@@ -48,7 +51,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
 
   private static final Logger log = LoggerFactory.getLogger(QuicClientImpl.class);
   public static final QuicConnectOptions DEFAULT_CONNECT_OPTIONS = new QuicConnectOptions();
-  private static final AttributeKey<SslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(SslContextProvider.class.getName());
+  private static final AttributeKey<ClientSslContextProvider> SSL_CONTEXT_PROVIDER_KEY = AttributeKey.newInstance(ClientSslContextProvider.class.getName());
   private static final AttributeKey<HostAndPort> SSL_PEER_KEY = AttributeKey.newInstance(HostAndPort.class.getName());
   private static final AttributeKey<List<String>> APPLICATION_PROTOCOLS_KEY = AttributeKey.newInstance("io.vertx.net.quic.client.application_protocols");
 
@@ -76,12 +79,17 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
   }
 
   @Override
+  ClientSslContextManager sslContextManager(BoringSslEngineOptions engine) {
+    return new ClientSslContextManager(engine);
+  }
+
+  @Override
   protected Future<QuicCodecBuilder<?>> codecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
     return context.succeededFuture(new QuicClientCodecBuilder()
       .sslEngineProvider(q -> {
-        SslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
+        ClientSslContextProvider sslContextProvider = q.attr(SSL_CONTEXT_PROVIDER_KEY).get();
         Attribute<List<String>> applicationProtocols = q.attr(APPLICATION_PROTOCOLS_KEY);
-        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createContext(false, applicationProtocols.get());
+        QuicSslContext sslContext = (QuicSslContext) sslContextProvider.createClientContext(applicationProtocols.get());
         Attribute<HostAndPort> peerAttr = q.attr(SSL_PEER_KEY);
         HostAndPort peer = peerAttr.get();
         return sslContext.newEngine(q.alloc(), peer.host(), peer.port());
@@ -105,7 +113,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
     if (applicationProtocols == null || applicationProtocols.isEmpty()) {
       return context.failedFuture(new IllegalArgumentException("Application protocols must be set on client SSL options"));
     }
-    Future<SslContextProvider> fut = manager.resolveSslContextProvider(sslOptions, context);
+    Future<ClientSslContextProvider> fut = ((ClientSslContextManager)manager).resolveSslContextProvider(sslOptions, context);
     return fut.compose(sslContextProvider -> {
       Duration connectTimeout = connectOptions.getTimeout();
       if (connectTimeout == null) {
@@ -124,7 +132,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          ContextInternal context,
                                          Duration connectTimeout,
                                          List<String> applicationProtocols,
-                                         SslContextProvider sslContextProvider) {
+                                         ClientSslContextProvider sslContextProvider) {
     NameResolver resolver = vertx.nameResolver();
     Future<java.net.SocketAddress> f = resolver.resolve(remoteAddress);
     return f.compose(res -> connect(remoteAddress, res, qLogConfig, context, connectTimeout,
@@ -137,7 +145,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          ContextInternal context,
                                          Duration connectTimeout,
                                          List<String> applicationProtocols,
-                                         SslContextProvider sslContextProvider) {
+                                         ClientSslContextProvider sslContextProvider) {
     Channel ch = channel;
     if (ch != null) {
       return connect(ch, remoteAddress, resolvedAddress, qLogConfig, context, connectTimeout,
@@ -168,7 +176,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          ContextInternal context,
                                          Duration connectTimeout,
                                          List<String> applicationProtocols,
-                                         SslContextProvider sslContextProvider) {
+                                         ClientSslContextProvider sslContextProvider) {
     int reconnectAttempts = config.getReconnectAttempts();
     if (reconnectAttempts == 0) {
       return connect_(ch, remoteAddress, resolvedAddress, qLogConfig, context, connectTimeout, applicationProtocols, sslContextProvider);
@@ -187,7 +195,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
                                          ContextInternal context,
                                          Duration connectTimeout,
                                          List<String> applicationProtocols,
-                                         SslContextProvider sslContextProvider) {
+                                          ClientSslContextProvider sslContextProvider) {
     TransportMetrics<?> metrics = this.metrics;
     PromiseInternal<QuicConnection> promise = context.promise();
     QuicChannelBootstrap bootstrap = QuicChannel.newBootstrap(ch)

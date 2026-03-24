@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SslContextManager {
+public abstract class SslContextManager<P extends SslContextProvider> {
 
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
@@ -45,10 +45,10 @@ public class SslContextManager {
     CLIENT_AUTH_MAPPING.put(ClientAuth.NONE, io.netty.handler.ssl.ClientAuth.NONE);
   }
 
-  private final Supplier<SslContextFactory> supplier;
-  private final boolean useWorkerPool;
+  protected final Supplier<SslContextFactory> supplier;
+  protected final boolean useWorkerPool;
   private final Map<ConfigKey, Future<Config>> configMap;
-  private final Map<ConfigKey, Future<SslContextProvider>> sslContextProviderMap;
+  private final Map<ConfigKey, Future<P>> sslContextProviderMap;
   private boolean closed;
 
   public SslContextManager(SSLEngineOptions sslEngineOptions, int cacheMaxSize) {
@@ -102,7 +102,7 @@ public class SslContextManager {
 
   public synchronized int sniEntrySize() {
     int size = 0;
-    for (Future<SslContextProvider> fut : sslContextProviderMap.values()) {
+    for (Future<P> fut : sslContextProviderMap.values()) {
       SslContextProvider result = fut.result();
       if (result != null) {
         size += result.sniEntrySize();
@@ -115,36 +115,11 @@ public class SslContextManager {
     this(sslEngineOptions, 256);
   }
 
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, ContextInternal ctx) {
-    if (options instanceof ClientSSLOptions) {
-      return resolveSslContextProvider((ClientSSLOptions) options, ctx);
-    } else {
-      return resolveSslContextProvider((ServerSSLOptions) options, ctx);
-    }
-  }
-
-  public Future<SslContextProvider> resolveSslContextProvider(ServerSSLOptions options, ContextInternal ctx) {
-    ClientAuth clientAuth = options.getClientAuth();
-    if (clientAuth == null) {
-      clientAuth = ClientAuth.NONE;
-    }
-    return resolveSslContextProvider(options, null, clientAuth, false, ctx);
-  }
-
-  public Future<SslContextProvider> resolveSslContextProvider(ClientSSLOptions options, ContextInternal ctx) {
-    String hostnameVerificationAlgorithm = options.getHostnameVerificationAlgorithm();
-    if (hostnameVerificationAlgorithm == null) {
-      hostnameVerificationAlgorithm = "";
-    }
-    return resolveSslContextProvider(options, hostnameVerificationAlgorithm, null, false, ctx);
-  }
-
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, ContextInternal ctx) {
-    return resolveSslContextProvider(options, endpointIdentificationAlgorithm, clientAuth, false, ctx);
-  }
-
-  public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String hostnameVerificationAlgorithm, ClientAuth clientAuth, boolean force, ContextInternal ctx) {
-    Promise<SslContextProvider> promise;
+  Future<P> resolveSslContextProvider(SSLOptions options,
+                                      Function<Config, P> factory,
+                                      boolean force,
+                                      ContextInternal ctx) {
+    Promise<P> promise;
     ConfigKey k = new ConfigKey(options);
     synchronized (this) {
       if (closed) {
@@ -153,7 +128,7 @@ public class SslContextManager {
       if (force) {
         sslContextProviderMap.remove(k);
       } else {
-        Future<SslContextProvider> v = sslContextProviderMap.get(k);
+        Future<P> v = sslContextProviderMap.get(k);
         if (v != null) {
           return v;
         }
@@ -161,40 +136,12 @@ public class SslContextManager {
       promise = Promise.promise();
       sslContextProviderMap.put(k, promise.future());
     }
-    buildSslContextProvider(options, hostnameVerificationAlgorithm, clientAuth, force, ctx)
-      .onComplete(promise);
+
+    Future<P> f = buildConfig(options, force, ctx).map(factory);
+
+    f.onComplete(promise);
+
     return promise.future();
-  }
-
-  /**
-   * Initialize the helper, this loads and validates the configuration.
-   *
-   * @param ctx the context
-   * @return a future resolved when the helper is initialized
-   */
-  public Future<SslContextProvider> buildSslContextProvider(SSLOptions sslOptions,
-                                                     String hostnameVerificationAlgorithm,
-                                                     ClientAuth clientAuth,
-                                                            boolean force,
-                                                     ContextInternal ctx) {
-    return buildConfig(sslOptions, force, ctx)
-      .map(config -> buildSslContextProvider(sslOptions, hostnameVerificationAlgorithm, supplier, clientAuth, config));
-  }
-
-  private SslContextProvider buildSslContextProvider(SSLOptions sslOptions, String hostnameVerificationAlgorithm,
-                                                     Supplier<SslContextFactory> supplier, ClientAuth clientAuth, Config config) {
-    return new SslContextProvider(
-      useWorkerPool,
-      clientAuth,
-      hostnameVerificationAlgorithm,
-      sslOptions.getEnabledCipherSuites(),
-      sslOptions.getEnabledSecureTransportProtocols(),
-      config.keyManagerFactory,
-      config.keyManagerFactoryMapper,
-      config.trustManagerFactory,
-      config.trustManagerMapper,
-      config.crls,
-      supplier);
   }
 
   private static TrustOptions trustOptionsOf(SSLOptions sslOptions) {
@@ -324,12 +271,12 @@ public class SslContextManager {
     }
   }
 
-  private final static class Config {
-    private final KeyManagerFactory keyManagerFactory;
-    private final TrustManagerFactory trustManagerFactory;
-    private final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
-    private final Function<String, TrustManager[]> trustManagerMapper;
-    private final List<CRL> crls;
+  final static class Config {
+    final KeyManagerFactory keyManagerFactory;
+    final TrustManagerFactory trustManagerFactory;
+    final Function<String, KeyManagerFactory> keyManagerFactoryMapper;
+    final Function<String, TrustManager[]> trustManagerMapper;
+    final List<CRL> crls;
     public Config(KeyManagerFactory keyManagerFactory, TrustManagerFactory trustManagerFactory, Function<String, KeyManagerFactory> keyManagerFactoryMapper, Function<String, TrustManager[]> trustManagerMapper, List<CRL> crls) {
       this.keyManagerFactory = keyManagerFactory;
       this.trustManagerFactory = trustManagerFactory;
