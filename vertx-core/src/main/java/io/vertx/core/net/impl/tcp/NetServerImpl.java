@@ -38,6 +38,8 @@ import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.internal.resolver.NameResolver;
+import io.vertx.core.internal.tls.ServerSslContextManager;
+import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
@@ -111,7 +113,7 @@ public class NetServerImpl implements NetServerInternal {
     this.sslEngineOptions = sslEngineOptions;
   }
 
-  public SslContextProvider sslContextProvider() {
+  public ServerSslContextProvider sslContextProvider() {
     return sslContextProviderRef.get();
   }
 
@@ -426,24 +428,24 @@ public class NetServerImpl implements NetServerInternal {
       PromiseInternal<Channel> promise = context.promise();
       if (main == null) {
 
-        SslContextManager helper;
+        ServerSslContextManager sslContextManager;
         try {
-          helper = new SslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions.isUseAlpn()));
+          sslContextManager = new ServerSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions.isUseAlpn()));
         } catch (Exception e) {
           return context.failedFuture(e);
         }
 
         // The first server binds the socket
         actualServer = this;
-        sslContextProviderRef = new SslContextProviderReference(helper);
+        sslContextProviderRef = new SslContextProviderReference(sslContextManager);
         bindFuture = promise;
-        sslContextManager = helper;
+        this.sslContextManager = sslContextManager;
         trafficShapingHandler = createTrafficShapingHandler();
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
           // Should close if the channel group is closed actually or check that
           channelGroup.add(ch);
-          initializer.accept(ch, sslContextProviderRef != null ? sslContextProviderRef.get() : null, sslContextManager, sslOptions);
+          initializer.accept(ch, sslContextProviderRef != null ? sslContextProviderRef.get() : null, this.sslContextManager, sslOptions);
         };
         channelBalancer = new ServerChannelLoadBalancer(vertx.acceptorEventLoopGroup().next());
 

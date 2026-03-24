@@ -26,6 +26,8 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.tls.ClientSslContextManager;
+import io.vertx.core.internal.tls.ServerSslContextManager;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
@@ -129,11 +131,13 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
       Future<SslChannelProvider> f;
       if (sslOptions instanceof ClientSSLOptions) {
         ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
-        f = sslContextManager.resolveSslContextProvider(clientSSLOptions, context)
+        ClientSslContextManager clientSslContextManager = (ClientSslContextManager)sslContextManager;
+        f = clientSslContextManager.resolveSslContextProvider(clientSSLOptions, context)
           .map(p -> new SslChannelProvider(context.owner(), p, false));
       } else {
         ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
-        f = sslContextManager.resolveSslContextProvider(serverSSLOptions, context)
+        ServerSslContextManager serverSslContextManager = (ServerSslContextManager)sslContextManager;
+        f = serverSslContextManager.resolveSslContextProvider(serverSSLOptions, context)
           .map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
       }
       return f.compose(provider -> {
