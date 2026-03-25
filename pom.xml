@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>4.5.26</version>
+  <version>4.5.27-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
