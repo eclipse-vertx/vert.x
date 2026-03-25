@@ -267,25 +267,6 @@ public class HttpServerConfig {
   }
 
   /**
-   *
-   * @return is SSL/TLS enabled?
-   */
-  public boolean isSsl() {
-    return tcpConfig.isSsl();
-  }
-
-  /**
-   * Set whether SSL/TLS is enabled
-   *
-   * @param ssl  true if enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpServerConfig setSsl(boolean ssl) {
-    tcpConfig.setSsl(ssl);
-    return this;
-  }
-
-  /**
    * Set the port used to bind the server at, affecting both TCP and QUIC transports.
    *
    * @param port  the port

@@ -47,6 +47,7 @@ public class TcpHttpServer implements HttpServerInternal {
 
   private final VertxInternal vertx;
   final HttpServerConfig config;
+  private final boolean ssl;
   private final ServerSSLOptions sslOptions;
   private final SSLEngineOptions engineOptions;
   private final boolean registerWebSocketWriteHandlers;
@@ -66,6 +67,7 @@ public class TcpHttpServer implements HttpServerInternal {
                        SSLEngineOptions engineOptions, HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.config = config;
+    this.ssl = sslOptions != null;
     this.sslOptions = sslOptions;
     this.engineOptions = engineOptions;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
@@ -207,7 +209,9 @@ public class TcpHttpServer implements HttpServerInternal {
     }
     CompressionConfig compression = config.getCompressionConfig();
     ServerSSLOptions sslOptions = configureSSLOptions(config, this.sslOptions);
-    NetServerInternal server = new NetServerBuilder(vertx, config.getTcpConfig(), sslOptions)
+    TcpServerConfig tcpConfig = new TcpServerConfig(config.getTcpConfig())
+      .setSsl(ssl);
+    NetServerInternal server = new NetServerBuilder(vertx, tcpConfig, sslOptions)
       .sslEngine(engineOptions)
       .fileRegionEnabled(compression == null || !compression.isCompressionEnabled())
       .cleanable(false)
@@ -223,7 +227,7 @@ public class TcpHttpServer implements HttpServerInternal {
       Supplier<ContextInternal> streamContextSupplier = context::duplicate;
       String host = address.isInetSocket() ? address.host() : "localhost";
       int port = address.port();
-      String serverOrigin = (config.isSsl() ? "https" : "http") + "://" + host + ":" + port;
+      String serverOrigin = (ssl ? "https" : "http") + "://" + host + ":" + port;
       HttpServerConnectionHandler handler = new HttpServerConnectionHandler(
         this,
         serverOrigin,
@@ -247,7 +251,7 @@ public class TcpHttpServer implements HttpServerInternal {
         compressors != null && !compressors.isEmpty() && compression.isCompressionEnabled(),
         compressors != null && !compressors.isEmpty() && compression.isDecompressionEnabled(),
         observabilityConfig != null ? observabilityConfig.getTracingPolicy() : null,
-        config.getTcpConfig().getLogConfig() != null,
+        tcpConfig.getLogConfig() != null,
         compressors != null ? compressors.toArray(new CompressionOptions[0]) : null,
         compression != null ? compression.getContentSizeThreshold() : 0,
         config.isHandle100ContinueAutomatically(),
@@ -258,7 +262,7 @@ public class TcpHttpServer implements HttpServerInternal {
         http2Config,
         registerWebSocketWriteHandlers,
         config.getWebSocketConfig(),
-        config.isSsl() ? sslOptions : null,
+        sslOptions,
         serverOrigin,
         handler,
         exceptionHandler,
@@ -284,7 +288,7 @@ public class TcpHttpServer implements HttpServerInternal {
   }
 
   private static ServerSSLOptions configureSSLOptions(HttpServerConfig config, ServerSSLOptions sslOptions) {
-    if (sslOptions != null && config.isSsl()) {
+    if (sslOptions != null) {
       sslOptions = sslOptions.copy();
       boolean h2 = config.getVersions().contains(HttpVersion.HTTP_2);
       if (h2) {

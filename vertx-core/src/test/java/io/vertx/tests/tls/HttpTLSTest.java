@@ -1305,30 +1305,32 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       HttpServerConfig serverCfg = config.forServer();
       serverCfg.setSsl(serverSSL);
       serverCfg.setUseProxyProtocol(serverUsesProxyProtocol);
-      serverCfg.configureSsl(sslOptions -> {
-        sslOptions.setClientAuth(requiresClientAuth ? ClientAuth.REQUIRED : ClientAuth.NONE);
-        sslOptions.setTrustOptions(serverTrust);
-        sslOptions.setKeyCertOptions(serverCert);
-        if (requiresClientAuth) {
-          sslOptions.setClientAuth(ClientAuth.REQUIRED);
-        }
-        if (serverUsesCrl) {
-          sslOptions.addCrlPath("tls/root-ca/crl.pem");
-        }
-        if (serverUsesAlpn == Boolean.TRUE) {
-          sslOptions.setUseAlpn(serverUsesAlpn);
-        }
-        sslOptions.setSni(serverSNI);
-        for (String suite: serverEnabledCipherSuites) {
-          sslOptions.addEnabledCipherSuite(suite);
-        }
-        if(serverEnabledSecureTransportProtocol.length > 0) {
-          sslOptions.getEnabledSecureTransportProtocols().forEach(sslOptions::removeEnabledSecureTransportProtocol);
-        }
-        for (String protocol : serverEnabledSecureTransportProtocol) {
-          sslOptions.addEnabledSecureTransportProtocol(protocol);
-        }
-      });
+      if (serverSSL) {
+        serverCfg.configureSsl(sslOptions -> {
+          sslOptions.setClientAuth(requiresClientAuth ? ClientAuth.REQUIRED : ClientAuth.NONE);
+          sslOptions.setTrustOptions(serverTrust);
+          sslOptions.setKeyCertOptions(serverCert);
+          if (requiresClientAuth) {
+            sslOptions.setClientAuth(ClientAuth.REQUIRED);
+          }
+          if (serverUsesCrl) {
+            sslOptions.addCrlPath("tls/root-ca/crl.pem");
+          }
+          if (serverUsesAlpn == Boolean.TRUE) {
+            sslOptions.setUseAlpn(serverUsesAlpn);
+          }
+          sslOptions.setSni(serverSNI);
+          for (String suite: serverEnabledCipherSuites) {
+            sslOptions.addEnabledCipherSuite(suite);
+          }
+          if(serverEnabledSecureTransportProtocol.length > 0) {
+            sslOptions.getEnabledSecureTransportProtocols().forEach(sslOptions::removeEnabledSecureTransportProtocol);
+          }
+          for (String protocol : serverEnabledSecureTransportProtocol) {
+            sslOptions.addEnabledSecureTransportProtocol(protocol);
+          }
+        });
+      }
       server.close();
       HttpServerBuilder serverBuilder = serverCfg.builder(vertx);
       if (serverOpenSSL) {

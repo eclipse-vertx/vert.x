@@ -100,22 +100,17 @@ public class HttpExamples {
           setPassword("password-of-your-keystore")
       );
 
-    HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true);
-
-    HttpServer server = vertx.createHttpServer(config, sslOptions);
+    HttpServer server = vertx.createHttpServer(sslOptions);
   }
 
   public void configurationOfAnHttp1Server(Vertx vertx) {
     HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true)
       .setHttp1Config(new Http1ServerConfig()
         .setMaxInitialLineLength(1024));
   }
 
   public void configurationOfAnH2Server(Vertx vertx) {
     HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true)
       .setHttp2Config(new Http2ServerConfig()
         .setInitialSettings(new Http2Settings()
           .setMaxConcurrentStreams(250)));
@@ -137,8 +132,7 @@ public class HttpExamples {
 
   public void configurationOfAHybridServer(Vertx vertx) {
     HttpServerConfig config = new HttpServerConfig()
-      .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, HttpVersion.HTTP_3)
-      .setSsl(true);
+      .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2, HttpVersion.HTTP_3);
 
     ServerSSLOptions sslOptions = new ServerSSLOptions()
       .setKeyCertOptions(new JksOptions().setPath("/path/to/my/keystore"));

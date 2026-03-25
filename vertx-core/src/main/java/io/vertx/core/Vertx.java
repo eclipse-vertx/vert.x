@@ -321,7 +321,7 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Create an HTTP/HTTPS server using the specified options
+   * Create an HTTP/HTTPS server using the specified {@code options}
    *
    * @param options  the options to use
    * @return the server
@@ -329,10 +329,14 @@ public interface Vertx extends Measured {
   default HttpServer createHttpServer(HttpServerOptions options) {
     HttpServerConfig config = new HttpServerConfig(options);
     ServerSSLOptions sslOptions = options.getSslOptions();
-    if (sslOptions != null) {
-      sslOptions = sslOptions.copy();
-    } else if (options.isSsl()) {
-      sslOptions = new ServerSSLOptions();
+    if (options.isSsl()) {
+      if (sslOptions != null) {
+        sslOptions = sslOptions.copy();
+      } else if (options.isSsl()) {
+        sslOptions = new ServerSSLOptions();
+      }
+    } else {
+      sslOptions = null;
     }
     SSLEngineOptions sslEngineOptions = options.getSslEngineOptions();
     if (sslEngineOptions != null) {
@@ -347,7 +351,7 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Create an HTTP server using the specified config
+   * Create an HTTP server using the specified {@code config}.
    *
    * @param config  the config to use
    * @return the server
@@ -357,9 +361,10 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Create an HTTP server using the specified config
+   * Create an HTTP server using the specified config and the specified {@code sslOptions}
    *
    * @param config  the config to use
+   * @param sslOptions  the ssl options to use
    * @return the server
    */
   default HttpServer createHttpServer(HttpServerConfig config, ServerSSLOptions sslOptions) {
@@ -367,7 +372,17 @@ public interface Vertx extends Measured {
   }
 
   /**
-   * Create an HTTP/HTTPS server using default options
+   * Create an HTTP server using default config and the specified {@code sslOptions}.
+   *
+   * @param sslOptions  the ssl options to use
+   * @return the server
+   */
+  default HttpServer createHttpServer(ServerSSLOptions sslOptions) {
+    return httpServerBuilder().with(new HttpServerConfig()).with(sslOptions).build();
+  }
+
+  /**
+   * Create an HTTP/HTTPS server using default config.
    *
    * @return the server
    */
