@@ -45,55 +45,6 @@ public class Http3TLSTest extends HttpTLSTest {
     super.testTLSServerSSLEnginePeerHost();
   }
 
-  @Ignore("https://github.com/netty/netty/pull/16178")
-  @Test
-  @Override
-  public void testTLSRevokedClientCertServer() throws Exception {
-    super.testTLSRevokedClientCertServer();
-  }
-
-  @Ignore("https://github.com/netty/netty/pull/16178")
-  @Test
-  @Override
-  public void testTLSClientCertClientNotTrusted() throws Exception {
-    super.testTLSClientCertClientNotTrusted();
-  }
-
-  @Ignore("https://github.com/netty/netty/pull/16178")
-  @Test
-  @Override
-  public void testTLSClientCertRequiredNoClientCert() throws Exception {
-    super.testTLSClientCertRequiredNoClientCert();
-  }
-
-  @Ignore("https://github.com/netty/netty/pull/16426")
-  @Test
-  @Override
-  public void testSNISubjectAltenativeNameCNMatch1() throws Exception {
-    super.testSNISubjectAltenativeNameCNMatch1();
-  }
-
-  @Ignore("https://github.com/netty/netty/pull/16426")
-  @Test
-  @Override
-  public void testSNISubjectAltenativeNameCNMatch1PKCS12() throws Exception {
-    super.testSNISubjectAltenativeNameCNMatch1PKCS12();
-  }
-
-  @Ignore("https://github.com/netty/netty/pull/16426")
-  @Test
-  @Override
-  public void testSNISubjectAltenativeNameCNMatch1PEM() throws Exception {
-    super.testSNISubjectAltenativeNameCNMatch1PEM();
-  }
-
-  @Ignore("https://github.com/netty/netty/pull/16426")
-  @Test
-  @Override
-  public void testTLSVerifyNonMatchingHost() throws Exception {
-    super.testTLSVerifyNonMatchingHost();
-  }
-
   @Ignore("Currently cipher suites are hardcoded")
   @Test
   @Override

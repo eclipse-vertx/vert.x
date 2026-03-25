@@ -2205,12 +2205,16 @@ public abstract class HttpTest extends SimpleHttpTest {
 
   @Test
   public void testConnectInvalidPort() {
+    client.close();
+    client = config.forClient().setConnectTimeout(Duration.ofMillis(300)).create(vertx);
     client.request(HttpMethod.GET, 9998, config.host(), DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()));
     await();
   }
 
   @Test
   public void testConnectInvalidHost() {
+    client.close();
+    client = config.forClient().setConnectTimeout(Duration.ofMillis(300)).create(vertx);
     client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI).onComplete(onFailure(resp -> complete()));
     await();
   }
@@ -5981,6 +5985,8 @@ public abstract class HttpTest extends SimpleHttpTest {
 
   @Test
   public void testRetrySameHostOnCallbackFailure() {
+    client.close();
+    client = config.forClient().setConnectTimeout(Duration.ofMillis(300)).create(vertx);
     client.request(requestOptions).onComplete(onFailure(req1 -> {
       client.request(requestOptions).onComplete(onFailure(req2 -> {
         testComplete();
@@ -6228,7 +6234,10 @@ public abstract class HttpTest extends SimpleHttpTest {
     Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
     try {
       AtomicInteger val = new AtomicInteger();
-      HttpClient client = httpClientBuilder(vertx)
+      HttpClient client = config
+        .forClient()
+        .setConnectTimeout(Duration.ofMillis(500))
+        .builder(vertx)
         .withLoadBalancer(enabled ? endpoints -> () -> {
           val.set(endpoints.size());
           return 0;

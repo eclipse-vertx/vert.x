@@ -126,6 +126,7 @@ public class QuicSslContextFactory implements SslContextFactory {
       }
     }
     builder.keylog(keylog);
+    builder.endpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
 /*
     Collection<String> cipherSuites = enabledCipherSuites;
     switch (sslProvider) {
