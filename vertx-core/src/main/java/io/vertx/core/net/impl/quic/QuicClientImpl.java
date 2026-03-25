@@ -93,8 +93,7 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
         Attribute<HostAndPort> peerAttr = q.attr(SSL_PEER_KEY);
         HostAndPort peer = peerAttr.get();
         return sslContext.newEngine(q.alloc(), peer.host(), peer.port());
-      })
-      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS));
+      }));
   }
 
   @Override

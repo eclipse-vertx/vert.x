@@ -192,7 +192,6 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       }
     }
     QuicServerCodecBuilder builder = new QuicServerCodecBuilder().sslContext(sslContext)
-      .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
       .tokenHandler(qtc)
       .handler(new ChannelInitializer<>() {
         @Override
