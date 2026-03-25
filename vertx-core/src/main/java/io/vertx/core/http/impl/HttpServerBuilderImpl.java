@@ -77,9 +77,6 @@ public class HttpServerBuilderImpl implements HttpServerBuilder {
     if (useQuic && sslOptions == null) {
       throw new NullPointerException("SSL configuration is necessary for a QUIC server");
     }
-    if (useTcp && config.isSsl() && sslOptions == null) {
-      throw new NullPointerException("SSL configuration is necessary for a TCP/SSL server");
-    }
     HttpServer server;
     if (useTcp) {
       if (useQuic) {

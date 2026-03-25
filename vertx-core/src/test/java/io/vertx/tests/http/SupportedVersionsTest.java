@@ -210,27 +210,27 @@ public class SupportedVersionsTest extends VertxTestBase {
   @Test
   public void testDefaultTlsServerConfig() {
     test(
-      new HttpServerConfig().setSsl(true),
+      new HttpServerConfig(),
       new HttpClientConfig().setSsl(true),
       HttpVersion.HTTP_2,
       null, HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true),
+      new HttpServerConfig(),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2),
       HttpVersion.HTTP_2,
       null, HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true),
+      new HttpServerConfig(),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1),
       HttpVersion.HTTP_2,
       null, HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true),
+      new HttpServerConfig(),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
       HttpVersion.HTTP_2,
       null, null, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true),
+      new HttpServerConfig(),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
       HttpVersion.HTTP_1_1,
       null, HttpVersion.HTTP_1_1,  null);
@@ -239,27 +239,27 @@ public class SupportedVersionsTest extends VertxTestBase {
   @Test
   public void testHttp1TlsServerConfig() {
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_1_1),
       new HttpClientConfig().setSsl(true),
       HttpVersion.HTTP_1_1,
       HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_1_1),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2),
       HttpVersion.HTTP_1_1,
       HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_1_1),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1),
       HttpVersion.HTTP_1_1,
       HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_1_1),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
       null,
       null, null, null);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_1_1),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
       HttpVersion.HTTP_1_1,
       HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_1, null);
@@ -268,27 +268,27 @@ public class SupportedVersionsTest extends VertxTestBase {
   @Test
   public void testHttp2TlsServerConfig() {
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_2),
       new HttpClientConfig().setSsl(true),
       HttpVersion.HTTP_2,
       null, null, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_2),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2),
       HttpVersion.HTTP_2,
       null, null, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_2),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1),
       HttpVersion.HTTP_2,
       null, null, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_2),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
       HttpVersion.HTTP_2,
       null, null, HttpVersion.HTTP_2);
     test(
-      new HttpServerConfig().setSsl(true).setVersions(HttpVersion.HTTP_2),
+      new HttpServerConfig().setVersions(HttpVersion.HTTP_2),
       new HttpClientConfig().setSsl(true).setVersions(HttpVersion.HTTP_1_1),
       null,
       null, null, null);
@@ -338,7 +338,13 @@ public class SupportedVersionsTest extends VertxTestBase {
 
   private HttpVersion testDefaultVersion(HttpServerConfig serverConfig, HttpClientConfig clientConfig, boolean useAlpn) {
     return testDefaultVersion(
-      () -> vertx.createHttpServer(serverConfig, useAlpn ? DEFAULT_SERVER_TLS : DEFAULT_SERVER_TLS_NO_ALPN),
+      () -> {
+        if (clientConfig.isSsl()) {
+          return vertx.createHttpServer(serverConfig, useAlpn ? DEFAULT_SERVER_TLS : DEFAULT_SERVER_TLS_NO_ALPN);
+        } else {
+          return vertx.createHttpServer(serverConfig);
+        }
+      },
       () -> vertx.createHttpClient(clientConfig, DEFAULT_CLIENT_TLS)
     );
   }

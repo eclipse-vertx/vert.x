@@ -53,7 +53,6 @@ public class CompositeHttpServerTest extends VertxTestBase {
 
   public void expectFail() {
     HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true)
       .setPort(4043)
       .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3);
     HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
@@ -71,7 +70,6 @@ public class CompositeHttpServerTest extends VertxTestBase {
 
   public void expectSucceed(Vertx vertx) throws Exception {
     HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true)
       .setPort(4043)
       .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3);
 
@@ -103,7 +101,6 @@ public class CompositeHttpServerTest extends VertxTestBase {
   public void testAutomaticCleanup() {
 
     HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true)
       .setPort(4043)
       .setVersions(HttpVersion.HTTP_1_1, HttpVersion.HTTP_3);
 

@@ -51,6 +51,8 @@ Vert.x HTTP servers can be configured to use HTTPS in exactly the same way as TC
 {@link examples.HttpExamples#configurationOfAnHttpsServer}
 ----
 
+NOTE: there is no ssl setting on `HttpServerConfig` like there used to be on `HttpServerOptions`, providing ssl options when creating a server indicates the server uses TLS.
+
 You can read more about <<server_ssl,SSL server configuration>>
 
 === Configuring an HTTP/1.x server

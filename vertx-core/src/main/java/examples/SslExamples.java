@@ -314,22 +314,18 @@ public class SslExamples {
 
     ServerSSLOptions sslOptions = new ServerSSLOptions()
       .setKeyCertOptions(keyStoreOptions);
-    HttpServerConfig config = new HttpServerConfig()
-      .setSsl(true);
 
     // Use JDK SSL engine
-    HttpServer server = vertx.createHttpServer(config);
+    HttpServer server = vertx.createHttpServer(sslOptions);
 
     // Use JDK SSL engine explicitly
     server = vertx.httpServerBuilder()
-      .with(config)
       .with(sslOptions)
       .with(new JdkSSLEngineOptions())
       .build();
 
     // Use OpenSSL engine
     server = vertx.httpServerBuilder()
-      .with(config)
       .with(sslOptions)
       .with(new OpenSSLEngineOptions())
       .build();

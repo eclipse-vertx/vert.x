@@ -43,6 +43,7 @@ import io.vertx.test.http.HttpConfig;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.proxy.ProxyKind;
 import io.vertx.test.proxy.WithProxy;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
