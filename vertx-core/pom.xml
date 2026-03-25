@@ -1047,11 +1047,10 @@
     </profile>
 
     <profile>
-      <id>windows-x86_64</id>
+      <id>windows</id>
       <activation>
         <os>
           <family>windows</family>
-          <arch>x86_64</arch>
         </os>
       </activation>
       <dependencies>
