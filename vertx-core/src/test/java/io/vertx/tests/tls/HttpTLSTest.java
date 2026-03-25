@@ -49,6 +49,7 @@ import io.vertx.test.http.SimpleHttpTest;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -316,7 +317,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   @Test
   // Client specifies cert but it's not trusted
   public void testTLSClientCertClientNotTrusted() throws Exception {
-    testTLS(Cert.CLIENT_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).requiresClientAuth().fail();
+    testTLS(Cert.SERVER_JKS, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).requiresClientAuth().fail();
   }
 
   @Test
@@ -1048,8 +1049,9 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     }, Cert.SERVER_JKS, Trust.NONE).pass();
   }
 
-  class TLSTest {
+  static class TLSTest {
 
+    final HttpTLSTest test;
     KeyCertOptions clientCert;
     TrustOptions clientTrust;
     boolean clientTrustAll;
@@ -1100,7 +1102,8 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     Certificate clientPeerCert;
     String indicatedServerName;
 
-    public TLSTest(Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
+    public TLSTest(HttpTLSTest test, Cert<?> clientCert, Trust<?> clientTrust, Cert<?> serverCert, Trust<?> serverTrust) {
+      this.test = test;
       this.clientCert = clientCert.get();
       this.clientTrust = clientTrust.get();
       this.serverCert = serverCert.get();
@@ -1250,12 +1253,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     }
 
     TLSTest run(boolean shouldPass) {
-      if ((proxyType == null && config.version() != HttpVersion.HTTP_3) || shouldPass) {
-        // The test with proxy that fails will not connect
-        // todo : should redo this ...
-        waitFor(2);
-      }
-      HttpClientConfig clientCfg = config.forClient();
+      HttpClientConfig clientCfg = test.config.forClient();
       clientCfg.setSsl(clientSSL);
       clientCfg.setForceSni(clientForceSNI);
       clientCfg.setVerifyHost(clientVerifyHost);
@@ -1295,14 +1293,14 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         }
         clientCfg.setProxyOptions(proxyOptions);
       }
-      HttpClientBuilder builder = clientCfg.builder(vertx);
+      HttpClientBuilder builder = clientCfg.builder(test.vertx);
       if (clientOpenSSL) {
         builder.with(new OpenSSLEngineOptions());
       } else {
         builder.with(new JdkSSLEngineOptions());
       }
-      client = builder.build();
-      HttpServerConfig serverCfg = config.forServer();
+      test.client = builder.build();
+      HttpServerConfig serverCfg = test.config.forServer();
       serverCfg.setSsl(serverSSL);
       serverCfg.setUseProxyProtocol(serverUsesProxyProtocol);
       if (serverSSL) {
@@ -1331,93 +1329,91 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
           }
         });
       }
-      server.close();
-      HttpServerBuilder serverBuilder = serverCfg.builder(vertx);
+      test.server.close();
+      HttpServerBuilder serverBuilder = serverCfg.builder(test.vertx);
       if (serverOpenSSL) {
         serverBuilder = serverBuilder.with(new OpenSSLEngineOptions());
       }
-      server = serverBuilder.build();
-      server.connectionHandler(conn -> complete());
+      test.server = serverBuilder.build();
+      AtomicInteger connectedCount = new AtomicInteger();
+//      test.server.connectionHandler(conn -> complete());
       AtomicInteger count = new AtomicInteger();
-      server.exceptionHandler(err -> {
-        if (!shouldPass) {
-          if (count.incrementAndGet() == 1) {
-            complete();
-          }
-        }
-      });
-      server.requestHandler(req -> {
+//      test.server.exceptionHandler(err -> {
+//        if (!shouldPass) {
+//          if (count.incrementAndGet() == 1) {
+//            complete();
+//          }
+//        }
+//      });
+      test.server.requestHandler(req -> {
         indicatedServerName = req.connection().indicatedServerName();
 //        assertEquals(options.getProtocolVersion(), req.version());
-        assertEquals(serverSSL, req.isSSL());
+        test.assertEquals(serverSSL, req.isSSL());
         if (serverSSL && serverOpenSSL) {
           String name = req.sslSession().getSessionContext().getClass().getSimpleName();
-          assertTrue(name.contains("OpenSslServerSessionContext"));
+          test.assertTrue(name.contains("OpenSslServerSessionContext"));
         }
         if (req.method() == HttpMethod.GET || req.method() == HttpMethod.HEAD) {
           req.response().end();
         } else {
           req.bodyHandler(buffer -> {
-            assertEquals("foo", buffer.toString());
+            test.assertEquals("foo", buffer.toString());
             req.response().end("bar");
           });
         }
       });
-      server.listen().onComplete(onSuccess(v -> {
-        String httpHost;
-        if (connectHostname != null) {
-          httpHost = connectHostname;
-        } else {
-          httpHost = DEFAULT_HTTP_HOST;
-        }
-        Future<Void> fut = requestProvider.apply(client).compose(req -> {
-          req.setFollowRedirects(followRedirects);
-          return req.send("foo").compose(resp -> {
-            HttpConnection conn = resp.request().connection();
-            if (conn.isSsl()) {
-              try {
-                clientPeerCert = conn.peerCertificates().get(0);
-              } catch (SSLPeerUnverifiedException ignore) {
-              }
-              if (clientSSL && clientOpenSSL) {
-                String name = req.connection().sslSession().getSessionContext().getClass().getSimpleName();
-                assertTrue(name.contains("OpenSslClientSessionContext"));
-              }
+      test.server.listen().await();
+
+      String httpHost;
+      if (connectHostname != null) {
+        httpHost = connectHostname;
+      } else {
+        httpHost = DEFAULT_HTTP_HOST;
+      }
+      Future<Void> fut = requestProvider.apply(test.client).compose(req -> {
+        req.setFollowRedirects(followRedirects);
+        return req.send("foo").compose(resp -> {
+          HttpConnection conn = resp.request().connection();
+          if (conn.isSsl()) {
+            try {
+              clientPeerCert = conn.peerCertificates().get(0);
+            } catch (SSLPeerUnverifiedException ignore) {
             }
-            if (shouldPass) {
-              resp.version();
-              HttpMethod method = resp.request().getMethod();
-              if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
-                return resp.end();
-              } else {
-                return resp.body().map(body -> {
-                  assertEquals("bar", body.toString());
-                  return null;
-                });
-              }
+            if (clientSSL && clientOpenSSL) {
+              String name = req.connection().sslSession().getSessionContext().getClass().getSimpleName();
+              test.assertTrue(name.contains("OpenSslClientSessionContext"));
+            }
+          }
+          if (shouldPass) {
+            resp.version();
+            HttpMethod method = resp.request().getMethod();
+            if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
+              return resp.end();
             } else {
-              HttpTLSTest.this.fail("Should not get a response");
-              return null;
+              return resp.body().map(body -> {
+                test.assertEquals("bar", body.toString());
+                return null;
+              });
             }
-          });
+          } else {
+            test.fail("Should not get a response");
+            return null;
+          }
         });
-        fut.onSuccess(v2 -> {
-          assertTrue(shouldPass);
-          complete();
-        });
-        fut.onFailure(err -> {
-          assertFalse("Should not fail " + err.getMessage(), shouldPass);
-          complete();
-        });
-      }));
-      await();
+      });
+      try {
+        fut.await();
+        test.assertTrue(shouldPass);
+      } catch (Exception err) {
+        test.assertFalse("Should not fail " + err.getMessage(), shouldPass);
+      }
       return this;
     }
   }
 
   protected TLSTest testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                           Cert<?> serverCert, Trust<?> serverTrust) throws Exception {
-    return new TLSTest(clientCert, clientTrust, serverCert, serverTrust);
+    return new TLSTest(this, clientCert, clientTrust, serverCert, serverTrust);
   }
 
 

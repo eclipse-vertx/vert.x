@@ -131,7 +131,9 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
         c.shutdown(shutdown.timeout());
       }
     } else if (evt instanceof QuicStreamLimitChangedEvent) {
-      connection.handleQuicStreamLimitChanged();
+      if (connection != null) {
+        connection.handleQuicStreamLimitChanged();
+      }
     } else if (evt instanceof QuicDatagramExtensionEvent) {
       QuicDatagramExtensionEvent datagramExtensionEvent = (QuicDatagramExtensionEvent) evt;
       QuicConnectionImpl c = connection;

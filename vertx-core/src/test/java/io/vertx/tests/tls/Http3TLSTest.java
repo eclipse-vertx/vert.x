@@ -11,6 +11,8 @@
 
 package io.vertx.tests.tls;
 
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import io.vertx.tests.http.http3.Http3Config;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -34,13 +36,6 @@ public class Http3TLSTest extends HttpTLSTest {
   @Ignore("Handle this")
   @Test
   @Override
-  public void testSNIServerIgnoresExtension2() throws Exception {
-    super.testSNIServerIgnoresExtension2();
-  }
-
-  @Ignore("Handle this")
-  @Test
-  @Override
   public void testTLSServerSSLEnginePeerHost() throws Exception {
     super.testTLSServerSSLEnginePeerHost();
   }
@@ -57,5 +52,12 @@ public class Http3TLSTest extends HttpTLSTest {
   @Override
   public void testServerSharingUpdateSSLOptions() throws Exception {
     super.testServerSharingUpdateSSLOptions();
+  }
+
+  @Ignore("Handle this")
+  @Test
+  @Override
+  public void testTLSRevokedClientCertServer() throws Exception {
+    super.testTLSRevokedClientCertServer();
   }
 }

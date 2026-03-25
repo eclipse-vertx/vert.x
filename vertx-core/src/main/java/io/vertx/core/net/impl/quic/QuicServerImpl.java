@@ -29,6 +29,7 @@ import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
 import io.netty.handler.codec.quic.QuicTokenHandler;
 import io.netty.handler.logging.ByteBufFormat;
+import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Mapping;
 import io.netty.util.internal.PlatformDependent;
@@ -45,8 +46,13 @@ import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
+import javax.net.ssl.X509ExtendedKeyManager;
+import java.net.Socket;
 import java.net.StandardSocketOptions;
 import java.nio.channels.DatagramChannel;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -149,11 +155,24 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
 
   private QuicServerCodecBuilder createCodecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
     List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
-    QuicSslContext sslContext = QuicSslContextBuilder.buildForServerWithSni(name -> {
-      ServerSslContextProvider provider = sslContextProviderRef.get();
-      Mapping<? super String, ? extends SslContext> mapping = provider.serverNameMapping(applicationProtocols);
-      return (QuicSslContext) mapping.map(name);
-    });
+    boolean sni = sslOptions.isSni();
+    QuicSslContextBuilder sslContextBuilder = QuicSslContextBuilder
+      .forServer(SNI_KEYMANAGER, null)
+      .clientAuth(ClientAuth.REQUIRE)
+      .sni(name -> {
+        ServerSslContextProvider provider = sslContextProviderRef.get();
+        if (sni && name != null) {
+          Mapping<? super String, ? extends SslContext> mapping = provider.serverNameMapping(applicationProtocols);
+          return (QuicSslContext) mapping.map(name);
+        } else {
+          return (QuicSslContext) provider.createServerContext(applicationProtocols);
+        }
+      });
+    sslContextBuilder.keylog(keylog);
+    if (sslOptions.getClientAuth() != null) {
+      sslContextBuilder.clientAuth(SslContextManager.mapClientAuth(sslOptions.getClientAuth()));
+    }
+    QuicSslContext sslContext = sslContextBuilder.build();
     QuicTokenHandler qtc = tokenHandler;
     if (qtc == null) {
       switch (config.getClientAddressValidation()) {
@@ -309,4 +328,39 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
       .update(options, vertx.getOrCreateContext(), force)
       .map(Objects::nonNull);
   }
+
+  private static final X509ExtendedKeyManager SNI_KEYMANAGER = new X509ExtendedKeyManager() {
+    private final X509Certificate[] emptyCerts = new X509Certificate[0];
+    private final String[] emptyStrings = new String[0];
+
+    @Override
+    public String[] getClientAliases(String keyType, Principal[] issuers) {
+      return emptyStrings;
+    }
+
+    @Override
+    public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+      return null;
+    }
+
+    @Override
+    public String[] getServerAliases(String keyType, Principal[] issuers) {
+      return emptyStrings;
+    }
+
+    @Override
+    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+      return null;
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain(String alias) {
+      return emptyCerts;
+    }
+
+    @Override
+    public PrivateKey getPrivateKey(String alias) {
+      return null;
+    }
+  };
 }

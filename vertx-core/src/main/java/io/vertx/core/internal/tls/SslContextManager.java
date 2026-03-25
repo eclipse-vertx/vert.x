@@ -36,8 +36,12 @@ import java.util.stream.Collectors;
  */
 public abstract class SslContextManager<P extends SslContextProvider> {
 
+  public static io.netty.handler.ssl.ClientAuth mapClientAuth(ClientAuth auth) {
+    return CLIENT_AUTH_MAPPING.get(auth);
+  }
+
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
-  static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
+  private static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
   static {
     CLIENT_AUTH_MAPPING.put(ClientAuth.REQUIRED, io.netty.handler.ssl.ClientAuth.REQUIRE);
