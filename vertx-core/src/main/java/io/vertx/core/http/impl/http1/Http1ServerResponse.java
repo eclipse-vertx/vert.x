@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -31,11 +31,11 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.CookieJar;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.http.impl.ServerCookie;
-import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.impl.headers.Http1xHeaders;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.metrics.Metrics;
@@ -854,5 +854,10 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
   public Future<Void> writeAltSvc(String advertisement) {
     putHeader(io.vertx.core.http.HttpHeaders.ALT_SVC, advertisement);
     return context.succeededFuture();
+  }
+
+  @Override
+  public io.vertx.core.http.HttpVersion version() {
+    return conn.protocolVersion();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -24,14 +24,12 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.headers.HttpHeaders;
+import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.UncloseableChunkedNioFile;
-import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
 import java.io.File;
@@ -850,14 +848,17 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> writeAltSvc(String advertisement) {
-    switch (stream.version()) {
-      case HTTP_2:
-      case HTTP_3:
-        Buffer value = Buffer.buffer();
-        value.appendShort((short)0);
-        value.appendString(advertisement);
-        return writeCustomFrame(0xA, 0, value);
+    if (stream.version().isNotHttp1x()) {
+      Buffer value = Buffer.buffer();
+      value.appendShort((short) 0);
+      value.appendString(advertisement);
+      return writeCustomFrame(0xA, 0, value);
     }
     return context.succeededFuture();
+  }
+
+  @Override
+  public HttpVersion version() {
+    return conn.protocolVersion();
   }
 }

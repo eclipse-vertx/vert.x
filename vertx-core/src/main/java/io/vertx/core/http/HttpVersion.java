@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -23,10 +23,30 @@ import java.util.List;
 @VertxGen
 public enum HttpVersion {
 
-  HTTP_1_0("http/1.0", List.of(HttpProtocol.HTTP_1_0)),
-  HTTP_1_1("http/1.1", List.of(HttpProtocol.HTTP_1_1)),
-  HTTP_2("h2", List.of(HttpProtocol.H2, HttpProtocol.H2C)),
-  HTTP_3("h3", List.of(HttpProtocol.H3));
+  HTTP_1_0("http/1.0", List.of(HttpProtocol.HTTP_1_0)) {
+    @Override
+    public boolean isNotHttp1x() {
+      return false;
+    }
+  },
+  HTTP_1_1("http/1.1", List.of(HttpProtocol.HTTP_1_1)) {
+    @Override
+    public boolean isNotHttp1x() {
+      return false;
+    }
+  },
+  HTTP_2("h2", List.of(HttpProtocol.H2, HttpProtocol.H2C)) {
+    @Override
+    public boolean isNotHttp1x() {
+      return true;
+    }
+  },
+  HTTP_3("h3", List.of(HttpProtocol.H3)) {
+    @Override
+    public boolean isNotHttp1x() {
+      return true;
+    }
+  };
 
   private final String alpnName;
   private final List<HttpProtocol> protocols;
@@ -51,6 +71,11 @@ public enum HttpVersion {
   }
 
   /**
+   * Whether this HTTP version is HTTP/2 or later.
+   */
+  public abstract boolean isNotHttp1x();
+
+  /**
    * Provides the version of the given protocol {@code id}
    *
    * @param id the protocol id
@@ -73,7 +98,7 @@ public enum HttpVersion {
   /**
    * Provides the version of the given protocol {@code id}
    *
-   * @param id the protocol id
+   * @param protocol the protocol id
    * @return the version of {@code null} when no id is matching
    */
   public static HttpVersion fromProtocol(HttpProtocol protocol) {
