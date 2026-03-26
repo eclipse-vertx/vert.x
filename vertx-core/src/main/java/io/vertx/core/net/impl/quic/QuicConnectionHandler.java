@@ -52,9 +52,9 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private final int maxStreamBidiRequests;
   private final int maxStreamUniRequests;
   private final boolean server;
+  private final SocketAddress remoteAddress;
   private Completable<QuicConnection> handler;
   private QuicConnectionImpl connection;
-  private SocketAddress remoteAddress;
   private int maxDatagramLength;
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
