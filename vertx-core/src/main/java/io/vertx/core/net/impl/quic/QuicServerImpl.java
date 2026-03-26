@@ -33,8 +33,10 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.Mapping;
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicServerInternal;
@@ -77,6 +79,7 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   private final ServerSSLOptions sslOptions;
   private SslContextProviderReference sslContextProviderRef;
   private Handler<QuicConnection> handler;
+  private Handler<Throwable> exceptionHandler;
   private QuicTokenHandler tokenHandler;
 
   public QuicServerImpl(VertxInternal vertx, QuicServerConfig config, String protocol, ServerSSLOptions sslOptions) {
@@ -88,6 +91,12 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   @Override
   public QuicServer connectHandler(Handler<QuicConnection> handler) {
     this.handler = handler;
+    return this;
+  }
+
+  @Override
+  public QuicServer exceptionHandler(Handler<Throwable> handler) {
+    this.exceptionHandler = handler;
     return this;
   }
 
@@ -200,10 +209,20 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
           QuicChannel channel = (QuicChannel) ch;
           LogConfig logConfig = config.getLogConfig();
           ByteBufFormat activityLogging = logConfig != null && logConfig.isEnabled() ? logConfig.getDataFormat() : null;
+          Completable<QuicConnection> adapter = (result, failure) -> {
+            if (failure != null) {
+              Handler<Throwable> handler = exceptionHandler;
+              if (handler != null) {
+                context.dispatch(failure, handler);
+              }
+            } else {
+              context.dispatch(result, handler);
+            }
+          };
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
             config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, config.getMaxStreamBidiRequests(),
             config.getMaxStreamUniRequests(), vertx.transport().convert(channel.remoteSocketAddress()), true,
-            QuicServerImpl.this.handler);
+            adapter);
           ChannelPipeline pipeline = channel.pipeline();
           pipeline.addLast("handler", handler);
         }

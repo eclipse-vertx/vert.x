@@ -23,6 +23,7 @@ import io.netty.handler.codec.quic.QuicSslContext;
 import io.netty.handler.logging.ByteBufFormat;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -32,8 +33,6 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.ClientSslContextManager;
 import io.vertx.core.internal.tls.ClientSslContextProvider;
-import io.vertx.core.internal.tls.SslContextManager;
-import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ConnectRetry;
 import io.vertx.core.spi.metrics.Metrics;
@@ -206,9 +205,14 @@ public class QuicClientImpl extends QuicEndpointImpl implements QuicClient {
           connectionGroup.add(ch);
           LogConfig logConfig = config.getLogConfig();
           ByteBufFormat activityLogging = logConfig != null && logConfig.isEnabled()? logConfig.getDataFormat() : null;
+          Completable<QuicConnection> adapter = (result, failure) -> {
+            if (failure == null) {
+              promise.tryComplete(result);
+            }
+          };
           QuicConnectionHandler handler = new QuicConnectionHandler(context, metrics, config.getIdleTimeout(),
             config.getReadIdleTimeout(), config.getWriteIdleTimeout(), activityLogging, config.getMaxStreamBidiRequests(),
-            config.getMaxStreamUniRequests(), remoteAddress, false, promise::tryComplete);
+            config.getMaxStreamUniRequests(), remoteAddress, false, adapter);
           ch.pipeline().addLast("handler", handler);
         }
       })

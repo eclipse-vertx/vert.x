@@ -92,7 +92,7 @@ public interface HttpServer extends Measured {
 
   /**
    * Set an exception handler called for socket errors happening before the HTTP connection
-   * is established, e.g during the TLS handshake.
+   * is established, e.g. during the TLS handshake.
    *
    * @param handler the handler to set
    * @return a reference to this, so the API can be used fluently
