@@ -555,11 +555,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServerInter
             }
           });
         }
-        // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
+        // Update port and address to actual values when it is not a domain socket as wildcard port 0 might have been used
+        var actualLocalAddress = localAddress;
         if (bindAddress.isInetSocket()) {
           actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+          actualLocalAddress = SocketAddress.inetSocketAddress(actualPort, localAddress.host());
         }
-        metrics = createMetrics(localAddress);
+        metrics = createMetrics(actualLocalAddress);
         promise.complete(ch);
       } else {
         promise.fail(res.cause());

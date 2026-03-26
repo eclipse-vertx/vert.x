@@ -14,7 +14,6 @@ package io.vertx.test.fakemetrics;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
@@ -31,6 +30,11 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   private final ConcurrentMap<String, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final Set<HttpServerMetric> requests = ConcurrentHashMap.newKeySet();
+  private final SocketAddress socketAddress;
+
+  public FakeHttpServerMetrics(SocketAddress socketAddress) {
+    this.socketAddress = socketAddress;
+  }
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
     return webSockets.get(ws.path());
@@ -42,6 +46,10 @@ public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerM
 
   public HttpServerMetric getResponseMetric(String uri) {
     return requests.stream().filter(m -> m.uri.equals(uri)).findFirst().orElse(null);
+  }
+
+  public SocketAddress socketAddress() {
+    return socketAddress;
   }
 
   @Override
