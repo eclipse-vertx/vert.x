@@ -119,6 +119,7 @@ public class QuicSslContextFactory implements SslContextFactory {
       if (kmf != null) {
         builder.keyManager(kmf, null);
       }
+      builder.endpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
     } else {
       builder = QuicSslContextBuilder.forServer(kmf, null);
       if (clientAuth != null) {
@@ -126,7 +127,6 @@ public class QuicSslContextFactory implements SslContextFactory {
       }
     }
     builder.keylog(keylog);
-    builder.endpointIdentificationAlgorithm(endpointIdentificationAlgorithm);
 /*
     Collection<String> cipherSuites = enabledCipherSuites;
     switch (sslProvider) {

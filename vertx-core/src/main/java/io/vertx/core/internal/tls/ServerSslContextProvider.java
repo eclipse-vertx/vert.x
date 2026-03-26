@@ -106,7 +106,7 @@ public class ServerSslContextProvider extends SslContextProvider {
     }
     try {
       SslContextFactory factory = provider.get()
-        .forServer(SslContextManager.CLIENT_AUTH_MAPPING.get(clientAuth))
+        .forServer(SslContextManager.mapClientAuth(clientAuth))
         .enabledProtocols(enabledProtocols)
         .enabledCipherSuites(enabledCipherSuites)
         .useAlpn(applicationProtocols != null)

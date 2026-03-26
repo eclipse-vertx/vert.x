@@ -58,6 +58,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
   private final QuicEndpointConfig config;
   private final String protocol;
   protected final SslContextManager<?> manager;
+  protected final BoringSSLKeylog keylog;
   protected final VertxInternal vertx;
   private TransportMetrics<?> metrics;
   private Channel channel;
@@ -100,6 +101,7 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
     this.protocol = protocol;
     this.vertx = Objects.requireNonNull(vertx);
     this.manager = sslContextManager(new BoringSslEngineOptions(keylog));
+    this.keylog = keylog;
   }
 
   abstract SslContextManager<?> sslContextManager(BoringSslEngineOptions engine);

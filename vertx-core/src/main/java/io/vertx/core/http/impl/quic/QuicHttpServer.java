@@ -45,6 +45,7 @@ public class QuicHttpServer implements HttpServerInternal {
   private final boolean manageMetrics;
   private volatile Handler<HttpServerRequest> requestHandler;
   private Handler<HttpConnection> connectionHandler;
+  private Handler<Throwable> exceptionHandler;
   private QuicServerImpl quicServer;
   private HttpServerMetrics<?, ?> httpMetrics;
   private volatile int actualPort;
@@ -108,6 +109,7 @@ public class QuicHttpServer implements HttpServerInternal {
     if (actualPort > 0) {
       throw new IllegalStateException("Server already bound");
     }
+    this.exceptionHandler = handler;
     return this;
   }
 
@@ -241,6 +243,7 @@ public class QuicHttpServer implements HttpServerInternal {
     quicServer.connectHandler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),
       http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled));
+    quicServer.exceptionHandler(exceptionHandler);
     return quicServer
       .bind(current, address)
       .map(addr -> {

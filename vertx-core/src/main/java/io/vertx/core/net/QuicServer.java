@@ -10,9 +10,11 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 /**
@@ -28,6 +30,7 @@ public interface QuicServer extends QuicEndpoint {
    * @param handler the connection handler
    * @return this object instance
    */
+  @Fluent
   QuicServer connectHandler(Handler<QuicConnection> handler);
 
   /**
@@ -37,6 +40,7 @@ public interface QuicServer extends QuicEndpoint {
    * @param handler the handler processing streams
    * @return this object instance
    */
+  @Fluent
   default QuicServer streamHandler(Handler<QuicStream> handler) {
     if (handler != null) {
       return connectHandler(connection -> {
@@ -46,6 +50,16 @@ public interface QuicServer extends QuicEndpoint {
       return connectHandler(null);
     }
   }
+
+  /**
+   * Set an exception handler called for socket errors happening before the QUIC connection
+   * is established, e.g. during the TLS handshake.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  QuicServer exceptionHandler(Handler<Throwable> handler);
 
   /**
    * Start listening on the {@code port} and {@code host} as configured in the {@link io.vertx.core.net.QuicServerConfig} used when

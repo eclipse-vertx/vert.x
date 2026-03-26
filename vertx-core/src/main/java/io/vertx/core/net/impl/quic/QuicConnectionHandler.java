@@ -20,7 +20,8 @@ import io.netty.handler.codec.quic.QuicStreamChannel;
 import io.netty.handler.codec.quic.QuicStreamLimitChangedEvent;
 import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.ssl.SniCompletionEvent;
-import io.vertx.core.Handler;
+import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.vertx.core.Completable;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
@@ -51,15 +52,15 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private final int maxStreamBidiRequests;
   private final int maxStreamUniRequests;
   private final boolean server;
-  private Handler<QuicConnection> handler;
-  private QuicChannel channel;
+  private final SocketAddress remoteAddress;
+  private Completable<QuicConnection> handler;
   private QuicConnectionImpl connection;
-  private SocketAddress remoteAddress;
+  private int maxDatagramLength;
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
                                Duration readIdleTimeout, Duration writeIdleTimeout, ByteBufFormat activityLogging,
                                int maxStreamBidiRequests, int maxStreamUniRequests, SocketAddress remoteAddress,
-                               boolean server, Handler<QuicConnection> handler) {
+                               boolean server, Completable<QuicConnection> handler) {
     this.context = context;
     this.metrics = metrics;
     this.idleTimeout = timeoutMillis(idleTimeout);
@@ -74,28 +75,23 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   }
 
   @Override
-  public void handlerAdded(ChannelHandlerContext ctx) {
-    QuicChannel ch = (QuicChannel) ctx.channel();
-    channel = ch;
-    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging,
-      maxStreamBidiRequests, maxStreamUniRequests, ch, remoteAddress, ctx, server);
-  }
-
-  @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    super.channelActive(ctx);
-    activate();
+    activate(ctx);
   }
 
-  private void activate() {
+  private void activate(ChannelHandlerContext ctx) {
+    QuicChannel ch = (QuicChannel) ctx.channel();
+    QuicConnectionImpl c = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging,
+      maxStreamBidiRequests, maxStreamUniRequests, maxDatagramLength, ch, remoteAddress, ctx, server);
+    connection = c;
     if (metrics != null) {
-      Object metric = metrics.connected(connection.remoteAddress(), connection.remoteName());
-      connection.metric(metric);
+      Object metric = metrics.connected(c.remoteAddress(), c.remoteName());
+      c.metric(metric);
     }
-    Handler<QuicConnection> h = handler;
+    Completable<QuicConnection> h = handler;
     if (h != null) {
       handler = null;
-      context.dispatch(connection, h);
+      h.succeed(c);
     }
   }
 
@@ -131,22 +127,29 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
         c.shutdown(shutdown.timeout());
       }
     } else if (evt instanceof QuicStreamLimitChangedEvent) {
-      connection.handleQuicStreamLimitChanged();
+      QuicConnectionImpl c = connection;
+      if (c != null) {
+        c.handleQuicStreamLimitChanged();
+      }
     } else if (evt instanceof QuicDatagramExtensionEvent) {
       QuicDatagramExtensionEvent datagramExtensionEvent = (QuicDatagramExtensionEvent) evt;
-      QuicConnectionImpl c = connection;
-      c.enableDatagramExtension(datagramExtensionEvent.maxLength());
-
-      // Activate at this moment, since the handler activation happens before we get relevant information
-      // datagram extension event is last, see QuicheQuicChannel
-      activate();
+      this.maxDatagramLength = datagramExtensionEvent.maxLength();
+    } else if (evt instanceof SslHandshakeCompletionEvent) {
+      SslHandshakeCompletionEvent handshakeEvt = (SslHandshakeCompletionEvent)evt;
+      if (!handshakeEvt.isSuccess()) {
+        Completable<QuicConnection> h = handler;
+        if (h != null) {
+          h.fail(handshakeEvt.cause());
+        }
+      }
     }
     super.userEventTriggered(ctx, evt);
   }
 
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) {
-    if (connection.handleException(t)) {
+    QuicConnectionImpl c = connection;
+    if (c != null && c.handleException(t)) {
       chctx.close();
     }
   }

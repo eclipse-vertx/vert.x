@@ -18,6 +18,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.NetUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
@@ -996,6 +997,27 @@ public class QuicServerTest extends VertxTestBase {
       client.close();
       server.close().await();
     }
+  }
+
+  @Test
+  public void testServerExceptionHandler() throws Exception {
+    QuicServer server = vertx.createQuicServer(SSL_OPTIONS.copy().setClientAuth(ClientAuth.REQUIRED));
+    server.connectHandler(conn -> {
+      fail();
+    });
+    AtomicReference<Throwable> exceptionCaught = new AtomicReference<>();
+    server.exceptionHandler(exceptionCaught::set);
+    server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
+    QuicTestClient client = new QuicTestClient();
+    try {
+      client = new QuicTestClient();
+      QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
+    } catch (Exception ignore) {
+    } finally {
+      client.close();
+      server.close().await();
+    }
+    assertWaitUntil(() -> exceptionCaught.get() != null);
   }
 
   /*  @Test
