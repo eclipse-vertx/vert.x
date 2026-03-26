@@ -1335,16 +1335,10 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         serverBuilder = serverBuilder.with(new OpenSSLEngineOptions());
       }
       test.server = serverBuilder.build();
-      AtomicInteger connectedCount = new AtomicInteger();
-//      test.server.connectionHandler(conn -> complete());
-      AtomicInteger count = new AtomicInteger();
-//      test.server.exceptionHandler(err -> {
-//        if (!shouldPass) {
-//          if (count.incrementAndGet() == 1) {
-//            complete();
-//          }
-//        }
-//      });
+      AtomicInteger connectSuccess = new AtomicInteger();
+      AtomicInteger connectFailures = new AtomicInteger();
+      test.server.connectionHandler(conn -> connectSuccess.incrementAndGet());
+      test.server.exceptionHandler(err -> connectFailures.incrementAndGet());
       test.server.requestHandler(req -> {
         indicatedServerName = req.connection().indicatedServerName();
 //        assertEquals(options.getProtocolVersion(), req.version());
@@ -1404,8 +1398,11 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       try {
         fut.await();
         test.assertTrue(shouldPass);
+        test.assertTrue(connectSuccess.get() > 0);
+        test.assertEquals(0, connectFailures.get());
       } catch (Exception err) {
         test.assertFalse("Should not fail " + err.getMessage(), shouldPass);
+        test.assertEquals(0, connectSuccess.get());
       }
       return this;
     }
