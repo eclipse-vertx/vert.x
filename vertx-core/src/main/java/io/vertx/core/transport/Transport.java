@@ -14,6 +14,7 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.impl.transports.TransportInternal;
 import io.vertx.core.impl.transports.TransportLoader;
+import io.vertx.core.impl.transports.VirtualThreadNioTransport;
 
 /**
  * The transport used by a {@link io.vertx.core.Vertx} instance.
@@ -41,6 +42,15 @@ public interface Transport {
    * Native transport based on Netty native io_uring transport.
    */
   Transport IO_URING = TransportLoader.io_uring();
+
+  /**
+   * NIO transport with event loops running as long-running virtual threads
+   * using Netty's {@code ManualIoEventLoop}.
+   */
+  Transport VIRTUAL_THREAD_NIO = new TransportInternal("virtual_thread_nio",
+    VirtualThreadNioTransport.INSTANCE.isAvailable(),
+    VirtualThreadNioTransport.INSTANCE.unavailabilityCause(),
+    VirtualThreadNioTransport.INSTANCE);
 
   /**
    * @return the name among {@code nio, kqueue, epoll, io_uring}

@@ -809,6 +809,15 @@
     </profile>
 
     <profile>
+      <id>VirtualThreadNio</id>
+      <properties>
+        <vertx.surefire.nettyTransport>virtual_thread_nio</vertx.surefire.nettyTransport>
+        <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
+        <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
+      </properties>
+    </profile>
+
+    <profile>
       <id>benchmarks</id>
       <build>
         <pluginManagement>

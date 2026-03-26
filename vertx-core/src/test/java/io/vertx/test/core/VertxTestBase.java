@@ -68,6 +68,9 @@ public class VertxTestBase extends AsyncTestBase {
         case "io_uring":
           transport = Transport.IO_URING;
           break;
+        case "virtual_thread_nio":
+          transport = Transport.VIRTUAL_THREAD_NIO;
+          break;
         default:
           transport = new Transport() {
             @Override
@@ -213,7 +216,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected Vertx createVertx(VertxOptions options) {
     Vertx vertx = createVertxBuilder(options).build();
-    if (TRANSPORT != Transport.NIO) {
+    if (TRANSPORT != Transport.NIO && TRANSPORT != Transport.VIRTUAL_THREAD_NIO) {
       if (!vertx.isNativeTransportEnabled()) {
         fail(vertx.unavailableNativeTransportCause());
       }
