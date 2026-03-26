@@ -55,6 +55,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   private Completable<QuicConnection> handler;
   private QuicConnectionImpl connection;
   private SocketAddress remoteAddress;
+  private int maxDatagramLength;
 
   public QuicConnectionHandler(ContextInternal context, TransportMetrics<?> metrics, Duration idleTimeout,
                                Duration readIdleTimeout, Duration writeIdleTimeout, ByteBufFormat activityLogging,
@@ -74,27 +75,23 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
   }
 
   @Override
-  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    QuicChannel ch = (QuicChannel) ctx.channel();
-    connection = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging,
-      maxStreamBidiRequests, maxStreamUniRequests, ch, remoteAddress, ctx, server);
-  }
-
-  @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
-    super.channelActive(ctx);
-    activate();
+    activate(ctx);
   }
 
-  private void activate() {
+  private void activate(ChannelHandlerContext ctx) {
+    QuicChannel ch = (QuicChannel) ctx.channel();
+    QuicConnectionImpl c = new QuicConnectionImpl(context, metrics, idleTimeout, readIdleTimeout, writeIdleTimeout, activityLogging,
+      maxStreamBidiRequests, maxStreamUniRequests, maxDatagramLength, ch, remoteAddress, ctx, server);
+    connection = c;
     if (metrics != null) {
-      Object metric = metrics.connected(connection.remoteAddress(), connection.remoteName());
-      connection.metric(metric);
+      Object metric = metrics.connected(c.remoteAddress(), c.remoteName());
+      c.metric(metric);
     }
     Completable<QuicConnection> h = handler;
     if (h != null) {
       handler = null;
-      h.succeed(connection);
+      h.succeed(c);
     }
   }
 
@@ -136,14 +133,7 @@ public class QuicConnectionHandler extends ChannelDuplexHandler implements Netwo
       }
     } else if (evt instanceof QuicDatagramExtensionEvent) {
       QuicDatagramExtensionEvent datagramExtensionEvent = (QuicDatagramExtensionEvent) evt;
-      QuicConnectionImpl c = connection;
-      if (c != null) {
-        c.enableDatagramExtension(datagramExtensionEvent.maxLength());
-      }
-
-      // Activate at this moment, since the handler activation happens before we get relevant information
-      // datagram extension event is last, see QuicheQuicChannel
-      activate();
+      this.maxDatagramLength = datagramExtensionEvent.maxLength();
     } else if (evt instanceof SslHandshakeCompletionEvent) {
       SslHandshakeCompletionEvent handshakeEvt = (SslHandshakeCompletionEvent)evt;
       if (!handshakeEvt.isSuccess()) {

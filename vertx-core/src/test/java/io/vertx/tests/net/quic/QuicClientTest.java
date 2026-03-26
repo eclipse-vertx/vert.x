@@ -627,8 +627,8 @@ public class QuicClientTest extends VertxTestBase {
     client = vertx.createQuicClient(clientConfig, SSL_OPTIONS);
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    assertWaitUntil(() -> connection.maxDatagramLength() > 0);
     int maxLen = connection.maxDatagramLength();
+    assertTrue(connection.maxDatagramLength() > 0);
     Buffer datagram = Buffer.buffer(TestUtils.randomAlphaString(maxLen));
     connection.datagramHandler(dgram -> {
       assertEquals(datagram.toString(), dgram.toString());

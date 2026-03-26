@@ -78,8 +78,8 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
 
   public QuicConnectionImpl(ContextInternal context, TransportMetrics metrics, long idleTimeout,
                             long readIdleTimeout,  long writeIdleTimeout, ByteBufFormat activityLogging, int maxStreamBidiRequests,
-                            int maxStreamUniRequests, QuicChannel channel, SocketAddress remoteAddress, ChannelHandlerContext chctx,
-                            boolean server) {
+                            int maxStreamUniRequests, int maxDatagramLength, QuicChannel channel, SocketAddress remoteAddress,
+                            ChannelHandlerContext chctx, boolean server) {
     super(context, chctx);
 
     Map<QuicStreamType, StreamOpenRequestQueue> pendingStreamRequestsMap = new EnumMap<>(QuicStreamType.class);
@@ -96,7 +96,7 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     this.remoteAddress = remoteAddress;
     this.server = server;
     this.pendingStreamOpenRequestsMap = pendingStreamRequestsMap;
-    this.maxDatagramLength = 0;
+    this.maxDatagramLength = maxDatagramLength;
     this.streamGroup = new ConnectionGroup(context.nettyEventLoop()) {
       @Override
       protected void handleShutdown(Duration timeout, Completable<Void> completion) {
@@ -198,10 +198,6 @@ public class QuicConnectionImpl extends ConnectionBase implements QuicConnection
     } else {
       byteBuf.release();
     }
-  }
-
-  void enableDatagramExtension(int maxDatagramLength) {
-    this.maxDatagramLength = Math.max(0, maxDatagramLength);
   }
 
   void handleQuicStreamLimitChanged() {
