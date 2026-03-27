@@ -65,6 +65,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
   public static TcpHttpClientTransport create(NetClientInternal netClient,
                                               HttpClientConfig config,
+                                              boolean forceSNI,
                                               HttpClientMetrics httpMetrics) {
     ObservabilityConfig observabilityConfig = config.getObservabilityConfig();
     return new TcpHttpClientTransport(netClient,
@@ -72,7 +73,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       config.isDecompressionEnabled(),
       config.getTcpConfig().getLogConfig() != null && config.getTcpConfig().getLogConfig().isEnabled(),
       config.getTcpConfig().getLogConfig() != null ? config.getTcpConfig().getLogConfig().getDataFormat() : null,
-      config.isForceSni(),
+      forceSNI,
       config.getHttp1Config(),
       config.getHttp2Config(),
       config.getTcpConfig().getIdleTimeout(),

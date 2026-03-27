@@ -43,7 +43,6 @@ public class QuicHttpClientTransport implements HttpClientTransport {
   private final Http3Settings localSettings;
   private final Http3FrameLogger frameLogger;
   private final long maxConcurrency;
-  private final boolean forceSni;
 
   public QuicHttpClientTransport(VertxInternal vertx, HttpClientConfig config) {
 
@@ -77,7 +76,6 @@ public class QuicHttpClientTransport implements HttpClientTransport {
     this.localSettings = localSettings;
     this.client = client;
     this.frameLogger = logEnabled ? new Http3FrameLogger(InternalLogLevel.DEBUG) : null;
-    this.forceSni = config.isForceSni();
   }
 
   public QuicClientImpl client() {
