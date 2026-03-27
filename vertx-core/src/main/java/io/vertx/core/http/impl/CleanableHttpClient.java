@@ -12,6 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.internal.VertxInternal;
@@ -106,6 +107,11 @@ public class CleanableHttpClient implements HttpClientInternal {
   @Override
   public HttpClientTransport quicTransport() {
     return delegate.quicTransport();
+  }
+
+  @Override
+  public HttpClientInternal exceptionHandler(Handler<Throwable> handler) {
+    return delegate.exceptionHandler(handler);
   }
 
   @Override

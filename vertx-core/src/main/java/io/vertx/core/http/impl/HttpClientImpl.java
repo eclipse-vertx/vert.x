@@ -70,6 +70,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final int maxRedirects;
   private final List<HttpVersion> versions;
   private final Handler<HttpConnection> connectHandler;
+  private volatile Handler<Throwable> exceptionHandler;
   private volatile ClientSSLOptions sslOptions;
 
   HttpClientImpl(VertxInternal vertx,
@@ -233,6 +234,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
             });
           }
         },
+        exceptionHandler,
         p,
         poolMetrics,
         key.authority,
@@ -248,6 +250,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   @Override
   public HttpClientTransport quicTransport() {
     return quicTransport;
+  }
+
+  @Override
+  public HttpClientInternal exceptionHandler(Handler<Throwable> handler) {
+    this.exceptionHandler = handler;
+    return this;
   }
 
   protected void setDefaultSslOptions(ClientSSLOptions options) {

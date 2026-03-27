@@ -13,6 +13,7 @@ package io.vertx.core.internal.http;
 
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
@@ -35,6 +36,8 @@ public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Cl
   HttpClientTransport tcpTransport();
 
   HttpClientTransport quicTransport();
+
+  HttpClientInternal exceptionHandler(Handler<Throwable> handler);
 
   // Should not be here but currently necessary for WebClient
   @Deprecated(forRemoval = true)
