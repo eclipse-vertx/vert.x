@@ -72,12 +72,6 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-classes-quic</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
