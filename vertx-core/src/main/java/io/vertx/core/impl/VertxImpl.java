@@ -454,7 +454,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       .protocol("http")
       .sslOptions(options.getSslOptions())
       .build();
-    TcpHttpClientTransport channelConnector = TcpHttpClientTransport.create(tcpClient, config, httpMetrics);
+    TcpHttpClientTransport channelConnector = TcpHttpClientTransport.create(tcpClient, config, false, httpMetrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, httpMetrics);
   }
 

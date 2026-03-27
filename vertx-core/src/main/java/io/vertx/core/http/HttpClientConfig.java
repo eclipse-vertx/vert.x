@@ -74,7 +74,6 @@ public class HttpClientConfig {
   private String defaultHost;
   private int defaultPort;
   private int maxRedirects;
-  private boolean forceSni;
   private ObservabilityConfig observabilityConfig;
   private boolean shared;
   private String name;
@@ -93,7 +92,6 @@ public class HttpClientConfig {
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
-    this.forceSni = HttpClientOptions.DEFAULT_FORCE_SNI;
     this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
@@ -113,7 +111,6 @@ public class HttpClientConfig {
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.maxRedirects = other.maxRedirects;
-    this.forceSni = other.forceSni;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.shared = other.shared;
     this.name = other.name;
@@ -141,7 +138,6 @@ public class HttpClientConfig {
     this.defaultHost = options.getDefaultHost();
     this.defaultPort = options.getDefaultPort();
     this.maxRedirects = options.getMaxRedirects();
-    this.forceSni = options.isForceSni();
     this.observabilityConfig = observabilityConfig;
     this.shared = options.isShared();
     this.name = options.getName();
@@ -447,25 +443,6 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
-    return this;
-  }
-
-  /**
-   * @return whether the client should always use SNI on TLS/SSL connections
-   */
-  public boolean isForceSni() {
-    return forceSni;
-  }
-
-  /**
-   * By default, the server name is only sent for Fully Qualified Domain Name (FQDN), setting
-   * this property to {@code true} forces the server name to be always sent.
-   *
-   * @param forceSni {@code true} when the client should always use SNI on TLS/SSL connections
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientConfig setForceSni(boolean forceSni) {
-    this.forceSni = forceSni;
     return this;
   }
 

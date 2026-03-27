@@ -155,7 +155,9 @@ public class Http3Config implements HttpConfig {
       }
       @Override
       public HttpClientConfig setForceSni(boolean forceSni) {
-        config.setForceSni(forceSni);
+        if (forceSni) {
+          throw new UnsupportedOperationException();
+        }
         return this;
       }
       @Override

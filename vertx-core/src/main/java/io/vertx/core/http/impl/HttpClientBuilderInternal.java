@@ -39,6 +39,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
   private HttpClientOptions clientOptions; // To be removed
   private ClientSSLOptions sslOptions;
   private SSLEngineOptions sslEngineOptions;
+  private boolean forceSNI;
   private PoolOptions poolOptions;
   private Handler<HttpConnection> connectHandler;
   private Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
@@ -53,15 +54,25 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
 
   public HttpClientBuilderInternal with(HttpClientConfig config) {
     this.clientConfig = config;
+    this.forceSNI = false;
     return this;
   }
 
   @Override
   public HttpClientBuilderInternal with(HttpClientOptions options) {
-    this.clientConfig = new HttpClientConfig(options);
-    this.sslOptions = options.getSslOptions();
-    this.sslEngineOptions = options.getSslEngineOptions();
-    this.clientOptions = options;
+    if (options != null) {
+      this.clientConfig = new HttpClientConfig(options);
+      this.sslOptions = options.getSslOptions();
+      this.sslEngineOptions = options.getSslEngineOptions();
+      this.clientOptions = options;
+      this.forceSNI = options.isForceSni();
+    } else {
+      this.clientConfig = null;
+      this.sslOptions = null;
+      this.sslEngineOptions = null;
+      this.clientOptions = null;
+      this.forceSNI = false;
+    }
     return this;
   }
 
@@ -277,7 +288,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         co.isDecompressionEnabled(),
         logConfig != null && logConfig.isEnabled(),
         logConfig != null ? logConfig.getDataFormat() : null,
-        co.isForceSni(),
+        forceSNI,
         supportedVersions.contains(HttpVersion.HTTP_1_1) || supportedVersions.contains(HttpVersion.HTTP_1_0) ? (co.getHttp1Config() != null ? co.getHttp1Config() : new Http1ClientConfig()) : null,
         supportedVersions.contains(HttpVersion.HTTP_2) ? (co.getHttp2Config() != null ? co.getHttp2Config() : new Http2ClientConfig()) : null,
         co.getTcpConfig().getIdleTimeout(),
