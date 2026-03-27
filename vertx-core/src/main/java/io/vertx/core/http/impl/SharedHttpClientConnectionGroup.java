@@ -66,6 +66,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
   private final HttpClientMetrics<?, ?> httpMetrics;
   private final ClientMetrics<?, ?, ?> clientMetrics;
   private final Handler<HttpConnection> connectHandler;
+  private final Handler<Throwable> exceptionHandler;
   private final Pool pool;
   private final HostAndPort authority;
   private final SocketAddress server;
@@ -73,6 +74,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
   public SharedHttpClientConnectionGroup(ClientMetrics<?, ?, ?> clientMetrics,
                                          HttpClientMetrics<?, ?> httpMetrics,
                                          Handler<HttpConnection> connectHandler,
+                                         Handler<Throwable> exceptionHandler,
                                          Function<SharedHttpClientConnectionGroup, Pool> poolProvider,
                                          PoolMetrics poolMetrics,
                                          HostAndPort authority,
@@ -84,6 +86,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
     this.pool = poolProvider.apply(this);
     this.server = server;
     this.connectHandler = connectHandler;
+    this.exceptionHandler = exceptionHandler;
   }
 
   public int size() {
@@ -233,7 +236,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
 
     @Override
     public Future<ConnectResult<HttpClientConnection>> connect(ContextInternal context, Listener listener) {
-      return connector
+      Future<ConnectResult<HttpClientConnection>> fut = connector
         .connect(context, owner.server, owner.authority, connectParams, owner.clientMetrics)
         .map(connection -> {
           connection.evictionHandler(v -> {
@@ -243,9 +246,17 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
           connection.concurrencyChangeHandler(listener::onConcurrencyChange);
           owner.init(connection);
           long capacity = connection.concurrency();
-          int idx = connection.protocolVersion() != HttpVersion.HTTP_2 ? 0: 1;
+          int idx = connection.protocolVersion() != HttpVersion.HTTP_2 ? 0 : 1;
           return new ConnectResult<>(connection, capacity, idx);
         });
+      if (owner.exceptionHandler != null) {
+        fut = fut.andThen(ar -> {
+          if (ar.failed()) {
+            owner.exceptionHandler.handle(ar.cause());
+          }
+        });
+      }
+      return fut;
     }
 
     @Override

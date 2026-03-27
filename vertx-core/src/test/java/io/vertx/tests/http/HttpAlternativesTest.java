@@ -33,9 +33,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -334,7 +332,7 @@ public class HttpAlternativesTest extends VertxTestBase {
   }
 
   @Test
-  public void testCertificateValidation() {
+  public void testServerCertValidation() {
     startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
       .handler(request -> {
         assertNull(request.getHeader(HttpHeaders.ALT_USED));
@@ -349,24 +347,21 @@ public class HttpAlternativesTest extends VertxTestBase {
         fail();
       });
     client = vertx.createHttpClient(new HttpClientConfig().setFollowAlternativeServices(true).setSsl(true), new ClientSSLOptions().setTrustAll(true));
+    List<SSLHandshakeException> connectErrors = Collections.synchronizedList(new ArrayList<>());
+    ((HttpClientInternal)client).exceptionHandler(err -> {
+      if (err instanceof SSLHandshakeException) {
+        connectErrors.add((SSLHandshakeException)err);
+      }
+    });
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
         .compose(HttpClientResponse::body)
       ).await();
     assertEquals("host2.com:4043", body.toString());
-    try {
-      client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_2).setPort(4043).setURI("/"))
-        .compose(request -> request
-          .send()
-          .expecting(response -> request.version() == HttpVersion.HTTP_2)
-          .compose(HttpClientResponse::body)
-        ).await();
-      fail();
-    } catch (Exception e) {
-      assertEquals(SSLHandshakeException.class, e.getClass());
-      assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
-    }
+    assertWaitUntil(() -> !connectErrors.isEmpty());
+    SSLHandshakeException err = connectErrors.get(0);
+    assertTrue(err.getCause().getMessage().contains("No name matching host2.com found"));
   }
 
   @Test
