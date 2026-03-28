@@ -193,13 +193,17 @@ public abstract class QuicEndpointImpl implements QuicEndpointInternal, MetricsP
           }
         }).addListener((ChannelFutureListener) future -> {
           try {
-            manager.close();
+            closeHook();
           } finally {
             completion.succeed();
           }
         });
       }
     };
+  }
+
+  void closeHook() {
+    manager.close();
   }
 
   @Override

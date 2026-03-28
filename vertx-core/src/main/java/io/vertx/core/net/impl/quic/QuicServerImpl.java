@@ -36,7 +36,6 @@ import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicServerInternal;
@@ -60,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -81,11 +79,21 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   private Handler<QuicConnection> handler;
   private Handler<Throwable> exceptionHandler;
   private QuicTokenHandler tokenHandler;
+  private final MappingRef<String, QuicSslContext> mapping;
 
   public QuicServerImpl(VertxInternal vertx, QuicServerConfig config, String protocol, ServerSSLOptions sslOptions) {
     super(vertx, config, protocol);
     this.config = config;
     this.sslOptions = sslOptions;
+    this.mapping = new MappingRef<>();
+  }
+
+  @Override
+  void closeHook() {
+    // Clear to the actual mapping: BoringSSLTlsextServernameCallback keeps a reference the mapping
+    // and a JNI GC root keeps a reference to BoringSSLTlsextServernameCallback
+    mapping.actual = null;
+    super.closeHook();
   }
 
   @Override
@@ -165,18 +173,19 @@ public class QuicServerImpl extends QuicEndpointImpl implements QuicServerIntern
   private QuicServerCodecBuilder createCodecBuilder(ContextInternal context, TransportMetrics<?> metrics) throws Exception {
     List<String> applicationProtocols = sslOptions.getApplicationLayerProtocols();
     boolean sni = sslOptions.isSni();
+    mapping.actual = name -> {
+      ServerSslContextProvider provider = sslContextProviderRef.get();
+      if (sni && name != null) {
+        Mapping<? super String, ? extends SslContext> resolved = provider.serverNameMapping(applicationProtocols);
+        return (QuicSslContext) resolved.map(name);
+      } else {
+        return (QuicSslContext) provider.createServerContext(applicationProtocols);
+      }
+    };
     QuicSslContextBuilder sslContextBuilder = QuicSslContextBuilder
       .forServer(SNI_KEYMANAGER, null)
       .clientAuth(ClientAuth.REQUIRE)
-      .sni(name -> {
-        ServerSslContextProvider provider = sslContextProviderRef.get();
-        if (sni && name != null) {
-          Mapping<? super String, ? extends SslContext> mapping = provider.serverNameMapping(applicationProtocols);
-          return (QuicSslContext) mapping.map(name);
-        } else {
-          return (QuicSslContext) provider.createServerContext(applicationProtocols);
-        }
-      });
+      .sni(mapping);
     sslContextBuilder.keylog(keylog);
     if (sslOptions.getClientAuth() != null) {
       sslContextBuilder.clientAuth(SslContextManager.mapClientAuth(sslOptions.getClientAuth()));
