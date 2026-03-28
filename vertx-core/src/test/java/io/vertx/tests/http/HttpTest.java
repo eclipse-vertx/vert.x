@@ -6192,10 +6192,11 @@ public abstract class HttpTest extends SimpleHttpTest {
       }
     );
     startServer(testAddress);
-    client.request(requestOptions)
-      .compose(req -> req.send()
+    client.request(requestOptions, req -> req
+        .send()
         .expecting(HttpResponseExpectation.SC_OK)
-        .compose(HttpClientResponse::end))
+        .compose(HttpClientResponse::end)
+      )
       .onComplete(onSuccess(nothing -> complete()));
     await();
   }
