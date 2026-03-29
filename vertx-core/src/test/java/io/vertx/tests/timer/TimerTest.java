@@ -17,7 +17,6 @@ import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.util.concurrent.CancellationException;
@@ -124,7 +123,7 @@ public class TimerTest extends VertxTestBase {
     id.set(abc.apply(delay, new Handler<Long>() {
       int count;
       public void handle(Long timerID) {
-        assertThat(System.nanoTime() - now, Matchers.greaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay)));
+        assertThatComparable(System.nanoTime() - now, a -> a.isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay)));
         assertEquals(id.get(), timerID.longValue());
         count++;
         if (count == numFires) {

@@ -10,8 +10,6 @@
  */
 package io.vertx.tests.http.impl;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 
 import org.junit.Test;
 
@@ -25,29 +23,29 @@ public class HttpClientRequestBaseTest extends HttpTestBase {
     server.requestHandler(req -> {});
     server.listen(testAddress).onComplete(onSuccess(server -> {
       client.request(new RequestOptions(requestOptions).setURI("/?")).onComplete(onSuccess(req -> {
-        assertThat(req.getURI(), is("/?"));
-        assertThat(req.path(), is("/"));
-        assertThat(req.query(), is(""));
+        assertThat(req.getURI(), a -> a.isEqualTo("/?"));
+        assertThat(req.path(), a -> a.isEqualTo("/"));
+        assertThat(req.query(), a -> a.isEqualTo(""));
         req.setURI("/index.html");
-        assertThat(req.getURI(), is("/index.html"));
-        assertThat(req.path(), is("/index.html"));
-        assertThat(req.query(), is(nullValue()));
+        assertThat(req.getURI(), a -> a.isEqualTo("/index.html"));
+        assertThat(req.path(), a -> a.isEqualTo("/index.html"));
+        assertThat(req.query(), a -> a.isNull());
         req.setURI("/foo?bar");
-        assertThat(req.getURI(), is("/foo?bar"));
-        assertThat(req.path(), is("/foo"));
-        assertThat(req.query(), is("bar"));
+        assertThat(req.getURI(), a -> a.isEqualTo("/foo?bar"));
+        assertThat(req.path(), a -> a.isEqualTo("/foo"));
+        assertThat(req.query(), a -> a.isEqualTo("bar"));
         req.setURI("/baz?key=value");
-        assertThat(req.getURI(), is("/baz?key=value"));
-        assertThat(req.path(), is("/baz"));
-        assertThat(req.query(), is("key=value"));
+        assertThat(req.getURI(), a -> a.isEqualTo("/baz?key=value"));
+        assertThat(req.path(), a -> a.isEqualTo("/baz"));
+        assertThat(req.query(), a -> a.isEqualTo("key=value"));
         req.setURI("");
-        assertThat(req.getURI(), is(""));
-        assertThat(req.path(), is(""));
-        assertThat(req.query(), is(nullValue()));
+        assertThat(req.getURI(), a -> a.isEqualTo(""));
+        assertThat(req.path(), a -> a.isEqualTo(""));
+        assertThat(req.query(), a -> a.isNull());
         req.setURI("?");
-        assertThat(req.getURI(), is("?"));
-        assertThat(req.path(), is(""));
-        assertThat(req.query(), is(""));
+        assertThat(req.getURI(), a -> a.isEqualTo("?"));
+        assertThat(req.path(), a -> a.isEqualTo(""));
+        assertThat(req.query(), a -> a.isEqualTo(""));
         testComplete();
       }));
     }));

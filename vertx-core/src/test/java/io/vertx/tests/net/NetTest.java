@@ -77,7 +77,6 @@ import static io.vertx.test.core.TestUtils.*;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.tests.tls.HttpTCPTLSTest.testPeerHostServerCert;
-import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -1667,8 +1666,8 @@ public class NetTest extends VertxTestBase {
 
     });
     server.listen(test.bindAddress).onComplete(onFailure(t -> {
-      assertThat(t, is(instanceOf(IllegalArgumentException.class)));
-      assertThat(t.getMessage(), containsString("alias does not exist in the keystore"));
+      assertThat(t, a -> a.isInstanceOf(IllegalArgumentException.class));
+      assertThatString(t.getMessage(), a -> a.contains("alias does not exist in the keystore"));
       testComplete();
     }));
     await();

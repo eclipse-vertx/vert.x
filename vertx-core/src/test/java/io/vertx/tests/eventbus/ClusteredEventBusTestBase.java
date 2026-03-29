@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.CoreMatchers.*;
 
 
 /**
@@ -144,10 +143,10 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     }));
     awaitLatch(updateLatch);
     vertices[1].eventBus().request("foo", "echo").onComplete(onFailure(fail1 -> {
-      assertThat(fail1, is(instanceOf(ReplyException.class)));
+      assertThat(fail1, a -> a.isInstanceOf(ReplyException.class));
       assertEquals(ReplyFailure.NO_HANDLERS, ((ReplyException) fail1).failureType());
       vertices[0].eventBus().request("foo", "echo").onComplete(onFailure(fail2 -> {
-        assertThat(fail2, is(instanceOf(ReplyException.class)));
+        assertThat(fail2, a -> a.isInstanceOf(ReplyException.class));
         assertEquals(ReplyFailure.NO_HANDLERS, ((ReplyException) fail2).failureType());
         testComplete();
       }));

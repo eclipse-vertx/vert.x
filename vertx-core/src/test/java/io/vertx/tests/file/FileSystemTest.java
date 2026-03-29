@@ -49,7 +49,6 @@ import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -1955,8 +1954,8 @@ public class FileSystemTest extends VertxTestBase {
     CopyOptions options = new CopyOptions();
 
     fs.copy(from, to, options).onComplete(onFailure(t -> {
-      assertThat(t, instanceOf(io.vertx.core.file.FileSystemException.class));
-      assertThat(t.getCause(), instanceOf(FileAlreadyExistsException.class));
+      assertThat(t, a -> a.isInstanceOf(io.vertx.core.file.FileSystemException.class));
+      assertThat(t.getCause(), a -> a.isInstanceOf(FileAlreadyExistsException.class));
       complete();
     }));
     await();

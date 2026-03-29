@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.not;
 
 public class HttpResponseExpectationTest extends HttpTestBase {
 
@@ -117,7 +115,7 @@ public class HttpResponseExpectationTest extends HttpTestBase {
 
     testExpectation(true, predicate, HttpServerResponse::end, ar -> {
       Throwable cause = ar.cause();
-      assertThat(cause, instanceOf(CustomException.class));
+      assertThat(cause, a -> a.isInstanceOf(CustomException.class));
       CustomException customException = (CustomException) cause;
       assertEquals("boom", customException.getMessage());
     });
@@ -139,7 +137,7 @@ public class HttpResponseExpectationTest extends HttpTestBase {
         .end(new JsonObject().put("tag", uuid.toString()).put("message", "tilt").toBuffer());
     }, ar -> {
       Throwable cause = ar.cause();
-      assertThat(cause, instanceOf(CustomException.class));
+      assertThat(cause, a -> a.isInstanceOf(CustomException.class));
       CustomException customException = (CustomException) cause;
       assertEquals("tilt", customException.getMessage());
       assertEquals(uuid, customException.tag);
@@ -161,7 +159,7 @@ public class HttpResponseExpectationTest extends HttpTestBase {
         .end(TestUtils.randomBuffer(2048));
     }, ar -> {
       Throwable cause = ar.cause();
-      assertThat(cause, instanceOf(CustomException.class));
+      assertThat(cause, a -> a.isInstanceOf(CustomException.class));
       CustomException customException = (CustomException) cause;
       assertEquals(String.valueOf(statusCode), customException.getMessage());
       assertEquals(uuid, customException.tag);
@@ -176,7 +174,7 @@ public class HttpResponseExpectationTest extends HttpTestBase {
       });
 
     testExpectation(true, predicate, HttpServerResponse::end, ar -> {
-      assertThat(ar.cause(), instanceOf(IndexOutOfBoundsException.class));
+      assertThat(ar.cause(), a -> a.isInstanceOf(IndexOutOfBoundsException.class));
     });
   }
 
@@ -186,7 +184,7 @@ public class HttpResponseExpectationTest extends HttpTestBase {
       .wrappingFailure((v,e) -> null);
 
     testExpectation(true, predicate, HttpServerResponse::end, ar -> {
-      assertThat(ar.cause(), not(instanceOf(NullPointerException.class)));
+      assertThat(ar.cause(), a -> a.isNotInstanceOf(NullPointerException.class));
     });
   }
 

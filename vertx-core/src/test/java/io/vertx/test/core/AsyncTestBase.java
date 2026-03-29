@@ -17,6 +17,9 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import org.assertj.core.api.AbstractCharSequenceAssert;
+import org.assertj.core.api.AbstractComparableAssert;
+import org.assertj.core.api.AbstractObjectAssert;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
@@ -467,6 +470,11 @@ public class AsyncTestBase {
     }
   }
 
+  /**
+   * @deprecated Use {@link #assertThat(Object, Consumer)} with AssertJ assertions instead.
+   * Example: {@code assertThat(value, a -> a.isEqualTo(expected))}
+   */
+  @Deprecated
   protected <T> void assertThat(T actual, Matcher<T> matcher) {
     checkThread();
     try {
@@ -518,10 +526,86 @@ public class AsyncTestBase {
     }
   }
 
+  /**
+   * @deprecated Use {@link #assertThat(Object, Consumer)} with AssertJ assertions instead.
+   * Example: {@code assertThat(value, a -> a.as(reason).isEqualTo(expected))}
+   */
+  @Deprecated
   protected <T> void assertThat(String reason, T actual, Matcher<T> matcher) {
     checkThread();
     try {
       Assert.assertThat(reason, actual, matcher);
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
+  /**
+   * AssertJ-based assertion for general objects using Consumer pattern.
+   * This method is thread-safe for event-loop assertions.
+   * <p>
+   * Example usage:
+   * <pre>{@code
+   * assertThat(value, a -> a.isEqualTo(expected));
+   * assertThat(value, a -> a.isNotNull());
+   * assertThat(value, a -> a.isInstanceOf(MyClass.class));
+   * }</pre>
+   *
+   * @param actual the actual value
+   * @param assertion a consumer that performs AssertJ assertions
+   * @param <T> the type of the value being asserted
+   */
+  protected <T> void assertThat(T actual, Consumer<AbstractObjectAssert<?, T>> assertion) {
+    checkThread();
+    try {
+      assertion.accept(org.assertj.core.api.Assertions.assertThat(actual));
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
+  /**
+   * AssertJ-based assertion for String values using Consumer pattern.
+   * This method is thread-safe for event-loop assertions.
+   * <p>
+   * Example usage:
+   * <pre>{@code
+   * assertThatString(str, a -> a.isEqualTo("expected"));
+   * assertThatString(str, a -> a.contains("substring"));
+   * assertThatString(str, a -> a.startsWith("prefix"));
+   * }</pre>
+   *
+   * @param actual the actual string value
+   * @param assertion a consumer that performs AssertJ string assertions
+   */
+  protected void assertThatString(String actual, Consumer<AbstractCharSequenceAssert<?, String>> assertion) {
+    checkThread();
+    try {
+      assertion.accept(org.assertj.core.api.Assertions.assertThat(actual));
+    } catch (AssertionError e) {
+      handleThrowable(e);
+    }
+  }
+
+  /**
+   * AssertJ-based assertion for Comparable values using Consumer pattern.
+   * This method is thread-safe for event-loop assertions and provides comparison operations.
+   * <p>
+   * Example usage:
+   * <pre>{@code
+   * assertThatComparable(number, a -> a.isGreaterThan(0));
+   * assertThatComparable(number, a -> a.isLessThanOrEqualTo(100));
+   * assertThatComparable(number, a -> a.isBetween(1, 10));
+   * }</pre>
+   *
+   * @param actual the actual comparable value
+   * @param assertion a consumer that performs AssertJ comparable assertions
+   * @param <T> the type of the comparable value being asserted
+   */
+  protected <T extends Comparable<? super T>> void assertThatComparable(T actual, Consumer<AbstractComparableAssert<?, T>> assertion) {
+    checkThread();
+    try {
+      assertion.accept(org.assertj.core.api.Assertions.assertThat(actual));
     } catch (AssertionError e) {
       handleThrowable(e);
     }
