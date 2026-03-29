@@ -12,9 +12,7 @@
 
 package io.vertx.tests.security;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.assertj.core.api.Assertions;
 
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -81,7 +79,7 @@ public class PrivateKeyParserTest extends VertxTestBase {
 
   private void assertKeySpecType(byte[] encodedKey, String expectedAlgorithm) {
     String keyAlgorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(encodedKey);
-    assertThat(keyAlgorithm, is(expectedAlgorithm));
+    Assertions.assertThat(keyAlgorithm).isEqualTo(expectedAlgorithm);
   }
 
   /**
@@ -102,7 +100,7 @@ public class PrivateKeyParserTest extends VertxTestBase {
     ECPrivateKeySpec spec = PrivateKeyParser.getECKeySpec(derEncoding);
     KeyFactory factory = KeyFactory.getInstance("EC");
     ECPrivateKey key = (ECPrivateKey) factory.generatePrivate(spec);
-    assertThat(key, notNullValue());
-    assertThat(key.getAlgorithm(), is("EC"));
+    Assertions.assertThat(key).isNotNull();
+    Assertions.assertThat(key.getAlgorithm()).isEqualTo("EC");
   }
 }

@@ -27,8 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import org.assertj.core.api.Assertions;
 import static org.junit.Assume.assumeTrue;
 
 public abstract class HAProxyTest extends HttpTestBase {
@@ -292,12 +291,12 @@ public abstract class HAProxyTest extends HttpTestBase {
       return;
     }
 
-    assertThat(tlvs, hasSize(1));
+    Assertions.assertThat(tlvs).hasSize(1);
 
     Map.Entry<Buffer, Buffer> uniqueIdTLV = tlvs.stream().findFirst().orElse(null);
-    assertThat(uniqueIdTLV.getKey().getByte(0), equalTo((byte)0x05));
+    Assertions.assertThat(uniqueIdTLV.getKey().getByte(0)).isEqualTo((byte)0x05);
 
     UUID uuid = new UUID(uniqueIdTLV.getValue().getLong(0), uniqueIdTLV.getValue().getLong(Long.BYTES));
-    assertThat(uuid, equalTo(UUID.fromString("1f29a3b5-7cc4-4592-a8f1-879ff1f47124")));
+    Assertions.assertThat(uuid).isEqualTo(UUID.fromString("1f29a3b5-7cc4-4592-a8f1-879ff1f47124"));
   }
 }

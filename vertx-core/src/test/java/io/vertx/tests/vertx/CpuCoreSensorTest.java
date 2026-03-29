@@ -16,7 +16,7 @@ import org.junit.Test;
 
 import java.io.File;
 
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
 /**
@@ -28,31 +28,31 @@ public class CpuCoreSensorTest {
   @Test
   public void readRegular() throws Exception {
     File file = new File("src/test/resources/cpus/status-1.txt");
-    assertThat(CpuCoreSensor.readCPUMask(file), is(1));
+    assertThat(CpuCoreSensor.readCPUMask(file)).isEqualTo(1);
   }
 
   @Test
   public void readRegular2() throws Exception {
     File file = new File("src/test/resources/cpus/status-2.txt");
-    assertThat(CpuCoreSensor.readCPUMask(file), is(2));
+    assertThat(CpuCoreSensor.readCPUMask(file)).isEqualTo(2);
   }
 
   @Test
   public void readMissingFile() throws Exception {
     File file = new File("src/test/resources/cpus/does-not-exist");
-    assertThat(CpuCoreSensor.readCPUMask(file), is(-1));
+    assertThat(CpuCoreSensor.readCPUMask(file)).isEqualTo(-1);
   }
 
   @Test
   public void readMissingEntry() throws Exception {
     File file = new File("src/test/resources/cpus/missing.txt");
-    assertThat(CpuCoreSensor.readCPUMask(file), is(-1));
+    assertThat(CpuCoreSensor.readCPUMask(file)).isEqualTo(-1);
   }
 
   @Test
   public void readCorruptedFile() throws Exception {
     File file = new File("src/test/resources/cpus/corrupted.txt");
-    assertThat(CpuCoreSensor.readCPUMask(file), is(-1));
+    assertThat(CpuCoreSensor.readCPUMask(file)).isEqualTo(-1);
   }
 
 }

@@ -47,7 +47,7 @@
   <properties>
     <junit.version>4.13.2</junit.version>
     <harmcrest.version>2.2</harmcrest.version>
-    <assertj.version>3.4.1</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
   </properties>
 
   <dependencyManagement>

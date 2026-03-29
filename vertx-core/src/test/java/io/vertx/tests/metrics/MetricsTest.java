@@ -50,7 +50,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.core.Is.is;
+import org.assertj.core.api.Assertions;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -949,8 +949,8 @@ public class MetricsTest extends VertxTestBase {
 
     FakePoolMetrics metrics = all.get("vert.x-worker-thread");
 
-    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
-    assertThat(metrics.available(), is(getOptions().getWorkerPoolSize()));
+    Assertions.assertThat(metrics.maxSize()).isEqualTo(getOptions().getInternalBlockingPoolSize());
+    Assertions.assertThat(metrics.available()).isEqualTo(getOptions().getWorkerPoolSize());
 
     Callable<Void> job = getSomeDumbTask();
 
@@ -989,8 +989,8 @@ public class MetricsTest extends VertxTestBase {
     Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
-    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
-    assertThat(metrics.available(), is(getOptions().getInternalBlockingPoolSize()));
+    Assertions.assertThat(metrics.maxSize()).isEqualTo(getOptions().getInternalBlockingPoolSize());
+    Assertions.assertThat(metrics.available()).isEqualTo(getOptions().getInternalBlockingPoolSize());
 
     int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
     int count = num * 5;
@@ -1042,8 +1042,8 @@ public class MetricsTest extends VertxTestBase {
     Map<String, FakePoolMetrics> all = FakePoolMetrics.getMetrics();
     FakePoolMetrics metrics = all.get("vert.x-worker-thread");
 
-    assertThat(metrics.maxSize(), is(getOptions().getInternalBlockingPoolSize()));
-    assertThat(metrics.available(), is(getOptions().getWorkerPoolSize()));
+    Assertions.assertThat(metrics.maxSize()).isEqualTo(getOptions().getInternalBlockingPoolSize());
+    Assertions.assertThat(metrics.available()).isEqualTo(getOptions().getWorkerPoolSize());
 
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
@@ -1120,8 +1120,8 @@ public class MetricsTest extends VertxTestBase {
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("my-pool");
 
-    assertThat(metrics.maxSize(), is(10));
-    assertThat(metrics.available(), is(10));
+    Assertions.assertThat(metrics.maxSize()).isEqualTo(10);
+    Assertions.assertThat(metrics.available()).isEqualTo(10);
 
     Callable<Void> job = getSomeDumbTask();
 

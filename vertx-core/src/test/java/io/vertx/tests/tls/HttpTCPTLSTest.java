@@ -11,7 +11,7 @@
 
 package io.vertx.tests.tls;
 
-import static org.hamcrest.core.StringEndsWith.endsWith;
+import org.assertj.core.api.Assertions;
 
 import java.io.*;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -239,7 +239,7 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
       if (!ok) {
         fail("Was expecting <" + exceptionMessage + "> e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
       }
-      assertThat(exceptionMessage, endsWith(expectedSuffix));
+      Assertions.assertThat(exceptionMessage).endsWith(expectedSuffix);
     }
   }
 
