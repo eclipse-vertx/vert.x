@@ -46,7 +46,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpMethod.GET;
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class Http1xProxyTest extends HttpTestBase {
 
@@ -641,7 +640,7 @@ public class Http1xProxyTest extends HttpTestBase {
       .compose(req -> req.send().compose(HttpClientResponse::body)).onComplete(ar -> {
         if (shouldTimeout) {
           assertTrue(ar.failed());
-          assertThat(ar.cause(), instanceOf(ProxyConnectException.class));
+          assertThat(ar.cause(), a -> a.isInstanceOf(ProxyConnectException.class));
         } else {
           assertTrue(ar.succeeded());
         }

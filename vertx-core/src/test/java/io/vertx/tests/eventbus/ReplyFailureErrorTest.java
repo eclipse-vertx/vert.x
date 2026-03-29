@@ -19,7 +19,6 @@ import io.vertx.tests.eventbus.EventBusTestBase.MyPOJOEncoder2;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class ReplyFailureErrorTest extends VertxTestBase {
 
@@ -38,7 +37,7 @@ public class ReplyFailureErrorTest extends VertxTestBase {
     }).completion().onComplete(onSuccess(v -> {
       DeliveryOptions options = new DeliveryOptions().setCodecName(codec.name());
       vertices[0].eventBus().request("foo", new MyPOJO("bar"), options).onComplete(onFailure(t -> {
-        assertThat(t, instanceOf(ReplyException.class));
+        assertThat(t, a -> a.isInstanceOf(ReplyException.class));
         ReplyException e = (ReplyException) t;
         assertSame(ReplyFailure.ERROR, e.failureType());
         testComplete();
