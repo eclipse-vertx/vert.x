@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.CoreMatchers.*;
+import org.assertj.core.api.Assertions;
 
 /**
  * Make sure that the Netty pipeline has a handler catching the {@link java.io.IOException} if the connection is reset
@@ -63,7 +63,7 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
       });
     }));
     awaitLatch(resetLatch);
-    assertThat(caught.get(), instanceOf(IOException.class));
+    Assertions.assertThat(caught.get()).isInstanceOf(IOException.class);
   }
 
   @Override

@@ -12,7 +12,7 @@
 
 package io.vertx.tests.security;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
+import org.assertj.core.api.Assertions;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -92,8 +92,8 @@ public class KeyStoreHelperTest extends VertxTestBase {
       String alias = e.nextElement();
       // "dummdummydummydummydummydummydummy" is the password set by KeyStoreHelper when importing the
       // keys into the internal key store
-      assertThat(store.getKey(alias, "dummdummydummydummydummydummydummy".toCharArray()), instanceOf(expectedKeyType));
-      assertThat(store.getCertificate(alias), instanceOf(X509Certificate.class));
+      Assertions.assertThat(store.getKey(alias, "dummdummydummydummydummydummy".toCharArray())).isInstanceOf(expectedKeyType);
+      Assertions.assertThat(store.getCertificate(alias)).isInstanceOf(X509Certificate.class);
     }
   }
 }

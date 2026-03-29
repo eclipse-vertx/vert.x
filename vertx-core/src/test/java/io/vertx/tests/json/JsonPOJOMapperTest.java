@@ -24,8 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
 /**
@@ -149,7 +148,7 @@ public class JsonPOJOMapperTest {
       new JsonObject().put(key, "1").mapTo(MyType2.class);
       fail();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getCause(), is(instanceOf(InvalidFormatException.class)));
+      assertThat(e.getCause()).isInstanceOf(InvalidFormatException.class);
       InvalidFormatException ife = (InvalidFormatException) e.getCause();
       assertEquals("1", ife.getValue());
     }
