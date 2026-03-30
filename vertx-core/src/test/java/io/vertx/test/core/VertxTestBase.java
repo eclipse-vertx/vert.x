@@ -11,6 +11,7 @@
 
 package io.vertx.test.core;
 
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
@@ -25,7 +26,6 @@ import io.vertx.core.transport.Transport;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import junit.framework.AssertionFailedError;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Rule;
 
 import javax.net.ssl.SSLContext;
@@ -48,8 +48,17 @@ public class VertxTestBase extends AsyncTestBase {
   public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
   public static final boolean USE_JAVA_MODULES = VertxTestBase.class.getModule().isNamed();
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
+  protected static final String[] ENABLED_CIPHER_SUITES;
 
   static {
+
+    String[] suites = new String[0];
+    try {
+      suites = SSLContext.getDefault().getSocketFactory().getSupportedCipherSuites();
+    } catch (NoSuchAlgorithmException e) {
+      e.printStackTrace();
+    }
+    ENABLED_CIPHER_SUITES = suites;
 
     Transport transport = null;
     String transportName = System.getProperty("vertx.transport");
@@ -120,11 +129,27 @@ public class VertxTestBase extends AsyncTestBase {
   @Rule
   public FileDescriptorLeakDetectorRule fileDescriptorLeakDetectorRule = new FileDescriptorLeakDetectorRule();
 
+  private final boolean stateless;
   protected Vertx vertx;
-
   protected Vertx[] vertices;
-
   private List<Vertx> created;
+
+  public VertxTestBase(boolean stateless) {
+    this.stateless = stateless;
+  }
+
+  public VertxTestBase() {
+    this(false);
+  }
+
+  @Override
+  void handleThrowable(Throwable t) {
+    if (stateless) {
+      PlatformDependent.throwException(t);
+    } else {
+      super.handleThrowable(t);
+    }
+  }
 
   protected void vinit() {
     vertx = null;
@@ -147,7 +172,7 @@ public class VertxTestBase extends AsyncTestBase {
         }
         throw afe;
       }
-      assertTrue(vertx.isNativeTransportEnabled());
+      Assert.assertTrue(vertx.isNativeTransportEnabled());
     }
   }
 
@@ -169,6 +194,11 @@ public class VertxTestBase extends AsyncTestBase {
     }
     FakeClusterManager.reset(); // Bit ugly
     super.tearDown();
+  }
+
+  @Override
+  public void await(long delay, TimeUnit timeUnit) {
+    super.await(delay, timeUnit);
   }
 
   protected void close(List<Vertx> instances) throws Exception {
@@ -233,8 +263,19 @@ public class VertxTestBase extends AsyncTestBase {
       created = Collections.synchronizedList(new ArrayList<>());
     }
     Vertx vertx = supplier.get();
-    created.add(vertx);
+    add(vertx);
     return vertx;
+  }
+
+  private void add(Vertx vertx) {
+    if (stateless) {
+      vertx.exceptionHandler(this::handleFailure);
+    }
+    created.add(vertx);
+  }
+
+  private void handleFailure(Throwable error) {
+    super.handleThrowable(error);
   }
 
   /**
@@ -253,9 +294,10 @@ public class VertxTestBase extends AsyncTestBase {
     }
     return createVertxBuilder(options)
       .withClusterManager(clusterManager)
-      .buildClustered().andThen(event -> {
+      .buildClustered()
+      .andThen(event -> {
         if (event.succeeded()) {
-          created.add(event.result());
+          add(event.result());
         }
       });
   }
@@ -277,47 +319,17 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   private void startNodes(int numNodes, VertxOptions options, Supplier<ClusterManager> clusterManagerSupplier) {
-    CountDownLatch latch = new CountDownLatch(numNodes);
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
-      int index = i;
       VertxOptions toUse = new VertxOptions(options);
       toUse.getEventBusOptions().setHost("localhost").setPort(0);
-      clusteredVertx(toUse, clusterManagerSupplier.get())
-        .onComplete(ar -> {
-          try {
-            if (ar.failed()) {
-              ar.cause().printStackTrace();
-            }
-            assertTrue("Failed to start node", ar.succeeded());
-            vertices[index] = ar.result();
-          } finally {
-            latch.countDown();
-          }
-        });
-    }
-    try {
-      assertTrue(latch.await(2, TimeUnit.MINUTES));
-    } catch (InterruptedException e) {
-      fail(e.getMessage());
+      vertices[i] = clusteredVertx(toUse, clusterManagerSupplier.get())
+        .await();
     }
   }
-
 
   protected static void setOptions(TCPSSLOptions sslOptions, KeyCertOptions options) {
     sslOptions.setKeyCertOptions(options);
-  }
-
-  protected static final String[] ENABLED_CIPHER_SUITES;
-
-  static {
-    String[] suites = new String[0];
-    try {
-      suites = SSLContext.getDefault().getSocketFactory().getSupportedCipherSuites();
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    }
-    ENABLED_CIPHER_SUITES = suites;
   }
 
   /**
