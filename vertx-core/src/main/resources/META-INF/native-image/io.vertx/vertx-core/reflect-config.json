@@ -48,6 +48,18 @@
     ]
   },
   {
+    "name": "java.lang.Thread$Builder$OfVirtual",
+    "condition": {
+      "typeReachable": "io.vertx.core.impl.transports.NioTransport"
+    },
+    "methods": [
+      {
+        "name": "name",
+        "parameterTypes": ["java.lang.String", "long"]
+      }
+    ]
+  },
+  {
     "name": "java.lang.Thread",
     "condition": {
       "typeReachable": "io.vertx.core.impl.transports.NioTransport"

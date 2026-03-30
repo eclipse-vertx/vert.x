@@ -33,11 +33,14 @@ public class NioTransport implements Transport {
     .toNanos(Integer.getInteger("io.vertx.virtualthread.running.yield.us", 1));
 
   // Not cached for graalvm
-  private static ThreadFactory virtualThreadFactory() {
+  private static ThreadFactory virtualThreadFactory(String prefix) {
     try {
       Class<?> builderClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder");
+      Class<?> ofVirtualClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder$OfVirtual");
       Method ofVirtualMethod = Thread.class.getDeclaredMethod("ofVirtual");
       Object builder = ofVirtualMethod.invoke(null);
+      Method nameMethod = ofVirtualClass.getDeclaredMethod("name", String.class, long.class);
+      builder = nameMethod.invoke(builder, prefix, 0L);
       Method factoryMethod = builderClass.getDeclaredMethod("factory");
       return (ThreadFactory) factoryMethod.invoke(builder);
     } catch (Exception e) {
@@ -119,7 +122,8 @@ public class NioTransport implements Transport {
     if (!virtualThreadEventLoops) {
       return Transport.super.eventLoopGroup(type, nThreads, threadFactory, ioRatio);
     }
-    ThreadFactory vtFactory = virtualThreadFactory();
+    String prefix = type == ACCEPTOR_EVENT_LOOP_GROUP ? "vert.x-acceptor-thread-" : "vert.x-eventloop-thread-";
+    ThreadFactory vtFactory = virtualThreadFactory(prefix);
     if (vtFactory == null) {
       throw new IllegalStateException("Virtual threads are not available");
     }
@@ -127,9 +131,6 @@ public class NioTransport implements Transport {
       @Override
       protected IoEventLoop newChild(Executor executor, IoHandlerFactory ioHandlerFactory, Object... args) {
         ManualIoEventLoop eventLoop = new ManualIoEventLoop(this, null, ioHandlerFactory);
-        // Create a platform thread via the Vert.x thread factory to obtain the correct name
-        // and register it with the blocked thread checker
-        Thread platformThread = threadFactory.newThread(() -> {});
         Thread vt = vtFactory.newThread(() -> {
           while (!eventLoop.isShuttingDown()) {
             eventLoop.run(0, RUNNING_YIELD_NS);
@@ -142,7 +143,6 @@ public class NioTransport implements Transport {
             Thread.yield();
           }
         });
-        vt.setName(platformThread.getName());
         eventLoop.setOwningThread(vt);
         vt.start();
         return eventLoop;
