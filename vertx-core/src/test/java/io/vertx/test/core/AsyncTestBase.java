@@ -652,7 +652,7 @@ public class AsyncTestBase {
     }
   }
 
-  protected <T> Handler<T> atMostOnce(Consumer<T> consumer) {
+  protected static <T> Handler<T> atMostOnce(Consumer<T> consumer) {
     AtomicBoolean called = new AtomicBoolean();
     return result -> {
       if (called.compareAndSet(false, true)) {
