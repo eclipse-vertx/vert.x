@@ -188,10 +188,12 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       connectHandler,
       tcpTransport,
       quicTransport,
+      config,
       options);
   }
 
   private static class LegacyHttpClient extends HttpClientImpl {
+    private final HttpClientConfig config;
     private final HttpClientOptions options;
     public LegacyHttpClient(
       VertxInternal vertx,
@@ -213,13 +215,20 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       Handler<HttpConnection> connectHandler,
       HttpClientTransport tcpTransport,
       HttpClientTransport quicTransport,
+      HttpClientConfig config,
       HttpClientOptions options) {
       super(vertx, resolver, redirectHandler, httpMetrics, poolOptions, defaultProxyOptions, nonProxyHosts, loadBalancer, followAlternativeServices, resolverIdeTimeout, verifyHost, defaultSsl, defaultHost, defaultPort, maxRedirects, versions, sslOptions, connectHandler, tcpTransport, quicTransport);
+      this.config = config;
       this.options = options;
     }
     @Override
     public HttpClientOptions options() {
       return options == null ? new HttpClientOptions() : new HttpClientOptions(options);
+    }
+
+    @Override
+    public HttpClientConfig config() {
+      return new HttpClientConfig(config);
     }
   }
 
