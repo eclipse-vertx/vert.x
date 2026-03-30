@@ -20,7 +20,6 @@ import io.vertx.core.internal.logging.LoggerFactory;
 import org.assertj.core.api.AbstractCharSequenceAssert;
 import org.assertj.core.api.AbstractComparableAssert;
 import org.assertj.core.api.AbstractObjectAssert;
-import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -470,20 +469,6 @@ public class AsyncTestBase {
     }
   }
 
-  /**
-   * @deprecated Use {@link #assertThat(Object, Consumer)} with AssertJ assertions instead.
-   * Example: {@code assertThat(value, a -> a.isEqualTo(expected))}
-   */
-  @Deprecated
-  protected <T> void assertThat(T actual, Matcher<T> matcher) {
-    checkThread();
-    try {
-      Assert.assertThat(actual, matcher);
-    } catch (AssertionError e) {
-      handleThrowable(e);
-    }
-  }
-
   @Deprecated
   protected void assertEquals(String message, Object[] expecteds, Object[] actuals) {
     checkThread();
@@ -521,20 +506,6 @@ public class AsyncTestBase {
     checkThread();
     try {
       Assert.assertNotEquals(message, unexpected, actual);
-    } catch (AssertionError e) {
-      handleThrowable(e);
-    }
-  }
-
-  /**
-   * @deprecated Use {@link #assertThat(Object, Consumer)} with AssertJ assertions instead.
-   * Example: {@code assertThat(value, a -> a.as(reason).isEqualTo(expected))}
-   */
-  @Deprecated
-  protected <T> void assertThat(String reason, T actual, Matcher<T> matcher) {
-    checkThread();
-    try {
-      Assert.assertThat(reason, actual, matcher);
     } catch (AssertionError e) {
       handleThrowable(e);
     }

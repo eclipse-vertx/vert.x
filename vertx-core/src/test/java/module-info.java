@@ -8,7 +8,6 @@ open module io.vertx.core.tests {
   requires io.vertx.core.logging;
 
   requires static org.assertj.core;
-  requires static org.hamcrest;
 
   requires junit;
   requires java.management;
