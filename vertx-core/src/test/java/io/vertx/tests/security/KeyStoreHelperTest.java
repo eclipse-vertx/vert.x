@@ -92,7 +92,7 @@ public class KeyStoreHelperTest extends VertxTestBase {
       String alias = e.nextElement();
       // "dummdummydummydummydummydummydummy" is the password set by KeyStoreHelper when importing the
       // keys into the internal key store
-      Assertions.assertThat(store.getKey(alias, "dummdummydummydummydummydummy".toCharArray())).isInstanceOf(expectedKeyType);
+      Assertions.assertThat(store.getKey(alias, "dummdummydummydummydummydummydummy".toCharArray())).isInstanceOf(expectedKeyType);
       Assertions.assertThat(store.getCertificate(alias)).isInstanceOf(X509Certificate.class);
     }
   }
