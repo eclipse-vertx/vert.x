@@ -31,6 +31,7 @@
     <jmh.version>1.37</jmh.version>
     <vertx.surefire.nettyTransport>jdk</vertx.surefire.nettyTransport>
     <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
+    <vertx.surefire.virtualThreadEventLoops>false</vertx.surefire.virtualThreadEventLoops>
   </properties>
 
   <dependencies>
@@ -283,6 +284,7 @@
               <vertx.handle100Continue>true</vertx.handle100Continue>
               <vertx.transport>${vertx.surefire.nettyTransport}</vertx.transport>
               <vertx.useDomainSockets>${vertx.surefire.useDomainSockets}</vertx.useDomainSockets>
+              <vertx.virtualThreadEventLoops>${vertx.surefire.virtualThreadEventLoops}</vertx.virtualThreadEventLoops>
               <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
@@ -811,7 +813,7 @@
     <profile>
       <id>VirtualThreadNio</id>
       <properties>
-        <vertx.surefire.nettyTransport>virtual_thread_nio</vertx.surefire.nettyTransport>
+        <vertx.surefire.virtualThreadEventLoops>true</vertx.surefire.virtualThreadEventLoops>
         <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
         <vertx.surefire.useModulePath>false</vertx.surefire.useModulePath>
       </properties>

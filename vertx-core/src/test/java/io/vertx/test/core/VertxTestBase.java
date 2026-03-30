@@ -46,6 +46,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   public static final Transport TRANSPORT;
   public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
+  public static final boolean USE_VIRTUAL_THREAD_EVENT_LOOPS = Boolean.getBoolean("vertx.virtualThreadEventLoops");
   public static final boolean USE_JAVA_MODULES = VertxTestBase.class.getModule().isNamed();
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
 
@@ -67,9 +68,6 @@ public class VertxTestBase extends AsyncTestBase {
           break;
         case "io_uring":
           transport = Transport.IO_URING;
-          break;
-        case "virtual_thread_nio":
-          transport = Transport.VIRTUAL_THREAD_NIO;
           break;
         default:
           transport = new Transport() {
@@ -163,7 +161,11 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected VertxOptions getOptions() {
-    return new VertxOptions();
+    VertxOptions options = new VertxOptions();
+    if (USE_VIRTUAL_THREAD_EVENT_LOOPS) {
+      options.setVirtualThreadEventLoops(true);
+    }
+    return options;
   }
 
   protected void tearDown() throws Exception {
@@ -216,7 +218,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   protected Vertx createVertx(VertxOptions options) {
     Vertx vertx = createVertxBuilder(options).build();
-    if (TRANSPORT != Transport.NIO && TRANSPORT != Transport.VIRTUAL_THREAD_NIO) {
+    if (TRANSPORT != Transport.NIO) {
       if (!vertx.isNativeTransportEnabled()) {
         fail(vertx.unavailableNativeTransportCause());
       }

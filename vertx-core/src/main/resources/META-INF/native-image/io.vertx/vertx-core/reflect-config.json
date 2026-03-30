@@ -34,5 +34,29 @@
         "parameterTypes": []
       }
     ]
+  },
+  {
+    "name": "java.lang.Thread$Builder",
+    "condition": {
+      "typeReachable": "io.vertx.core.impl.transports.NioTransport"
+    },
+    "methods": [
+      {
+        "name": "factory",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "java.lang.Thread",
+    "condition": {
+      "typeReachable": "io.vertx.core.impl.transports.NioTransport"
+    },
+    "methods": [
+      {
+        "name": "ofVirtual",
+        "parameterTypes": []
+      }
+    ]
   }
 ]
