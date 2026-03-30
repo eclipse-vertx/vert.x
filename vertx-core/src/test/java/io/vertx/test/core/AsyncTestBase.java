@@ -149,7 +149,6 @@ public class AsyncTestBase {
         // Unexpected throwable- Should never happen
         throw new IllegalStateException(throwable);
       }
-
     }
   }
 
@@ -179,7 +178,7 @@ public class AsyncTestBase {
 
   }
 
-  private void handleThrowable(Throwable t) {
+  void handleThrowable(Throwable t) {
     if (Thread.currentThread() != mainThread && testCompleteCalled) {
       lateFailure = t;
       throw new IllegalStateException("assert or failure occurred after test has completed", t);
