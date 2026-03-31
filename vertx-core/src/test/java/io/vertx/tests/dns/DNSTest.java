@@ -23,6 +23,7 @@ import io.vertx.core.dns.SrvRecord;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.MockDnsServer;
 import io.vertx.test.fakedns.MockDnsServer.RecordStore;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -32,6 +33,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 
+import io.vertx.test.core.TestUtils;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
@@ -42,12 +44,15 @@ public class DNSTest extends VertxTestBase {
 
   private MockDnsServer mockDnsServer;
 
+  public DNSTest() {
+    super(true);
+  }
+
   @Override
   public void setUp() throws Exception {
-    mockDnsServer = new MockDnsServer();
-    mockDnsServer.start();
-
     super.setUp();
+    mockDnsServer = new MockDnsServer(vertx);
+    mockDnsServer.start();
   }
 
   @Override
@@ -91,13 +96,13 @@ public class DNSTest extends VertxTestBase {
     VertxOptions vertxOptions = new VertxOptions();
     InetSocketAddress mockDnsAddress = mockDnsServer.localAddress();
     vertxOptions.getAddressResolverOptions().addServer(mockDnsAddress.getHostString() + ":" + mockDnsAddress.getPort());
-    Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
+    Vertx vertxWithFakeDns = vertx(vertxOptions);
     DnsClient dnsClient = clientProvider.apply(vertxWithFakeDns);
 
     dnsClient
       .lookup4("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals(ip, result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals(ip, result);
         testComplete();
       }));
     await();
@@ -112,10 +117,10 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveA("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(ip, result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ip, result.get(0));
         testComplete();
       }));
     await();
@@ -125,10 +130,10 @@ public class DNSTest extends VertxTestBase {
   public void testUnresolvedDnsServer() throws Exception {
     try {
       DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setHost("iamanunresolvablednsserver.com").setPort(53));
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertTrue(e instanceof IllegalArgumentException);
-      assertEquals("Cannot resolve the host to a valid ip address", e.getMessage());
+      Assert.assertTrue(e instanceof IllegalArgumentException);
+      Assert.assertEquals("Cannot resolve the host to a valid ip address", e.getMessage());
     }
   }
 
@@ -140,10 +145,10 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns();
     dns
       .resolveA("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(ip, result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ip, result.get(0));
         testComplete();
       }));
     await();
@@ -156,10 +161,10 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveAAAA("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals("0:0:0:0:0:0:0:1", result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals("0:0:0:0:0:0:0:1", result.get(0));
         testComplete();
       }));
     await();
@@ -174,13 +179,13 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveMX("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
         MxRecord record = result.get(0);
-        assertEquals(100, record.ttl());
-        assertEquals(prio, record.priority());
-        assertEquals(record.name(), mxRecord);
+        Assert.assertEquals(100, record.ttl());
+        Assert.assertEquals(prio, record.priority());
+        Assert.assertEquals(record.name(), mxRecord);
         testComplete();
       }));
     await();
@@ -193,10 +198,10 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns();
     dns
       .resolveTXT("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(txt, result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(txt, result.get(0));
         testComplete();
       }));
     await();
@@ -210,10 +215,10 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveNS("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(ns, result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ns, result.get(0));
         testComplete();
       }));
     await();
@@ -227,12 +232,12 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveCNAME("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
         String record = result.get(0);
-        assertFalse(record.isEmpty());
-        assertEquals(cname, record);
+        Assert.assertFalse(record.isEmpty());
+        Assert.assertEquals(cname, record);
         testComplete();
       }));
     await();
@@ -246,8 +251,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolvePTR("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals(ptr, result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals(ptr, result);
         testComplete();
       }));
     await();
@@ -264,18 +269,18 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveSRV("_svc._tcp.vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
         SrvRecord record = result.get(0);
-        assertEquals("vertx.io.", record.name());
-        assertEquals("_svc", record.service());
-        assertEquals("_tcp", record.protocol());
-        assertEquals(100, record.ttl());
-        assertEquals(priority, record.priority());
-        assertEquals(weight, record.weight());
-        assertEquals(port, record.port());
-        assertEquals("svc.vertx.io", record.target());
+        Assert.assertEquals("vertx.io.", record.name());
+        Assert.assertEquals("_svc", record.service());
+        Assert.assertEquals("_tcp", record.protocol());
+        Assert.assertEquals(100, record.ttl());
+        Assert.assertEquals(priority, record.priority());
+        Assert.assertEquals(weight, record.weight());
+        Assert.assertEquals(port, record.port());
+        Assert.assertEquals("svc.vertx.io", record.target());
         testComplete();
       }));
     await();
@@ -292,30 +297,30 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .resolveSRV("_svc._tcp.vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(2, result.size());
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(2, result.size());
         SortedMap<Integer, SrvRecord> map = new TreeMap<>();
         map.put(result.get(0).port(), result.get(0));
         map.put(result.get(1).port(), result.get(1));
         SrvRecord record = map.get(80);
-        assertEquals("vertx.io.", record.name());
-        assertEquals("_tcp", record.protocol());
-        assertEquals("_svc", record.service());
-        assertEquals(100, record.ttl());
-        assertEquals(priority, record.priority());
-        assertEquals(weight, record.weight());
-        assertEquals(80, record.port());
-        assertEquals("svc0.vertx.io", record.target());
+        Assert.assertEquals("vertx.io.", record.name());
+        Assert.assertEquals("_tcp", record.protocol());
+        Assert.assertEquals("_svc", record.service());
+        Assert.assertEquals(100, record.ttl());
+        Assert.assertEquals(priority, record.priority());
+        Assert.assertEquals(weight, record.weight());
+        Assert.assertEquals(80, record.port());
+        Assert.assertEquals("svc0.vertx.io", record.target());
         record = map.get(81);
-        assertEquals("vertx.io.", record.name());
-        assertEquals("_tcp", record.protocol());
-        assertEquals("_svc", record.service());
-        assertEquals(100, record.ttl());
-        assertEquals(priority, record.priority());
-        assertEquals(weight, record.weight());
-        assertEquals(81, record.port());
-        assertEquals("svc1.vertx.io", record.target());
+        Assert.assertEquals("vertx.io.", record.name());
+        Assert.assertEquals("_tcp", record.protocol());
+        Assert.assertEquals("_svc", record.service());
+        Assert.assertEquals(100, record.ttl());
+        Assert.assertEquals(priority, record.priority());
+        Assert.assertEquals(weight, record.weight());
+        Assert.assertEquals(81, record.port());
+        Assert.assertEquals("svc1.vertx.io", record.target());
         testComplete();
       }));
     await();
@@ -328,10 +333,10 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns();
     dns
       .lookup4("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals(ip, result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals(ip, result);
         DnsMessage msg = mockDnsServer.pollMessage();
-        assertTrue(msg.isRecursionDesired());
+        Assert.assertTrue(msg.isRecursionDesired());
         testComplete();
       }));
     await();
@@ -344,8 +349,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .lookup6("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals("0:0:0:0:0:0:0:1", result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals("0:0:0:0:0:0:0:1", result);
         testComplete();
       }));
     await();
@@ -359,8 +364,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .lookup("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals(ip, result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals(ip, result);
         testComplete();
       }));
     await();
@@ -373,8 +378,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .lookup("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals("0:0:0:0:0:0:0:1", result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals("0:0:0:0:0:0:0:1", result);
         testComplete();
       }));
     await();
@@ -386,9 +391,9 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .lookup("vertx.io")
-      .onComplete(onFailure(err -> {
+      .onComplete(TestUtils.onFailure(err -> {
         if (err instanceof VertxException) {
-          assertEquals("DNS query timeout for vertx.io.", err.getMessage());
+          Assert.assertEquals("DNS query timeout for vertx.io.", err.getMessage());
         } else if (err instanceof DnsNameResolverTimeoutException) {
           DnsNameResolverTimeoutException te = (DnsNameResolverTimeoutException) err;
         }
@@ -403,7 +408,7 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns();
     dns
       .lookup("gfegjegjf.sg1")
-      .onComplete(onFailure(err -> {
+      .onComplete(TestUtils.onFailure(err -> {
         testComplete();
       }));
     await();
@@ -416,8 +421,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .reverseLookup("10.0.0.1")
-      .onComplete(onSuccess(result -> {
-        assertEquals("vertx.io", result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals("vertx.io", result);
         testComplete();
       }));
     await();
@@ -431,8 +436,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .reverseLookup(address)
-      .onComplete(onSuccess(result -> {
-        assertEquals("vertx.io", result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals("vertx.io", result);
         testComplete();
       }));
     await();
@@ -447,8 +452,8 @@ public class DNSTest extends VertxTestBase {
 
     dns
       .lookup4("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertEquals(ip, result);
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertEquals(ip, result);
         testComplete();
       }));
     await();
@@ -459,8 +464,8 @@ public class DNSTest extends VertxTestBase {
     final DnsClient dns = prepareDns();
     mockDnsServer.testResolveDNAME("mail.vertx.io");
     dns.resolveMX("vertx.io")
-      .onComplete(onSuccess(lst -> {
-        assertEquals(Collections.emptyList(), lst);
+      .onComplete(TestUtils.onSuccess(lst -> {
+        Assert.assertEquals(Collections.emptyList(), lst);
         testComplete();
       }));
     await();
@@ -480,12 +485,12 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(new DnsClientOptions().setRecursionDesired(true));
     dns
       .resolveA("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(ip, result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ip, result.get(0));
         DnsMessage msg = mockDnsServer.pollMessage();
-        assertTrue(msg.isRecursionDesired());
+        Assert.assertTrue(msg.isRecursionDesired());
         testComplete();
       }));
     await();
@@ -499,12 +504,12 @@ public class DNSTest extends VertxTestBase {
     DnsClient dns = prepareDns(new DnsClientOptions().setRecursionDesired(false));
     dns
       .resolveA("vertx.io")
-      .onComplete(onSuccess(result -> {
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(ip, result.get(0));
+      .onComplete(TestUtils.onSuccess(result -> {
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(ip, result.get(0));
         DnsMessage msg = mockDnsServer.pollMessage();
-        assertFalse(msg.isRecursionDesired());
+        Assert.assertFalse(msg.isRecursionDesired());
         testComplete();
       }));
     await();
@@ -521,21 +526,21 @@ public class DNSTest extends VertxTestBase {
     mockDnsServer.store(question -> {
       latch1.countDown();
       try {
-        awaitLatch(latch2);
+        TestUtils.awaitLatch(latch2);
       } catch (Exception e) {
-        fail(e);
+        Assert.fail(e.getMessage());
       }
       return store.getRecords(question);
     });
     DnsClient dns = prepareDns();
     dns
       .resolveA("vertx.io")
-      .onComplete(onFailure(timeout -> {
-        assertTrue(timeout.getMessage().contains("closed"));
+      .onComplete(TestUtils.onFailure(timeout -> {
+        Assert.assertTrue(timeout.getMessage().contains("closed"));
         complete();
       }));
-    awaitLatch(latch1);
-    dns.close().onComplete(onSuccess(v -> {
+    TestUtils.awaitLatch(latch1);
+    dns.close().onComplete(TestUtils.onSuccess(v -> {
       latch2.countDown();
       complete();
     }));

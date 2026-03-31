@@ -28,6 +28,8 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
 import org.junit.Rule;
+import org.assertj.core.api.Assertions;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -63,6 +65,10 @@ public class FileSystemTest extends VertxTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
+
+  public FileSystemTest() {
+    super(true);
+  }
 
   public void setUp() throws Exception {
     super.setUp();
@@ -171,8 +177,8 @@ public class FileSystemTest extends VertxTestBase {
     String target = "bar.txt";
     createFileWithJunk(source, 100);
     testCopy(source, target, false, true, v-> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -185,8 +191,8 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(source, 100);
     createFileWithJunk(target, 100);
     testCopy(source, target, false, false, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -200,8 +206,8 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(dir);
     createFileWithJunk(source, 100);
     testCopy(source, target, false, true, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -213,8 +219,8 @@ public class FileSystemTest extends VertxTestBase {
     String target = "some-other-dir";
     mkDir(source);
     testCopy(source, target, false, true, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -228,9 +234,9 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(source);
     createFileWithJunk(source + file1, 100);
     testCopy(source, target, false, true, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
-      assertFalse(fileExists(target + file1));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
+      Assert.assertFalse(fileExists(target + file1));
       testComplete();
     });
     await();
@@ -243,8 +249,8 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(source);
     mkDir(target);
     testCopy(source, target, false, false, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -264,11 +270,11 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     String target = "some-other-dir";
     testCopy(dir, target, true, true, v -> {
-      assertTrue(fileExists(dir));
-      assertTrue(fileExists(target));
-      assertTrue(fileExists(target + file1));
-      assertTrue(fileExists(target + file2));
-      assertTrue(fileExists(target + pathSep + dir2 + file3));
+      Assert.assertTrue(fileExists(dir));
+      Assert.assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(target + file1));
+      Assert.assertTrue(fileExists(target + file2));
+      Assert.assertTrue(fileExists(target + pathSep + dir2 + file3));
       testComplete();
     });
     await();
@@ -289,8 +295,8 @@ public class FileSystemTest extends VertxTestBase {
     String target = "bar.txt";
     createFileWithJunk(source, 100);
     testMove(source, target, true, v -> {
-      assertFalse(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertFalse(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -303,8 +309,8 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(source, 100);
     createFileWithJunk(target, 100);
     testMove(source, target, false, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -316,8 +322,8 @@ public class FileSystemTest extends VertxTestBase {
     String target = "some-other-dir";
     mkDir(source);
     testMove(source, target, true, v -> {
-      assertFalse(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertFalse(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -330,8 +336,8 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(source);
     mkDir(target);
     testMove(source, target, false, v -> {
-      assertTrue(fileExists(source));
-      assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(source));
+      Assert.assertTrue(fileExists(target));
       testComplete();
     });
     await();
@@ -351,11 +357,11 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     String target = "some-other-dir";
     testMove(dir, target, true, v -> {
-      assertFalse(fileExists(dir));
-      assertTrue(fileExists(target));
-      assertTrue(fileExists(target + file1));
-      assertTrue(fileExists(target + file2));
-      assertTrue(fileExists(target + pathSep + dir2 + file3));
+      Assert.assertFalse(fileExists(dir));
+      Assert.assertTrue(fileExists(target));
+      Assert.assertTrue(fileExists(target + file1));
+      Assert.assertTrue(fileExists(target + file2));
+      Assert.assertTrue(fileExists(target + pathSep + dir2 + file3));
       testComplete();
     });
     await();
@@ -371,9 +377,9 @@ public class FileSystemTest extends VertxTestBase {
     long initialLen = 1000;
     long truncatedLen = 534;
     createFileWithJunk(file1, initialLen);
-    assertEquals(initialLen, fileLength(file1));
+    Assert.assertEquals(initialLen, fileLength(file1));
     testTruncate(file1, truncatedLen, true, v -> {
-      assertEquals(truncatedLen, fileLength(file1));
+      Assert.assertEquals(truncatedLen, fileLength(file1));
       testComplete();
     });
     await();
@@ -385,9 +391,9 @@ public class FileSystemTest extends VertxTestBase {
     long initialLen = 500;
     long truncatedLen = 1000;
     createFileWithJunk(file1, initialLen);
-    assertEquals(initialLen, fileLength(file1));
+    Assert.assertEquals(initialLen, fileLength(file1));
     testTruncate(file1, truncatedLen, true, v -> {
-      assertEquals(truncatedLen, fileLength(file1));
+      Assert.assertEquals(truncatedLen, fileLength(file1));
       testComplete();
     });
     await();
@@ -451,7 +457,7 @@ public class FileSystemTest extends VertxTestBase {
 
   private void assertPerms(String perms, String file1) {
     if (!Utils.isWindows()) {
-      assertEquals(perms, getPerms(file1));
+      Assert.assertEquals(perms, getPerms(file1));
     }
   }
 
@@ -521,7 +527,7 @@ public class FileSystemTest extends VertxTestBase {
   private void testChownFails(String user) throws Exception {
     String file1 = "some-file.dat";
     createFileWithJunk(file1, 100);
-    vertx.fileSystem().chown(testDir + pathSep + file1, user, null).onComplete(onFailure(err -> {
+    vertx.fileSystem().chown(testDir + pathSep + file1, user, null).onComplete(TestUtils.onFailure(err -> {
       deleteFile(file1);
       testComplete();
     }));
@@ -536,7 +542,7 @@ public class FileSystemTest extends VertxTestBase {
     Path path = Paths.get(fullPath);
     UserPrincipal owner = Files.getOwner(path);
     String user = owner.getName();
-    vertx.fileSystem().chown(fullPath, user, null).onComplete(onSuccess(v -> {
+    vertx.fileSystem().chown(fullPath, user, null).onComplete(TestUtils.onSuccess(v -> {
       deleteFile(file1);
       testComplete();
     }));
@@ -552,7 +558,7 @@ public class FileSystemTest extends VertxTestBase {
     String fullPath = testDir + pathSep + file1;
     Path path = Paths.get(fullPath);
     GroupPrincipal group = Files.readAttributes(path, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS).group();
-    vertx.fileSystem().chown(fullPath, null, group.getName()).onComplete(onSuccess(v -> {
+    vertx.fileSystem().chown(fullPath, null, group.getName()).onComplete(TestUtils.onSuccess(v -> {
       deleteFile(file1);
       testComplete();
     }));
@@ -583,14 +589,14 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(fileName, fileSize);
 
     testProps(fileName, false, true, st -> {
-      assertNotNull(st);
-      assertEquals(fileSize, st.size());
-      assertTrue(st.creationTime() >= start);
-      assertTrue(st.lastAccessTime() >= start);
-      assertTrue(st.lastModifiedTime() >= start);
-      assertFalse(st.isDirectory());
-      assertTrue(st.isRegularFile());
-      assertFalse(st.isSymbolicLink());
+      Assert.assertNotNull(st);
+      Assert.assertEquals(fileSize, st.size());
+      Assert.assertTrue(st.creationTime() >= start);
+      Assert.assertTrue(st.lastAccessTime() >= start);
+      Assert.assertTrue(st.lastModifiedTime() >= start);
+      Assert.assertFalse(st.isDirectory());
+      Assert.assertTrue(st.isRegularFile());
+      Assert.assertFalse(st.isSymbolicLink());
     });
     await();
   }
@@ -618,18 +624,18 @@ public class FileSystemTest extends VertxTestBase {
     Files.createSymbolicLink(Paths.get(testDir + pathSep + linkName), Paths.get(fileName));
 
     testProps(linkName, false, true, st -> {
-      assertNotNull(st);
-      assertEquals(fileSize, st.size());
-      assertTrue(st.creationTime() >= start);
-      assertTrue(st.creationTime() <= end);
-      assertTrue(st.lastAccessTime() >= start);
-      assertTrue(st.lastAccessTime() <= end);
-      assertTrue(st.lastModifiedTime() >= start);
-      assertTrue(st.lastModifiedTime() <= end);
-      assertFalse(st.isDirectory());
-      assertFalse(st.isOther());
-      assertTrue(st.isRegularFile());
-      assertFalse(st.isSymbolicLink());
+      Assert.assertNotNull(st);
+      Assert.assertEquals(fileSize, st.size());
+      Assert.assertTrue(st.creationTime() >= start);
+      Assert.assertTrue(st.creationTime() <= end);
+      Assert.assertTrue(st.lastAccessTime() >= start);
+      Assert.assertTrue(st.lastAccessTime() <= end);
+      Assert.assertTrue(st.lastModifiedTime() >= start);
+      Assert.assertTrue(st.lastModifiedTime() <= end);
+      Assert.assertFalse(st.isDirectory());
+      Assert.assertFalse(st.isOther());
+      Assert.assertTrue(st.isRegularFile());
+      Assert.assertFalse(st.isSymbolicLink());
     });
     await();
   }
@@ -644,8 +650,8 @@ public class FileSystemTest extends VertxTestBase {
     String linkName = "some-link.txt";
     Files.createSymbolicLink(Paths.get(testDir + pathSep + linkName), Paths.get(fileName));
     testProps(linkName, true, true, st -> {
-      assertNotNull(st != null);
-      assertTrue(st.isSymbolicLink());
+      Assert.assertNotNull(st != null);
+      Assert.assertTrue(st.isSymbolicLink());
     });
     await();
   }
@@ -655,9 +661,9 @@ public class FileSystemTest extends VertxTestBase {
     Handler<AsyncResult<FileProps>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
-          fail(ar.cause().getMessage());
+          Assert.fail(ar.cause().getMessage());
         } else {
-          assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
+          Assert.assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
           if (afterOK != null) {
             afterOK.handle(ar.result());
           }
@@ -670,7 +676,7 @@ public class FileSystemTest extends VertxTestBase {
           }
           testComplete();
         } else {
-          fail("stat should fail");
+          Assert.fail("stat should fail");
         }
       }
     };
@@ -688,8 +694,8 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(fileName, fileSize);
     String linkName = "some-link.txt";
     testLink(linkName, fileName, false, true, v -> {
-      assertEquals(fileSize, fileLength(linkName));
-      assertFalse(Files.isSymbolicLink(Paths.get(testDir + pathSep + linkName)));
+      Assert.assertEquals(fileSize, fileLength(linkName));
+      Assert.assertFalse(Files.isSymbolicLink(Paths.get(testDir + pathSep + linkName)));
       testComplete();
     });
     await();
@@ -704,11 +710,11 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(fileName, fileSize);
     String symlinkName = "some-sym-link.txt";
     testLink(symlinkName, fileName, true, true, v -> {
-      assertEquals(fileSize, fileLength(symlinkName));
-      assertTrue(Files.isSymbolicLink(Paths.get(testDir + pathSep + symlinkName)));
+      Assert.assertEquals(fileSize, fileLength(symlinkName));
+      Assert.assertTrue(Files.isSymbolicLink(Paths.get(testDir + pathSep + symlinkName)));
       // Now try reading it
       String read = vertx.fileSystem().readSymlinkBlocking(testDir + pathSep + symlinkName);
-      assertEquals(fileName, read);
+      Assert.assertEquals(fileName, read);
       testComplete();
     });
     await();
@@ -731,9 +737,9 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(fileName, fileSize);
     String linkName = "some-link.txt";
     Files.createLink(Paths.get(testDir + pathSep + linkName), Paths.get(testDir + pathSep + fileName));
-    assertEquals(fileSize, fileLength(linkName));
+    Assert.assertEquals(fileSize, fileLength(linkName));
     vertx.fileSystem().unlink(testDir + pathSep + linkName).onComplete(createHandler(true, v -> {
-      assertFalse(fileExists(linkName));
+      Assert.assertFalse(fileExists(linkName));
       testComplete();
     }));
     await();
@@ -750,9 +756,9 @@ public class FileSystemTest extends VertxTestBase {
     Files.createSymbolicLink(Paths.get(testDir + pathSep + linkName), Paths.get(fileName));
     vertx.fileSystem().readSymlink(testDir + pathSep + linkName).onComplete(ar -> {
       if (ar.failed()) {
-        fail(ar.cause().getMessage());
+        Assert.fail(ar.cause().getMessage());
       } else {
-        assertEquals(fileName, ar.result());
+        Assert.assertEquals(fileName, ar.result());
         testComplete();
       }
     });
@@ -763,9 +769,9 @@ public class FileSystemTest extends VertxTestBase {
   public void testSimpleDelete() throws Exception {
     String fileName = "some-file.txt";
     createFileWithJunk(fileName, 100);
-    assertTrue(fileExists(fileName));
+    Assert.assertTrue(fileExists(fileName));
     testDelete(fileName, false, true, v -> {
-      assertFalse(fileExists(fileName));
+      Assert.assertFalse(fileExists(fileName));
       testComplete();
     });
     await();
@@ -775,9 +781,9 @@ public class FileSystemTest extends VertxTestBase {
   public void testDeleteEmptyDir() throws Exception {
     String dirName = "some-dir";
     mkDir(dirName);
-    assertTrue(fileExists(dirName));
+    Assert.assertTrue(fileExists(dirName));
     testDelete(dirName, false, true, v -> {
-      assertFalse(fileExists(dirName));
+      Assert.assertFalse(fileExists(dirName));
       testComplete();
     });
     await();
@@ -786,7 +792,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testDeleteNonExistent() {
     String dirName = "some-dir";
-    assertFalse(fileExists(dirName));
+    Assert.assertFalse(fileExists(dirName));
     testDelete(dirName, false, false, v -> {
       testComplete();
     });
@@ -818,7 +824,7 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     testDelete(dir, true, true, v -> {
-      assertFalse(fileExists(dir));
+      Assert.assertFalse(fileExists(dir));
       testComplete();
     });
     await();
@@ -837,8 +843,8 @@ public class FileSystemTest extends VertxTestBase {
   public void testMkdirSimple() {
     String dirName = "some-dir";
     testMkdir(dirName, null, false, true, v -> {
-      assertTrue(fileExists(dirName));
-      assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      Assert.assertTrue(fileExists(dirName));
+      Assert.assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       testComplete();
     });
     await();
@@ -858,8 +864,8 @@ public class FileSystemTest extends VertxTestBase {
     String dirName = "some-dir";
     String perms = "rwx--x--x";
     testMkdir(dirName, perms, false, true, v -> {
-      assertTrue(fileExists(dirName));
-      assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      Assert.assertTrue(fileExists(dirName));
+      Assert.assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       assertPerms(perms, dirName);
       testComplete();
     });
@@ -871,8 +877,8 @@ public class FileSystemTest extends VertxTestBase {
     String dirName = "some-dir";
     testMkdir(dirName, null, false, true, v1 -> {
       testMkdir(dirName, null, false, false, v2 -> {
-        assertTrue(fileExists(dirName));
-        assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+        Assert.assertTrue(fileExists(dirName));
+        Assert.assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
         testComplete();
       });
     });
@@ -883,8 +889,8 @@ public class FileSystemTest extends VertxTestBase {
   public void testMkdirCreateParents() {
     String dirName = "top-dir" + pathSep + "/some-dir";
     testMkdir(dirName, null, true, true, v -> {
-      assertTrue(fileExists(dirName));
-      assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      Assert.assertTrue(fileExists(dirName));
+      Assert.assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       testComplete();
     });
     await();
@@ -895,8 +901,8 @@ public class FileSystemTest extends VertxTestBase {
     String dirName = "top-dir" + pathSep + "/some-dir";
     String perms = "rwx--x--x";
     testMkdir(dirName, perms, true, true, v -> {
-      assertTrue(fileExists(dirName));
-      assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      Assert.assertTrue(fileExists(dirName));
+      Assert.assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       assertPerms(perms, dirName);
       testComplete();
     });
@@ -908,8 +914,8 @@ public class FileSystemTest extends VertxTestBase {
     String dirName = "some-dir";
     testMkdir(dirName, null, true, true, v1 -> {
       testMkdir(dirName, null, true, true, v2 -> {
-        assertTrue(fileExists(dirName));
-        assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+        Assert.assertTrue(fileExists(dirName));
+        Assert.assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
         testComplete();
       });
     });
@@ -921,8 +927,8 @@ public class FileSystemTest extends VertxTestBase {
     String dirName = "some-dir";
     createFileWithJunk(dirName, 1024);
     testMkdir(dirName, null, true, false, v2 -> {
-      assertTrue(fileExists(dirName));
-      assertFalse(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      Assert.assertTrue(fileExists(dirName));
+      Assert.assertFalse(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       testComplete();
     });
     await();
@@ -955,7 +961,7 @@ public class FileSystemTest extends VertxTestBase {
       createFileWithJunk(dirName + pathSep + "file-" + i + ".dat", 100);
     }
     testReadDir(dirName, null, true, fileNames -> {
-      assertEquals(numFiles, fileNames.size());
+      Assert.assertEquals(numFiles, fileNames.size());
       Set<String> fset = new HashSet<String>();
       for (String fileName: fileNames) {
         fset.add(fileName);
@@ -965,11 +971,11 @@ public class FileSystemTest extends VertxTestBase {
       try {
         root = dir.getCanonicalPath();
       } catch (IOException e) {
-        fail(e.getMessage());
+        Assert.fail(e.getMessage());
         return;
       }
       for (int i = 0; i < numFiles; i++) {
-        assertTrue(fset.contains(root + pathSep + "file-" + i + ".dat"));
+        Assert.assertTrue(fset.contains(root + pathSep + "file-" + i + ".dat"));
       }
     });
     await();
@@ -987,7 +993,7 @@ public class FileSystemTest extends VertxTestBase {
       createFileWithJunk(dirName + pathSep + "bar-" + i + ".txt", 100);
     }
     testReadDir(dirName, "foo.+", true, fileNames -> {
-      assertEquals(numFiles, fileNames.size());
+      Assert.assertEquals(numFiles, fileNames.size());
       Set<String> fset = new HashSet<>();
       for (String fileName: fileNames) {
         fset.add(fileName);
@@ -997,11 +1003,11 @@ public class FileSystemTest extends VertxTestBase {
       try {
         root = dir.getCanonicalPath();
       } catch (IOException e) {
-        fail(e.getMessage());
+        Assert.fail(e.getMessage());
         return;
       }
       for (int i = 0; i < numFiles; i++) {
-        assertTrue(fset.contains(root + pathSep + "foo-" + i + ".txt"));
+        Assert.assertTrue(fset.contains(root + pathSep + "foo-" + i + ".txt"));
       }
     });
     await();
@@ -1012,9 +1018,9 @@ public class FileSystemTest extends VertxTestBase {
     Handler<AsyncResult<List<String>>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
-          fail(ar.cause().getMessage());
+          Assert.fail(ar.cause().getMessage());
         } else {
-          assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
+          Assert.assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
           if (afterOK != null) {
             afterOK.handle(null);
           }
@@ -1027,7 +1033,7 @@ public class FileSystemTest extends VertxTestBase {
           }
           testComplete();
         } else {
-          fail("read should fail");
+          Assert.fail("read should fail");
         }
       }
     };
@@ -1044,8 +1050,8 @@ public class FileSystemTest extends VertxTestBase {
     String fileName = "some-file.dat";
     createFile(fileName, content);
 
-    vertx.fileSystem().readFile(testDir + pathSep + fileName).onComplete(onSuccess(buff -> {
-      assertEquals(Buffer.buffer(content), buff);
+    vertx.fileSystem().readFile(testDir + pathSep + fileName).onComplete(TestUtils.onSuccess(buff -> {
+      Assert.assertEquals(Buffer.buffer(content), buff);
       testComplete();
     }));
     await();
@@ -1056,17 +1062,17 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(1000);
     Buffer buff = Buffer.buffer(content);
     String fileName = "some-file.dat";
-    vertx.fileSystem().writeFile(testDir + pathSep + fileName, buff).onComplete(onSuccess(v -> {
-      assertTrue(fileExists(fileName));
-      assertEquals(content.length, fileLength(fileName));
+    vertx.fileSystem().writeFile(testDir + pathSep + fileName, buff).onComplete(TestUtils.onSuccess(v -> {
+      Assert.assertTrue(fileExists(fileName));
+      Assert.assertEquals(content.length, fileLength(fileName));
       byte[] readBytes;
       try {
         readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
       } catch (IOException e) {
-        fail(e.getMessage());
+        Assert.fail(e.getMessage());
         return;
       }
-      assertEquals(buff, Buffer.buffer(readBytes));
+      Assert.assertEquals(buff, Buffer.buffer(readBytes));
       testComplete();
     }));
     await();
@@ -1080,23 +1086,23 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.buffer(content);
     AtomicInteger count = new AtomicInteger();
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(arr -> {
       for (int i = 0; i < chunks; i++) {
         Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
-        assertEquals(chunkSize, chunk.length());
-        arr.write(chunk, i * chunkSize).onComplete(onSuccess(ar -> {
+        Assert.assertEquals(chunkSize, chunk.length());
+        arr.write(chunk, i * chunkSize).onComplete(TestUtils.onSuccess(ar -> {
           if (count.incrementAndGet() == chunks) {
-            arr.close().onComplete(onSuccess(ar2 -> {
-              assertTrue(fileExists(fileName));
+            arr.close().onComplete(TestUtils.onSuccess(ar2 -> {
+              Assert.assertTrue(fileExists(fileName));
               byte[] readBytes;
               try {
                 readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
               } catch (IOException e) {
-                fail(e.getMessage());
+                Assert.fail(e.getMessage());
                 return;
               }
               Buffer read = Buffer.buffer(readBytes);
-              assertEquals(buff, read);
+              Assert.assertEquals(buff, read);
               testComplete();
             }));
           }
@@ -1117,9 +1123,9 @@ public class FileSystemTest extends VertxTestBase {
     waitFor(loops + 1);
 
     for (int i = 0; i < loops; i++) {
-      asyncFile.write(TestUtils.randomBuffer(256)).onComplete(onFailure(write -> complete()));
+      asyncFile.write(TestUtils.randomBuffer(256)).onComplete(TestUtils.onFailure(write -> complete()));
     }
-    asyncFile.close().onComplete(onSuccess(close -> complete()));
+    asyncFile.close().onComplete(TestUtils.onSuccess(close -> complete()));
 
     await();
   }
@@ -1127,8 +1133,8 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testWriteEmptyAsync() {
     String fileName = "some-file.dat";
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(file -> {
-      file.write(Buffer.buffer(), 0).onComplete(onSuccess(v -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(file -> {
+      file.write(Buffer.buffer(), 0).onComplete(TestUtils.onSuccess(v -> {
         testComplete();
       }));
     }));
@@ -1144,14 +1150,14 @@ public class FileSystemTest extends VertxTestBase {
     Buffer expected = Buffer.buffer(content);
     createFile(fileName, content);
     AtomicInteger reads = new AtomicInteger();
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(arr -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(arr -> {
       Buffer buff = Buffer.buffer(chunks * chunkSize);
       for (int i = 0; i < chunks; i++) {
-        arr.read(buff, i * chunkSize, i * chunkSize, chunkSize).onComplete(onSuccess(arb -> {
+        arr.read(buff, i * chunkSize, i * chunkSize, chunkSize).onComplete(TestUtils.onSuccess(arb -> {
           if (reads.incrementAndGet() == chunks) {
-            arr.close().onComplete(onSuccess(ar -> {
-              assertEquals(expected, buff);
-              assertEquals(buff, arb);
+            arr.close().onComplete(TestUtils.onSuccess(ar -> {
+              Assert.assertEquals(expected, buff);
+              Assert.assertEquals(buff, arb);
               testComplete();
             }));
           }
@@ -1168,23 +1174,23 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.buffer(content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(ws -> {
-      ws.exceptionHandler(t -> fail(t.getMessage()));
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(ws -> {
+      ws.exceptionHandler(t -> Assert.fail(t.getMessage()));
       for (int i = 0; i < chunks; i++) {
         Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
-        assertEquals(chunkSize, chunk.length());
+        Assert.assertEquals(chunkSize, chunk.length());
         ws.write(chunk);
       }
-      ws.close().onComplete(onSuccess(ar2 -> {
-        assertTrue(fileExists(fileName));
+      ws.close().onComplete(TestUtils.onSuccess(ar2 -> {
+        Assert.assertTrue(fileExists(fileName));
         byte[] readBytes;
         try {
           readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
         } catch (IOException e) {
-          fail(e.getMessage());
+          Assert.fail(e.getMessage());
           return;
         }
-        assertEquals(buff, Buffer.buffer(readBytes));
+        Assert.assertEquals(buff, Buffer.buffer(readBytes));
         testComplete();
       }));
     }));
@@ -1200,23 +1206,23 @@ public class FileSystemTest extends VertxTestBase {
     createFile(fileName, existing);
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     Buffer buff = Buffer.buffer(content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions().setAppend(true)).onComplete(onSuccess(ws -> {
-      ws.exceptionHandler(t -> fail(t.getMessage()));
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions().setAppend(true)).onComplete(TestUtils.onSuccess(ws -> {
+      ws.exceptionHandler(t -> Assert.fail(t.getMessage()));
       for (int i = 0; i < chunks; i++) {
         Buffer chunk = buff.getBuffer(i * chunkSize, (i + 1) * chunkSize);
-        assertEquals(chunkSize, chunk.length());
+        Assert.assertEquals(chunkSize, chunk.length());
         ws.write(chunk);
       }
-      ws.close().onComplete(onSuccess(ar2 -> {
-        assertTrue(fileExists(fileName));
+      ws.close().onComplete(TestUtils.onSuccess(ar2 -> {
+        Assert.assertTrue(fileExists(fileName));
         byte[] readBytes;
         try {
           readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
         } catch (IOException e) {
-          fail(e.getMessage());
+          Assert.fail(e.getMessage());
           return;
         }
-        assertEquals(Buffer.buffer(existing).appendBuffer(buff), Buffer.buffer(readBytes));
+        Assert.assertEquals(Buffer.buffer(existing).appendBuffer(buff), Buffer.buffer(readBytes));
         testComplete();
       }));
     }));
@@ -1232,19 +1238,19 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content2 = TestUtils.randomByteArray(chunkSize * (chunks / 2));
     ByteBuf byteBuf = Unpooled.wrappedBuffer(content1, content2);
     Buffer buff = BufferInternal.buffer(byteBuf);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(ws -> {
-      ws.exceptionHandler(t -> fail(t.getMessage()));
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(ws -> {
+      ws.exceptionHandler(t -> Assert.fail(t.getMessage()));
       ws.write(buff);
-      ws.close().onComplete(onSuccess(ar2 -> {
-        assertTrue(fileExists(fileName));
+      ws.close().onComplete(TestUtils.onSuccess(ar2 -> {
+        Assert.assertTrue(fileExists(fileName));
         byte[] readBytes;
         try {
           readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName));
         } catch (IOException e) {
-          fail(e.getMessage());
+          Assert.fail(e.getMessage());
           return;
         }
-        assertEquals(buff, Buffer.buffer(readBytes));
+        Assert.assertEquals(buff, Buffer.buffer(readBytes));
         byteBuf.release();
         testComplete();
       }));
@@ -1328,14 +1334,14 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       AtomicInteger inProgress = new AtomicInteger();
       AtomicBoolean ended = new AtomicBoolean();
       Buffer buff = Buffer.buffer();
       Runnable checkEnd = () -> {
         if (ended.get() && inProgress.get() == 0) {
-          rs.close().onComplete(onSuccess(ar2 -> {
-            assertEquals(Buffer.buffer(content), buff);
+          rs.close().onComplete(TestUtils.onSuccess(ar2 -> {
+            Assert.assertEquals(Buffer.buffer(content), buff);
             testComplete();
           }));
         }
@@ -1350,7 +1356,7 @@ public class FileSystemTest extends VertxTestBase {
           checkEnd.run();
         });
       });
-      rs.exceptionHandler(t -> fail(t.getMessage()));
+      rs.exceptionHandler(t -> Assert.fail(t.getMessage()));
       rs.endHandler(v -> {
         ended.set(true);
         checkEnd.run();
@@ -1366,7 +1372,7 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 1;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       rs.setReadBufferSize(chunkSize);
       Buffer buff = Buffer.buffer();
       int[] callCount = {0};
@@ -1374,11 +1380,11 @@ public class FileSystemTest extends VertxTestBase {
         buff.appendBuffer(buff1);
         callCount[0]++;
       });
-      rs.exceptionHandler(t -> fail(t.getMessage()));
+      rs.exceptionHandler(t -> Assert.fail(t.getMessage()));
       rs.endHandler(v -> {
-        rs.close().onComplete(onSuccess(ar2 -> {
-          assertEquals(1, callCount[0]);
-          assertEquals(Buffer.buffer(content), buff);
+        rs.close().onComplete(TestUtils.onSuccess(ar2 -> {
+          Assert.assertEquals(1, callCount[0]);
+          Assert.assertEquals(Buffer.buffer(content), buff);
           testComplete();
         }));
       });
@@ -1393,17 +1399,17 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       rs.setReadPos(chunkSize * chunks / 2);
       Buffer buff = Buffer.buffer();
       rs.handler(buff::appendBuffer);
-      rs.exceptionHandler(t -> fail(t.getMessage()));
+      rs.exceptionHandler(t -> Assert.fail(t.getMessage()));
       rs.endHandler(v -> {
-        rs.close().onComplete(onSuccess(ar2 -> {
-          assertEquals(chunkSize * chunks / 2, buff.length());
+        rs.close().onComplete(TestUtils.onSuccess(ar2 -> {
+          Assert.assertEquals(chunkSize * chunks / 2, buff.length());
           byte[] lastHalf = new byte[chunkSize * chunks / 2];
           System.arraycopy(content, chunkSize * chunks / 2, lastHalf, 0, chunkSize * chunks / 2);
-          assertEquals(Buffer.buffer(lastHalf), buff);
+          Assert.assertEquals(Buffer.buffer(lastHalf), buff);
           testComplete();
         }));
       });
@@ -1419,17 +1425,17 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     int readLength = chunkSize * chunks / 3;
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       rs.setReadLength(readLength);
       Buffer buff = Buffer.buffer();
       rs.handler(buff::appendBuffer);
-      rs.exceptionHandler(t -> fail(t.getMessage()));
+      rs.exceptionHandler(t -> Assert.fail(t.getMessage()));
       rs.endHandler(v -> {
-        rs.close().onComplete(onSuccess(ar2 -> {
-          assertEquals(readLength, buff.length());
+        rs.close().onComplete(TestUtils.onSuccess(ar2 -> {
+          Assert.assertEquals(readLength, buff.length());
           byte[] firstThird = new byte[readLength];
           System.arraycopy(content, 0, firstThird, 0, readLength);
-          assertEquals(Buffer.buffer(firstThird), buff);
+          Assert.assertEquals(Buffer.buffer(firstThird), buff);
           testComplete();
         }));
       });
@@ -1448,7 +1454,7 @@ public class FileSystemTest extends VertxTestBase {
     int readBufferSize = 1000;
     int numOfReads = readLength / readBufferSize + (readLength % readBufferSize > 0? 1 : 0);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       rs.setReadPos(readPos);
       rs.setReadLength(readLength);
       rs.setReadBufferSize(readBufferSize);
@@ -1458,14 +1464,14 @@ public class FileSystemTest extends VertxTestBase {
         buff.appendBuffer(rsBuff);
         appendCount[0]++;
       });
-      rs.exceptionHandler(t -> fail(t.getMessage()));
+      rs.exceptionHandler(t -> Assert.fail(t.getMessage()));
       rs.endHandler(v -> {
-        rs.close().onComplete(onSuccess(ar2 -> {
-          assertEquals(buff.length(), readLength);
-          assertEquals(numOfReads, appendCount[0]);
+        rs.close().onComplete(TestUtils.onSuccess(ar2 -> {
+          Assert.assertEquals(buff.length(), readLength);
+          Assert.assertEquals(numOfReads, appendCount[0]);
           byte[] middleThird = new byte[readLength];
           System.arraycopy(content, readPos, middleThird, 0, readLength);
-          assertEquals(Buffer.buffer(middleThird), buff);
+          Assert.assertEquals(Buffer.buffer(middleThird), buff);
           testComplete();
         }));
       });
@@ -1480,12 +1486,12 @@ public class FileSystemTest extends VertxTestBase {
     int chunks = 1;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
     createFile(fileName, content);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       rs.handler(buff -> {
-        assertFalse(Thread.holdsLock(rs));
+        Assert.assertFalse(Thread.holdsLock(rs));
       });
       rs.endHandler(v -> {
-        assertFalse(Thread.holdsLock(rs));
+        Assert.assertFalse(Thread.holdsLock(rs));
         testComplete();
       });
     }));
@@ -1503,19 +1509,19 @@ public class FileSystemTest extends VertxTestBase {
     byte[] content = TestUtils.randomByteArray(fileSize);
     createFile(fileName1, content);
 
-    vertx.fileSystem().open(testDir + pathSep + fileName1, new OpenOptions()).onComplete(onSuccess(rs -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName1, new OpenOptions()).onComplete(TestUtils.onSuccess(rs -> {
       //Open file for writing
-      vertx.fileSystem().open(testDir + pathSep + fileName2, new OpenOptions()).onComplete(onSuccess(ws -> {
-        rs.pipeTo(ws).onComplete(onSuccess(v -> {
-          assertTrue(fileExists(fileName2));
+      vertx.fileSystem().open(testDir + pathSep + fileName2, new OpenOptions()).onComplete(TestUtils.onSuccess(ws -> {
+        rs.pipeTo(ws).onComplete(TestUtils.onSuccess(v -> {
+          Assert.assertTrue(fileExists(fileName2));
           byte[] readBytes;
           try {
             readBytes = Files.readAllBytes(Paths.get(testDir + pathSep + fileName2));
           } catch (IOException e) {
-            fail(e.getMessage());
+            Assert.fail(e.getMessage());
             return;
           }
-          assertEquals(Buffer.buffer(content), Buffer.buffer(readBytes));
+          Assert.assertEquals(Buffer.buffer(content), Buffer.buffer(readBytes));
           testComplete();
         }));
       }));
@@ -1544,21 +1550,21 @@ public class FileSystemTest extends VertxTestBase {
     Handler<AsyncResult<Void>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
-          fail(ar.cause().getMessage());
+          Assert.fail(ar.cause().getMessage());
         } else {
-          assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
+          Assert.assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
           testComplete();
         }
       } else {
         if (shouldPass) {
-          assertTrue(fileExists(fileName));
-          assertEquals(0, fileLength(fileName));
+          Assert.assertTrue(fileExists(fileName));
+          Assert.assertEquals(0, fileLength(fileName));
           if (perms != null) {
             assertPerms(perms, fileName);
           }
           testComplete();
         } else {
-          fail("test should fail");
+          Assert.fail("test should fail");
         }
       }
     };
@@ -1585,8 +1591,8 @@ public class FileSystemTest extends VertxTestBase {
     if (exists) {
       createFileWithJunk(fileName, 100);
     }
-    vertx.fileSystem().exists(testDir + pathSep + fileName).onComplete(onSuccess(ar -> {
-      assertEquals(exists, ar);
+    vertx.fileSystem().exists(testDir + pathSep + fileName).onComplete(TestUtils.onSuccess(ar -> {
+      Assert.assertEquals(exists, ar);
       testComplete();
     }));
     await();
@@ -1597,17 +1603,17 @@ public class FileSystemTest extends VertxTestBase {
     String fileName = "some-file.txt";
     createFileWithJunk(fileName, 1234);
     testFSProps(fileName, props -> {
-      assertNotNull(props.name());
-      assertTrue(props.totalSpace() > 0);
-      assertTrue(props.unallocatedSpace() > 0);
-      assertTrue(props.usableSpace() > 0);
+      Assert.assertNotNull(props.name());
+      Assert.assertTrue(props.totalSpace() > 0);
+      Assert.assertTrue(props.unallocatedSpace() > 0);
+      Assert.assertTrue(props.usableSpace() > 0);
     });
     await();
   }
 
   private void testFSProps(String fileName,
                            Handler<FileSystemProps> afterOK) {
-    vertx.fileSystem().fsProps(testDir + pathSep + fileName).onComplete(onSuccess(res -> {
+    vertx.fileSystem().fsProps(testDir + pathSep + fileName).onComplete(TestUtils.onSuccess(res -> {
       afterOK.handle(res);
       testComplete();
     }));
@@ -1616,53 +1622,53 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testOpenOptions() {
     OpenOptions opts = new OpenOptions();
-    assertNull(opts.getPerms());
+    Assert.assertNull(opts.getPerms());
     String perms = "rwxrwxrwx";
-    assertEquals(opts, opts.setPerms(perms));
-    assertEquals(perms, opts.getPerms());
-    assertTrue(opts.isCreate());
-    assertEquals(opts, opts.setCreate(false));
-    assertFalse(opts.isCreate());
-    assertFalse(opts.isCreateNew());
-    assertEquals(opts, opts.setCreateNew(true));
-    assertTrue(opts.isCreateNew());
-    assertTrue(opts.isRead());
-    assertEquals(opts, opts.setRead(false));
-    assertFalse(opts.isRead());
-    assertTrue(opts.isWrite());
-    assertEquals(opts, opts.setWrite(false));
-    assertFalse(opts.isWrite());
-    assertFalse(opts.isDsync());
-    assertEquals(opts, opts.setDsync(true));
-    assertTrue(opts.isDsync());
-    assertFalse(opts.isSync());
-    assertEquals(opts, opts.setSync(true));
-    assertTrue(opts.isSync());
-    assertFalse(opts.isDeleteOnClose());
-    assertEquals(opts, opts.setDeleteOnClose(true));
-    assertTrue(opts.isDeleteOnClose());
-    assertFalse(opts.isTruncateExisting());
-    assertEquals(opts, opts.setTruncateExisting(true));
-    assertTrue(opts.isTruncateExisting());
-    assertFalse(opts.isSparse());
-    assertEquals(opts, opts.setSparse(true));
-    assertTrue(opts.isSparse());
+    Assert.assertEquals(opts, opts.setPerms(perms));
+    Assert.assertEquals(perms, opts.getPerms());
+    Assert.assertTrue(opts.isCreate());
+    Assert.assertEquals(opts, opts.setCreate(false));
+    Assert.assertFalse(opts.isCreate());
+    Assert.assertFalse(opts.isCreateNew());
+    Assert.assertEquals(opts, opts.setCreateNew(true));
+    Assert.assertTrue(opts.isCreateNew());
+    Assert.assertTrue(opts.isRead());
+    Assert.assertEquals(opts, opts.setRead(false));
+    Assert.assertFalse(opts.isRead());
+    Assert.assertTrue(opts.isWrite());
+    Assert.assertEquals(opts, opts.setWrite(false));
+    Assert.assertFalse(opts.isWrite());
+    Assert.assertFalse(opts.isDsync());
+    Assert.assertEquals(opts, opts.setDsync(true));
+    Assert.assertTrue(opts.isDsync());
+    Assert.assertFalse(opts.isSync());
+    Assert.assertEquals(opts, opts.setSync(true));
+    Assert.assertTrue(opts.isSync());
+    Assert.assertFalse(opts.isDeleteOnClose());
+    Assert.assertEquals(opts, opts.setDeleteOnClose(true));
+    Assert.assertTrue(opts.isDeleteOnClose());
+    Assert.assertFalse(opts.isTruncateExisting());
+    Assert.assertEquals(opts, opts.setTruncateExisting(true));
+    Assert.assertTrue(opts.isTruncateExisting());
+    Assert.assertFalse(opts.isSparse());
+    Assert.assertEquals(opts, opts.setSparse(true));
+    Assert.assertTrue(opts.isSparse());
   }
 
   @Test
   public void testDefaultOptionOptions() {
     OpenOptions def = new OpenOptions();
     OpenOptions json = new OpenOptions(new JsonObject());
-    assertEquals(def.getPerms(), json.getPerms());
-    assertEquals(def.isRead(), json.isRead());
-    assertEquals(def.isWrite(), json.isWrite());
-    assertEquals(def.isCreate(), json.isCreate());
-    assertEquals(def.isCreateNew(), json.isCreateNew());
-    assertEquals(def.isDeleteOnClose(), json.isDeleteOnClose());
-    assertEquals(def.isTruncateExisting(), json.isTruncateExisting());
-    assertEquals(def.isSparse(), json.isSparse());
-    assertEquals(def.isSync(), json.isSync());
-    assertEquals(def.isDsync(), json.isDsync());
+    Assert.assertEquals(def.getPerms(), json.getPerms());
+    Assert.assertEquals(def.isRead(), json.isRead());
+    Assert.assertEquals(def.isWrite(), json.isWrite());
+    Assert.assertEquals(def.isCreate(), json.isCreate());
+    Assert.assertEquals(def.isCreateNew(), json.isCreateNew());
+    Assert.assertEquals(def.isDeleteOnClose(), json.isDeleteOnClose());
+    Assert.assertEquals(def.isTruncateExisting(), json.isTruncateExisting());
+    Assert.assertEquals(def.isSparse(), json.isSparse());
+    Assert.assertEquals(def.isSync(), json.isSync());
+    Assert.assertEquals(def.isDsync(), json.isDsync());
   }
 
   @Test
@@ -1673,8 +1679,8 @@ public class FileSystemTest extends VertxTestBase {
     ThreadLocal stack = new ThreadLocal();
     stack.set(true);
     file.close().onComplete(ar -> {
-      assertNull(stack.get());
-      assertTrue(Vertx.currentContext().isEventLoopContext());
+      Assert.assertNull(stack.get());
+      Assert.assertTrue(Vertx.currentContext().isEventLoopContext());
       testComplete();
     });
     await();
@@ -1683,7 +1689,7 @@ public class FileSystemTest extends VertxTestBase {
   @Test
   public void testDrainNotCalledAfterClose() {
     String fileName = "some-file.dat";
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(file -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(file -> {
       Buffer buf = TestUtils.randomBuffer(1024 * 1024);
       file.write(buf);
       AtomicBoolean drainAfterClose = new AtomicBoolean();
@@ -1691,7 +1697,7 @@ public class FileSystemTest extends VertxTestBase {
         drainAfterClose.set(true);
       });
       file.close().onComplete(ar -> {
-        assertFalse(drainAfterClose.get());
+        Assert.assertFalse(drainAfterClose.get());
         testComplete();
       });
     }));
@@ -1702,19 +1708,19 @@ public class FileSystemTest extends VertxTestBase {
   public void testDrainSetOnce() {
     String fileName = "some-file.dat";
     Buffer buff = TestUtils.randomBuffer(1024);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(file -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(file -> {
       file.setWriteQueueMaxSize(1024 * 4);
       Context ctx = Vertx.currentContext();
-      assertNotNull(ctx);
+      Assert.assertNotNull(ctx);
       AtomicInteger times = new AtomicInteger(7);
       file.drainHandler(v -> {
-        assertSame(ctx, Vertx.currentContext());
+        Assert.assertSame(ctx, Vertx.currentContext());
         if (times.decrementAndGet() > 0) {
           while (!file.writeQueueFull()) {
             file.write(buff);
           }
         } else {
-          assertEquals(0, times.get());
+          Assert.assertEquals(0, times.get());
           testComplete();
         }
       });
@@ -1730,10 +1736,10 @@ public class FileSystemTest extends VertxTestBase {
     Buffer expected = TestUtils.randomBuffer(10000);
     String fileName = "some-file.dat";
     createFile(fileName, expected.getBytes());
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(file -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(file -> {
       Buffer buffer = Buffer.buffer();
       file.endHandler(v -> {
-        assertEquals(buffer.length(), expected.length());
+        Assert.assertEquals(buffer.length(), expected.length());
         file.pause();
         file.resume();
         complete();
@@ -1748,7 +1754,7 @@ public class FileSystemTest extends VertxTestBase {
     String fileName = "some-file.dat";
     createFile(fileName, new byte[0]);
     AtomicBoolean paused = new AtomicBoolean(false);
-    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(onSuccess(file -> {
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions()).onComplete(TestUtils.onSuccess(file -> {
       Buffer buffer = Buffer.buffer();
       paused.set(true);
       file.pause();
@@ -1757,7 +1763,7 @@ public class FileSystemTest extends VertxTestBase {
         file.resume();
       });
       file.endHandler(v -> {
-        assertFalse(paused.get());
+        Assert.assertFalse(paused.get());
         testComplete();
       });
       file.handler(buffer::appendBuffer);
@@ -1769,9 +1775,9 @@ public class FileSystemTest extends VertxTestBase {
     return ar -> {
       if (ar.failed()) {
         if (shouldPass) {
-          fail(ar.cause().getMessage());
+          Assert.fail(ar.cause().getMessage());
         } else {
-          assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
+          Assert.assertTrue(ar.cause() instanceof io.vertx.core.file.FileSystemException);
           if (afterOK != null) {
             afterOK.handle(null);
           }
@@ -1782,7 +1788,7 @@ public class FileSystemTest extends VertxTestBase {
             afterOK.handle(null);
           }
         } else {
-          fail("operation should fail");
+          Assert.fail("operation should fail");
         }
       }
     };
@@ -1872,11 +1878,11 @@ public class FileSystemTest extends VertxTestBase {
         AsyncFile af = ar.result();
         arFile.set(af);
       } else {
-        fail(ar.cause().getMessage());
+        Assert.fail(ar.cause().getMessage());
       }
       latch.countDown();
     });
-    awaitLatch(latch);
+    TestUtils.awaitLatch(latch);
 
     AsyncFile af = arFile.get();
 
@@ -1885,7 +1891,7 @@ public class FileSystemTest extends VertxTestBase {
       af.write(buff);
     }
 
-    af.close().onComplete(onSuccess(v -> {
+    af.close().onComplete(TestUtils.onSuccess(v -> {
       testComplete();
     }));
 
@@ -1910,9 +1916,9 @@ public class FileSystemTest extends VertxTestBase {
     String to = testDir + pathSep + target;
     CopyOptions options = new CopyOptions().setAtomicMove(true);
 
-    fs.move(from, to, options).onComplete(onSuccess(v -> {
-      assertFalse(fileExists(middle));
-      assertTrue(fileExists(target));
+    fs.move(from, to, options).onComplete(TestUtils.onSuccess(v -> {
+      Assert.assertFalse(fileExists(middle));
+      Assert.assertTrue(fileExists(target));
       complete();
     }));
     await();
@@ -1930,10 +1936,10 @@ public class FileSystemTest extends VertxTestBase {
     String to = testDir + pathSep + target;
     CopyOptions options = new CopyOptions().setReplaceExisting(true);
 
-    fs.copy(from, to, options).onComplete(onSuccess(v -> {
-      fs.readFile(from).onComplete(onSuccess(expected -> {
-        fs.readFile(to).onComplete(onSuccess(actual -> {
-          assertEquals(expected, actual);
+    fs.copy(from, to, options).onComplete(TestUtils.onSuccess(v -> {
+      fs.readFile(from).onComplete(TestUtils.onSuccess(expected -> {
+        fs.readFile(to).onComplete(TestUtils.onSuccess(actual -> {
+          Assert.assertEquals(expected, actual);
           complete();
         }));
       }));
@@ -1953,9 +1959,9 @@ public class FileSystemTest extends VertxTestBase {
     String to = testDir + pathSep + target;
     CopyOptions options = new CopyOptions();
 
-    fs.copy(from, to, options).onComplete(onFailure(t -> {
-      assertThat(t, a -> a.isInstanceOf(io.vertx.core.file.FileSystemException.class));
-      assertThat(t.getCause(), a -> a.isInstanceOf(FileAlreadyExistsException.class));
+    fs.copy(from, to, options).onComplete(TestUtils.onFailure(t -> {
+      Assertions.assertThat(t).isInstanceOf(io.vertx.core.file.FileSystemException.class);
+      Assertions.assertThat(t.getCause()).isInstanceOf(FileAlreadyExistsException.class);
       complete();
     }));
     await();
@@ -1983,11 +1989,11 @@ public class FileSystemTest extends VertxTestBase {
       .compose(expected -> fs
         .props(from)
         .expecting(that(actual -> {
-          assertEquals(expected.creationTime(), actual.creationTime());
-          assertEquals(expected.lastModifiedTime(), actual.lastModifiedTime());
+          Assert.assertEquals(expected.creationTime(), actual.creationTime());
+          Assert.assertEquals(expected.lastModifiedTime(), actual.lastModifiedTime());
         }))
-        .compose(v2 -> vertx.executeBlocking(() -> Files.getPosixFilePermissions(new File(testDir, target).toPath(), LinkOption.NOFOLLOW_LINKS))))).onComplete(onSuccess(perms -> {
-      assertEquals(EnumSet.of(PosixFilePermission.OWNER_READ), perms);
+        .compose(v2 -> vertx.executeBlocking(() -> Files.getPosixFilePermissions(new File(testDir, target).toPath(), LinkOption.NOFOLLOW_LINKS))))).onComplete(TestUtils.onSuccess(perms -> {
+      Assert.assertEquals(EnumSet.of(PosixFilePermission.OWNER_READ), perms);
       complete();
     }));
     await();
@@ -2017,21 +2023,21 @@ public class FileSystemTest extends VertxTestBase {
     fs.copy(from, to, options)
       .compose(v -> fs
         .lprops(to)
-        .expecting(that(props -> assertTrue(props.isSymbolicLink())))
+        .expecting(that(props -> Assert.assertTrue(props.isSymbolicLink())))
         .compose(v2 -> fs
           .readFile(from)
           .compose(expected -> fs
             .readFile(to)
-            .expecting(that(actual -> assertEquals(expected, actual)))))).onComplete(onSuccess(v -> complete()));
+            .expecting(that(actual -> Assert.assertEquals(expected, actual)))))).onComplete(TestUtils.onSuccess(v -> complete()));
     await();
   }
 
   @Test
   public void testCreateTempDirectory() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
-    fs.createTempDirectory("project").onComplete(onSuccess(tempDirectory -> {
-      assertNotNull(tempDirectory);
-      assertTrue(Files.exists(Paths.get(tempDirectory)));
+    fs.createTempDirectory("project").onComplete(TestUtils.onSuccess(tempDirectory -> {
+      Assert.assertNotNull(tempDirectory);
+      Assert.assertTrue(Files.exists(Paths.get(tempDirectory)));
       complete();
     }));
     await();
@@ -2041,19 +2047,19 @@ public class FileSystemTest extends VertxTestBase {
   public void testCreateTempDirectoryBlocking() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
     String tempDirectory = fs.createTempDirectoryBlocking("project");
-    assertTrue(Files.exists(Paths.get(tempDirectory)));
+    Assert.assertTrue(Files.exists(Paths.get(tempDirectory)));
   }
 
   @Test
   public void testCreateTempDirectoryWithPerms() {
     Assume.assumeFalse(Utils.isWindows());
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
-    fs.createTempDirectory("project", DEFAULT_DIR_PERMS).onComplete(onSuccess(tempDirectory -> {
+    fs.createTempDirectory("project", DEFAULT_DIR_PERMS).onComplete(TestUtils.onSuccess(tempDirectory -> {
       try {
         String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(Paths.get(tempDirectory)));
-        assertEquals(perms, DEFAULT_DIR_PERMS);
+        Assert.assertEquals(perms, DEFAULT_DIR_PERMS);
       } catch (IOException e) {
-        fail(e);
+        Assert.fail(e.getMessage());
       }
       complete();
     }));
@@ -2067,16 +2073,16 @@ public class FileSystemTest extends VertxTestBase {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
     String tempDirectory = fs.createTempDirectoryBlocking("project", DEFAULT_DIR_PERMS);
     String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(Paths.get(tempDirectory)));
-    assertEquals(perms, DEFAULT_DIR_PERMS);
+    Assert.assertEquals(perms, DEFAULT_DIR_PERMS);
   }
 
   @Test
   public void testCreateTempDirectoryWithDirectory() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
-    fs.createTempDirectory(testDir, "project", (String) null).onComplete(onSuccess(tempDirectory -> {
+    fs.createTempDirectory(testDir, "project", (String) null).onComplete(TestUtils.onSuccess(tempDirectory -> {
       Path path = Paths.get(tempDirectory);
-      assertTrue(Files.exists(path));
-      assertTrue(path.startsWith(testDir));
+      Assert.assertTrue(Files.exists(path));
+      Assert.assertTrue(path.startsWith(testDir));
       complete();
     }));
     await();
@@ -2087,17 +2093,17 @@ public class FileSystemTest extends VertxTestBase {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
     String tempDirectory = fs.createTempDirectoryBlocking(testDir, "project", null);
     Path path = Paths.get(tempDirectory);
-    assertTrue(Files.exists(Paths.get(tempDirectory)));
-    assertTrue(path.startsWith(testDir));
+    Assert.assertTrue(Files.exists(Paths.get(tempDirectory)));
+    Assert.assertTrue(path.startsWith(testDir));
   }
 
 
   @Test
   public void testCreateTempFile() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
-    fs.createTempFile("project", ".tmp").onComplete(onSuccess(tempFile -> {
-      assertNotNull(tempFile);
-      assertTrue(Files.exists(Paths.get(tempFile)));
+    fs.createTempFile("project", ".tmp").onComplete(TestUtils.onSuccess(tempFile -> {
+      Assert.assertNotNull(tempFile);
+      Assert.assertTrue(Files.exists(Paths.get(tempFile)));
       complete();
     }));
     await();
@@ -2107,18 +2113,18 @@ public class FileSystemTest extends VertxTestBase {
   public void testCreateTempFileBlocking() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
     String tempFile = fs.createTempFileBlocking("project", ".tmp");
-    assertNotNull(tempFile);
-    assertTrue(Files.exists(Paths.get(tempFile)));
+    Assert.assertNotNull(tempFile);
+    Assert.assertTrue(Files.exists(Paths.get(tempFile)));
   }
 
   @Test
   public void testCreateTempFileWithDirectory() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
-    fs.createTempFile(testDir, "project", ".tmp", (String)null).onComplete(onSuccess(tempFile -> {
-      assertNotNull(tempFile);
+    fs.createTempFile(testDir, "project", ".tmp", (String)null).onComplete(TestUtils.onSuccess(tempFile -> {
+      Assert.assertNotNull(tempFile);
       Path path = Paths.get(tempFile);
-      assertTrue(Files.exists(path));
-      assertTrue(path.startsWith(testDir));
+      Assert.assertTrue(Files.exists(path));
+      Assert.assertTrue(path.startsWith(testDir));
       complete();
     }));
     await();
@@ -2128,10 +2134,10 @@ public class FileSystemTest extends VertxTestBase {
   public void testCreateTempFileWithDirectoryBlocking() {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
     String tempFile = fs.createTempFileBlocking(testDir, "project", ".tmp", null);
-    assertNotNull(tempFile);
+    Assert.assertNotNull(tempFile);
     Path path = Paths.get(tempFile);
-    assertTrue(Files.exists(path));
-    assertTrue(path.startsWith(testDir));
+    Assert.assertTrue(Files.exists(path));
+    Assert.assertTrue(path.startsWith(testDir));
   }
 
   @Test
@@ -2139,14 +2145,14 @@ public class FileSystemTest extends VertxTestBase {
     Assume.assumeFalse(Utils.isWindows());
 
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
-    fs.createTempFile("project", ".tmp", DEFAULT_FILE_PERMS).onComplete(onSuccess(tempFile -> {
+    fs.createTempFile("project", ".tmp", DEFAULT_FILE_PERMS).onComplete(TestUtils.onSuccess(tempFile -> {
       Path path = Paths.get(tempFile);
-      assertTrue(Files.exists(path));
+      Assert.assertTrue(Files.exists(path));
       try {
         String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
-        assertEquals(perms, DEFAULT_FILE_PERMS);
+        Assert.assertEquals(perms, DEFAULT_FILE_PERMS);
       } catch (IOException e) {
-        fail(e);
+        Assert.fail(e.getMessage());
       }
     }));
   }
@@ -2159,9 +2165,9 @@ public class FileSystemTest extends VertxTestBase {
     io.vertx.core.file.FileSystem fs = vertx.fileSystem();
     String tempFile = fs.createTempFileBlocking("project", ".tmp", DEFAULT_FILE_PERMS);
     Path path = Paths.get(tempFile);
-    assertTrue(Files.exists(path));
+    Assert.assertTrue(Files.exists(path));
     String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
-    assertEquals(perms, DEFAULT_FILE_PERMS);
+    Assert.assertEquals(perms, DEFAULT_FILE_PERMS);
   }
 
   @Test
@@ -2171,9 +2177,9 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(fileName, expected);
     AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
     file.size()
-      .expecting(that(size -> assertEquals(expected, size.longValue())))
+      .expecting(that(size -> Assert.assertEquals(expected, size.longValue())))
       .compose(v -> file.close())
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -2183,8 +2189,8 @@ public class FileSystemTest extends VertxTestBase {
     int expected = ThreadLocalRandom.current().nextInt(1000, 2000);
     createFileWithJunk(fileName, expected);
     AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
-    assertEquals(expected, file.sizeBlocking());
-    file.close().onComplete(onSuccess(v -> testComplete()));
+    Assert.assertEquals(expected, file.sizeBlocking());
+    file.close().onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -2198,13 +2204,13 @@ public class FileSystemTest extends VertxTestBase {
     AsyncFile file1 = fs.openBlocking(path, new OpenOptions());
     AsyncFile file2 = fs.openBlocking(path, new OpenOptions());
 
-    file1.lock(0, "Hello".length(), false).onComplete(onSuccess(lock1 -> {
-      file2.lock().onComplete(onFailure(t -> {
-        assertTrue(t instanceof FileSystemException);
-        assertTrue(t.getCause() instanceof OverlappingFileLockException);
-        file2.lock("Hello".length(), "Locks".length(), false).onComplete(onSuccess(lock2 -> {
-          lock1.release().onComplete(onSuccess(r1 -> {
-            lock2.release().onComplete(onSuccess(r2 -> {
+    file1.lock(0, "Hello".length(), false).onComplete(TestUtils.onSuccess(lock1 -> {
+      file2.lock().onComplete(TestUtils.onFailure(t -> {
+        Assert.assertTrue(t instanceof FileSystemException);
+        Assert.assertTrue(t.getCause() instanceof OverlappingFileLockException);
+        file2.lock("Hello".length(), "Locks".length(), false).onComplete(TestUtils.onSuccess(lock2 -> {
+          lock1.release().onComplete(TestUtils.onSuccess(r1 -> {
+            lock2.release().onComplete(TestUtils.onSuccess(r2 -> {
               testComplete();
             }));
           }));
@@ -2240,12 +2246,12 @@ public class FileSystemTest extends VertxTestBase {
       latch.countDown();
       return promise.future();
     });
-    awaitLatch(latch);
+    TestUtils.awaitLatch(latch);
     try {
       file.lock().await();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertSame(FileSystemException.class, e.getClass());
+      Assert.assertSame(FileSystemException.class, e.getClass());
     }
     String expected = TestUtils.randomAlphaString(10);
     completer.accept(expected, promise);
@@ -2265,9 +2271,9 @@ public class FileSystemTest extends VertxTestBase {
     }
     res.onComplete(ar -> {
       if (ar.succeeded()) {
-        assertEquals(expected, ar.result());
+        Assert.assertEquals(expected, ar.result());
       } else {
-        assertEquals(expected, ar.cause().getMessage());
+        Assert.assertEquals(expected, ar.cause().getMessage());
       }
       testComplete();
     });
@@ -2288,11 +2294,11 @@ public class FileSystemTest extends VertxTestBase {
     });
     waitUntil(res::failed);
     CountDownLatch latch1 = new CountDownLatch(1);
-    file.lock().onComplete(onSuccess(lock -> {
+    file.lock().onComplete(TestUtils.onSuccess(lock -> {
       latch1.countDown();
       lock.release();
     }));
-    awaitLatch(latch1);
+    TestUtils.awaitLatch(latch1);
     file.close();
   }
 }

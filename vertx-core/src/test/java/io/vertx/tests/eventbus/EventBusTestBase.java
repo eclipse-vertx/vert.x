@@ -21,6 +21,7 @@ import io.vertx.tests.shareddata.AsyncMapTest.SomeClusterSerializableObject;
 import io.vertx.tests.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -43,6 +44,10 @@ public abstract class EventBusTestBase extends VertxTestBase {
   protected static final String ADDRESS2 = "some-address2";
 
   protected abstract Vertx[] vertices(int num);
+
+  public EventBusTestBase() {
+    super(true);
+  }
 
   @Test
   public void testSendNull() throws Exception {
@@ -111,8 +116,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testSendBuffer() throws Exception {
     Buffer sent = TestUtils.randomBuffer(100);
     testSend(sent, (buffer) -> {
-      assertEquals(sent, buffer);
-      assertFalse(sent == buffer); // Make sure it's copied
+      Assert.assertEquals(sent, buffer);
+      Assert.assertFalse(sent == buffer); // Make sure it's copied
     });
   }
 
@@ -120,8 +125,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testReplyBuffer() throws Exception {
     Buffer sent = TestUtils.randomBuffer(100);
     testReply(sent, (bytes) -> {
-      assertEquals(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
+      Assert.assertEquals(sent, bytes);
+      Assert.assertFalse(sent == bytes); // Make sure it's copied
     });
   }
 
@@ -129,8 +134,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testPublishBuffer() throws Exception {
     Buffer sent = TestUtils.randomBuffer(100);
     testPublish(sent, (buffer) -> {
-      assertEquals(sent, buffer);
-      assertFalse(sent == buffer); // Make sure it's copied
+      Assert.assertEquals(sent, buffer);
+      Assert.assertFalse(sent == buffer); // Make sure it's copied
     });
   }
 
@@ -154,7 +159,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     byte[] sent = TestUtils.randomByteArray(100);
     testSend(sent, (bytes) -> {
       TestUtils.byteArraysEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
+      Assert.assertFalse(sent == bytes); // Make sure it's copied
     });
   }
 
@@ -163,7 +168,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     byte[] sent = TestUtils.randomByteArray(100);
     testReply(sent, (bytes) -> {
       TestUtils.byteArraysEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
+      Assert.assertFalse(sent == bytes); // Make sure it's copied
     });
   }
 
@@ -172,7 +177,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     byte[] sent = TestUtils.randomByteArray(100);
     testPublish(sent, (bytes) -> {
       TestUtils.byteArraysEqual(sent, bytes);
-      assertFalse(sent == bytes); // Make sure it's copied
+      Assert.assertFalse(sent == bytes); // Make sure it's copied
     });
   }
 
@@ -301,8 +306,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
     testSend(arr, (received) -> {
-      assertEquals(arr, received);
-      assertFalse(arr == received); // Make sure it's copied
+      Assert.assertEquals(arr, received);
+      Assert.assertFalse(arr == received); // Make sure it's copied
     });
   }
 
@@ -311,8 +316,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
     testReply(arr, (received) -> {
-      assertEquals(arr, received);
-      assertFalse(arr == received); // Make sure it's copied
+      Assert.assertEquals(arr, received);
+      Assert.assertFalse(arr == received); // Make sure it's copied
     });
   }
 
@@ -321,8 +326,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
     testPublish(arr, (received) -> {
-      assertEquals(arr, received);
-      assertFalse(arr == received); // Make sure it's copied
+      Assert.assertEquals(arr, received);
+      Assert.assertFalse(arr == received); // Make sure it's copied
     });
   }
 
@@ -331,8 +336,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testSend(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -341,8 +346,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testReply(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -351,8 +356,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
     testPublish(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -360,8 +365,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testSendClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
     testSend(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -369,8 +374,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testReplyClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
     testReply(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -378,8 +383,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testPublishClusterSerializable() throws Exception {
     SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -387,8 +392,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testSendSerializable() throws Exception {
     SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testSend(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -396,8 +401,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testReplySerializable() throws Exception {
     SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testReply(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -405,8 +410,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testPublishSerializable() throws Exception {
     SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
-      assertEquals(obj, received);
-      assertFalse(obj == received); // Make sure it's copied
+      Assert.assertEquals(obj, received);
+      Assert.assertFalse(obj == received); // Make sure it's copied
     });
   }
 
@@ -414,8 +419,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testSendWithCodecFromSelector() throws Exception {
     ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
     testSend(obj, (received) -> {
-      assertEquals(obj, received);
-      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+      Assert.assertEquals(obj, received);
+      Assert.assertEquals(shouldImmutableObjectBeCopied(), obj != received);
     });
   }
 
@@ -423,8 +428,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testReplyWithCodecFromSelector() throws Exception {
     ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
     testReply(obj, (received) -> {
-      assertEquals(obj, received);
-      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+      Assert.assertEquals(obj, received);
+      Assert.assertEquals(shouldImmutableObjectBeCopied(), obj != received);
     });
   }
 
@@ -432,8 +437,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testPublishWithCodecFromSelector() throws Exception {
     ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
     testPublish(obj, (received) -> {
-      assertEquals(obj, received);
-      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+      Assert.assertEquals(obj, received);
+      Assert.assertEquals(shouldImmutableObjectBeCopied(), obj != received);
     });
   }
 
@@ -465,14 +470,14 @@ public abstract class EventBusTestBase extends VertxTestBase {
         vertx.eventBus().<String>consumer(ADDRESS1, msg -> {
           msg.reply(expectedBody);
         }).completion().onComplete(ar -> {
-          assertTrue(ar.succeeded());
+          Assert.assertTrue(ar.succeeded());
           latch.countDown();
         });
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
-    awaitLatch(latch);
-    vertices[0].eventBus().request(ADDRESS1, "whatever").onComplete(onSuccess(reply -> {
-      assertEquals(expectedBody, reply.body());
+    TestUtils.awaitLatch(latch);
+    vertices[0].eventBus().request(ADDRESS1, "whatever").onComplete(TestUtils.onSuccess(reply -> {
+      Assert.assertEquals(expectedBody, reply.body());
       testComplete();
     }));
     await();
@@ -484,20 +489,20 @@ public abstract class EventBusTestBase extends VertxTestBase {
     CountDownLatch receivedLatch = new CountDownLatch(1);
     Vertx[] vertices = vertices(2);
     vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
-      assertEquals(expectedBody, msg.body());
+      Assert.assertEquals(expectedBody, msg.body());
       receivedLatch.countDown();
     }).completion().onComplete(ar -> {
-      assertTrue(ar.succeeded());
+      Assert.assertTrue(ar.succeeded());
       vertices[0].executeBlocking(() -> {
         vertices[0].eventBus().send(ADDRESS1, expectedBody);
         try {
-          awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
+          TestUtils.awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
         } catch (InterruptedException e) {
           Thread.interrupted();
           throw e;
         }
         return null;
-      }).onComplete(onSuccess(ar2 -> testComplete()));
+      }).onComplete(TestUtils.onSuccess(ar2 -> testComplete()));
     });
     await();
   }
@@ -508,28 +513,28 @@ public abstract class EventBusTestBase extends VertxTestBase {
     waitFor(4);
 
     // On an "external" thread
-    vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+    vertices[0].eventBus().request("blah", "blah").onComplete(TestUtils.onFailure(err -> {
       if (err instanceof ReplyException) {
         ReplyException cause = (ReplyException) err;
-        assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+        Assert.assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
       } else {
-        fail(err);
+        Assert.fail(err.getMessage());
       }
-      assertTrue("Not an EL thread", Context.isOnEventLoopThread());
+      Assert.assertTrue("Not an EL thread", Context.isOnEventLoopThread());
       complete();
     }));
 
     // On a EL context
     vertices[0].runOnContext(v -> {
       Context ctx = vertices[0].getOrCreateContext();
-      vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+      vertices[0].eventBus().request("blah", "blah").onComplete(TestUtils.onFailure(err -> {
         if (err instanceof ReplyException) {
           ReplyException cause = (ReplyException) err;
-          assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+          Assert.assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
         } else {
-          fail(err);
+          Assert.fail(err.getMessage());
         }
-        assertSame(ctx, vertices[0].getOrCreateContext());
+        Assert.assertSame(ctx, vertices[0].getOrCreateContext());
         complete();
       }));
     });
@@ -539,14 +544,14 @@ public abstract class EventBusTestBase extends VertxTestBase {
       @Override
       public void start() throws Exception {
         Context ctx = getVertx().getOrCreateContext();
-        vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+        vertices[0].eventBus().request("blah", "blah").onComplete(TestUtils.onFailure(err -> {
           if (err instanceof ReplyException) {
             ReplyException cause = (ReplyException) err;
-            assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+            Assert.assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
           } else {
-            fail(err);
+            Assert.fail(err.getMessage());
           }
-          assertSame(ctx, getVertx().getOrCreateContext());
+          Assert.assertSame(ctx, getVertx().getOrCreateContext());
           complete();
         }));
       }
@@ -554,14 +559,14 @@ public abstract class EventBusTestBase extends VertxTestBase {
 
     // Inside executeBlocking
     vertices[0].executeBlocking(() -> {
-      vertices[0].eventBus().request("blah", "blah").onComplete(onFailure(err -> {
+      vertices[0].eventBus().request("blah", "blah").onComplete(TestUtils.onFailure(err -> {
         if (err instanceof ReplyException) {
           ReplyException cause = (ReplyException) err;
-          assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
+          Assert.assertSame(ReplyFailure.NO_HANDLERS, cause.failureType());
         } else {
-          fail(err);
+          Assert.fail(err.getMessage());
         }
-        assertTrue("Not an EL thread", Context.isOnEventLoopThread());
+        Assert.assertTrue("Not an EL thread", Context.isOnEventLoopThread());
         complete();
       }));
       return null;
@@ -578,15 +583,15 @@ public abstract class EventBusTestBase extends VertxTestBase {
     Vertx[] vertices = vertices(2);
     MessageConsumer<T> reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
-        assertTrue(msg.isSend());
-        assertEquals(received, msg.body());
+        Assert.assertTrue(msg.isSend());
+        Assert.assertEquals(received, msg.body());
         if (options != null) {
-          assertNotNull(msg.headers());
+          Assert.assertNotNull(msg.headers());
           int numHeaders = options.getHeaders() != null ? options.getHeaders().size() : 0;
-          assertEquals(numHeaders, msg.headers().size());
+          Assert.assertEquals(numHeaders, msg.headers().size());
           if (numHeaders != 0) {
             for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
-              assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
+              Assert.assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
             }
           }
         }
@@ -595,7 +600,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       }
       testComplete();
     });
-    awaitFuture(reg.completion());
+    reg.completion().await();
     if (options == null) {
       vertices[0].eventBus().send(ADDRESS1, val);
     } else {
@@ -620,23 +625,23 @@ public abstract class EventBusTestBase extends VertxTestBase {
     Vertx[] vertices = vertices(2);
     String str = TestUtils.randomUnicodeString(1000);
     MessageConsumer<?> reg = vertices[1].eventBus().consumer(ADDRESS1, msg -> {
-      assertEquals(str, msg.body());
+      Assert.assertEquals(str, msg.body());
       if (options == null) {
         msg.reply(val);
       } else {
         msg.reply(val, options);
       }
     });
-    awaitFuture(reg.completion());
-    vertices[0].eventBus().<R>request(ADDRESS1, str).onComplete(onSuccess((Message<R> reply) -> {
+    reg.completion().await();
+    vertices[0].eventBus().<R>request(ADDRESS1, str).onComplete(TestUtils.onSuccess((Message<R> reply) -> {
       if (consumer == null) {
-        assertTrue(reply.isSend());
-        assertEquals(received, reply.body());
+        Assert.assertTrue(reply.isSend());
+        Assert.assertEquals(received, reply.body());
         if (options != null && options.getHeaders() != null) {
-          assertNotNull(reply.headers());
-          assertEquals(options.getHeaders().size(), reply.headers().size());
+          Assert.assertNotNull(reply.headers());
+          Assert.assertEquals(options.getHeaders().size(), reply.headers().size());
           for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
-            assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
+            Assert.assertEquals(reply.headers().get(entry.getKey()), entry.getValue());
           }
         }
       } else {
@@ -657,14 +662,14 @@ public abstract class EventBusTestBase extends VertxTestBase {
     for (int i = 1;i < vertices.length;i++) {
       MessageConsumer<?> reg = vertices[i].eventBus().<T>consumer(ADDRESS1).handler(msg -> {
         if (consumer == null) {
-          assertFalse(msg.isSend());
-          assertEquals(val, msg.body());
+          Assert.assertFalse(msg.isSend());
+          Assert.assertEquals(val, msg.body());
         } else {
           consumer.accept(msg.body());
         }
         complete();
       });
-      awaitFuture(reg.completion());
+      reg.completion().await();
     }
     vertices[0].eventBus().publish(ADDRESS1, val);
     await();
@@ -969,8 +974,8 @@ public abstract class EventBusTestBase extends VertxTestBase {
     MessageConsumer<?> consumer = latch.get(20, TimeUnit.SECONDS);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
-      consumer.unregister().onComplete(onSuccess(v2 -> {
-        assertSame(ctx, Vertx.currentContext());
+      consumer.unregister().onComplete(TestUtils.onSuccess(v2 -> {
+        Assert.assertSame(ctx, Vertx.currentContext());
         testComplete();
       }));
     });

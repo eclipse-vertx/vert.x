@@ -17,6 +17,8 @@ import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CancellationException;
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -31,6 +34,10 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TimerTest extends VertxTestBase {
+
+  public TimerTest() {
+    super(true);
+  }
 
   @Test
   public void testTimer() {
@@ -66,9 +73,9 @@ public class TimerTest extends VertxTestBase {
     final long delay = 2000;
     vertx.setTimer(delay, timerID -> {
       long dur = System.nanoTime() - start;
-      assertTrue(dur >= TimeUnit.MILLISECONDS.toNanos(delay));
+      Assert.assertTrue(dur >= TimeUnit.MILLISECONDS.toNanos(delay));
       long maxDelay = delay * 2;
-      assertTrue("Timer accuracy: " + dur + " vs " + TimeUnit.MILLISECONDS.toNanos(maxDelay), dur < TimeUnit.MILLISECONDS.toNanos(maxDelay)); // 100% margin of error (needed for CI)
+      Assert.assertTrue("Timer accuracy: " + dur + " vs " + TimeUnit.MILLISECONDS.toNanos(maxDelay), dur < TimeUnit.MILLISECONDS.toNanos(maxDelay)); // 100% margin of error (needed for CI)
       vertx.cancelTimer(timerID);
       testComplete();
     });
@@ -83,19 +90,19 @@ public class TimerTest extends VertxTestBase {
       public void start() {
         Thread thr = Thread.currentThread();
         vertx.setTimer(1, id -> {
-          assertSame(thr, Thread.currentThread());
+          Assert.assertSame(thr, Thread.currentThread());
           if (cnt.incrementAndGet() == 5) {
             testComplete();
           }
         });
         vertx.setPeriodic(2, id -> {
-          assertSame(thr, Thread.currentThread());
+          Assert.assertSame(thr, Thread.currentThread());
           if (cnt.incrementAndGet() == 5) {
             testComplete();
           }
         });
         vertx.setPeriodic(3, 4, id -> {
-          assertSame(thr, Thread.currentThread());
+          Assert.assertSame(thr, Thread.currentThread());
           if (cnt.incrementAndGet() == 5) {
             testComplete();
           }
@@ -124,14 +131,14 @@ public class TimerTest extends VertxTestBase {
       int count;
       public void handle(Long timerID) {
         assertThatComparable(System.nanoTime() - now, a -> a.isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay)));
-        assertEquals(id.get(), timerID.longValue());
+        Assert.assertEquals(id.get(), timerID.longValue());
         count++;
         if (count == numFires) {
           vertx.cancelTimer(timerID);
           setEndTimer();
         }
         if (count > numFires) {
-          fail("Fired too many times");
+          Assert.fail("Fired too many times");
         }
       }
     }));
@@ -144,10 +151,10 @@ public class TimerTest extends VertxTestBase {
       int count;
       boolean fired;
       public void handle(Long timerID) {
-        assertFalse(fired);
+        Assert.assertFalse(fired);
         fired = true;
-        assertEquals(id.get(), timerID.longValue());
-        assertEquals(0, count);
+        Assert.assertEquals(id.get(), timerID.longValue());
+        Assert.assertEquals(0, count);
         count++;
         setEndTimer();
       }
@@ -163,18 +170,25 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testCancelTimerWhenScheduledOnWorker() {
+    AtomicBoolean executed = new AtomicBoolean();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        long id = vertx.setTimer(100, id_ -> {
-          fail();
+        vertx.runOnContext(v -> {
+          long id = vertx.setTimer(100, id_ -> {
+            executed.set(true);
+          });
+          try {
+            Thread.sleep(200);
+          } catch (InterruptedException ignore) {
+          }
+          Assert.assertTrue(vertx.cancelTimer(id));
+          testComplete();
         });
-        Thread.sleep(200);
-        assertTrue(vertx.cancelTimer(id));
-        testComplete();
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
+    Assert.assertFalse(waitUntil(() -> executed.get(), 25));
   }
 
   @Test
@@ -183,7 +197,7 @@ public class TimerTest extends VertxTestBase {
       @Override
       public void start() throws Exception {
         vertx.setTimer(10, id -> {
-          assertTrue(Context.isOnWorkerThread());
+          Assert.assertTrue(Context.isOnWorkerThread());
           testComplete();
         });
       }
@@ -197,7 +211,7 @@ public class TimerTest extends VertxTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       ctx.exceptionHandler(err -> {
-        assertSame(err, failure);
+        Assert.assertSame(err, failure);
         testComplete();
       });
       vertx.setTimer(5, id -> {
@@ -239,8 +253,8 @@ public class TimerTest extends VertxTestBase {
       public void start() {
         timer.set(f.get());
       }
-    }).compose(deployment -> vertx.undeploy(deployment)).onComplete(onSuccess(v -> {
-      assertFalse(vertx.cancelTimer(timer.get()));
+    }).compose(deployment -> vertx.undeploy(deployment)).onComplete(TestUtils.onSuccess(v -> {
+      Assert.assertFalse(vertx.cancelTimer(timer.get()));
       testComplete();
     }));
     await();
@@ -252,14 +266,14 @@ public class TimerTest extends VertxTestBase {
     ContextInternal ctx1 = ((VertxInternal)vertx).createEventLoopContext();
     waitFor(2);
     ContextInternal ctx2 = ((VertxInternal)vertx).createEventLoopContext();
-    assertNotSame(ctx1, ctx2);
+    Assert.assertNotSame(ctx1, ctx2);
     ctx2.runOnContext(v -> {
       vertx.setTimer(10, l -> {
-        assertSame(ctx2, vertx.getOrCreateContext());
+        Assert.assertSame(ctx2, vertx.getOrCreateContext());
         complete();
       });
       ctx1.setTimer(10, l -> {
-        assertSame(ctx1, vertx.getOrCreateContext());
+        Assert.assertSame(ctx1, vertx.getOrCreateContext());
         complete();
       });
     });
@@ -280,7 +294,7 @@ public class TimerTest extends VertxTestBase {
     disableThreadChecks();
     waitFor(4);
     ContextInternal ctx1 = ((VertxInternal)vertx).createEventLoopContext();
-    assertNotSame(ctx1, ctx2);
+    Assert.assertNotSame(ctx1, ctx2);
     ctx2.runOnContext(v -> {
       Thread th = Thread.currentThread();
       vertx.setPeriodic(10, new Handler<>() {
@@ -288,12 +302,12 @@ public class TimerTest extends VertxTestBase {
 
         @Override
         public void handle(Long l) {
-          assertSame(th, Thread.currentThread());
+          Assert.assertSame(th, Thread.currentThread());
           ContextInternal current = (ContextInternal) vertx.getOrCreateContext();
-          assertNotNull(current);
-          assertTrue(current.isDuplicate());
-          assertNotSame(ctx2, current);
-          assertSame(ctx2.unwrap(), current.unwrap());
+          Assert.assertNotNull(current);
+          Assert.assertTrue(current.isDuplicate());
+          Assert.assertNotSame(ctx2, current);
+          Assert.assertSame(ctx2.unwrap(), current.unwrap());
           if (++count == 2) {
             vertx.cancelTimer(l);
           }
@@ -306,10 +320,10 @@ public class TimerTest extends VertxTestBase {
         @Override
         public void handle(Long l) {
           ContextInternal current = (ContextInternal) vertx.getOrCreateContext();
-          assertNotNull(current);
-          assertTrue(current.isDuplicate());
-          assertNotSame(ctx1, current);
-          assertSame(ctx1, current.unwrap());
+          Assert.assertNotNull(current);
+          Assert.assertTrue(current.isDuplicate());
+          Assert.assertNotSame(ctx1, current);
+          Assert.assertSame(ctx1, current.unwrap());
           if (++count == 2) {
             vertx.cancelTimer(l);
           }
@@ -350,7 +364,7 @@ public class TimerTest extends VertxTestBase {
           complete();
         });
         context.runOnContext(v -> {
-          vertx.undeploy(context.deploymentID()).onComplete(onSuccess(ar -> {
+          vertx.undeploy(context.deploymentID()).onComplete(TestUtils.onSuccess(ar -> {
             ((ContextInternal)context).setTimer(1, id -> {
               complete();
             });
@@ -365,8 +379,8 @@ public class TimerTest extends VertxTestBase {
   public void testTimerFire() {
     long now = System.nanoTime();
     Timer timer = vertx.timer(1, TimeUnit.SECONDS);
-    timer.onComplete(onSuccess(v -> {
-      assertTrue(System.nanoTime() - now >= TimeUnit.SECONDS.toNanos(1));
+    timer.onComplete(TestUtils.onSuccess(v -> {
+      Assert.assertTrue(System.nanoTime() - now >= TimeUnit.SECONDS.toNanos(1));
       testComplete();
     }));
     await();
@@ -374,15 +388,18 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testTimerFireOnContext1() {
+    AtomicReference<ContextInternal> ref1 = new AtomicReference<>();
+    AtomicReference<ContextInternal> ref2 = new AtomicReference<>();
     new Thread(() -> {
       ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+      ref2.set(ctx);
       Timer timer = vertx.timer(10, TimeUnit.MILLISECONDS);
-      timer.onComplete(onSuccess(v -> {
-        assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
-        testComplete();
+      timer.onComplete(TestUtils.onSuccess(v -> {
+        ref1.set((ContextInternal)Vertx.currentContext());
       }));
     }).start();
-    await();
+    waitUntil(() -> ref1.get() != null);
+    Assert.assertSame(ref2.get().nettyEventLoop(), ref1.get().nettyEventLoop());
   }
 
   @Test
@@ -390,10 +407,10 @@ public class TimerTest extends VertxTestBase {
     vertx.runOnContext(v1 -> {
       Context current = vertx.getOrCreateContext();
       ContextInternal context = ((VertxInternal) vertx).createEventLoopContext();
-      assertNotSame(context, current);
+      Assert.assertNotSame(context, current);
       Timer timer = context.timer(10, TimeUnit.MILLISECONDS);
-      timer.onComplete(onSuccess(v2 -> {
-        assertSame(context, Vertx.currentContext());
+      timer.onComplete(TestUtils.onSuccess(v2 -> {
+        Assert.assertSame(context, Vertx.currentContext());
         testComplete();
       }));
     });
@@ -403,17 +420,17 @@ public class TimerTest extends VertxTestBase {
   @Test
   public void testFailTimerTaskWhenCancellingTimer() {
     Timer timer = vertx.timer(10_000);
-    assertTrue(timer.cancel());
+    Assert.assertTrue(timer.cancel());
     waitUntil(timer::failed);
-    assertTrue(timer.cause() instanceof CancellationException);
+    Assert.assertTrue(timer.cause() instanceof CancellationException);
   }
 
   @Test
   public void testFailTimerTaskWhenClosingVertx() throws Exception {
     Vertx vertx = Vertx.vertx();
     Timer timer = vertx.timer(10_000);
-    awaitFuture(vertx.close());
+    vertx.close().await();
     waitUntil(timer::failed);
-    assertTrue(timer.cause() instanceof CancellationException);
+    Assert.assertTrue(timer.cause() instanceof CancellationException);
   }
 }

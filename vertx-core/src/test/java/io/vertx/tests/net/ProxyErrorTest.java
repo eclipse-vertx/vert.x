@@ -44,14 +44,6 @@ public class ProxyErrorTest extends VertxTestBase {
   private InetSocketAddress dnsServerAddress;
 
   @Override
-  public void setUp() throws Exception {
-    dnsServer = new MockDnsServer().testLookupNonExisting();
-    dnsServer.start();
-    dnsServerAddress = dnsServer.localAddress();
-    super.setUp();
-  }
-
-  @Override
   protected void tearDown() throws Exception {
     dnsServer.stop();
     if (proxy!=null) {
@@ -62,6 +54,11 @@ public class ProxyErrorTest extends VertxTestBase {
 
   @Override
   protected VertxOptions getOptions() {
+    if (dnsServer == null) {
+      dnsServer = new MockDnsServer(vertx()).testLookupNonExisting();
+      dnsServer.start();
+      dnsServerAddress = dnsServer.localAddress();
+    }
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
     options.getAddressResolverOptions().setOptResourceEnabled(false);

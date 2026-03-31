@@ -156,10 +156,9 @@ public class Http2Test extends HttpTest {
   @Test
   public void testClientRequestWriteFromOtherThread() throws Exception {
     disableThreadChecks();
-    CountDownLatch latch1 = new CountDownLatch(1);
-    CountDownLatch latch2 = new CountDownLatch(1);
+    CountDownLatch latch = new CountDownLatch(1);
     server.requestHandler(req -> {
-      latch2.countDown();
+      latch.countDown();
       req.endHandler(v -> {
         req.response().end();
       });
@@ -176,7 +175,7 @@ public class Http2Test extends HttpTest {
           .writeHead();
         new Thread(() -> {
           try {
-            awaitLatch(latch2); // The next write won't be buffered
+            latch.await(10, TimeUnit.SECONDS);
           } catch (InterruptedException e) {
             fail(e);
             return;

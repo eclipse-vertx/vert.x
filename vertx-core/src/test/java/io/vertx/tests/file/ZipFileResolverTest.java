@@ -86,7 +86,7 @@ public class ZipFileResolverTest extends FileResolverTestBase {
         baos.write(tmp, 0, amount);
       }
       baos.close();
-      assertEquals(baos.toString(), buffer.toString());
+      Assert.assertEquals(baos.toString(), buffer.toString());
     } finally {
       in.close();
     }

@@ -25,6 +25,8 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
 import org.junit.Ignore;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -190,15 +192,15 @@ public class Http1xTLSTest extends HttpTCPTLSTest {
     });
     startServer(server);
     client = vertx.createHttpClient(new HttpClientOptions().setSsl(true).setTrustAll(true));
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI).onComplete(TestUtils.onSuccess(req -> {
+      req.send().onComplete(TestUtils.onSuccess(resp -> {
         List<String> chunks = new ArrayList<>();
         resp.handler(chunk -> {
           chunk.appendString("-suffix");
           chunks.add(chunk.toString());
         });
         resp.endHandler(v -> {
-          assertEquals(expected.stream().map(s -> s + "-suffix").collect(Collectors.toList()), chunks);
+          Assert.assertEquals(expected.stream().map(s -> s + "-suffix").collect(Collectors.toList()), chunks);
           testComplete();
         });
       }));
@@ -246,12 +248,12 @@ public class Http1xTLSTest extends HttpTCPTLSTest {
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
-    }, new DeploymentOptions().setInstances(num)).onComplete(onSuccess(v -> listenLatch.countDown()));
-    awaitLatch(listenLatch);
+    }, new DeploymentOptions().setInstances(num)).onComplete(TestUtils.onSuccess(v -> listenLatch.countDown()));
+    TestUtils.awaitLatch(listenLatch);
     CountDownLatch connectionLatch = new CountDownLatch(num);
     for (int i = 0;i < num;i++) {
       client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI)
-        .onComplete(onSuccess(request -> {
+        .onComplete(TestUtils.onSuccess(request -> {
           connectionLatch.countDown();
         }));
       if (i == 0) {
@@ -259,8 +261,8 @@ public class Http1xTLSTest extends HttpTCPTLSTest {
         waitUntil(() -> connectionLatch.getCount() == num - 1);
       }
     }
-    awaitLatch(connectionLatch);
-    assertEquals(num, sessionIds.size());
-    assertEquals(1, new HashSet<>(sessionIds).size());
+    TestUtils.awaitLatch(connectionLatch);
+    Assert.assertEquals(num, sessionIds.size());
+    Assert.assertEquals(1, new HashSet<>(sessionIds).size());
   }
 }

@@ -11,9 +11,6 @@
 
 package io.vertx.test.core;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -25,7 +22,9 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -36,9 +35,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
 import io.netty.util.internal.logging.InternalLoggerFactory;
-import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.JksOptions;
@@ -50,6 +49,9 @@ import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.netty.TestLoggerFactory;
 import junit.framework.AssertionFailedError;
+import org.junit.Assert;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -569,5 +571,53 @@ public class TestUtils {
 
   public static byte[] fromBase64String(String s) {
     return decoder.decode(s);
+  }
+
+  public static <T> Completable<T> onSuccess2(Consumer<T> consumer) {
+    return (res, err) -> {
+      if (err != null) {
+        err.printStackTrace();
+        Assert.fail(err.getMessage());
+      } else {
+        consumer.accept(res);
+      }
+    };
+  }
+
+  public static <T> Handler<AsyncResult<T>> onSuccess(Consumer<T> consumer) {
+    return result -> {
+      if (result.failed()) {
+        result.cause().printStackTrace();
+        Assert.fail(result.cause().getMessage());
+      } else {
+        consumer.accept(result.result());
+      }
+    };
+  }
+
+  public static <T> Handler<AsyncResult<T>> onFailure(Consumer<Throwable> consumer) {
+    return result -> {
+      Assert.assertFalse(result.succeeded());
+      consumer.accept(result.cause());
+    };
+  }
+
+  public static <T> Completable<T> onFailure2(Consumer<Throwable> consumer) {
+    return (res, err) -> {
+      Assert.assertNotNull(err);
+      consumer.accept(err);
+    };
+  }
+
+  public static void awaitLatch(CountDownLatch latch) throws InterruptedException {
+    awaitLatch(latch, 10, TimeUnit.SECONDS);
+  }
+
+  public static void awaitLatch(CountDownLatch latch, long timeout, TimeUnit unit) throws InterruptedException {
+    assertTrue(latch.await(timeout, unit));
+  }
+
+  public static void assertSameEventLoop(Context expected, Context actual) {
+    assertSame(((ContextInternal)expected).nettyEventLoop(), ((ContextInternal)actual).nettyEventLoop());
   }
 }
