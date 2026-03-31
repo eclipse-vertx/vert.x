@@ -57,6 +57,13 @@ public class Http2TestBase extends HttpTestBase {
   protected HttpClientOptions clientOptions;
   protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
+  public Http2TestBase() {
+  }
+
+  public Http2TestBase(ReportMode reportMode) {
+    super(reportMode);
+  }
+
   @Override
   public void setUp() throws Exception {
     eventLoopGroups.clear();

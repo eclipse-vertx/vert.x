@@ -39,6 +39,7 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.test.core.Repeat;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -54,6 +55,10 @@ import static io.netty.handler.codec.http2.Http2CodecUtil.DEFAULT_HEADER_LIST_SI
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2MYRServerTest extends Http2TestBase {
+
+  public Http2MYRServerTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Test
   public void testMYR() throws Exception {
@@ -202,12 +207,12 @@ public class Http2MYRServerTest extends Http2TestBase {
 
     // Check the number of rst frame received before getting a go away
     if (goAway.get(20, TimeUnit.SECONDS)) {
-      assertEquals(receivedRstFrames.get(), maxRstFramePerWindow + 1);
+      Assert.assertEquals(receivedRstFrames.get(), maxRstFramePerWindow + 1);
     } else {
       // Mitigate CI behavior
-      assertTrue(receivedRstFrames.get() < maxRstFramePerWindow + 1);
+      Assert.assertTrue(receivedRstFrames.get() < maxRstFramePerWindow + 1);
     }
 
-    assertTrue(maxInflightRequests.get() <= 2 * maxRstFramePerWindow );
+    Assert.assertTrue(maxInflightRequests.get() <= 2 * maxRstFramePerWindow );
   }
 }
