@@ -64,6 +64,10 @@ public class FileSystemTest extends VertxTestBase {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
+  public FileSystemTest() {
+    super(true);
+  }
+
   public void setUp() throws Exception {
     super.setUp();
     java.nio.file.FileSystem fs = FileSystems.getDefault();
