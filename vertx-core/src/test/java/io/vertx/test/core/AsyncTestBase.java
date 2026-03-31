@@ -95,7 +95,6 @@ public class AsyncTestBase {
     if (tearingDown) {
       throw new IllegalStateException("testComplete called after test has completed");
     }
-    checkThread();
     if (testCompleteCalled) {
       throw new IllegalStateException("already complete");
     }
@@ -109,7 +108,6 @@ public class AsyncTestBase {
     if (tearingDown) {
       throw new IllegalStateException("testComplete called after test has completed");
     }
-    checkThread();
     if (testCompleteCalled) {
       throw new IllegalStateException("testComplete() already called");
     }

@@ -133,13 +133,50 @@ public class VertxTestBase extends AsyncTestBase {
   protected Vertx vertx;
   protected Vertx[] vertices;
   private List<Vertx> created;
+  private Thread junitThread;
+  private final Handler<Throwable> failureBridgeHandler;
 
   public VertxTestBase(boolean stateless) {
     this.stateless = stateless;
+    this.failureBridgeHandler = this::handleFailure;
   }
 
   public VertxTestBase() {
     this(false);
+  }
+
+  @Override
+  protected void disableThreadChecks() {
+    if (stateless) {
+      // Do nothing as we actually want to ensure that this is either
+      // - the JUnit main thread
+      // - a vertx context thread that we can fail to
+    } else {
+      super.disableThreadChecks();
+    }
+  }
+
+  @Override
+  protected void checkThread() {
+    if (stateless) {
+      if (Thread.currentThread() == junitThread) {
+        // Ok
+      } else {
+        Context current = Vertx.currentContext();
+        if (current == null) {
+          System.out.println("Running test assertion from un-associated thread: " + Thread.currentThread());
+          new Exception().printStackTrace(System.out);
+        } else {
+          Handler<Throwable> handler = current.owner().exceptionHandler();
+          if (handler != failureBridgeHandler) {
+            System.out.println("Asserting from a vertx thread that is not relaying failures to the failure handler: " + Thread.currentThread());
+            new Exception().printStackTrace(System.out);
+          }
+        }
+      }
+    } else {
+      super.checkThread();
+    }
   }
 
   @Override
@@ -158,6 +195,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   public void setUp() throws Exception {
+    junitThread = Thread.currentThread();
     super.setUp();
     vinit();
     VertxOptions options = getOptions();
@@ -189,6 +227,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void tearDown() throws Exception {
+    junitThread = null;
     if (created != null) {
       close(created);
     }
@@ -269,7 +308,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   private void add(Vertx vertx) {
     if (stateless) {
-      vertx.exceptionHandler(this::handleFailure);
+      vertx.exceptionHandler(failureBridgeHandler);
     }
     created.add(vertx);
   }
