@@ -49,8 +49,8 @@ public abstract class AbstractHttpTest extends VertxTestBase {
   protected SocketAddress testAddress;
   protected RequestOptions requestOptions;
 
-  public AbstractHttpTest(boolean stateless) {
-    super(stateless);
+  public AbstractHttpTest(ReportMode reportMode) {
+    super(reportMode);
   }
 
   public AbstractHttpTest() {

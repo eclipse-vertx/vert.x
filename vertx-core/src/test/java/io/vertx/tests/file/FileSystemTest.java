@@ -67,7 +67,7 @@ public class FileSystemTest extends VertxTestBase {
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   public FileSystemTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   public void setUp() throws Exception {

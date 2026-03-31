@@ -50,7 +50,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   private ClassLoader testCL;
 
   public FileResolverTestBase() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
     try {
       cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getCanonicalPath();
     } catch (IOException e) {

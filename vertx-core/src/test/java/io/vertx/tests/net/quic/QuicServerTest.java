@@ -60,7 +60,7 @@ public class QuicServerTest extends VertxTestBase {
   private PfxOptions macKey;
 
   public QuicServerTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   @Override

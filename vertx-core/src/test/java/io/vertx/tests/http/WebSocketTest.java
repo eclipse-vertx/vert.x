@@ -105,7 +105,7 @@ public class WebSocketTest extends VertxTestBase {
   private NetServer netServer;
 
   public WebSocketTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   @Override

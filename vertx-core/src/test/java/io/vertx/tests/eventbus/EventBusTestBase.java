@@ -46,7 +46,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
   protected abstract Vertx[] vertices(int num);
 
   public EventBusTestBase() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   @Test

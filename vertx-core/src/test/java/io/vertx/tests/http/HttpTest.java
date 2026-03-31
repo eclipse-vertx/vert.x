@@ -71,7 +71,7 @@ import static org.junit.Assume.assumeTrue;
 public abstract class HttpTest extends SimpleHttpTest {
 
   protected HttpTest(HttpConfig config) {
-    super(config, true);
+    super(config, ReportMode.FORBIDDEN);
   }
 
   @Test

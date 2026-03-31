@@ -22,8 +22,8 @@ import io.vertx.core.net.SocketAddress;
  */
 public class HttpTestBase extends AbstractHttpTest {
 
-  public HttpTestBase(boolean stateless) {
-    super(stateless);
+  public HttpTestBase(ReportMode reportMode) {
+    super(reportMode);
   }
 
   public HttpTestBase() {

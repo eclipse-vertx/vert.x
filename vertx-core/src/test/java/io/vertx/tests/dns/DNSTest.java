@@ -45,7 +45,7 @@ public class DNSTest extends VertxTestBase {
   private MockDnsServer mockDnsServer;
 
   public DNSTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   @Override
