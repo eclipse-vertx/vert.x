@@ -27,6 +27,7 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
 import org.junit.Ignore;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -105,9 +106,9 @@ public class QuicClientTest extends VertxTestBase {
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     try {
       client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertSame(SSLHandshakeException.class, e.getClass());
+      Assert.assertSame(SSLHandshakeException.class, e.getClass());
     }
     QuicConnectOptions connectOptions = new QuicConnectOptions().setSslOptions(SSL_OPTIONS.copy().setTrustOptions(Trust.CLIENT_JKS.get()));
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), connectOptions).await();
@@ -148,8 +149,8 @@ public class QuicClientTest extends VertxTestBase {
       latch.countDown();
     });
     stream.end(Buffer.buffer("ping"));
-    awaitLatch(latch);
-    assertEquals(List.of(Buffer.buffer("ping")), received);
+    TestUtils.awaitLatch(latch);
+    Assert.assertEquals(List.of(Buffer.buffer("ping")), received);
   }
 
   @Test
@@ -160,7 +161,7 @@ public class QuicClientTest extends VertxTestBase {
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
-          stream.reset(4).onComplete(onSuccess2(v -> complete()));
+          stream.reset(4).onComplete(TestUtils.onSuccess2(v -> complete()));
         });
         stream.endHandler(v -> {
           complete();
@@ -174,7 +175,7 @@ public class QuicClientTest extends VertxTestBase {
     QuicStream stream = connection.openStream().await();
 
     stream.resetHandler(code -> {
-      assertEquals(4L, (long)code);
+      Assert.assertEquals(4L, (long)code);
       complete();
       stream.end();
     });
@@ -193,7 +194,7 @@ public class QuicClientTest extends VertxTestBase {
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
         stream.resetHandler(code -> {
-          assertEquals(10L, (long)code);
+          Assert.assertEquals(10L, (long)code);
           vertx.setTimer(20, id -> {
             stream.end(Buffer.buffer("done"));
           });
@@ -210,7 +211,7 @@ public class QuicClientTest extends VertxTestBase {
     Buffer buffer = Buffer.buffer();
     stream.handler(buff -> {
       if (isReset.compareAndSet(false, true)) {
-        stream.reset(0).onComplete(onSuccess2(v -> complete()));
+        stream.reset(0).onComplete(TestUtils.onSuccess2(v -> complete()));
       } else {
         buffer.appendBuffer(buff);
       }
@@ -236,7 +237,7 @@ public class QuicClientTest extends VertxTestBase {
         Buffer buffer = Buffer.buffer();
         stream.handler(buff -> {
           if (isReset.compareAndSet(false, true)) {
-            stream.reset(0).onComplete(onSuccess2(v -> complete()));
+            stream.reset(0).onComplete(TestUtils.onSuccess2(v -> complete()));
           } else {
             buffer.appendBuffer(buff);
           }
@@ -252,7 +253,7 @@ public class QuicClientTest extends VertxTestBase {
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicStream stream = connection.openStream().await();
 
-    stream.exceptionHandler(t -> fail());
+    stream.exceptionHandler(t -> Assert.fail());
     stream.resetHandler(code -> {
       vertx.setTimer(20, id -> {
         stream.end(Buffer.buffer("done"));
@@ -304,7 +305,7 @@ public class QuicClientTest extends VertxTestBase {
       stream.shutdownHandler(v -> {
         shutdownCount.incrementAndGet();
         vertx.setTimer(100, id -> {
-          assertEquals(0, serverEndCount.get());
+          Assert.assertEquals(0, serverEndCount.get());
           clientEndCount.incrementAndGet();
           stream.end();
         });
@@ -319,9 +320,9 @@ public class QuicClientTest extends VertxTestBase {
       res = client.shutdown(Duration.ofSeconds(10));
     }
     res.await();
-    assertEquals(numStreams, shutdownCount.get());
-    assertEquals(numStreams, clientEndCount.get());
-    assertEquals(numStreams, serverEndCount.get());
+    Assert.assertEquals(numStreams, shutdownCount.get());
+    Assert.assertEquals(numStreams, clientEndCount.get());
+    Assert.assertEquals(numStreams, serverEndCount.get());
   }
 
   @Test
@@ -331,12 +332,12 @@ public class QuicClientTest extends VertxTestBase {
     long now = System.currentTimeMillis();
     try {
       client.connect(SocketAddress.inetSocketAddress(1234, TestUtils.NON_ROUTABLE_HOST), options).await();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertEquals(ConnectTimeoutException.class, e.getClass());
+      Assert.assertEquals(ConnectTimeoutException.class, e.getClass());
       long delta = System.currentTimeMillis() - now;
-      assertTrue(delta >= 250);
-      assertTrue(delta <= 250 * 2);
+      Assert.assertTrue(delta >= 250);
+      Assert.assertTrue(delta <= 250 * 2);
     }
   }
 
@@ -365,9 +366,9 @@ public class QuicClientTest extends VertxTestBase {
     });
     stream.closeHandler(v -> {
       long delta = System.currentTimeMillis() - now;
-      assertTrue(delta >= 100);
-      assertTrue(delta <= 300);
-      assertEquals(1, idleEvents.get());
+      Assert.assertTrue(delta >= 100);
+      Assert.assertTrue(delta <= 300);
+      Assert.assertEquals(1, idleEvents.get());
       testComplete();
     });
     stream.write("ping").await();
@@ -402,7 +403,7 @@ public class QuicClientTest extends VertxTestBase {
     QuicConnection connection = client.connect(connectAddr,
       connectOptions).await();
     connection.close().await();
-    assertEquals(host, serverName.get());
+    Assert.assertEquals(host, serverName.get());
   }
 
   @Test
@@ -414,7 +415,7 @@ public class QuicClientTest extends VertxTestBase {
     String doesNotResolve = TestUtils.randomAlphaString(32);
     SocketAddress addr = SocketAddress.inetSocketAddress(new InetSocketAddress(Inet4Address.getByAddress(doesNotResolve, NetUtil.LOCALHOST4.getAddress()), 9999));
     QuicConnection connection = client.connect(addr).await();
-    assertEquals(doesNotResolve, connection.remoteAddress().hostName());
+    Assert.assertEquals(doesNotResolve, connection.remoteAddress().hostName());
     connection.close().await();
   }
 
@@ -429,7 +430,7 @@ public class QuicClientTest extends VertxTestBase {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    assertEquals(1234, connection.localAddress().port());
+    Assert.assertEquals(1234, connection.localAddress().port());
   }
 
   @Test
@@ -443,7 +444,7 @@ public class QuicClientTest extends VertxTestBase {
       try {
         client.connect(SocketAddress.inetSocketAddress(9999, "localhost"), new QuicConnectOptions()
           .setSslOptions(new ClientSSLOptions().setTrustAll(true).setApplicationLayerProtocols(applicationProtocols))).await();
-        fail();
+        Assert.fail();
       } catch (IllegalArgumentException ignore) {
       }
     }
@@ -467,12 +468,12 @@ public class QuicClientTest extends VertxTestBase {
     AtomicInteger ended = new AtomicInteger();
     stream.handler(buf -> {
       received.addAndGet(buf.length());
-      assertEquals(0, ended.get());
+      Assert.assertEquals(0, ended.get());
       stream.pause();
       vertx.setTimer(50, t -> stream.resume());
     });
     stream.endHandler(v -> {
-      assertEquals(0, ended.getAndIncrement());
+      Assert.assertEquals(0, ended.getAndIncrement());
     });
     stream.end();
     assertWaitUntil(() -> received.get() == buffer.length());
@@ -569,10 +570,10 @@ public class QuicClientTest extends VertxTestBase {
       });
       futures.add(fut);
     }
-    awaitLatch(close);
+    TestUtils.awaitLatch(close);
     assertWaitUntil(() -> futures.get(maxStreams).isComplete());
-    assertTrue(futures.get(maxStreams).failed());
-    assertTrue(futures.get(maxStreams).cause() == NetSocketInternal.CLOSED_EXCEPTION);
+    Assert.assertTrue(futures.get(maxStreams).failed());
+    Assert.assertTrue(futures.get(maxStreams).cause() == NetSocketInternal.CLOSED_EXCEPTION);
   }
 
   @Test
@@ -605,7 +606,7 @@ public class QuicClientTest extends VertxTestBase {
     Future<QuicStream> fut = connection.openStream();
     try {
       fut.await();
-      fail();
+      Assert.fail();
     } catch (VertxException ignore) {
       // Expected
     }
@@ -628,15 +629,15 @@ public class QuicClientTest extends VertxTestBase {
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     int maxLen = connection.maxDatagramLength();
-    assertTrue(connection.maxDatagramLength() > 0);
+    Assert.assertTrue(connection.maxDatagramLength() > 0);
     Buffer datagram = Buffer.buffer(TestUtils.randomAlphaString(maxLen));
     connection.datagramHandler(dgram -> {
-      assertEquals(datagram.toString(), dgram.toString());
+      Assert.assertEquals(datagram.toString(), dgram.toString());
       testComplete();
     });
     try {
       connection.writeDatagram(Buffer.buffer(TestUtils.randomAlphaString(maxLen + 1))).await();
-      fail();
+      Assert.fail();
     } catch (java.nio.BufferUnderflowException ignore) {
       // Expected
     }
@@ -659,9 +660,9 @@ public class QuicClientTest extends VertxTestBase {
     client = vertx.createQuicClient(sslOptions);
     try {
       client.connect(serverAddr).await();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertTrue(e.getMessage().contains("Only TLSv1.3 supported"));
+      Assert.assertTrue(e.getMessage().contains("Only TLSv1.3 supported"));
     }
   }
 
@@ -690,7 +691,7 @@ public class QuicClientTest extends VertxTestBase {
 
     // Start the server after a delay
     Thread.sleep(2000);
-    assertFalse(fut.isComplete());
+    Assert.assertFalse(fut.isComplete());
 
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
@@ -721,7 +722,7 @@ public class QuicClientTest extends VertxTestBase {
     try {
       client.connect(serverAddr).await();
     } catch (Exception expected) {
-      assertEquals(ConnectTimeoutException.class, expected.getClass());
+      Assert.assertEquals(ConnectTimeoutException.class, expected.getClass());
     }
   }
 }

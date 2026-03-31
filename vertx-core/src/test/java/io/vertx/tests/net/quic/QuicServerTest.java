@@ -22,8 +22,10 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.crypto.KeyGenerator;
@@ -82,8 +84,8 @@ public class QuicServerTest extends VertxTestBase {
   public void testBind() {
     QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     SocketAddress addr = server.bind(SocketAddress.inetSocketAddress(9999, "localhost")).await();
-    assertEquals(9999, addr.port());
-    assertEquals("127.0.0.1", addr.host());
+    Assert.assertEquals(9999, addr.port());
+    Assert.assertEquals("127.0.0.1", addr.host());
     server.close().await();
   }
 
@@ -100,15 +102,15 @@ public class QuicServerTest extends VertxTestBase {
   private void testConnect(QuicServerConfig options, int port) throws Exception {
     QuicServer server = vertx.createQuicServer(options, SSL_OPTIONS);
     server.connectHandler(conn -> {
-      assertEquals("test-protocol", conn.applicationLayerProtocol());
+      Assert.assertEquals("test-protocol", conn.applicationLayerProtocol());
       QuicTransportParams params = conn.transportParams();
-      assertEquals(10000000L, params.initialMaxData());
-      assertEquals(1000000L, params.initialMaxStreamDataBidiLocal());
-      assertEquals(1000000L, params.initialMaxStreamDataBidiRemote());
-      assertEquals(1000000L, params.initialMaxStreamDataUni());
-      assertEquals(100L, params.initialMaxStreamsBidi());
-      assertEquals(100L, params.initialMaxStreamsUni());
-      assertEquals(5000L, params.maxIdleTimeout().toMillis());
+      Assert.assertEquals(10000000L, params.initialMaxData());
+      Assert.assertEquals(1000000L, params.initialMaxStreamDataBidiLocal());
+      Assert.assertEquals(1000000L, params.initialMaxStreamDataBidiRemote());
+      Assert.assertEquals(1000000L, params.initialMaxStreamDataUni());
+      Assert.assertEquals(100L, params.initialMaxStreamsBidi());
+      Assert.assertEquals(100L, params.initialMaxStreamsUni());
+      Assert.assertEquals(5000L, params.maxIdleTimeout().toMillis());
       // Does not seem to work
 //      assertTrue(params.disableActiveMigration());
 //      assertEquals(2L, params.maxAckDelay().toMillis());
@@ -123,9 +125,9 @@ public class QuicServerTest extends VertxTestBase {
     });
     int actualPort = server.bind(SocketAddress.inetSocketAddress(port, "localhost")).await().port();
     if (port == 0) {
-      assertTrue(actualPort > 0);
+      Assert.assertTrue(actualPort > 0);
     } else {
-      assertEquals(port, actualPort);
+      Assert.assertEquals(port, actualPort);
     }
     QuicTestClient client = new QuicTestClient(vertx);
     try {
@@ -152,8 +154,8 @@ public class QuicServerTest extends VertxTestBase {
     server.connectHandler(conn -> {
       inflights.incrementAndGet();
       conn.closeHandler(v -> {
-        assertEquals(3, conn.closePayload().getError());
-        assertEquals("done", conn.closePayload().getReason().toString());
+        Assert.assertEquals(3, conn.closePayload().getError());
+        Assert.assertEquals("done", conn.closePayload().getReason().toString());
         inflights.decrementAndGet();
       });
     });
@@ -181,9 +183,9 @@ public class QuicServerTest extends VertxTestBase {
       ctx.exceptionHandler(caught::add);
       AtomicInteger streamClosed = new AtomicInteger();
       ((QuicConnectionInternal)conn).graceHandler(v -> {
-        assertSame(ctx, Vertx.currentContext());
+        Assert.assertSame(ctx, Vertx.currentContext());
         beforeClose.incrementAndGet();
-        assertEquals(0, streamClosed.get());
+        Assert.assertEquals(0, streamClosed.get());
         throw thrown;
       });
       conn.streamHandler(stream -> {
@@ -208,11 +210,11 @@ public class QuicServerTest extends VertxTestBase {
       });
       stream.create();
       stream.write("ping");
-      assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
-      assertEquals(3, connection.closeError());
-      assertEquals("done", new String(connection.closeReason()));
-      assertEquals(1, beforeClose.get());
-      assertEquals(List.of(thrown), caught);
+      Assert.assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+      Assert.assertEquals(3, connection.closeError());
+      Assert.assertEquals("done", new String(connection.closeReason()));
+      Assert.assertEquals(1, beforeClose.get());
+      Assert.assertEquals(List.of(thrown), caught);
     } finally {
       client.close();
       server.close().await();
@@ -225,10 +227,10 @@ public class QuicServerTest extends VertxTestBase {
     options.getTransportConfig().setInitialMaxStreamDataBidiLocal(1_048_576L);
     QuicServer server = vertx.createQuicServer(options, SSL_OPTIONS);
     server.connectHandler(conn -> {
-      conn.openStream().onComplete(onSuccess2(stream -> {
+      conn.openStream().onComplete(TestUtils.onSuccess2(stream -> {
         stream.write("ping");
         stream.handler(buff -> {
-          assertEquals("pong", buff.toString());
+          Assert.assertEquals("pong", buff.toString());
           testComplete();
         });
       }));
@@ -253,9 +255,9 @@ public class QuicServerTest extends VertxTestBase {
     disableThreadChecks();
     QuicServer server = vertx.createQuicServer(SSL_OPTIONS);
     server.connectHandler(conn -> {
-      conn.openStream(false).onComplete(onSuccess2(stream -> {
-        assertFalse(stream.isBidirectional());
-        assertTrue(stream.isLocalCreated());
+      conn.openStream(false).onComplete(TestUtils.onSuccess2(stream -> {
+        Assert.assertFalse(stream.isBidirectional());
+        Assert.assertTrue(stream.isLocalCreated());
         stream.write("ping");
       }));
     });
@@ -265,7 +267,7 @@ public class QuicServerTest extends VertxTestBase {
       QuicTestClient.Connection connection = client.connection();
       connection.handler(stream -> {
         stream.handler(data -> {
-          assertEquals("ping", new String(data, StandardCharsets.UTF_8));
+          Assert.assertEquals("ping", new String(data, StandardCharsets.UTF_8));
           testComplete();
         });
       });
@@ -286,10 +288,10 @@ public class QuicServerTest extends VertxTestBase {
     QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
-        assertFalse(stream.isBidirectional());
-        assertFalse(stream.isLocalCreated());
+        Assert.assertFalse(stream.isBidirectional());
+        Assert.assertFalse(stream.isLocalCreated());
         Future<Void> f = stream.write("pong");
-        f.onComplete(onFailure(err -> {
+        f.onComplete(TestUtils.onFailure(err -> {
           testComplete();
         }));
       });
@@ -359,8 +361,8 @@ public class QuicServerTest extends VertxTestBase {
       }
       assertWaitUntil(() -> count.get() == numConnections * numStreams);
       server.shutdown(grace).await();
-      assertEquals(numConnections, connectionShutdown.get());
-      assertEquals(numConnections * numStreams, streamShutdown.get());
+      Assert.assertEquals(numConnections, connectionShutdown.get());
+      Assert.assertEquals(numConnections * numStreams, streamShutdown.get());
       await();
     } finally {
       client.close();
@@ -376,7 +378,7 @@ public class QuicServerTest extends VertxTestBase {
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
         stream.resetHandler(code -> {
-          assertEquals(4L, (long)code);
+          Assert.assertEquals(4L, (long)code);
           stream.end();
         });
         stream.closeHandler(v -> {
@@ -436,8 +438,8 @@ public class QuicServerTest extends VertxTestBase {
           assert(System.currentTimeMillis() - now < 10_000);
         }
       } catch (Exception e) {
-        assertEquals(ChannelOutputShutdownException.class, e.getClass());
-        assertEquals("STOP_SENDING frame received", e.getMessage());
+        Assert.assertEquals(ChannelOutputShutdownException.class, e.getClass());
+        Assert.assertEquals("STOP_SENDING frame received", e.getMessage());
       }
     } finally {
       client.close();
@@ -473,11 +475,11 @@ public class QuicServerTest extends VertxTestBase {
         try {
           stream.streamChannel.writeAndFlush(Unpooled.copiedBuffer("test", StandardCharsets.UTF_8)).sync();
           // Retry
-          assertTrue(i + 1 < num);
+          Assert.assertTrue(i + 1 < num);
           Thread.sleep(1);
         } catch (Exception e) {
-          assertSame(ChannelOutputShutdownException.class, e.getClass());
-          assertEquals("STOP_SENDING frame received", e.getMessage());
+          Assert.assertSame(ChannelOutputShutdownException.class, e.getClass());
+          Assert.assertEquals("STOP_SENDING frame received", e.getMessage());
           break;
         }
       }
@@ -495,7 +497,7 @@ public class QuicServerTest extends VertxTestBase {
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
-          stream.reset(4).onComplete(onSuccess2(v -> complete()));
+          stream.reset(4).onComplete(TestUtils.onSuccess2(v -> complete()));
         });
       });
     });
@@ -505,7 +507,7 @@ public class QuicServerTest extends VertxTestBase {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       QuicTestClient.Stream stream = connection.newStream();
       stream.resetHandler(code -> {
-        assertEquals(4, (long)code);
+        Assert.assertEquals(4, (long)code);
         complete();
       });
       stream.create();
@@ -525,7 +527,7 @@ public class QuicServerTest extends VertxTestBase {
       conn.streamHandler(stream -> {
         stream.handler(buff -> {
           stream.exceptionHandler(err -> {
-            fail();
+            Assert.fail();
           });
           stream.resetHandler(reset -> {
             vertx.setTimer(20, id -> {
@@ -544,7 +546,7 @@ public class QuicServerTest extends VertxTestBase {
       Buffer out = Buffer.buffer();
       stream.handler(out::appendBytes);
       stream.closeHandler(v -> {
-        assertEquals("done", out.toString());
+        Assert.assertEquals("done", out.toString());
         testComplete();
       });
       stream.write("ping");
@@ -565,7 +567,7 @@ public class QuicServerTest extends VertxTestBase {
     config.getTransportConfig().setDatagramConfig(new QuicDatagramConfig().setEnabled(true));
     QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.connectHandler(conn -> {
-      conn.writeDatagram(Buffer.buffer("ping")).onComplete(onSuccess2(v -> {
+      conn.writeDatagram(Buffer.buffer("ping")).onComplete(TestUtils.onSuccess2(v -> {
         complete();
       }));
     });
@@ -573,7 +575,7 @@ public class QuicServerTest extends VertxTestBase {
     QuicTestClient client = new QuicTestClient(vertx);
     try {
       client.connection().datagramHandler(datagram -> {
-        assertEquals("ping", new String(datagram));
+        Assert.assertEquals("ping", new String(datagram));
         complete();
       }).connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       await();
@@ -590,7 +592,7 @@ public class QuicServerTest extends VertxTestBase {
     QuicServer server = vertx.createQuicServer(config, SSL_OPTIONS);
     server.connectHandler(conn -> {
       conn.datagramHandler(dgram -> {
-        assertEquals("ping", dgram.toString());
+        Assert.assertEquals("ping", dgram.toString());
         testComplete();
       });
     });
@@ -614,8 +616,8 @@ public class QuicServerTest extends VertxTestBase {
     server.connectHandler(conn -> {
       long now = System.currentTimeMillis();
       conn.closeHandler(v -> {
-        assertTrue(System.currentTimeMillis() - now >= 1000);
-        assertTrue(System.currentTimeMillis() - now < 2000);
+        Assert.assertTrue(System.currentTimeMillis() - now >= 1000);
+        Assert.assertTrue(System.currentTimeMillis() - now < 2000);
         testComplete();
       });
     });
@@ -640,8 +642,8 @@ public class QuicServerTest extends VertxTestBase {
     server.connectHandler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost"))
-      .onComplete(onFailure2(err -> {
-        assertTrue(err.getCause() instanceof java.security.UnrecoverableKeyException);
+      .onComplete(TestUtils.onFailure2(err -> {
+        Assert.assertTrue(err.getCause() instanceof java.security.UnrecoverableKeyException);
       testComplete();
     }));
     await();
@@ -672,8 +674,8 @@ public class QuicServerTest extends VertxTestBase {
     server.connectHandler(conn -> {
     });
     server.bind(SocketAddress.inetSocketAddress(9999, "localhost"))
-      .onComplete(onFailure2(err -> {
-        assertTrue(err instanceof IllegalArgumentException);
+      .onComplete(TestUtils.onFailure2(err -> {
+        Assert.assertTrue(err instanceof IllegalArgumentException);
         testComplete();
       }));
     await();
@@ -683,12 +685,12 @@ public class QuicServerTest extends VertxTestBase {
   public void testInvalidTokenTimeWindow() {
     try {
       new QuicServerConfig().setClientAddressValidationTimeWindow(null);
-      fail();
+      Assert.fail();
     } catch (NullPointerException ignore) {
     }
     try {
       new QuicServerConfig().setClientAddressValidationTimeWindow(Duration.ofMillis(-10));
-      fail();
+      Assert.fail();
     } catch (IllegalArgumentException ignore) {
     }
   }
@@ -721,8 +723,8 @@ public class QuicServerTest extends VertxTestBase {
     try {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
       connection.close();
-      assertNotNull(tokenRef.get());
-      assertEquals(1, connections.get());
+      Assert.assertNotNull(tokenRef.get());
+      Assert.assertEquals(1, connections.get());
     } finally {
       client.close();
       server.close().await();
@@ -754,9 +756,9 @@ public class QuicServerTest extends VertxTestBase {
     });
     try {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
-      fail();
+      Assert.fail();
     } catch (QuicClosedChannelException ignore) {
-      assertEquals(0, connections.get());
+      Assert.assertEquals(0, connections.get());
     } finally {
       client.close();
       server.close().await();
@@ -779,9 +781,9 @@ public class QuicServerTest extends VertxTestBase {
     client.tokenHandler((token) -> token.setLong(0, 0L));
     try {
       QuicTestClient.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 9999));
-      fail();
+      Assert.fail();
     } catch (QuicClosedChannelException ignore) {
-      assertEquals(0, connections.get());
+      Assert.assertEquals(0, connections.get());
     } finally {
       client.close();
       server.close().await();
@@ -798,10 +800,10 @@ public class QuicServerTest extends VertxTestBase {
   @Test
   public void testKeyLogFile2() throws Exception {
     File keyLogFile = Files.createTempFile("vertx", ".txt").toFile();
-    assertTrue(keyLogFile.exists());
+    Assert.assertTrue(keyLogFile.exists());
     Files.writeString(keyLogFile.toPath(), "TEST LINE" + System.lineSeparator(), StandardOpenOption.APPEND);
     List<String> entries = testKeyLogFile(keyLogFile);
-    assertTrue(entries.contains("TEST"));
+    Assert.assertTrue(entries.contains("TEST"));
   }
 
   private List<String> testKeyLogFile(File keyLogFile) throws Exception {
@@ -817,14 +819,14 @@ public class QuicServerTest extends VertxTestBase {
       List<String> entries = new ArrayList<>();
       Files.readAllLines(keyLogFile.toPath()).forEach(line -> {
         Matcher matcher = pattern.matcher(line);
-        assertTrue(matcher.matches());
+        Assert.assertTrue(matcher.matches());
         entries.add(matcher.group(1));
       });
-      assertTrue(entries.contains("CLIENT_HANDSHAKE_TRAFFIC_SECRET"));
-      assertTrue(entries.contains("SERVER_HANDSHAKE_TRAFFIC_SECRET"));
-      assertTrue(entries.contains("CLIENT_TRAFFIC_SECRET_0"));
-      assertTrue(entries.contains("SERVER_TRAFFIC_SECRET_0"));
-      assertTrue(entries.contains("EXPORTER_SECRET"));
+      Assert.assertTrue(entries.contains("CLIENT_HANDSHAKE_TRAFFIC_SECRET"));
+      Assert.assertTrue(entries.contains("SERVER_HANDSHAKE_TRAFFIC_SECRET"));
+      Assert.assertTrue(entries.contains("CLIENT_TRAFFIC_SECRET_0"));
+      Assert.assertTrue(entries.contains("SERVER_TRAFFIC_SECRET_0"));
+      Assert.assertTrue(entries.contains("EXPORTER_SECRET"));
       return entries;
     } finally {
       client.close();
@@ -854,7 +856,7 @@ public class QuicServerTest extends VertxTestBase {
           } else {
             f = stream.end();
           }
-          f.onComplete(onFailure2(err -> {
+          f.onComplete(TestUtils.onFailure2(err -> {
             testComplete();
           }));
         });
@@ -909,9 +911,9 @@ public class QuicServerTest extends VertxTestBase {
         });
         stream.closeHandler(v -> {
           long delta = System.currentTimeMillis() - now;
-          assertTrue(delta >= 100);
-          assertTrue(delta <= 300);
-          assertEquals(1, idleEvents.get());
+          Assert.assertTrue(delta >= 100);
+          Assert.assertTrue(delta <= 300);
+          Assert.assertEquals(1, idleEvents.get());
           testComplete();
         });
       });
@@ -945,10 +947,10 @@ public class QuicServerTest extends VertxTestBase {
           }
         });
         stream.closeHandler(v -> {
-          assertEquals(numEvents, count.get());
+          Assert.assertEquals(numEvents, count.get());
           long delta = System.currentTimeMillis() - now;
-          assertTrue(delta >= 100L * numEvents);
-          assertTrue(delta <= 100L * (numEvents + 2));
+          Assert.assertTrue(delta >= 100L * numEvents);
+          Assert.assertTrue(delta <= 100L * (numEvents + 2));
           testComplete();
         });
       });
@@ -980,7 +982,7 @@ public class QuicServerTest extends VertxTestBase {
         .serverName("host2.com")
         .connect(new InetSocketAddress(NetUtil.LOCALHOST4, actualPort));
       connection.close();
-      assertEquals("host2.com", serverName.get());
+      Assert.assertEquals("host2.com", serverName.get());
     } finally {
       client.close();
       server.close().await();
@@ -991,7 +993,7 @@ public class QuicServerTest extends VertxTestBase {
   public void testServerExceptionHandler() throws Exception {
     QuicServer server = vertx.createQuicServer(SSL_OPTIONS.copy().setClientAuth(ClientAuth.REQUIRED));
     server.connectHandler(conn -> {
-      fail();
+      Assert.fail();
     });
     AtomicReference<Throwable> exceptionCaught = new AtomicReference<>();
     server.exceptionHandler(exceptionCaught::set);
