@@ -28,6 +28,7 @@ import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
+import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -50,6 +51,10 @@ import static io.netty.handler.codec.http3.Http3ErrorCode.H3_REQUEST_CANCELLED;
 
 public class Http3ServerTest extends VertxTestBase {
 
+  public Http3ServerTest() {
+    super(ReportMode.FORBIDDEN);
+  }
+
   public static HttpServerConfig serverConfig() {
     HttpServerConfig options = new HttpServerConfig();
     options.setVersions(HttpVersion.HTTP_3);
@@ -70,7 +75,7 @@ public class Http3ServerTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    client = Http3TestClient.client();
+    client = Http3TestClient.client(vertx);
     server = vertx.createHttpServer(serverConfig(), sslOptions());
   }
 
@@ -85,7 +90,7 @@ public class Http3ServerTest extends VertxTestBase {
   public void testGet() throws Exception{
 
     server.requestHandler(req -> {
-      assertEquals(HttpVersion.HTTP_3, req.version());
+      Assert.assertEquals(HttpVersion.HTTP_3, req.version());
       req.endHandler(v -> {
         req.response().end("Hello World");
       });
@@ -96,14 +101,14 @@ public class Http3ServerTest extends VertxTestBase {
     Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
     Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
-    assertEquals("Hello World", new String(stream.responseBody()));
+    Assert.assertEquals("Hello World", new String(stream.responseBody()));
   }
 
   @Test
   public void testPost() throws Exception{
 
     server.requestHandler(req -> {
-      assertEquals(HttpMethod.POST, req.method());
+      Assert.assertEquals(HttpMethod.POST, req.method());
       req.bodyHandler(body -> {
         req.response().end(body);
       });
@@ -114,7 +119,7 @@ public class Http3ServerTest extends VertxTestBase {
     Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
     Http3TestClient.Client.Stream stream = connection.stream();
     stream.POST("/", "Hello World".getBytes(StandardCharsets.UTF_8));
-    assertEquals("Hello World", new String(stream.responseBody()));
+    Assert.assertEquals("Hello World", new String(stream.responseBody()));
   }
 
   @Test
@@ -137,7 +142,7 @@ public class Http3ServerTest extends VertxTestBase {
     stream.end(new DefaultHttp3Headers().set("key", "value"));
 
 
-    assertEquals("chunk", new String(stream.responseBody()));
+    Assert.assertEquals("chunk", new String(stream.responseBody()));
   }
 
   @Test
@@ -146,8 +151,8 @@ public class Http3ServerTest extends VertxTestBase {
     server.requestHandler(req -> {
       Buffer content = Buffer.buffer();
       req.customFrameHandler(frame -> {
-        assertEquals(64, frame.type());
-        assertEquals(0, frame.flags());
+        Assert.assertEquals(64, frame.type());
+        Assert.assertEquals(0, frame.flags());
         content.appendBuffer(frame.payload());
       });
       req.endHandler(v -> {
@@ -164,7 +169,7 @@ public class Http3ServerTest extends VertxTestBase {
     stream.writeUnknownFrame(64, "ping".getBytes(StandardCharsets.UTF_8));
     stream.end();
 
-    assertEquals("ping", new String(stream.responseBody()));
+    Assert.assertEquals("ping", new String(stream.responseBody()));
   }
 
   @Test
@@ -184,7 +189,7 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.requestHandler(req -> {
       long now = System.currentTimeMillis();
-      req.response().exceptionHandler(err -> fail());
+      req.response().exceptionHandler(err -> Assert.fail());
       HttpConnection connection = req.connection();
       connection.shutdownHandler(v -> {
         complete();
@@ -196,8 +201,8 @@ public class Http3ServerTest extends VertxTestBase {
         future = server.shutdown(10, TimeUnit.SECONDS);
       }
       future
-        .onComplete(onSuccess2(v -> {
-          assertTrue(System.currentTimeMillis() - now >= 1000);
+        .onComplete(TestUtils.onSuccess2(v -> {
+          Assert.assertTrue(System.currentTimeMillis() - now >= 1000);
           complete();
         }));
       vertx.setTimer(1000, id -> {
@@ -211,7 +216,7 @@ public class Http3ServerTest extends VertxTestBase {
     connection.goAwayHandler(id -> complete());
     Http3TestClient.Client.Stream stream = connection.stream();
     stream.GET("/");
-    assertEquals("Hello World", new String(stream.responseBody()));
+    Assert.assertEquals("Hello World", new String(stream.responseBody()));
 
     await();
   }
@@ -225,12 +230,12 @@ public class Http3ServerTest extends VertxTestBase {
     server.requestHandler(req -> {
       long now = System.currentTimeMillis();
       req.response().exceptionHandler(err -> {
-        assertSame(HttpClosedException.class, err.getClass());
+        Assert.assertSame(HttpClosedException.class, err.getClass());
         complete();
       });
       req.connection().shutdown(1, TimeUnit.SECONDS)
-        .onComplete(onSuccess2(v -> {
-          assertTrue(System.currentTimeMillis() - now <= 2000);
+        .onComplete(TestUtils.onSuccess2(v -> {
+          Assert.assertTrue(System.currentTimeMillis() - now <= 2000);
           complete();
         }));
     });
@@ -247,15 +252,15 @@ public class Http3ServerTest extends VertxTestBase {
     });
     Http3TestClient.Client.Stream stream = connection.stream();
     stream.resetHandler(code -> {
-      assertEquals(H3_REQUEST_CANCELLED.code(), code);
-      assertEquals(1, goAways.size());
+      Assert.assertEquals(H3_REQUEST_CANCELLED.code(), (long)code);
+      Assert.assertEquals(1, goAways.size());
     });
     stream.GET("/");
     try {
       stream.responseBody();
-      fail();
+      Assert.fail();
     } catch (QuicStreamResetException e) {
-      assertEquals(H3_REQUEST_CANCELLED.code(), e.applicationProtocolCode());
+      Assert.assertEquals(H3_REQUEST_CANCELLED.code(), e.applicationProtocolCode());
     }
 
     await();
@@ -274,8 +279,8 @@ public class Http3ServerTest extends VertxTestBase {
       long now = System.currentTimeMillis();
       pendingRequest.compareAndSet(null, req);
       req.connection().shutdown(10, TimeUnit.SECONDS)
-        .onComplete(onSuccess2(v -> {
-          assertTrue(System.currentTimeMillis() - now <= 1000);
+        .onComplete(TestUtils.onSuccess2(v -> {
+          Assert.assertTrue(System.currentTimeMillis() - now <= 1000);
           testComplete();
         }));
     });
@@ -300,10 +305,10 @@ public class Http3ServerTest extends VertxTestBase {
     stream2.GET("/");
 
     try {
-      assertEquals("Hello World", new String(stream2.responseBody()));
-      fail();
+      Assert.assertEquals("Hello World", new String(stream2.responseBody()));
+      Assert.fail();
     } catch (QuicStreamResetException e) {
-      assertEquals(Http3ErrorCode.H3_REQUEST_REJECTED.code(), e.applicationProtocolCode());
+      Assert.assertEquals(Http3ErrorCode.H3_REQUEST_REJECTED.code(), e.applicationProtocolCode());
     }
     pendingRequest.get().response().end();
 
@@ -316,8 +321,8 @@ public class Http3ServerTest extends VertxTestBase {
     server.requestHandler(req -> {
       HttpServerResponse response = req.response();
       response.setChunked(true).write("chunk")
-        .onComplete(onSuccess2(v1 -> {
-          response.reset(4L).onComplete(onSuccess(v2 -> testComplete()));
+        .onComplete(TestUtils.onSuccess2(v1 -> {
+          response.reset(4L).onComplete(TestUtils.onSuccess(v2 -> testComplete()));
       }));
     });
 
@@ -328,9 +333,9 @@ public class Http3ServerTest extends VertxTestBase {
     stream.GET("/");
     try {
       stream.responseBody();
-      fail();
+      Assert.fail();
     } catch (QuicStreamResetException expected) {
-      assertEquals(4L, expected.applicationProtocolCode());
+      Assert.assertEquals(4L, expected.applicationProtocolCode());
     }
 
     await();
@@ -356,14 +361,14 @@ public class Http3ServerTest extends VertxTestBase {
     Http3TestClient.Client.Stream stream = connection.stream();
     stream.write(new DefaultHttp3Headers());
 
-    awaitLatch(latch);
+    TestUtils.awaitLatch(latch);
     stream.reset(4);
 
     try {
       stream.responseBody();
-      fail();
+      Assert.fail();
     } catch (QuicStreamResetException e) {
-      assertEquals(Http3ErrorCode.H3_REQUEST_INCOMPLETE.code(), e.applicationProtocolCode());
+      Assert.assertEquals(Http3ErrorCode.H3_REQUEST_INCOMPLETE.code(), e.applicationProtocolCode());
     }
 
     await();
@@ -380,9 +385,8 @@ public class Http3ServerTest extends VertxTestBase {
       long now = System.currentTimeMillis();
       req.response().closeHandler(v -> {
         long delta = System.currentTimeMillis() - now;
-        System.out.println(delta);
-        assertTrue(delta >= 200);
-        assertTrue(delta <= 600);
+        Assert.assertTrue(delta >= 200);
+        Assert.assertTrue(delta <= 600);
         testComplete();
       });
     });
@@ -394,10 +398,10 @@ public class Http3ServerTest extends VertxTestBase {
     stream.GET("/");
     try {
       stream.responseBody();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertEquals(QuicStreamResetException.class, e.getClass());
-      assertEquals(H3_REQUEST_CANCELLED.code(), ((QuicStreamResetException)e).applicationProtocolCode());
+      Assert.assertEquals(QuicStreamResetException.class, e.getClass());
+      Assert.assertEquals(H3_REQUEST_CANCELLED.code(), ((QuicStreamResetException)e).applicationProtocolCode());
     }
     await();
   }
@@ -414,9 +418,9 @@ public class Http3ServerTest extends VertxTestBase {
 
     server.connectionHandler(connection -> {
       connection.remoteSettingsHandler(settings -> {
-        assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.MAX_FIELD_SECTION_SIZE));
-        assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_BLOCKED_STREAMS));
-        assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_MAX_TABLE_CAPACITY));
+        Assert.assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.MAX_FIELD_SECTION_SIZE));
+        Assert.assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_BLOCKED_STREAMS));
+        Assert.assertEquals(1024L, (long)settings.get(io.vertx.core.http.Http3Settings.QPACK_MAX_TABLE_CAPACITY));
         testComplete();
       });
     });
@@ -439,21 +443,21 @@ public class Http3ServerTest extends VertxTestBase {
 
     assertWaitUntil(() -> connection.remoteSettings() != null);
     Http3Settings settings = connection.remoteSettings();
-    assertEquals(1024L, (long)settings.maxFieldSectionSize());
-    assertEquals(1024L, (long)settings.qpackMaxTableCapacity());
-    assertEquals(1024L, (long)settings.qpackBlockedStreams());
+    Assert.assertEquals(1024L, (long)settings.maxFieldSectionSize());
+    Assert.assertEquals(1024L, (long)settings.qpackMaxTableCapacity());
+    Assert.assertEquals(1024L, (long)settings.qpackBlockedStreams());
   }
 
   @Test
   public void testConnect() throws Exception {
     server.requestHandler(req -> {
-      assertEquals(HttpMethod.CONNECT, req.method());
-      assertEquals("whatever.com", req.authority().host());
-      assertNull(req.path());
-      assertNull(req.query());
-      assertNull(req.scheme());
-      assertNull(req.uri());
-      assertNull(req.absoluteURI());
+      Assert.assertEquals(HttpMethod.CONNECT, req.method());
+      Assert.assertEquals("whatever.com", req.authority().host());
+      Assert.assertNull(req.path());
+      Assert.assertNull(req.query());
+      Assert.assertNull(req.scheme());
+      Assert.assertNull(req.uri());
+      Assert.assertNull(req.absoluteURI());
       testComplete();
     });
 
@@ -487,12 +491,12 @@ public class Http3ServerTest extends VertxTestBase {
       Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress("localhost", 8443));
       connections.add(connection);
     }
-    assertEquals(num, serverConnections.size());
+    Assert.assertEquals(num, serverConnections.size());
     for (Http3TestClient.Client.Connection connection : connections) {
       Http3TestClient.Client.Stream stream = connection.stream();
       stream.GET("/");
       byte[] body = stream.responseBody();
-      assertEquals("Hello World 8443", new String(body));
+      Assert.assertEquals("Hello World 8443", new String(body));
     }
   }
 

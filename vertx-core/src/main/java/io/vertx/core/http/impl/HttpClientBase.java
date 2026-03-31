@@ -99,7 +99,10 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   public Future<Void> shutdown(Duration timeout) {
     this.closeTimeout = timeout;
-    return closeSequence.close();
+    Future<Void> closeFut = closeSequence.close();
+    Promise<Void> promise = vertx.promise();
+    closeFut.onComplete(promise);
+    return promise.future();
   }
 
   @Override
