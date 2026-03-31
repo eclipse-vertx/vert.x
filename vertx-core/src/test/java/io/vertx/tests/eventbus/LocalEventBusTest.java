@@ -19,6 +19,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void setUp() throws Exception {
     super.setUp();
     vertx.close();
-    vertx = Vertx.vertx();
+    vertx = vertx();
     eb = (EventBusInternal) vertx.eventBus();
     ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
     eb.registerCodec(immutableObjectCodec);
@@ -1030,41 +1031,54 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testExceptionWhenDeliveringBufferedMessageWithMessageStream() {
+  public void testExceptionWhenDeliveringBufferedMessageWithMessageStream() throws Exception {
     testExceptionWhenDeliveringBufferedMessage((consumer, handler) -> consumer.handler(message -> handler.handle(message.body())));
   }
 
   @Test
-  public void testExceptionWhenDeliveringBufferedMessageWithBodyStream() {
+  public void testExceptionWhenDeliveringBufferedMessageWithBodyStream() throws Exception {
     testExceptionWhenDeliveringBufferedMessage((consumer, handler) -> consumer.bodyStream().handler(handler));
   }
 
-  private void testExceptionWhenDeliveringBufferedMessage(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) {
+  private void testExceptionWhenDeliveringBufferedMessage(BiFunction<MessageConsumer<String>, Handler<String>, ReadStream<?>> register) throws Exception {
     String[] data = new String[11];
     for (int i = 0;i < data.length;i++) {
       data[i] = TestUtils.randomAlphaString(10);
     }
-    Set<String> expected = new HashSet<>();
+    Set<String> expected = Collections.synchronizedSet(new HashSet<>());
+    List<Boolean> checks = Collections.synchronizedList(new ArrayList<>());
     Handler<String> handler = body -> {
-      assertTrue("Was expecting " + expected + " to contain " + body, expected.remove(body));
+      checks.add(expected.remove(body));
       if (expected.isEmpty()) {
         testComplete();
       } else {
         throw new RuntimeException();
       }
     };
-    MessageConsumer<String> reg = eb.<String>consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(10));
-    ReadStream<?> controller = register.apply(reg, handler);
-    ((MessageConsumerImpl<String>) reg).discardHandler(msg -> {
-      assertEquals(data[10], msg.body());
-      expected.addAll(Arrays.asList(data).subList(0, 10));
-      controller.resume();
+    Context ctx = vertx.getOrCreateContext();
+    // Set an exception handler to avoid failing the test
+    ctx.exceptionHandler(err -> {
     });
-    controller.pause();
+    CountDownLatch latch = new CountDownLatch(1);
+    ctx.runOnContext(v -> {
+      MessageConsumer<String> reg = eb.consumer(new MessageConsumerOptions().setAddress(ADDRESS1).setMaxBufferedMessages(10));
+      ReadStream<?> controller = register.apply(reg, handler);
+      controller.pause();
+      ((MessageConsumerImpl<String>) reg).discardHandler(msg -> {
+        assertEquals(data[10], msg.body());
+        expected.addAll(Arrays.asList(data).subList(0, 10));
+        controller.resume();
+      });
+      latch.countDown();
+    });
+    awaitLatch(latch);
     for (String msg : data) {
       eb.publish(ADDRESS1, msg);
     }
     await();
+    for (Boolean check : checks) {
+      Assert.assertTrue(check);
+    }
   }
 
   @Test

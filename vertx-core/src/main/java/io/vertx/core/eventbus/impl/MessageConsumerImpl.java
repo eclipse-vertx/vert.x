@@ -94,7 +94,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   private void handleDiscard(Message<T> message, boolean isFull) {
     if (discardHandler != null) {
-      discardHandler.handle(message);
+      context.dispatch(message, discardHandler);
     } else if (isFull) {
       if (log.isWarnEnabled()) {
         log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
