@@ -320,7 +320,7 @@ public class VertxTestBase extends AsyncTestBase {
     Vertx vertx = createVertxBuilder(options).build();
     if (TRANSPORT != Transport.NIO) {
       if (!vertx.isNativeTransportEnabled()) {
-        fail(vertx.unavailableNativeTransportCause());
+        Assert.fail("Native transport is not enabled: " + vertx.unavailableNativeTransportCause());
       }
     }
     return vertx;

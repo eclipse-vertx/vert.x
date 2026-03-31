@@ -18,6 +18,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.core.TestUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -130,7 +131,7 @@ public class TimerTest extends VertxTestBase {
     id.set(abc.apply(delay, new Handler<Long>() {
       int count;
       public void handle(Long timerID) {
-        assertThatComparable(System.nanoTime() - now, a -> a.isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay)));
+        Assertions.assertThat(System.nanoTime() - now).isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay));
         Assert.assertEquals(id.get(), timerID.longValue());
         count++;
         if (count == numFires) {
