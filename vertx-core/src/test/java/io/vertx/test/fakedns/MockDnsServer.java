@@ -21,6 +21,7 @@ import io.netty.handler.codec.dns.*;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.VertxInternal;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -72,13 +73,13 @@ public class MockDnsServer {
     return this;
   }
 
-  public void start() throws Exception {
+  public void start() {
     if (this.channel != null) {
       throw new IllegalStateException();
     }
     Bootstrap bootstrap = new Bootstrap()
       .group(context.nettyEventLoop())
-      .channel(NioDatagramChannel.class)
+      .channelFactory(context.owner().transport().datagramChannelFactory())
       .handler(new ChannelInitializer<DatagramChannel>() {
         @Override
         protected void initChannel(DatagramChannel ch) throws Exception {
@@ -115,7 +116,14 @@ public class MockDnsServer {
             });
         }
       });
-    ChannelFuture fut = bootstrap.bind(ipAddress, port).sync();
+    ChannelFuture fut = null;
+    try {
+      fut = bootstrap.bind(ipAddress, port).sync();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      PlatformDependent.throwException(e);
+      return;
+    }
     if (fut.isSuccess()) {
       this.channel = fut.channel();
     } else {

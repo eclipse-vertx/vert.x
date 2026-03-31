@@ -60,14 +60,6 @@ public class NameResolverTest extends VertxTestBase {
   private InetSocketAddress dnsServerAddress;
 
   @Override
-  public void setUp() throws Exception {
-    dnsServer = new MockDnsServer(vertx).testResolveASameServer("127.0.0.1");
-    dnsServer.start();
-    dnsServerAddress = dnsServer.localAddress();
-    super.setUp();
-  }
-
-  @Override
   protected void tearDown() throws Exception {
     dnsServer.stop();
     super.tearDown();
@@ -87,6 +79,11 @@ public class NameResolverTest extends VertxTestBase {
   }
 
   private AddressResolverOptions getAddressResolverOptions() {
+    if (dnsServer == null) {
+      dnsServer = new MockDnsServer(vertx()).testResolveASameServer("127.0.0.1");
+      dnsServer.start();
+      dnsServerAddress = dnsServer.localAddress();
+    }
     return new AddressResolverOptions()
       .addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
   }

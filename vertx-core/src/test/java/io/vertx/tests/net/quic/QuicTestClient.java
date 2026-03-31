@@ -361,7 +361,7 @@ public class QuicTestClient {
 
       Bootstrap bs = new Bootstrap();
       ch = bs.group(group)
-        .channel(NioDatagramChannel.class)
+        .channelFactory(QuicTestClient.this.context.owner().transport().datagramChannelFactory())
         .handler(new ChannelInitializer<>() {
           @Override
           protected void initChannel(Channel ch) throws Exception {
@@ -423,6 +423,8 @@ public class QuicTestClient {
   }
 
   public void close() throws Exception {
-    channel.close().sync();
+    if (channel != null) {
+      channel.close().sync();
+    }
   }
 }
