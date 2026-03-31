@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -31,6 +32,10 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TimerTest extends VertxTestBase {
+
+  public TimerTest() {
+    super(true);
+  }
 
   @Test
   public void testTimer() {
@@ -163,18 +168,25 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testCancelTimerWhenScheduledOnWorker() {
+    AtomicBoolean executed = new AtomicBoolean();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        long id = vertx.setTimer(100, id_ -> {
-          fail();
+        vertx.runOnContext(v -> {
+          long id = vertx.setTimer(100, id_ -> {
+            executed.set(true);
+          });
+          try {
+            Thread.sleep(200);
+          } catch (InterruptedException ignore) {
+          }
+          assertTrue(vertx.cancelTimer(id));
+          testComplete();
         });
-        Thread.sleep(200);
-        assertTrue(vertx.cancelTimer(id));
-        testComplete();
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     await();
+    assertFalse(waitUntil(() -> executed.get(), 25));
   }
 
   @Test
@@ -374,15 +386,18 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testTimerFireOnContext1() {
+    AtomicReference<ContextInternal> ref1 = new AtomicReference<>();
+    AtomicReference<ContextInternal> ref2 = new AtomicReference<>();
     new Thread(() -> {
       ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+      ref2.set(ctx);
       Timer timer = vertx.timer(10, TimeUnit.MILLISECONDS);
       timer.onComplete(onSuccess(v -> {
-        assertSame(ctx.nettyEventLoop(), ((ContextInternal)Vertx.currentContext()).nettyEventLoop());
-        testComplete();
+        ref1.set((ContextInternal)Vertx.currentContext());
       }));
     }).start();
-    await();
+    waitUntil(() -> ref1.get() != null);
+    assertSame(ref2.get().nettyEventLoop(), ref1.get().nettyEventLoop());
   }
 
   @Test
