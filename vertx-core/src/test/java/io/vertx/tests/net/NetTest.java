@@ -49,10 +49,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.Assume;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.*;
@@ -93,6 +90,10 @@ public class NetTest extends VertxTestBase {
 
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
+
+  public NetTest() {
+    super(true);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -2700,15 +2701,9 @@ public class NetTest extends VertxTestBase {
     awaitLatch(serverLatch);
 
     // Close should be in own context
-    server.close().onComplete(onSuccess(ar -> {
-//      Context closeContext = Vertx.currentContext();
-//      assertFalse(contexts.contains(closeContext));
-      assertFalse(contexts.contains(listenContext.get()));
-      assertSame(serverConnectContext.get(), listenContext.get());
-      testComplete();
-    }));
-
-    await();
+    server.close().await();
+    Assert.assertFalse(contexts.contains(listenContext.get()));
+    Assert.assertSame(serverConnectContext.get(), listenContext.get());
   }
 
   @Test
@@ -4480,7 +4475,6 @@ public class NetTest extends VertxTestBase {
   }
 
   private void testClientShutdown(boolean override, boolean useHandler, LongPredicate checker) throws Exception {
-    waitFor(2);
     server.connectHandler(so -> {
 
     });
@@ -4502,17 +4496,14 @@ public class NetTest extends VertxTestBase {
         so.closeHandler(v -> {
           assertEquals(useHandler ? 1 : 0, eventCount.get());
           assertTrue(checker.test(now));
-          complete();
+          testComplete();
         });
         latch.countDown();
     }));
     awaitLatch(latch);
-    Future<Void> fut = client.shutdown(2, TimeUnit.SECONDS);
-    fut.onComplete(onSuccess(v -> {
-      assertTrue(checker.test(now));
-      complete();
-    }));
+    client.shutdown(2, TimeUnit.SECONDS).await();
     await();
+    Assert.assertTrue(checker.test(now));
   }
 
   @Test
@@ -4531,7 +4522,6 @@ public class NetTest extends VertxTestBase {
   }
 
   public void testServerShutdown(boolean override, boolean useHandler, LongPredicate checker) throws Exception {
-    waitFor(2);
     long now = System.currentTimeMillis();
     server.connectHandler(so -> {
       AtomicInteger eventCount = new AtomicInteger();
@@ -4546,7 +4536,7 @@ public class NetTest extends VertxTestBase {
       so.closeHandler(v -> {
         assertEquals(useHandler ? 1 : 0, eventCount.getAndIncrement());
         assertTrue(checker.test(now));
-        complete();
+        testComplete();
       });
       so.write("ping");
     });
@@ -4558,12 +4548,9 @@ public class NetTest extends VertxTestBase {
       });
     }));
     awaitLatch(latch);
-    Future<Void> fut = server.shutdown(2, TimeUnit.SECONDS);
-    fut.onComplete(onSuccess(v -> {
-      assertTrue(checker.test(now));
-      complete();
-    }));
+    server.shutdown(2, TimeUnit.SECONDS).await();
     await();
+    assertTrue(checker.test(now));
   }
 
   @Test
