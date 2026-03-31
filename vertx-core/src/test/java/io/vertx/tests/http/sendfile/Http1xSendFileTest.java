@@ -22,6 +22,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
@@ -45,13 +46,13 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     server.requestHandler(req -> {
       try {
         barrier.await(10, TimeUnit.SECONDS);
-        req.response().sendFile(f.getAbsolutePath()).onComplete(onFailure(err -> {
+        req.response().sendFile(f.getAbsolutePath()).onComplete(TestUtils.onFailure(err -> {
           // Broken pipe
           testComplete();
         }));
       } catch (Exception e) {
         // this was the bug reported with issues/issue-80
-        fail(e);
+        Assert.fail(e.getMessage());
       }
     });
     startServer(testAddress);
@@ -86,7 +87,7 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     for (int i = 0;i < n;i++) {
       client.request(requestOptions)
         .compose(req -> req.send().compose(HttpClientResponse::body))
-        .onComplete(onSuccess(body -> {
+        .onComplete(TestUtils.onSuccess(body -> {
           complete();
         }));
     }
@@ -104,7 +105,7 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     // Now test with timeout relative to this delay
     int timeout = delay / 2;
     delay = retrieveFileFromServer(file, createBaseServerOptions().setIdleTimeout(timeout).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
-    assertTrue(delay > timeout);
+    Assert.assertTrue(delay > timeout);
   }
 
   private int retrieveFileFromServer(File file, HttpServerOptions options) throws Exception {
@@ -128,11 +129,11 @@ public class Http1xSendFileTest extends HttpSendFileTest {
               resp.resume();
             });
           });
-          resp.exceptionHandler(this::fail);
+          resp.exceptionHandler(err -> Assert.fail(err.getMessage()));
           return resp.end();
         }))
       .map(v -> length[0]).await();
-    assertEquals((int)len, file.length());
+    Assert.assertEquals((int)len, file.length());
     return (int) (System.currentTimeMillis() - now);
   }
 }

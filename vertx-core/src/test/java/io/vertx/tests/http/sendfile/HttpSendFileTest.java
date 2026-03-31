@@ -23,6 +23,7 @@ import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Assume;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
@@ -37,6 +38,10 @@ import java.util.function.Supplier;
 import static io.vertx.test.core.AssertExpectations.that;
 
 public abstract class HttpSendFileTest extends HttpTestBase {
+
+  public HttpSendFileTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Test
   @DetectFileDescriptorLeaks(iterations = 40)
@@ -62,7 +67,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     File fileToSend = setupFile(fileName, contentExpected);
     server.requestHandler(req -> {
       if (useHandler) {
-        req.response().sendFile(fileToSend.getAbsolutePath()).onComplete(onSuccess(v -> complete()));
+        req.response().sendFile(fileToSend.getAbsolutePath()).onComplete(TestUtils.onSuccess(v -> complete()));
       } else {
         req.response().sendFile(fileToSend.getAbsolutePath());
         complete();
@@ -72,14 +77,14 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     requestFact.get().compose(req -> req
         .send()
         .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals("text/html", resp.headers().get("Content-Type"));
-          assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
-          resp.exceptionHandler(this::fail);
+          Assert.assertEquals(200, resp.statusCode());
+          Assert.assertEquals("text/html", resp.headers().get("Content-Type"));
+          Assert.assertEquals(fileToSend.length(), Long.parseLong(resp.headers().get("content-length")));
+          resp.exceptionHandler(err -> Assert.fail(err.getMessage()));
         }))
         .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(buff -> {
-        assertEquals(contentExpected, buff.toString());
+      .onComplete(TestUtils.onSuccess(buff -> {
+        Assert.assertEquals(contentExpected, buff.toString());
         complete();
       }));
     await();
@@ -90,7 +95,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     server.requestHandler(req -> {
       final Context ctx = vertx.getOrCreateContext();
       req.response().sendFile("/not/existing/path").onComplete(event -> {
-        assertEquals(ctx, vertx.getOrCreateContext());
+        Assert.assertEquals(ctx, vertx.getOrCreateContext());
         if (event.failed()) {
           req.response().end("failed");
         }
@@ -103,8 +108,8 @@ public abstract class HttpSendFileTest extends HttpTestBase {
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body)
-        .expecting(that(buff -> assertEquals("failed", buff.toString()))))
-      .onComplete(onSuccess(v -> testComplete()));
+        .expecting(that(buff -> Assert.assertEquals("failed", buff.toString()))))
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
 
     await();
   }
@@ -124,13 +129,13 @@ public abstract class HttpSendFileTest extends HttpTestBase {
       .compose(req -> req
         .send()
         .expecting(that(resp -> {
-          assertEquals(200, resp.statusCode());
-          assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
-          assertEquals("wibble", resp.headers().get("content-type"));
+          Assert.assertEquals(200, resp.statusCode());
+          Assert.assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
+          Assert.assertEquals("wibble", resp.headers().get("content-type"));
         }))
         .compose(HttpClientResponse::body)
-        .expecting(that(buff -> assertEquals(content, buff.toString()))))
-      .onComplete(onSuccess(v -> testComplete()));
+        .expecting(that(buff -> Assert.assertEquals(content, buff.toString()))))
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
 
     await();
   }
@@ -141,15 +146,15 @@ public abstract class HttpSendFileTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.response().putHeader("Content-Type", "wibble");
-      req.response().sendFile("nosuchfile.html").onComplete(onFailure(v -> complete()));
+      req.response().sendFile("nosuchfile.html").onComplete(TestUtils.onFailure(v -> complete()));
     });
 
     startServer(testAddress);
     AtomicBoolean completed = new AtomicBoolean();
-    client.request(requestOptions).onComplete(onSuccess(req -> {
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
       req.send().onComplete(ar -> {
         if (!completed.get()) {
-          fail();
+          Assert.fail();
         }
       });
     }));
@@ -169,15 +174,15 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().putHeader("Content-Type", "wibble");
       req.response().sendFile(dir.getAbsolutePath())
-        .onComplete(onFailure(t -> {
-          assertTrue(t instanceof FileNotFoundException);
+        .onComplete(TestUtils.onFailure(t -> {
+          Assert.assertTrue(t instanceof FileNotFoundException);
           testComplete();
         }));
     });
 
     startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onFailure(err -> {}));
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
+      req.send().onComplete(TestUtils.onFailure(err -> {}));
     }));
 
     await();
@@ -189,14 +194,14 @@ public abstract class HttpSendFileTest extends HttpTestBase {
       res.response().sendFile("hosts_config.txt", 13);
     });
     startServer(testAddress);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
-        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
+        .expecting(that(resp -> Assert.assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
         .compose(HttpClientResponse::body)
-        .onComplete(onSuccess(body -> {
-          assertTrue(body.toString().startsWith("server.net"));
-          assertEquals(10, body.toString().length());
+        .onComplete(TestUtils.onSuccess(body -> {
+          Assert.assertTrue(body.toString().startsWith("server.net"));
+          Assert.assertEquals(10, body.toString().length());
           testComplete();
         }));
     }));
@@ -212,11 +217,11 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
+        .expecting(that(resp -> Assert.assertEquals(String.valueOf(10), resp.headers().get("Content-Length"))))
         .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(body -> {
-        assertEquals("server.net", body.toString());
-        assertEquals(10, body.toString().length());
+      .onComplete(TestUtils.onSuccess(body -> {
+        Assert.assertEquals("server.net", body.toString());
+        Assert.assertEquals(10, body.toString().length());
         testComplete();
       }));
     await();
@@ -230,11 +235,11 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     client.request(requestOptions)
       .compose(req -> req
         .send()
-        .expecting(that(resp -> assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
+        .expecting(that(resp -> Assert.assertEquals(String.valueOf(0), resp.headers().get("Content-Length"))))
         .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(body -> {
-        assertEquals("", body.toString());
-        assertEquals(0, body.toString().length());
+      .onComplete(TestUtils.onSuccess(body -> {
+        Assert.assertEquals("", body.toString());
+        Assert.assertEquals(0, body.toString().length());
         testComplete();
       }));
     await();
@@ -244,20 +249,20 @@ public abstract class HttpSendFileTest extends HttpTestBase {
   public void testSendFileOffsetIsHigherThanFileLength() throws Exception {
     testSendFileWithFailure(
       (resp, f) -> resp.sendFile(f.getAbsolutePath(), 33, 10),
-      err -> assertEquals("offset : 33 is larger than the requested file length : 23", err.getMessage()));
+      err -> Assert.assertEquals("offset : 33 is larger than the requested file length : 23", err.getMessage()));
   }
 
   @Test
   public void testSendFileWithNegativeLength() throws Exception {
     testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), 0, -100), err -> {
-      assertEquals("length : -100 (expected: >= 0)", err.getMessage());
+      Assert.assertEquals("length : -100 (expected: >= 0)", err.getMessage());
     });
   }
 
   @Test
   public void testSendFileWithNegativeOffset() throws Exception {
     testSendFileWithFailure((resp, f) -> resp.sendFile(f.getAbsolutePath(), -100, 23), err -> {
-      assertEquals("offset : -100 (expected: >= 0)", err.getMessage());
+      Assert.assertEquals("offset : -100 (expected: >= 0)", err.getMessage());
     });
   }
 
@@ -268,17 +273,17 @@ public abstract class HttpSendFileTest extends HttpTestBase {
       // Expected
       sendFile
         .apply(res.response(), f)
-        .andThen(onFailure(checker::accept))
+        .andThen(TestUtils.onFailure(checker::accept))
         .recover(v -> res.response().setStatusCode(500).end())
-        .onComplete(onSuccess(v -> {
+        .onComplete(TestUtils.onSuccess(v -> {
           complete();
         }));
     });
     startServer(testAddress);
     client.request(requestOptions)
       .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(response -> {
-        assertEquals(500, response.statusCode());
+      .onComplete(TestUtils.onSuccess(response -> {
+        Assert.assertEquals(500, response.statusCode());
         complete();
       }));
 
@@ -290,7 +295,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file.getChannel());
     try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
-      assertTrue(raf.getChannel().isOpen());
+      Assert.assertTrue(raf.getChannel().isOpen());
     }
   }
 
@@ -301,7 +306,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file.getChannel());
     try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", fileLength)) {
-      assertTrue(raf.getChannel().isOpen());
+      Assert.assertTrue(raf.getChannel().isOpen());
     }
   }
 
@@ -314,7 +319,7 @@ public abstract class HttpSendFileTest extends HttpTestBase {
       .putHeader(HttpHeaders.CONTENT_TYPE, "video/mp4")
       .sendFile(file.getChannel(), offset, expectedRange);
     try (RandomAccessFile raf =  testSendFileWithFileChannel(fileLength, sender, "video/mp4", expectedRange)) {
-      assertTrue(raf.getChannel().isOpen());
+      Assert.assertTrue(raf.getChannel().isOpen());
     }
   }
 
@@ -356,13 +361,13 @@ public abstract class HttpSendFileTest extends HttpTestBase {
     Assume.assumeTrue(createBaseClientOptions().getProtocolVersion() == HttpVersion.HTTP_1_1 || createBaseServerOptions().getHttp2MultiplexImplementation());
     File file = TestUtils.tmpFile(".dat", flen);
     RandomAccessFile raf = new RandomAccessFile(file, "r");
-    server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(onSuccess(v -> testComplete())));
+    server.requestHandler(req -> sender.apply(raf, req.response()).onComplete(TestUtils.onSuccess(v -> testComplete())));
     startServer(testAddress);
     Buffer body = client.request(requestOptions)
       .compose(req -> req.send()
         .expecting(HttpResponseExpectation.contentType(expectedContentType))
         .compose(HttpClientResponse::body)).await();
-    assertEquals(body.length(), expectedLength);
+    Assert.assertEquals(body.length(), expectedLength);
     await();
     return raf;
   }
