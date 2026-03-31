@@ -11,6 +11,7 @@
 
 package io.vertx.tests.file;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
@@ -33,8 +34,8 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
   @Test
   public void testResolvePlusSignsOnName() {
     File file = resolver.resolve("this+that");
-    assertFalse(file.exists());
-    assertEquals("this+that", file.getPath());
+    Assert.assertFalse(file.exists());
+    Assert.assertEquals("this+that", file.getPath());
   }
 
   @Test
@@ -52,7 +53,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
             try {
               return f.toURL();
             } catch (MalformedURLException e) {
-              fail(e);
+              Assert.fail(e.getMessage());
             }
           }
           return super.getResource(name);
@@ -61,7 +62,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
       thread.setContextClassLoader(next);
       try {
         File file = resolver.resolve(s);
-        assertNotNull(file);
+        Assert.assertNotNull(file);
       } finally {
         thread.setContextClassLoader(prev);
       }
@@ -92,7 +93,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
     try {
       File file = resolver.resolve("a/a.txt");
       String content = Files.readString(file.toPath());
-      assertEquals("the_content", content);
+      Assert.assertEquals("the_content", content);
     } finally {
       thread.setContextClassLoader(prev);
     }
