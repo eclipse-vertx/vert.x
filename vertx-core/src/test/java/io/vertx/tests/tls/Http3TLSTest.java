@@ -11,8 +11,6 @@
 
 package io.vertx.tests.tls;
 
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
 import io.vertx.tests.http.http3.Http3Config;
 import org.junit.Ignore;
 import org.junit.Test;

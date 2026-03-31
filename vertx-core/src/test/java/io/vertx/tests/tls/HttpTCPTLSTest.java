@@ -45,6 +45,7 @@ import io.vertx.test.proxy.ProxyKind;
 import io.vertx.test.proxy.WithProxy;
 import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 
 import io.netty.util.internal.PlatformDependent;
@@ -219,7 +220,7 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
     server.requestHandler(req -> {
     });
     AtomicReference<Throwable> failure = new AtomicReference<>();
-    server.listen().onComplete(onFailure(failure::set));
+    server.listen().onComplete(TestUtils.onFailure(failure::set));
     assertWaitUntil(() -> failure.get() != null);
     Throwable cause = failure.get();
     String exceptionMessage = cause.getMessage();
@@ -229,7 +230,7 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
         ok |= expectedPossiblePrefix.equals(exceptionMessage);
       }
       if (!ok) {
-        fail("Was expecting <" + exceptionMessage + ">  to be equals to one of " + expectedPossiblePrefixes);
+        Assert.fail("Was expecting <" + exceptionMessage + ">  to be equals to one of " + expectedPossiblePrefixes);
       }
     } else {
       boolean ok = expectedPossiblePrefixes.isEmpty();
@@ -237,7 +238,7 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
         ok |= exceptionMessage.startsWith(expectedPossiblePrefix);
       }
       if (!ok) {
-        fail("Was expecting <" + exceptionMessage + "> e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+        Assert.fail("Was expecting <" + exceptionMessage + "> e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
       }
       Assertions.assertThat(exceptionMessage).endsWith(expectedSuffix);
     }
@@ -250,8 +251,8 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
     HttpClient client = vertx.createHttpClient(clientOptions);
-    client.request(HttpMethod.GET, 9292, "localhost", "/").onComplete(onFailure(err -> {
-      assertEquals(NoSuchFileException.class, TestUtils.rootCause(err).getClass());
+    client.request(HttpMethod.GET, 9292, "localhost", "/").onComplete(TestUtils.onFailure(err -> {
+      Assert.assertEquals(NoSuchFileException.class, TestUtils.rootCause(err).getClass());
       testComplete();
     }));
     await();
@@ -264,14 +265,14 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
   // Access https server via connect proxy
   public void testHttpsProxy() throws Exception {
     testProxy(ProxyType.HTTP);
-    assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
+    Assert.assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
+    Assert.assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   private void testProxy(ProxyType proxyType) throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(proxyType).pass();
-    assertNotNull("connection didn't access the proxy", proxy.lastUri());
-    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
+    Assert.assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    Assert.assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
   }
 
   @WithProxy(kind = ProxyKind.HTTP, localhosts = { "localhost", "host2.com"})
@@ -279,8 +280,8 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
   // Access https server via connect proxy
   public void testHttpsProxyWithSNI() throws Exception {
     testProxyWithSNI(ProxyType.HTTP);
-    assertEquals("Host header doesn't contain target host", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.lastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
+    Assert.assertEquals("Host header doesn't contain target host", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.lastRequestHeaders().get("Host"));
+    Assert.assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   private void testProxyWithSNI(ProxyType proxyType) throws Exception {
@@ -290,9 +291,9 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertNotNull("connection didn't access the proxy", proxy.lastUri());
-    assertEquals("hostname resolved but it shouldn't be", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
-    assertEquals("host2.com", TestUtils.cnOf(cert));
+    Assert.assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    Assert.assertEquals("hostname resolved but it shouldn't be", "host2.com:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
+    Assert.assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @WithProxy(username = "username", kind = ProxyKind.HTTP)
@@ -307,10 +308,10 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
   // Access https server via connect proxy with proxy auth required
   public void testHttpsProxyAuth() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP).useProxyAuth().pass();
-    assertNotNull("connection didn't access the proxy", proxy.lastUri());
-    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
-    assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
+    Assert.assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    Assert.assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
+    Assert.assertEquals("Host header doesn't contain target host", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastRequestHeaders().get("Host"));
+    Assert.assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   @WithProxy(kind = ProxyKind.HTTP)
@@ -322,10 +323,10 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
     proxy.forceUri(DEFAULT_HTTPS_HOST_AND_PORT);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.HTTP)
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
-    assertNotNull("connection didn't access the proxy", proxy.lastUri());
-    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
-    assertEquals("Host header doesn't contain target host", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastRequestHeaders().get("Host"));
-    assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
+    Assert.assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    Assert.assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
+    Assert.assertEquals("Host header doesn't contain target host", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastRequestHeaders().get("Host"));
+    Assert.assertEquals("Host header doesn't contain target host", HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   @WithProxy(kind = ProxyKind.SOCKS5)
@@ -347,8 +348,8 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
   // Access https server via socks5 proxy with authentication
   public void testHttpsSocksAuth() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.SOCKS5).useProxyAuth().pass();
-    assertNotNull("connection didn't access the proxy", proxy.lastUri());
-    assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
+    Assert.assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    Assert.assertEquals("hostname resolved but it shouldn't be", DEFAULT_HTTPS_HOST_AND_PORT, proxy.lastUri());
   }
 
   @WithProxy(kind = ProxyKind.SOCKS5)
@@ -360,8 +361,8 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
     proxy.forceUri(DEFAULT_HTTPS_HOST_AND_PORT);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).useProxy(ProxyType.SOCKS5)
         .connectHostname("doesnt-resolve.host-name").clientTrustAll().clientVerifyHost(false).pass();
-    assertNotNull("connection didn't access the proxy", proxy.lastUri());
-    assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
+    Assert.assertNotNull("connection didn't access the proxy", proxy.lastUri());
+    Assert.assertEquals("hostname resolved but it shouldn't be", "doesnt-resolve.host-name:" + DEFAULT_HTTPS_PORT, proxy.lastUri());
   }
 
   @Test
@@ -391,9 +392,9 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setVerifyHost(false).setSsl(true).setTrustOptions(Trust.CLIENT_JKS.get()));
-    client.request(requestOptions).onComplete(onFailure(err -> {
+    client.request(requestOptions).onComplete(TestUtils.onFailure(err -> {
       client.request(new RequestOptions(requestOptions).setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
-        .onComplete(onSuccess(request -> {
+        .onComplete(TestUtils.onSuccess(request -> {
           testComplete();
         }));
     }));
@@ -638,18 +639,18 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
       .setVerifyHost(false)
       .setTrustAll(true)
     );
-    request.get().onComplete(onSuccess(body1 -> {
-      assertEquals("Hello World", body1.toString());
+    request.get().onComplete(TestUtils.onSuccess(body1 -> {
+      Assert.assertEquals("Hello World", body1.toString());
       latch.countDown();
     }));
-    awaitLatch(latch);
-    assertTrue(engineThreads.size() > 0);
+    TestUtils.awaitLatch(latch);
+    Assert.assertTrue(engineThreads.size() > 0);
     long numWorkers = engineThreads.stream()
       .map(thread -> (VertxThread) thread)
       .filter(VertxThread::isWorker)
       .count();
     if (useWorkerThreads) {
-      assertTrue(numWorkers > 0);
+      Assert.assertTrue(numWorkers > 0);
     } else {
       // It is fine using worker threads in this case
     }

@@ -51,6 +51,7 @@ import io.vertx.test.tls.Trust;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -360,7 +361,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       .serverSni()
       .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com."))
       .pass();
-    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    Assert.assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
   }
 
   /*
@@ -559,8 +560,8 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .serverSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass();
-    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
-    assertEquals("host2.com", test.indicatedServerName);
+    Assert.assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    Assert.assertEquals("host2.com", test.indicatedServerName);
   }
 
   @Test
@@ -571,7 +572,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host2.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -582,7 +583,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host2.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -601,7 +602,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("localhost", TestUtils.cnOf(cert));
+    Assert.assertEquals("localhost", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -620,8 +621,8 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .clientVerifyHost(false)
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("unknown.com"))
         .pass();
-    assertEquals("localhost", TestUtils.cnOf(test.clientPeerCert()));
-    assertEquals("unknown.com", test.indicatedServerName);
+    Assert.assertEquals("localhost", TestUtils.cnOf(test.clientPeerCert()));
+    Assert.assertEquals("unknown.com", test.indicatedServerName);
   }
 
   @Test
@@ -631,8 +632,8 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .serverSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("sub.host3.com"))
         .pass();
-    assertEquals("*.host3.com", TestUtils.cnOf(test.clientPeerCert()));
-    assertEquals("sub.host3.com", test.indicatedServerName);
+    Assert.assertEquals("*.host3.com", TestUtils.cnOf(test.clientPeerCert()));
+    Assert.assertEquals("sub.host3.com", test.indicatedServerName);
   }
 
   @Test
@@ -643,7 +644,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("sub.host3.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("*.host3.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("*.host3.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -654,7 +655,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("sub.host3.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("*.host3.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("*.host3.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -664,7 +665,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host4.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host4.com certificate", TestUtils.cnOf(cert));
+    Assert.assertEquals("host4.com certificate", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -674,7 +675,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host4.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host4.com certificate", TestUtils.cnOf(cert));
+    Assert.assertEquals("host4.com certificate", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -684,7 +685,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host4.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host4.com certificate", TestUtils.cnOf(cert));
+    Assert.assertEquals("host4.com certificate", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -694,7 +695,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("www.host4.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host4.com certificate", TestUtils.cnOf(cert));
+    Assert.assertEquals("host4.com certificate", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -704,7 +705,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("www.host4.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host4.com certificate", TestUtils.cnOf(cert));
+    Assert.assertEquals("host4.com certificate", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -714,7 +715,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("www.host4.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host4.com certificate", TestUtils.cnOf(cert));
+    Assert.assertEquals("host4.com certificate", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -724,7 +725,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("www.host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -734,7 +735,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("www.host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -744,7 +745,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("www.host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -782,7 +783,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -793,7 +794,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -804,7 +805,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host5.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -816,7 +817,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host2.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -833,7 +834,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
           .setURI("/somepath")))
         .pass()
         .clientPeerCert();
-    assertEquals("host2.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -846,7 +847,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host2.com", TestUtils.cnOf(cert));
+    Assert.assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -864,7 +865,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .serverSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host1"))
         .pass();
-    assertEquals(null, test.indicatedServerName);
+    Assert.assertEquals(null, test.indicatedServerName);
   }
 
   @Test
@@ -875,7 +876,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .serverSni()
         .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host1"))
         .pass();
-    assertEquals("host1", test.indicatedServerName);
+    Assert.assertEquals("host1", test.indicatedServerName);
   }
 
   @Test
@@ -1012,8 +1013,8 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       .serverSni()
       .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com."))
       .pass();
-    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
-    assertEquals("host2.com", test.indicatedServerName);
+    Assert.assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    Assert.assertEquals("host2.com", test.indicatedServerName);
   }
 
   // Other tests
@@ -1342,16 +1343,16 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       test.server.requestHandler(req -> {
         indicatedServerName = req.connection().indicatedServerName();
 //        assertEquals(options.getProtocolVersion(), req.version());
-        test.assertEquals(serverSSL, req.isSSL());
+        Assert.assertEquals(serverSSL, req.isSSL());
         if (serverSSL && serverOpenSSL) {
           String name = req.sslSession().getSessionContext().getClass().getSimpleName();
-          test.assertTrue(name.contains("OpenSslServerSessionContext"));
+          Assert.assertTrue(name.contains("OpenSslServerSessionContext"));
         }
         if (req.method() == HttpMethod.GET || req.method() == HttpMethod.HEAD) {
           req.response().end();
         } else {
           req.bodyHandler(buffer -> {
-            test.assertEquals("foo", buffer.toString());
+            Assert.assertEquals("foo", buffer.toString());
             req.response().end("bar");
           });
         }
@@ -1375,7 +1376,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
             }
             if (clientSSL && clientOpenSSL) {
               String name = req.connection().sslSession().getSessionContext().getClass().getSimpleName();
-              test.assertTrue(name.contains("OpenSslClientSessionContext"));
+              Assert.assertTrue(name.contains("OpenSslClientSessionContext"));
             }
           }
           if (shouldPass) {
@@ -1385,7 +1386,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
               return resp.end();
             } else {
               return resp.body().map(body -> {
-                test.assertEquals("bar", body.toString());
+                Assert.assertEquals("bar", body.toString());
                 return null;
               });
             }
@@ -1397,12 +1398,12 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       });
       try {
         fut.await();
-        test.assertTrue(shouldPass);
-        test.assertTrue(connectSuccess.get() > 0);
-        test.assertEquals(0, connectFailures.get());
+        Assert.assertTrue(shouldPass);
+        Assert.assertTrue(connectSuccess.get() > 0);
+        Assert.assertEquals(0, connectFailures.get());
       } catch (Exception err) {
-        test.assertFalse("Should not fail " + err.getMessage(), shouldPass);
-        test.assertEquals(0, connectSuccess.get());
+        Assert.assertFalse("Should not fail " + err.getMessage(), shouldPass);
+        Assert.assertEquals(0, connectSuccess.get());
       }
       return this;
     }
@@ -1424,7 +1425,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   public void testTLSServerSSLEnginePeerHost() throws Exception {
     AtomicBoolean called = new AtomicBoolean(false);
     testTLS(Cert.NONE, Trust.SERVER_JKS, testPeerHostServerCert(Cert.SERVER_JKS, called), Trust.NONE).pass();
-    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+    Assert.assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
   }
 
   /**
@@ -1440,9 +1441,9 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       .serverSni()
       .requestOptions(new RequestOptions().setSsl(true).setPort(DEFAULT_HTTPS_PORT).setHost("host2.com"))
       .pass();
-    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
-    assertEquals("host2.com", test.indicatedServerName);
-    assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
+    Assert.assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    Assert.assertEquals("host2.com", test.indicatedServerName);
+    Assert.assertTrue("X509ExtendedKeyManager.chooseEngineServerAlias is not called", called.get());
   }
 
   /**
@@ -1649,7 +1650,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
             return Cert.SERVER_JKS.get().copy().setPath(cert.toFile().getAbsolutePath());
         }
       } catch (IOException e) {
-        fail(e);
+        Assert.fail(e.getMessage());
       }
       return null;
     }, idx -> {
@@ -1684,25 +1685,25 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       );
     HttpClientAgent client1 = clientCfg.create(vertx);
     HttpClientAgent client2 = clientCfg.create(vertx);
-    request.apply(client1).onComplete(onSuccess(body1 -> {
-      assertEquals("Hello World", body1.toString());
+    request.apply(client1).onComplete(TestUtils.onSuccess(body1 -> {
+      Assert.assertEquals("Hello World", body1.toString());
       ServerSSLOptions certUpdate = new ServerSSLOptions().setKeyCertOptions(certProvider.apply(1));
-      server.updateSSLOptions(certUpdate, force).onComplete(onSuccess(updateOccurred -> {
+      server.updateSSLOptions(certUpdate, force).onComplete(TestUtils.onSuccess(updateOccurred -> {
         request.apply(client2).onComplete(ar -> {
-          assertEquals(!updateTrust, ar.succeeded());
+          Assert.assertEquals(!updateTrust, ar.succeeded());
           if (updateTrust) {
-            assertTrue(updateOccurred);
+            Assert.assertTrue(updateOccurred);
             ClientSSLOptions trustUpdate = new ClientSSLOptions().setTrustOptions(trustProvider.apply(1));
             client2.updateSSLOptions(trustUpdate, force)
-              .onComplete(onSuccess(v2 -> {
-              request.apply(client2).onComplete(onSuccess(body2 -> {
-                assertEquals("Hello World", body2.toString());
+              .onComplete(TestUtils.onSuccess(v2 -> {
+              request.apply(client2).onComplete(TestUtils.onSuccess(body2 -> {
+                Assert.assertEquals("Hello World", body2.toString());
                 testComplete();
               }));
             }));
           } else {
             // Same trust options since update did not occur
-            assertFalse(updateOccurred);
+            Assert.assertFalse(updateOccurred);
             testComplete();
           }
         });
@@ -1733,12 +1734,12 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .setValue(TestUtils.randomBuffer(20))
         .setPassword("invalid"));
     Future<Boolean> last = server.updateSSLOptions(certUpdate);
-    last.onComplete(onFailure(err -> {
+    last.onComplete(TestUtils.onFailure(err -> {
       client
         .request(requestOptions)
         .compose(req -> req.send().compose(HttpClientResponse::body))
-        .onComplete(onSuccess(body -> {
-          assertEquals("Hello World", body.toString());
+        .onComplete(TestUtils.onSuccess(body -> {
+          Assert.assertEquals("Hello World", body.toString());
           testComplete();
         }));
     }));
@@ -1773,16 +1774,16 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     for (int i = 0;i < list.size();i++) {
       int val = i;
       last = server.updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(list.get(i)));
-      last.onComplete(onSuccess(v -> {
-        assertEquals(val, seq.getAndIncrement());
+      last.onComplete(TestUtils.onSuccess(v -> {
+        Assert.assertEquals(val, seq.getAndIncrement());
       }));
     }
-    last.onComplete(onSuccess(v -> {
+    last.onComplete(TestUtils.onSuccess(v -> {
       client
         .request(requestOptions)
         .compose(req -> req.send().compose(HttpClientResponse::body))
-        .onComplete(onSuccess(body -> {
-          assertEquals("Hello World", body.toString());
+        .onComplete(TestUtils.onSuccess(body -> {
+          Assert.assertEquals("Hello World", body.toString());
           testComplete();
         }));
     }));
@@ -1803,7 +1804,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         .requestHandler(req -> {
           req.response().end(msg);
         });
-      awaitFuture(servers[i].listen(testAddress));
+      servers[i].listen(testAddress).await();
     }
     HttpClient[] clients = new HttpClient[num];
     for (int i = 0;i < num;i++) {
@@ -1816,7 +1817,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     }
     for (int i = 0;i < num;i++) {
       Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).await();
-      assertEquals("Hello World " + i, body.toString());
+      Assert.assertEquals("Hello World " + i, body.toString());
     }
     for (int i = 0;i < num;i++) {
       servers[i].updateSSLOptions(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_PKCS12.get())).await();
@@ -1832,7 +1833,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     }
     for (int i = 0;i < num;i++) {
       Buffer body = clients[i].request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).await();
-      assertEquals("Hello World " + i, body.toString());
+      Assert.assertEquals("Hello World " + i, body.toString());
     }
   }
 }
