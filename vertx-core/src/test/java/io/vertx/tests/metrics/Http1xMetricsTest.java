@@ -14,6 +14,8 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.test.http.HttpConfig;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -31,17 +33,17 @@ public class Http1xMetricsTest extends HttpMetricsTestBase {
   @Test
   public void testAllocatedStreamResetShouldNotCallMetricsLifecycle() throws Exception {
     server.requestHandler(req -> {
-      fail();
+      Assert.fail();
     });
     startServer(testAddress);
     CountDownLatch latch = new CountDownLatch(1);
     client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(2));
-    client.request(requestOptions).onComplete(onSuccess(req -> {
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
       req.exceptionHandler(err -> {
         latch.countDown();
       });
       req.connection().close();
     }));
-    awaitLatch(latch);
+    TestUtils.awaitLatch(latch);
   }
 }

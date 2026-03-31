@@ -18,6 +18,7 @@ import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.tests.http.Http2TestBase;
 import org.junit.Assume;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -88,13 +89,13 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
         HttpServerResponse pushedResp = ar.result();
         FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
         HttpServerMetric serverMetric = serverMetrics.getResponseMetric("/wibble");
-        assertNotNull(serverMetric);
+        Assert.assertNotNull(serverMetric);
         pushedResp.putHeader("content-length", "" + contentLength);
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
           if (numBuffer.getAndDecrement() == 0) {
-            pushedResp.end().onComplete(onSuccess(v -> {
-              assertNull(serverMetrics.getResponseMetric("/wibble"));
+            pushedResp.end().onComplete(TestUtils.onSuccess(v -> {
+              Assert.assertNull(serverMetrics.getResponseMetric("/wibble"));
               complete();
             }));
             vertx.cancelTimer(timerID);
@@ -107,13 +108,13 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     startServer(testAddress);
     client = createHttpClient();
     FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
-    client.request(requestOptions).onComplete(onSuccess(req -> {
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
       req.pushHandler(pushedReq -> {
         HttpClientMetric metric = metrics.getMetric(pushedReq);
-        assertNotNull(metric);
-        pushedReq.response().onComplete(onSuccess(resp -> {
+        Assert.assertNotNull(metric);
+        pushedReq.response().onComplete(TestUtils.onSuccess(resp -> {
           resp.endHandler(v -> {
-            assertNull(metrics.getMetric(pushedReq));
+            Assert.assertNull(metrics.getMetric(pushedReq));
             complete();
           });
         }));
