@@ -38,7 +38,7 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
   private ContextLocal<Object> key;
 
   protected HttpTracerTestBase(HttpConfig config) {
-    super(config);
+    super(config, true);
   }
 
   @Override
@@ -241,7 +241,7 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
 
   protected void setTracer(VertxTracer tracer) {
     this.server.close();
-    this.tracer = tracer;
+    this.tracer = TestTracer.wrap(tracer);
     // So, the vertx options is reset with the new tracer.
     this.vertx = vertx(getOptions());
     this.server = createHttpServer();
