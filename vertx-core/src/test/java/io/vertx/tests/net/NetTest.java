@@ -93,7 +93,7 @@ public class NetTest extends VertxTestBase {
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   public NetTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   @Override

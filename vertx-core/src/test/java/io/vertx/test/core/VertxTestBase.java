@@ -44,6 +44,34 @@ import java.util.function.Supplier;
  */
 public class VertxTestBase extends AsyncTestBase {
 
+  /**
+   * Test mode, note: this is temporary until migration is done.
+   */
+  public enum ReportMode {
+
+    /**
+     * The legacy / usual test mode
+     */
+    LEGACY,
+
+    /**
+     * Enable stateless assertions, relying on the thread to report failures:
+     * <ul>
+     *   <li>JUnit thread naturally reports failures to the runner</li>
+     *   <li>Vert.x thread relies on context task execution to report failure to Vert.x exception handler</li>
+     * </ul>
+     * This mode should only be used when migrated a test to spot incorrect usage of AsyncTestBase assertions made
+     * from a non instrumented thread that would miss test checks.
+     */
+    STATELESS,
+
+    /**
+     * Throw an exception upon any assertion, this mode should be used when the test is migrated, ensuring that
+     * the various reporting methods of {@link AsyncTestBase} are never called anymore.
+     */
+    FORBIDDEN
+  }
+
   public static final Transport TRANSPORT;
   public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
   public static final boolean USE_JAVA_MODULES = VertxTestBase.class.getModule().isNamed();
@@ -129,25 +157,25 @@ public class VertxTestBase extends AsyncTestBase {
   @Rule
   public FileDescriptorLeakDetectorRule fileDescriptorLeakDetectorRule = new FileDescriptorLeakDetectorRule();
 
-  private final boolean stateless;
+  private final ReportMode reportMode;
   protected Vertx vertx;
   protected Vertx[] vertices;
   private List<Vertx> created;
   private Thread junitThread;
   private final Handler<Throwable> failureBridgeHandler;
 
-  public VertxTestBase(boolean stateless) {
-    this.stateless = stateless;
+  public VertxTestBase(ReportMode reportMode) {
+    this.reportMode = reportMode;
     this.failureBridgeHandler = this::handleFailure;
   }
 
   public VertxTestBase() {
-    this(false);
+    this(ReportMode.LEGACY);
   }
 
   @Override
   protected void disableThreadChecks() {
-    if (stateless) {
+    if (reportMode != ReportMode.LEGACY) {
       // Do nothing as we actually want to ensure that this is either
       // - the JUnit main thread
       // - a vertx context thread that we can fail to
@@ -158,33 +186,41 @@ public class VertxTestBase extends AsyncTestBase {
 
   @Override
   protected void checkThread() {
-    if (stateless) {
-      if (Thread.currentThread() == junitThread) {
-        // Ok
-      } else {
-        Context current = Vertx.currentContext();
-        if (current == null) {
-          System.out.println("Running test assertion from un-associated thread: " + Thread.currentThread());
-          new Exception().printStackTrace(System.out);
+    switch (reportMode) {
+      case LEGACY:
+        super.checkThread();
+        break;
+      case STATELESS:
+        if (Thread.currentThread() == junitThread) {
+          // Ok
         } else {
-          Handler<Throwable> handler = current.owner().exceptionHandler();
-          if (handler != failureBridgeHandler) {
-            System.out.println("Asserting from a vertx thread that is not relaying failures to the failure handler: " + Thread.currentThread());
+          Context current = Vertx.currentContext();
+          if (current == null) {
+            System.out.println("Running test assertion from un-associated thread: " + Thread.currentThread());
             new Exception().printStackTrace(System.out);
+          } else {
+            Handler<Throwable> handler = current.owner().exceptionHandler();
+            if (handler != failureBridgeHandler) {
+              System.out.println("Asserting from a vertx thread that is not relaying failures to the failure handler: " + Thread.currentThread());
+              new Exception().printStackTrace(System.out);
+            }
           }
         }
-      }
-    } else {
-      super.checkThread();
+        break;
+      case FORBIDDEN:
+        throw new UnsupportedOperationException("Strictly forbidden to call an assertion on AsyncTestBase");
     }
   }
 
   @Override
   void handleThrowable(Throwable t) {
-    if (stateless) {
-      PlatformDependent.throwException(t);
-    } else {
-      super.handleThrowable(t);
+    switch (reportMode) {
+      case STATELESS:
+        PlatformDependent.throwException(t);
+        break;
+      case LEGACY:
+        super.handleThrowable(t);
+        break;
     }
   }
 
@@ -307,7 +343,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   private void add(Vertx vertx) {
-    if (stateless) {
+    if (reportMode != ReportMode.LEGACY) {
       vertx.exceptionHandler(failureBridgeHandler);
     }
     created.add(vertx);

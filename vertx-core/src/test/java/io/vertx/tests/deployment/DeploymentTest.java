@@ -64,7 +64,7 @@ import java.util.function.Supplier;
 public class DeploymentTest extends VertxTestBase {
 
   public DeploymentTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   public void setUp() throws Exception {

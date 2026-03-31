@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 public class TimerTest extends VertxTestBase {
 
   public TimerTest() {
-    super(true);
+    super(ReportMode.FORBIDDEN);
   }
 
   @Test

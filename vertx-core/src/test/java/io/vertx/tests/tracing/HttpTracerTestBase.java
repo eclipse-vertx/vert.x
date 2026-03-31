@@ -40,7 +40,7 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
   private ContextLocal<Object> key;
 
   protected HttpTracerTestBase(HttpConfig config) {
-    super(config, true);
+    super(config, ReportMode.FORBIDDEN);
   }
 
   @Override
