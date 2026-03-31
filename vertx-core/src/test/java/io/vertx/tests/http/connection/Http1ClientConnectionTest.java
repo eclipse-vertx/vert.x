@@ -13,6 +13,8 @@ package io.vertx.tests.http.connection;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnectOptions;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class Http1ClientConnectionTest extends HttpClientConnectionTest {
@@ -23,16 +25,16 @@ public class Http1ClientConnectionTest extends HttpClientConnectionTest {
       req.response().end("Hello World");
     });
     startServer(testAddress);
-    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(onSuccess(conn -> {
-      conn.request().onComplete(onSuccess(req -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(TestUtils.onSuccess(conn -> {
+      conn.request().onComplete(TestUtils.onSuccess(req -> {
         req.reset();
         vertx.runOnContext(v -> {
           conn.request()
             .compose(req2 -> req2
               .send()
               .compose(HttpClientResponse::body))
-            .onComplete(onSuccess(body -> {
-              assertEquals("Hello World", body.toString());
+            .onComplete(TestUtils.onSuccess(body -> {
+              Assert.assertEquals("Hello World", body.toString());
               testComplete();
             }));
         });
@@ -50,11 +52,11 @@ public class Http1ClientConnectionTest extends HttpClientConnectionTest {
     });
     startServer(testAddress);
     HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress);
-    client.connect(connect).onComplete(onSuccess(conn -> {
+    client.connect(connect).onComplete(TestUtils.onSuccess(conn -> {
       conn.closeHandler(v -> complete());
       conn.request()
-        .onComplete(onSuccess(req -> {
-          req.send().onComplete(onFailure(err -> complete()));
+        .onComplete(TestUtils.onSuccess(req -> {
+          req.send().onComplete(TestUtils.onFailure(err -> complete()));
           continuation
             .future()
             .onSuccess(v -> {
@@ -72,15 +74,15 @@ public class Http1ClientConnectionTest extends HttpClientConnectionTest {
       req.response().putHeader("Connection", "close").end("Hello World");
     });
     startServer(testAddress);
-    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(onSuccess(conn -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress)).onComplete(TestUtils.onSuccess(conn -> {
       conn.closeHandler(v -> complete());
       conn
         .request()
         .compose(req -> req
           .send()
           .compose(HttpClientResponse::body))
-        .onComplete(onSuccess(body -> {
-          assertEquals("Hello World", body.toString());
+        .onComplete(TestUtils.onSuccess(body -> {
+          Assert.assertEquals("Hello World", body.toString());
           complete();
         }));
     }));

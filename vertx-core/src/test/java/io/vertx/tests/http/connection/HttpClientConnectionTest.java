@@ -18,6 +18,8 @@ import io.vertx.core.http.impl.http2.Http2Connection;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -31,6 +33,10 @@ import static io.vertx.test.core.AssertExpectations.that;
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
   protected HttpClientInternal client;
+
+  public HttpClientConnectionTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -50,8 +56,8 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
         .send()
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
-      .onComplete(onSuccess(body -> {
-        assertEquals("Hello World", body.toString());
+      .onComplete(TestUtils.onSuccess(body -> {
+        Assert.assertEquals("Hello World", body.toString());
         testComplete();
       }));
     await();
@@ -67,9 +73,9 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     client.connect(connect).compose(conn -> conn.request().compose(req -> req
         .send()
         .compose(HttpClientResponse::body)
-        .expecting(that(body -> assertEquals("Hello World", body.toString())))
+        .expecting(that(body -> Assert.assertEquals("Hello World", body.toString())))
       ))
-      .onComplete(onSuccess(v -> {
+      .onComplete(TestUtils.onSuccess(v -> {
         testComplete();
       }));
     await();
@@ -83,7 +89,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     });
     startServer(testAddress);
     HttpConnectOptions connect = new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort());
-    client.connect(connect).onComplete(onSuccess(conn -> {
+    client.connect(connect).onComplete(TestUtils.onSuccess(conn -> {
       conn.closeHandler(v -> {
         complete();
       });
@@ -91,7 +97,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
         .compose(req -> req
           .send()
           .compose(HttpClientResponse::body))
-        .onComplete(onFailure(err -> complete()));
+        .onComplete(TestUtils.onFailure(err -> complete()));
     }));
     await();
   }
@@ -104,7 +110,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     });
     startServer(testAddress);
     List<String> collected = Collections.synchronizedList(new ArrayList<>());
-    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(onSuccess(conn -> {
+    client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).onComplete(TestUtils.onSuccess(conn -> {
       final int concurrency = (int) conn.maxActiveStreams();
       for (int i = 0;i < concurrency + num;i++) {
         int val = i;
@@ -112,13 +118,13 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
           .putHeader("id", "echo-" + val)
           .send()
           .map(response -> response.getHeader("id")))
-          .onComplete(onSuccess(response -> {
+          .onComplete(TestUtils.onSuccess(response -> {
             collected.add(response);
             if (val == concurrency + num - 1) {
               List<String> expected = IntStream.range(0, concurrency + num)
                 .mapToObj(idx -> "echo-" + idx)
                 .collect(Collectors.toList());
-              assertEquals(expected, collected);
+              Assert.assertEquals(expected, collected);
               testComplete();
             }
           }));
@@ -160,26 +166,26 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     startServer(testAddress);
     HttpClientConnection connection = client.connect(new HttpConnectOptions().setServer(testAddress).setHost(requestOptions.getHost()).setPort(requestOptions.getPort())).await();
     ((io.vertx.core.http.impl.UnpooledHttpClientConnection)connection).unwrap().alternativeServicesHandler(evt -> {
-      assertNotNull(evt);
-      assertNotNull(evt.origin);
+      Assert.assertNotNull(evt);
+      Assert.assertNotNull(evt.origin);
       if (origin != null) {
-        assertEquals(origin.scheme, evt.origin.scheme);
-        assertEquals(origin.host, evt.origin.host);
-        assertEquals(origin.port, evt.origin.port);
+        Assert.assertEquals(origin.scheme, evt.origin.scheme);
+        Assert.assertEquals(origin.host, evt.origin.host);
+        Assert.assertEquals(origin.port, evt.origin.port);
       } else {
         String expectedScheme = connection.isSsl() ? "https" : "http";
-        assertEquals(expectedScheme, evt.origin.scheme);
-        assertEquals(testAddress.host(), evt.origin.host);
-        assertEquals(testAddress.port(), evt.origin.port);
+        Assert.assertEquals(expectedScheme, evt.origin.scheme);
+        Assert.assertEquals(testAddress.host(), evt.origin.host);
+        Assert.assertEquals(testAddress.port(), evt.origin.port);
       }
-      assertEquals(AltSvc.ListOfValue.class, evt.altSvc.getClass());
+      Assert.assertEquals(AltSvc.ListOfValue.class, evt.altSvc.getClass());
       AltSvc.ListOfValue list = (AltSvc.ListOfValue)evt.altSvc;
-      assertEquals(1, list.size());
+      Assert.assertEquals(1, list.size());
       AltSvc.Value value = list.get(0);
-      assertEquals("h2", value.protocolId());
-      assertEquals("192.168.0.1", value.altAuthority().host());
-      assertEquals(443, value.altAuthority().port());
-      assertEquals("2592000", value.parameters().get("ma"));
+      Assert.assertEquals("h2", value.protocolId());
+      Assert.assertEquals("192.168.0.1", value.altAuthority().host());
+      Assert.assertEquals(443, value.altAuthority().port());
+      Assert.assertEquals("2592000", value.parameters().get("ma"));
       testComplete();
     });
     Buffer response = connection
@@ -189,7 +195,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
         .expecting(HttpResponseExpectation.SC_OK)
         .compose(HttpClientResponse::body))
       .await();
-    assertEquals("Hello World", response.toString());
+    Assert.assertEquals("Hello World", response.toString());
     await();
   }
 }
