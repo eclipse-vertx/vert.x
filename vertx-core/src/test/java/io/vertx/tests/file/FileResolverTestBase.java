@@ -49,6 +49,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   private ClassLoader testCL;
 
   public FileResolverTestBase() {
+    super(true);
     try {
       cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getCanonicalPath();
     } catch (IOException e) {
@@ -255,11 +256,8 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
     assertTrue(cacheDir.exists());
-    vertx2.close().onComplete(onSuccess(v -> {
-      assertFalse(cacheDir.exists());
-      testComplete();
-    }));
-    await();
+    vertx2.close().await();
+    assertFalse(cacheDir.exists());
   }
 
   @Test
