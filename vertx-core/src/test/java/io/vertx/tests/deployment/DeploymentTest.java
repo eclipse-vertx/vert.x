@@ -32,6 +32,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.tests.vertx.VertxTest;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -61,6 +62,10 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DeploymentTest extends VertxTestBase {
+
+  public DeploymentTest() {
+    super(true);
+  }
 
   public void setUp() throws Exception {
     super.setUp();
@@ -701,12 +706,12 @@ public class DeploymentTest extends VertxTestBase {
         CountDownLatch latch = new CountDownLatch(1);
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
-          public void start() throws Exception {
+          public void start() {
             childDeployed.incrementAndGet();
             latch.countDown();
           }
           @Override
-          public void stop() throws Exception {
+          public void stop() {
             childUndeployed.incrementAndGet();
           }
         });
@@ -862,11 +867,15 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testAsyncUndeployFailsAfterSuccess() {
+    Exception expected = new Exception();
+    AtomicReference<Throwable> logged = new AtomicReference<>();
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void stop(Promise<Void> stopPromise) throws Exception {
         stopPromise.complete();
-        throw new Exception();
+        // Avoid this exception to fail the test
+        context.exceptionHandler(logged::set);
+        throw expected;
       }
     };
     Context ctx = vertx.getOrCreateContext();
@@ -878,7 +887,9 @@ public class DeploymentTest extends VertxTestBase {
       }));
     });
     await();
+    assertSame(expected, logged.get());
   }
+
   @Test
   public void testChildUndeployedDirectly() throws Exception {
     Verticle parent = new AbstractVerticle() {
@@ -1008,11 +1019,8 @@ public class DeploymentTest extends VertxTestBase {
     }
     awaitLatch(latch);
     assertEquals(2 * numVerticles, vertx.deploymentIDs().size());
-    vertx.close().onComplete(onSuccess(v -> {
-      assertEquals(0, vertx.deploymentIDs().size());
-      testComplete();
-    }));
-    await();
+    vertx.close().await();
+    assertEquals(0, vertx.deploymentIDs().size());
     vertx = null;
   }
 
@@ -1045,13 +1053,10 @@ public class DeploymentTest extends VertxTestBase {
       }));
     }
     awaitLatch(latch);
-    vertx.close().onComplete(onSuccess(v -> {
-      for (MyVerticle verticle: verticles) {
-        assertFalse(verticle.stopCalled);
-      }
-      testComplete();
-    }));
-    await();
+    vertx.close().await();
+    for (MyVerticle verticle: verticles) {
+      assertFalse(verticle.stopCalled);
+    }
     vertx = null;
   }
 
@@ -1363,37 +1368,27 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testCloseDeploymentInProgress() {
-    Vertx vertx = Vertx.vertx();
-    waitFor(3);
-    vertx.deployVerticle(new AbstractVerticle() {
-      Promise<Void> startPromise;
+    Vertx vertx = vertx();
+    AtomicReference<Completable<Void>> completionRef = new AtomicReference<>();
+    AtomicBoolean deploying = new AtomicBoolean();
+    Future<String> deployment = vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
-        this.startPromise = startPromise;
-        AtomicBoolean hookCompletion = new AtomicBoolean();
-        ((ContextInternal)context).addCloseHook(completion -> {
-          complete();
-          new Thread(() -> {
-            try {
-              Thread.sleep(500);
-            } catch (InterruptedException e) {
-              fail(e);
-            }
-            hookCompletion.set(true);
-            completion.succeed();
-          }).start();
-        });
-        vertx.close().onComplete(onSuccess(v -> {
-          assertTrue(hookCompletion.get());
-          complete();
-        }));
+        ((ContextInternal) context).addCloseHook(completionRef::set);
+        deploying.set(true);
       }
       @Override
       public void stop(Promise<Void> stopPromise) {
         fail();
       }
-    }).onComplete(onFailure(err -> complete()));
-    await();
+    });
+    waitUntil(deploying::get);
+    Future<Void> fut = vertx.close();
+    waitUntil(() -> completionRef.get() != null);
+    assertFalse(fut.isComplete());
+    completionRef.get().succeed();
+    fut.await();
+    assertTrue(deployment.failed());
   }
 
   @Test
