@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
@@ -28,6 +29,10 @@ public class QLogTest extends VertxTestBase {
 
   private QuicServer server;
   private QuicClient client;
+
+  public QLogTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -67,7 +72,7 @@ public class QLogTest extends VertxTestBase {
     File dir = TestUtils.createTmpDirectory("client-qlog");
     testQLog(new QuicServerConfig(), new QuicClientConfig().setQLogConfig(qlogConfig(dir, "the title", "the description")));
     int count =  checkQLog(dir);
-    assertEquals(10, count);
+    Assert.assertEquals(10, count);
   }
 
   @Test
@@ -75,7 +80,7 @@ public class QLogTest extends VertxTestBase {
     File dir = TestUtils.createTmpDirectory("server-qlog");
     testQLog(new QuicServerConfig().setQLogConfig(qlogConfig(dir, "the title", "the description")), new QuicClientConfig());
     int count =  checkQLog(dir);
-    assertEquals(10, count);
+    Assert.assertEquals(10, count);
   }
 
   private void testQLog(QuicServerConfig serverConfig,  QuicClientConfig clientConfig) throws Exception {
@@ -99,10 +104,10 @@ public class QLogTest extends VertxTestBase {
       if (qlogFile.getName().endsWith(".qlog")) {
         count++;
         List<JsonObject> qlog = parseQLog(qlogFile);
-        assertTrue(!qlog.isEmpty());
+        Assert.assertTrue(!qlog.isEmpty());
         JsonObject data = qlog.get(0);
-        assertEquals("the title", data.getString("title"));
-        assertTrue(data.getString("description").contains("the description"));
+        Assert.assertEquals("the title", data.getString("title"));
+        Assert.assertTrue(data.getString("description").contains("the description"));
       }
     }
     return count;

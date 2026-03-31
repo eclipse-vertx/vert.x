@@ -19,6 +19,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,6 +28,10 @@ public class QuicFlowControlTest extends VertxTestBase {
 
   private QuicServer server;
   private QuicClient client;
+
+  public QuicFlowControlTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -57,7 +62,7 @@ public class QuicFlowControlTest extends VertxTestBase {
     Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(128));
     server.connectHandler(conn -> {
       conn.streamHandler(stream -> {
-        pump(0, chunk, stream, onSuccess2(times -> {
+        pump(0, chunk, stream, TestUtils.onSuccess2(times -> {
           stream.end();
           latch.complete(times);
         }));
@@ -68,7 +73,7 @@ public class QuicFlowControlTest extends VertxTestBase {
     QuicConnection connection = client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).await();
     connection
       .openStream()
-      .onComplete(onSuccess2(stream -> {
+      .onComplete(TestUtils.onSuccess2(stream -> {
         stream.pause();
         QuicStreamInternal streamInternal = (QuicStreamInternal) stream;
         Buffer expected = Buffer.buffer();
@@ -85,7 +90,7 @@ public class QuicFlowControlTest extends VertxTestBase {
           cumulation.appendBuffer(buffer);
         });
         streamInternal.endHandler(v -> {
-          assertEquals(expected, cumulation);
+          Assert.assertEquals(expected, cumulation);
           testComplete();
         });
         stream.write("ping");

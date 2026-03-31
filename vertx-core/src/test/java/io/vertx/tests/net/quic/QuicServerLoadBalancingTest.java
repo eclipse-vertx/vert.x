@@ -18,6 +18,8 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -37,6 +39,10 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
 
   private List<QuicServer> servers;
   private QuicClient client;
+
+  public QuicServerLoadBalancingTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -100,7 +106,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
       set.removeAll(closed);
       Iterator<QuicServer> it = set.iterator();
       QuicServer toClose = it.next();
-      assertFalse(it.hasNext());
+      Assert.assertFalse(it.hasNext());
       toClose.close().await();
       closed.add(toClose);
     }
@@ -140,7 +146,7 @@ public class QuicServerLoadBalancingTest extends VertxTestBase {
         latch.countDown();
       });
       stream.end().await();
-      awaitLatch(latch, 10, TimeUnit.SECONDS);
+      TestUtils.awaitLatch(latch, 10, TimeUnit.SECONDS);
     }
   }
 }
