@@ -13,13 +13,7 @@ package io.vertx.tests.net.quic;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.channel.socket.DatagramPacket;
@@ -30,6 +24,8 @@ import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.internal.ContextInternal;
 
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -195,10 +191,10 @@ public class QuicTestClient {
 
     final Connection connection;
     QuicStreamChannel streamChannel;
-    Consumer<byte[]> handler;
-    Runnable closeHandler;
-    LongConsumer resetHandler;
-    Consumer<Exception> exceptionHandler;
+    Handler<byte[]> handler;
+    Handler<Void> closeHandler;
+    Handler<Long> resetHandler;
+    Handler<Exception> exceptionHandler;
 
     private Stream(Connection connection) {
       this.connection = connection;
@@ -236,22 +232,22 @@ public class QuicTestClient {
       streamChannel.shutdownInput(errorCode).sync();
     }
 
-    public Stream handler(Consumer<byte[]> handler) {
+    public Stream handler(Handler<byte[]> handler) {
       this.handler = handler;
       return this;
     }
 
-    public Stream closeHandler(Runnable handler) {
+    public Stream closeHandler(Handler<Void> handler) {
       closeHandler = handler;
       return this;
     }
 
-    public Stream resetHandler(LongConsumer handler) {
+    public Stream resetHandler(Handler<Long> handler) {
       resetHandler = handler;
       return this;
     }
 
-    public Stream exceptionHandler(Consumer<Exception> handler) {
+    public Stream exceptionHandler(Handler<Exception> handler) {
       exceptionHandler = handler;
       return this;
     }
@@ -266,18 +262,18 @@ public class QuicTestClient {
       } finally {
         byteBuf.release();
       }
-      Consumer<byte[]> h = handler;
+      Handler<byte[]> h = handler;
       if (h != null) {
-        h.accept(data);
+        context.dispatch(data, h);
       }
     }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
       if (evt == ChannelInputShutdownReadComplete.INSTANCE) {
-        Runnable handler = closeHandler;
+        Handler<Void> handler = closeHandler;
         if (handler != null) {
-          handler.run();
+          context.emit(handler);
         }
       }
     }
@@ -288,15 +284,15 @@ public class QuicTestClient {
         QuicException quicCause = (QuicException) cause;
         if (quicCause instanceof QuicStreamResetException) {
           QuicStreamResetException reset = (QuicStreamResetException)quicCause;
-          LongConsumer handler = resetHandler;
+          Handler<Long> handler = resetHandler;
           if (handler != null) {
-            resetHandler.accept(reset.applicationProtocolCode());
+            context.dispatch(reset.applicationProtocolCode(), resetHandler);
             return;
           }
         }
-        Consumer<Exception> handler = exceptionHandler;
+        Handler<Exception> handler = exceptionHandler;
         if (handler != null) {
-          handler.accept(quicCause);
+          context.dispatch(quicCause, handler);
           return;
         }
       }
@@ -319,15 +315,17 @@ public class QuicTestClient {
     }
   }
 
-  private final NioEventLoopGroup group;
+  private final ContextInternal context;
+  private final EventLoopGroup group;
   private Channel channel;
-  private Consumer<ByteBuf> tokenHandler;
+  private Handler<ByteBuf> tokenHandler;
 
-  public QuicTestClient() {
-    this.group = new NioEventLoopGroup(1);
+  public QuicTestClient(Vertx vertx) {
+    this.context = (ContextInternal)vertx.getOrCreateContext();
+    this.group = context.nettyEventLoop();
   }
 
-  public QuicTestClient tokenHandler(Consumer<ByteBuf> tokenHandler) {
+  public QuicTestClient tokenHandler(Handler<ByteBuf> tokenHandler) {
     this.tokenHandler = tokenHandler;
     return this;
   }
@@ -368,7 +366,7 @@ public class QuicTestClient {
           @Override
           protected void initChannel(Channel ch) throws Exception {
 
-            Consumer<ByteBuf> tokenHandler = QuicTestClient.this.tokenHandler;
+            Handler<ByteBuf> tokenHandler = QuicTestClient.this.tokenHandler;
             if (tokenHandler != null) {
               ch.pipeline().addLast(new ChannelDuplexHandler() {
                 @Override
@@ -398,7 +396,7 @@ public class QuicTestClient {
                       }
                       if (tokenLength > 0) {
                         ByteBuf token = byteBuf.slice(payloadIndex, tokenLength);
-                        tokenHandler.accept(token);
+                        QuicTestClient.this.context.dispatch(token, tokenHandler);
                       }
                     }
                   }
@@ -426,6 +424,5 @@ public class QuicTestClient {
 
   public void close() throws Exception {
     channel.close().sync();
-    group.shutdownGracefully();
   }
 }
