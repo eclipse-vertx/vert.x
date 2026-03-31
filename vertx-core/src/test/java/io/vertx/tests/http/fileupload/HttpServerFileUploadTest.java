@@ -22,6 +22,7 @@ import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -46,7 +47,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
   protected File testDir;
 
   protected HttpServerFileUploadTest(HttpConfig config) {
-    super(config);
+    super(config, ReportMode.FORBIDDEN);
   }
 
   @Override
@@ -289,7 +290,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
         expectedFilename = filename;
       }
     } catch (UnsupportedEncodingException e) {
-      fail(e);
+      Assert.fail(e.getMessage());
       return;
     }
 
@@ -309,41 +310,41 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
 
       Context requestContext = vertx.getOrCreateContext();
       if (req.method() == HttpMethod.POST) {
-        assertEquals(req.path(), "/form");
+        Assert.assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
-        assertTrue(req.isExpectMultipart());
+        Assert.assertTrue(req.isExpectMultipart());
 
         // Now try setting again, it shouldn't have an effect
         req.setExpectMultipart(true);
-        assertTrue(req.isExpectMultipart());
+        Assert.assertTrue(req.isExpectMultipart());
 
         req.uploadHandler(upload -> {
 
           Context uploadContext = Vertx.currentContext();
-          assertNotNull(uploadContext);
-          assertSame(requestContext, uploadContext);
+          Assert.assertNotNull(uploadContext);
+          Assert.assertSame(requestContext, uploadContext);
 
           serverConn.set(req.connection());
           checkClose.run();
 
           Buffer tot = Buffer.buffer();
-          assertEquals("file", upload.name());
-          assertEquals(expectedFilename, upload.filename());
-          assertEquals("image/gif", upload.contentType());
+          Assert.assertEquals("file", upload.name());
+          Assert.assertEquals(expectedFilename, upload.filename());
+          Assert.assertEquals("image/gif", upload.contentType());
           String uploadedFileName;
           if (!streamToDisk) {
             upload.handler(tot::appendBuffer);
             upload.exceptionHandler(err -> {
-              assertTrue(abortClient);
+              Assert.assertTrue(abortClient);
               complete();
             });
             upload.endHandler(v -> {
-              assertFalse(abortClient);
-              assertTrue(content.verify(tot));
-              assertTrue(upload.isSizeAvailable());
-              assertEquals(content.length(), upload.size());
-              assertNull(upload.file());
+              Assert.assertFalse(abortClient);
+              Assert.assertTrue(content.verify(tot));
+              Assert.assertTrue(upload.isSizeAvailable());
+              Assert.assertEquals(content.length(), upload.size());
+              Assert.assertNull(upload.file());
               complete();
             });
           } else {
@@ -353,22 +354,22 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
                 File f = new File(uploadedFileName);
                 if (f.length() < 10 * 1024 * 1024) {
                   Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
-                  assertEquals(content.length(), uploaded.length());
-                  assertTrue(content.verify(uploaded));
+                  Assert.assertEquals(content.length(), uploaded.length());
+                  Assert.assertTrue(content.verify(uploaded));
                 } else {
                   // We check the size only
-                  assertEquals(f.length(), content.length());
+                  Assert.assertEquals(f.length(), content.length());
                 }
                 AsyncFile file = upload.file();
-                assertNotNull(file);
+                Assert.assertNotNull(file);
                 try {
                   file.flush();
-                  fail("Was expecting uploaded file to be closed");
+                  Assert.fail("Was expecting uploaded file to be closed");
                 } catch (IllegalStateException ignore) {
                   // File has been closed
                 }
               } else {
-                assertTrue(ar.failed());
+                Assert.assertTrue(ar.failed());
               }
               complete();
             });
@@ -376,10 +377,10 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
               BooleanSupplier test = () -> {
                 File f = new File(uploadedFileName);
                 if (f.length() == content.length() / 2) {
-                  assertTrue(upload.cancelStreamToFileSystem());
+                  Assert.assertTrue(upload.cancelStreamToFileSystem());
                   long now = System.currentTimeMillis();
                   vertx.setPeriodic(10, id -> {
-                    assertTrue(System.currentTimeMillis() - now < 20_000);
+                    Assert.assertTrue(System.currentTimeMillis() - now < 20_000);
                     if (!new File(uploadedFileName).exists()) {
                       vertx.cancelTimer(id);
                       req.response().end();
@@ -393,7 +394,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
               if (!test.getAsBoolean()) {
                 long now = System.currentTimeMillis();
                 vertx.setPeriodic(10, id -> {
-                  assertTrue(System.currentTimeMillis() - now < 20_000);
+                  Assert.assertTrue(System.currentTimeMillis() - now < 20_000);
                   if (test.getAsBoolean()) {
                     vertx.cancelTimer(id);
                   }
@@ -405,7 +406,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
         req.endHandler(v -> {
           MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
-          assertTrue(req.isExpectMultipart());
+          Assert.assertTrue(req.isExpectMultipart());
           req.response().end();
         });
       }
@@ -433,7 +434,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       request.write(pro);
       Future<Void> fut = content.write(request).compose(v -> request.end(epi));
       if (abortClient) {
-        fut.onComplete(onSuccess(v -> {
+        fut.onComplete(TestUtils.onSuccess(v -> {
           clientConn.set(request.connection());
           checkClose.run();
         }));
@@ -441,12 +442,12 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       if (abortClient) {
         request.response().onComplete(ar -> complete());
       } else {
-        request.response().onComplete(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
+        request.response().onComplete(TestUtils.onSuccess(resp -> {
+          Assert.assertEquals(200, resp.statusCode());
           resp.bodyHandler(body -> {
-            assertEquals(0, body.length());
+            Assert.assertEquals(0, body.length());
           });
-          assertEquals(0, attributeCount.get());
+          Assert.assertEquals(0, attributeCount.get());
           complete();
         }));
       }
@@ -460,27 +461,27 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
-        assertEquals(req.path(), "/form");
+        Assert.assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
         req.uploadHandler(upload -> upload.handler(buffer -> {
-          fail("Should get here");
+          Assert.fail("Should get here");
         }));
         req.endHandler(v -> {
           MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
-          assertEquals("vert x", attrs.get("framework"));
-          assertEquals("vert x", req.getFormAttribute("framework"));
-          assertEquals("vert x", req.formAttributes().get("framework"));
-          assertEquals(Collections.singletonList("vert x"), req.formAttributes().getAll("framework"));
-          assertEquals("jvm", attrs.get("runson"));
-          assertEquals("jvm", req.getFormAttribute("runson"));
-          assertEquals("jvm", req.formAttributes().get("runson"));
-          assertEquals(Collections.singletonList("jvm"), req.formAttributes().getAll("runson"));
-          assertEquals("0", attrs.get("list"));
-          assertEquals("0", req.getFormAttribute("list"));
-          assertEquals("0", req.formAttributes().get("list"));
-          assertEquals(Arrays.asList("0", "1"), req.formAttributes().getAll("list"));
+          Assert.assertEquals("vert x", attrs.get("framework"));
+          Assert.assertEquals("vert x", req.getFormAttribute("framework"));
+          Assert.assertEquals("vert x", req.formAttributes().get("framework"));
+          Assert.assertEquals(Collections.singletonList("vert x"), req.formAttributes().getAll("framework"));
+          Assert.assertEquals("jvm", attrs.get("runson"));
+          Assert.assertEquals("jvm", req.getFormAttribute("runson"));
+          Assert.assertEquals("jvm", req.formAttributes().get("runson"));
+          Assert.assertEquals(Collections.singletonList("jvm"), req.formAttributes().getAll("runson"));
+          Assert.assertEquals("0", attrs.get("list"));
+          Assert.assertEquals("0", req.getFormAttribute("list"));
+          Assert.assertEquals("0", req.formAttributes().get("list"));
+          Assert.assertEquals(Arrays.asList("0", "1"), req.formAttributes().getAll("list"));
           req.response().end();
         });
       }
@@ -494,20 +495,20 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       "&list=0" +
       "&list=1"
       , "UTF-8");
-    server.listen(testAddress).onComplete(onSuccess(s -> {
+    server.listen(testAddress).onComplete(TestUtils.onSuccess(s -> {
       client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
-        .setURI("/form")).onComplete(onSuccess(req -> {
+        .setURI("/form")).onComplete(TestUtils.onSuccess(req -> {
         req
           .putHeader("content-length", String.valueOf(buffer.length()))
           .putHeader("content-type", "application/x-www-form-urlencoded")
-          .send(buffer).onComplete(onSuccess(resp -> {
+          .send(buffer).onComplete(TestUtils.onSuccess(resp -> {
             // assert the response
-            assertEquals(200, resp.statusCode());
+            Assert.assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
-              assertEquals(0, body.length());
+              Assert.assertEquals(0, body.length());
             });
-            assertEquals(3, attributeCount.get());
+            Assert.assertEquals(3, attributeCount.get());
             testComplete();
           }));
       }));
@@ -521,37 +522,37 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
-        assertEquals(req.path(), "/form");
+        Assert.assertEquals(req.path(), "/form");
         req.setExpectMultipart(true);
         req.uploadHandler(event -> event.handler(buffer -> {
-          fail("Should not get here");
+          Assert.fail("Should not get here");
         }));
         req.endHandler(v -> {
           MultiMap attrs = req.formAttributes();
           attributeCount.set(attrs.size());
-          assertEquals("junit-testUserAlias", attrs.get("origin"));
-          assertEquals("admin@foo.bar", attrs.get("login"));
-          assertEquals("admin", attrs.get("pass word"));
+          Assert.assertEquals("junit-testUserAlias", attrs.get("origin"));
+          Assert.assertEquals("admin@foo.bar", attrs.get("login"));
+          Assert.assertEquals("admin", attrs.get("pass word"));
           req.response().end();
         });
       }
     });
 
-    server.listen(testAddress).onComplete(onSuccess(s -> {
+    server.listen(testAddress).onComplete(TestUtils.onSuccess(s -> {
       Buffer buffer = Buffer.buffer();
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
       client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
-        .setURI("/form")).onComplete(onSuccess(req -> {
+        .setURI("/form")).onComplete(TestUtils.onSuccess(req -> {
         req.putHeader("content-length", String.valueOf(buffer.length()))
           .putHeader("content-type", "application/x-www-form-urlencoded")
-          .response().onComplete(onSuccess(resp -> {
+          .response().onComplete(TestUtils.onSuccess(resp -> {
             // assert the response
-            assertEquals(200, resp.statusCode());
+            Assert.assertEquals(200, resp.statusCode());
             resp.bodyHandler(body -> {
-              assertEquals(0, body.length());
+              Assert.assertEquals(0, body.length());
             });
-            assertEquals(3, attributeCount.get());
+            Assert.assertEquals(3, attributeCount.get());
             testComplete();
           }));
         req.end(buffer);
@@ -567,31 +568,31 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
     server = config.forServer().setMaxFormAttributeSize(9).create(vertx);
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
-        assertEquals(req.path(), "/form");
+        Assert.assertEquals(req.path(), "/form");
         AtomicReference<Throwable> err = new AtomicReference<>();
         req
           .setExpectMultipart(true)
           .exceptionHandler(err::set)
           .endHandler(v -> {
-            assertNotNull(err.get());
-            assertTrue(err.get() instanceof DecoderException);
-            assertTrue(err.get().getMessage().contains("Size exceed allowed maximum capacity"));
-            assertEquals(0, req.formAttributes().size());
+            Assert.assertNotNull(err.get());
+            Assert.assertTrue(err.get() instanceof DecoderException);
+            Assert.assertTrue(err.get().getMessage().contains("Size exceed allowed maximum capacity"));
+            Assert.assertEquals(0, req.formAttributes().size());
           req.response().end();
         });
       }
     });
 
-    server.listen(testAddress).onComplete( onSuccess(s -> {
+    server.listen(testAddress).onComplete( TestUtils.onSuccess(s -> {
       Buffer buffer = Buffer.buffer();
       buffer.appendString("origin=0123456789");
       client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
-        .setURI("/form")).onComplete(onSuccess(req -> {
+        .setURI("/form")).onComplete(TestUtils.onSuccess(req -> {
         req.putHeader("content-length", String.valueOf(buffer.length()))
           .putHeader("content-type", "application/x-www-form-urlencoded")
-          .response().onComplete(onSuccess(resp -> {
-            assertEquals(200, resp.statusCode());
+          .response().onComplete(TestUtils.onSuccess(resp -> {
+            Assert.assertEquals(200, resp.statusCode());
             testComplete();
           }));
         req.end(buffer);
@@ -610,7 +611,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
         errCount.incrementAndGet();
       });
       req.endHandler(v -> {
-        assertTrue(errCount.get() > 0);
+        Assert.assertTrue(errCount.get() > 0);
         testComplete();
       });
     });
@@ -625,7 +626,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       "some-content\r\n" +
       "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
 
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/form")).onComplete(onSuccess(req -> {
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/form")).onComplete(TestUtils.onSuccess(req -> {
       req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
       req.putHeader(HttpHeaders.CONTENT_LENGTH, "" + body.length());
       req.end(body);
@@ -671,7 +672,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
     });
     startServer(testAddress);
 
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).onComplete(onSuccess(req -> {
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).onComplete(TestUtils.onSuccess(req -> {
       req.setChunked(true);
       req.putHeader("content-type", "application/x-www-form-urlencoded");
       StringBuilder sb = new StringBuilder();
@@ -689,12 +690,12 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
         .response()
         .compose(resp -> {
           if (pass) {
-            assertEquals(200, resp.statusCode());
+            Assert.assertEquals(200, resp.statusCode());
           } else {
-            assertEquals(400, resp.statusCode());
+            Assert.assertEquals(400, resp.statusCode());
           }
           return resp.end();
-        }).onComplete(onSuccess(v -> testComplete()));
+        }).onComplete(TestUtils.onSuccess(v -> testComplete()));
     }));
     await();
   }
@@ -738,7 +739,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
 
     startServer(testAddress);
 
-    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).onComplete(onSuccess(req -> {
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST)).onComplete(TestUtils.onSuccess(req -> {
       req.setChunked(true);
       req.putHeader("content-type", "application/x-www-form-urlencoded");
       StringBuilder sb = new StringBuilder();
@@ -753,12 +754,12 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
         .response()
         .compose(resp -> {
           if (pass) {
-            assertEquals(200, resp.statusCode());
+            Assert.assertEquals(200, resp.statusCode());
           } else {
-            assertEquals(400, resp.statusCode());
+            Assert.assertEquals(400, resp.statusCode());
           }
           return resp.end();
-        }).onComplete(onSuccess(v -> testComplete()));
+        }).onComplete(TestUtils.onSuccess(v -> testComplete()));
     }));
 
     await();
