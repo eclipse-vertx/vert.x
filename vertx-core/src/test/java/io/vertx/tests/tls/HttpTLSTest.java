@@ -95,7 +95,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   public HttpTLSTest(HttpConfig config) {
-    super(config);
+    super(config, true);
   }
 
   private void assumeTcp() {
