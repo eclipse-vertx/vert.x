@@ -61,7 +61,7 @@ public class NameResolverTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
-    dnsServer = new MockDnsServer().testResolveASameServer("127.0.0.1");
+    dnsServer = new MockDnsServer(vertx).testResolveASameServer("127.0.0.1");
     dnsServer.start();
     dnsServerAddress = dnsServer.localAddress();
     super.setUp();
@@ -903,7 +903,7 @@ public class NameResolverTest extends VertxTestBase {
     List<MockDnsServer> dnsServers = new ArrayList<>();
     try {
       for (int index = 1; index <= num; index++) {
-        MockDnsServer server = new MockDnsServer().store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
+        MockDnsServer server = new MockDnsServer(vertx).store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0." + index)));
         server.port(MockDnsServer.PORT + index);
         server.start();
         dnsServers.add(server);
@@ -979,7 +979,7 @@ public class NameResolverTest extends VertxTestBase {
 
   @Test
   public void testServerFailover() throws Exception {
-    MockDnsServer server = new MockDnsServer().store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(MockDnsServer.PORT + 2);
+    MockDnsServer server = new MockDnsServer(vertx).store(MockDnsServer.A_store(Collections.singletonMap("vertx.io", "127.0.0.1"))).port(MockDnsServer.PORT + 2);
     try {
       AddressResolverOptions options = new AddressResolverOptions();
       options.setOptResourceEnabled(false);

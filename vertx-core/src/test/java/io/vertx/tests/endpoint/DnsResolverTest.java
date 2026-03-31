@@ -26,7 +26,7 @@ public class DnsResolverTest extends VertxTestBase {
   }
 
   public void setUp() throws Exception {
-    dnsServer = new MockDnsServer();
+    dnsServer = new MockDnsServer(vertx);
     dnsServer.start();
     dnsServer.store(questionRecord -> {
       Set<DnsRecord> set = new LinkedHashSet<>();

@@ -19,14 +19,14 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.dns.*;
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Vertx;
+import io.vertx.core.internal.ContextInternal;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,10 +42,11 @@ public class MockDnsServer {
   private String ipAddress = IP_ADDRESS;
   private int port = PORT;
 
-  private EventLoopGroup eventLoopGroup;
+  private final ContextInternal context;
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
-  public MockDnsServer() {
+  public MockDnsServer(Vertx vertx) {
+    this.context = (ContextInternal) vertx.getOrCreateContext();
   }
 
   public MockDnsServer store(RecordStore store) {
@@ -72,12 +73,11 @@ public class MockDnsServer {
   }
 
   public void start() throws Exception {
-    if (this.eventLoopGroup != null) {
+    if (this.channel != null) {
       throw new IllegalStateException();
     }
-    EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
     Bootstrap bootstrap = new Bootstrap()
-      .group(eventLoopGroup)
+      .group(context.nettyEventLoop())
       .channel(NioDatagramChannel.class)
       .handler(new ChannelInitializer<DatagramChannel>() {
         @Override
@@ -95,8 +95,15 @@ public class MockDnsServer {
 
                 DnsResponse response = new DatagramDnsResponse(msg.recipient(), msg.sender(), msg.id(), DnsOpCode.QUERY);
                 response.addRecord(DnsSection.QUESTION, dnsRecord);
-                if (store != null) {
-                  Collection<DnsRecord> records = store.getRecords((DnsQuestion) dnsRecord);
+                RecordStore s = store;
+                if (s != null) {
+                  ContextInternal prev = context.beginDispatch();
+                  Collection<DnsRecord> records;
+                  try {
+                    records = s.getRecords((DnsQuestion) dnsRecord);
+                  } finally {
+                    context.endDispatch(prev);
+                  }
                   if (records != null) {
                     for (DnsRecord record : records) {
                       response.addRecord(DnsSection.ANSWER, record);
@@ -111,9 +118,7 @@ public class MockDnsServer {
     ChannelFuture fut = bootstrap.bind(ipAddress, port).sync();
     if (fut.isSuccess()) {
       this.channel = fut.channel();
-      this.eventLoopGroup = eventLoopGroup;
     } else {
-      eventLoopGroup.shutdownGracefully().await();
       PlatformDependent.throwException(fut.cause());
     }
   }
@@ -123,11 +128,6 @@ public class MockDnsServer {
     this.channel = null;
     if (channel != null) {
       channel.close().sync();
-    }
-    EventLoopGroup eventLoopGroup = this.eventLoopGroup;
-    this.eventLoopGroup = null;
-    if (eventLoopGroup != null) {
-      eventLoopGroup.shutdownGracefully(2, 2, TimeUnit.MILLISECONDS).sync();
     }
   }
 

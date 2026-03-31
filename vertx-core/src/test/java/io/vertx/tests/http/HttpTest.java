@@ -6223,7 +6223,7 @@ public abstract class HttpTest extends SimpleHttpTest {
   }
 
   private void testDnsClientSideLoadBalancing(boolean enabled) throws Exception {
-    MockDnsServer server = new MockDnsServer();
+    MockDnsServer server = new MockDnsServer(vertx);
     server.store(question -> List.of(
       MockDnsServer.a("vertx.io", 100, "127.0.0.1"),
       MockDnsServer.a("vertx.io", 100, "127.0.0.2")

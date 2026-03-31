@@ -42,12 +42,15 @@ public class DNSTest extends VertxTestBase {
 
   private MockDnsServer mockDnsServer;
 
+  public DNSTest() {
+    super(true);
+  }
+
   @Override
   public void setUp() throws Exception {
-    mockDnsServer = new MockDnsServer();
-    mockDnsServer.start();
-
     super.setUp();
+    mockDnsServer = new MockDnsServer(vertx);
+    mockDnsServer.start();
   }
 
   @Override
@@ -91,7 +94,7 @@ public class DNSTest extends VertxTestBase {
     VertxOptions vertxOptions = new VertxOptions();
     InetSocketAddress mockDnsAddress = mockDnsServer.localAddress();
     vertxOptions.getAddressResolverOptions().addServer(mockDnsAddress.getHostString() + ":" + mockDnsAddress.getPort());
-    Vertx vertxWithFakeDns = Vertx.vertx(vertxOptions);
+    Vertx vertxWithFakeDns = vertx(vertxOptions);
     DnsClient dnsClient = clientProvider.apply(vertxWithFakeDns);
 
     dnsClient
