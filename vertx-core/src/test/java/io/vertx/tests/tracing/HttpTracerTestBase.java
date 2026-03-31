@@ -25,6 +25,8 @@ import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.http.SimpleHttpTest;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -65,33 +67,33 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
     setTracer(new VertxTracer() {
       @Override
       public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        assertNull(key.get(context));
+        Assert.assertNull(key.get(context));
         key.put(context, val);
-        assertTrue(seq.compareAndSet(0, 1));
+        Assert.assertTrue(seq.compareAndSet(0, 1));
         return request;
       }
       @Override
       public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertTrue(seq.compareAndSet(1, 2));
-        assertNotNull(response);
-        assertTrue(response instanceof HttpResponse);
-        assertNull(failure);
-        assertSame(val, key.get(context));
+        Assert.assertTrue(seq.compareAndSet(1, 2));
+        Assert.assertNotNull(response);
+        Assert.assertTrue(response instanceof HttpResponse);
+        Assert.assertNull(failure);
+        Assert.assertSame(val, key.get(context));
         key.remove(context);
       }
     });
     server.requestHandler(req -> {
-      assertEquals(1, seq.get());
+      Assert.assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-      assertSame(val, key.get(ctx));
+      Assert.assertSame(val, key.get(ctx));
       req.response().closeHandler(v -> {
-        assertNull(key.get(ctx));
-        assertEquals(2, seq.get());
+        Assert.assertNull(key.get(ctx));
+        Assert.assertEquals(2, seq.get());
       });
       req.response().end();
     }).listen().await();
-    client.request(HttpMethod.GET, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
+    client.request(HttpMethod.GET, "/").onComplete(TestUtils.onSuccess(req -> {
+      req.send().onComplete(TestUtils.onSuccess(resp -> {
         testComplete();
       }));
     }));
@@ -106,23 +108,23 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
     setTracer(new VertxTracer() {
       @Override
       public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        assertNull(key.get(context));
+        Assert.assertNull(key.get(context));
         key.put(context, val);
-        assertTrue(seq.compareAndSet(0, 1));
+        Assert.assertTrue(seq.compareAndSet(0, 1));
         return request;
       }
       @Override
       public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertTrue(seq.compareAndSet(1, 2));
-        assertNull(response);
-        assertNotNull(failure);
+        Assert.assertTrue(seq.compareAndSet(1, 2));
+        Assert.assertNull(response);
+        Assert.assertNotNull(failure);
         complete();
       }
     });
     server.requestHandler(req -> {
-      assertEquals(1, seq.get());
+      Assert.assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-      assertSame(val, key.get(ctx));
+      Assert.assertSame(val, key.get(ctx));
       req.exceptionHandler(v -> {
 //        assertNull(ctx.localContextData().get(key));
 //        assertEquals(2, seq.get());
@@ -140,7 +142,7 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
     request.connection().close();
     try {
       request.response().await();
-      fail();
+      Assert.fail();
     } catch (Exception expected) {
     }
     await();
@@ -163,24 +165,24 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
     setTracer(new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        assertSame(val, key.get(context));
-        assertTrue(seq.compareAndSet(0, 1));
+        Assert.assertSame(val, key.get(context));
+        Assert.assertTrue(seq.compareAndSet(0, 1));
         headers.accept("X-B3-TraceId", traceId);
-        assertNotNull(request);
-        assertEquals(expectedOperation, operation);
+        Assert.assertNotNull(request);
+        Assert.assertEquals(expectedOperation, operation);
         return request;
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertSame(val, key.get(context));
+        Assert.assertSame(val, key.get(context));
         key.remove(context);
-        assertNotNull(response);
-        assertNull(failure);
-        assertTrue(seq.compareAndSet(1, 2));
+        Assert.assertNotNull(response);
+        Assert.assertNull(failure);
+        Assert.assertTrue(seq.compareAndSet(1, 2));
       }
     });
     server.requestHandler(req -> {
-      assertEquals(traceId, req.getHeader("X-B3-TraceId"));
+      Assert.assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.response().end();
     }).listen().await();
     Context ctx = vertx.getOrCreateContext();
@@ -207,30 +209,30 @@ public abstract class HttpTracerTestBase extends SimpleHttpTest {
     setTracer(new VertxTracer() {
       @Override
       public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        assertSame(val, key.get(context));
-        assertTrue(seq.compareAndSet(0, 1));
+        Assert.assertSame(val, key.get(context));
+        Assert.assertTrue(seq.compareAndSet(0, 1));
         headers.accept("X-B3-TraceId", traceId);
         return request;
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertSame(val, key.get(context));
+        Assert.assertSame(val, key.get(context));
         key.remove(context);
-        assertNull(response);
-        assertNotNull(failure);
-        assertTrue(seq.compareAndSet(1, 2));
+        Assert.assertNull(response);
+        Assert.assertNotNull(failure);
+        Assert.assertTrue(seq.compareAndSet(1, 2));
         complete();
       }
     });
     server.requestHandler(req -> {
-      assertEquals(traceId, req.getHeader("X-B3-TraceId"));
+      Assert.assertEquals(traceId, req.getHeader("X-B3-TraceId"));
       req.connection().close();
     }).listen().await();
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       key.put(ctx, val);
-      client.request(HttpMethod.GET,"/").onComplete(onSuccess(req -> {
-        req.send().onComplete(onFailure(err -> {
+      client.request(HttpMethod.GET,"/").onComplete(TestUtils.onSuccess(req -> {
+        req.send().onComplete(TestUtils.onFailure(err -> {
           // assertNull(tracerMap.get(key));
           complete();
         }));
