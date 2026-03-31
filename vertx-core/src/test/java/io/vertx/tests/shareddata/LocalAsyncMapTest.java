@@ -13,6 +13,7 @@ package io.vertx.tests.shareddata;
 
 import io.vertx.core.Vertx;
 import io.vertx.test.core.Repeat;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
