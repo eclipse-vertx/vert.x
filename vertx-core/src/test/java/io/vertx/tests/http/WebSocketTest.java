@@ -103,6 +103,10 @@ public class WebSocketTest extends VertxTestBase {
   private HttpServer server;
   private NetServer netServer;
 
+  public WebSocketTest() {
+    super(true);
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();
