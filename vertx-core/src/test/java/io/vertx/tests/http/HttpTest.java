@@ -70,7 +70,7 @@ import static org.junit.Assume.assumeTrue;
 public abstract class HttpTest extends SimpleHttpTest {
 
   protected HttpTest(HttpConfig config) {
-    super(config);
+    super(config, true);
   }
 
   @Test
@@ -6231,7 +6231,7 @@ public abstract class HttpTest extends SimpleHttpTest {
 
     AddressResolverOptions resolverOptions = new AddressResolverOptions()
       .addServer(server.localAddress().getAddress().getHostAddress() + ":" + server.localAddress().getPort());
-    Vertx vertx = Vertx.vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
+    Vertx vertx = vertx(new VertxOptions().setAddressResolverOptions(resolverOptions));
     try {
       AtomicInteger val = new AtomicInteger();
       HttpClient client = config

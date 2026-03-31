@@ -99,7 +99,7 @@ public class HttpNetSocket implements NetSocket {
       closed = true;
       Handler<Void> closeHandler = closeHandler();
       if (closeHandler != null) {
-        closeHandler.handle(null);
+        context.dispatch(null, closeHandler);
       }
     }
   }
