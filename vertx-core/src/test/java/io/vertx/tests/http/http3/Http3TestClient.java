@@ -21,6 +21,9 @@ import io.netty.handler.codec.http3.*;
 import io.netty.handler.codec.quic.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.ReferenceCountUtil;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.internal.ContextInternal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,27 +37,29 @@ import java.util.function.LongConsumer;
 
 public class Http3TestClient {
 
-  public static Client client() throws Exception {
-    Client client = new Client();
+  public static Client client(Vertx vertx) throws Exception {
+    Client client = new Client(vertx);
     client.bind(0);
     return client;
   }
 
   public static class Client {
 
+    private final ContextInternal context;
     private final EventLoopGroup group;
     private Channel channel;
 
-    public Client() {
-      this.group = new NioEventLoopGroup(1);
+    public Client(Vertx vertx) {
+      this.context = (ContextInternal) vertx.getOrCreateContext();
+      this.group = context.nettyEventLoop();
     }
 
     public Client bind(int port) throws Exception {
-      QuicSslContext context = QuicSslContextBuilder.forClient()
+      QuicSslContext quicContext = QuicSslContextBuilder.forClient()
         .trustManager(InsecureTrustManagerFactory.INSTANCE)
         .applicationProtocols(Http3.supportedApplicationProtocols()).build();
       ChannelHandler codec = Http3.newQuicClientCodecBuilder()
-        .sslContext(context)
+        .sslContext(quicContext)
         .maxIdleTimeout(5000, TimeUnit.MILLISECONDS)
         .initialMaxData(10000000)
         .initialMaxStreamDataBidirectionalLocal(1000000)
@@ -62,7 +67,7 @@ public class Http3TestClient {
 
       Bootstrap bs = new Bootstrap();
       channel = bs.group(group)
-        .channel(NioDatagramChannel.class)
+        .channelFactory(context.owner().transport().datagramChannelFactory())
         .handler(codec)
         .bind(0).sync().channel();
 
@@ -73,7 +78,6 @@ public class Http3TestClient {
       if (channel != null) {
         channel.close().sync();
       }
-      group.shutdownGracefully();
     }
 
     public Connection connect(InetSocketAddress server) throws Exception {
@@ -111,7 +115,7 @@ public class Http3TestClient {
 
       private final QuicChannel channel;
       private final InetSocketAddress address;
-      private volatile LongConsumer goAwayHandlerRef;
+      private volatile Handler<Long> goAwayHandlerRef;
       private volatile Http3Settings remoteSettings;
 
       private Connection(QuicChannel quicChannel, InetSocketAddress address) {
@@ -130,10 +134,10 @@ public class Http3TestClient {
               break;
             case 7:
               // Go away
-              LongConsumer runnable = goAwayHandlerRef;
-              if (runnable != null) {
+              Handler<Long> handler = goAwayHandlerRef;
+              if (handler != null) {
                 Http3GoAwayFrame goAwayFrame = (Http3GoAwayFrame) controlStreamFrame;
-                runnable.accept(goAwayFrame.id());
+                context.dispatch(goAwayFrame.id(), handler);
               }
               break;
           }
@@ -142,7 +146,7 @@ public class Http3TestClient {
         }
       }
 
-      public Connection goAwayHandler(LongConsumer handler) {
+      public Connection goAwayHandler(Handler<Long> handler) {
         goAwayHandlerRef = handler;
         return this;
       }
@@ -172,10 +176,10 @@ public class Http3TestClient {
 
       private final Connection connection;
       private QuicStreamChannel streamChannel;
-      private Consumer<Http3Headers> headersHandler;
-      private Consumer<byte[]> chunkHandler;
-      private Consumer<Void> endHandler;
-      private LongConsumer resetHandler;
+      private Handler<Http3Headers> headersHandler;
+      private Handler<byte[]> chunkHandler;
+      private Handler<Void> endHandler;
+      private Handler<Long> resetHandler;
       private boolean headersSent;
       private Http3Headers responseHeaders;
       private ByteArrayOutputStream responseCumulation = new ByteArrayOutputStream();
@@ -196,9 +200,9 @@ public class Http3TestClient {
       @Override
       public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof QuicStreamResetException) {
-          LongConsumer handler = resetHandler;
+          Handler<Long> handler = resetHandler;
           if (handler != null) {
-            handler.accept(((QuicStreamResetException)cause).applicationProtocolCode());
+            context.dispatch(((QuicStreamResetException)cause).applicationProtocolCode(), handler);
           }
         }
         responseBody.completeExceptionally(cause);
@@ -208,11 +212,11 @@ public class Http3TestClient {
       @Override
       protected void channelRead(ChannelHandlerContext ctx, Http3HeadersFrame frame) {
         ReferenceCountUtil.release(frame);
-        Consumer<Http3Headers> handler = headersHandler;
+        Handler<Http3Headers> handler = headersHandler;
         Http3Headers headers = frame.headers();
         responseHeaders = headers;
         if (handler != null) {
-          handler.accept(headers);
+          context.dispatch(headers, handler);
         }
       }
 
@@ -221,9 +225,9 @@ public class Http3TestClient {
         byte[] chunk = ByteBufUtil.getBytes(frame.content());
         ReferenceCountUtil.release(frame);
         responseCumulation.writeBytes(chunk);
-        Consumer<byte[]> handler = chunkHandler;
+        Handler<byte[]> handler = chunkHandler;
         if (handler != null) {
-          handler.accept(chunk);
+          context.dispatch(chunk, handler);
         }
       }
 
@@ -234,29 +238,29 @@ public class Http3TestClient {
         } catch (IOException ignore) {
         }
         responseBody.complete(responseCumulation.toByteArray());
-        Consumer<Void> handler = endHandler;
+        Handler<Void> handler = endHandler;
         if (handler != null) {
-          handler.accept(null);
+          context.dispatch(null, handler);
         }
         ctx.close(); // ???
       }
 
-      public Stream headersHandler(Consumer<Http3Headers> headersHandler) {
+      public Stream headersHandler(Handler<Http3Headers> headersHandler) {
         this.headersHandler = headersHandler;
         return this;
       }
 
-      public Stream endHandler(Consumer<Void> endHandler) {
+      public Stream endHandler(Handler<Void> endHandler) {
         this.endHandler = endHandler;
         return this;
       }
 
-      public Stream chunkHandler(Consumer<byte[]> chunkHandler) {
+      public Stream chunkHandler(Handler<byte[]> chunkHandler) {
         this.chunkHandler = chunkHandler;
         return this;
       }
 
-      public Stream resetHandler(LongConsumer resetHandler) {
+      public Stream resetHandler(Handler<Long> resetHandler) {
         this.resetHandler = resetHandler;
         return this;
       }

@@ -16,13 +16,12 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Assume;
 import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -44,7 +43,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
   public TemporaryFolder testFolder = new TemporaryFolder();
 
   protected HttpClientFileUploadTest(HttpConfig config) {
-    super(config);
+    super(config, ReportMode.FORBIDDEN);
   }
 
   @Test
@@ -52,7 +51,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
       req.endHandler(v -> {
-        assertEquals("param1_value", req.getFormAttribute("param1"));
+        Assert.assertEquals("param1_value", req.getFormAttribute("param1"));
         req.response().end();
       });
     });
@@ -75,7 +74,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
       req.setExpectMultipart(true);
       req.endHandler(v -> {
         String val = req.getFormAttribute("param1");
-        assertEquals(expected, val);
+        Assert.assertEquals(expected, val);
         req.response().end();
       });
     });
@@ -95,7 +94,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
       req.bodyHandler(body -> {
-        assertEquals("grant_type=client_credentials&resource=https%3A%2F%2Fmanagement.core.windows.net%2F", body.toString());
+        Assert.assertEquals("grant_type=client_credentials&resource=https%3A%2F%2Fmanagement.core.windows.net%2F", body.toString());
         req.response().end();
       });
     });
@@ -117,7 +116,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
       req.endHandler(v -> {
-        assertEquals(Arrays.asList("1", "2"), req.headers().getAll("bla"));
+        Assert.assertEquals(Arrays.asList("1", "2"), req.headers().getAll("bla"));
         req.response().end();
       });
     });
@@ -134,10 +133,10 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
   @Test
   public void testFormMultipart() throws Exception {
     server.requestHandler(req -> {
-      assertTrue(req.getHeader(HttpHeaders.CONTENT_TYPE).startsWith("multipart/form-data"));
+      Assert.assertTrue(req.getHeader(HttpHeaders.CONTENT_TYPE).startsWith("multipart/form-data"));
       req.setExpectMultipart(true);
       req.endHandler(v -> {
-        assertEquals("param1_value", req.getFormAttribute("param1"));
+        Assert.assertEquals("param1_value", req.getFormAttribute("param1"));
         req.response().end();
       });
     });
@@ -155,8 +154,8 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
   @Test
   public void testFormMultipartWithCharset() throws Exception {
     server.requestHandler(req -> {
-      req.body().onComplete(onSuccess(body -> {
-        assertTrue(body.toString().contains("content-type: text/plain; charset=ISO-8859-1"));
+      req.body().onComplete(TestUtils.onSuccess(body -> {
+        Assert.assertTrue(body.toString().contains("content-type: text/plain; charset=ISO-8859-1"));
         req.response().end();
       }));
     });
@@ -204,13 +203,13 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
       .attribute("toolkit", "vert.x")
       .attribute("runtime", "jvm");
     List<Upload> uploads = testFileUploadFormMultipart(form, Collections.singletonList(upload), (req) -> {
-      assertEquals("vert.x", req.getFormAttribute("toolkit"));
-      assertEquals("jvm", req.getFormAttribute("runtime"));
+      Assert.assertEquals("vert.x", req.getFormAttribute("toolkit"));
+      Assert.assertEquals("jvm", req.getFormAttribute("runtime"));
     });
     assertWaitUntil(() -> uploads.size() == 1);
-    assertEquals("test", uploads.get(0).name);
-    assertEquals("test.txt", uploads.get(0).filename);
-    assertEquals(content, uploads.get(0).data);
+    Assert.assertEquals("test", uploads.get(0).name);
+    Assert.assertEquals("test.txt", uploads.get(0).filename);
+    Assert.assertEquals(content, uploads.get(0).data);
   }
 
   @Test
@@ -224,15 +223,15 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     ClientMultipartForm form = ClientMultipartForm.multipartForm();
     List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
     });
-    assertEquals(2, uploads.size());
-    assertEquals("test1", uploads.get(0).name);
-    assertEquals("test1.txt", uploads.get(0).filename);
-    assertEquals("UTF-8", uploads.get(0).charset);
-    assertEquals(content1, uploads.get(0).data);
-    assertEquals("test2", uploads.get(1).name);
-    assertEquals("test2.txt", uploads.get(1).filename);
-    assertEquals("UTF-8", uploads.get(1).charset);
-    assertEquals(content2, uploads.get(1).data);
+    Assert.assertEquals(2, uploads.size());
+    Assert.assertEquals("test1", uploads.get(0).name);
+    Assert.assertEquals("test1.txt", uploads.get(0).filename);
+    Assert.assertEquals("UTF-8", uploads.get(0).charset);
+    Assert.assertEquals(content1, uploads.get(0).data);
+    Assert.assertEquals("test2", uploads.get(1).name);
+    Assert.assertEquals("test2.txt", uploads.get(1).filename);
+    Assert.assertEquals("UTF-8", uploads.get(1).charset);
+    Assert.assertEquals(content2, uploads.get(1).data);
   }
 
     @Test
@@ -242,10 +241,10 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
       ClientMultipartForm form = ClientMultipartForm.multipartForm().charset(StandardCharsets.ISO_8859_1);
       List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
       });
-      assertEquals(1, uploads.size());
-      assertEquals("test1", uploads.get(0).name);
-      assertEquals("test1.txt", uploads.get(0).filename);
-      assertEquals("ISO-8859-1", uploads.get(0).charset);
+      Assert.assertEquals(1, uploads.size());
+      Assert.assertEquals("test1", uploads.get(0).name);
+      Assert.assertEquals("test1.txt", uploads.get(0).filename);
+      Assert.assertEquals("ISO-8859-1", uploads.get(0).charset);
     }
 
     @Test
@@ -259,13 +258,13 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
       ClientMultipartForm form = ClientMultipartForm.multipartForm();
       List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
       });
-      assertEquals(2, uploads.size());
-      assertEquals("test", uploads.get(0).name);
-      assertEquals("test1.txt", uploads.get(0).filename);
-      assertEquals(content1, uploads.get(0).data);
-      assertEquals("test", uploads.get(1).name);
-      assertEquals("test2.txt", uploads.get(1).filename);
-      assertEquals(content2, uploads.get(1).data);
+      Assert.assertEquals(2, uploads.size());
+      Assert.assertEquals("test", uploads.get(0).name);
+      Assert.assertEquals("test1.txt", uploads.get(0).filename);
+      Assert.assertEquals(content1, uploads.get(0).data);
+      Assert.assertEquals("test", uploads.get(1).name);
+      Assert.assertEquals("test2.txt", uploads.get(1).filename);
+      Assert.assertEquals(content2, uploads.get(1).data);
     }
 
   @Test
@@ -279,13 +278,13 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     ClientMultipartForm form = ClientMultipartForm.multipartForm().mixed(false);
     List<Upload> uploads = testFileUploadFormMultipart(form, toUpload, (req) -> {
     });
-    assertEquals(2, uploads.size());
-    assertEquals("test", uploads.get(0).name);
-    assertEquals("test1.txt", uploads.get(0).filename);
-    assertEquals(content1, uploads.get(0).data);
-    assertEquals("test", uploads.get(1).name);
-    assertEquals("test2.txt", uploads.get(1).filename);
-    assertEquals(content2, uploads.get(1).data);
+    Assert.assertEquals(2, uploads.size());
+    Assert.assertEquals("test", uploads.get(0).name);
+    Assert.assertEquals("test1.txt", uploads.get(0).filename);
+    Assert.assertEquals(content1, uploads.get(0).data);
+    Assert.assertEquals("test", uploads.get(1).name);
+    Assert.assertEquals("test2.txt", uploads.get(1).filename);
+    Assert.assertEquals(content2, uploads.get(1).data);
   }
 
   private List<Upload> testFileUploadFormMultipart(
@@ -310,7 +309,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
       req.setExpectMultipart(true);
       req.uploadHandler(upload -> {
         Buffer fileBuffer = Buffer.buffer();
-        assertEquals("text/plain", upload.contentType());
+        Assert.assertEquals("text/plain", upload.contentType());
         upload.handler(fileBuffer::appendBuffer);
         upload.endHandler(v -> {
           uploads.add(new Upload(upload.name(), upload.filename(), true, upload.charset(), fileBuffer));
@@ -359,7 +358,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
     server.requestHandler(req -> {
       req.setExpectMultipart(true);
       req.endHandler(v -> {
-        assertEquals(Arrays.asList("1", "2"), req.headers().getAll("bla"));
+        Assert.assertEquals(Arrays.asList("1", "2"), req.headers().getAll("bla"));
         req.response().end();
       });
     });
@@ -375,7 +374,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
   @Test
   public void testFileUploadWhenFileDoesNotExist() throws Exception {
     server.requestHandler(req -> {
-      fail();
+      Assert.fail();
     });
     startServer();
     HttpClientRequest request = client
@@ -390,10 +389,10 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
           .compose(HttpClientResponse::body)
         .await();
     } catch (Exception err) {
-      assertEquals(err.getClass(), HttpPostRequestEncoder.ErrorDataEncoderException.class);
-      assertEquals(err.getCause().getClass(), FileNotFoundException.class);
+      Assert.assertEquals(err.getClass(), HttpPostRequestEncoder.ErrorDataEncoderException.class);
+      Assert.assertEquals(err.getCause().getClass(), FileNotFoundException.class);
     }
-    assertTrue(request.response().failed());
+    Assert.assertTrue(request.response().failed());
   }
 
   @Test
@@ -408,7 +407,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
 
   private void testInvalidContentType(ClientForm form, String contentType) throws Exception {
     server.requestHandler(req -> {
-      fail();
+      Assert.fail();
     });
     startServer();
     try {
@@ -419,7 +418,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
         .compose(request -> request
           .send(form))
         .await();
-      fail();
+      Assert.fail();
     } catch (Exception expected) {
     }
   }

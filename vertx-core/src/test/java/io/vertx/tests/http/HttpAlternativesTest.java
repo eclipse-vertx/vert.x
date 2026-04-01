@@ -30,6 +30,7 @@ import io.vertx.test.tls.Cert;
 import junit.framework.AssertionFailedError;
 import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -46,6 +47,10 @@ public class HttpAlternativesTest extends VertxTestBase {
   public Proxy proxy = new Proxy();
 
   private HttpClient client;
+
+  public HttpAlternativesTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   protected VertxOptions getOptions() {
@@ -167,32 +172,32 @@ public class HttpAlternativesTest extends VertxTestBase {
           .expecting(response -> request.version() == HttpVersion.HTTP_1_1)
           .compose(HttpClientResponse::body)
         ).await();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertEquals(SSLHandshakeException.class, e.getClass());
-      assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+      Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+      Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
     }
   }
 
   @Test
   public void testOverwriteInvalidation() {
     Exception e = testInvalidation("h2=\"host2.com:4045\"");
-    assertEquals(SSLHandshakeException.class, e.getClass());
-    assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+    Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+    Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
   }
 
   @Test
   public void testClearInvalidation() {
     Exception e = testInvalidation("clear");
-    assertEquals(SSLHandshakeException.class, e.getClass());
-    assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+    Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+    Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
   }
 
   @Test
   public void testInvalidProtocolInvalidation() {
     Exception e = testInvalidation("h2c=\"host2.com:4044\"");
-    assertEquals(SSLHandshakeException.class, e.getClass());
-    assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+    Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+    Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
   }
 
   private Exception testInvalidation(String altSvcInvalidator) {
@@ -205,7 +210,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .expecting(response -> request.version() == HttpVersion.HTTP_1_1)
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
     try {
       int retries = 10;
       for (int i = 0;i < retries;i++) {
@@ -227,16 +232,16 @@ public class HttpAlternativesTest extends VertxTestBase {
   private void testFollowProtocol(HttpVersion initialProtocol, HttpVersion upgradedProtocol, Supplier<String> advertisement, String expectedAltUsed) {
     startServer(4043, Cert.SNI_JKS, initialProtocol)
       .handler(request -> {
-        assertNull(request.getHeader(HttpHeaders.ALT_USED));
-        assertEquals("host2.com", request.connection().indicatedServerName());
+        Assert.assertNull(request.getHeader(HttpHeaders.ALT_USED));
+        Assert.assertEquals("host2.com", request.connection().indicatedServerName());
         HttpServerResponse response = request.response();
         response.writeAltSvc(advertisement.get());
         response.end(request.authority().toString(false));
       });
     Server alternative = startServer(4044, Cert.SNI_JKS, upgradedProtocol)
       .handler(request -> {
-        assertEquals(expectedAltUsed, request.getHeader(HttpHeaders.ALT_USED));
-        assertEquals("host2.com", request.connection().indicatedServerName());
+        Assert.assertEquals(expectedAltUsed, request.getHeader(HttpHeaders.ALT_USED));
+        Assert.assertEquals("host2.com", request.connection().indicatedServerName());
         request
           .response()
           .end(request.authority().toString(false));
@@ -253,7 +258,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .expecting(response -> request.version() == initialProtocol)
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
     assertWaitUntil(() -> alternative.connectionCount() == 1);
     body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(upgradedProtocol).setPort(4043).setURI("/"))
       .compose(request -> request
@@ -261,21 +266,21 @@ public class HttpAlternativesTest extends VertxTestBase {
         .expecting(response -> request.version() == upgradedProtocol)
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
     body = client.request(new RequestOptions().setHost("host2.com").setPort(4043).setURI("/"))
       .compose(request -> request
         .send()
         .expecting(response -> request.version() == upgradedProtocol)
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
   }
 
   @Test
   public void testEvictInvalidAlternative() {
     startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
       .handler(request -> {
-        assertNull(request.getHeader(HttpHeaders.ALT_USED));
+        Assert.assertNull(request.getHeader(HttpHeaders.ALT_USED));
         request
           .response()
           .putHeader(HttpHeaders.ALT_SVC, "h2=\"host2.com:4044\"")
@@ -287,15 +292,15 @@ public class HttpAlternativesTest extends VertxTestBase {
         .send()
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
     for (int i = 0;i < 2;i++) {
       try {
         client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_2).setPort(4043).setURI("/"))
           .await();
-        fail();
+        Assert.fail();
       } catch (Exception e) {
-        assertEquals(SSLHandshakeException.class, e.getClass());
-        assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+        Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+        Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
       }
     }
   }
@@ -304,7 +309,7 @@ public class HttpAlternativesTest extends VertxTestBase {
   public void testIgnoreAlternativeWithoutSNI() {
     startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
       .handler(request -> {
-        assertEquals(null, request.connection().indicatedServerName());
+        Assert.assertEquals(null, request.connection().indicatedServerName());
         request
           .response()
           .putHeader(HttpHeaders.ALT_SVC, "h2=\":4044\"")
@@ -316,7 +321,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .send()
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("localhost:4043", body.toString());
+    Assert.assertEquals("localhost:4043", body.toString());
     try {
       body = client.request(new RequestOptions().setHost("localhost").setProtocolVersion(HttpVersion.HTTP_2).setPort(4043).setURI("/"))
         .compose(request -> request
@@ -324,10 +329,10 @@ public class HttpAlternativesTest extends VertxTestBase {
           .expecting(response -> request.version() == HttpVersion.HTTP_1_1)
           .compose(HttpClientResponse::body)
         ).await();
-      fail();
+      Assert.fail();
     } catch (Exception e) {
-      assertEquals(SSLHandshakeException.class, e.getClass());
-      assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+      Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+      Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
     }
   }
 
@@ -335,8 +340,8 @@ public class HttpAlternativesTest extends VertxTestBase {
   public void testServerCertValidation() {
     startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
       .handler(request -> {
-        assertNull(request.getHeader(HttpHeaders.ALT_USED));
-        assertEquals("host2.com", request.connection().indicatedServerName());
+        Assert.assertNull(request.getHeader(HttpHeaders.ALT_USED));
+        Assert.assertEquals("host2.com", request.connection().indicatedServerName());
         request
           .response()
           .putHeader(HttpHeaders.ALT_SVC, "h2=\":4044\"")
@@ -344,7 +349,7 @@ public class HttpAlternativesTest extends VertxTestBase {
       });
     startServer(4044, Cert.SERVER_JKS, HttpVersion.HTTP_2)
       .handler(request -> {
-        fail();
+        Assert.fail();
       });
     client = vertx.createHttpClient(new HttpClientConfig().setFollowAlternativeServices(true).setSsl(true), new ClientSSLOptions().setTrustAll(true));
     List<SSLHandshakeException> connectErrors = Collections.synchronizedList(new ArrayList<>());
@@ -358,17 +363,17 @@ public class HttpAlternativesTest extends VertxTestBase {
         .send()
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
     assertWaitUntil(() -> !connectErrors.isEmpty());
     SSLHandshakeException err = connectErrors.get(0);
-    assertTrue(err.getCause().getMessage().contains("No name matching host2.com found"));
+    Assert.assertTrue(err.getCause().getMessage().contains("No name matching host2.com found"));
   }
 
   @Test
   public void testIgnoreAlternativeServicesAdvertisements() {
     startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
       .handler(request -> {
-        assertNull(request.getHeader(HttpHeaders.ALT_USED));
+        Assert.assertNull(request.getHeader(HttpHeaders.ALT_USED));
         request
           .response()
           .putHeader(HttpHeaders.ALT_SVC, "h2=\"host2.com:4044\"")
@@ -380,7 +385,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .send()
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
     try {
       client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_2).setPort(4043).setURI("/"))
         .compose(request -> request
@@ -389,17 +394,17 @@ public class HttpAlternativesTest extends VertxTestBase {
           .compose(HttpClientResponse::body)
         ).await();
     } catch (Exception e) {
-      assertEquals(SSLHandshakeException.class, e.getClass());
-      assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
+      Assert.assertEquals(SSLHandshakeException.class, e.getClass());
+      Assert.assertTrue(e.getCause().getMessage().contains("no_application_protocol"));
     }
-    assertEquals("host2.com:4043", body.toString());
+    Assert.assertEquals("host2.com:4043", body.toString());
   }
 
   @Test
   public void testIgnoreAlternativeServicesAdvertisements2() {
     HttpServer server = vertx.createHttpServer(new HttpServerOptions().setHttp2ClearTextEnabled(false));
     server.requestHandler(request -> {
-      assertNull(request.getHeader(HttpHeaders.ALT_USED));
+      Assert.assertNull(request.getHeader(HttpHeaders.ALT_USED));
       request
         .response()
         .putHeader(HttpHeaders.ALT_SVC, "h2c=\"host2.com:8081\"")
@@ -412,35 +417,35 @@ public class HttpAlternativesTest extends VertxTestBase {
         .send()
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:8080", body.toString());
+    Assert.assertEquals("host2.com:8080", body.toString());
     body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(HttpVersion.HTTP_2).setPort(8080).setURI("/"))
       .compose(request -> request
         .send()
         .expecting(response -> request.version() == HttpVersion.HTTP_1_1)
         .compose(HttpClientResponse::body)
       ).await();
-    assertEquals("host2.com:8080", body.toString());
+    Assert.assertEquals("host2.com:8080", body.toString());
   }
 
   @Test
   public void testAlternativeCaching1() throws Exception {
     // Test that we maintain the information although the server will an advertisement on each request
     int times = testAlternativeCaching("h2=\"host2.com:4044\"", 5, 0L);
-    assertEquals(1, times);
+    Assert.assertEquals(1, times);
   }
 
   @Test
   public void testAlternativeCaching2() throws Exception {
     // Test that we refresh information when expiration time is short and the server provides identical advertisements
     int times = testAlternativeCaching("h2=\"host2.com:4044\";ma=1", 5, 1000L);
-    assertEquals(5, times);
+    Assert.assertEquals(5, times);
   }
 
   private int testAlternativeCaching(String altSvc, int num, long sleepTime) throws Exception {
     startServer(4043, Cert.SNI_JKS, HttpVersion.HTTP_1_1)
       .handler(request -> {
-        assertNull(request.getHeader(HttpHeaders.ALT_USED));
-        assertEquals("host2.com", request.connection().indicatedServerName());
+        Assert.assertNull(request.getHeader(HttpHeaders.ALT_USED));
+        Assert.assertEquals("host2.com", request.connection().indicatedServerName());
         request
           .response()
           .putHeader(HttpHeaders.ALT_SVC, altSvc)
@@ -448,7 +453,7 @@ public class HttpAlternativesTest extends VertxTestBase {
       });
     startServer(4044, Cert.SNI_JKS, HttpVersion.HTTP_2)
       .handler(request -> {
-        fail();
+        Assert.fail();
       });
     client = vertx.createHttpClient(new HttpClientConfig().setFollowAlternativeServices(true).setSsl(true), new ClientSSLOptions().setTrustAll(true));
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
@@ -500,6 +505,6 @@ public class HttpAlternativesTest extends VertxTestBase {
       Thread.sleep(100);
     }
     while (count++ < 20);
-    assertEquals(HttpVersion.HTTP_3, version);
+    Assert.assertEquals(HttpVersion.HTTP_3, version);
   }
 }

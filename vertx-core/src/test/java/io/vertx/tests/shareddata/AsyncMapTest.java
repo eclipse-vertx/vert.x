@@ -21,6 +21,7 @@ import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,6 +39,10 @@ import static io.vertx.test.core.TestUtils.*;
 public abstract class AsyncMapTest extends VertxTestBase {
 
   protected abstract Vertx getVertx();
+
+  public AsyncMapTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Test
   public void testMapPutGetByte() {
@@ -115,7 +120,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     sharedData
       .<String, String>getAsyncMap("foo").compose(map -> map.put("pipo", "molo", 10))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -130,7 +135,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   private void assertWaitUntil(AsyncMap<String, String> map, String key, long delay, Function<String, Boolean> checks, Promise<Void> promise) {
     vertx.setTimer(delay, l -> {
       map.get(key)
-        .onComplete(onSuccess(value -> {
+        .onComplete(TestUtils.onSuccess(value -> {
           if (checks.apply(value)) {
             promise.complete();
           } else {
@@ -148,7 +153,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .put("pipo", "molo", 10)
         .compose(v -> map.put("pipo", "mili")))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 20, s -> "mili".equals(s)))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -160,7 +165,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .put("pipo", "molo")
         .compose(v -> map.put("pipo", "mili", 10)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -240,7 +245,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     sharedData.<String, String>getAsyncMap("foo")
       .compose(map -> map.putIfAbsent("pipo", "molo", 10).expecting(that(Assert::assertNull)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -252,8 +257,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .put("pipo", "molo")
         .compose(v -> map
           .putIfAbsent("pipo", "mili", 10)
-          .expecting(that(vd -> assertEquals("molo", vd)))))
-      .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, "molo"::equals)).onComplete(onSuccess(v -> testComplete()));
+          .expecting(that(vd -> Assert.assertEquals("molo", vd)))))
+      .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, "molo"::equals)).onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -481,7 +486,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .replace("pipo", "molo", 10)
         .expecting(that(Assert::assertNull)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -494,7 +499,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .expecting(that(Assert::assertNull))
         .compose(vd -> map.replace("pipo", "mili", 10)))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -580,7 +585,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .compose(v -> map.replaceIfPresent("pipo", "molo", "mili", 10)
           .expecting(that(Assert::assertTrue))))
       .compose(v -> assertWaitUntilMapContains(sharedData, "foo", "pipo", 15, Objects::isNull))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -590,7 +595,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
       .compose(map -> map
         .replaceIfPresent("pipo", "molo", "mili",10)
         .expecting(that(Assert::assertFalse)))
-      .onComplete(onSuccess(vd -> testComplete()));
+      .onComplete(TestUtils.onSuccess(vd -> testComplete()));
     await();
   }
 
@@ -602,7 +607,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testPutNullKey() {
     getVertx().sharedData().<String, String>getAsyncMap("foo")
-      .onComplete(onSuccess(map -> {
+      .onComplete(TestUtils.onSuccess(map -> {
         assertIllegalArgumentException(() -> map.put(null, "foo"));
         testComplete();
       }));
@@ -612,7 +617,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testPutNullValue() {
     getVertx().sharedData().<String, String>getAsyncMap("foo")
-      .onComplete(onSuccess(map -> {
+      .onComplete(TestUtils.onSuccess(map -> {
         assertIllegalArgumentException(() -> map.put("foo", null));
         testComplete();
       }));
@@ -622,7 +627,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testPutInvalidKey() {
     getVertx().sharedData().<SomeObject, String>getAsyncMap("foo")
-      .onComplete(onSuccess(map -> {
+      .onComplete(TestUtils.onSuccess(map -> {
         assertIllegalArgumentException(() -> map.put(new SomeObject(), "foo"));
         testComplete();
       }));
@@ -632,7 +637,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testPutInvalidValue() {
     getVertx().sharedData().<String, SomeObject>getAsyncMap("foo")
-      .onComplete(onSuccess(map -> {
+      .onComplete(TestUtils.onSuccess(map -> {
         assertIllegalArgumentException(() -> map.put("foo", new SomeObject()));
         testComplete();
       }));
@@ -642,7 +647,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testPutIfAbsentInvalidKey() {
     getVertx().sharedData().<SomeObject, String>getAsyncMap("foo")
-      .onComplete(onSuccess(map -> {
+      .onComplete(TestUtils.onSuccess(map -> {
         assertIllegalArgumentException(() -> map.putIfAbsent(new SomeObject(), "foo"));
         testComplete();
       }));
@@ -652,7 +657,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testPutIfAbsentInvalidValue() {
     getVertx().sharedData().<String, SomeObject>getAsyncMap("foo")
-      .onComplete(onSuccess(map -> {
+      .onComplete(TestUtils.onSuccess(map -> {
         assertIllegalArgumentException(() -> map.putIfAbsent("foo", new SomeObject()));
         testComplete();
       }));
@@ -668,7 +673,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .<String, String>getAsyncMap("bar")
         .compose(map -> map.get("foo"))
         .expecting(that(Assert::assertNull)))
-      .onComplete(onSuccess(res -> testComplete()));
+      .onComplete(TestUtils.onSuccess(res -> testComplete()));
     await();
   }
 
@@ -682,7 +687,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .compose(map -> map
           .clear()
           .compose(v2 -> map.get("foo"))))
-      .onComplete(onSuccess(v -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -692,15 +697,15 @@ public abstract class AsyncMapTest extends VertxTestBase {
     sharedData.<String, String>getAsyncMap("foo")
       .compose(map -> map
         .size()
-        .expecting(that(size -> assertEquals(0, size.intValue())))
+        .expecting(that(size -> Assert.assertEquals(0, size.intValue())))
         .compose(v -> map.put("foo", "bar"))
         .compose(v -> map.size()
-          .expecting(that(size -> assertEquals(1, size.intValue())))))
+          .expecting(that(size -> Assert.assertEquals(1, size.intValue())))))
       .compose(v -> sharedData.
           <String, String>getAsyncMap("foo")
           .compose(map -> map.size()
-            .expecting(that(size -> assertEquals(1, size.intValue())))))
-      .onComplete(onSuccess(v -> testComplete()));
+            .expecting(that(size -> Assert.assertEquals(1, size.intValue())))))
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
     await();
   }
 
@@ -709,8 +714,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
     Map<JsonObject, Buffer> map = genJsonToBuffer(100);
     loadData(map, (vertx, asyncMap) -> {
       asyncMap.keys()
-        .onComplete(onSuccess(keys -> {
-          assertEquals(map.keySet(), keys);
+        .onComplete(TestUtils.onSuccess(keys -> {
+          Assert.assertEquals(map.keySet(), keys);
           testComplete();
         }));
     });
@@ -724,11 +729,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
       asyncMap
         .values()
         .expecting(that(values -> {
-          assertEquals(map.values().size(), values.size());
-          assertTrue(map.values().containsAll(values));
-          assertTrue(values.containsAll(map.values()));
+          Assert.assertEquals(map.values().size(), values.size());
+          Assert.assertTrue(map.values().containsAll(values));
+          Assert.assertTrue(values.containsAll(map.values()));
         }))
-        .onComplete(onSuccess(values -> testComplete()));
+        .onComplete(TestUtils.onSuccess(values -> testComplete()));
     });
     await();
   }
@@ -739,7 +744,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
     loadData(map, (vertx, asyncMap) -> {
       asyncMap
         .entries()
-        .expecting(that(res -> assertEquals(map.entrySet(), res.entrySet())))
+        .expecting(that(res -> Assert.assertEquals(map.entrySet(), res.entrySet())))
         .onSuccess(res -> testComplete());
     });
     await();
@@ -761,7 +766,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
       futures.add(sharedData.getAsyncMap("foo").compose(asyncMap -> asyncMap.put(key, value)));
     });
     Future.all(futures).compose(cf -> sharedData.<JsonObject, Buffer>getAsyncMap("foo"))
-      .onComplete(onSuccess(asyncMap -> test.accept(getVertx(), asyncMap)));
+      .onComplete(TestUtils.onSuccess(asyncMap -> test.accept(getVertx(), asyncMap)));
   }
 
   private <K, V> void testMapPutGet(K k, V v) {
@@ -772,8 +777,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .<K, V>getAsyncMap("foo")
         .compose(map -> map
           .get(k))
-        .expecting(that(res -> assertEquals(v, res))))
-      .onComplete(onSuccess(res -> testComplete()));
+        .expecting(that(res -> Assert.assertEquals(v, res))))
+      .onComplete(TestUtils.onSuccess(res -> testComplete()));
     await();
   }
 
@@ -785,10 +790,10 @@ public abstract class AsyncMapTest extends VertxTestBase {
       .compose(v_ -> sharedData.<K, V>getAsyncMap("foo"))
       .compose(map -> map
         .get(k)
-        .expecting(that(res -> assertEquals(v, res)))
+        .expecting(that(res -> Assert.assertEquals(v, res)))
         .compose(res2 -> map.putIfAbsent(k, v))
-        .expecting(that(res -> assertEquals(v, res))))
-      .onComplete(onSuccess(res -> testComplete()));
+        .expecting(that(res -> Assert.assertEquals(v, res))))
+      .onComplete(TestUtils.onSuccess(res -> testComplete()));
     await();
   }
 
@@ -799,8 +804,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
       .compose(v_ -> sharedData
         .<K, V>getAsyncMap("foo")
         .compose(map -> map.remove(k))
-        .expecting(that(res -> assertEquals(v, res))))
-      .onComplete(onSuccess(res -> testComplete()));
+        .expecting(that(res -> Assert.assertEquals(v, res))))
+      .onComplete(TestUtils.onSuccess(res -> testComplete()));
     await();
   }
 
@@ -815,7 +820,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
         .expecting(that(Assert::assertFalse))
         .compose(res -> map.removeIfPresent(k, otherValue).expecting(that(Assert::assertFalse)))
         .compose(res -> map.removeIfPresent(k, v).expecting(that(Assert::assertTrue))))
-      .onComplete(onSuccess(v_ -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v_ -> testComplete()));
     await();
   }
 
@@ -826,11 +831,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
       .compose(map -> map.put(k, v).expecting(that(Assert::assertNull)))
       .compose(v_ -> sharedData
         .<K, V>getAsyncMap("foo")
-        .compose(map -> map.replace(k, other).expecting(that(res -> assertEquals(v, res)))
-          .compose(v__ -> map.get(k).expecting(that(res -> assertEquals(other, res))))
+        .compose(map -> map.replace(k, other).expecting(that(res -> Assert.assertEquals(v, res)))
+          .compose(v__ -> map.get(k).expecting(that(res -> Assert.assertEquals(other, res))))
           .compose(v__ -> map.remove(k)).compose(v__ -> map.replace(k, other).expecting(that(Assert::assertNull)))
           .compose(v__ -> map.get(k).expecting(that(Assert::assertNull)))))
-      .onComplete(onSuccess(v_ -> testComplete()));
+      .onComplete(TestUtils.onSuccess(v_ -> testComplete()));
 
     await();
   }
@@ -844,8 +849,8 @@ public abstract class AsyncMapTest extends VertxTestBase {
       .compose(map -> map
         .replaceIfPresent(k, v, other)
         .compose(res2 -> map.replaceIfPresent(k, v, other).expecting(that(Assert::assertFalse)))
-        .compose(v_ -> map.get(k).expecting(that(res4 -> assertEquals(other, res4)))))
-      .onComplete(onSuccess(v_ -> testComplete()));
+        .compose(v_ -> map.get(k).expecting(that(res4 -> Assert.assertEquals(other, res4)))))
+      .onComplete(TestUtils.onSuccess(v_ -> testComplete()));
     await();
   }
 

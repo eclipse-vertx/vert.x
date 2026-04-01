@@ -18,6 +18,8 @@ import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.FakeQuicEndpointMetrics;
 import io.vertx.test.fakemetrics.FakeTransportMetrics;
 import io.vertx.test.fakemetrics.ConnectionMetric;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -36,6 +38,10 @@ public class QuicMetricsTest extends VertxTestBase {
 
   private List<QuicServer> servers = new ArrayList<>();
   private QuicClient client;
+
+  public QuicMetricsTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   protected void tearDown() throws Exception {
@@ -70,8 +76,8 @@ public class QuicMetricsTest extends VertxTestBase {
       QuicServer server = vertx.createQuicServer(new QuicServerConfig().setLoadBalanced(numberOfServers > 1), QuicServerTest.SSL_OPTIONS);
       server.connectHandler(conn -> {
         FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(server);
-        assertNull(serverMetrics.protocol());
-        assertEquals(1, serverMetrics.connectionCount());
+        Assert.assertNull(serverMetrics.protocol());
+        Assert.assertEquals(1, serverMetrics.connectionCount());
         serverConnectionMetric.set(serverMetrics.firstMetric(conn.remoteAddress()));
         conn.streamHandler(stream -> {
           stream.handler(buff -> stream.write(buff));
@@ -85,9 +91,9 @@ public class QuicMetricsTest extends VertxTestBase {
     client.bind(SocketAddress.inetSocketAddress(0, "localhost")).await();
     QuicConnection clientConnection = client.connect(SocketAddress.inetSocketAddress(port, "localhost")).await();
     FakeQuicEndpointMetrics clientMetrics = FakeTransportMetrics.quicMetricsOf(client);
-    assertNull(clientMetrics.protocol());
-    assertEquals("the-metrics", clientMetrics.name());
-    assertEquals(1, clientMetrics.connectionCount());
+    Assert.assertNull(clientMetrics.protocol());
+    Assert.assertEquals("the-metrics", clientMetrics.name());
+    Assert.assertEquals(1, clientMetrics.connectionCount());
     ConnectionMetric clientConnectionMetric = clientMetrics.firstMetric(clientConnection.remoteAddress());
     List<Buffer> received = Collections.synchronizedList(new ArrayList<>());
     CountDownLatch latch = new CountDownLatch(1);
@@ -102,16 +108,16 @@ public class QuicMetricsTest extends VertxTestBase {
     clientStream.end().await();
     assertWaitUntil(() -> clientConnectionMetric.openStreams.get() == 0, 30_000);
     assertWaitUntil(() -> serverConnectionMetric.get().openStreams.get() == 0, 30_000);
-    awaitLatch(latch);
-    assertEquals(List.of(Buffer.buffer("ping")), received);
+    TestUtils.awaitLatch(latch);
+    Assert.assertEquals(List.of(Buffer.buffer("ping")), received);
     FakeQuicEndpointMetrics serverMetrics = FakeTransportMetrics.quicMetricsOf(servers.get(0));
-    assertNull(serverMetrics.protocol());
+    Assert.assertNull(serverMetrics.protocol());
     clientConnection.close().await();
     assertWaitUntil(() -> serverMetrics.connectionCount() == 0);
     assertWaitUntil(() -> clientMetrics.connectionCount() == 0);
-    assertEquals(4, serverConnectionMetric.get().bytesRead.get());
-    assertEquals(4, serverConnectionMetric.get().bytesWritten.get());
-    assertEquals(4, clientConnectionMetric.bytesRead.get());
-    assertEquals(4, clientConnectionMetric.bytesWritten.get());
+    Assert.assertEquals(4, serverConnectionMetric.get().bytesRead.get());
+    Assert.assertEquals(4, serverConnectionMetric.get().bytesWritten.get());
+    Assert.assertEquals(4, clientConnectionMetric.bytesRead.get());
+    Assert.assertEquals(4, clientConnectionMetric.bytesWritten.get());
   }
 }

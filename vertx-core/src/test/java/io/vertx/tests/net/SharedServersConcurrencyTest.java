@@ -18,6 +18,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -25,14 +27,17 @@ import org.junit.Test;
  */
 public class SharedServersConcurrencyTest extends VertxTestBase {
 
+  public SharedServersConcurrencyTest() {
+    super(ReportMode.FORBIDDEN);
+  }
+
   @Test
   @Repeat(times = 100)
   public void testConcurrency() {
     vertx.deployVerticle(new MonitorVerticle())
       .compose(__ -> vertx.deployVerticle(new RestVerticle()))
       .compose(__ -> vertx.deployVerticle(new ApiVerticle()))
-      .onComplete(onSuccess(__ -> testComplete()));
-    await();
+      .await();
   }
 
   private static class ApiVerticle extends AbstractVerticle {
@@ -72,7 +77,6 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
         })
         .listen(15152).onComplete(ar -> {
           if (ar.succeeded()) {
-            System.out.println("REST listening on port: " + ar.result().actualPort());
             startPromise.complete();
           } else {
             startPromise.fail(ar.cause());
@@ -89,7 +93,6 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
         })
         .listen(16152).onComplete(ar -> {
           if (ar.succeeded()) {
-            System.out.println("Monitor listening on port: " + ar.result().actualPort());
             startPromise.complete();
           } else {
             startPromise.fail(ar.cause());

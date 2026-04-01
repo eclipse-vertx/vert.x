@@ -21,6 +21,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +31,10 @@ public class Http3FlowControlTest extends VertxTestBase {
   private HttpServer server;
   private HttpClientConfig clientConfig;
   private HttpClientAgent client;
+
+  public Http3FlowControlTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -67,7 +72,7 @@ public class Http3FlowControlTest extends VertxTestBase {
     CompletableFuture<Integer> latch = new CompletableFuture<>();
 
     server.requestHandler(req -> {
-      pump(0, chunk, req.response(), onSuccess2(times -> {
+      pump(0, chunk, req.response(), TestUtils.onSuccess2(times -> {
         req.response().end();
         latch.complete(times);
       }));
@@ -78,7 +83,7 @@ public class Http3FlowControlTest extends VertxTestBase {
       .compose(request -> request
         .send()
         .expecting(HttpResponseExpectation.SC_OK))
-      .onComplete(onSuccess2(resp -> {
+      .onComplete(TestUtils.onSuccess2(resp -> {
         resp.pause();
         Buffer expected = Buffer.buffer();
         latch.whenComplete((times, err) -> {
@@ -90,7 +95,7 @@ public class Http3FlowControlTest extends VertxTestBase {
         Buffer cumulation = Buffer.buffer();
         resp.handler(cumulation::appendBuffer);
         resp.endHandler(v -> {
-          assertEquals(expected, cumulation);
+          Assert.assertEquals(expected, cumulation);
           testComplete();
         });
       }));

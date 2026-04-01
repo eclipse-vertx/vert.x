@@ -20,13 +20,11 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
 import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
-import org.junit.Assume;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -45,7 +43,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
   private final ThreadingModel threadingModel;
 
   public HttpMetricsTestBase(HttpConfig config,  HttpVersion protocol, ThreadingModel threadingModel) {
-    super(config);
+    super(config, ReportMode.FORBIDDEN);
     this.protocol = protocol;
     this.threadingModel = threadingModel;
   }
@@ -86,26 +84,26 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     int contentLength = numBuffers * chunkSize;
     AtomicReference<HttpServerMetric> serverMetric = new AtomicReference<>();
     server.requestHandler(req -> {
-      assertEquals(protocol, req.version());
+      Assert.assertEquals(protocol, req.version());
       FakeHttpServerMetrics serverMetrics = FakeMetricsBase.httpMetricsOf(server);
-      assertNotNull(serverMetrics);
+      Assert.assertNotNull(serverMetrics);
       HttpServerMetric metric = serverMetrics.getRequestMetric(req);
-      assertSame(((HttpServerRequestInternal)req).metric(), metric);
-      assertNotNull(metric);
-      assertEquals(requestUri, metric.uri);
-      assertNotNull(metric.request);
-      assertEquals(protocol, metric.request.version());
-      assertNull(metric.response.get());
-      assertNull(metric.route.get());
+      Assert.assertSame(((HttpServerRequestInternal)req).metric(), metric);
+      Assert.assertNotNull(metric);
+      Assert.assertEquals(requestUri, metric.uri);
+      Assert.assertNotNull(metric.request);
+      Assert.assertEquals(protocol, metric.request.version());
+      Assert.assertNull(metric.response.get());
+      Assert.assertNull(metric.route.get());
       req.routed("/route/:param");
       // Worker can wait
       assertWaitUntil(() -> metric.route.get() != null);
       serverMetric.set(metric);
-      assertEquals("/route/:param", serverMetric.get().route.get());
+      Assert.assertEquals("/route/:param", serverMetric.get().route.get());
       req.bodyHandler(buff -> {
-        assertEquals(contentLength, buff.length());
-        assertTrue(serverMetric.get().requestEnded.get());
-        assertEquals(contentLength, serverMetric.get().bytesRead.get());
+        Assert.assertEquals(contentLength, buff.length());
+        Assert.assertTrue(serverMetric.get().requestEnded.get());
+        Assert.assertEquals(contentLength, serverMetric.get().bytesRead.get());
         HttpServerResponse resp = req.response().setChunked(true);
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
@@ -113,18 +111,18 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
           if (numBuffer.decrementAndGet() == 0) {
             resp
               .end(chunk)
-              .onComplete(onSuccess(v -> {
-                assertTrue(serverMetric.get().responseEnded.get());
-                assertFalse(serverMetric.get().failed.get());
-                assertEquals(contentLength, serverMetric.get().bytesWritten.get());
-                assertNull(serverMetrics.getRequestMetric(req));
+              .onComplete(TestUtils.onSuccess(v -> {
+                Assert.assertTrue(serverMetric.get().responseEnded.get());
+                Assert.assertFalse(serverMetric.get().failed.get());
+                Assert.assertEquals(contentLength, serverMetric.get().bytesWritten.get());
+                Assert.assertNull(serverMetrics.getRequestMetric(req));
               }));
             vertx.cancelTimer(timerID);
           } else {
             resp
               .write(chunk)
-              .onComplete(onSuccess(v -> {
-                assertSame(serverMetric.get().response.get().headers(), resp.headers());
+              .onComplete(TestUtils.onSuccess(v -> {
+                Assert.assertSame(serverMetric.get().response.get().headers(), resp.headers());
               }));
           }
         });
@@ -140,45 +138,45 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
 //    assertSame(metrics, tcpMetrics);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
-      assertEquals(Collections.emptySet(), clientMetrics.endpoints());
+      Assert.assertEquals(Collections.emptySet(), clientMetrics.endpoints());
       client.request(new RequestOptions(requestOptions)
         .setURI(requestUri))
-        .onComplete(onSuccess(req -> {
+        .onComplete(TestUtils.onSuccess(req -> {
           req
-            .response().onComplete(onSuccess(resp -> {
+            .response().onComplete(TestUtils.onSuccess(resp -> {
               FakeTransportMetrics transportMetrics = FakeTCPMetrics.transportMetricsOf(client);
               clientSocketMetric.set(transportMetrics.firstMetric(testAddress));
-              assertNotNull(clientSocketMetric.get());
-              assertEquals(Collections.singleton(testAddress.toString()), clientMetrics.endpoints());
+              Assert.assertNotNull(clientSocketMetric.get());
+              Assert.assertEquals(Collections.singleton(testAddress.toString()), clientMetrics.endpoints());
               clientMetric.set(clientMetrics.getMetric(resp.request()));
-              assertNotNull(clientMetric.get());
-              assertEquals(contentLength, clientMetric.get().bytesWritten.get());
+              Assert.assertNotNull(clientMetric.get());
+              Assert.assertEquals(contentLength, clientMetric.get().bytesWritten.get());
               // assertNotNull(clientMetric.get().socket);
               // assertTrue(clientMetric.get().socket.connected.get());
-              assertEquals((Integer) 1, transportMetrics.connectionCount(testAddress));
+              Assert.assertEquals((Integer) 1, transportMetrics.connectionCount(testAddress));
               resp.bodyHandler(buff -> {
-                assertEquals(contentLength, clientMetric.get().bytesRead.get());
-                assertNull(clientMetrics.getMetric(resp.request()));
-                assertEquals(contentLength, buff.length());
+                Assert.assertEquals(contentLength, clientMetric.get().bytesRead.get());
+                Assert.assertNull(clientMetrics.getMetric(resp.request()));
+                Assert.assertEquals(contentLength, buff.length());
                 latch.countDown();
               });
             }));
-          req.exceptionHandler(this::fail)
+          req.exceptionHandler(err -> Assert.fail(err.getMessage()))
             .setChunked(true);
-          assertNull(clientMetrics.getMetric(req));
+          Assert.assertNull(clientMetrics.getMetric(req));
           for (int i = 0;i < numBuffers;i++) {
             req.write(TestUtils.randomBuffer(chunkSize));
           }
           req.end();
       }));
     });
-    awaitLatch(latch);
+    TestUtils.awaitLatch(latch);
     client.close();
     AsyncTestBase.assertWaitUntil(() -> clientMetrics.endpoints().isEmpty());
-    assertEquals(null, clientMetrics.connectionCount(DEFAULT_HTTP_HOST_AND_PORT));
+    Assert.assertEquals(null, clientMetrics.connectionCount(DEFAULT_HTTP_HOST_AND_PORT));
     AsyncTestBase.assertWaitUntil(() -> !clientSocketMetric.get().connected.get());
-    assertEquals(contentLength, clientSocketMetric.get().bytesRead.get());
-    assertEquals(contentLength, clientSocketMetric.get().bytesWritten.get());
+    Assert.assertEquals(contentLength, clientSocketMetric.get().bytesRead.get());
+    Assert.assertEquals(contentLength, clientSocketMetric.get().bytesWritten.get());
   }
 
   @Test
@@ -191,7 +189,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     CompletableFuture<Void> beginResponse = new CompletableFuture<>();
     CompletableFuture<Void> endResponse = new CompletableFuture<>();
     server.requestHandler(req -> {
-      assertEquals(protocol, req.version());
+      Assert.assertEquals(protocol, req.version());
       requestBeginLatch.countDown();
       req.handler(buff -> {
         requestBodyLatch.countDown();
@@ -213,13 +211,13 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     });
     startServer(testAddress);
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.httpMetricsOf(client);
-    assertEquals("the-metrics", clientMetrics.name());
+    Assert.assertEquals("the-metrics", clientMetrics.name());
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     HttpClientRequest request = client.request(new RequestOptions(requestOptions)
       .setMethod(HttpMethod.POST)
       .setURI("/somepath")).await();
     HttpClientMetric initRequestMetric = (HttpClientMetric)((HttpClientRequestInternal)request).metric(); // Might be null
-    assertTrue(initRequestMetric != null);
+    Assert.assertTrue(initRequestMetric != null);
     Future<Void> responseEndLatch = request
       .response()
       .compose(response -> {
@@ -227,28 +225,28 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
       return response.end();
     });
     request.setChunked(true).writeHead().await();
-    awaitLatch(requestBeginLatch);
+    TestUtils.awaitLatch(requestBeginLatch);
     HttpClientMetric requestMetric = clientMetrics.getMetric(request);
-    assertSame(initRequestMetric, requestMetric);
+    Assert.assertSame(initRequestMetric, requestMetric);
     waitUntil(() -> requestMetric.requestEnded.get() == 0);
     waitUntil(() -> requestMetric.responseBegin.get() == 0);
     request.write(TestUtils.randomAlphaString(1024));
-    awaitLatch(requestBodyLatch);
-    assertEquals(0, requestMetric.requestEnded.get());
-    assertEquals(0, requestMetric.responseBegin.get());
+    TestUtils.awaitLatch(requestBodyLatch);
+    Assert.assertEquals(0, requestMetric.requestEnded.get());
+    Assert.assertEquals(0, requestMetric.responseBegin.get());
     request.end();
-    awaitLatch(requestEndLatch);
+    TestUtils.awaitLatch(requestEndLatch);
     waitUntil(() -> requestMetric.requestEnded.get() == 1);
-    assertEquals(0, requestMetric.responseBegin.get());
+    Assert.assertEquals(0, requestMetric.responseBegin.get());
     beginResponse.complete(null);
-    awaitLatch(responseBeginLatch);
-    assertEquals(1, requestMetric.requestEnded.get());
+    TestUtils.awaitLatch(responseBeginLatch);
+    Assert.assertEquals(1, requestMetric.requestEnded.get());
     waitUntil(() -> requestMetric.responseBegin.get() == 1);
     endResponse.complete(null);
     responseEndLatch.await();
     waitUntil(() -> clientMetrics.getMetric(request) == null);
-    assertEquals(1, requestMetric.requestEnded.get());
-    assertEquals(1, requestMetric.responseBegin.get());
+    Assert.assertEquals(1, requestMetric.requestEnded.get());
+    Assert.assertEquals(1, requestMetric.responseBegin.get());
   }
 
   @Test
@@ -261,12 +259,12 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     client = config.forClient().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
     FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
     AtomicReference<HttpClientMetric> ref = new AtomicReference<>();
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
+    client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
+      req.send().onComplete(TestUtils.onSuccess(resp -> {
         HttpClientMetric metric = metrics.getMetric(resp.request());
-        assertNotNull(metric);
+        Assert.assertNotNull(metric);
         ref.set(metric);
-        assertFalse(metric.failed.get());
+        Assert.assertFalse(metric.failed.get());
         resp.exceptionHandler(err -> {
           testComplete();
         });
@@ -283,16 +281,16 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);
-      assertNotNull(metric);
-      assertFalse(metric.failed.get());
+      Assert.assertNotNull(metric);
+      Assert.assertFalse(metric.failed.get());
       req.response().closeHandler(v -> {
-        assertNull(metrics.getRequestMetric(req));
-        assertTrue(metric.failed.get());
+        Assert.assertNull(metrics.getRequestMetric(req));
+        Assert.assertTrue(metric.failed.get());
         testComplete();
       });
     });
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::send));
+    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(TestUtils.onSuccess(HttpClientRequest::send));
     await();
   }
 
@@ -301,21 +299,21 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);
-      assertNull(metric.route.get());
+      Assert.assertNull(metric.route.get());
       req.routed("MyRoute");
       // Worker can wait
       assertWaitUntil(() -> metric.route.get() != null);
-      assertEquals("MyRoute", metric.route.get());
+      Assert.assertEquals("MyRoute", metric.route.get());
       metric.route.set(null);
       req.routed("MyRoute - rerouted");
       // Worker can wait
       assertWaitUntil(() -> metric.route.get() != null);
-      assertEquals("MyRoute - rerouted", metric.route.get());
+      Assert.assertEquals("MyRoute - rerouted", metric.route.get());
       req.response().end();
       testComplete();
     });
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::send));
+    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(TestUtils.onSuccess(HttpClientRequest::send));
     await();
   }
 
@@ -324,14 +322,14 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.httpMetricsOf(server);
       HttpServerMetric metric = metrics.getRequestMetric(req);
-      assertNull(metric.route.get());
+      Assert.assertNull(metric.route.get());
       req.response().end();
       req.routed("Routed after ending");
-      assertNull(metric.route.get());
+      Assert.assertNull(metric.route.get());
       testComplete();
     });
     startServer(testAddress);
-    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::send));
+    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(TestUtils.onSuccess(HttpClientRequest::send));
     await();
   }
 
@@ -339,9 +337,9 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
   public void testResetImmediately() {
     FakeHttpClientMetrics metrics = FakeMetricsBase.httpMetricsOf(client);
     server.requestHandler(req -> {
-    }).listen(testAddress).onComplete(onSuccess(v -> {
-      client.request(requestOptions).onComplete(onSuccess(request -> {
-        assertNull(metrics.getMetric(request));
+    }).listen(testAddress).onComplete(TestUtils.onSuccess(v -> {
+      client.request(requestOptions).onComplete(TestUtils.onSuccess(request -> {
+        Assert.assertNull(metrics.getMetric(request));
         request.reset(0);
         vertx.setTimer(10, id -> {
           testComplete();
@@ -365,18 +363,18 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
         }
       });
     });
-    awaitFuture(server.listen(testAddress));
+    server.listen(testAddress).await();
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.httpMetricsOf(client);
     for (int i = 0;i < 5;i++) {
       client.request(requestOptions)
         .compose(HttpClientRequest::end)
-        .onComplete(onSuccess(v -> {
+        .onComplete(TestUtils.onSuccess(v -> {
         }));
     }
     assertWaitUntil(() -> requests.size() == 5);
     EndpointMetric endpoint = metrics.endpoint("localhost:" + testAddress.port());
     int expectedConnections = protocol == HttpVersion.HTTP_1_1 ? 5 : 1;
-    assertEquals(expectedConnections, endpoint.connectionCount.get());
+    Assert.assertEquals(expectedConnections, endpoint.connectionCount.get());
     ArrayList<Runnable> copy = new ArrayList<>(requests);
     requests.clear();
     copy.forEach(Runnable::run);

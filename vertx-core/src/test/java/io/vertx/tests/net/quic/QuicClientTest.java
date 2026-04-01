@@ -59,6 +59,10 @@ public class QuicClientTest extends VertxTestBase {
   private QuicServer server;
   private QuicClient client;
 
+  public QuicClientTest() {
+    super(ReportMode.FORBIDDEN);
+  }
+
   @Override
   public void setUp() throws Exception {
     super.setUp();

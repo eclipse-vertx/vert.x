@@ -19,6 +19,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +29,10 @@ public class QuicContextTest extends VertxTestBase {
   private ContextInternal workerContext;
   private QuicServer server;
   private QuicClient client;
+
+  public QuicContextTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -52,15 +57,15 @@ public class QuicContextTest extends VertxTestBase {
   public void testServerConnectionScoped() {
 
     server.connectHandler(conn -> {
-      assertSame(Vertx.currentContext(), workerContext);
+      Assert.assertSame(Vertx.currentContext(), workerContext);
       conn.streamHandler(stream -> {
-        assertSame(Vertx.currentContext(), workerContext);
+        Assert.assertSame(Vertx.currentContext(), workerContext);
         stream.handler(buff -> {
-          assertSame(Vertx.currentContext(), workerContext);
+          Assert.assertSame(Vertx.currentContext(), workerContext);
           stream.write(buff);
         });
         stream.endHandler(v -> {
-          assertSame(Vertx.currentContext(), workerContext);
+          Assert.assertSame(Vertx.currentContext(), workerContext);
           stream.end();
           testComplete();
         });
@@ -80,15 +85,15 @@ public class QuicContextTest extends VertxTestBase {
   public void testServerStreamScoped() {
 
     server.connectHandler(conn -> {
-      assertSame(Vertx.currentContext(), workerContext);
+      Assert.assertSame(Vertx.currentContext(), workerContext);
       conn.streamHandler(stream -> {
-        assertSame(Vertx.currentContext(), workerContext);
+        Assert.assertSame(Vertx.currentContext(), workerContext);
         stream.handler(buff -> {
-          assertSame(Vertx.currentContext(), workerContext);
+          Assert.assertSame(Vertx.currentContext(), workerContext);
           stream.write(buff);
         });
         stream.endHandler(v -> {
-          assertSame(Vertx.currentContext(), workerContext);
+          Assert.assertSame(Vertx.currentContext(), workerContext);
           stream.end();
           testComplete();
         });
@@ -116,7 +121,7 @@ public class QuicContextTest extends VertxTestBase {
     QuicConnection connection = Future.<QuicConnection>future(p -> workerContext.runOnContext(v -> client.connect(SocketAddress.inetSocketAddress(9999, "localhost")).onComplete(p))).await();
 
     connection.datagramHandler(buff -> {
-      assertSame(workerContext, Vertx.currentContext());
+      Assert.assertSame(workerContext, Vertx.currentContext());
       testComplete();
     });
     connection.writeDatagram(Buffer.buffer("ping")).await();
@@ -143,11 +148,11 @@ public class QuicContextTest extends VertxTestBase {
 
     AtomicInteger cnt = new AtomicInteger();
     stream.handler(buff -> {
-      assertSame(workerContext, Vertx.currentContext());
+      Assert.assertSame(workerContext, Vertx.currentContext());
       cnt.incrementAndGet();
     });
     stream.endHandler(v -> {
-      assertSame(workerContext, Vertx.currentContext());
+      Assert.assertSame(workerContext, Vertx.currentContext());
       testComplete();
     });
     stream.write(Buffer.buffer("ping")).await();
@@ -161,17 +166,17 @@ public class QuicContextTest extends VertxTestBase {
   public void testStreamContextProvider() {
 
     server.connectHandler(conn -> {
-      assertNotSame(Vertx.currentContext(), workerContext);
+      Assert.assertNotSame(Vertx.currentContext(), workerContext);
       Context connectionCtx = vertx.getOrCreateContext();
       ((QuicConnectionInternal)conn).streamContextProvider(ctx -> workerContext);
       conn.streamHandler(stream -> {
-        assertSame(Vertx.currentContext(), connectionCtx);
+        Assert.assertSame(Vertx.currentContext(), connectionCtx);
         stream.handler(buff -> {
-          assertSame(Vertx.currentContext(), workerContext);
+          Assert.assertSame(Vertx.currentContext(), workerContext);
           stream.write(buff);
         });
         stream.endHandler(v -> {
-          assertSame(Vertx.currentContext(), workerContext);
+          Assert.assertSame(Vertx.currentContext(), workerContext);
           stream.end();
           testComplete();
         });
@@ -205,11 +210,11 @@ public class QuicContextTest extends VertxTestBase {
 
     AtomicInteger cnt = new AtomicInteger();
     stream.handler(buff -> {
-      assertSame(workerContext, Vertx.currentContext());
+      Assert.assertSame(workerContext, Vertx.currentContext());
       cnt.incrementAndGet();
     });
     stream.endHandler(v -> {
-      assertSame(workerContext, Vertx.currentContext());
+      Assert.assertSame(workerContext, Vertx.currentContext());
       testComplete();
     });
     stream.write(Buffer.buffer("ping")).await();

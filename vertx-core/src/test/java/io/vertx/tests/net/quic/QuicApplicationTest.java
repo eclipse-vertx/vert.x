@@ -49,6 +49,7 @@ import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.impl.quic.QuicConnectionHandler;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -57,6 +58,10 @@ import java.util.Arrays;
 import static io.vertx.tests.net.quic.QuicClientTest.clientOptions;
 
 public class QuicApplicationTest extends VertxTestBase {
+
+  public QuicApplicationTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Test
   public void testConnectionLevel() throws Exception {
@@ -204,7 +209,7 @@ public class QuicApplicationTest extends VertxTestBase {
       if (msg instanceof FullHttpResponse) {
         FullHttpResponse response = (FullHttpResponse) msg;
         try {
-          assertEquals("Hello World", response.content().toString(StandardCharsets.UTF_8));
+          Assert.assertEquals("Hello World", response.content().toString(StandardCharsets.UTF_8));
         } finally {
           response.release();
         }

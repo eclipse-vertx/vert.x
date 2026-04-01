@@ -13,6 +13,8 @@ package io.vertx.tests.shareddata;
 
 import io.vertx.core.Future;
 import io.vertx.core.shareddata.AsyncMap;
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import io.vertx.core.Vertx;
@@ -55,7 +57,7 @@ public class ClusteredAsyncMapTest extends AsyncMapTest {
   public void testGetLocalAsyncMap() {
     final Vertx node1 = getVertx();
     final Vertx node2 = getVertx();
-    assertNotSame(node1, node2);
+    Assert.assertNotSame(node1, node2);
 
     Future
       .all(node1.sharedData().getLocalAsyncMap("map"), node2.sharedData().getLocalAsyncMap("map"))
@@ -65,11 +67,11 @@ public class ClusteredAsyncMapTest extends AsyncMapTest {
       return Future
         .all(mapNode1.put("Hodor", "Hodor"), mapNode2.put("Hodor", "Hodor Hodor"))
         .compose(compFuturePutted -> Future.all(mapNode1.get("Hodor"), mapNode2.get("Hodor")));
-    }).onComplete(onSuccess(asyncCompFuture -> {
+    }).onComplete(TestUtils.onSuccess(asyncCompFuture -> {
       String valueMapNode1 = asyncCompFuture.result().resultAt(0);
       String valueMapNode2 = asyncCompFuture.result().resultAt(1);
-      assertEquals(valueMapNode1, "Hodor");
-      assertEquals(valueMapNode2, "Hodor Hodor");
+      Assert.assertEquals(valueMapNode1, "Hodor");
+      Assert.assertEquals(valueMapNode2, "Hodor Hodor");
       testComplete();
     }));
     await();

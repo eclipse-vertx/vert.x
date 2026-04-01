@@ -620,4 +620,10 @@ public class TestUtils {
   public static void assertSameEventLoop(Context expected, Context actual) {
     assertSame(((ContextInternal)expected).nettyEventLoop(), ((ContextInternal)actual).nettyEventLoop());
   }
+
+  public static void assertOnIOContext(Context context) {
+    Context current = Vertx.currentContext();
+    assertNotNull(current);
+    assertSameEventLoop(context, current);
+  }
 }

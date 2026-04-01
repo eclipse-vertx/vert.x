@@ -73,6 +73,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
   public HttpBandwidthLimitingTest(double protoVersion, Function<Vertx, HttpServer> serverFactory,
                                    Function<Vertx, HttpClientAgent> clientFactory,
                                    Function<Vertx, HttpServer> nonTrafficShapedServerFactory) {
+    super(ReportMode.FORBIDDEN);
     this.serverFactory = serverFactory;
     this.clientFactory = clientFactory;
     this.nonTrafficShapedServerFactory = nonTrafficShapedServerFactory;
@@ -119,7 +120,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
               .compose(req -> req.send()
                 .expecting(HttpResponseExpectation.SC_OK)
                 .compose(HttpClientResponse::body))
-              .onComplete(onSuccess(body -> {
+              .onComplete(TestUtils.onSuccess(body -> {
                 receivedLength.set(body.getBytes().length);
                 Assert.assertEquals(expectedLength, receivedLength.get());
                 testComplete();
@@ -179,14 +180,14 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     AtomicLong startTime = new AtomicLong();
     AtomicLong totalReceivedLength = new AtomicLong();
     long expectedLength = Files.size(Path.of(sampleF.getAbsolutePath()));
-    listenLatch.onComplete(onSuccess(v -> {
+    listenLatch.onComplete(TestUtils.onSuccess(v -> {
       startTime.set(System.nanoTime());
       for (int i=0; i<2; i++) {
         testClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST,"/get-file")
                   .compose(req -> req.send()
                     .expecting(HttpResponseExpectation.SC_OK)
                     .compose(HttpClientResponse::body))
-                  .onComplete(onSuccess(body -> {
+                  .onComplete(TestUtils.onSuccess(body -> {
                       long receivedBytes = body.getBytes().length;
                       totalReceivedLength.addAndGet(receivedBytes);
                       Assert.assertEquals(expectedLength, receivedBytes);
@@ -194,7 +195,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
                   }));
       }
     }));
-    awaitLatch(waitForResponse);
+    TestUtils.awaitLatch(waitForResponse);
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis > expectedTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT)); // because there are simultaneous 2 requests
   }
@@ -234,16 +235,16 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     for (int i = 0; i < 2; i++) {
       testClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/get-file")
         .compose(req -> req.send()
-          .andThen(onSuccess(resp -> assertEquals(200, resp.statusCode())))
+          .andThen(TestUtils.onSuccess(resp -> Assert.assertEquals(200, resp.statusCode())))
           .compose(HttpClientResponse::body))
-        .onComplete(onSuccess(body -> {
+        .onComplete(TestUtils.onSuccess(body -> {
           long receivedBytes = body.getBytes().length;
           totalReceivedLength.addAndGet(receivedBytes);
           Assert.assertEquals(expectedLength, receivedBytes);
           waitForResponse.countDown();
         }));
     }
-    awaitLatch(waitForResponse);
+    TestUtils.awaitLatch(waitForResponse);
     long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get());
     Assert.assertTrue(elapsedMillis < expectedUpperBoundTimeMillis(totalReceivedLength.get(), OUTBOUND_LIMIT));
   }
@@ -327,8 +328,8 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
             .send()
             .expecting(HttpResponseExpectation.SC_OK)
             .compose(HttpClientResponse::body))
-          .onComplete(onSuccess(body -> {
-              assertEquals(expected.getBytes().length, body.getBytes().length);
+          .onComplete(TestUtils.onSuccess(body -> {
+              Assert.assertEquals(expected.getBytes().length, body.getBytes().length);
               testComplete();
           }));
   }
@@ -372,7 +373,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     public Handler<HttpServerRequest> bufferWrite(Buffer expected) {
       return req -> {
         req.bodyHandler(buffer -> {
-          assertEquals(expected, buffer);
+          Assert.assertEquals(expected, buffer);
           testComplete();
         });
       };
@@ -381,7 +382,7 @@ public class HttpBandwidthLimitingTest extends Http2TestBase {
     public Handler<HttpServerRequest> uploadFile(File expected) {
       return req -> {
         req.endHandler((r) -> {
-          assertEquals(expected.length(), req.bytesRead());
+          Assert.assertEquals(expected.length(), req.bytesRead());
           testComplete();
         });
       };

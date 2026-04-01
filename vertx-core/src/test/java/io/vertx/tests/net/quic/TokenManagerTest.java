@@ -16,6 +16,7 @@ import io.vertx.core.net.impl.quic.TokenManager;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -23,6 +24,10 @@ import java.time.Duration;
 public class TokenManagerTest extends VertxTestBase {
 
   private PemKeyCertOptions pemConf;
+
+  public TokenManagerTest() {
+    super(ReportMode.FORBIDDEN);
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -33,7 +38,7 @@ public class TokenManagerTest extends VertxTestBase {
   private TokenManager tokenManager(Duration timeWindow) throws Exception {
     TokenManager tokenManager = new TokenManager((VertxInternal) vertx, timeWindow);
     tokenManager.init(pemConf);
-    assertNotNull(tokenManager.signingAlgorithm());
+    Assert.assertNotNull(tokenManager.signingAlgorithm());
     return tokenManager;
   }
 
@@ -43,7 +48,7 @@ public class TokenManagerTest extends VertxTestBase {
     TokenManager tokenManager = tokenManager(timeWindow);
     int retries = 0;
     while (true) {
-      assertTrue(retries < 3);
+      Assert.assertTrue(retries < 3);
       long now = System.currentTimeMillis();
       byte[] token = tokenManager.generateToken("hello".getBytes());
       long target = now + (timeWindow.toMillis() * 80) / 100;
@@ -54,7 +59,7 @@ public class TokenManagerTest extends VertxTestBase {
         break;
       } else {
         if ((System.currentTimeMillis() - now) < timeWindow.toMillis()) {
-          fail();
+          Assert.fail();
         } else {
           retries++;
         }
@@ -68,7 +73,7 @@ public class TokenManagerTest extends VertxTestBase {
     TokenManager tokenManager = tokenManager(timeWindow);
     byte[] token = tokenManager.generateToken("hello".getBytes());
     Thread.sleep(timeWindow.toMillis() * 2 + 1);
-    assertFalse(tokenManager.verify(token));
+    Assert.assertFalse(tokenManager.verify(token));
   }
 
   @Test
@@ -79,6 +84,6 @@ public class TokenManagerTest extends VertxTestBase {
     for (int i = 0;i < token.length;i += 2) {
       token[i] = 0;
     }
-    assertFalse(tokenManager.verify(token));
+    Assert.assertFalse(tokenManager.verify(token));
   }
 }

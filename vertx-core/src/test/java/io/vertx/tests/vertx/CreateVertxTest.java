@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -22,18 +23,22 @@ import org.junit.Test;
  */
 public class CreateVertxTest extends VertxTestBase {
 
+  public CreateVertxTest() {
+    super(ReportMode.FORBIDDEN);
+  }
+
   @Test
   public void testCreateSimpleVertx() {
     Vertx vertx = vertx();
-    assertNotNull(vertx);
+    Assert.assertNotNull(vertx);
   }
 
   @Test
   public void testCreateVertxWithOptions() {
     VertxOptions options = new VertxOptions();
     Vertx vertx = vertx(options);
-    assertNotNull(vertx);
-    assertFalse(vertx.isClustered());
+    Assert.assertNotNull(vertx);
+    Assert.assertFalse(vertx.isClustered());
   }
 
   @Test
@@ -41,7 +46,7 @@ public class CreateVertxTest extends VertxTestBase {
     VertxOptions options = new VertxOptions();
     clusteredVertx(options)
       .compose(v -> {
-        assertTrue(v.isClustered());
+        Assert.assertTrue(v.isClustered());
         return v.close();
       }).await();
   }
@@ -57,9 +62,9 @@ public class CreateVertxTest extends VertxTestBase {
     try {
       clusteredVertx(new VertxOptions(), clusterManager).await();
     } catch (Throwable e) {
-      assertEquals("joinfailure", e.getMessage());
+      Assert.assertEquals("joinfailure", e.getMessage());
       return;
     }
-    fail();
+    Assert.fail();
   }
 }
