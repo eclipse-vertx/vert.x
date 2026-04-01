@@ -371,21 +371,31 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
               } else {
                 Assert.assertTrue(ar.failed());
               }
-              complete();
+              if (cancelStream) {
+                File f = new File(uploadedFileName);
+                if (!f.exists() || f.length() == content.length()) {
+                  // Was fully uploaded or removed already
+                  complete();
+                } else {
+                  long now = System.currentTimeMillis();
+                  vertx.setPeriodic(10, id -> {
+                    if (f.exists()) {
+                      Assert.assertTrue(System.currentTimeMillis() - now < 20_000);
+                    } else {
+                      vertx.cancelTimer(id);
+                      complete();
+                    }
+                  });
+                }
+              } else {
+                complete();
+              }
             });
             if (cancelStream) {
               BooleanSupplier test = () -> {
                 File f = new File(uploadedFileName);
-                if (f.length() == content.length() / 2) {
+                if (f.length() >= content.length() / 2 && f.length() < content.length()) {
                   Assert.assertTrue(upload.cancelStreamToFileSystem());
-                  long now = System.currentTimeMillis();
-                  vertx.setPeriodic(10, id -> {
-                    Assert.assertTrue(System.currentTimeMillis() - now < 20_000);
-                    if (!new File(uploadedFileName).exists()) {
-                      vertx.cancelTimer(id);
-                      req.response().end();
-                    }
-                  });
                   return true;
                 } else {
                   return false;
