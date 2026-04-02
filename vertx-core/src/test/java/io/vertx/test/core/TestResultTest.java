@@ -21,7 +21,7 @@ public class TestResultTest {
   @Test
   public void testVerify() {
     try (var res = new TestResult()) {
-      Completable<?> verifier = res.verifying();
+      Completable<?> verifier = res.succeeding();
       new Thread(() -> {
         try {
           Thread.sleep(100);
@@ -79,7 +79,7 @@ public class TestResultTest {
   @Test
   public void testConcurrentClose() throws Exception {
     TestResult res = new TestResult();
-    Completable<?> verifier = res.verifying();
+    Completable<?> verifier = res.succeeding();
     int num = 4;
     CyclicBarrier barrier = new CyclicBarrier(num);
     Thread[] runners = new Thread[num];
@@ -109,7 +109,7 @@ public class TestResultTest {
   @Test
   public void testVariance() {
     try (var res = new TestResult()) {
-      Completable<Object> verifier = res.verifying();
+      Completable<Object> verifier = res.succeeding();
       Future<Void> succeeded = Future.succeededFuture();
       succeeded.onComplete(verifier);
     }

@@ -45,7 +45,7 @@ public class TestResult implements AutoCloseable {
     return this;
   }
 
-  public synchronized Completable<Object> verifying() {
+  public synchronized Completable<Object> succeeding() {
     if (closed) {
       throw new IllegalStateException();
     }
@@ -57,6 +57,25 @@ public class TestResult implements AutoCloseable {
         }
         if (err != null && failure == null) {
           failure = err;
+        } else if (--pending == 0) {
+          TestResult.this.notify();
+        }
+      }
+    };
+  }
+
+  public synchronized Completable<Object> failing() {
+    if (closed) {
+      throw new IllegalStateException();
+    }
+    pending++;
+    return (res, err) -> {
+      synchronized (TestResult.this) {
+        if (closed) {
+          return;
+        }
+        if (err == null && failure == null) {
+          failure = new AssertionError("Was expectint a failure");
         } else if (--pending == 0) {
           TestResult.this.notify();
         }

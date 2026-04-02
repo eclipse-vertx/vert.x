@@ -128,57 +128,60 @@ public class VertxConnectionTest extends VertxTestBase {
           latch2.countDown();
         });
       };
-      client.connect(1234, "localhost").onComplete(result.verifying());
+      client.connect(1234, "localhost").onComplete(result.succeeding());
     }
   }
 
   @Test
   public void testQueueMessageFromInnerWrite() throws Exception {
-    connectHandler = conn -> {
-      ChannelHandlerContext ctx = conn.channelHandlerContext();
-      ChannelPipeline pipeline = ctx.pipeline();
-      List<String> order = new ArrayList<>();
-      pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
-        @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-          if (msg instanceof String) {
-            String s = (String) msg;
-            order.add(s);
-            if ("msg1".equals(s)) {
-              // Write a message why there are two messages queued on the connection
-              conn.writeMessage("msg3");
+    try (var result = new TestResult()) {
+      vertx.exceptionHandler(result::fail);
+      Completable<Object> hook = result.succeeding();
+      connectHandler = conn -> {
+        ChannelHandlerContext ctx = conn.channelHandlerContext();
+        ChannelPipeline pipeline = ctx.pipeline();
+        List<String> order = new ArrayList<>();
+        pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
+          @Override
+          public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            if (msg instanceof String) {
+              String s = (String) msg;
+              order.add(s);
+              if ("msg1".equals(s)) {
+                // Write a message why there are two messages queued on the connection
+                conn.writeMessage("msg3");
+              }
+              if (order.size() == 3) {
+                vertx.runOnContext(v -> {
+                  Assert.assertEquals(Arrays.asList("msg1", "msg2", "msg3"), order);
+                  hook.succeed();
+                });
+              }
+            } else {
+              super.write(ctx, msg, promise);
             }
-            if (order.size() == 3) {
-              vertx.runOnContext(v -> {
-                assertEquals(Arrays.asList("msg1", "msg2", "msg3"), order);
-                testComplete();
-              });
-            }
-          } else {
-            super.write(ctx, msg, promise);
           }
-        }
-      });
-      executeAsyncTaskAndAwait(() -> {
-        conn.writeMessage("msg1");
-        conn.writeMessage("msg2");
-      });
-    };
-    awaitFuture(client.connect(1234, "localhost"));
-    await();
+        });
+        executeAsyncTaskAndAwait(() -> {
+          conn.writeMessage("msg1");
+          conn.writeMessage("msg2");
+        });
+      };
+      client.connect(1234, "localhost").await();
+    }
   }
 
   @Test
   public void testQueueFlushFromEventLoop() throws Exception {
     try (var result = new TestResult()) {
-      Completable<Object> cond = result.verifying();
+      Completable<Object> cond = result.succeeding();
       connectHandler = conn -> {
         ChannelHandlerContext ctx = conn.channelHandlerContext();
         ChannelPipeline pipeline = ctx.pipeline();
         List<String> order = new ArrayList<>();
         Runnable checkOrder = () -> {
           vertx.runOnContext(v -> {
-            assertEquals(Arrays.asList("msg1", "msg2", "flush"), order);
+            Assert.assertEquals(Arrays.asList("msg1", "msg2", "flush"), order);
             cond.succeed();
           });
         };
@@ -220,15 +223,15 @@ public class VertxConnectionTest extends VertxTestBase {
           throw new RuntimeException(e);
         }
       };
-      client.connect(1234, "localhost").onComplete(result.verifying());
+      client.connect(1234, "localhost").onComplete(result.succeeding());
     }
   }
 
   @Test
   public void testOverflowDrain() throws Exception {
     try (var result = new TestResult()) {
-      Completable<Object> cond1 = result.verifying();
-      Completable<Object> cond2 = result.verifying();
+      Completable<Object> cond1 = result.succeeding();
+      Completable<Object> cond2 = result.succeeding();
       BufferInternal chunk = BufferInternal.buffer(TestUtils.randomAlphaString(1024 * 16));
       CompletableFuture<Void> drain = new CompletableFuture<>();
       connectHandler = so -> {
@@ -239,12 +242,12 @@ public class VertxConnectionTest extends VertxTestBase {
           num++;
         }
         Future.<Void>future(future -> conn.writeToChannel(Unpooled.EMPTY_BUFFER, future))
-          .onComplete(cond1)
+          .andThen(cond1)
           .onSuccess(v1 -> ctx.emit(v2 -> cond2.succeed()));
         drain.complete(null);
       };
       client.connect(1234, "localhost")
-        .onComplete(result.verifying())
+        .onComplete(result.succeeding())
         .onSuccess(so -> {
           so.pause();
           drain.whenComplete((v, e) -> {
@@ -278,109 +281,112 @@ public class VertxConnectionTest extends VertxTestBase {
 
   @Test
   public void testFailedQueueMessages() throws Exception {
-    // Todo : investigate this
-    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
-    BufferInternal buffer = BufferInternal.buffer(TestUtils.randomAlphaString(16 * 1024));
-    CompletableFuture<Void> latch = new CompletableFuture<>();
-    connectHandler = conn -> {
-      fill(conn, buffer, v1 -> {
-        Future<Void> fut = conn.write(buffer);
-        fut.onComplete(onFailure(v2 -> {
-          testComplete();
-        }));
-        latch.complete(null);
+    try (var result = new TestResult()) {
+      // Todo : investigate this
+      Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
+      Completable<Object> ver = result.failing();
+      BufferInternal buffer = BufferInternal.buffer(TestUtils.randomAlphaString(16 * 1024));
+      CompletableFuture<Void> latch = new CompletableFuture<>();
+      connectHandler = conn -> {
+        fill(conn, buffer, v1 -> {
+          conn.write(buffer).onComplete(ver);
+          latch.complete(null);
+        });
+      };
+      NetSocket so = client.connect(1234, "localhost").await(20, TimeUnit.SECONDS);
+      so.pause();
+      latch.whenComplete((v, err) -> {
+        so.close();
       });
-    };
-    NetSocket so = client.connect(1234, "localhost").await(20, TimeUnit.SECONDS);
-    so.pause();
-    latch.whenComplete((v, err) -> {
-      so.close();
-    });
-    await();
+    }
   }
 
   @Test
   public void testDrainReentrancy() throws Exception {
-    connectHandler = so -> {
-      ChannelHandlerContext chctx = so.channelHandlerContext();
-      chctx.pipeline().addBefore("handler", "myhandler", new ChannelDuplexHandler() {
-        int reentrant;
-        @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-          assertEquals(0, reentrant++);
-          try {
-            switch (msg.toString()) {
-              case "msg1":
-                // Fill outbound buffer
-                assertTrue(ctx.channel().isWritable());
-                ChannelFuture f = ctx.write(BufferInternal.buffer(TestUtils.randomAlphaString((int) ctx.channel().bytesBeforeUnwritable())).getByteBuf());
-                assertFalse(ctx.channel().isWritable());
-                // Flush to trigger writability change
-                ctx.flush();
-                assertTrue(ctx.channel().isWritable());
-                break;
-              case "msg2":
-                testComplete();
-                break;
+    try (var result = new TestResult()) {
+      Completable<Object> ss = result.succeeding();
+      connectHandler = so -> {
+        ChannelHandlerContext chctx = so.channelHandlerContext();
+        chctx.pipeline().addBefore("handler", "myhandler", new ChannelDuplexHandler() {
+          int reentrant;
+          @Override
+          public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+            result.eval(() -> Assert.assertEquals(0, reentrant++));
+            try {
+              switch (msg.toString()) {
+                case "msg1":
+                  // Fill outbound buffer
+                  result.eval(() -> Assert.assertTrue(ctx.channel().isWritable()));
+                  ChannelFuture f = ctx.write(BufferInternal.buffer(TestUtils.randomAlphaString((int) ctx.channel().bytesBeforeUnwritable())).getByteBuf());
+                  result.eval(() -> Assert.assertFalse(ctx.channel().isWritable()));
+                  // Flush to trigger writability change
+                  ctx.flush();
+                  result.eval(() -> Assert.assertTrue(ctx.channel().isWritable()));
+                  break;
+                case "msg2":
+                  ss.succeed();
+                  break;
+              }
+            } finally {
+              reentrant--;
             }
-          } finally {
-            reentrant--;
           }
-        }
-      });
+        });
 
-      VertxConnection conn = (VertxConnection) so;
-      CountDownLatch latch = new CountDownLatch(1);
-      executeAsyncTask(() -> {
-        conn.writeToChannel("msg1");
-        conn.writeToChannel("msg2");
-        latch.countDown();
-      });
-      try {
-        awaitLatch(latch);
-      } catch (InterruptedException e) {
-        fail(e);
-      }
-    };
-    NetSocket so = awaitFuture(client.connect(1234, "localhost"));
-    await();
+        VertxConnection conn = (VertxConnection) so;
+        CountDownLatch latch = new CountDownLatch(1);
+        executeAsyncTask(() -> {
+          conn.writeToChannel("msg1");
+          conn.writeToChannel("msg2");
+          latch.countDown();
+        });
+        try {
+          TestUtils.awaitLatch(latch);
+        } catch (InterruptedException e) {
+          result.fail(e);
+        }
+      };
+      NetSocket so = client.connect(1234, "localhost").await();
+    }
   }
 
   @Test
   public void testConsolidateFlushInDrain() throws Exception {
-    connectHandler = conn -> {
-      ChannelHandlerContext ctx = conn.channelHandlerContext();
-      ChannelPipeline pipeline = ctx.pipeline();
-      pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
-        int flushes;
-        int writes;
-        @Override
-        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-          writes++;
-        }
-        @Override
-        public void flush(ChannelHandlerContext ctx) throws Exception {
-          flushes++;
-          if (writes == 2) {
-            assertEquals(1, flushes);
-            testComplete();
+    try (var result = new TestResult()) {
+      Completable<Object> s = result.succeeding();
+      connectHandler = conn -> {
+        ChannelHandlerContext ctx = conn.channelHandlerContext();
+        ChannelPipeline pipeline = ctx.pipeline();
+        pipeline.addBefore("handler", "myhandler", new ChannelDuplexHandler() {
+          int flushes;
+          int writes;
+          @Override
+          public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+            writes++;
           }
+          @Override
+          public void flush(ChannelHandlerContext ctx) throws Exception {
+            flushes++;
+            if (writes == 2) {
+              result.eval(() -> Assert.assertEquals(1, flushes));
+              s.succeed();
+            }
+          }
+        });
+        CountDownLatch latch = new CountDownLatch(1);
+        executeAsyncTaskAndAwait(() -> {
+          conn.writeMessage("msg1");
+          conn.writeMessage("msg2");
+          latch.countDown();
+        });
+        try {
+          latch.await(20, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
         }
-      });
-      CountDownLatch latch = new CountDownLatch(1);
-      executeAsyncTaskAndAwait(() -> {
-        conn.writeMessage("msg1");
-        conn.writeMessage("msg2");
-        latch.countDown();
-      });
-      try {
-        latch.await(20, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    };
-    awaitFuture(client.connect(1234, "localhost"));
-    await();
+      };
+      client.connect(1234, "localhost").await();
+    }
   }
 
   @Test
@@ -429,7 +435,7 @@ public class VertxConnectionTest extends VertxTestBase {
   @Test
   public void testReentrantRead() throws Exception {
     try (var result = new TestResult()) {
-      Completable<Object> cond = result.verifying();
+      Completable<Object> cond = result.succeeding();
       connectHandler = conn -> {
         ChannelHandlerContext ctx = conn.channelHandlerContext();
         ChannelPipeline pipeline = ctx.pipeline();
@@ -455,7 +461,7 @@ public class VertxConnectionTest extends VertxTestBase {
         cond.succeed();
       });
       so.write("inbound-1")
-        .onComplete(result.verifying());
+        .onComplete(result.succeeding());
     }
   }
 
@@ -463,7 +469,7 @@ public class VertxConnectionTest extends VertxTestBase {
   public void testResumeWhenRead() throws Exception {
     try (var result = new TestResult()) {
       vertx.exceptionHandler(result::fail);
-      Completable<Object> latch = result.verifying();
+      Completable<Object> latch = result.succeeding();
       connectHandler = conn -> {
         ChannelHandlerContext ctx = conn.channelHandlerContext();
         ChannelPipeline pipeline = ctx.pipeline();
@@ -488,14 +494,14 @@ public class VertxConnectionTest extends VertxTestBase {
         latch.succeed();
       });
       so.write("inbound-1")
-        .onComplete(result.verifying());
+        .onComplete(result.succeeding());
     }
   }
 
   @Test
   public void testWriteQueueDrain() throws Exception {
     try (var result = new TestResult()) {
-      Completable<Object> v = result.verifying();
+      Completable<Object> v = result.succeeding();
       CountDownLatch latch = new CountDownLatch(1);
       BufferInternal buffer = BufferInternal.buffer(TestUtils.randomAlphaString(1024));
       connectHandler = conn -> {
@@ -508,7 +514,7 @@ public class VertxConnectionTest extends VertxTestBase {
           });
         });
       };
-      NetSocket so = awaitFuture(client.connect(1234, "localhost"));
+      NetSocket so = client.connect(1234, "localhost").await();
       so.pause();
       so.write("ping");
       TestUtils.awaitLatch(latch);
@@ -519,8 +525,8 @@ public class VertxConnectionTest extends VertxTestBase {
   @Test
   public void testChannelPromisePiggiesBackOnEventLoop() throws Exception {
     try (var result = new TestResult()) {
-      Completable<?> v1 = result.verifying();
-      Completable<?> v2 = result.verifying();
+      Completable<?> v1 = result.succeeding();
+      Completable<?> v2 = result.succeeding();
       connectHandler = conn -> {
         Promise<Void> promise = Promise.promise();
         ChannelPromise channelPromise = ((VertxConnection) conn).write(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8), false, promise);
@@ -540,12 +546,14 @@ public class VertxConnectionTest extends VertxTestBase {
         }));
       };
       client.connect(1234, "localhost")
-        .onComplete(result.verifying());
+        .onComplete(result.succeeding());
     }
   }
 
   private CountDownLatch executeAsyncTask(Runnable runnable) {
-    assertTrue(Context.isOnEventLoopThread());
+    if (!Context.isOnEventLoopThread()) {
+      throw new IllegalStateException();
+    }
     CountDownLatch latch = new CountDownLatch(1);
     new Thread(() -> {
       runnable.run();
