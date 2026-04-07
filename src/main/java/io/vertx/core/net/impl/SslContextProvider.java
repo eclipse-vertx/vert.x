@@ -30,6 +30,8 @@ import java.util.function.Supplier;
  */
 public class SslContextProvider {
 
+  public static final int DEFAULT_SNI_CACHE_SIZE = 16;
+
   private final boolean jdkSSLProvider;
   private final Supplier<SslContextFactory> provider;
   private final Set<String> enabledProtocols;

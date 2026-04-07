@@ -18,6 +18,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsyncMapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.VertxException;
+import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import static io.vertx.core.net.impl.SslContextProvider.DEFAULT_SNI_CACHE_SIZE;
 
 /**
  * Provider for {@link SslHandler} and {@link SniHandler}.
@@ -45,7 +48,7 @@ public class SslChannelProvider {
   private final SslContextProvider sslContextProvider;
   private final SslContext[] sslContexts = new SslContext[2];
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
-    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
+    new LruCache<>(DEFAULT_SNI_CACHE_SIZE), new LruCache<>(DEFAULT_SNI_CACHE_SIZE)
   };
 
   public SslChannelProvider(SslContextProvider sslContextProvider,
@@ -67,7 +70,14 @@ public class SslChannelProvider {
   }
 
   public int sniEntrySize() {
-    return sslContextMaps[0].size() + sslContextMaps[1].size();
+    int size;
+    synchronized (sslContextMaps[0]) {
+      size = sslContextMaps[0].size();
+    }
+    synchronized (sslContextMaps[1]) {
+      size += sslContextMaps[1].size();
+    }
+    return size;
   }
 
   public SslContextProvider sslContextProvider() {
@@ -92,7 +102,9 @@ public class SslChannelProvider {
       KeyManagerFactory kmf = sslContextProvider.resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = trustAll ? null : sslContextProvider.resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
-        return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
+        synchronized (sslContextMaps[idx]) {
+          return sslContextMaps[idx].computeIfAbsent(serverName, s -> sslContextProvider.createContext(server, kmf, trustManagers, s, useAlpn, trustAll));
+        }
       }
     }
     if (sslContexts[idx] == null) {

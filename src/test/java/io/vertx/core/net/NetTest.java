@@ -1591,6 +1591,52 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testEnabledSniCacheSize() throws Exception {
+    testSniCacheSize(true);
+  }
+
+  @Test
+  public void testDisabledSniCacheSize() throws Exception {
+    testSniCacheSize(false);
+  }
+
+  private void testSniCacheSize(boolean sni) throws Exception {
+    List<String> receivedServerNames = Collections.synchronizedList(new ArrayList<>());
+    server = vertx.createNetServer(new NetServerOptions()
+      .setSni(sni)
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SNI_JKS.get())
+    ).connectHandler(so -> {
+      receivedServerNames.add(so.indicatedServerName());
+    });
+    startServer();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("").setTrustAll(true));
+    int num = 100;
+    List<NetSocket> sockets = new ArrayList<>();
+    List<String> actualServerNames = new ArrayList<>();
+    for (int i = 0;i < num;i++) {
+      String serverName = i + ".host3.com";
+      NetSocket socket = client.connect(testAddress, serverName).toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+      sockets.add(socket);
+      actualServerNames.add(serverName);
+    }
+    for (NetSocket socket : sockets) {
+      socket.close();
+    }
+    assertWaitUntil(() -> num == receivedServerNames.size());
+    int size = ((NetServerImpl) server).sniEntrySize();
+    if (sni) {
+      assertEquals(actualServerNames, receivedServerNames);
+      assertEquals(SslContextProvider.DEFAULT_SNI_CACHE_SIZE, size);
+    } else {
+      for (String receivedServerName : receivedServerNames) {
+        assertNull(receivedServerName);
+      }
+      assertEquals(0, size);
+    }
+  }
+
+  @Test
   // SNI present an unknown server
   public void testSniWithUnknownServer1() throws Exception {
     TLSTest test = new TLSTest()
