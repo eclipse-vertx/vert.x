@@ -17,6 +17,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.tls.SslContextFactory;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
  */
 public class SslContextManager {
 
+  public static final int DEFAULT_SSL_CONTEXT_PROVIDER_CACHE_SIZE = 64;
   private static final Config NULL_CONFIG = new Config(null, null, null, null, null);
   static final EnumMap<ClientAuth, io.netty.handler.ssl.ClientAuth> CLIENT_AUTH_MAPPING = new EnumMap<>(ClientAuth.class);
 
@@ -49,6 +51,10 @@ public class SslContextManager {
   private final boolean useWorkerPool;
   private final Map<ConfigKey, Future<Config>> configMap;
   private final Map<ConfigKey, Future<SslContextProvider>> sslContextProviderMap;
+
+  public SslContextManager(SSLEngineOptions sslEngineOptions) {
+    this(sslEngineOptions, DEFAULT_SSL_CONTEXT_PROVIDER_CACHE_SIZE);
+  }
 
   public SslContextManager(SSLEngineOptions sslEngineOptions, int cacheMaxSize) {
     this.configMap = new LruCache<>(cacheMaxSize);
@@ -107,10 +113,6 @@ public class SslContextManager {
       }
     }
     return size;
-  }
-
-  public SslContextManager(SSLEngineOptions sslEngineOptions) {
-    this(sslEngineOptions, 256);
   }
 
   public Future<SslContextProvider> resolveSslContextProvider(SSLOptions options, String endpointIdentificationAlgorithm, ClientAuth clientAuth, List<String> applicationProtocols, ContextInternal ctx) {
@@ -234,23 +236,6 @@ public class SslContextManager {
       return new Config(keyManagerFactory, trustManagerFactory, keyManagerFactoryMapper, trustManagerMapper, crls);
     }).onComplete(promise);
     return promise.future();
-  }
-
-  private static class LruCache<K, V> extends LinkedHashMap<K, V> {
-
-    private final int maxSize;
-
-    public LruCache(int maxSize) {
-      if (maxSize < 1) {
-        throw new UnsupportedOperationException();
-      }
-      this.maxSize = maxSize;
-    }
-
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-      return size() > maxSize;
-    }
   }
 
   private final static class ConfigKey {
