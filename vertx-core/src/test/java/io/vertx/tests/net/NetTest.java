@@ -35,6 +35,7 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
@@ -42,14 +43,13 @@ import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetServerInternal;
-import io.vertx.core.net.impl.tcp.NetSocketImpl;
+import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.assertj.core.api.Assertions;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
@@ -1543,6 +1543,52 @@ public class NetTest {
     assertEquals(2, ((NetServerInternal)server).sniEntrySize());
     assertWaitUntil(() -> receivedServerNames.size() == 3);
     assertEquals(receivedServerNames, serverNames);
+  }
+
+  @Test
+  public void testEnabledSniCacheSize() throws Exception {
+    testSniCacheSize(true);
+  }
+
+  @Test
+  public void testDisabledSniCacheSize() throws Exception {
+    testSniCacheSize(false);
+  }
+
+  private void testSniCacheSize(boolean sni) throws Exception {
+    List<String> receivedServerNames = Collections.synchronizedList(new ArrayList<>());
+    server = vertx.createNetServer(new NetServerOptions()
+      .setSni(sni)
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SNI_JKS.get())
+    ).connectHandler(so -> {
+      receivedServerNames.add(so.indicatedServerName());
+    });
+    startServer();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true).setHostnameVerificationAlgorithm("").setTrustAll(true));
+    int num = 100;
+    List<NetSocket> sockets = new ArrayList<>();
+    List<String> actualServerNames = new ArrayList<>();
+    for (int i = 0;i < num;i++) {
+      String serverName = i + ".host3.com";
+      NetSocket socket = client.connect(testAddress, serverName).await();
+      sockets.add(socket);
+      actualServerNames.add(serverName);
+    }
+    for (NetSocket socket : sockets) {
+      socket.close().await();
+    }
+    assertWaitUntil(() -> num == receivedServerNames.size());
+    int size = ((NetServerImpl) server).sniEntrySize();
+    if (sni) {
+      assertEquals(actualServerNames, receivedServerNames);
+      assertEquals(SslContextProvider.DEFAULT_SNI_CACHE_SIZE, size);
+    } else {
+      for (String receivedServerName : receivedServerNames) {
+        Assert.assertNull(receivedServerName);
+      }
+      assertEquals(0, size);
+    }
   }
 
   @Test
