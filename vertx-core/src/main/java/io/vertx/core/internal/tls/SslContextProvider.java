@@ -11,6 +11,7 @@
 package io.vertx.core.internal.tls;
 
 import io.netty.handler.ssl.SslContext;
+import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.*;
@@ -29,6 +30,7 @@ import java.util.function.Supplier;
  */
 public abstract class SslContextProvider {
 
+  public static final int DEFAULT_SNI_CACHE_SIZE = 16;
   private static final List<String> VALID_PROTOCOLS = List.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1", "SSLv3", "SSLv2Hello", "DTLSv1.2", "DTLSv1.0");
 
   private final boolean useWorkerPool;
@@ -42,7 +44,7 @@ public abstract class SslContextProvider {
   protected final Set<String> enabledCipherSuites;
 
   private final Map<String, SslContext> sslContexts = new ConcurrentHashMap<>();
-  private final Map<String, SslContext> sslContextMaps = new ConcurrentHashMap<>();
+  private final Map<String, SslContext> sslContextMaps = new LruCache<>(DEFAULT_SNI_CACHE_SIZE);
 
   public SslContextProvider(boolean useWorkerPool,
                             Set<String> enabledCipherSuites,
@@ -74,7 +76,9 @@ public abstract class SslContextProvider {
   }
 
   public int sniEntrySize() {
-    return sslContextMaps.size();
+    synchronized (sslContextMaps) {
+      return sslContextMaps.size();
+    }
   }
 
   protected abstract SslContext createContext(KeyManagerFactory keyManagerFactory,  TrustManager[] trustManagers, String serverName, List<String> applicationProtocols);
@@ -84,9 +88,11 @@ public abstract class SslContextProvider {
       KeyManagerFactory kmf = resolveKeyManagerFactory(serverName);
       TrustManager[] trustManagers = resolveTrustManagers(serverName);
       if (kmf != null || trustManagers != null || !server) {
-        return sslContextMaps.computeIfAbsent(serverName, s -> {
-          return createContext(kmf, trustManagers, s, applicationProtocols);
-        });
+        synchronized (sslContextMaps) {
+          return sslContextMaps.computeIfAbsent(serverName, s -> {
+            return createContext(kmf, trustManagers, s, applicationProtocols);
+          });
+        }
       }
     }
     String alpnKey;
