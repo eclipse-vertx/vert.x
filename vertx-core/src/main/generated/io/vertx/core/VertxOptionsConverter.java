@@ -87,6 +87,11 @@ public class VertxOptionsConverter {
             obj.setPreferNativeTransport((Boolean)member.getValue());
           }
           break;
+        case "virtualThreadEventLoops":
+          if (member.getValue() instanceof Boolean) {
+            obj.setVirtualThreadEventLoops((Boolean)member.getValue());
+          }
+          break;
         case "maxEventLoopExecuteTimeUnit":
           if (member.getValue() instanceof String) {
             obj.setMaxEventLoopExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
@@ -156,6 +161,7 @@ public class VertxOptionsConverter {
       json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }
     json.put("preferNativeTransport", obj.getPreferNativeTransport());
+    json.put("virtualThreadEventLoops", obj.getVirtualThreadEventLoops());
     if (obj.getMaxEventLoopExecuteTimeUnit() != null) {
       json.put("maxEventLoopExecuteTimeUnit", obj.getMaxEventLoopExecuteTimeUnit().name());
     }

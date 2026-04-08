@@ -246,6 +246,9 @@ public class VertxBootstrapImpl implements VertxBootstrap {
     } else {
       tr = NioTransport.INSTANCE;
     }
+    if (options.getVirtualThreadEventLoops() && !(tr instanceof NioTransport)) {
+      throw new IllegalStateException("Virtual thread event loops are only supported with the NIO transport");
+    }
     return new VertxImpl(
       options,
       clusterManager,

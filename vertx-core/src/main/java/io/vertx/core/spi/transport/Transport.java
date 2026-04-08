@@ -93,6 +93,19 @@ public interface Transport {
   }
 
   /**
+   * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
+   * @param nThreads the number of threads that will be used by this instance.
+   * @param threadFactory the ThreadFactory to use.
+   * @param ioRatio the IO ratio
+   * @param virtualThreadEventLoops whether event loops should run as virtual threads
+   *
+   * @return a new event loop group
+   */
+  default EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio, boolean virtualThreadEventLoops) {
+    return eventLoopGroup(type, nThreads, threadFactory, ioRatio);
+  }
+
+  /**
    * @return a new datagram channel
    */
   DatagramChannel datagramChannel(InternetProtocolFamily family);

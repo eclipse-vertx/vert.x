@@ -99,6 +99,11 @@ public class VertxOptions {
   public static final boolean DEFAULT_PREFER_NATIVE_TRANSPORT = false;
 
   /**
+   * The default value for using virtual thread event loops = false
+   */
+  public static final boolean DEFAULT_VIRTUAL_THREAD_EVENT_LOOPS = false;
+
+  /**
    * The default value of warning exception time 5000000000 ns (5 seconds)
    * If a thread is blocked longer than this threshold, the warning log
    * contains a stack trace
@@ -138,6 +143,7 @@ public class VertxOptions {
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
   private boolean preferNativeTransport = DEFAULT_PREFER_NATIVE_TRANSPORT;
+  private boolean virtualThreadEventLoops = DEFAULT_VIRTUAL_THREAD_EVENT_LOOPS;
   private TimeUnit maxEventLoopExecuteTimeUnit = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT;
   private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
   private TimeUnit warningExceptionTimeUnit = DEFAULT_WARNING_EXCEPTION_TIME_UNIT;
@@ -172,6 +178,7 @@ public class VertxOptions {
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions(other.getAddressResolverOptions()) : null;
     this.preferNativeTransport = other.preferNativeTransport;
+    this.virtualThreadEventLoops = other.virtualThreadEventLoops;
     this.maxEventLoopExecuteTimeUnit = other.maxEventLoopExecuteTimeUnit;
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
@@ -539,6 +546,30 @@ public class VertxOptions {
   }
 
   /**
+   * @return whether event loop threads run as virtual threads on the NIO transport
+   */
+  public boolean getVirtualThreadEventLoops() {
+    return virtualThreadEventLoops;
+  }
+
+  /**
+   * Set whether event loop threads should run as virtual threads using Netty's {@code ManualIoEventLoop}.
+   * <p>
+   * When enabled, each Netty event loop runs as a long-running virtual thread, allowing the JVM's
+   * virtual thread scheduler to multiplex event loops onto platform threads alongside other virtual threads.
+   * <p>
+   * This option is only supported with the NIO transport. Native transports (epoll, kqueue, io_uring) use
+   * JNI calls that pin virtual threads to carrier threads, defeating the purpose.
+   *
+   * @param virtualThreadEventLoops {@code true} to run event loops as virtual threads
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setVirtualThreadEventLoops(boolean virtualThreadEventLoops) {
+    this.virtualThreadEventLoops = virtualThreadEventLoops;
+    return this;
+  }
+
+  /**
    * @return the time unit of {@code maxEventLoopExecuteTime}
    */
   public TimeUnit getMaxEventLoopExecuteTimeUnit() {
@@ -699,6 +730,7 @@ public class VertxOptions {
         ", maxWorkerExecuteTime=" + maxWorkerExecuteTime +
         ", haEnabled=" + haEnabled +
         ", preferNativeTransport=" + preferNativeTransport +
+        ", virtualThreadEventLoops=" + virtualThreadEventLoops +
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metricsOptions +

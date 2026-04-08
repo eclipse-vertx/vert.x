@@ -74,6 +74,7 @@ public class VertxTestBase extends AsyncTestBase {
 
   public static final Transport TRANSPORT;
   public static final boolean USE_DOMAIN_SOCKETS = Boolean.getBoolean("vertx.useDomainSockets");
+  public static final boolean USE_VIRTUAL_THREAD_EVENT_LOOPS = Boolean.getBoolean("vertx.virtualThreadEventLoops");
   public static final boolean USE_JAVA_MODULES = VertxTestBase.class.getModule().isNamed();
   private static final Logger log = LoggerFactory.getLogger(VertxTestBase.class);
   protected static final String[] ENABLED_CIPHER_SUITES;
@@ -259,7 +260,11 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected VertxOptions getOptions() {
-    return new VertxOptions();
+    VertxOptions options = new VertxOptions();
+    if (USE_VIRTUAL_THREAD_EVENT_LOOPS) {
+      options.setVirtualThreadEventLoops(true);
+    }
+    return options;
   }
 
   protected void tearDown() throws Exception {
