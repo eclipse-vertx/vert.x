@@ -29,6 +29,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 
 import javax.net.ssl.SSLContext;
+import java.lang.ref.WeakReference;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -162,11 +163,10 @@ public class VertxTestBase extends AsyncTestBase {
   protected Vertx[] vertices;
   private List<Vertx> created;
   private Thread junitThread;
-  private final Handler<Throwable> failureBridgeHandler;
+  private Handler<Throwable> failureBridgeHandler;
 
   public VertxTestBase(ReportMode reportMode) {
     this.reportMode = reportMode;
-    this.failureBridgeHandler = this::handleFailure;
   }
 
   public VertxTestBase() {
@@ -231,6 +231,7 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   public void setUp() throws Exception {
+    failureBridgeHandler = new FailureBridgeHandler(this);
     junitThread = Thread.currentThread();
     super.setUp();
     vinit();
@@ -447,5 +448,31 @@ public class VertxTestBase extends AsyncTestBase {
     Context current = Vertx.currentContext();
     assertNotNull(current);
     assertSameEventLoop(context, current);
+  }
+
+  /**
+   * Reports a failure to the test, this uses a weak reference to avoid keeping a path of references from the cleaner
+   * to the test that might contain references to cleanable objects, preventing those cleanable to be reclaimed:
+   *
+   * --> CleanerImpl#phantomCleanableList
+   * --> PhantomCleanableRef#action
+   * --> CleanableNetClient.Action#client
+   * --> NetClient#vertx
+   * --> Vertx#exceptionHandler
+   * --> FailureBridgeHandler#test
+   * --> NetTest#client
+   * --> CleanableNetClient
+   */
+  private static class FailureBridgeHandler extends WeakReference<VertxTestBase> implements Handler<Throwable> {
+    public FailureBridgeHandler(VertxTestBase referent) {
+      super(referent);
+    }
+    @Override
+    public void handle(Throwable failure) {
+      VertxTestBase test = get();
+      if (test != null) {
+        test.handleFailure(failure);
+      }
+    }
   }
 }
