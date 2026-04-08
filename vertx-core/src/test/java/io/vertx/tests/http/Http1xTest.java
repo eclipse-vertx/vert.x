@@ -4559,7 +4559,9 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     HttpClientRequest request = client.request(requestOptions).await();
+    Assert.assertFalse(request.isChunked());
     request.write("chunk");
+    Assert.assertTrue(request.isChunked());
     await();
   }
 

@@ -43,7 +43,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
-  private boolean chunked_;
+  private boolean chunked;
   private Handler<Void> continueHandler;
   private Handler<MultiMap> earlyHintsHandler;
   private Handler<Void> drainHandler;
@@ -61,7 +61,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   public HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
     super(connection, stream, stream.context().promise(), HttpMethod.GET, "/");
-    this.chunked_ = false;
+    this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
@@ -171,14 +171,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
     if (version() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
-      this.chunked_ = chunked;
+      this.chunked = chunked;
     }
     return this;
   }
 
   @Override
   public synchronized boolean isChunked() {
-    return chunked_;
+    return chunked;
   }
 
   @Override
@@ -488,19 +488,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return write(BufferInternal.buffer(chunk, enc), false);
   }
 
-//  private boolean requiresContentLength() {
-//    return !chunked && !headers.contains(CONTENT_LENGTH) && !isConnect;
-//  }
-
   private Future<Void> write(Buffer buff, boolean end) {
-//    if (end) {
-//      if (buff != null && requiresContentLength()) {
-//        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
-//      }
-//    } else if (requiresContentLength()) {
-//      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-//        + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
-//    }
     return doWrite(buff, end, false);
   }
 
@@ -517,14 +505,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       if (!headersSent) {
         if (!connect) {
-          boolean requiresContentLength = !chunked_ && !headers.contains(CONTENT_LENGTH);
+          boolean requiresContentLength = !this.chunked && !headers.contains(CONTENT_LENGTH);
           if (end) {
             if (buff != null && requiresContentLength) {
               headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
             }
           } else if (requiresContentLength) {
             headers.set(TRANSFER_ENCODING, CHUNKED);
-            chunked_ = true;
+            this.chunked = true;
           }
         }
         headersSent = true;
@@ -533,7 +521,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         writeHead = false;
       }
-      chunked = chunked_;
+      chunked = this.chunked;
       writeEnd = !isConnect && end;
       trailersSent = end;
     }
