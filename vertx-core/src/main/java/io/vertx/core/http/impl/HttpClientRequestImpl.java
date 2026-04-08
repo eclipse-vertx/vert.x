@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
+import static io.vertx.core.http.HttpHeaders.*;
 import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 
 /**
@@ -43,7 +43,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
-  private boolean chunked;
+  private boolean chunked_;
   private Handler<Void> continueHandler;
   private Handler<MultiMap> earlyHintsHandler;
   private Handler<Void> drainHandler;
@@ -61,7 +61,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   public HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
     super(connection, stream, stream.context().promise(), HttpMethod.GET, "/");
-    this.chunked = false;
+    this.chunked_ = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
@@ -171,14 +171,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
     if (version() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
-      this.chunked = chunked;
+      this.chunked_ = chunked;
     }
     return this;
   }
 
   @Override
   public synchronized boolean isChunked() {
-    return chunked;
+    return chunked_;
   }
 
   @Override
@@ -488,25 +488,26 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return write(BufferInternal.buffer(chunk, enc), false);
   }
 
-  private boolean requiresContentLength() {
-    return !chunked && !headers.contains(CONTENT_LENGTH) && !isConnect;
-  }
+//  private boolean requiresContentLength() {
+//    return !chunked && !headers.contains(CONTENT_LENGTH) && !isConnect;
+//  }
 
   private Future<Void> write(Buffer buff, boolean end) {
-    if (end) {
-      if (buff != null && requiresContentLength()) {
-        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
-      }
-    } else if (requiresContentLength()) {
-      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-        + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
-    }
+//    if (end) {
+//      if (buff != null && requiresContentLength()) {
+//        headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
+//      }
+//    } else if (requiresContentLength()) {
+//      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+//        + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+//    }
     return doWrite(buff, end, false);
   }
 
   private Future<Void> doWrite(Buffer buff, boolean end, boolean connect) {
     boolean writeHead;
     boolean writeEnd;
+    boolean chunked;
     synchronized (this) {
       if (reset != null) {
         return context.failedFuture(reset);
@@ -515,12 +516,24 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return context.failedFuture(new IllegalStateException("Request already complete"));
       }
       if (!headersSent) {
+        if (!connect) {
+          boolean requiresContentLength = !chunked_ && !headers.contains(CONTENT_LENGTH);
+          if (end) {
+            if (buff != null && requiresContentLength) {
+              headers().set(CONTENT_LENGTH, HttpUtils.positiveLongToString(buff.length()));
+            }
+          } else if (requiresContentLength) {
+            headers.set(TRANSFER_ENCODING, CHUNKED);
+            chunked_ = true;
+          }
+        }
         headersSent = true;
         isConnect = connect;
         writeHead = true;
       } else {
         writeHead = false;
       }
+      chunked = chunked_;
       writeEnd = !isConnect && end;
       trailersSent = end;
     }

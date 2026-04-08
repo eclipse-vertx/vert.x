@@ -3166,6 +3166,7 @@ public class Http1xTest extends HttpTest {
             "\r\n" +
             "POST /somepath HTTP/1.1\r\n" +
             "host: " + config.host() + ":" + config.port() + "\r\n" +
+            "transfer-encoding: chunked\r\n" +
             "\r\n")) {
           doReset.complete(null);
           so.write(
@@ -4547,6 +4548,39 @@ public class Http1xTest extends HttpTest {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testClientSetChunkedAutomatically() throws Exception {
+    server.requestHandler(req -> {
+      MultiMap headers = req.headers();
+      Assert.assertEquals(HttpHeaders.CHUNKED.toString(), headers.get(HttpHeaders.TRANSFER_ENCODING));
+      testComplete();
+    });
+    startServer(testAddress);
+    HttpClientRequest request = client.request(requestOptions).await();
+    request.write("chunk");
+    await();
+  }
+
+  @Test
+  public void testServerSetChunkedAutomatically() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse response = req.response();
+      Assert.assertFalse(response.isChunked());
+      response.write("chunk");
+      Assert.assertTrue(response.isChunked());
+      response.end();
+    });
+    startServer(testAddress);
+    MultiMap headers = client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .compose(response -> response
+          .end()
+          .map(response.headers()))
+      ).await();
+    Assert.assertEquals(HttpHeaders.CHUNKED.toString(), headers.get(HttpHeaders.TRANSFER_ENCODING));
   }
 
   @Test

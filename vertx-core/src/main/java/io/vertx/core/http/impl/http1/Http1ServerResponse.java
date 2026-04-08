@@ -318,8 +318,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         throw new IllegalStateException();
       }
       if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
-        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+        headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
       }
       VertxHttpObject msg;
       prepareHeaders(-1);
@@ -726,8 +725,7 @@ public class Http1ServerResponse implements HttpServerResponse, HttpResponse {
         throw new IllegalStateException("Response has already been written");
       } else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
-          throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-            + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+          headers.set(HttpHeaders.TRANSFER_ENCODING, HttpHeaders.CHUNKED);
         }
       }
       bytesWritten += chunk.readableBytes();

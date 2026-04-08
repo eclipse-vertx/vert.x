@@ -6320,19 +6320,9 @@ public abstract class HttpTest extends SimpleHttpTest {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       continuation.set(() -> resp.end("body"));
-      try {
-        resp.writeHead().onComplete(TestUtils.onSuccess(v -> {
-          complete();
-        }));
-        Assert.assertNotEquals(HttpVersion.HTTP_1_1, req.version());
-      } catch (IllegalStateException ignore) {
-        resp
-          .setChunked(true)
-          .writeHead()
-          .onComplete(TestUtils.onSuccess(v -> {
-            complete();
-          }));
-      }
+      resp
+        .writeHead()
+        .onComplete(TestUtils.onSuccess(v -> complete()));
     });
     startServer(testAddress);
     client.request(requestOptions).onComplete(TestUtils.onSuccess(req -> {
