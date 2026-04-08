@@ -996,6 +996,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
               if (tracer != null) {
                 tracer.close();
               }
+              timeouts.clear();
               checker.close();
               eventLoopThreadFactory.newThread(promise::complete).start();
             }

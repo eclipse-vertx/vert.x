@@ -18,10 +18,13 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.core.TestUtils;
+import io.vertx.tests.vertx.VertxTest;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -433,5 +436,33 @@ public class TimerTest extends VertxTestBase {
     vertx.close().await();
     waitUntil(timer::failed);
     Assert.assertTrue(timer.cause() instanceof CancellationException);
+  }
+
+  private static class TimerHandler implements Handler<Long> {
+    @Override
+    public void handle(Long event) {
+    }
+  }
+
+  @Test
+  public void testClosingVertxDoesNotKeepRefToTimers() throws Exception {
+    TimerHandler handler = new TimerHandler();
+    WeakReference<Handler<Long>> ref = new WeakReference<>(handler);
+    Vertx vertx = Vertx.vertx();
+    try {
+      vertx.setTimer(10_000_000, handler);
+      handler = null;
+    } finally {
+      vertx.close().await();
+    }
+    long now = System.currentTimeMillis();
+    while (true) {
+      Assert.assertTrue((System.currentTimeMillis() - now) <= 20_00000);
+      VertxTest.runGC();
+      Thread.sleep(10);
+      if (ref.get() == null) {
+        break;
+      }
+    }
   }
 }
