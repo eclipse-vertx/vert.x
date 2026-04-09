@@ -173,7 +173,7 @@ public class VerticleManager {
     List<VerticleFactory> verticleFactories = resolveFactories(identifier);
     Iterator<VerticleFactory> iter = verticleFactories.iterator();
     return createDeployment(iter, null, identifier, options, parentContext, callingContext, cl)
-      .compose(deployment -> deploymentManager.deploy(parentContext.deployment(), callingContext, deployment));
+      .compose(deployment -> deploymentManager.deploy(parentContext.deploymentID(), callingContext, deployment));
   }
 
   private Future<Deployment> createDeployment(Iterator<VerticleFactory> iter,

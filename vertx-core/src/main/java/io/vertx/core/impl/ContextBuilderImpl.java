@@ -33,7 +33,7 @@ public class ContextBuilderImpl implements ContextBuilder {
   private ClassLoader classLoader;
   private CloseFuture closeFuture;
   private WorkerPool workerPool;
-  private DeploymentContext deploymentContext;
+  private String deploymentID;
 
   ContextBuilderImpl(VertxImpl vertx) {
     this.vertx = Objects.requireNonNull(vertx);
@@ -70,8 +70,8 @@ public class ContextBuilderImpl implements ContextBuilder {
     return this;
   }
 
-  public ContextBuilderImpl withDeploymentContext(DeploymentContext deploymentContext) {
-    this.deploymentContext = deploymentContext;
+  public ContextBuilderImpl withDeployment(String deploymentID) {
+    this.deploymentID = deploymentID;
     return this;
   }
 
@@ -89,6 +89,6 @@ public class ContextBuilderImpl implements ContextBuilder {
     if (classLoader == null) {
       classLoader = Thread.currentThread().getContextClassLoader();
     }
-    return vertx.createContext(threadingModel, eventLoop, closeFuture, workerPool, deploymentContext, classLoader);
+    return vertx.createContext(threadingModel, eventLoop, closeFuture, workerPool, deploymentID, classLoader);
   }
 }

@@ -520,8 +520,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * @return event loop context
    */
   private ContextInternal createContext(
-    ThreadingModel threadingModel, DeploymentContext deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return createContext(threadingModel, nettyEventLoopGroup().next(), closeFuture, workerPool, deployment, tccl);
+    ThreadingModel threadingModel, String deploymentID, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createContext(threadingModel, nettyEventLoopGroup().next(), closeFuture, workerPool, deploymentID, tccl);
   }
 
   private ContextInternal createContext(ThreadingModel threadingModel, EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
@@ -628,7 +628,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    EventLoop eventLoop,
                                    CloseFuture closeFuture,
                                    WorkerPool workerPool,
-                                   DeploymentContext deployment,
+                                   String deploymentID,
                                    ClassLoader tccl) {
     EventExecutor eventExecutor;
     EventLoopExecutor eventLoopExecutor = new EventLoopExecutor(eventLoop);
@@ -652,7 +652,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       default:
         throw new UnsupportedOperationException();
     }
-    return createContext(threadingModel, eventLoopExecutor, eventExecutor, wp, closeFuture, deployment, tccl);
+    return createContext(threadingModel, eventLoopExecutor, eventExecutor, wp, closeFuture, deploymentID, tccl);
   }
 
   public ContextImpl createContext(ThreadingModel threadingModel,
@@ -660,7 +660,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
                                    EventExecutor eventExecutor,
                                    WorkerPool workerPool,
                                    CloseFuture closeFuture,
-                                   DeploymentContext deployment,
+                                   String deploymentID,
                                    ClassLoader tccl) {
     return new ContextImpl(this,
       createContextLocals(),
@@ -668,7 +668,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       threadingModel,
       eventExecutor,
       workerPool,
-      deployment,
+      deploymentID,
       closeFuture,
       disableTCCL ? null : tccl);
   }
@@ -860,7 +860,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       } catch (Exception e) {
         return currentContext.failedFuture(e);
       }
-      return deploymentManager.deploy(currentContext.deployment(), currentContext, deployment);
+
+      // NEED TO SOLVE THIS
+
+      return deploymentManager.deploy(currentContext.deploymentID(), currentContext, deployment);
     }
   }
 

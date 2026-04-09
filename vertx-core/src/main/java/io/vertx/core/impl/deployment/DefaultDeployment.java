@@ -127,7 +127,7 @@ public class DefaultDeployment implements Deployment {
     for (Deployable verticle : deployables) {
       CloseFuture closeFuture = new CloseFuture(log);
       ContextBuilderImpl contextBuilder = ((ContextBuilderImpl) vertx.contextBuilder())
-        .withDeploymentContext(deployment)
+        .withDeployment(deployment.id())
         .withCloseFuture(closeFuture)
         .withClassLoader(tccl);
       ContextInternal context;

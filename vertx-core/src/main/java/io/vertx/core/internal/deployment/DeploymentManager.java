@@ -21,7 +21,7 @@ import java.util.*;
  */
 public interface DeploymentManager {
 
-  Future<DeploymentContext> deploy(DeploymentContext parent,
+  Future<DeploymentContext> deploy(String parentID,
                                    ContextInternal callingContext,
                                    Deployment deployment);
 

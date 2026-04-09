@@ -85,7 +85,7 @@ public final class ShadowContext extends ContextBase {
   }
 
   @Override
-  public DeploymentContext deployment() {
+  public String deploymentID() {
     return null;
   }
 
