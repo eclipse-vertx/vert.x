@@ -530,39 +530,43 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployUndeployMultipleInstancesUsingClassName() throws Exception {
-    int numInstances = 10;
-    DeploymentOptions options = new DeploymentOptions().setInstances(numInstances);
-    AtomicInteger deployCount = new AtomicInteger();
-    AtomicInteger undeployCount = new AtomicInteger();
-    AtomicInteger deployHandlerCount = new AtomicInteger();
-    AtomicInteger undeployHandlerCount = new AtomicInteger();
-    vertx.eventBus().<String>consumer("tvstarted").handler(msg -> {
-      deployCount.incrementAndGet();
-    });
-    vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
-      undeployCount.incrementAndGet();
-      msg.reply("whatever");
-    });
-    CountDownLatch deployLatch = new CountDownLatch(1);
-    vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options).onComplete(TestUtils.onSuccess(depID -> {
-        Assert.assertEquals(1, deployHandlerCount.incrementAndGet());
-        deployLatch.countDown();
-    }));
-    TestUtils.awaitLatch(deployLatch);
-    assertWaitUntil(() -> deployCount.get() == numInstances);
-    Assert.assertEquals(1, vertx.deploymentIDs().size());
-    DeploymentContext deployment = ((VertxInternal) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
-    Set<Deployable> verticles = deployment.deployment().instances();
-    Assert.assertEquals(numInstances, verticles.size());
-    CountDownLatch undeployLatch = new CountDownLatch(1);
-    Assert.assertEquals(numInstances, deployCount.get());
-    vertx.undeploy(deployment.id()).onComplete(TestUtils.onSuccess(v -> {
-      Assert.assertEquals(1, undeployHandlerCount.incrementAndGet());
-      undeployLatch.countDown();
-    }));
-    TestUtils.awaitLatch(undeployLatch);
-    assertWaitUntil(() -> deployCount.get() == numInstances);
-    Assert.assertTrue(vertx.deploymentIDs().isEmpty());
+    try {
+      int numInstances = 10;
+      DeploymentOptions options = new DeploymentOptions().setInstances(numInstances);
+      AtomicInteger deployCount = new AtomicInteger();
+      AtomicInteger undeployCount = new AtomicInteger();
+      AtomicInteger deployHandlerCount = new AtomicInteger();
+      AtomicInteger undeployHandlerCount = new AtomicInteger();
+      vertx.eventBus().<String>consumer("tvstarted").handler(msg -> {
+        deployCount.incrementAndGet();
+      });
+      vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
+        undeployCount.incrementAndGet();
+        msg.reply("whatever");
+      });
+      CountDownLatch deployLatch = new CountDownLatch(1);
+      vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options).onComplete(TestUtils.onSuccess(depID -> {
+          Assert.assertEquals(1, deployHandlerCount.incrementAndGet());
+          deployLatch.countDown();
+      }));
+      TestUtils.awaitLatch(deployLatch);
+      assertWaitUntil(() -> deployCount.get() == numInstances);
+      Assert.assertEquals(1, vertx.deploymentIDs().size());
+      DeploymentContext deployment = ((VertxInternal) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
+      Set<Deployable> verticles = deployment.deployment().instances();
+      Assert.assertEquals(numInstances, verticles.size());
+      CountDownLatch undeployLatch = new CountDownLatch(1);
+      Assert.assertEquals(numInstances, deployCount.get());
+      vertx.undeploy(deployment.id()).onComplete(TestUtils.onSuccess(v -> {
+        Assert.assertEquals(1, undeployHandlerCount.incrementAndGet());
+        undeployLatch.countDown();
+      }));
+      TestUtils.awaitLatch(undeployLatch);
+      assertWaitUntil(() -> deployCount.get() == numInstances);
+      Assert.assertTrue(vertx.deploymentIDs().isEmpty());
+    } finally {
+      TestVerticle2.contexts.clear();
+    }
   }
 
   @Test
@@ -1178,17 +1182,17 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployClass() {
-    JsonObject config = generateJSONObject();
-    vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config))
-      .onComplete(TestUtils.onSuccess(deploymentId -> {
+    try {
+      JsonObject config = generateJSONObject();
+      String deploymentID = vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config)).await();
       ReferenceSavingMyVerticle.myVerticles.forEach(myVerticle -> {
-        Assert.assertEquals(deploymentId, myVerticle.deploymentID);
+        Assert.assertEquals(deploymentID, myVerticle.deploymentID);
         Assert.assertEquals(config, myVerticle.config);
         Assert.assertTrue(myVerticle.startCalled);
       });
-      testComplete();
-    }));
-    await();
+    } finally {
+      ReferenceSavingMyVerticle.myVerticles.clear();;
+    }
   }
 
   @Test
