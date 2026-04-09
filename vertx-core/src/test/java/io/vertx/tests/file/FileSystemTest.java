@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.*;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.file.impl.AsyncFileImpl;
@@ -2300,5 +2301,17 @@ public class FileSystemTest extends VertxTestBase {
     }));
     TestUtils.awaitLatch(latch1);
     file.close();
+  }
+
+  @Test
+  public void testClosedAsyncFileSetNullHandler() throws Exception {
+    createFileWithJunk("file.txt", 100);
+    FileSystem fs = vertx.fileSystem();
+    AsyncFile asyncFile = fs.openBlocking(testDir + pathSep + "file.txt", new OpenOptions().setRead(true));
+    asyncFile.close().await();
+    asyncFile.handler(null);
+    asyncFile.exceptionHandler(null);
+    asyncFile.drainHandler(null);
+    asyncFile.endHandler(null);
   }
 }

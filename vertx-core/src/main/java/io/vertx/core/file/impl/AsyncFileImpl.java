@@ -236,23 +236,26 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public synchronized AsyncFile drainHandler(Handler<Void> handler) {
-    check();
+    if (handler != null) {
+      check();
+    }
     this.drainHandler = handler;
     return this;
   }
 
   @Override
   public synchronized AsyncFile exceptionHandler(Handler<Throwable> handler) {
-    check();
+    if (handler != null) {
+      check();
+    }
     this.exceptionHandler = handler;
     return this;
   }
 
   @Override
   public synchronized AsyncFile handler(Handler<Buffer> handler) {
-    check();
-    if (closed) {
-      return this;
+    if (handler != null) {
+      check();
     }
     this.handler = handler;
     if (handler != null) {
@@ -265,7 +268,9 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public synchronized AsyncFile endHandler(Handler<Void> handler) {
-    check();
+    if (handler != null) {
+      check();
+    }
     this.endHandler = handler;
     return this;
   }
