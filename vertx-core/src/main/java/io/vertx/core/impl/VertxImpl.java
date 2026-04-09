@@ -15,6 +15,7 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.internal.MathUtil;
 import io.netty.util.internal.ThreadExecutorMap;
 import io.vertx.core.Future;
 import io.vertx.core.*;
@@ -73,6 +74,8 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -83,6 +86,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -112,6 +116,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private static final String CLUSTER_MAP_NAME = "__vertx.haInfo";
   private static final String NETTY_IO_RATIO_PROPERTY_NAME = "vertx.nettyIORatio";
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
+  private static final VarHandle LOCALS_UPDATER = MethodHandles.arrayElementVarHandle(EventLoop[].class);
 
   // Not cached for graalvm
   private static ThreadFactory virtualThreadFactory() {
@@ -177,7 +182,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   private final Throwable transportUnavailabilityCause;
   private final VertxTracer tracer;
-  private final ThreadLocal<WeakReference<EventLoop>> stickyEventLoop = new ThreadLocal<>();
+  private final EventLoop[] stickyEventLoop;
   private final boolean disableTCCL;
   private final Boolean useDaemonThread;
   private final boolean shadowContext;
@@ -211,13 +216,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ThreadFactory virtualThreadFactory = virtualThreadFactory();
     PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null && virtualThreadFactory != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", -1) : null;
 
+    int numberOfEventLoops = options.getEventLoopPoolSize();
+    int stickyEventLoopSize = MathUtil.findNextPositivePowerOfTwo(numberOfEventLoops);
+
     contextLocals = LocalSeq.get();
     contextLocalsList = Collections.unmodifiableList(Arrays.asList(contextLocals));
     closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = maxEventLoopExecuteTime;
     maxEventLoopExecTimeUnit = maxEventLoopExecuteTimeUnit;
     eventLoopThreadFactory = createThreadFactory(threadFactory, checker, useDaemonThread, maxEventLoopExecTime, maxEventLoopExecTimeUnit, "vert.x-eventloop-thread-", false);
-    eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
+    eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, numberOfEventLoops, eventLoopThreadFactory, NETTY_IO_RATIO);
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
@@ -229,6 +237,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxWorkerExecTime = maxWorkerExecuteTime;
     maxWorkerExecTimeUnit = maxWorkerExecuteTimeUnit;
     disableTCCL = options.getDisableTCCL();
+    this.stickyEventLoop = new EventLoop[stickyEventLoopSize];
     this.checker = checker;
     this.useDaemonThread = useDaemonThread;
     this.executorServiceFactory = executorServiceFactory;
@@ -574,16 +583,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private EventLoop stickyEventLoop() {
+    long id = Thread.currentThread().getId();
+    long mask = stickyEventLoop.length - 1;
+    int idx = (int)(id & mask);
     EventLoop eventLoop;
-    WeakReference<EventLoop> r = stickyEventLoop.get();
-    if (r != null) {
-      eventLoop = r.get();
-    } else {
-      eventLoop = null;
-    }
-    if (eventLoop == null) {
+    while (true) {
+      eventLoop = (EventLoop)LOCALS_UPDATER.getVolatile(stickyEventLoop, idx);
+      if (eventLoop != null) {
+        break;
+      }
       eventLoop = eventLoopGroup.next();
-      stickyEventLoop.set(new WeakReference<>(eventLoop));
+      if (LOCALS_UPDATER.compareAndSet(stickyEventLoop, idx, null, eventLoop)) {
+        break;
+      }
     }
     return eventLoop;
   }
@@ -998,6 +1010,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
               }
               if (tracer != null) {
                 tracer.close();
+              }
+              for (int i = 0;i < stickyEventLoop.length;i++) {
+                LOCALS_UPDATER.setVolatile(stickyEventLoop, i, null);
               }
               timeouts.clear();
               checker.close();
