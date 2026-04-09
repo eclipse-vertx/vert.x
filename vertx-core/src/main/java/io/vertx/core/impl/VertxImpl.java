@@ -35,8 +35,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.*;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.http.HttpClientConfig;
-import io.vertx.core.http.impl.quic.QuicHttpServer;
-import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;
@@ -77,7 +75,6 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -86,7 +83,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -538,7 +534,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private ContextInternal createContext(Thread thread) {
-    if (thread instanceof VertxThread && ((VertxThread) thread).owner == this) {
+    if (thread instanceof VertxThread && ((VertxThread) thread).ownerId == System.identityHashCode(VertxImpl.this)) {
       if (((VertxThread)thread).isWorker()) {
         return createContext(ThreadingModel.WORKER, eventLoopGroup.next(), workerPool, null);
       } else {
@@ -1172,9 +1168,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private ThreadFactory createThreadFactory(VertxThreadFactory threadFactory, BlockedThreadChecker checker, Boolean useDaemonThread, long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
     AtomicInteger threadCount = new AtomicInteger(0);
+
+
     return runnable -> {
       VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
-      thread.owner = VertxImpl.this;
+      thread.ownerId = System.identityHashCode(VertxImpl.this);
       checker.registerThread(thread, thread.info);
       if (useDaemonThread != null && thread.isDaemon() != useDaemonThread) {
         thread.setDaemon(useDaemonThread);
