@@ -21,6 +21,7 @@ import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
@@ -53,8 +54,8 @@ public class CleanableHttpClient implements HttpClientInternal {
   }
 
   public final HttpClientInternal delegate;
-  private final Cleaner.Cleanable cleanable;
-  private final Action action;
+  private Cleaner.Cleanable cleanable;
+  private Action action;
 
   public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Consumer<Duration> dispose) {
     this.action = new Action(dispose);
@@ -77,8 +78,19 @@ public class CleanableHttpClient implements HttpClientInternal {
     if (timeout.isNegative()) {
       throw new IllegalArgumentException();
     }
-    action.timeout = timeout;
-    cleanable.clean();
+    Action action;
+    Cleaner.Cleanable cleanable;
+    synchronized (this) {
+      action = this.action;
+      cleanable = this.cleanable;
+      this.action = null;
+      this.cleanable = null;
+    }
+    if (action != null) {
+      assert cleanable != null;
+      action.timeout = timeout;
+      cleanable.clean();
+    }
     return delegate.closeFuture();
   }
 

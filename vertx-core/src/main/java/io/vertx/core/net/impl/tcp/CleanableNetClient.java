@@ -13,12 +13,14 @@ package io.vertx.core.net.impl.tcp;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -46,11 +48,12 @@ public class CleanableNetClient implements NetClientInternal {
   }
 
   private final NetClientInternal client;
-  private final Cleaner.Cleanable cleanable;
-  private final Action action;
+  private Cleaner.Cleanable cleanable;
+  private Action action;
 
   public CleanableNetClient(NetClientInternal client, Cleaner cleaner) {
-    this.action = new Action(client);
+    Action action = new Action(client);
+    this.action = action;
     this.client = client;
     this.cleanable = cleaner.register(this, action);
   }
@@ -109,8 +112,19 @@ public class CleanableNetClient implements NetClientInternal {
     if (timeout.isNegative()) {
       throw new IllegalArgumentException("Invalid timeout: " + timeout);
     }
-    action.timeout = timeout;
-    cleanable.clean();
+    Action action;
+    Cleaner.Cleanable cleanable;
+    synchronized (this) {
+      action = this.action;
+      cleanable = this.cleanable;
+      this.action = null;
+      this.cleanable = null;
+    }
+    if (action != null) {
+      assert cleanable != null;
+      action.timeout = timeout;
+      cleanable.clean();
+    }
     return client.closeFuture();
   }
 
