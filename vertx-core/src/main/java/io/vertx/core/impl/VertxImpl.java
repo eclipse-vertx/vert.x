@@ -370,14 +370,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       .build();
     CloseFuture fut = resolveCloseFuture();
     fut.add(netClient);
-    return new CleanableNetClient(netClient, cleaner);
+    return new CleanableNetClient(netClient, cleaner, netClient::shutdown);
   }
 
   public NetClient createNetClient(NetClientOptions options) {
     NetClientInternal netClient = new NetClientBuilder(this, options).build();
     CloseFuture fut = resolveCloseFuture();
     fut.add(netClient);
-    return new CleanableNetClient(netClient, cleaner);
+    return new CleanableNetClient(netClient, cleaner, netClient::shutdown);
   }
 
   @Override

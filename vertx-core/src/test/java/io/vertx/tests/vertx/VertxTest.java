@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -50,6 +51,22 @@ import java.util.concurrent.atomic.AtomicReference;
 public class VertxTest extends VertxTestBase {
 
   private static final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
+
+  public static boolean runGC(BooleanSupplier condition) {
+    long now = System.currentTimeMillis();
+    while (!condition.getAsBoolean()) {
+      if (System.currentTimeMillis() - now >= 20_000) {
+        return false;
+      }
+      runGC();
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   public static void runGC() {
     RUNNER.runSystemGC();

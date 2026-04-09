@@ -15,19 +15,16 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
-import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.impl.CleanableObject;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.ClientSSLOptions;
-import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -37,30 +34,13 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableHttpClient implements HttpClientInternal {
-
-  static class Action implements Runnable {
-    private Consumer<Duration> dispose;
-    private Duration timeout = Duration.ofSeconds(30);
-    private Action(Consumer<Duration> dispose) {
-      this.dispose = dispose;
-    }
-    @Override
-    public void run() {
-      Consumer<Duration> d = dispose;
-      dispose = null;
-      d.accept(timeout);
-    }
-  }
+public class CleanableHttpClient extends CleanableObject implements HttpClientInternal {
 
   public final HttpClientInternal delegate;
-  private Cleaner.Cleanable cleanable;
-  private Action action;
 
   public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Consumer<Duration> dispose) {
-    this.action = new Action(dispose);
+    super(cleaner, dispose);
     this.delegate = delegate;
-    this.cleanable = cleaner.register(this, action);
   }
 
   @Override
@@ -75,22 +55,7 @@ public class CleanableHttpClient implements HttpClientInternal {
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    if (timeout.isNegative()) {
-      throw new IllegalArgumentException();
-    }
-    Action action;
-    Cleaner.Cleanable cleanable;
-    synchronized (this) {
-      action = this.action;
-      cleanable = this.cleanable;
-      this.action = null;
-      this.cleanable = null;
-    }
-    if (action != null) {
-      assert cleanable != null;
-      action.timeout = timeout;
-      cleanable.clean();
-    }
+    clean(timeout);
     return delegate.closeFuture();
   }
 
