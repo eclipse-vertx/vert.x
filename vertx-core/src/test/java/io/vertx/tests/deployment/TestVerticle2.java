@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public class TestVerticle2 extends AbstractVerticle {
 
-  private static Set<Context> contexts = new HashSet<>();
+  static Set<Context> contexts = new HashSet<>();
 
   @Override
   public void start() throws Exception {

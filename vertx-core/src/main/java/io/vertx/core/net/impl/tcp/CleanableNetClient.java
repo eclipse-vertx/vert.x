@@ -13,6 +13,7 @@ package io.vertx.core.net.impl.tcp;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.CleanableObject;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
@@ -20,8 +21,7 @@ import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
 import java.time.Duration;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * A lightweight proxy of Vert.x {@link NetClient} that can be collected by the garbage collector and release
@@ -29,28 +29,13 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableNetClient implements NetClientInternal {
-
-  static class Action implements Runnable {
-    private final NetClientInternal client;
-    private Duration timeout = Duration.ofSeconds(30);
-    private Action(NetClientInternal client) {
-      this.client = client;
-    }
-    @Override
-    public void run() {
-      client.shutdown(timeout);
-    }
-  }
+public class CleanableNetClient extends CleanableObject implements NetClientInternal {
 
   private final NetClientInternal client;
-  private final Cleaner.Cleanable cleanable;
-  private final Action action;
 
-  public CleanableNetClient(NetClientInternal client, Cleaner cleaner) {
-    this.action = new Action(client);
+  public CleanableNetClient(NetClientInternal client, Cleaner cleaner, Consumer<Duration> dispose) {
+    super(cleaner, dispose);
     this.client = client;
-    this.cleanable = cleaner.register(this, action);
   }
 
   public NetClientInternal unwrap() {
@@ -104,11 +89,7 @@ public class CleanableNetClient implements NetClientInternal {
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    if (timeout.isNegative()) {
-      throw new IllegalArgumentException("Invalid timeout: " + timeout);
-    }
-    action.timeout = timeout;
-    cleanable.clean();
+    clean(timeout);
     return client.closeFuture();
   }
 

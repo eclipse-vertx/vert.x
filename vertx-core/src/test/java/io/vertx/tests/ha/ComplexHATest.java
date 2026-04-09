@@ -56,8 +56,8 @@ public class ComplexHATest extends VertxTestBase {
   protected List<Integer> aliveNodes;
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
+  protected void tearDown() throws Exception {
+    super.tearDown();
     deploymentSnapshots = null;
     totDeployed = 0;
     killedNode = 0;

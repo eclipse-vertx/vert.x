@@ -15,11 +15,11 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.impl.*;
-import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -152,7 +152,15 @@ public interface ContextInternal extends Context {
   /**
    * @return the deployment associated with this context or {@code null}
    */
-  DeploymentContext deployment();
+  default DeploymentContext deployment() {
+    String deploymentID = deploymentID();
+    if (deploymentID != null) {
+      DeploymentManager mgr = owner().deploymentManager();
+      return mgr.deployment(deploymentID);
+    } else {
+      return null;
+    }
+  }
 
   @Override
   VertxInternal owner();
@@ -429,11 +437,6 @@ public interface ContextInternal extends Context {
    */
   default boolean isDeployment() {
     return deployment() != null;
-  }
-
-  default String deploymentID() {
-    DeploymentContext deployment = deployment();
-    return deployment != null ? deployment.id() : null;
   }
 
   default int getInstanceCount() {

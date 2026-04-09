@@ -96,8 +96,8 @@ final class DuplicatedContext extends ContextBase implements ContextInternal {
   }
 
   @Override
-  public DeploymentContext deployment() {
-    return delegate.deployment();
+  public String deploymentID() {
+    return delegate.deploymentID();
   }
 
   @Override

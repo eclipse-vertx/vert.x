@@ -18,6 +18,7 @@ import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.WorkerPool;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.EventExecutor;
+import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.CloseFuture;
@@ -40,13 +41,13 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
   static final boolean DISABLE_TIMINGS = SysProps.DISABLE_CONTEXT_TIMINGS.getBoolean();
 
   private final VertxImpl owner;
-  private final JsonObject config;
-  private final DeploymentContext deployment;
+  private final String deploymentID;
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoopExecutor eventLoop;
   private final ThreadingModel threadingModel;
   private final EventExecutor executor;
+  private JsonObject config;
   private ConcurrentMap<Object, Object> data;
   private volatile Handler<Throwable> exceptionHandler;
   final WorkerPool workerPool;
@@ -58,19 +59,11 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
                      ThreadingModel threadingModel,
                      EventExecutor executor,
                      WorkerPool workerPool,
-                     DeploymentContext deployment,
+                     String deploymentID,
                      CloseFuture closeFuture,
                      ClassLoader tccl) {
     super(locals);
-    JsonObject config = null;
-    if (deployment != null) {
-      config = deployment.deployment().options().getConfig();
-    }
-    if (config == null) {
-      config = new JsonObject();
-    }
-    this.deployment = deployment;
-    this.config = config;
+    this.deploymentID = deploymentID;
     this.eventLoop = eventLoop;
     this.threadingModel = threadingModel;
     this.executor = executor;
@@ -96,8 +89,9 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
     return fut;
   }
 
-  public DeploymentContext deployment() {
-    return deployment;
+  @Override
+  public String deploymentID() {
+    return deploymentID;
   }
 
   @Override
@@ -107,7 +101,20 @@ public final class ContextImpl extends ContextBase implements ContextInternal {
 
   @Override
   public JsonObject config() {
-    return config;
+    JsonObject cfg = config;
+    if (cfg == null) {
+      DeploymentContext deployment = deployment();
+      if (deployment != null) {
+        cfg = deployment.deployment().options().getConfig();
+      }
+      if (cfg == null) {
+        cfg = new JsonObject();
+      } else {
+        cfg = cfg.copy();
+      }
+      config = cfg;
+    }
+    return cfg;
   }
 
   public EventLoop nettyEventLoop() {

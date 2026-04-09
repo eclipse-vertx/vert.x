@@ -64,7 +64,13 @@ public class DefaultDeploymentManager implements DeploymentManager {
   }
 
   public DeploymentContext deployment(String deploymentID) {
-    return deployments.get(deploymentID);
+    DeploymentContext ctx = deployments.get(deploymentID);
+    if (ctx == null) {
+      synchronized (deploying) {
+        ctx = deploying.get(deploymentID);
+      }
+    }
+    return ctx;
   }
 
   public Future<Void> undeployAll() {
@@ -107,9 +113,16 @@ public class DefaultDeploymentManager implements DeploymentManager {
     return promise.future();
   }
 
-  public Future<DeploymentContext> deploy(DeploymentContext parent,
-                                          ContextInternal callingContext,
-                                          Deployment deployment) {
+  @Override
+  public Future<DeploymentContext> deploy(String parentID, ContextInternal callingContext, Deployment deployment) {
+
+    DeploymentContext parent;
+    if (parentID != null) {
+      parent = deployment(parentID);
+    } else {
+      parent = null;
+    }
+
     String deploymentID = generateDeploymentID();
     DeploymentContextImpl context = new DeploymentContextImpl(deployment, parent, deploymentID);
     synchronized (deploying) {

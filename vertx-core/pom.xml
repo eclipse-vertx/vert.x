@@ -278,6 +278,17 @@
             <argLine>-Xmx1200M</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
+            <properties>
+              <!--
+                Uncomment to make a JVM heap dump after all tests have been executed, stored in ${project.build.directory}/dumps/dump-XXX.hprof
+              -->
+              <!--
+              <property>
+                <name>listener</name>
+                <value>io.vertx.test.core.HeapDumpRunListener</value>
+              </property>
+              -->
+            </properties>
             <excludes>
               <exclude>io/vertx/it/**</exclude>
             </excludes>

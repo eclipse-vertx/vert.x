@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
+import io.vertx.core.impl.CleanableObject;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
@@ -24,8 +25,7 @@ import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -34,29 +34,13 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableHttpClient implements HttpClientInternal {
-
-  static class Action implements Runnable {
-    private final Function<Duration, Future<Void>> dispose;
-    private Duration timeout = Duration.ofSeconds(30);
-    private Future<Void> closeFuture;
-    private Action(Function<Duration, Future<Void>> dispose) {
-      this.dispose = dispose;
-    }
-    @Override
-    public void run() {
-      closeFuture = dispose.apply(timeout);
-    }
-  }
+public class CleanableHttpClient extends CleanableObject implements HttpClientInternal {
 
   public final HttpClientInternal delegate;
-  private final Cleaner.Cleanable cleanable;
-  private final Action action;
 
-  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Function<Duration, Future<Void>> dispose) {
-    this.action = new Action(dispose);
+  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Consumer<Duration> dispose) {
+    super(cleaner, dispose);
     this.delegate = delegate;
-    this.cleanable = cleaner.register(this, action);
   }
 
   @Override
@@ -71,12 +55,8 @@ public class CleanableHttpClient implements HttpClientInternal {
 
   @Override
   public Future<Void> shutdown(Duration timeout) {
-    if (timeout.isNegative()) {
-      throw new IllegalArgumentException();
-    }
-    action.timeout = timeout;
-    cleanable.clean();
-    return action.closeFuture;
+    clean(timeout);
+    return delegate.closeFuture();
   }
 
   @Override

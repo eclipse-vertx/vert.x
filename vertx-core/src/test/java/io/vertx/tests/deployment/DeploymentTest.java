@@ -12,25 +12,14 @@
 package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
-import io.vertx.core.Context;
-import io.vertx.core.Deployable;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.ThreadingModel;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.tests.timer.TimerTest;
 import io.vertx.tests.vertx.VertxTest;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -541,39 +530,43 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployUndeployMultipleInstancesUsingClassName() throws Exception {
-    int numInstances = 10;
-    DeploymentOptions options = new DeploymentOptions().setInstances(numInstances);
-    AtomicInteger deployCount = new AtomicInteger();
-    AtomicInteger undeployCount = new AtomicInteger();
-    AtomicInteger deployHandlerCount = new AtomicInteger();
-    AtomicInteger undeployHandlerCount = new AtomicInteger();
-    vertx.eventBus().<String>consumer("tvstarted").handler(msg -> {
-      deployCount.incrementAndGet();
-    });
-    vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
-      undeployCount.incrementAndGet();
-      msg.reply("whatever");
-    });
-    CountDownLatch deployLatch = new CountDownLatch(1);
-    vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options).onComplete(TestUtils.onSuccess(depID -> {
-        Assert.assertEquals(1, deployHandlerCount.incrementAndGet());
-        deployLatch.countDown();
-    }));
-    TestUtils.awaitLatch(deployLatch);
-    assertWaitUntil(() -> deployCount.get() == numInstances);
-    Assert.assertEquals(1, vertx.deploymentIDs().size());
-    DeploymentContext deployment = ((VertxInternal) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
-    Set<Deployable> verticles = deployment.deployment().instances();
-    Assert.assertEquals(numInstances, verticles.size());
-    CountDownLatch undeployLatch = new CountDownLatch(1);
-    Assert.assertEquals(numInstances, deployCount.get());
-    vertx.undeploy(deployment.id()).onComplete(TestUtils.onSuccess(v -> {
-      Assert.assertEquals(1, undeployHandlerCount.incrementAndGet());
-      undeployLatch.countDown();
-    }));
-    TestUtils.awaitLatch(undeployLatch);
-    assertWaitUntil(() -> deployCount.get() == numInstances);
-    Assert.assertTrue(vertx.deploymentIDs().isEmpty());
+    try {
+      int numInstances = 10;
+      DeploymentOptions options = new DeploymentOptions().setInstances(numInstances);
+      AtomicInteger deployCount = new AtomicInteger();
+      AtomicInteger undeployCount = new AtomicInteger();
+      AtomicInteger deployHandlerCount = new AtomicInteger();
+      AtomicInteger undeployHandlerCount = new AtomicInteger();
+      vertx.eventBus().<String>consumer("tvstarted").handler(msg -> {
+        deployCount.incrementAndGet();
+      });
+      vertx.eventBus().<String>consumer("tvstopped").handler(msg -> {
+        undeployCount.incrementAndGet();
+        msg.reply("whatever");
+      });
+      CountDownLatch deployLatch = new CountDownLatch(1);
+      vertx.deployVerticle(TestVerticle2.class.getCanonicalName(), options).onComplete(TestUtils.onSuccess(depID -> {
+          Assert.assertEquals(1, deployHandlerCount.incrementAndGet());
+          deployLatch.countDown();
+      }));
+      TestUtils.awaitLatch(deployLatch);
+      assertWaitUntil(() -> deployCount.get() == numInstances);
+      Assert.assertEquals(1, vertx.deploymentIDs().size());
+      DeploymentContext deployment = ((VertxInternal) vertx).deploymentManager().deployment(vertx.deploymentIDs().iterator().next());
+      Set<Deployable> verticles = deployment.deployment().instances();
+      Assert.assertEquals(numInstances, verticles.size());
+      CountDownLatch undeployLatch = new CountDownLatch(1);
+      Assert.assertEquals(numInstances, deployCount.get());
+      vertx.undeploy(deployment.id()).onComplete(TestUtils.onSuccess(v -> {
+        Assert.assertEquals(1, undeployHandlerCount.incrementAndGet());
+        undeployLatch.countDown();
+      }));
+      TestUtils.awaitLatch(undeployLatch);
+      assertWaitUntil(() -> deployCount.get() == numInstances);
+      Assert.assertTrue(vertx.deploymentIDs().isEmpty());
+    } finally {
+      TestVerticle2.contexts.clear();
+    }
   }
 
   @Test
@@ -1189,17 +1182,17 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testDeployClass() {
-    JsonObject config = generateJSONObject();
-    vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config))
-      .onComplete(TestUtils.onSuccess(deploymentId -> {
+    try {
+      JsonObject config = generateJSONObject();
+      String deploymentID = vertx.deployVerticle(ReferenceSavingMyVerticle.class, new DeploymentOptions().setInstances(4).setConfig(config)).await();
       ReferenceSavingMyVerticle.myVerticles.forEach(myVerticle -> {
-        Assert.assertEquals(deploymentId, myVerticle.deploymentID);
+        Assert.assertEquals(deploymentID, myVerticle.deploymentID);
         Assert.assertEquals(config, myVerticle.config);
         Assert.assertTrue(myVerticle.startCalled);
       });
-      testComplete();
-    }));
-    await();
+    } finally {
+      ReferenceSavingMyVerticle.myVerticles.clear();;
+    }
   }
 
   @Test
@@ -1568,6 +1561,36 @@ public class DeploymentTest extends VertxTestBase {
 
     for (WeakReference<HttpServer> verticle : verticles) {
       Assert.assertNull(verticle.get());
+    }
+  }
+
+  private static class DeployableImpl implements Deployable {
+    private Context context;
+    @Override
+    public Future<?> deploy(Context context) throws Exception {
+      this.context = context;
+      return Future.succeededFuture();
+    }
+  }
+
+  @Test
+  public void testClosingVertxDoesNotKeepRef() throws Exception {
+    DeployableImpl deployable = new DeployableImpl();
+    Context context;
+    WeakReference<DeployableImpl> ref = new WeakReference<>(deployable);
+    String deploymentID = vertx.deployVerticle(deployable).await();
+    context = deployable.context;
+    Assert.assertNotNull(context);
+    deployable = null;
+    vertx.undeploy(deploymentID).await();
+    long now = System.currentTimeMillis();
+    while (true) {
+      Assert.assertTrue((System.currentTimeMillis() - now) <= 20_00000);
+      VertxTest.runGC();
+      Thread.sleep(10);
+      if (ref.get() == null) {
+        break;
+      }
     }
   }
 }
