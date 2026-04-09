@@ -15,6 +15,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
+import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
@@ -26,6 +27,7 @@ import java.lang.ref.Cleaner;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -37,15 +39,16 @@ import java.util.function.Function;
 public class CleanableHttpClient implements HttpClientInternal {
 
   static class Action implements Runnable {
-    private final Function<Duration, Future<Void>> dispose;
+    private Consumer<Duration> dispose;
     private Duration timeout = Duration.ofSeconds(30);
-    private Future<Void> closeFuture;
-    private Action(Function<Duration, Future<Void>> dispose) {
+    private Action(Consumer<Duration> dispose) {
       this.dispose = dispose;
     }
     @Override
     public void run() {
-      closeFuture = dispose.apply(timeout);
+      Consumer<Duration> d = dispose;
+      dispose = null;
+      d.accept(timeout);
     }
   }
 
@@ -53,7 +56,7 @@ public class CleanableHttpClient implements HttpClientInternal {
   private final Cleaner.Cleanable cleanable;
   private final Action action;
 
-  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Function<Duration, Future<Void>> dispose) {
+  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Consumer<Duration> dispose) {
     this.action = new Action(dispose);
     this.delegate = delegate;
     this.cleanable = cleaner.register(this, action);
@@ -76,7 +79,7 @@ public class CleanableHttpClient implements HttpClientInternal {
     }
     action.timeout = timeout;
     cleanable.clean();
-    return action.closeFuture;
+    return delegate.closeFuture();
   }
 
   @Override

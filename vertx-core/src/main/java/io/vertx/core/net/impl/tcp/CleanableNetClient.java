@@ -32,14 +32,16 @@ import java.util.concurrent.TimeUnit;
 public class CleanableNetClient implements NetClientInternal {
 
   static class Action implements Runnable {
-    private final NetClientInternal client;
+    private NetClientInternal client;
     private Duration timeout = Duration.ofSeconds(30);
     private Action(NetClientInternal client) {
       this.client = client;
     }
     @Override
     public void run() {
-      client.shutdown(timeout);
+      NetClientInternal c = client;
+      client = null;
+      c.shutdown(timeout);
     }
   }
 
