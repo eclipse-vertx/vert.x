@@ -12,25 +12,14 @@
 package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
-import io.vertx.core.Context;
-import io.vertx.core.Deployable;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.ThreadingModel;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.tests.timer.TimerTest;
 import io.vertx.tests.vertx.VertxTest;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -1568,6 +1557,36 @@ public class DeploymentTest extends VertxTestBase {
 
     for (WeakReference<HttpServer> verticle : verticles) {
       Assert.assertNull(verticle.get());
+    }
+  }
+
+  private static class DeployableImpl implements Deployable {
+    private Context context;
+    @Override
+    public Future<?> deploy(Context context) throws Exception {
+      this.context = context;
+      return Future.succeededFuture();
+    }
+  }
+
+  @Test
+  public void testClosingVertxDoesNotKeepRef() throws Exception {
+    DeployableImpl deployable = new DeployableImpl();
+    Context context;
+    WeakReference<DeployableImpl> ref = new WeakReference<>(deployable);
+    String deploymentID = vertx.deployVerticle(deployable).await();
+    context = deployable.context;
+    Assert.assertNotNull(context);
+    deployable = null;
+    vertx.undeploy(deploymentID).await();
+    long now = System.currentTimeMillis();
+    while (true) {
+      Assert.assertTrue((System.currentTimeMillis() - now) <= 20_00000);
+      VertxTest.runGC();
+      Thread.sleep(10);
+      if (ref.get() == null) {
+        break;
+      }
     }
   }
 }
