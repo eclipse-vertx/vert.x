@@ -208,7 +208,7 @@ public class VertxTestBase extends AsyncTestBase {
         }
         break;
       case FORBIDDEN:
-        throw new UnsupportedOperationException("Strictly forbidden to call an assertion on AsyncTestBase");
+        throw new AssertionError("Strictly forbidden to call an assertion on AsyncTestBase");
     }
   }
 

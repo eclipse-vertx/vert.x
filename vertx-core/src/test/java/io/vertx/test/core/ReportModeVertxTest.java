@@ -73,7 +73,7 @@ public class ReportModeVertxTest {
   public void testForbidden() {
     Result result = runTest(Forbidden.class);
     assertEquals(1, result.getFailureCount());
-    assertThat(result.getFailures().get(0).getException()).isInstanceOf(UnsupportedOperationException.class);
+    assertThat(result.getFailures().get(0).getException()).isInstanceOf(AssertionError.class);
   }
 
   public static class Forbidden extends VertxTestBase {
