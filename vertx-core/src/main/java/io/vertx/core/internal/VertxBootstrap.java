@@ -14,14 +14,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxBootstrapImpl;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.transport.Transport;
+
+import java.util.List;
 
 /**
  * Vertx bootstrap for creating vertx instances with SPI overrides.
@@ -72,8 +71,22 @@ public interface VertxBootstrap {
   EventExecutorProvider eventExecutorProvider();
 
   /**
-   * @return the {@code FileResolver} instance to use
+   * @return the list of service providers to use
    */
+  List<VertxServiceProvider> serviceProviders();
+
+  /**
+   * Set the list of service providers to use, when the list is {@code null}, Java's service loader
+   * mechanism will be used to discover service providers.
+   *
+   * @param providers the service providers
+   * @return this builder instance
+   */
+  VertxBootstrap serviceProviders(List<VertxServiceProvider> providers);
+
+    /**
+     * @return the {@code FileResolver} instance to use
+     */
   FileResolver fileResolver();
 
   /**
@@ -146,7 +159,7 @@ public interface VertxBootstrap {
    * @param transport the transport
    * @return this builder instance
    */
-  VertxBootstrapImpl transport(Transport transport);
+  VertxBootstrap transport(Transport transport);
 
   /**
    * @return the cluster manager to use
@@ -162,6 +175,20 @@ public interface VertxBootstrap {
   VertxBootstrap clusterManager(ClusterManager clusterManager);
 
   /**
+   * @return the verticle factories to use
+   */
+  List<VerticleFactory> verticleFactories();
+
+  /**
+   * Set the list of {@code VerticleFactory} to use.
+   *
+   * @param verticleFactories the verticle factories
+   * @return the builder instance
+   */
+  VertxBootstrap verticleFactories(List<VerticleFactory> verticleFactories);
+
+  /**
+   *
    * Initialize the service providers.
    *
    * @return this builder instance

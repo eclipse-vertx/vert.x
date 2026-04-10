@@ -48,12 +48,12 @@ public class VerticleManager {
     this.vertx = (VertxImpl) vertx;
     this.deploymentManager = deploymentManager;
     this.log = log;
-    loadVerticleFactories();
   }
 
-  private void loadVerticleFactories() {
-    Collection<VerticleFactory> factories = ServiceHelper.loadFactories(VerticleFactory.class);
-    factories.forEach(this::registerVerticleFactory);
+  public void init(List<VerticleFactory> factories) {
+    if (factories != null) {
+      factories.forEach(this::registerVerticleFactory);
+    }
     VerticleFactory defaultFactory = new JavaVerticleFactory();
     defaultFactory.init(vertx);
     defaultFactories.add(defaultFactory);

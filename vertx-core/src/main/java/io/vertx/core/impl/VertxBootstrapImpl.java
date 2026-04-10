@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.core.eventbus.impl.clustered.DefaultNodeSelector;
+import io.vertx.core.spi.*;
 import io.vertx.core.spi.context.executor.EventExecutorProvider;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
@@ -22,16 +23,12 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.transport.Transport;
-import io.vertx.core.spi.ExecutorServiceFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxServiceProvider;
-import io.vertx.core.spi.VertxThreadFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.eventbus.impl.clustered.NodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -51,6 +48,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private EventExecutorProvider eventExecutorProvider;
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
+  private List<VertxServiceProvider> serviceProviders;
   private VertxTracerFactory tracerFactory;
   private VertxTracer tracer;
   private VertxThreadFactory threadFactory;
@@ -58,6 +56,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   private VertxMetricsFactory metricsFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
+  private List<VerticleFactory> verticleFactories;
 
   public VertxBootstrapImpl(JsonObject config) {
     this(new VertxOptions(config));
@@ -85,7 +84,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   }
 
   @Override
-  public VertxBootstrap enableShadowContext(boolean option) {
+  public VertxBootstrapImpl enableShadowContext(boolean option) {
     this.enableShadowContext = option;
     return this;
   }
@@ -98,7 +97,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
   }
 
   @Override
-  public VertxBootstrap eventExecutorProvider(EventExecutorProvider provider) {
+  public VertxBootstrapImpl eventExecutorProvider(EventExecutorProvider provider) {
     this.eventExecutorProvider = provider;
     return this;
   }
@@ -160,6 +159,25 @@ public class VertxBootstrapImpl implements VertxBootstrap {
 
   public VertxBootstrapImpl tracerFactory(VertxTracerFactory factory) {
     this.tracerFactory = factory;
+    return this;
+  }
+
+  /**
+   * @return the list of service providers to use
+   */
+  public List<VertxServiceProvider> serviceProviders() {
+    return serviceProviders;
+  }
+
+  /**
+   * Set the list of service providers to use, when the list is {@code null}, Java's service loader
+   * mechanism will be used to discover service providers.
+   *
+   * @param providers the service providers
+   * @return this builder instance
+   */
+  public VertxBootstrapImpl serviceProviders(List<VertxServiceProvider> providers) {
+    this.serviceProviders = providers;
     return this;
   }
 
@@ -245,7 +263,7 @@ public class VertxBootstrapImpl implements VertxBootstrap {
 
   public Vertx vertx() {
     VertxImpl vertx = instantiateVertx(null, null);
-    vertx.init();
+    vertx.init(verticleFactories);
     return vertx;
   }
 
@@ -261,27 +279,48 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       nodeSelector = new DefaultNodeSelector();
     }
     VertxImpl vertx = instantiateVertx(clusterManager, nodeSelector);
-    return vertx.initClustered(options);
+    return vertx.initClustered(options, verticleFactories);
   }
 
   /**
-   * Initialize the service providers.
-   * @return this builder instance
+   * @return the verticle factories to use
    */
+  public List<VerticleFactory> verticleFactories() {
+    return verticleFactories;
+  }
+
+  /**
+   * Set the list of {@code VerticleFactory} to use.
+   *
+   * @param verticleFactories the verticle factories
+   * @return the builder instance
+   */
+  public VertxBootstrapImpl verticleFactories(List<VerticleFactory> verticleFactories) {
+    this.verticleFactories = verticleFactories;
+    return this;
+  }
+
+  @Override
   public VertxBootstrapImpl init() {
+    List<VertxServiceProvider> providers = new ArrayList<>();
     initTransport();
     initMetrics();
     initTracing();
-    List<VertxServiceProvider> providers = ServiceHelper.loadFactories(VertxServiceProvider.class);
     initProviders(providers);
     initThreadFactory();
     initExecutorServiceFactory();
     initFileResolver();
+    initVerticleFactories();
     return this;
   }
 
-  private void initProviders(Collection<VertxServiceProvider> providers) {
-    for (VertxServiceProvider provider : providers) {
+  private void initProviders(Collection<VertxServiceProvider> toInit) {
+    List<VertxServiceProvider> serviceProviders = this.serviceProviders;
+    if (serviceProviders == null) {
+      serviceProviders = new ArrayList<>(ServiceHelper.loadFactories(VertxServiceProvider.class));
+    }
+    toInit.addAll(serviceProviders);
+    for (VertxServiceProvider provider : toInit) {
       if (provider instanceof VertxMetricsFactory && (options.getMetricsOptions() == null || !options.getMetricsOptions().isEnabled())) {
         continue;
       } else if (provider instanceof VertxTracerFactory && (options.getTracingOptions() == null)) {
@@ -327,6 +366,13 @@ public class VertxBootstrapImpl implements VertxBootstrap {
       return;
     }
     executorServiceFactory = ExecutorServiceFactory.INSTANCE;
+  }
+
+  private void initVerticleFactories() {
+    if (verticleFactories != null) {
+      return;
+    }
+    verticleFactories = new ArrayList<>(ServiceHelper.loadFactories(VerticleFactory.class));
   }
 
   private void checkBeforeInstantiating() {
