@@ -74,7 +74,11 @@ public final class FailedFuture<T> extends FutureBase<T> {
     } else if (context != null) {
       context.emit(this, handler);
     } else {
-      handler.handle(this);
+      try {
+        handler.handle(this);
+      } catch (Throwable t) {
+        reportException(t);
+      }
     }
     return this;
   }

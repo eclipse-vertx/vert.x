@@ -20,6 +20,8 @@ import io.vertx.core.impl.NoStackTraceTimeoutException;
 import io.vertx.core.internal.FutureInternal;
 
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,6 +32,31 @@ import java.util.function.Supplier;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class FutureBase<T> implements FutureInternal<T> {
+
+  private static final ConcurrentMap<Thread, Handler<Throwable>> uncaughtExceptionHandlers = new ConcurrentHashMap<>();
+
+  public static void exceptionHandler(Thread thread, Handler<Throwable> handler) {
+    if (handler != null) {
+      uncaughtExceptionHandlers.put(thread, handler);
+    } else {
+      uncaughtExceptionHandlers.remove(thread);
+    }
+  }
+
+  /**
+   * Reports for context-less future listener faillures.
+   *
+   * @param failure to be reported
+   */
+  static void reportException(Throwable failure) {
+    Handler<Throwable> handler = uncaughtExceptionHandlers.get(Thread.currentThread());
+    if (handler != null) {
+      try {
+        handler.handle(failure);
+      } catch (Exception ignore) {
+      }
+    }
+  }
 
   protected final ContextInternal context;
 
@@ -53,25 +80,53 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
 
   protected final void emitResult(T result, Throwable cause, Completable<? super T> listener) {
     if (context != null && !context.isRunningOnContext()) {
-      context.execute(() -> {
-        ContextInternal prev = context.beginDispatch();
-        try {
-          listener.complete(result, cause);
-        } catch (Throwable t) {
-          context.reportException(t);
-        } finally {
-          context.endDispatch(prev);
-        }
-      });
+      context.execute(new EmitResultTask<>(context, result, cause, listener));
+    } else if (context != null) {
+      emitResult(context, result, cause, listener);
     } else {
+      signalComplete(result, cause, listener);
+    }
+  }
+
+  private static <T> void emitResult(ContextInternal context, T result, Throwable cause, Completable<? super T> listener) {
+    ContextInternal prev = context.beginDispatch();
+    try {
+      listener.complete(result, cause);
+    } catch (Throwable t) {
+      context.reportException(t);
+    } finally {
+      context.endDispatch(prev);
+    }
+  }
+
+  private static <T> void signalComplete(T result, Throwable cause, Completable<? super T> listener) {
+    try {
+      listener.complete(result, cause);
+    } catch (Throwable t) {
+      reportException(t);
+    }
+  }
+
+  private static class EmitResultTask<T> implements Runnable {
+    final ContextInternal context;
+    final T result;
+    final Throwable cause;
+    final Completable<? super T> listener;
+    EmitResultTask(ContextInternal context, T result, Throwable cause, Completable<? super T> listener) {
+      this.context = context;
+      this.result = result;
+      this.cause = cause;
+      this.listener = listener;
+    }
+    @Override
+    public void run() {
+      ContextInternal prev = context.beginDispatch();
       try {
         listener.complete(result, cause);
       } catch (Throwable t) {
-        if (context != null) {
-          context.reportException(t);
-        } else {
-          throw t;
-        }
+        context.reportException(t);
+      } finally {
+        context.endDispatch(prev);
       }
     }
   }
