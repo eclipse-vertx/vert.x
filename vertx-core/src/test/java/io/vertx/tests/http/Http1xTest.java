@@ -85,6 +85,37 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6038
+  public void testResponseBodyAfterResponseEnd() throws Exception {
+    server.requestHandler(req -> req.response().setStatusCode(204).end());
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      // Ensure body() is invoked after response end has been processed.
+      .compose(resp -> vertx.timer(50).compose(v -> resp.body()))
+      .timeout(5, TimeUnit.SECONDS)
+      .onComplete(TestUtils.onSuccess(body -> {
+        Assert.assertEquals(0, body.length());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6038
+  public void testResponseEndAfterResponseEnd() throws Exception {
+    server.requestHandler(req -> req.response().setStatusCode(204).end());
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      // Ensure end() is invoked after response end has been processed.
+      .compose(resp -> vertx.timer(50).compose(v -> resp.end()))
+      .timeout(5, TimeUnit.SECONDS)
+      .onComplete(TestUtils.onSuccess(v -> testComplete()));
+    await();
+  }
+
+  @Test
   public void testClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
 
@@ -3630,19 +3661,7 @@ public class Http1xTest extends HttpTest {
       });
     }).listen(testAddress).onComplete(TestUtils.onSuccess(v -> listenLatch.countDown()));
     TestUtils.awaitLatch(listenLatch);
-    AtomicInteger status = new AtomicInteger();
-    testHttpClientResponseDecodeError(cont::complete, err -> {
-      switch (status.incrementAndGet()) {
-        case 1:
-          Assert.assertTrue(err instanceof NumberFormatException);
-          break;
-        case 2:
-          Assert.assertTrue(err instanceof VertxException);
-          Assert.assertTrue(err.getMessage().equals("Connection was closed"));
-          testComplete();
-          break;
-      }
-    });
+    testHttpClientResponseDecodeError(cont::complete, err -> Assert.assertTrue(err instanceof NumberFormatException));
   }
 
   @Test
@@ -3666,26 +3685,32 @@ public class Http1xTest extends HttpTest {
       });
     }).listen(testAddress).onComplete(TestUtils.onSuccess(v -> listenLatch.countDown()));
     TestUtils.awaitLatch(listenLatch);
-    AtomicInteger status = new AtomicInteger();
-    testHttpClientResponseDecodeError(cont::complete, err -> {
-      switch (status.incrementAndGet()) {
-        case 1:
-          Assert.assertTrue(err instanceof TooLongFrameException);
-          break;
-        case 2:
-          Assert.assertTrue(err instanceof VertxException);
-          Assert.assertTrue(err.getMessage().equals("Connection was closed"));
-          testComplete();
-          break;
-      }
-    });
+    testHttpClientResponseDecodeError(cont::complete, err -> Assert.assertTrue(err instanceof TooLongFrameException));
   }
 
   private void testHttpClientResponseDecodeError(Handler<Void> continuation, Handler<Throwable> errorHandler) throws Exception {
+    AtomicInteger status = new AtomicInteger();
+    AtomicBoolean connectionClosed = new AtomicBoolean();
     client.request(requestOptions)
       .onComplete(TestUtils.onSuccess(req -> {
         req.send().onComplete(TestUtils.onSuccess(resp -> {
-          resp.exceptionHandler(errorHandler);
+          resp.request().connection().closeHandler(v -> {
+            connectionClosed.set(true);
+            if (status.get() == 1) {
+              testComplete();
+            }
+          });
+          resp.exceptionHandler(err -> {
+            int current = status.incrementAndGet();
+            if (current == 1) {
+              errorHandler.handle(err);
+              if (connectionClosed.get()) {
+                testComplete();
+              }
+            } else {
+              Assert.fail("Unexpected extra response exception callback: " + err);
+            }
+          });
           continuation.handle(null);
         }));
       }));
