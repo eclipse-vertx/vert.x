@@ -11,10 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.impl.WorkerExecutor;
-import io.vertx.core.impl.future.FutureImpl;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.future.CompositeFutureImpl;
@@ -294,7 +291,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the result
    * @return a reference to this, so it can be used fluently
    */
-  @Fluent
   default Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     Objects.requireNonNull(handler, "No null handler accepted");
     return onComplete((value, err) -> handler.handle(this));
@@ -340,7 +336,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the succeeded result
    * @return a reference to this, so it can be used fluently
    */
-  @Fluent
   default Future<T> onSuccess(Handler<? super T> handler) {
     return onComplete(handler, null);
   }
@@ -354,7 +349,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the failed result
    * @return a reference to this, so it can be used fluently
    */
-  @Fluent
   default Future<T> onFailure(Handler<? super Throwable> handler) {
     return onComplete(null, handler);
   }
@@ -644,7 +638,6 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @return a {@link CompletionStage} that completes when this future resolves
    */
-  @GenIgnore
   default CompletionStage<T> toCompletionStage() {
     CompletableFuture<T> completableFuture = new CompletableFuture<>();
     onComplete(ar -> {
@@ -666,7 +659,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>             the result type
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
-  @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage) {
     Promise<T> promise = Promise.promise();
     completionStage.whenComplete((value, err) -> {
@@ -689,7 +681,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>             the result type
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
-  @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
     Promise<T> promise = ((ContextInternal) context).promise();
     completionStage.whenComplete((value, err) -> {

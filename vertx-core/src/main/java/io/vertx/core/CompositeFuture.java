@@ -11,9 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.impl.future.CompositeFutureImpl;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,7 +82,6 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    * @return a list of the current completed values. If one future is not yet resolved or is failed, {@code} null
    *         will be used
    */
-  @GenIgnore
   default <T> List<T> list() {
     int size = size();
     ArrayList<T> list = new ArrayList<>(size);
@@ -98,7 +94,6 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   /**
    * @return a list of all the eventual failure causes. If no future failed, returns a list of null values.
    */
-  @GenIgnore
   default List<Throwable> causes() {
     int size = size();
     ArrayList<Throwable> list = new ArrayList<>(size);
