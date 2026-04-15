@@ -68,22 +68,6 @@ public final class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    if (handler instanceof Completable) {
-      emitResult(null, cause, (Completable<T>) handler);
-    } else if (context != null) {
-      context.emit(this, handler);
-    } else {
-      try {
-        handler.handle(this);
-      } catch (Throwable t) {
-        reportException(t);
-      }
-    }
-    return this;
-  }
-
-  @Override
   public Future<T> onSuccess(Handler<? super T> handler) {
     return this;
   }

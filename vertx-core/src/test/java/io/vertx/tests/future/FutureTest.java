@@ -1036,7 +1036,11 @@ public class FutureTest extends FutureTestBase {
       T result;
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public io.vertx.core.Future<T> onComplete(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
+
+      @Override
+      public Future<T> onComplete(Completable<? super T> handler) {
+        throw new UnsupportedOperationException();
+      }
 
       public void complete(T result) {
         if (!tryComplete(result)) {

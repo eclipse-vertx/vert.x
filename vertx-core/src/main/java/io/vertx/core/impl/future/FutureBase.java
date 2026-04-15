@@ -219,6 +219,12 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
     return promise.future();
   }
 
+  @Override
+  public final Future<T> onComplete(Completable<? super T> handler) {
+    addListener(handler);
+    return this;
+  }
+
   /**
    * Add a listener to the future result.
    *
