@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
@@ -45,10 +46,42 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<StreamPriority> priorityHandler;
 
   // Cache these for performance
-  private MultiMap headers;
+  private final MultiMap headers;
   private MultiMap trailers;
   private List<String> cookies;
   private NetSocket netSocket;
+
+  /**
+   * This {@code ended} field is used internally to track whether the response has ended.
+   * The {@link #completion} promise is used to expose the response result, completed as failed
+   * or succeeded. The promise's {@link Future} is exposed to external users via {@link #end()}.
+   *
+   * <p>The {@code ended} / {@link #completion} pair decouples the "response ended" state handling
+   * from the potentially expensive work that might be incurred by handlers registered on the promise's
+   * {@link Future}.
+   *
+   * <p>The pattern for both fields in {@link #handleException(Throwable)} and {@link #handleEnd(MultiMap)}
+   * is:
+   * <ol>
+   *   <li>Acquire lock ({@code synchronized (conn)}).
+   *   <li>Check {@code ended}, if {@code ended != null} return immediately.
+   *   <li>Set {@code ended}.
+   *   <li>Release lock.
+   *   <li>Complete the {@link #completion} promise.
+   * </ol>
+   *
+   * <p>Possible states of {@code ended}:
+   * <ul>
+   *   <li>{@code null} - the response has not ended yet</li>
+   *   <li>{@link #ENDED_SENTINEL ENDED_SENTINEL} - the response has ended successfully</li>
+   *   <li>any other {@link Throwable} - the response has ended with an exception</li>
+   * </ul>
+   *
+   * <p>All accesses to this field must be guarded by {@code conn}.
+   */
+  private Throwable ended;
+  private static final Throwable ENDED_SENTINEL = new Throwable();
+  private final Promise<Void> completion;
 
   HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, MultiMap headers) {
     this.version = version;
@@ -57,9 +90,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.request = request;
     this.stream = stream;
     this.conn = stream.connection();
+    this.completion = request.context.promise();
     this.headers = headers;
   }
 
+  // Must be guarded by a `synchronized (conn)` block.
   private HttpEventHandler eventHandler(boolean create) {
     if (eventHandler == null && create) {
       eventHandler = new HttpEventHandler(request.context);
@@ -122,6 +157,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public String getTrailer(String trailerName) {
+    MultiMap trailers;
+    synchronized (conn) {
+      trailers = this.trailers;
+    }
     return trailers != null ? trailers.get(trailerName) : null;
   }
 
@@ -139,9 +178,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
   }
 
+  /** Must be called within a {@code synchronized (conn)} block. */
   private void checkEnded() {
-    if (trailers != null) {
-      throw new IllegalStateException();
+    if (ended != null) {
+      throw new IllegalStateException("Response already ended");
     }
   }
 
@@ -236,10 +276,24 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleEnd(MultiMap trailers) {
     HttpEventHandler handler;
+    Throwable wasEnded;
+    // This synchronized block is used to guarantee that a handler's `handleEnd()` is
+    // called only once and that setting/updating `trailers` does not race with
+    // `trailers()`, where the `trailers` field can escape.
     synchronized (conn) {
-      this.trailers = trailers;
+      wasEnded = this.ended;
+      if (wasEnded != null) {
+        return;
+      }
+      if (this.trailers == null) {
+        this.trailers = trailers;
+      } else if (this.trailers != trailers) {
+        this.trailers.setAll(trailers);
+      }
+      this.ended = ENDED_SENTINEL;
       handler = eventHandler;
     }
+    completion.tryComplete();
     if (handler != null) {
       handler.handleEnd();
     }
@@ -247,12 +301,18 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleException(Throwable e) {
     HttpEventHandler handler;
+    Throwable wasEnded;
     synchronized (conn) {
-      if (trailers != null) {
+      // Only report the first exception, and generally only report when the
+      // response has not yet ended.
+      wasEnded = this.ended;
+      if (wasEnded != null) {
         return;
       }
+      this.ended = e;
       handler = eventHandler;
     }
+    completion.tryFail(e);
     if (handler != null) {
       handler.handleException(e);
     } else {
@@ -262,13 +322,25 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public Future<Buffer> body() {
-    return eventHandler(true).body();
+    HttpEventHandler eventHandler;
+    Future<Buffer> bodyFuture;
+    Throwable wasEnded;
+    synchronized (conn) {
+      eventHandler = eventHandler(true);
+      bodyFuture = eventHandler.body();
+      wasEnded = ended;
+    }
+    if (wasEnded == ENDED_SENTINEL) {
+      eventHandler.handleEnd();
+    } else if (wasEnded != null) {
+      eventHandler.handleException(wasEnded);
+    }
+    return bodyFuture;
   }
 
   @Override
-  public synchronized Future<Void> end() {
-    checkEnded();
-    return eventHandler(true).end();
+  public Future<Void> end() {
+    return completion.future();
   }
 
   @Override

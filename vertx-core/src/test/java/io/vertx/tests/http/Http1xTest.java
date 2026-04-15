@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -70,6 +69,37 @@ public class Http1xTest extends HttpTest {
       "127.0.0.1 host1\n" +
       "127.0.0.1 host2\n"));
     return options;
+  }
+
+  @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6038
+  public void testResponseBodyAfterResponseEnd() throws Exception {
+    server.requestHandler(req -> req.response().setStatusCode(204).end());
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      // Ensure body() is invoked after response end has been processed.
+      .compose(resp -> vertx.timer(50).compose(v -> resp.body()))
+      .timeout(5, TimeUnit.SECONDS)
+      .onComplete(onSuccess(body -> {
+        assertEquals(0, body.length());
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  // Regression test for https://github.com/eclipse-vertx/vert.x/issues/6038
+  public void testResponseEndAfterResponseEnd() throws Exception {
+    server.requestHandler(req -> req.response().setStatusCode(204).end());
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      // Ensure end() is invoked after response end has been processed.
+      .compose(resp -> vertx.timer(50).compose(v -> resp.end()))
+      .timeout(5, TimeUnit.SECONDS)
+      .onComplete(onSuccess(v -> testComplete()));
+    await();
   }
 
   @Test
@@ -3609,21 +3639,10 @@ public class Http1xTest extends HttpTest {
       cont.whenComplete((v,e) -> {
         so.write("invalid\r\n"); // Invalid chunk
       });
+
     }).listen(testAddress).onComplete(onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
-    AtomicInteger status = new AtomicInteger();
-    testHttpClientResponseDecodeError(cont::complete, err -> {
-      switch (status.incrementAndGet()) {
-        case 1:
-          assertTrue(err instanceof NumberFormatException);
-          break;
-        case 2:
-          assertTrue(err instanceof VertxException);
-          assertTrue(err.getMessage().equals("Connection was closed"));
-          testComplete();
-          break;
-      }
-    });
+    testHttpClientResponseDecodeError(cont::complete, err -> assertTrue(err instanceof NumberFormatException));
   }
 
   @Test
@@ -3647,26 +3666,32 @@ public class Http1xTest extends HttpTest {
       });
     }).listen(testAddress).onComplete(onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
-    AtomicInteger status = new AtomicInteger();
-    testHttpClientResponseDecodeError(cont::complete, err -> {
-      switch (status.incrementAndGet()) {
-        case 1:
-          assertTrue(err instanceof TooLongFrameException);
-          break;
-        case 2:
-          assertTrue(err instanceof VertxException);
-          assertTrue(err.getMessage().equals("Connection was closed"));
-          testComplete();
-          break;
-      }
-    });
+    testHttpClientResponseDecodeError(cont::complete, err -> assertTrue(err instanceof TooLongFrameException));
   }
 
   private void testHttpClientResponseDecodeError(Handler<Void> continuation, Handler<Throwable> errorHandler) throws Exception {
+    AtomicInteger status = new AtomicInteger();
+    AtomicBoolean connectionClosed = new AtomicBoolean();
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
         req.send().onComplete(onSuccess(resp -> {
-          resp.exceptionHandler(errorHandler);
+          resp.request().connection().closeHandler(v -> {
+            connectionClosed.set(true);
+            if (status.get() == 1) {
+              testComplete();
+            }
+          });
+          resp.exceptionHandler(err -> {
+            int current = status.incrementAndGet();
+            if (current == 1) {
+              errorHandler.handle(err);
+              if (connectionClosed.get()) {
+                testComplete();
+              }
+            } else {
+              fail("Unexpected extra response exception callback: " + err);
+            }
+          });
           continuation.handle(null);
         }));
       }));
