@@ -20,9 +20,7 @@ import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.QuicClientConfig;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.Proxy;
@@ -35,7 +33,7 @@ import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -64,20 +62,12 @@ public class HttpAlternativesTest extends VertxTestBase {
 
   private interface Server {
     Server handler(Handler<HttpServerRequest> handler);
-    int connectionCount();
   }
 
   private Server startServer(int port, Cert<? extends KeyCertOptions> cert, HttpVersion... versions) {
     AtomicReference<Handler<HttpServerRequest>> handler = new AtomicReference<>();
     List<HttpVersion> tcpVersions = Stream.of(versions).filter(v -> v != HttpVersion.HTTP_3).collect(Collectors.toList());
     List<HttpVersion> quicVersions = Stream.of(versions).filter(v -> v == HttpVersion.HTTP_3).collect(Collectors.toList());
-    AtomicInteger connectionCount = new AtomicInteger();
-    Handler<HttpConnection> connectionHandler = connection -> {
-      connectionCount.incrementAndGet();
-      connection.closeHandler(v -> {
-        connectionCount.decrementAndGet();
-      });
-    };
     if (!tcpVersions.isEmpty()) {
       HttpServer server = vertx.createHttpServer(new HttpServerOptions()
         .setSsl(true)
@@ -85,7 +75,6 @@ public class HttpAlternativesTest extends VertxTestBase {
         .setSni(true)
         .setAlpnVersions(tcpVersions)
         .setKeyCertOptions(cert.get()));
-      server.connectionHandler(connectionHandler);
       server.requestHandler(request -> {
         Handler<HttpServerRequest> h = handler.get();
         if (h != null) {
@@ -98,7 +87,6 @@ public class HttpAlternativesTest extends VertxTestBase {
       HttpServerConfig config = new HttpServerConfig();
       config.setVersions(HttpVersion.HTTP_3);
       HttpServer server = vertx.createHttpServer(config, new ServerSSLOptions().setKeyCertOptions(cert.get()));
-      server.connectionHandler(connectionHandler);
       server.requestHandler(request -> {
         Handler<HttpServerRequest> h = handler.get();
         if (h != null) {
@@ -112,10 +100,6 @@ public class HttpAlternativesTest extends VertxTestBase {
       public Server handler(Handler<HttpServerRequest> httpServerRequestHandler) {
         handler.set(httpServerRequestHandler);
         return this;
-      }
-      @Override
-      public int connectionCount() {
-        return connectionCount.get();
       }
     };
   }
@@ -246,12 +230,18 @@ public class HttpAlternativesTest extends VertxTestBase {
           .response()
           .end(request.authority().toString(false));
       });
-    client = vertx.createHttpClient((
-        new HttpClientConfig()
-          .setFollowAlternativeServices(true)
-          .setSsl(true)
-          .setVersions(initialProtocol, upgradedProtocol)),
-      new ClientSSLOptions().setTrustAll(true));
+    Set<HttpVersion> versions = ConcurrentHashMap.newKeySet();
+    client = vertx
+      .httpClientBuilder()
+      .with(new HttpClientConfig()
+        .setFollowAlternativeServices(true)
+        .setSsl(true)
+        .setVersions(initialProtocol, upgradedProtocol))
+      .with(new ClientSSLOptions().setTrustAll(true))
+      .withConnectHandler(conn -> {
+        versions.add(conn.protocolVersion());
+      })
+      .build();
     Buffer body = client.request(HttpMethod.GET, 4043, "host2.com", "/")
       .compose(request -> request
         .send()
@@ -259,7 +249,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .compose(HttpClientResponse::body)
       ).await();
     Assert.assertEquals("host2.com:4043", body.toString());
-    assertWaitUntil(() -> alternative.connectionCount() == 1);
+    assertWaitUntil(() -> versions.contains(upgradedProtocol));
     body = client.request(new RequestOptions().setHost("host2.com").setProtocolVersion(upgradedProtocol).setPort(4043).setURI("/"))
       .compose(request -> request
         .send()
