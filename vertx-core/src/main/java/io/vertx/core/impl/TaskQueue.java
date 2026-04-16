@@ -33,9 +33,10 @@ import java.util.concurrent.RejectedExecutionException;
  */
 public class TaskQueue {
 
-  static final Logger log = LoggerFactory.getLogger(TaskQueue.class);
+  static final Logger LOGGER = LoggerFactory.getLogger(TaskQueue.class);
 
   // @protectedby tasks
+  private final Logger log;
   private final LinkedList<Task> tasks = new LinkedList<>();
   private final Set<ContinuationTask> continuations = new HashSet<>();
   private boolean closed;
@@ -45,8 +46,13 @@ public class TaskQueue {
 
   private final Runnable runner;
 
-  public TaskQueue() {
+  public TaskQueue(Logger log) {
+    this.log = log;
     runner = this::run;
+  }
+
+  public TaskQueue() {
+    this(LOGGER);
   }
 
   private void run() {
@@ -79,7 +85,10 @@ public class TaskQueue {
         currentTask = execute;
         execute.runnable.run();
       } catch (Throwable t) {
-        log.error("Caught unexpected Throwable", t);
+        try {
+          log.error("Caught unexpected Throwable", t);
+        } catch (Throwable ignore) {
+        }
       } finally {
         currentThread = null;
         currentTask = null;
