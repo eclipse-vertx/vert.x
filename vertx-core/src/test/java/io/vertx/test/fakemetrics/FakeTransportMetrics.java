@@ -95,12 +95,14 @@ public class FakeTransportMetrics extends FakeMetricsBase implements TransportMe
 
   @Override
   public void streamOpened(ConnectionMetric connectionMetric) {
-    connectionMetric.openStreams.incrementAndGet();
+    long v = connectionMetric.openStreams.incrementAndGet();
+    System.out.println(connectionMetric + " stream opened " + v);
   }
 
   @Override
   public void streamClosed(ConnectionMetric connectionMetric) {
-    connectionMetric.openStreams.decrementAndGet();
+    long v = connectionMetric.openStreams.decrementAndGet();
+    System.out.println(connectionMetric + " stream closed " + v);
   }
 
   public ConnectionMetric firstMetric(SocketAddress address) {
