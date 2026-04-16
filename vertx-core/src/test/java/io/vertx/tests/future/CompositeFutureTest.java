@@ -600,8 +600,9 @@ public class CompositeFutureTest extends FutureTestBase {
     }
 
     @Override
-    public Future<Void> onComplete(Handler<AsyncResult<Void>> handler) {
-      return delegate.onComplete(handler);
+    public Future<Void> onComplete(Completable<? super Void> handler) {
+      delegate.onComplete(handler);
+      return this;
     }
 
     @Override

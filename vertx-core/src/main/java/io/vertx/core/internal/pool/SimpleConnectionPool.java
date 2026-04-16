@@ -959,16 +959,6 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       return fut != null && fut.isComplete();
     }
     @Override
-    public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-      addListener(new Completable<T>() {
-        @Override
-        public void complete(T result, Throwable failure) {
-          handler.handle(LazyFuture.this);
-        }
-      });
-      return this;
-    }
-    @Override
     public synchronized T result() {
       return fut != null ? fut.result() : null;
     }
