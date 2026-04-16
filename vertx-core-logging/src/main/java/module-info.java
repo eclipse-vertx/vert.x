@@ -16,5 +16,6 @@ module io.vertx.core.logging {
   // Internal API
 
   exports io.vertx.core.internal.logging;
+  exports io.vertx.core.spi.logging;
 
 }
