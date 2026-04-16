@@ -2,8 +2,11 @@ package io.vertx.tests.context;
 
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.WorkerExecutor;
+import io.vertx.core.internal.logging.LoggerAdapter;
+import io.vertx.core.spi.logging.LogDelegate;
 import io.vertx.test.core.AsyncTestBase;
 import org.assertj.core.api.Assertions;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -352,5 +355,80 @@ public class TaskQueueTest extends AsyncTestBase {
     }, exec);
     pending.poll().run();
     assertTrue(seq.get() >= 2);
+  }
+
+  @Test
+  public void testFaultyLogger() {
+    AtomicInteger errorCounts = new AtomicInteger();
+    LogDelegate logDelegate = new LogDelegate() {
+      @Override
+      public String implementation() {
+        return "test";
+      }
+      @Override
+      public boolean isWarnEnabled() {
+        return true;
+      }
+      @Override
+      public boolean isInfoEnabled() {
+        return true;
+      }
+      @Override
+      public boolean isDebugEnabled() {
+        return true;
+      }
+      @Override
+      public boolean isTraceEnabled() {
+        return true;
+      }
+      @Override
+      public void error(Object message) {
+      }
+      @Override
+      public void error(Object message, Throwable t) {
+        errorCounts.incrementAndGet();
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public void warn(Object message) {
+      }
+      @Override
+      public void warn(Object message, Throwable t) {
+      }
+      @Override
+      public void info(Object message) {
+      }
+      @Override
+      public void info(Object message, Throwable t) {
+      }
+      @Override
+      public void debug(Object message) {
+      }
+      @Override
+      public void debug(Object message, Throwable t) {
+      }
+      @Override
+      public void trace(Object message) {
+      }
+      @Override
+      public void trace(Object message, Throwable t) {
+      }
+    };
+    TaskQueue taskQueue = new TaskQueue(new LoggerAdapter(logDelegate));
+    Deque<Runnable> pending = new ConcurrentLinkedDeque<>();
+    taskQueue.execute(() -> {
+      throw new RuntimeException();
+    }, pending::add);
+    Runnable next = pending.poll();
+    Assert.assertNotNull(next);
+    next.run();
+    assertEquals(1, errorCounts.get());
+    AtomicInteger executeCounts = new AtomicInteger();
+    taskQueue.execute(executeCounts::incrementAndGet, pending::add);
+    assertEquals(1, pending.size());
+    next = pending.poll();
+    Assert.assertNotNull(next);
+    next.run();
+    assertEquals(1, errorCounts.get());
   }
 }
