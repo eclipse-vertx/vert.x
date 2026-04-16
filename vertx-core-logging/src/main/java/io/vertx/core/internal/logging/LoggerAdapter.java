@@ -13,91 +13,180 @@ package io.vertx.core.internal.logging;
 
 import io.vertx.core.spi.logging.LogDelegate;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 /**
  * @author Thomas Segismont
  */
 public final class LoggerAdapter implements Logger {
 
+  private static volatile Consumer<Throwable> loggerFailureHandler;
+
+  /**
+   * Set a JVM wide handler that gets reported exception thrown by actual logger implementations.
+   *
+   * @param handler the handler getting reported failures
+   */
+  public static void setLoggerFailureHandler(Consumer<Throwable> handler) {
+    loggerFailureHandler = handler;
+  }
+
   private final LogDelegate adapted;
 
   // Visible for testing
   public LoggerAdapter(LogDelegate adapted) {
-    this.adapted = adapted;
+    this.adapted = Objects.requireNonNull(adapted);
+  }
+
+  private static void reportLoggerFailure(Throwable t) {
+    Consumer<Throwable> handler = loggerFailureHandler;
+    if (handler != null) {
+      try {
+        handler.accept(t);
+      } catch (Throwable ignore) {
+      }
+    }
   }
 
   @Override
   public String implementation() {
-    return adapted.implementation();
+    try {
+      return adapted.implementation();
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+      return "Unknown";
+    }
   }
 
   @Override
   public boolean isTraceEnabled() {
-    return adapted.isTraceEnabled();
+    try {
+      return adapted.isTraceEnabled();
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+      return false;
+    }
   }
 
   @Override
   public void trace(Object message) {
-    adapted.trace(message);
+    try {
+      adapted.trace(message);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public void trace(Object message, Throwable t) {
-    adapted.trace(message, t);
+    try {
+      adapted.trace(message, t);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public boolean isDebugEnabled() {
-    return adapted.isDebugEnabled();
+    try {
+      return adapted.isDebugEnabled();
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+      return false;
+    }
   }
 
   @Override
   public void debug(Object message) {
-    adapted.debug(message);
+    try {
+      adapted.debug(message);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public void debug(Object message, Throwable t) {
-    adapted.debug(message, t);
+    try {
+      adapted.debug(message, t);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public boolean isInfoEnabled() {
-    return adapted.isInfoEnabled();
+    try {
+      return adapted.isInfoEnabled();
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+      return false;
+    }
   }
 
   @Override
   public void info(Object message) {
-    adapted.info(message);
+    try {
+      adapted.info(message);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public void info(Object message, Throwable t) {
-    adapted.info(message, t);
+    try {
+      adapted.info(message, t);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public boolean isWarnEnabled() {
-    return adapted.isWarnEnabled();
+    try {
+      return adapted.isWarnEnabled();
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+      return false;
+    }
   }
 
   @Override
   public void warn(Object message) {
-    adapted.warn(message);
+    try {
+      adapted.warn(message);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public void warn(Object message, Throwable t) {
-    adapted.warn(message, t);
+    try {
+      adapted.warn(message, t);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public void error(Object message) {
-    adapted.error(message);
+    try {
+      adapted.error(message);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   @Override
   public void error(Object message, Throwable t) {
-    adapted.error(message, t);
+    try {
+      adapted.error(message, t);
+    } catch (Exception e) {
+      reportLoggerFailure(e);
+    }
   }
 
   public LogDelegate unwrap() {
