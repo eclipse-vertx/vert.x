@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.core.internal.FutureInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.Repeat;
 import org.junit.Ignore;
@@ -928,36 +929,82 @@ public class FutureTest extends FutureTestBase {
     checker.assertFailed(cause);
   }
 
+  /**
+   * Implements variations of a completed future.
+   */
+  private List<Function<ContextInternal, Future<String>>> COMPLETED_FUTURE_CASES = Arrays.asList(
+    ctx -> {
+      if (ctx != null) {
+        return ctx.succeededFuture("abc");
+      } else {
+        return Future.succeededFuture("abc");
+      }
+    },
+    ctx -> {
+      if (ctx != null) {
+        return ctx.failedFuture("abc");
+      } else {
+        return Future.failedFuture("abc");
+      }
+    },
+    ctx -> {
+      Promise<String> promise;
+      if (ctx != null) {
+        promise = ctx.promise();
+      } else {
+        promise = Promise.promise();
+      }
+      promise.complete("abc");
+      return promise.future();
+    }
+  );
+
   @Test
   public void testHandlerFailureWithContext() {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-    Promise<String> promise = ctx.promise();
-    promise.complete("abc");
     RuntimeException failure = new RuntimeException();
-    ctx.exceptionHandler(err -> {
-      assertSame(failure, err);
-      testComplete();
-    });
-    promise.future().onComplete(ar -> {
-      throw failure;
-    });
-    await();
+    for (Function<ContextInternal, Future<String>> provider : COMPLETED_FUTURE_CASES) {
+      List<Throwable> catches = new CopyOnWriteArrayList<>();
+      ctx.exceptionHandler(catches::add);
+      provider.apply(ctx)
+        .onComplete(ar -> {
+          throw failure;
+        });
+      assertWaitUntil(() -> catches.size() == 1);
+      assertSame(failure, catches.get(0));
+    }
   }
 
   @Test
   public void testHandlerFailureWithoutContext() {
-    Promise<String> promise = Promise.promise();
-    promise.complete("abc");
     RuntimeException failure = new RuntimeException();
+    for (Function<ContextInternal, Future<String>> provider : COMPLETED_FUTURE_CASES) {
+      provider.apply(null)
+        .onComplete(ar -> {
+          throw failure;
+        });
+    }
+  }
+
+  @Test
+  public void testHandlerFailureWithThreadHandler() {
+    RuntimeException failure = new RuntimeException();
+    List<Throwable> catches = new ArrayList<>();
+    FutureInternal.exceptionHandler(Thread.currentThread(), err -> {
+      catches.add(err);
+    });
     try {
-      promise.future().onComplete(ar -> {
-        throw failure;
-      });
-      fail();
-    } catch (Exception e) {
-      // This is the expected behavior, without a context we don't have a specific place to report to
-      // and we let the exception bubble to the caller so it is not swallowed
-      assertSame(failure, e);
+      for (Function<ContextInternal, Future<String>> provider : COMPLETED_FUTURE_CASES) {
+        catches.clear();
+        provider.apply(null)
+          .onComplete(ar -> {
+            throw failure;
+          });
+        assertEquals(1, catches.size());
+        assertSame(failure, catches.get(0));
+      }
+    } finally {
+      FutureInternal.exceptionHandler(Thread.currentThread(), null);
     }
   }
 
@@ -989,7 +1036,11 @@ public class FutureTest extends FutureTestBase {
       T result;
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public io.vertx.core.Future<T> onComplete(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
+
+      @Override
+      public Future<T> onComplete(Completable<? super T> handler) {
+        throw new UnsupportedOperationException();
+      }
 
       public void complete(T result) {
         if (!tryComplete(result)) {

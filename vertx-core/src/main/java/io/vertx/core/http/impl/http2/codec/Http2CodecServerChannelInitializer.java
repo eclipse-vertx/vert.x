@@ -82,10 +82,12 @@ public class Http2CodecServerChannelInitializer implements Http2ServerChannelIni
   public VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> buildHttp2ConnectionHandler(ContextInternal ctx) {
     int maxRstFramesPerWindow = config.getRstFloodMaxRstFramePerWindow();
     int secondsPerWindow = (int)config.getRstFloodWindowDuration().toSeconds();
+    int maxSmallContinuationFrames = config.getMaxSmallContinuationFrames();
     VertxHttp2ConnectionHandler<Http2ServerConnectionImpl> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnectionImpl>()
       .server(true)
       .useCompression(compressionManager != null ? compressionManager.options() : null)
       .gracefulShutdownTimeoutMillis(0)
+      .decoderEnforceMaxSmallContinuationFrames(maxSmallContinuationFrames)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(useDecompression)

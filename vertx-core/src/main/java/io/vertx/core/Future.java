@@ -11,8 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
@@ -21,6 +19,7 @@ import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -292,8 +291,10 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the result
    * @return a reference to this, so it can be used fluently
    */
-  @Fluent
-  Future<T> onComplete(Handler<AsyncResult<T>> handler);
+  default Future<T> onComplete(Handler<AsyncResult<T>> handler) {
+    Objects.requireNonNull(handler, "No null handler accepted");
+    return onComplete((value, err) -> handler.handle(this));
+  }
 
   /**
    * Add handlers to be notified on succeeded result and failed result.
@@ -306,11 +307,11 @@ public interface Future<T> extends AsyncResult<T> {
    * @return a reference to this, so it can be used fluently
    */
   default Future<T> onComplete(Handler<? super T> successHandler, Handler<? super Throwable> failureHandler) {
-      return onComplete(ar -> {
-        if (successHandler != null && ar.succeeded()) {
-          successHandler.handle(ar.result());
-        } else if (failureHandler != null && ar.failed()) {
-          failureHandler.handle(ar.cause());
+      return onComplete((result,  err) -> {
+        if (successHandler != null && err == null) {
+          successHandler.handle(result);
+        } else if (failureHandler != null && err != null) {
+          failureHandler.handle(err);
         }
       });
   }
@@ -324,11 +325,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the completion outcome
    * @return a reference to this, so it can be used fluently
    */
-  default Future<T> onComplete(Completable<? super T> handler) {
-    return onComplete(ar -> {
-      handler.complete(ar.succeeded() ? ar.result() : null, ar.failed() ? ar.cause() : null);
-    });
-  }
+  Future<T> onComplete(Completable<? super T> handler);
 
   /**
    * Add a handler to be notified of the succeeded result.
@@ -339,7 +336,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the succeeded result
    * @return a reference to this, so it can be used fluently
    */
-  @Fluent
   default Future<T> onSuccess(Handler<? super T> handler) {
     return onComplete(handler, null);
   }
@@ -353,7 +349,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param handler the handler that will be called with the failed result
    * @return a reference to this, so it can be used fluently
    */
-  @Fluent
   default Future<T> onFailure(Handler<? super Throwable> handler) {
     return onComplete(null, handler);
   }
@@ -643,7 +638,6 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @return a {@link CompletionStage} that completes when this future resolves
    */
-  @GenIgnore
   default CompletionStage<T> toCompletionStage() {
     CompletableFuture<T> completableFuture = new CompletableFuture<>();
     onComplete(ar -> {
@@ -665,7 +659,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>             the result type
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
-  @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage) {
     Promise<T> promise = Promise.promise();
     completionStage.whenComplete((value, err) -> {
@@ -688,7 +681,6 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>             the result type
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
-  @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
     Promise<T> promise = ((ContextInternal) context).promise();
     completionStage.whenComplete((value, err) -> {
