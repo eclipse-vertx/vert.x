@@ -37,6 +37,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
   private final Http2MultiplexConnectionFactory connectionFactory;
   private final int rstFloodMaxRstFramePerWindow;
   private final int rstFloodWindowDuration;
+  private final int maxSmallContinuationFrames;
   private final boolean logEnabled;
 
   public Http2MultiplexServerChannelInitializer(ContextInternal context,
@@ -50,6 +51,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
                                                 Http2Settings initialSettings,
                                                 int rstFloodMaxRstFramePerWindow,
                                                 int rstFloodWindowDuration,
+                                                int maxSmallContinuationFrames,
                                                 boolean logEnabled) {
     Http2MultiplexConnectionFactory connectionFactory = (handler, chctx) -> {
       Http2MultiplexServerConnection connection = new Http2MultiplexServerConnection(
@@ -70,6 +72,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
     this.decompressionSupported = decompressionSupported;
     this.rstFloodMaxRstFramePerWindow = rstFloodMaxRstFramePerWindow;
     this.rstFloodWindowDuration = rstFloodWindowDuration;
+    this.maxSmallContinuationFrames = maxSmallContinuationFrames;
     this.logEnabled = logEnabled;
   }
 
@@ -83,6 +86,7 @@ public class Http2MultiplexServerChannelInitializer implements Http2ServerChanne
 
     Http2FrameCodec frameCodec = new Http2CustomFrameCodecBuilder(compressionManager, decompressionSupported)
       .server(true)
+      .decoderEnforceMaxSmallContinuationFrames(rstFloodWindowDuration)
       .decoderEnforceMaxRstFramesPerWindow(rstFloodMaxRstFramePerWindow, rstFloodWindowDuration)
       .encoderEnforceMaxRstFramesPerWindow(rstFloodMaxRstFramePerWindow, rstFloodWindowDuration)
       .initialSettings(initialSettings)

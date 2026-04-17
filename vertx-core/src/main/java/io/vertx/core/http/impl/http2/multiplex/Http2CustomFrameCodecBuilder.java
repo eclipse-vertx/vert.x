@@ -51,6 +51,11 @@ class Http2CustomFrameCodecBuilder extends Http2FrameCodecBuilder {
   }
 
   @Override
+  public Http2CustomFrameCodecBuilder decoderEnforceMaxSmallContinuationFrames(int maxConsecutiveContinuationsFrames) {
+    return (Http2CustomFrameCodecBuilder) super.decoderEnforceMaxSmallContinuationFrames(maxConsecutiveContinuationsFrames);
+  }
+
+  @Override
   public Http2CustomFrameCodecBuilder server(boolean isServer) {
     this.server = isServer;
     return this;

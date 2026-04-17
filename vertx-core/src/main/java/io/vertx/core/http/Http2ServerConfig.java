@@ -28,6 +28,7 @@ public class Http2ServerConfig {
   private int connectionWindowSize;
   private boolean multiplexImplementation;
   private int rstFloodMaxRstFramePerWindow;
+  private int maxSmallContinuationFrames;
   private Duration rstFloodWindowDuration;
 
   public Http2ServerConfig() {
@@ -35,6 +36,7 @@ public class Http2ServerConfig {
     connectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     rstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
     rstFloodWindowDuration = Duration.of(DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION, DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT.toChronoUnit());
+    maxSmallContinuationFrames = DEFAULT_HTTP2_MAX_SMALL_CONTINUATION_FRAMES;
     multiplexImplementation = DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION;
   }
 
@@ -43,6 +45,7 @@ public class Http2ServerConfig {
     this.connectionWindowSize = other.connectionWindowSize;
     this.rstFloodMaxRstFramePerWindow = other.rstFloodMaxRstFramePerWindow;
     this.rstFloodWindowDuration = other.rstFloodWindowDuration;
+    this.maxSmallContinuationFrames = other.maxSmallContinuationFrames;
     this.multiplexImplementation = other.multiplexImplementation;
   }
 
@@ -81,6 +84,29 @@ public class Http2ServerConfig {
    */
   public Http2ServerConfig setRstFloodWindowDuration(Duration rstFloodWindowDuration) {
     this.rstFloodWindowDuration = rstFloodWindowDuration;
+    return this;
+  }
+
+  /**
+   * @return the max number of small continuation frame allowed
+   */
+  public int getMaxSmallContinuationFrames() {
+    return maxSmallContinuationFrames;
+  }
+
+  /**
+   * Set the maximum number of small continuation frames allowed, this is used to prevent flood DoS attack
+   * via <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33871">zero-byte continuation frames</a>. The default value
+   * is {@link HttpServerOptions#DEFAULT_HTTP2_MAX_SMALL_CONTINUATION_FRAMES}.
+   *
+   * @param maxSmallContinuationFrames the max number of small continuation frame allowed
+   * @return a reference to this, so the API can be used fluently
+   */
+  public Http2ServerConfig setMaxSmallContinuationFrames(int maxSmallContinuationFrames) {
+    if (maxSmallContinuationFrames < 1) {
+      throw new IllegalArgumentException();
+    }
+    this.maxSmallContinuationFrames = maxSmallContinuationFrames;
     return this;
   }
 

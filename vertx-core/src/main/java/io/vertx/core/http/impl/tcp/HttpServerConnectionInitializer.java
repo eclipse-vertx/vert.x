@@ -126,6 +126,7 @@ public class HttpServerConnectionInitializer {
           HttpUtils.fromVertxInitialSettings(true, http2Config.getInitialSettings()),
           http2Config.getRstFloodMaxRstFramePerWindow(),
           (int)http2Config.getRstFloodWindowDuration().toSeconds(),
+          http2Config.getMaxSmallContinuationFrames(),
           logEnabled);
       } else {
         http2ChannelInitializer = new Http2CodecServerChannelInitializer(
