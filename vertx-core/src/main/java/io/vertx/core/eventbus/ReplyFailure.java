@@ -37,7 +37,7 @@ public enum ReplyFailure {
   RECIPIENT_FAILURE,
 
   /**
-   * A fatal error occured while delivering the message. Do not retry to send.
+   * A fatal error occurred while delivering the message. Do not retry to send.
    */
   ERROR;
 
