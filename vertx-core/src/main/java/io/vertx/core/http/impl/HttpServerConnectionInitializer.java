@@ -189,11 +189,13 @@ class HttpServerConnectionInitializer {
   private VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
+    int http2MaxSmallContinuationFrames = options.getHttp2MaxSmallContinuationFrames();
     int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
       .server(true)
       .useCompression(compressionOptions)
       .gracefulShutdownTimeoutMillis(0)
+      .decoderEnforceMaxSmallContinuationFrames(http2MaxSmallContinuationFrames)
       .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
