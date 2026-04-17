@@ -45,7 +45,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private final boolean useDecompressor;
   private final Http2Settings initialSettings;
   public boolean upgraded;
-  private final Http2LocalFlowController defaultController;
 
   public VertxHttp2ConnectionHandler(
       Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
@@ -54,7 +53,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       Http2ConnectionEncoder encoder,
       Http2Settings initialSettings) {
     super(decoder, encoder, initialSettings);
-    this.defaultController = decoder.flowController();
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
     this.initialSettings = initialSettings;
@@ -388,19 +386,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
     if (useDecompressor) {
-      decoder().frameListener(new DelegatingDecompressorFrameListener(decoder().connection(), connection) {
-        @Override
-        public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-          // Work around padded decompression
-          // this should be removed when response decompression is fixed
-          if (padding > 0) {
-            VertxHttp2Stream<?> stream = connection.stream(streamId);
-            defaultController.consumeBytes(stream.stream, padding);
-            padding = 0;
-          }
-          return super.onDataRead(ctx, streamId, data, padding, endOfStream);
-        }
-      });
+      decoder().frameListener(new DelegatingDecompressorFrameListener(decoder().connection(), connection));
     } else {
       decoder().frameListener(connection);
     }
