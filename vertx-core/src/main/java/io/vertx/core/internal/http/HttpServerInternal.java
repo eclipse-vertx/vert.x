@@ -14,6 +14,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 /**
@@ -30,5 +31,7 @@ public interface HttpServerInternal extends HttpServer, MetricsProvider {
   default HttpServerInternal unwrap() {
     return this;
   }
+
+  default void setMetrics(HttpServerMetrics<?, ?> httpMetrics) {}
 
 }

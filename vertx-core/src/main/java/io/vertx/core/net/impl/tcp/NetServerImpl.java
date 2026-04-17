@@ -531,11 +531,13 @@ public class NetServerImpl implements NetServerInternal {
             }
           });
         }
+        var actualLocalAddress = localAddress;
         // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
         if (bindAddress.isInetSocket()) {
           actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+          actualLocalAddress = SocketAddress.inetSocketAddress(actualPort, localAddress.host());
         }
-        metrics = createMetrics(vertx.metrics(), localAddress);
+        metrics = createMetrics(vertx.metrics(), actualLocalAddress);
         promise.complete(ch);
       } else {
         promise.fail(res.cause());
