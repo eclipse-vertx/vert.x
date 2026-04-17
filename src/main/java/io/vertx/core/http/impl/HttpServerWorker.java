@@ -253,9 +253,11 @@ public class HttpServerWorker implements BiConsumer<Channel, SslChannelProvider>
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     int maxRstFramesPerWindow = options.getHttp2RstFloodMaxRstFramePerWindow();
     int secondsPerWindow = (int)options.getHttp2RstFloodWindowDurationTimeUnit().toSeconds(options.getHttp2RstFloodWindowDuration());
+    int maxSmallContinuationFrames = options.getHttp2MaxSmallContinuationFrames();
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
       .server(true)
       .useCompression(compressionOptions)
+      .decoderEnforceMaxSmallContinuationFrames(maxSmallContinuationFrames)
       .decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .encoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow)
       .useDecompression(options.isDecompressionSupported())
