@@ -202,6 +202,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final TimeUnit DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT = TimeUnit.SECONDS;
 
   /**
+   * HTTP/2 maximum allowed number of small continuation frames.
+   */
+  public static final int DEFAULT_HTTP2_MAX_SMALL_CONTINUATION_FRAMES = 16;
+
+  /**
    * Strict thread mode = false.
    */
   public static final boolean DEFAULT_STRICT_THREAD_MODE_STRICT = false;
@@ -1271,6 +1276,26 @@ public class HttpServerOptions extends NetServerOptions {
     Duration tmp = http2Config.getRstFloodWindowDuration();
     this.http2RstFloodWindowDurationTimeUnit = http2RstFloodWindowDurationTimeUnit;
     http2Config.setRstFloodWindowDuration(tmp);
+    return this;
+  }
+
+  /**
+   * @return the max number of small continuation frame allowed
+   */
+  public int getHttp2MaxSmallContinuationFrames() {
+    return http2Config.getMaxSmallContinuationFrames();
+  }
+
+  /**
+   * Set the maximum number of small continuation frames allowed, this is used to prevent flood DoS attack
+   * via <a href="https://nvd.nist.gov/vuln/detail/CVE-2026-33871">zero-byte continuation frames</a>. The default value
+   * is {@link #DEFAULT_HTTP2_MAX_SMALL_CONTINUATION_FRAMES}.
+   *
+   * @param http2MaxSmallContinuationFrames the max number of small continuation frame allowed
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setHttp2MaxSmallContinuationFrames(int http2MaxSmallContinuationFrames) {
+    http2Config.setMaxSmallContinuationFrames(http2MaxSmallContinuationFrames);
     return this;
   }
 

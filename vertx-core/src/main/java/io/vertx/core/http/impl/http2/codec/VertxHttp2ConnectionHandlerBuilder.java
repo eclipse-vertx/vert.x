@@ -54,6 +54,11 @@ public class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionImpl> e
   }
 
   @Override
+  public VertxHttp2ConnectionHandlerBuilder<C> decoderEnforceMaxSmallContinuationFrames(int maxSmallContinuationFrames) {
+    return super.decoderEnforceMaxSmallContinuationFrames(maxSmallContinuationFrames);
+  }
+
+  @Override
   public VertxHttp2ConnectionHandlerBuilder<C> decoderEnforceMaxRstFramesPerWindow(int maxRstFramesPerWindow, int secondsPerWindow) {
     return super.decoderEnforceMaxRstFramesPerWindow(maxRstFramesPerWindow, secondsPerWindow);
   }
