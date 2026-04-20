@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -625,5 +626,46 @@ public class TestUtils {
     Context current = Vertx.currentContext();
     assertNotNull(current);
     assertSameEventLoop(context, current);
+  }
+
+  public static void assertWaitUntil(BooleanSupplier supplier) {
+    assertWaitUntil(supplier, 10000);
+  }
+
+  public static void waitUntil(BooleanSupplier supplier) {
+    waitUntil(supplier, 10000);
+  }
+
+  public static <T> void waitUntilEquals(T value, Supplier<T> supplier) {
+    waitUntil(() -> Objects.equals(value, supplier.get()), 10000);
+  }
+
+  public static void assertWaitUntil(BooleanSupplier supplier, long timeout) {
+    if (!waitUntil(supplier, timeout)) {
+      throw new IllegalStateException("Timed out");
+    }
+  }
+
+  public static void assertWaitUntil(BooleanSupplier supplier, long timeout, String reason) {
+    if (!waitUntil(supplier, timeout)) {
+      throw new IllegalStateException("Timed out: " + reason);
+    }
+  }
+
+  public static boolean waitUntil(BooleanSupplier supplier, long timeout) {
+    long start = System.currentTimeMillis();
+    while (true) {
+      if (supplier.getAsBoolean()) {
+        return true;
+      }
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException ignore) {
+      }
+      long now = System.currentTimeMillis();
+      if (now - start > timeout) {
+        return false;
+      }
+    }
   }
 }
