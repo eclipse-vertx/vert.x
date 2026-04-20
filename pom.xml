@@ -73,9 +73,9 @@
   <profiles>
 
     <profile>
-      <id>Java25</id>
+      <id>Java21</id>
       <activation>
-        <jdk>[25,)</jdk>
+        <jdk>[21,)</jdk>
       </activation>
       <modules>
         <module>vertx-core-logging</module>
@@ -86,7 +86,7 @@
 
     <!--
       This profile can be activated when a toolchain is required, the main use case is building
-      with Java 25 features with any JDK.
+      with Java 21 features with any JDK.
     -->
     <profile>
       <id>toolchains</id>
@@ -109,7 +109,7 @@
                   <version>11</version>
                 </jdk>
                 <jdk>
-                  <version>25</version>
+                  <version>21</version>
                 </jdk>
               </toolchains>
             </configuration>

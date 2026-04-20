@@ -775,9 +775,9 @@
   <profiles>
 
     <profile>
-      <id>Java25</id>
+      <id>Java21</id>
       <activation>
-        <jdk>[25,)</jdk>
+        <jdk>[21,)</jdk>
       </activation>
       <build>
         <pluginManagement>
@@ -786,14 +786,14 @@
               <artifactId>maven-compiler-plugin</artifactId>
               <executions>
                 <execution>
-                  <id>Java25</id>
+                  <id>Java21</id>
                   <goals>
                     <goal>compile</goal>
                   </goals>
                   <configuration>
-                    <release>25</release>
+                    <release>21</release>
                     <compileSourceRoots>
-                      <compileSourceRoot>${project.basedir}/src/main/java25</compileSourceRoot>
+                      <compileSourceRoot>${project.basedir}/src/main/java21</compileSourceRoot>
                     </compileSourceRoots>
                     <multiReleaseOutput>true</multiReleaseOutput>
                   </configuration>
@@ -819,8 +819,8 @@
                   <addExports>false</addExports>
                   <detectUses>false</detectUses>
                   <detectProvides>false</detectProvides>
-                  <moduleInfoYml>${project.basedir}/src/main/java25/module-info.yml</moduleInfoYml>
-                  <outputDirectory>${project.build.outputDirectory}/META-INF/versions/25</outputDirectory>
+                  <moduleInfoYml>src/main/java21/module-info.yml</moduleInfoYml>
+                  <outputDirectory>${project.build.outputDirectory}/META-INF/versions/21</outputDirectory>
                 </configuration>
               </execution>
             </executions>
