@@ -3,7 +3,7 @@ import io.vertx.tests.deployment.ClasspathVerticleFactory;
 
 open module io.vertx.core.tests {
 
-  requires io.vertx.codegen.api;
+  requires static io.vertx.codegen.api;
   requires io.vertx.core;
   requires io.vertx.core.logging;
 
