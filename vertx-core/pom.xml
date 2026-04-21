@@ -459,7 +459,7 @@
                 <vertx.jackson.defaultReadMaxTokenCount>100</vertx.jackson.defaultReadMaxTokenCount>
               </systemProperties>
               <classpathDependencyExcludes>
-                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -476,7 +476,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -507,7 +507,7 @@
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -527,7 +527,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-                <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
