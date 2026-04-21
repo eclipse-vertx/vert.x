@@ -9,18 +9,28 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.it.json;
+package io.vertx.it.jackson;
 
-import io.vertx.tests.json.jackson.JacksonReadConstraintsTestBase;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JacksonReadConstraintsOverrideTest {
+public class JacksonDatabindAbsenceTest extends VertxTestBase {
 
   @Test
-  public void testReadConstraints() {
-    JacksonReadConstraintsTestBase.testReadConstraints(100,  100, 100, 100, 1000);
+  public void testJsonObject() {
+    JsonObject obj = new JsonObject("{\"foo\":\"bar\"}");
+    assertEquals("bar", obj.getString("foo"));
+    assertEquals("{\"foo\":\"bar\"}", obj.toString());
+    try {
+      obj.mapTo(Object.class);
+      fail();
+    } catch (DecodeException ignore) {
+      // Expected
+    }
   }
 }

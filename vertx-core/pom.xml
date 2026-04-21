@@ -438,7 +438,7 @@
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JacksonReadConstraintsOverrideTest.java</include>
+                <include>io/vertx/it/jackson/JacksonReadConstraintsOverrideTest.java</include>
               </includes>
               <systemProperties>
                 <vertx.jackson.defaultReadMaxNestingDepth>100</vertx.jackson.defaultReadMaxNestingDepth>
@@ -454,17 +454,33 @@
             </configuration>
           </execution>
           <execution>
-            <id>no-jackson</id>
+            <id>jackson-absence</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/NoJacksonTest.java</include>
+                <include>io/vertx/it/jackson/JacksonAbsenceTest.java</include>
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jackson-databind-absence</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/jackson/JacksonDatabindAbsenceTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
                 <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
@@ -482,22 +498,6 @@
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-codec-haproxy</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>no-jackson-databind</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/json/NoDatabindTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
