@@ -48,6 +48,7 @@ open module io.vertx.core.tests {
 
   // Jackson v3 codec testing
   exports io.vertx.tests.json;
+  exports io.vertx.tests.json.jackson;
 
   exports io.vertx.test.core;
   exports io.vertx.test.fakecluster;
