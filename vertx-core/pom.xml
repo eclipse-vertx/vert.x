@@ -431,14 +431,14 @@
             </configuration>
           </execution>
           <execution>
-            <id>jackson-config-override</id>
+            <id>jackson-read-constraints-override</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JacksonConfigOverrideTest.java</include>
+                <include>io/vertx/it/json/JacksonReadConstraintsOverrideTest.java</include>
               </includes>
               <systemProperties>
                 <vertx.jackson.defaultReadMaxNestingDepth>100</vertx.jackson.defaultReadMaxNestingDepth>

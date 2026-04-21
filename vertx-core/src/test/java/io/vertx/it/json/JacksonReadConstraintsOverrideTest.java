@@ -11,17 +11,16 @@
 
 package io.vertx.it.json;
 
-import io.vertx.test.core.VertxTestBase;
-import io.vertx.tests.json.jackson.JacksonTest;
+import io.vertx.tests.json.jackson.JacksonReadConstraintsTestBase;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JacksonConfigOverrideTest extends VertxTestBase {
+public class JacksonReadConstraintsOverrideTest {
 
   @Test
   public void testReadConstraints() {
-    JacksonTest.testReadConstraints(100,  100, 100, 100, 1000);
+    JacksonReadConstraintsTestBase.testReadConstraints(100,  100, 100, 100, 1000);
   }
 }

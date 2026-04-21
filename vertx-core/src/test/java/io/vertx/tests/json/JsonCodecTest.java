@@ -21,16 +21,14 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.spi.json.JsonCodec;
 import io.vertx.test.core.TestUtils;
+import io.vertx.tests.json.jackson.JsonParserTest;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -44,10 +42,10 @@ import static org.junit.Assert.fail;
 
 public abstract class JsonCodecTest {
 
-  private final JsonCodec codec;
+  protected final JsonCodec codec;
 
   public JsonCodecTest(JsonCodec codec) {
-    this.codec = codec;
+    this.codec = Objects.requireNonNull(codec);
   }
 
   @Test
@@ -520,4 +518,49 @@ public abstract class JsonCodecTest {
     return codec.toString(Collections.singletonList(o), false);
   }
 
+  @Test
+  public void testEncodeUnknownNumber() {
+    Assume.assumeFalse(codec.getClass().getSimpleName().contains("Databind"));
+    String result = codec.toString(new Number() {
+      @Override
+      public int intValue() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public long longValue() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public float floatValue() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public double doubleValue() {
+        return 4D;
+      }
+    });
+    assertEquals("4.0", result);
+  }
+
+  public static class MyPojo {
+  }
+
+  @Test
+  public void testEncodePojoFailure() {
+    Assume.assumeFalse(codec.getClass().getSimpleName().contains("Databind"));
+    try {
+      codec.toString(new MyPojo());
+      fail();
+    } catch (EncodeException e) {
+      assertTrue(e.getMessage().contains(MyPojo.class.getName()));
+    }
+  }
+
+  @Test(expected = EncodeException.class)
+  public void testEncodeToBufferFailure() {
+    Assume.assumeFalse(codec.getClass().getSimpleName().contains("Databind"));
+    // if other than EncodeException happens here, then
+    // there is probably a leak closing the netty buffer output stream
+    codec.toBuffer(new RuntimeException("Unsupported"));
+  }
 }
