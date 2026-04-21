@@ -39,7 +39,10 @@
     <dependency>
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
 
     <!-- Testing -->
@@ -86,7 +89,8 @@
             <exclude>io/vertx/it/**</exclude>
           </excludes>
           <classpathDependencyExcludes>
-            <classpathDependencyExclude>com.fasterxml.jackson.core:*</classpathDependencyExclude>
+            <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+            <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
           </classpathDependencyExcludes>
         </configuration>
       </plugin>
@@ -108,6 +112,23 @@
               <includes>
                 <include>io/vertx/it/jacksonv3/JacksonV2PresenceTest.java</include>
               </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jackson-v3-databind-absence</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/jacksonv3/JacksonV3DatabindAbsenceTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
         </executions>

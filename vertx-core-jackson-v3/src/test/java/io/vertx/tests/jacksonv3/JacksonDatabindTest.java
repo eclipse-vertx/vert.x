@@ -9,20 +9,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.tests.json.jackson;
+package io.vertx.tests.jacksonv3;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationConfig;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.EnumFeature;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.core.json.jackson.v3.DatabindCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -107,8 +105,7 @@ public class JacksonDatabindTest extends VertxTestBase {
 
 
   @Test
-  public void testJsonArrayDeserializer() throws JsonProcessingException {
-
+  public void testJsonArrayDeserializer() throws Exception {
     String jsonArrayString = "[1, 2, 3]";
     JsonArray jsonArray = DatabindCodec.mapper().readValue(jsonArrayString, JsonArray.class);
 
@@ -119,7 +116,7 @@ public class JacksonDatabindTest extends VertxTestBase {
 
 
   @Test
-  public void testJsonObjectDeserializer() throws JsonProcessingException {
+  public void testJsonObjectDeserializer() throws Exception {
 
     String jsonObjectString = "{\"key1\": \"value1\", \"key2\": \"value2\", \"key3\": \"value3\"}";
 
@@ -247,16 +244,12 @@ public class JacksonDatabindTest extends VertxTestBase {
   @Test
   public void testObjectMapperConfigAppliesToPrettyPrinting() {
     ObjectMapper om = DatabindCodec.mapper();
-    SerializationConfig sc = om.getSerializationConfig();
-    assertNotNull(sc);
-    try {
-      om.setConfig(sc.with(SerializationFeature.WRITE_ENUMS_USING_INDEX));
-      ThreadingModel vt = ThreadingModel.VIRTUAL_THREAD;
-      String expected = String.valueOf(vt.ordinal());
-      assertEquals(expected, Json.encodePrettily(vt));
-      assertEquals(expected, Json.encode(vt));
-    } finally {
-      om.setConfig(sc);
-    }
+    ObjectMapper reconfigured = om
+      .rebuild()
+      .configure(EnumFeature.WRITE_ENUMS_USING_INDEX, true)
+      .build();
+    ThreadingModel vt = ThreadingModel.VIRTUAL_THREAD;
+    String expected = String.valueOf(vt.ordinal());
+    assertEquals(expected, reconfigured.writeValueAsString(vt));
   }
 }

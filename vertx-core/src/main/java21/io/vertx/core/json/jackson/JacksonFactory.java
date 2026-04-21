@@ -40,8 +40,15 @@ public class JacksonFactory implements io.vertx.core.spi.JsonFactory {
       } catch (Throwable reason2) {
         // No v2 core
         logger.debug("Jackson v2 core not found: " + reason2.getMessage());
-        codec = new io.vertx.core.json.jackson.v3.JacksonCodec();
-        logger.debug("Using io.vertx.core.json.v3.JacksonCodec");
+        try {
+          codec = new io.vertx.core.json.jackson.v3.DatabindCodec();
+          logger.debug("Using io.vertx.core.json.jackson.v3.DatabindCodec");
+        } catch (Throwable reason3) {
+          // No v3 databind
+          logger.debug("Jackson v3 databind not found: " + reason3.getMessage());
+          codec = new io.vertx.core.json.jackson.v3.JacksonCodec();
+          logger.debug("Using io.vertx.core.json.jackson.v3.JacksonCodec");
+        }
       }
     }
     CODEC = codec;

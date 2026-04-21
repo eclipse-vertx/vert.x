@@ -23,6 +23,7 @@ module io.vertx.core {
   requires static com.fasterxml.jackson.core;
   requires static com.fasterxml.jackson.databind;
   requires static tools.jackson.core;
+  requires static tools.jackson.databind;
   requires static io.netty.transport.classes.io_uring;
   requires static io.netty.transport.classes.epoll;
   requires static io.netty.transport.classes.kqueue;
