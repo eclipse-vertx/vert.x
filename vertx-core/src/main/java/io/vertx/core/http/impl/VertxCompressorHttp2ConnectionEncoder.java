@@ -33,24 +33,45 @@ import static io.vertx.core.http.HttpHeaders.IDENTITY;
 
 public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, Http2ConnectionEncoder, Http2SettingsReceivedConsumer {
 
-  private Http2ConnectionEncoder delegate;
+  private final Http2ConnectionEncoder delegate;
   private final Http2ConnectionEncoder plainEncoder;
+  private final Http2Connection.PropertyKey encoderKey;
 
   public VertxCompressorHttp2ConnectionEncoder(Http2ConnectionEncoder plainEncoder, CompressionOptions[] compressionOptions) {
     this.delegate = new CompressorHttp2ConnectionEncoder(plainEncoder, compressionOptions);
     this.plainEncoder = plainEncoder;
+    this.encoderKey = plainEncoder.connection().newKey();
   }
 
-  private void beforeWritingHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers responseHeaders) {
+  private Http2ConnectionEncoder selectEncoder(ChannelHandlerContext ctx, int streamId, Http2Headers responseHeaders) {
     String contentEncodingToApply = determineContentEncodingToApply(ctx, streamId, responseHeaders);
     if (contentEncodingToApply == null || contentEncodingToApply.equalsIgnoreCase(IDENTITY.toString())) {
       if (responseHeaders.contains(CONTENT_ENCODING, IDENTITY)) {
         responseHeaders.remove(CONTENT_ENCODING);
       }
-      delegate = plainEncoder;
+      return plainEncoder;
     } else {
       responseHeaders.set(CONTENT_ENCODING, contentEncodingToApply);
+      return delegate;
     }
+  }
+
+  private void storeEncoder(int streamId, Http2ConnectionEncoder encoder) {
+    io.netty.handler.codec.http2.Http2Stream stream = delegate.connection().stream(streamId);
+    if (stream != null) {
+      stream.setProperty(encoderKey, encoder);
+    }
+  }
+
+  private Http2ConnectionEncoder getStoredEncoder(int streamId) {
+    io.netty.handler.codec.http2.Http2Stream stream = delegate.connection().stream(streamId);
+    if (stream != null) {
+      Http2ConnectionEncoder encoder = stream.getProperty(encoderKey);
+      if (encoder != null) {
+        return encoder;
+      }
+    }
+    return delegate;
   }
 
   private String determineContentEncodingToApply(ChannelHandlerContext ctx, int streamId, Http2Headers responseHeaders) {
@@ -69,14 +90,22 @@ public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, 
 
   @Override
   public ChannelFuture writeHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endStream, ChannelPromise promise) {
-    beforeWritingHeaders(ctx, streamId, headers);
-    return delegate.writeHeaders(ctx, streamId, headers, padding, endStream, promise);
+    Http2ConnectionEncoder encoder = selectEncoder(ctx, streamId, headers);
+    storeEncoder(streamId, encoder);
+    return encoder.writeHeaders(ctx, streamId, headers, padding, endStream, promise);
   }
 
   @Override
   public ChannelFuture writeHeaders(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream, ChannelPromise promise) {
-    beforeWritingHeaders(ctx, streamId, headers);
-    return delegate.writeHeaders(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream, promise);
+    Http2ConnectionEncoder encoder = selectEncoder(ctx, streamId, headers);
+    storeEncoder(streamId, encoder);
+    return encoder.writeHeaders(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream, promise);
+  }
+
+  @Override
+  public ChannelFuture writeData(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endStream, ChannelPromise promise) {
+    Http2ConnectionEncoder encoder = getStoredEncoder(streamId);
+    return encoder.writeData(ctx, streamId, data, padding, endStream, promise);
   }
 
   @Override
@@ -162,11 +191,6 @@ public class VertxCompressorHttp2ConnectionEncoder implements Http2FrameWriter, 
   @Override
   public void close() {
     delegate.close();
-  }
-
-  @Override
-  public ChannelFuture writeData(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endStream, ChannelPromise promise) {
-    return delegate.writeData(ctx, streamId, data, padding, endStream, promise);
   }
 
   @Override
