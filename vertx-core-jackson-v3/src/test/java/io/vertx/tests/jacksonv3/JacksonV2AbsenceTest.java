@@ -1,18 +1,18 @@
 package io.vertx.tests.jacksonv3;
 
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
 import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class JsonTest {
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.Json;
+
+public class JacksonV2AbsenceTest {
 
   @Test
-  public void testNoJacksonV2() {
+  public void testJacksonVersion() {
     try {
-      JsonTest.class.getClassLoader().loadClass("com.fasterxml.jackson.core.JsonFactory");
+      JsonObject.class.getClassLoader().loadClass("com.fasterxml.jackson.core.JsonFactory");
       fail();
     } catch (ClassNotFoundException expected) {
     }
@@ -24,7 +24,7 @@ public class JsonTest {
   }
 
   @Test
-  public void testSome() {
+  public void testJsonObject() {
     JsonObject json = new JsonObject("{\"key\":\"value\"}");
     assertEquals("value", json.getString("key"));
     assertEquals("{\"key\":\"value\"}", json.toString());
