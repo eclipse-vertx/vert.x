@@ -131,16 +131,6 @@
       <artifactId>jackson-databind</artifactId>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>tools.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>tools.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <optional>true</optional>
-    </dependency>
 
     <!-- Loggers -->
     <dependency>
@@ -783,6 +773,16 @@
       <activation>
         <jdk>[21,)</jdk>
       </activation>
+      <dependencies>
+        <dependency>
+          <groupId>tools.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>tools.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </dependency>
+      </dependencies>
       <build>
         <pluginManagement>
           <plugins>
