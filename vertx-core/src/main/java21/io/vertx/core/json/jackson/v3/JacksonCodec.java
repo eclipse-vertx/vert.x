@@ -108,6 +108,7 @@ public class JacksonCodec implements JsonCodec {
     }
 
     tsfBuilder.streamReadConstraints(readConstraintsBuilder.build());
+    tsfBuilder.recyclerPool(HybridJacksonPool.getInstance());
 
     // Non-standard JSON but we allow C style comments in our JSON
     tsfBuilder.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true);
