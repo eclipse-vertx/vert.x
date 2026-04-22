@@ -1,6 +1,7 @@
 package io.vertx.test.core;
 
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.junit.*;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class VertxRunner extends BlockJUnit4ClassRunner {
 
@@ -63,16 +65,26 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
   }
 
   protected Callable<Void> invokeTestMethod(FrameworkMethod fMethod, Object test) throws InvocationTargetException, IllegalAccessException, TimeoutException, InterruptedException {
+    TestContext testContext = new TestContext();
+    Checkpoint invocationCheckpoint = new Checkpoint();
+    testContext.checkpoints.add(invocationCheckpoint);
     Method method = fMethod.getMethod();
     Class<?>[] paramTypes = method.getParameterTypes();
     Object[] params = new Object[paramTypes.length];
     for (int i = 0;i < paramTypes.length;i++) {
       if (paramTypes[i] == Checkpoint.class) {
-        params[i] = new Checkpoint();
+        Checkpoint checkpoint = new Checkpoint();
+        params[i] = checkpoint;
+        testContext.checkpoints.add(checkpoint);
       } else if (paramTypes[i] == Vertx.class) {
-        params[i] = Vertx.vertx();
+        Vertx vertx = Vertx.vertx();
+        params[i] = vertx;
+        vertx.exceptionHandler(err -> {
+          reportFailure(test, err);
+        });
       }
     }
+    failureReporterMap.put(test, testContext);
     try {
       method.invoke(test, (Object[]) params);
     } catch (InvocationTargetException e) {
@@ -80,15 +92,18 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     } catch (IllegalAccessException e) {
       PlatformDependent.throwException(e);
     }
-    for (Object param : params) {
-      if (param instanceof Checkpoint) {
-        Checkpoint checkpoint = (Checkpoint) param;
+    try {
+      // Try to satisfy invocation checkpoint
+      invocationCheckpoint.succeed();
+      // Now awaits checkpoints
+      for (Checkpoint checkpoint : testContext.checkpoints) {
         if (!checkpoint.latch.await(10, TimeUnit.SECONDS)) {
           throw new TimeoutException();
         }
-        checkpoint.await();
         checkpoint.awaitSuccess();
       }
+    } finally {
+      failureReporterMap.remove(test);
     }
     return () -> {
       for (Object param : params) {
@@ -148,6 +163,7 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
   }
 
   private Map<Object, List<Callable<?>>> cleanerMap = new HashMap<>();
+  private Map<Object, TestContext> failureReporterMap = new HashMap<>();
 
   private Statement withAfters(List<FrameworkMethod> afters, Object target, Statement statement) {
     return new Statement() {
@@ -171,6 +187,7 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
             }
           }
         } finally {
+          cleanerMap.remove(target);
           for (Callable<?> cleanerTask : cleanTasks) {
             cleanerTask.call();
           }
@@ -178,5 +195,18 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
         MultipleFailureException.assertEmpty(errors);
       }
     };
+  }
+
+  private void reportFailure(Object test, Throwable failure) {
+    TestContext testContext = failureReporterMap.get(test);
+    if (testContext != null) {
+      for (Checkpoint checkpoint : testContext.checkpoints) {
+        checkpoint.fail(failure);
+      }
+    }
+  }
+
+  private static class TestContext {
+    final List<Checkpoint> checkpoints = new ArrayList<>();
   }
 }

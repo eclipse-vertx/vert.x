@@ -14,6 +14,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Deployable;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.internal.ContextInternal;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +31,6 @@ import static org.junit.Assert.*;
 public class RunnerTest {
 
   private static final RuntimeException RUNTIME_EXCEPTION = new RuntimeException();
-  private static final String FAILURE_MSG = "the-failure";
 
   private Result runTest(Class<?> testClass) {
     try {
@@ -58,7 +58,7 @@ public class RunnerTest {
   public void testFailCheckpoint() {
     Result result = runTest(FailCheckpoint.class);
     assertEquals(1, result.getFailureCount());
-    assertSame(RUNTIME_EXCEPTION, result.getFailures().get(0).getException().getCause());
+    assertSame(RUNTIME_EXCEPTION, result.getFailures().get(0).getException());
   }
 
   @RunWith(VertxRunner.class)
@@ -172,6 +172,51 @@ public class RunnerTest {
     @After
     public void after() {
       assertFalse(undeployed);
+    }
+  }
+
+  @Test
+  public void testReportVertxFailure() {
+    Result result = runTest(ReportVertxFailure.class);
+    assertEquals(1, result.getFailureCount());
+    assertSame(RUNTIME_EXCEPTION, result.getFailures().get(0).getException());
+  }
+
+  @RunWith(VertxRunner.class)
+  public static class ReportVertxFailure {
+
+    @Test
+    public void test(Vertx vertx) {
+      ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+      context.reportException(RUNTIME_EXCEPTION);
+    }
+  }
+
+  @Test
+  public void testReportedFailureFailsCheckpoint() {
+    Result result = runTest(ReportedFailureCancelCheckpoint.class);
+    assertEquals(1, result.getFailureCount());
+    assertSame(RUNTIME_EXCEPTION, result.getFailures().get(0).getException());
+    Checkpoint checkpoint = ReportedFailureCancelCheckpoint.checkpoint;
+    assertNotNull(checkpoint);
+    try {
+      checkpoint.awaitSuccess();
+      fail();
+    } catch (Exception e) {
+      assertSame(RUNTIME_EXCEPTION, e);
+    }
+  }
+
+  @RunWith(VertxRunner.class)
+  public static class ReportedFailureCancelCheckpoint {
+
+    static Checkpoint checkpoint;
+
+    @Test
+    public void test(Vertx vertx, Checkpoint checkpoint) {
+      ReportedFailureCancelCheckpoint.checkpoint = checkpoint;
+      ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+      context.reportException(RUNTIME_EXCEPTION);
     }
   }
 }
