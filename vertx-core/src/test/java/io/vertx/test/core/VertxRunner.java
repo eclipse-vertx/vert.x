@@ -9,6 +9,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -87,12 +88,6 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
   }
 
   @Override
-  protected Statement methodBlock(FrameworkMethod method) {
-    Statement statement = super.methodBlock(method);
-    return statement;
-  }
-
-  @Override
   protected Statement withBefores(FrameworkMethod method, Object target, Statement statement) {
     return withBefores(getTestClass().getAnnotatedMethods(Before.class), target, statement);
   }
@@ -131,20 +126,24 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
           for (FrameworkMethod before : befores) {
             invokeTestMethod(before, target);
           }
+          cleanerMap.get(target).add(() -> {
+          });
           statement.evaluate();
         }
       };
     }
   }
 
+  private Map<Object, List<Runnable>> cleanerMap = new HashMap<>();
+
   private Statement withAfters(List<FrameworkMethod> afters, Object target, Statement statement) {
-    if (afters.isEmpty()) {
-      return statement;
-    } else {
-      return new Statement() {
-        @Override
-        public void evaluate() throws Throwable {
-          List<Throwable> errors = new ArrayList<Throwable>();
+    return new Statement() {
+      @Override
+      public void evaluate() throws Throwable {
+        ArrayList<Runnable> cleanTasks = new ArrayList<>();
+        cleanerMap.put(target, cleanTasks);
+        List<Throwable> errors = new ArrayList<>();
+        try {
           try {
             statement.evaluate();
           } catch (Throwable e) {
@@ -158,10 +157,14 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
               }
             }
           }
-          MultipleFailureException.assertEmpty(errors);
+        } finally {
+          for (Runnable cleanerTask : cleanTasks) {
+            cleanerTask.run();
+          }
         }
-      };
-    }
+        MultipleFailureException.assertEmpty(errors);
+      }
+    };
   }
 
   static void pushTimeout(long timeout) {
