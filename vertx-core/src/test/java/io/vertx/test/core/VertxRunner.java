@@ -10,6 +10,7 @@ import org.junit.runners.model.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -64,6 +65,15 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     };
   }
 
+  static class VertxInstance {
+    final VertxProvider provider;
+    final Vertx vertx;
+    public VertxInstance(VertxProvider provider, Vertx vertx) {
+      this.provider = provider;
+      this.vertx = vertx;
+    }
+  }
+
   protected Callable<Void> invokeTestMethod(FrameworkMethod fMethod, Object test) throws InvocationTargetException, IllegalAccessException, TimeoutException, InterruptedException {
     TestContext testContext = new TestContext();
     Checkpoint invocationCheckpoint = new Checkpoint();
@@ -71,13 +81,41 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     Method method = fMethod.getMethod();
     Class<?>[] paramTypes = method.getParameterTypes();
     Object[] params = new Object[paramTypes.length];
+    Annotation[][] paramsAnnotations = method.getParameterAnnotations();
+    List<VertxInstance> vertxInstances = new ArrayList<>();
     for (int i = 0;i < paramTypes.length;i++) {
       if (paramTypes[i] == Checkpoint.class) {
         Checkpoint checkpoint = new Checkpoint();
         params[i] = checkpoint;
         testContext.checkpoints.add(checkpoint);
       } else if (paramTypes[i] == Vertx.class) {
-        Vertx vertx = Vertx.vertx();
+        Annotation[] paramAnnotations = paramsAnnotations[i];
+        VertxProvider provider = null;
+        for (Annotation paramAnnotation : paramAnnotations) {
+          if (paramAnnotation instanceof ProvidedBy) {
+            ProvidedBy providedBy = (ProvidedBy) paramAnnotation;
+            try {
+              Class<? extends VertxProvider> providerClass = providedBy.value();
+              provider = providerClass.getConstructor().newInstance();
+              break;
+            } catch (Exception e) {
+              // Handle me
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        if (provider == null) {
+          // Default provider
+          provider = Vertx::vertx;
+        }
+        Vertx vertx;
+        try {
+          vertx = provider.call();
+        } catch (Exception e) {
+          // Handle me
+          throw new RuntimeException(e);
+        }
+        vertxInstances.add(new VertxInstance(provider, vertx));
         params[i] = vertx;
         vertx.exceptionHandler(err -> {
           reportFailure(test, err);
@@ -106,11 +144,8 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
       failureReporterMap.remove(test);
     }
     return () -> {
-      for (Object param : params) {
-        if (param instanceof Vertx) {
-          Vertx vertx = (Vertx) param;
-          vertx.close().await(20, TimeUnit.SECONDS);
-        }
+      for (VertxInstance vertxInstance : vertxInstances) {
+        vertxInstance.provider.close(vertxInstance.vertx, Duration.ofSeconds(10));
       }
       return null;
     };

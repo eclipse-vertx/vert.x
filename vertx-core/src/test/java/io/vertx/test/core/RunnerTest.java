@@ -10,11 +10,10 @@
  */
 package io.vertx.test.core;
 
-import io.vertx.core.Context;
-import io.vertx.core.Deployable;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -217,6 +216,35 @@ public class RunnerTest {
       ReportedFailureCancelCheckpoint.checkpoint = checkpoint;
       ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
       context.reportException(RUNTIME_EXCEPTION);
+    }
+  }
+
+  @Test
+  public void testVertxProvider() {
+    InjectProvidedInstance.metricsEnabled = false;
+    Result result = runTest(InjectProvidedInstance.class);
+    assertEquals(0, result.getFailureCount());
+    assertTrue(InjectProvidedInstance.metricsEnabled);
+  }
+
+  public static class ConfiguredVertxProvider implements VertxProvider {
+    @Override
+    public Vertx call() {
+      return Vertx.builder()
+        .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+        .withMetrics(new FakeMetricsFactory())
+        .build();
+    }
+  }
+
+  @RunWith(VertxRunner.class)
+  public static class InjectProvidedInstance {
+
+    public static boolean metricsEnabled;
+
+    @Test
+    public void test(@ProvidedBy(ConfiguredVertxProvider.class) Vertx vertx) {
+      metricsEnabled = vertx.isMetricsEnabled();
     }
   }
 }
