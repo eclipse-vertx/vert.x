@@ -10,13 +10,18 @@
  */
 package io.vertx.test.core;
 
+import io.vertx.core.Context;
+import io.vertx.core.Deployable;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runner.RunWith;
 import org.junit.runners.model.InitializationError;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.Assert.*;
 
 /**
@@ -86,6 +91,87 @@ public class RunnerTest {
         executed = true;
         checkpoint.succeed();
       }).start();
+    }
+  }
+
+  @Test
+  public void testInjectVertxInTestMethod() {
+    InjectVertxInTestMethod.vertx = null;
+    InjectVertxInTestMethod.undeployed = false;
+    Result result = runTest(InjectVertxInTestMethod.class);
+    assertEquals(0, result.getFailureCount());
+    assertNotNull(InjectVertxInTestMethod.vertx);
+    assertTrue(InjectVertxInTestMethod.undeployed);
+  }
+
+  @RunWith(VertxRunner.class)
+  public static class InjectVertxInTestMethod {
+
+    static Vertx vertx;
+    static boolean undeployed;
+
+    @Test
+    public void test(Vertx vertx) {
+      InjectVertxInTestMethod.vertx = vertx;
+      vertx.deployVerticle(new Deployable() {
+        @Override
+        public Future<?> deploy(Context context) {
+          return Future.succeededFuture();
+        }
+        @Override
+        public Future<?> undeploy(Context context) throws Exception {
+          undeployed = true;
+          return Deployable.super.undeploy(context);
+        }
+      }).await();
+    }
+
+    @After
+    public void after() {
+      assertTrue(undeployed);
+    }
+  }
+
+  @Test
+  public void testInjectVertxInBeforeMethod() {
+    InjectVertxInBeforeMethod.vertx = null;
+    InjectVertxInBeforeMethod.undeployed = false;
+    Result result = runTest(InjectVertxInBeforeMethod.class);
+    assertEquals(0, result.getFailureCount());
+    assertNotNull(InjectVertxInTestMethod.vertx);
+    assertTrue(InjectVertxInTestMethod.undeployed);
+  }
+
+  @RunWith(VertxRunner.class)
+  public static class InjectVertxInBeforeMethod {
+
+    static Vertx vertx;
+    static boolean undeployed;
+
+    @Before
+    public void before(Vertx vertx) {
+      InjectVertxInBeforeMethod.vertx = vertx;
+      vertx.deployVerticle(new Deployable() {
+        @Override
+        public Future<?> deploy(Context context) {
+          return Future.succeededFuture();
+        }
+        @Override
+        public Future<?> undeploy(Context context) throws Exception {
+          undeployed = true;
+          return Deployable.super.undeploy(context);
+        }
+      }).await();
+    }
+
+    @Test
+    public void test() {
+      assertFalse(undeployed);
+    }
+
+    @After
+    public void after() {
+      assertFalse(undeployed);
     }
   }
 }

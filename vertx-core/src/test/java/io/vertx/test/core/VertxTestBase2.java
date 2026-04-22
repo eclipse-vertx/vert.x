@@ -14,17 +14,7 @@ public class VertxTestBase2 {
   protected Vertx vertx;
 
   @Before
-  public void setUp() {
-    vertx = Vertx.vertx();
-  }
-
-  @After
-  public void tearDown() throws TimeoutException {
-    Vertx v = vertx;
-    if (v != null) {
-      vertx = null;
-      v.close()
-        .await(20, TimeUnit.SECONDS);
-    }
+  public void setUp(Vertx vertx) {
+    this.vertx = vertx;
   }
 }

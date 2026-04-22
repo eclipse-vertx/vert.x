@@ -1,6 +1,7 @@
 package io.vertx.test.core;
 
 import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Vertx;
 import org.junit.*;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.*;
@@ -16,10 +17,6 @@ import java.util.concurrent.TimeoutException;
 public class VertxRunner extends BlockJUnit4ClassRunner {
 
   private final TestClass testClass;
-  private Map<String, Object> classAttributes = new HashMap<>();
-
-  // To remove
-  private static final LinkedList<Long> timeoutStack = new LinkedList<>();
 
   public VertxRunner(Class<?> klass) throws InitializationError {
     super(klass);
@@ -47,9 +44,9 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
   protected void validateTestMethod(FrameworkMethod fMethod) throws Exception {
     Class<?>[] paramTypes = fMethod.getMethod().getParameterTypes();
     for (Class<?> paramType : paramTypes) {
-      if (paramType != Checkpoint.class) {
+      if (paramType != Checkpoint.class && paramType != Vertx.class) {
         throw new Exception("Method " + fMethod.getName() + " should have no parameters or " +
-            "the " + Checkpoint.class.getName() + " parameter");
+            "the " + Checkpoint.class.getName() + " / " + Vertx.class.getName() + " parameter");
       }
     }
   }
@@ -59,17 +56,22 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     return new Statement() {
       @Override
       public void evaluate() throws Throwable {
-        invokeTestMethod(method, test);
+        Callable<Void> cleanup = invokeTestMethod(method, test);
+        cleanup.call();
       }
     };
   }
 
-  protected void invokeTestMethod(FrameworkMethod fMethod, Object test) throws InvocationTargetException, IllegalAccessException, TimeoutException, InterruptedException {
+  protected Callable<Void> invokeTestMethod(FrameworkMethod fMethod, Object test) throws InvocationTargetException, IllegalAccessException, TimeoutException, InterruptedException {
     Method method = fMethod.getMethod();
     Class<?>[] paramTypes = method.getParameterTypes();
-    Checkpoint[] params = new Checkpoint[paramTypes.length];
+    Object[] params = new Object[paramTypes.length];
     for (int i = 0;i < paramTypes.length;i++) {
-      params[i] = new Checkpoint();
+      if (paramTypes[i] == Checkpoint.class) {
+        params[i] = new Checkpoint();
+      } else if (paramTypes[i] == Vertx.class) {
+        params[i] = Vertx.vertx();
+      }
     }
     try {
       method.invoke(test, (Object[]) params);
@@ -78,13 +80,25 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     } catch (IllegalAccessException e) {
       PlatformDependent.throwException(e);
     }
-    for (Checkpoint checkpoint : params) {
-      if (!checkpoint.latch.await(10, TimeUnit.SECONDS)) {
-        throw new TimeoutException();
+    for (Object param : params) {
+      if (param instanceof Checkpoint) {
+        Checkpoint checkpoint = (Checkpoint) param;
+        if (!checkpoint.latch.await(10, TimeUnit.SECONDS)) {
+          throw new TimeoutException();
+        }
+        checkpoint.await();
+        checkpoint.awaitSuccess();
       }
-      checkpoint.await();
-      checkpoint.awaitSuccess();
     }
+    return () -> {
+      for (Object param : params) {
+        if (param instanceof Vertx) {
+          Vertx vertx = (Vertx) param;
+          vertx.close().await(20, TimeUnit.SECONDS);
+        }
+      }
+      return null;
+    };
   }
 
   @Override
@@ -123,24 +137,23 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
       return new Statement() {
         @Override
         public void evaluate() throws Throwable {
+          List<Callable<?>> beforeCleanup = cleanerMap.get(target);
           for (FrameworkMethod before : befores) {
-            invokeTestMethod(before, target);
+            beforeCleanup.add(invokeTestMethod(before, target));
           }
-          cleanerMap.get(target).add(() -> {
-          });
           statement.evaluate();
         }
       };
     }
   }
 
-  private Map<Object, List<Runnable>> cleanerMap = new HashMap<>();
+  private Map<Object, List<Callable<?>>> cleanerMap = new HashMap<>();
 
   private Statement withAfters(List<FrameworkMethod> afters, Object target, Statement statement) {
     return new Statement() {
       @Override
       public void evaluate() throws Throwable {
-        ArrayList<Runnable> cleanTasks = new ArrayList<>();
+        ArrayList<Callable<?>> cleanTasks = new ArrayList<>();
         cleanerMap.put(target, cleanTasks);
         List<Throwable> errors = new ArrayList<>();
         try {
@@ -151,27 +164,19 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
           } finally {
             for (FrameworkMethod after : afters) {
               try {
-                invokeTestMethod(after, target);
+                invokeTestMethod(after, target).call();
               } catch (Throwable e) {
                 errors.add(e);
               }
             }
           }
         } finally {
-          for (Runnable cleanerTask : cleanTasks) {
-            cleanerTask.run();
+          for (Callable<?> cleanerTask : cleanTasks) {
+            cleanerTask.call();
           }
         }
         MultipleFailureException.assertEmpty(errors);
       }
     };
-  }
-
-  static void pushTimeout(long timeout) {
-    timeoutStack.push(timeout);
-  }
-
-  static void popTimeout() {
-    timeoutStack.pop();
   }
 }
