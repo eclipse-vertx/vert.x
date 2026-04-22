@@ -40,7 +40,7 @@ public final class Checkpoint implements Completable<Void> {
     await();
     Throwable c = completion;
     if (c != SUCCESS) {
-      throw new AssertionError("Unexpected failure", c);
+      PlatformDependent.throwException(c);
     }
   }
 
