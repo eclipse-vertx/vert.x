@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.json;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.WebSocketVersion;
@@ -20,26 +19,16 @@ import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
-import io.vertx.core.json.jackson.JacksonCodec;
+import io.vertx.core.spi.json.JsonCodec;
 import io.vertx.test.core.TestUtils;
+import io.vertx.tests.json.jackson.JsonParserTest;
 import org.junit.Assume;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -51,29 +40,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(Parameterized.class)
-public class JsonCodecTest {
+public abstract class JsonCodecTest {
 
-  private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};
-  private static final TypeReference<Long> LONG_TYPE_REF = new TypeReference<Long>() {};
-  private static final TypeReference<String> STRING_TYPE_REF = new TypeReference<String>() {};
-  private static final TypeReference<Float> FLOAT_TYPE_REF = new TypeReference<Float>() {};
-  private static final TypeReference<Double> DOUBLE_TYPE_REF = new TypeReference<Double>() {};
-  private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<Map<String, Object>>() {};
-  private static final TypeReference<List<Object>> LIST_TYPE_REF = new TypeReference<List<Object>>() {};
-  private static final TypeReference<Boolean> BOOLEAN_TYPE_REF = new TypeReference<Boolean>() {};
+  protected final JsonCodec codec;
 
-  @Parameterized.Parameters
-  public static Collection<Object[]> mappers() {
-    return Arrays.asList(new Object[][] {
-      { new DatabindCodec() }, { new JacksonCodec() }
-    });
-  }
-
-  private final JacksonCodec codec;
-
-  public JsonCodecTest(JacksonCodec codec) {
-    this.codec = codec;
+  public JsonCodecTest(JsonCodec codec) {
+    this.codec = Objects.requireNonNull(codec);
   }
 
   @Test
@@ -426,20 +398,6 @@ public class JsonCodecTest {
   }
 
   @Test
-  public void testDecodeValue() {
-    Assume.assumeTrue(codec instanceof DatabindCodec);
-    assertDecodeValue(Buffer.buffer("42"), 42, INTEGER_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("42"), 42L, LONG_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("\"foobar\""), "foobar", STRING_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("3.4"), 3.4f, FLOAT_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("3.4"), 3.4d, DOUBLE_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("{\"foo\":4}"), Collections.singletonMap("foo", 4), MAP_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("[0,1,2]"), Arrays.asList(0, 1, 2), LIST_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("true"), true, BOOLEAN_TYPE_REF);
-    assertDecodeValue(Buffer.buffer("false"), false, BOOLEAN_TYPE_REF);
-  }
-
-  @Test
   public void testEnumValue() {
     // just a random enum
     Buffer json = codec.toBuffer(WebSocketVersion.V13);
@@ -458,21 +416,6 @@ public class JsonCodecTest {
     assertEquals("12456789009876543211245678900987654321", json2.toString());
   }
 
-  private <T> void assertDecodeValue(Buffer buffer, T expected, TypeReference<T> ref) {
-    DatabindCodec databindCodec = (DatabindCodec) codec;
-    Type type = ref.getType();
-    Class<?> clazz = type instanceof Class ? (Class<?>) type : (Class<?>) ((ParameterizedType) type).getRawType();
-    assertEquals(expected, codec.fromBuffer(buffer, clazz));
-    assertEquals(expected, databindCodec.fromBuffer(buffer, ref));
-    assertEquals(expected, codec.fromString(buffer.toString(StandardCharsets.UTF_8), clazz));
-    assertEquals(expected, databindCodec.fromString(buffer.toString(StandardCharsets.UTF_8), ref));
-    Buffer nullValue = Buffer.buffer("null");
-    assertNull(codec.fromBuffer(nullValue, clazz));
-    assertNull(databindCodec.fromBuffer(nullValue, ref));
-    assertNull(codec.fromString(nullValue.toString(StandardCharsets.UTF_8), clazz));
-    assertNull(databindCodec.fromString(nullValue.toString(StandardCharsets.UTF_8), ref));
-  }
-
   @Test
   public void testDecodeBufferUnknowContent() {
     testDecodeUnknowContent(true);
@@ -485,29 +428,29 @@ public class JsonCodecTest {
 
   private void testDecodeUnknowContent(boolean asBuffer) {
     String number = String.valueOf(1);
-    assertEquals(1, asBuffer ? codec.fromBuffer(Buffer.buffer(number)) : codec.fromString(number));
+    assertEquals(1, asBuffer ? codec.fromBuffer(Buffer.buffer(number), Object.class) : codec.fromString(number, Object.class));
 
     String bool = Boolean.TRUE.toString();
-    assertEquals(true, asBuffer ? codec.fromBuffer(Buffer.buffer(bool)) : codec.fromString(bool));
+    assertEquals(true, asBuffer ? codec.fromBuffer(Buffer.buffer(bool), Object.class) : codec.fromString(bool, Object.class));
 
     String text = "\"whatever\"";
-    assertEquals("whatever", asBuffer ? codec.fromBuffer(Buffer.buffer(text)) : codec.fromString(text));
+    assertEquals("whatever", asBuffer ? codec.fromBuffer(Buffer.buffer(text), Object.class) : codec.fromString(text, Object.class));
 
     String nullText = "null";
-    assertNull(asBuffer ? codec.fromBuffer(Buffer.buffer(nullText)) : codec.fromString(nullText));
+    assertNull(asBuffer ? codec.fromBuffer(Buffer.buffer(nullText), Object.class) : codec.fromString(nullText, Object.class));
 
     JsonObject obj = new JsonObject().put("foo", "bar");
-    assertEquals(obj, asBuffer ? codec.fromBuffer(obj.toBuffer()) : codec.fromString(obj.toString()));
+    assertEquals(obj, asBuffer ? codec.fromBuffer(obj.toBuffer(), Object.class) : codec.fromString(obj.toString(), Object.class));
 
     JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
-    assertEquals(arr, asBuffer ? codec.fromBuffer(arr.toBuffer()) : codec.fromString(arr.toString()));
+    assertEquals(arr, asBuffer ? codec.fromBuffer(arr.toBuffer(), Object.class) : codec.fromString(arr.toString(), Object.class));
 
     String invalidText = "\"invalid";
     try {
       if (asBuffer) {
-        codec.fromBuffer(Buffer.buffer(invalidText));
+        codec.fromBuffer(Buffer.buffer(invalidText), Object.class);
       } else {
-        codec.fromString(invalidText);
+        codec.fromString(invalidText, Object.class);
       }
       fail();
     } catch (DecodeException ignore) {
@@ -575,4 +518,49 @@ public class JsonCodecTest {
     return codec.toString(Collections.singletonList(o), false);
   }
 
+  @Test
+  public void testEncodeUnknownNumber() {
+    Assume.assumeFalse(codec.getClass().getSimpleName().contains("Databind"));
+    String result = codec.toString(new Number() {
+      @Override
+      public int intValue() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public long longValue() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public float floatValue() {
+        throw new UnsupportedOperationException();
+      }
+      @Override
+      public double doubleValue() {
+        return 4D;
+      }
+    });
+    assertEquals("4.0", result);
+  }
+
+  public static class MyPojo {
+  }
+
+  @Test
+  public void testEncodePojoFailure() {
+    Assume.assumeFalse(codec.getClass().getSimpleName().contains("Databind"));
+    try {
+      codec.toString(new MyPojo());
+      fail();
+    } catch (EncodeException e) {
+      assertTrue(e.getMessage().contains(MyPojo.class.getName()));
+    }
+  }
+
+  @Test(expected = EncodeException.class)
+  public void testEncodeToBufferFailure() {
+    Assume.assumeFalse(codec.getClass().getSimpleName().contains("Databind"));
+    // if other than EncodeException happens here, then
+    // there is probably a leak closing the netty buffer output stream
+    codec.toBuffer(new RuntimeException("Unsupported"));
+  }
 }

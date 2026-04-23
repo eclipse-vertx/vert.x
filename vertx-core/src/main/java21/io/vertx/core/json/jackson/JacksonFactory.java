@@ -24,18 +24,32 @@ public class JacksonFactory implements io.vertx.core.spi.JsonFactory {
 
   public static final JacksonFactory INSTANCE = new JacksonFactory();
 
-  public static final JacksonCodec CODEC;
+  public static final JsonCodec CODEC;
 
   static {
-    JacksonCodec codec;
+    JsonCodec codec;
     try {
       codec = new DatabindCodec();
       logger.debug("Using io.vertx.core.json.DatabindCodec");
-    } catch (Throwable reason) {
-      // No databind
-      logger.debug("Jackson databind not found: " + reason.getMessage());
-      logger.debug("Using io.vertx.core.json.JacksonCodec");
-      codec = new JacksonCodec();
+    } catch (Throwable reason1) {
+      // No v2 databind
+      logger.debug("Jackson v2 databind not found: " + reason1.getMessage());
+      try {
+        codec = new JacksonCodec();
+        logger.debug("Using io.vertx.core.json.JacksonCodec");
+      } catch (Throwable reason2) {
+        // No v2 core
+        logger.debug("Jackson v2 core not found: " + reason2.getMessage());
+        try {
+          codec = new io.vertx.core.json.jackson.v3.DatabindCodec();
+          logger.debug("Using io.vertx.core.json.jackson.v3.DatabindCodec");
+        } catch (Throwable reason3) {
+          // No v3 databind
+          logger.debug("Jackson v3 databind not found: " + reason3.getMessage());
+          codec = new io.vertx.core.json.jackson.v3.JacksonCodec();
+          logger.debug("Using io.vertx.core.json.jackson.v3.JacksonCodec");
+        }
+      }
     }
     CODEC = codec;
   }

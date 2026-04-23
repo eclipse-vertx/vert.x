@@ -8,14 +8,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+package io.vertx.core.json.jackson.v3;
 
-package io.vertx.core.json.jackson;
-
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.io.SegmentedStringWriter;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
-import com.fasterxml.jackson.core.util.BufferRecycler;
-import com.fasterxml.jackson.core.util.ByteArrayBuilder;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.SysProps;
@@ -27,19 +21,23 @@ import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.json.JsonCodec;
+import tools.jackson.core.*;
+import tools.jackson.core.io.SegmentedStringWriter;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.json.JsonFactoryBuilder;
+import tools.jackson.core.json.JsonReadFeature;
+import tools.jackson.core.util.BufferRecycler;
+import tools.jackson.core.util.ByteArrayBuilder;
+import tools.jackson.core.util.DefaultPrettyPrinter;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -50,7 +48,7 @@ public class JacksonCodec implements JsonCodec {
   private static final Logger log = LoggerFactory.getLogger(JacksonCodec.class);
 
   private static JsonFactory buildFactory() {
-    TSFBuilder<?, ?> tsfBuilder = JsonFactory.builder();
+    JsonFactoryBuilder tsfBuilder = JsonFactory.builder();
 
     // Build stream read constraints
     StreamReadConstraints.Builder readConstraintsBuilder = StreamReadConstraints.builder();
@@ -110,11 +108,11 @@ public class JacksonCodec implements JsonCodec {
     }
 
     tsfBuilder.streamReadConstraints(readConstraintsBuilder.build());
+    tsfBuilder.recyclerPool(HybridJacksonPool.getInstance());
 
     // Non-standard JSON but we allow C style comments in our JSON
     tsfBuilder.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true);
 
-    tsfBuilder.recyclerPool(HybridJacksonPool.getInstance());
     return tsfBuilder.build();
   }
 
@@ -132,7 +130,7 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public <T> T fromValue(Object json, Class<T> toValueType) {
-    throw new DecodeException("Mapping " + toValueType.getName() + "  is not available without Jackson Databind on the classpath");
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -143,7 +141,7 @@ public class JacksonCodec implements JsonCodec {
       encodeJson(object, generator);
       generator.close();
       return sw.getAndClear();
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
       br.releaseToPool();
@@ -160,7 +158,7 @@ public class JacksonCodec implements JsonCodec {
       byte[] result = bb.toByteArray();
       bb.release();
       return Buffer.buffer(result);
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new EncodeException(e.getMessage(), e);
     } finally {
       br.releaseToPool();
@@ -168,51 +166,19 @@ public class JacksonCodec implements JsonCodec {
   }
 
   public static JsonParser createParser(String str) {
-    try {
-      return factory.createParser(str);
-    } catch (IOException e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
+    return factory.createParser(ObjectReadContext.empty(), str);
   }
 
   public static JsonParser createParser(Buffer buf) {
-    try {
-      return factory.createParser((InputStream) new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
-    } catch (IOException e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
+    return factory.createParser(ObjectReadContext.empty(), (InputStream) new ByteBufInputStream(((BufferInternal)buf).getByteBuf()));
   }
 
   private static JsonGenerator createGenerator(Writer out, boolean pretty) {
-    try {
-      JsonGenerator generator = factory.createGenerator(out);
-      if (pretty) {
-        generator.useDefaultPrettyPrinter();
-      }
-      return generator;
-    } catch (IOException e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
+    return factory.createGenerator(owc(pretty), out);
   }
 
   private static JsonGenerator createGenerator(OutputStream out, boolean pretty) {
-    try {
-      JsonGenerator generator = factory.createGenerator(out);
-      if (pretty) {
-        generator.useDefaultPrettyPrinter();
-      }
-      return generator;
-    } catch (IOException e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
-  }
-
-  public Object fromString(String str) throws DecodeException {
-    return fromParser(createParser(str), Object.class);
-  }
-
-  public Object fromBuffer(Buffer buf) throws DecodeException {
-    return fromParser(createParser(buf), Object.class);
+    return factory.createGenerator(owc(pretty), out);
   }
 
   public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
@@ -222,7 +188,7 @@ public class JacksonCodec implements JsonCodec {
       parser.nextToken();
       res = parseValue(parser);
       remaining = parser.nextToken();
-    } catch (IOException e) {
+    } catch (JacksonException | IOException e) {
       throw new DecodeException(e.getMessage(), e);
     } finally {
       close(parser);
@@ -233,28 +199,21 @@ public class JacksonCodec implements JsonCodec {
     return cast(res, type);
   }
 
-  /**
-   * Parse a JSON value given the {@code parser}, consuming the current parser token and possibly more
-   * when parsing an object or an array.
-   *
-   * @param parser the parser
-   * @return the parsed value as an object
-   */
-  public static Object parseValue(JsonParser parser) throws IOException, DecodeException {
+  private static Object parseValue(JsonParser parser) throws IOException, DecodeException {
     switch (parser.currentTokenId()) {
       case JsonTokenId.ID_START_OBJECT:
-        return internalParseObject(parser);
+        return parseObject(parser);
       case JsonTokenId.ID_START_ARRAY:
-        return internalParseArray(parser);
+        return parseArray(parser);
       case JsonTokenId.ID_STRING:
-        return parser.getText();
+        return parser.getString();
       case JsonTokenId.ID_NUMBER_FLOAT:
       case JsonTokenId.ID_NUMBER_INT:
         return parser.getNumberValue();
       case JsonTokenId.ID_TRUE:
         return Boolean.TRUE;
       case JsonTokenId.ID_FALSE:
-         return Boolean.FALSE;
+        return Boolean.FALSE;
       case JsonTokenId.ID_NULL:
         return null;
       default:
@@ -276,13 +235,13 @@ public class JacksonCodec implements JsonCodec {
   }
 
   private static Map<String, Object> internalParseObject(JsonParser parser) throws IOException {
-    String key1 = parser.nextFieldName();
+    String key1 = parser.nextName();
     if (key1 == null) {
       return new LinkedHashMap<>(2);
     }
     parser.nextToken();
     Object value1 = parseValue(parser);
-    String key2 = parser.nextFieldName();
+    String key2 = parser.nextName();
     if (key2 == null) {
       LinkedHashMap<String, Object> obj = new LinkedHashMap<>(2);
       obj.put(key1, value1);
@@ -290,7 +249,7 @@ public class JacksonCodec implements JsonCodec {
     }
     parser.nextToken();
     Object value2 = parseValue(parser);
-    String key = parser.nextFieldName();
+    String key = parser.nextName();
     if (key == null) {
       LinkedHashMap<String, Object> obj = new LinkedHashMap<>(2);
       obj.put(key1, value1);
@@ -305,7 +264,7 @@ public class JacksonCodec implements JsonCodec {
       parser.nextToken();
       Object value = parseValue(parser);
       obj.put(key, value);
-      key = parser.nextFieldName();
+      key = parser.nextName();
     } while (key != null);
     return obj;
   }
@@ -328,7 +287,7 @@ public class JacksonCodec implements JsonCodec {
     while (true) {
       parser.nextToken();
       int tokenId = parser.currentTokenId();
-      if (tokenId == JsonTokenId.ID_FIELD_NAME) {
+      if (tokenId == JsonTokenId.ID_PROPERTY_NAME) {
         throw new UnsupportedOperationException();
       } else if (tokenId == JsonTokenId.ID_END_ARRAY) {
         return array;
@@ -356,7 +315,7 @@ public class JacksonCodec implements JsonCodec {
       if (json instanceof Map) {
         generator.writeStartObject();
         for (Map.Entry<String, ?> e : ((Map<String, ?>)json).entrySet()) {
-          generator.writeFieldName(e.getKey());
+          generator.writeName(e.getKey());
           Object value = e.getValue();
           encodeJson0(value, generator);
         }
@@ -389,7 +348,7 @@ public class JacksonCodec implements JsonCodec {
       if (json instanceof Map) {
         generator.writeStartObject();
         for (Map.Entry<String, ?> e : ((Map<String, ?>)json).entrySet()) {
-          generator.writeFieldName(e.getKey());
+          generator.writeName(e.getKey());
           Object value = e.getValue();
           encodeJson(value, generator);
         }
@@ -515,6 +474,18 @@ public class JacksonCodec implements JsonCodec {
         throw new DecodeException("Failed to decode");
       }
       return clazz.cast(o);
+    }
+  }
+
+  private static ObjectWriteContext owc(boolean pretty) {
+    if (pretty) {
+      PrettyPrinter prettyPrinter = new DefaultPrettyPrinter();
+      return new ObjectWriteContext.Base() {
+        @Override
+        public PrettyPrinter getPrettyPrinter() { return prettyPrinter; }
+      };
+    } else {
+      return ObjectWriteContext.empty();
     }
   }
 }

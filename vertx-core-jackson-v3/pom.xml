@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+  ~
+  ~ This program and the accompanying materials are made available under the
+  ~ terms of the Eclipse Public License 2.0 which is available at
+  ~
+  ~ http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+  ~ which is available at https://www.apache.org/licenses/LICENSE-2.0.
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+  ~
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-core-aggregator</artifactId>
+    <version>5.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>vertx-core-jackson-v3</artifactId>
+  <version>5.1.0-SNAPSHOT</version>
+
+  <name>Vert.x Core Jackson v3 plugin</name>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <maven.install.skip>true</maven.install.skip>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <skip>true</skip>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.3</version>
+        <configuration>
+          <excludes>
+            <exclude>io/vertx/it/**</exclude>
+          </excludes>
+          <classpathDependencyExcludes>
+            <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+            <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+          </classpathDependencyExcludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.5.3</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+        </configuration>
+        <executions>
+          <execution>
+            <id>jackson-v2-presence</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/jacksonv3/JacksonV2PresenceTest.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jackson-v3-databind-absence</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/jacksonv3/JacksonV3DatabindAbsenceTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jackson-read-constraints-override</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/json/JacksonReadConstraintsOverrideTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx.jackson.defaultReadMaxNestingDepth>100</vertx.jackson.defaultReadMaxNestingDepth>
+                <vertx.jackson.defaultReadMaxDocumentLength>1000</vertx.jackson.defaultReadMaxDocumentLength>
+                <vertx.jackson.defaultReadMaxNumberLength>100</vertx.jackson.defaultReadMaxNumberLength>
+                <vertx.jackson.defaultReadMaxStringLength>100</vertx.jackson.defaultReadMaxStringLength>
+                <vertx.jackson.defaultReadMaxNameLength>100</vertx.jackson.defaultReadMaxNameLength>
+                <vertx.jackson.defaultReadMaxTokenCount>100</vertx.jackson.defaultReadMaxTokenCount>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

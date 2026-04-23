@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.it.json;
+package io.vertx.it.jackson;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -27,7 +27,7 @@ import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NoJacksonTest extends VertxTestBase {
+public class JacksonAbsenceTest extends VertxTestBase {
 
   @Test
   public void testJsonObject() {

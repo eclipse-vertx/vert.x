@@ -22,6 +22,8 @@ module io.vertx.core {
 
   requires static com.fasterxml.jackson.core;
   requires static com.fasterxml.jackson.databind;
+  requires static tools.jackson.core;
+  requires static tools.jackson.databind;
   requires static io.netty.transport.classes.io_uring;
   requires static io.netty.transport.classes.epoll;
   requires static io.netty.transport.classes.kqueue;
@@ -55,6 +57,7 @@ module io.vertx.core {
   exports io.vertx.core.json;
   exports io.vertx.core.json.jackson;
   exports io.vertx.core.json.pointer;
+  exports io.vertx.core.json.jackson.v3;
   exports io.vertx.core.buffer;
   exports io.vertx.core.eventbus;
   exports io.vertx.core.shareddata;

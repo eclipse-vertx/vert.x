@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.it.json;
+package io.vertx.it.jackson;
 
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -19,7 +19,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NoDatabindTest extends VertxTestBase {
+public class JacksonDatabindAbsenceTest extends VertxTestBase {
 
   @Test
   public void testJsonObject() {
