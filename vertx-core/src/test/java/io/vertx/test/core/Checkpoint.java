@@ -5,6 +5,7 @@ import io.vertx.core.Completable;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public final class Checkpoint implements Completable<Void> {
 
@@ -39,7 +40,9 @@ public final class Checkpoint implements Completable<Void> {
   public void awaitSuccess() {
     await();
     Throwable c = completion;
-    if (c != SUCCESS) {
+    if (c == null) {
+      PlatformDependent.throwException(new TimeoutException());
+    } else if (c != SUCCESS) {
       PlatformDependent.throwException(c);
     }
   }
