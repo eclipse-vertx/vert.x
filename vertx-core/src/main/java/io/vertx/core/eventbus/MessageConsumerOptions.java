@@ -34,9 +34,15 @@ public class MessageConsumerOptions {
    */
   public static final boolean DEFAULT_LOCAL_ONLY = false;
 
+  /**
+   * The default auto-ack mode = {@code true}
+   */
+  public static final boolean DEFAULT_AUTO_ACK = true;
+
   private String address;
   private boolean localOnly;
   private int maxBufferedMessages;
+  private boolean autoAck;
 
   /**
    * Default constructor
@@ -44,6 +50,7 @@ public class MessageConsumerOptions {
   public MessageConsumerOptions() {
     maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
     localOnly = DEFAULT_LOCAL_ONLY;
+    autoAck = DEFAULT_AUTO_ACK;
   }
 
   /**
@@ -56,6 +63,7 @@ public class MessageConsumerOptions {
     maxBufferedMessages = other.getMaxBufferedMessages();
     localOnly = other.isLocalOnly();
     address = other.getAddress();
+    autoAck = other.isAutoAck();
   }
 
   /**
@@ -124,6 +132,33 @@ public class MessageConsumerOptions {
   public MessageConsumerOptions setMaxBufferedMessages(int maxBufferedMessages) {
     Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
     this.maxBufferedMessages = maxBufferedMessages;
+    return this;
+  }
+
+  /**
+   * @return whether message ack is signaled automatically
+   */
+  public boolean isAutoAck() {
+    return autoAck;
+  }
+
+  /**
+   * Set whether message ack should be signaled automatically.
+   * <p>
+   * When {@code true} (default), ack is signaled automatically when the message handler returns.
+   * <p>
+   * When {@code false}, the user must explicitly call {@link Message#ack()} to ack the message.
+   * This is useful for async/blocking handlers where you need precise control over when tracing
+   * spans are closed.
+   * <p>
+   * Note: For request/reply messages, calling {@link Message#reply(Object)} always acks the
+   * message regardless of this setting.
+   *
+   * @param autoAck whether to automatically ack messages
+   * @return this options instance for chaining
+   */
+  public MessageConsumerOptions setAutoAck(boolean autoAck) {
+    this.autoAck = autoAck;
     return this;
   }
 

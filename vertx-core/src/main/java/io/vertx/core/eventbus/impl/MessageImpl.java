@@ -12,8 +12,11 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.eventbus.*;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,8 @@ public class MessageImpl<U, V> implements Message<V> {
   protected V receivedBody;
   protected boolean send;
   protected Object trace;
+  protected Handler<Void> ackHandler = v -> {
+  };
 
   public MessageImpl(EventBusImpl bus) {
     this.bus = bus;
@@ -127,6 +132,11 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public boolean isSend() {
     return send;
+  }
+
+  @Override
+  public void ack() {
+    ackHandler.handle(null);
   }
 
   public void setReplyAddress(String replyAddress) {

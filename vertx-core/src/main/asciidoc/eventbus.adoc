@@ -240,6 +240,25 @@ persisted in storage, or `false` if not.
 * A message consumer which processes an order might acknowledge with `true` when the order has been successfully processed
 so it can be deleted from the database
 
+==== Manual Ack Mode
+
+By default, Vert.x automatically acks messages when the message handler returns.
+This works well for synchronous handlers but may not be ideal for asynchronous or blocking operations where you need precise control over when processing is considered complete, especially for tracing purposes.
+
+You can enable *manual ack mode* by setting `autoAck` to `false` in {@link io.vertx.core.eventbus.MessageConsumerOptions}:
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example13}
+----
+
+In manual ack mode, you must explicitly call {@link io.vertx.core.eventbus.Message#ack()} to ack the message:
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example14}
+----
+
 ==== Sending with timeouts
 
 When sending a message with a reply handler, you can specify a timeout in the {@link io.vertx.core.eventbus.DeliveryOptions}.
