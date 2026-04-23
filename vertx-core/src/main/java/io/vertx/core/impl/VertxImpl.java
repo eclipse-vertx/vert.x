@@ -127,22 +127,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return INTERNAL_TIMER_HANDLER_DISPOSED.compareAndSet(handler, false, true);
   }
 
-  // Not cached for graalvm
-  private static ThreadFactory virtualThreadFactory() {
-    try {
-      Class<?> builderClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder");
-      Class<?> ofVirtualClass = ClassLoader.getSystemClassLoader().loadClass("java.lang.Thread$Builder$OfVirtual");
-      Method ofVirtualMethod = Thread.class.getDeclaredMethod("ofVirtual");
-      Object builder = ofVirtualMethod.invoke(null);
-      Method nameMethod = ofVirtualClass.getDeclaredMethod("name", String.class, long.class);
-      Method factoryMethod = builderClass.getDeclaredMethod("factory");
-      builder = nameMethod.invoke(builder, "vert.x-virtual-thread-", 0L);
-      return (ThreadFactory) factoryMethod.invoke(builder);
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
   static {
     // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
     // Supports both the default netty leak detection system property and the deprecated one
@@ -222,7 +206,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ExecutorService internalWorkerExec = executorServiceFactory.createExecutor(internalWorkerThreadFactory, internalBlockingPoolSize, internalBlockingPoolSize);
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", internalBlockingPoolSize) : null;
 
-    ThreadFactory virtualThreadFactory = virtualThreadFactory();
+    ThreadFactory virtualThreadFactory = VirtualThreadSupport.VIRTUAL_THREAD_FACTORY;
     PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null && virtualThreadFactory != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", -1) : null;
 
     int numberOfEventLoops = options.getEventLoopPoolSize();
@@ -1227,7 +1211,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public boolean isVirtualThreadAvailable() {
-    return virtualThreadExecutor != null;
+    return VirtualThreadSupport.VIRTUAL_THREAD_AVAILABLE;
   }
 
   private CloseFuture resolveCloseFuture() {

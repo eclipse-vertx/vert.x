@@ -10,6 +10,7 @@ import java.util.stream.IntStream;
 import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.JsonRecyclerPools;
 import com.fasterxml.jackson.core.util.RecyclerPool;
+import io.vertx.core.impl.VirtualThreadSupport;
 
 /**
  * This is a custom implementation of the Jackson's {@link RecyclerPool} intended to work equally well with both
@@ -34,8 +35,6 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
 
   private static final HybridJacksonPool INSTANCE = new HybridJacksonPool();
 
-  private static final Predicate<Thread> isVirtual = VirtualPredicate.findIsVirtualPredicate();
-
   private final RecyclerPool<BufferRecycler> nativePool = JsonRecyclerPools.threadLocalPool();
 
   private static class VirtualPoolHolder {
@@ -53,7 +52,7 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
 
   @Override
   public BufferRecycler acquirePooled() {
-    return isVirtual.test(Thread.currentThread()) ?
+    return VirtualThreadSupport.isVirtual(Thread.currentThread()) ?
       VirtualPoolHolder.virtualPool.acquirePooled() :
       nativePool.acquirePooled();
   }
@@ -61,7 +60,7 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
   @Override
   public BufferRecycler acquireAndLinkPooled() {
     // when using the ThreadLocal based pool it is not necessary to register the BufferRecycler on the pool
-    return isVirtual.test(Thread.currentThread()) ?
+    return VirtualThreadSupport.isVirtual(Thread.currentThread()) ?
       VirtualPoolHolder.virtualPool.acquireAndLinkPooled() :
       nativePool.acquirePooled();
   }
@@ -167,41 +166,6 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
 
     VThreadBufferRecycler(int slot) {
       this.slot = slot;
-    }
-  }
-
-  private static class VirtualPredicate {
-    private static final MethodHandle virtualMh = findVirtualMH();
-
-    private static MethodHandle findVirtualMH() {
-      try {
-        return MethodHandles.publicLookup().findVirtual(Thread.class, "isVirtual",
-          MethodType.methodType(boolean.class));
-      } catch (Exception e) {
-        return null;
-      }
-    }
-
-    private static Predicate<Thread> findIsVirtualPredicate() {
-      if (virtualMh != null) {
-        return new Predicate<Thread>() {
-          @Override
-          public boolean test(Thread thread) {
-            try {
-              return (boolean) virtualMh.invokeExact(thread);
-            } catch (Throwable e) {
-              throw new RuntimeException(e);
-            }
-          }
-        };
-      }
-
-      return new Predicate<Thread>() {
-        @Override
-        public boolean test(Thread thread) {
-          return false;
-        }
-      };
     }
   }
 
