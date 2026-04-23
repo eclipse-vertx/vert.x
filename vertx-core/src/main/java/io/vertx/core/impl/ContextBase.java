@@ -77,14 +77,7 @@ abstract class ContextBase implements ContextInternal {
   @Override
   public final <T> void emit(T argument, Handler<T> task) {
     if (executor().inThread()) {
-      ContextInternal prev = beginDispatch();
-      try {
-        task.handle(argument);
-      } catch (Throwable t) {
-        reportException(t);
-      } finally {
-        endDispatch(prev);
-      }
+      dispatch(argument, task);
     } else {
       executor().execute(() -> emit(argument, task));
     }
