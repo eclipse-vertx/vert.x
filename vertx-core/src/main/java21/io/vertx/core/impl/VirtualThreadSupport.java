@@ -23,7 +23,7 @@ public class VirtualThreadSupport {
   public static final boolean VIRTUAL_THREAD_AVAILABLE;
 
   static {
-    VIRTUAL_THREAD_FACTORY = Thread.ofVirtual().name("vert.x-virtual-thread-").factory();
+    VIRTUAL_THREAD_FACTORY = Thread.ofVirtual().name("vert.x-virtual-thread-", 0).factory();
     VIRTUAL_THREAD_AVAILABLE = true;
   }
 
@@ -33,4 +33,5 @@ public class VirtualThreadSupport {
   public static boolean isVirtual(Thread thread) {
     return thread.isVirtual();
   }
+
 }

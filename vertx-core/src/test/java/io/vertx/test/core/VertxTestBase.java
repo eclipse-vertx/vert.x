@@ -290,10 +290,6 @@ public class VertxTestBase extends AsyncTestBase {
     Assert.assertTrue(latch.await(180, TimeUnit.SECONDS));
   }
 
-  protected final boolean isVirtualThreadAvailable() {
-    return ((VertxInternal)vertx).isVirtualThreadAvailable();
-  }
-
   /**
    * @return create a blank new Vert.x instance with no options closed when tear down executes.
    */

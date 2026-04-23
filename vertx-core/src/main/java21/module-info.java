@@ -109,7 +109,7 @@ module io.vertx.core {
 
   // Testing
 
-  exports io.vertx.core.impl to io.vertx.core.tests;
+  exports io.vertx.core.impl to io.vertx.core.tests, io.vertx.core.java21.tests;
   exports io.vertx.core.impl.cpu to io.vertx.core.tests;
   exports io.vertx.core.impl.future to io.vertx.core.tests;
   exports io.vertx.core.impl.utils to io.vertx.core.tests;
