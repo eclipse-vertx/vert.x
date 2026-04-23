@@ -14,9 +14,7 @@ package io.vertx.core.eventbus;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 
 /**
@@ -127,4 +125,18 @@ public interface Message<T> {
     reply(new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message));
   }
 
+  /**
+   * Acknowledge that processing of this message is complete (for tracing purposes).
+   * <p>
+   * This method is only relevant when the consumer is configured with manual ack mode
+   * (see {@link MessageConsumerOptions#setAutoAck(boolean)}).
+   * <p>
+   * In automatic mode (default), this method has no effect as ack is signaled
+   * automatically when the message handler returns.
+   * <p>
+   * For request/reply messages, calling {@link #reply(Object)}
+   * automatically acks the message, so this method needs not to be called.
+   */
+  default void ack() {
+  }
 }

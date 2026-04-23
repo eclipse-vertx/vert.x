@@ -33,7 +33,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   Object trace;
 
   ReplyHandler(EventBusImpl eventBus, ContextInternal context, String address, String repliedAddress, boolean src, long timeout) {
-    super(context, eventBus, address, src);
+    super(context, eventBus, address, src, true);
     this.result = context.promise();
     this.repliedAddress = repliedAddress;
     this.timeoutID = context.setTimer(timeout, this);
