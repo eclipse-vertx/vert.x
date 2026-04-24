@@ -14,7 +14,7 @@ public class VertxTestBase2 {
   protected Vertx vertx;
 
   @Before
-  public void setUp(Vertx vertx) {
+  public void setUp(Vertx vertx) throws Exception {
     this.vertx = vertx;
   }
 }
