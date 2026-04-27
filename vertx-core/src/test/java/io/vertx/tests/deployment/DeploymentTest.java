@@ -13,6 +13,7 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
+import io.vertx.core.impl.VirtualThreadSupport;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.deployment.DeploymentContext;
@@ -22,6 +23,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.tests.timer.TimerTest;
 import io.vertx.tests.vertx.VertxTest;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -1592,6 +1594,19 @@ public class DeploymentTest extends VertxTestBase {
         break;
       }
     }
+  }
+
+  @Test
+  public void testVirtualThreadsNotAvailable() {
+    Assume.assumeFalse(VirtualThreadSupport.VIRTUAL_THREAD_AVAILABLE);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+      }
+    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD)).onComplete(TestUtils.onFailure(err -> {
+      testComplete();
+    }));
+    await();
   }
 }
 

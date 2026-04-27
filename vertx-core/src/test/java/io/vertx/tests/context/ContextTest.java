@@ -1050,12 +1050,6 @@ public class ContextTest extends VertxTestBase {
     testAwaitFromContextThread(ThreadingModel.WORKER, true);
   }
 
-  @Test
-  public void testAwaitFromVirtualThreadThread() {
-    Assume.assumeTrue(isVirtualThreadAvailable());
-    testAwaitFromContextThread(ThreadingModel.VIRTUAL_THREAD, false);
-  }
-
   private void testAwaitFromContextThread(ThreadingModel threadMode, boolean fail) {
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
@@ -1071,37 +1065,6 @@ public class ContextTest extends VertxTestBase {
         }
       }
     }, new DeploymentOptions().setThreadingModel(threadMode)).onComplete(onSuccess(v -> testComplete()));
-    await();
-  }
-
-  @Test
-  public void testInterruptThreadOnAwait() {
-    Assume.assumeTrue(isVirtualThreadAvailable());
-    vertx.deployVerticle(() -> new AbstractVerticle() {
-      @Override
-      public void start() {
-        Thread current = Thread.currentThread();
-        Promise<String> promise = Promise.promise();
-        new Thread(() -> {
-          while (current.getState() != Thread.State.WAITING) {
-            try {
-              Thread.sleep(10);
-            } catch (InterruptedException e) {
-              throw new RuntimeException(e);
-            }
-          }
-          current.interrupt();
-        }).start();
-        try {
-          Future.await(promise.future());
-          fail();
-        } catch (Exception expected) {
-          assertFalse(current.isInterrupted());
-          assertEquals(expected.getClass(), InterruptedException.class);
-          testComplete();
-        }
-      }
-    }, new DeploymentOptions().setThreadingModel(ThreadingModel.VIRTUAL_THREAD));
     await();
   }
 
@@ -1188,17 +1151,6 @@ public class ContextTest extends VertxTestBase {
     });
   }
 
-  @Test
-  public void testInterruptSuspendedVirtualThreadTask() throws Exception {
-    Assume.assumeTrue(isVirtualThreadAvailable());
-    ContextInternal ctx = ((VertxInternal)vertx).createVirtualThreadContext();
-    testInterruptTask(ctx, (task) -> {
-      ctx.runOnContext(v -> {
-        task.run();
-      });
-    });
-  }
-
   public void testInterruptTask(ContextInternal context, Consumer<Runnable> actor) throws Exception {
     CountDownLatch blockingLatch = new CountDownLatch(1);
     CountDownLatch closeLatch = new CountDownLatch(1);
@@ -1243,15 +1195,5 @@ public class ContextTest extends VertxTestBase {
     assertSame(ContextInternal.LOCAL_MAP, locals.get(0));
     assertSame(contextLocal, locals.get(1));
     assertSame(locals, ((VertxInternal) vertx).contextLocals());
-  }
-
-  @Test
-  public void testVirtualThreadContextHasPoolMetrics() {
-    Assume.assumeTrue(isVirtualThreadAvailable());
-    Vertx vertxWithMetrics = Vertx.builder()
-      .withMetrics(new FakeMetricsFactory())
-      .build();
-    ContextInternal context = ((VertxImpl) vertxWithMetrics).createVirtualThreadContext();
-    assertNotNull(context.workerPool().metrics());
   }
 }

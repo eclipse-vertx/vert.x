@@ -128,7 +128,17 @@ When you are unsure of the string validity then you should use instead `{@link i
 {@link examples.JsonExamples#example5}
 ----
 
-=== Jackson configuration
+=== Jackson
+
+`JsonObject` / `JsonArray`encoding and decoding is backed by the Jackson library, {@link io.vertx.core.json.Json} static
+methods uses it as well.
+
+==== Supported Jackson versions
+
+Vert.x depends on the https://github.com/FasterXML/jackson/wiki/Jackson-Releases[latest available LTS version] of Jackson 2: 2.21.x
+
+Since Vert.x 5.1, Jackson 3 is supported and utilized when Jackson 2 is not available on the class/module path, the Jackson
+3 version shall be the latest available LTS version of Jackson 3: 3.1.x
 
 ==== Read constraint configuration
 
@@ -145,3 +155,9 @@ You can override the default configuration of the underlying parsers used by Ver
 
 You can refer to https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-core/latest/index.html[this] for more information.
 
+==== Databind support
+
+Jackson Databind extension is supported, powering JSON/Object mapping facilities such as {@link io.vertx.core.json.JsonObject#mapTo(java.lang.Class)} or {@link io.vertx.core.json.Json#encode(java.lang.Object)}.
+
+By choice, Jackson Databind is not a dependency of `io.vertx:vertx-core`, it should be explicitly as a dependency of your
+project.

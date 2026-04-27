@@ -11,12 +11,16 @@
 
 package io.vertx.core.json.jackson;
 
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.spi.json.JsonCodec;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class JacksonFactory implements io.vertx.core.spi.JsonFactory {
+
+  private static final Logger logger = LoggerFactory.getLogger(JacksonFactory.class);
 
   public static final JacksonFactory INSTANCE = new JacksonFactory();
 
@@ -26,8 +30,11 @@ public class JacksonFactory implements io.vertx.core.spi.JsonFactory {
     JacksonCodec codec;
     try {
       codec = new DatabindCodec();
-    } catch (Throwable ignore) {
+      logger.debug("Using io.vertx.core.json.DatabindCodec");
+    } catch (Throwable reason) {
       // No databind
+      logger.debug("Jackson databind not found: " + reason.getMessage());
+      logger.debug("Using io.vertx.core.json.JacksonCodec");
       codec = new JacksonCodec();
     }
     CODEC = codec;

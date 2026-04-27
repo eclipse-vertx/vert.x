@@ -3,7 +3,7 @@ import io.vertx.tests.deployment.ClasspathVerticleFactory;
 
 open module io.vertx.core.tests {
 
-  requires io.vertx.codegen.api;
+  requires static io.vertx.codegen.api;
   requires io.vertx.core;
   requires io.vertx.core.logging;
 
@@ -18,7 +18,7 @@ open module io.vertx.core.tests {
 
   requires static jmh.core;
 
-  requires transitive com.fasterxml.jackson.core;
+  requires static com.fasterxml.jackson.core;
   requires static com.fasterxml.jackson.annotation;
   requires static com.fasterxml.jackson.databind;
 
@@ -45,6 +45,10 @@ open module io.vertx.core.tests {
   exports io.vertx.tests.ha;
   exports io.vertx.tests.eventbus;
   exports io.vertx.tests.shareddata;
+
+  // Jackson v3 codec testing
+  exports io.vertx.tests.json;
+  exports io.vertx.tests.json.jackson;
 
   exports io.vertx.test.core;
   exports io.vertx.test.fakecluster;

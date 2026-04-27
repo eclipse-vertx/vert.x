@@ -13,6 +13,7 @@ package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.io.SegmentedStringWriter;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.ByteArrayBuilder;
 import io.netty.buffer.ByteBufInputStream;
@@ -109,16 +110,15 @@ public class JacksonCodec implements JsonCodec {
     }
 
     tsfBuilder.streamReadConstraints(readConstraintsBuilder.build());
+
+    // Non-standard JSON but we allow C style comments in our JSON
+    tsfBuilder.configure(JsonReadFeature.ALLOW_JAVA_COMMENTS, true);
+
     tsfBuilder.recyclerPool(HybridJacksonPool.getInstance());
     return tsfBuilder.build();
   }
 
   static final JsonFactory factory = buildFactory();
-
-  static {
-    // Non-standard JSON but we allow C style comments in our JSON
-    JacksonCodec.factory.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-  }
 
   @Override
   public <T> T fromString(String json, Class<T> clazz) throws DecodeException {

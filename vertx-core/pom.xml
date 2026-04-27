@@ -431,14 +431,14 @@
             </configuration>
           </execution>
           <execution>
-            <id>jackson-config-override</id>
+            <id>jackson-read-constraints-override</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/JacksonConfigOverrideTest.java</include>
+                <include>io/vertx/it/jackson/JacksonReadConstraintsOverrideTest.java</include>
               </includes>
               <systemProperties>
                 <vertx.jackson.defaultReadMaxNestingDepth>100</vertx.jackson.defaultReadMaxNestingDepth>
@@ -448,21 +448,41 @@
                 <vertx.jackson.defaultReadMaxNameLength>100</vertx.jackson.defaultReadMaxNameLength>
                 <vertx.jackson.defaultReadMaxTokenCount>100</vertx.jackson.defaultReadMaxTokenCount>
               </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
-            <id>no-jackson</id>
+            <id>jackson-absence</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
             <configuration>
               <includes>
-                <include>io/vertx/it/json/NoJacksonTest.java</include>
+                <include>io/vertx/it/jackson/JacksonAbsenceTest.java</include>
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jackson-databind-absence</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/jackson/JacksonDatabindAbsenceTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -482,21 +502,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>no-jackson-databind</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/json/NoDatabindTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
             <id>custom-json-factory</id>
             <goals>
               <goal>integration-test</goal>
@@ -512,6 +517,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                <classpathDependencyExclude>tools.jackson.core:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -761,6 +767,50 @@
   </build>
 
   <profiles>
+
+    <profile>
+      <id>Java21</id>
+      <activation>
+        <jdk>[21,)</jdk>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>tools.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>tools.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </dependency>
+      </dependencies>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>Java21</id>
+                  <goals>
+                    <goal>compile</goal>
+                  </goals>
+                  <configuration>
+                    <release>21</release>
+                    <compilerArgs>
+                      <arg>--patch-module=io.vertx.core=${project.basedir}/target/classes</arg>
+                    </compilerArgs>
+                    <compileSourceRoots>
+                      <compileSourceRoot>${project.basedir}/src/main/java21</compileSourceRoot>
+                    </compileSourceRoots>
+                    <multiReleaseOutput>true</multiReleaseOutput>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
 
     <profile>
       <id>NativeEpoll</id>

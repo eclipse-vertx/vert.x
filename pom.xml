@@ -70,4 +70,83 @@
     <module>vertx-core</module>
   </modules>
 
+  <profiles>
+
+    <!-- Build Jackson V3 tests -->
+    <profile>
+      <id>Java21</id>
+      <activation>
+        <jdk>[21,)</jdk>
+      </activation>
+      <modules>
+        <module>vertx-core-logging</module>
+        <module>vertx-core</module>
+        <module>vertx-core-java21-tests</module>
+      </modules>
+    </profile>
+
+    <!--
+      This profile can be activated when a toolchain is required, the main use case is building
+      with Java 21 features with any JDK, e.g. mvn install -PJava21,toolchain
+    -->
+    <profile>
+      <id>toolchain</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-toolchains-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>toolchain</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <toolchains>
+                <jdk>
+                  <version>11</version>
+                </jdk>
+                <jdk>
+                  <version>21</version>
+                </jdk>
+              </toolchains>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Ensure that a release is capable of releasing Jackson v3 -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-jackson-v3</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <skip>${skipEnforcer}</skip>
+                  <rules>
+                    <requireActiveProfile>
+                      <profiles>toolchain,Java21</profiles>
+                    </requireActiveProfile>
+                  </rules>
+                  <fail>true</fail>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+  </profiles>
 </project>
