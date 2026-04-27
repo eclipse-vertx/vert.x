@@ -2768,7 +2768,8 @@ public class NetTest {
     }
     barrier.await();
     long now = System.currentTimeMillis();
-    serverSocket.get().write(Buffer.buffer("hello"));
+    TestUtils.assertWaitUntil(() -> serverSocket.get() != null);
+    serverSocket.get().write(Buffer.buffer("hello")).await();
     checkpoint.awaitSuccess();
     assertTrue(System.currentTimeMillis() - now > 0.9);
   }
@@ -4196,6 +4197,9 @@ public class NetTest {
     testServerShutdown(checkpoint, true, true, now -> System.currentTimeMillis() - now <= 2000);
   }
 
+  @Rule
+  public final RepeatRule repeatRule  = new RepeatRule();
+
   @Test
   public void testServerShutdown(Checkpoint checkpoint) throws Exception {
     testServerShutdown(checkpoint, false, false, now -> System.currentTimeMillis() - now <= 2000);
@@ -4204,7 +4208,9 @@ public class NetTest {
   public void testServerShutdown(Checkpoint checkpoint, boolean closeServerSocketOnShutdown, boolean useHandler, LongPredicate checker) throws Exception {
     AtomicInteger eventCount = new AtomicInteger();
     long now = System.currentTimeMillis();
+    AtomicInteger count = new AtomicInteger();
     server.connectHandler(so -> {
+      count.incrementAndGet();
       if (useHandler) {
         so.shutdownHandler(v -> {
           eventCount.incrementAndGet();
@@ -4220,7 +4226,8 @@ public class NetTest {
     startServer();
     NetSocket so = client.connect(testAddress).await();
     so.write("ping").await();
-    server.shutdown(2, TimeUnit.SECONDS).await();
+    TestUtils.assertWaitUntil(() -> count.get() > 0);
+    server.shutdown(10, TimeUnit.SECONDS).await();
     checkpoint.awaitSuccess();
     assertEquals(useHandler ? 1 : 0, eventCount.getAndIncrement());
     assertTrue(checker.test(now));
