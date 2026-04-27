@@ -21,12 +21,14 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
       - name: Install JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v5
         with:
-          java-version: ${{ inputs.jdk }}
+          java-version: |
+            ${{ inputs.jdk }}
+            21
           distribution: temurin
       - name: Get project version
         run: echo "PROJECT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=project.version -q -DforceStdout | grep -v '\[')" >> $GITHUB_ENV
       - name: Maven deploy
         if: ${{ endsWith(env.PROJECT_VERSION, '-SNAPSHOT') }}
-        run: mvn deploy -s .github/maven-cd-settings.xml -DskipTests -B
+        run: mvn deploy -s .github/maven-cd-settings.xml -DskipTests -B -Ptoolchain,Java21
