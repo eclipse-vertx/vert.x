@@ -873,8 +873,6 @@ public class NetTest {
 
   @Test
   public void testWriteHandlerFailure() throws Exception {
-    // Todo : investigate this
-    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     AtomicReference<NetSocket> serverSocket = new AtomicReference<>();
     server.connectHandler(socket -> {
       serverSocket.set(socket);
@@ -3611,7 +3609,6 @@ public class NetTest {
   }
 
   private void testIdleTimeoutSendChunkedFile(Checkpoint checkpoint, boolean idleOnServer) throws Exception {
-    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
     File sent = TestUtils.tmpFile(".dat", expected);
     AtomicReference<AsyncResult<Void>> sendResult = new AtomicReference<>();
