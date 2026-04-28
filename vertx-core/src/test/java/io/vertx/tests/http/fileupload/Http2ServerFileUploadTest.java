@@ -11,6 +11,7 @@
 package io.vertx.tests.http.fileupload;
 
 import io.vertx.test.http.HttpConfig;
+import org.junit.Test;
 
 /**
  */
@@ -22,5 +23,10 @@ public class Http2ServerFileUploadTest extends HttpServerFileUploadTest {
 
   protected Http2ServerFileUploadTest(boolean multiplex) {
     super(new HttpConfig.H2(multiplex));
+  }
+
+  @Test
+  public void testClientResetMultipartUploadCleansDecoder() throws Exception {
+    super.testClientResetMultipartUploadCleansDecoder();
   }
 }

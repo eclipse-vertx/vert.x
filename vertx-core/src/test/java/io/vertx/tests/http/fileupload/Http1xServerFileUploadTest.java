@@ -22,6 +22,11 @@ public class Http1xServerFileUploadTest extends HttpServerFileUploadTest {
     super(HttpConfig.Http1x.DEFAULT);
   }
 
+  @Test
+  public void testClientResetMultipartUploadCleansDecoder() throws Exception {
+    super.testClientResetMultipartUploadCleansDecoder();
+  }
+
   @Ignore
   @Test
   @Override

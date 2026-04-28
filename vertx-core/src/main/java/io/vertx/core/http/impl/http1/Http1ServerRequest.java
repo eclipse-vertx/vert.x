@@ -567,8 +567,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
         } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                  HttpPostRequestDecoder.TooLongFormFieldException |
                  HttpPostRequestDecoder.TooManyFormFieldsException e) {
-          decoder.destroy();
-          decoder = null;
+          cleanupDecoder();
           handleException(e);
         }
       }
@@ -628,6 +627,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
             handleException(e);
+            return;
           } finally {
             attr.release();
           }
@@ -640,8 +640,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
     }  catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
       // ignore this as it is expected
     } finally {
-      decoder.destroy();
-      decoder = null;
+      cleanupDecoder();
     }
   }
 
@@ -649,11 +648,13 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
     InterfaceHttpData upload = null;
+    HttpPostRequestDecoder decoderToCleanup = null;
     synchronized (conn) {
       if (!isEnded()) {
         handler = eventHandler;
         if (decoder != null) {
           upload = decoder.currentPartialHttpData();
+          decoderToCleanup = decoder;
         }
       }
       if (!response.ended()) {
@@ -663,14 +664,37 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
         resp = response;
       }
     }
-    if (resp != null) {
-      resp.handleException(t);
+    try {
+      if (resp != null) {
+        resp.handleException(t);
+      }
+      if (upload instanceof NettyFileUpload) {
+        ((NettyFileUpload) upload).handleException(t);
+      }
+      if (handler != null) {
+        handler.handleException(t);
+      }
+    } finally {
+      cleanupDecoder(decoderToCleanup);
     }
-    if (upload instanceof NettyFileUpload) {
-      ((NettyFileUpload) upload).handleException(t);
+  }
+
+  private void cleanupDecoder() {
+    HttpPostRequestDecoder decoderToCleanup;
+    synchronized (conn) {
+      decoderToCleanup = decoder;
     }
-    if (handler != null) {
-      handler.handleException(t);
+    cleanupDecoder(decoderToCleanup);
+  }
+
+  private void cleanupDecoder(HttpPostRequestDecoder decoderToCleanup) {
+    if (decoderToCleanup != null) {
+      synchronized (conn) {
+        if (decoder == decoderToCleanup) {
+          decoder = null;
+        }
+      }
+      decoderToCleanup.destroy();
     }
   }
 
