@@ -354,60 +354,6 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * Add a handler asserting this Future completes with a success.
-   * <ul>
-   *   <li>When this future succeeds, the {@code handler} is called with the result.</li>
-   *   <li>When this future fails, an {@link AssertionError} is reported against the Vert.x instance allowing an
-   *   agent to be aware of the failure.</li>
-   * </ul>
-   * This is useful for asserting future outcome when writing unit tests, since the test runner can listen to
-   * reported assertion failures and update the test result.
-   * <p>
-   * <em><strong>WARNING</strong></em>: this is a terminal operation.
-   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
-   *
-   * @param handler the handler called with the result
-   * @return a reference to this, so it can be used fluently
-   */
-  default Future<T> assertSuccess(Handler<? super T> handler) {
-    return onComplete((result, failure) -> {
-        if (failure == null) {
-          handler.handle(result);
-        } else {
-          throw new AssertionError("Was not expecting a failure", failure);
-        }
-      }
-    );
-  }
-
-  /**
-   * Add a handler asserting this Future completes with a failure.
-   * <ul>
-   *   <li>When this future fails, the {@code handler} is called with the failure.</li>
-   *   <li>When this future succeeds, an {@link AssertionError} is reported against the Vert.x instance allowing an
-   *   agent to be aware of the unexpected success.</li>
-   * </ul>
-   * This is useful for asserting future outcome when writing unit tests, since the test runner can listen to
-   * reported assertion failures and update the test result.
-   * <p>
-   * <em><strong>WARNING</strong></em>: this is a terminal operation.
-   * If several {@code handler}s are registered, there is no guarantee that they will be invoked in order of registration.
-   *
-   * @param handler the handler called with the failure
-   * @return a reference to this, so it can be used fluently
-   */
-  default Future<T> assertFailure(Handler<? super Throwable> handler) {
-    return onComplete((result, failure) -> {
-        if (failure != null) {
-          handler.handle(failure);
-        } else {
-          throw new AssertionError("Was not expecting a success");
-        }
-      }
-    );
-  }
-
-  /**
    * The result of the operation. This will be null if the operation failed.
    *
    * @return the result or null if the operation failed.

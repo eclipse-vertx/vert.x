@@ -18,9 +18,6 @@ import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.FutureInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.test.core.Repeat;
-import io.vertx.test.core.TestUtils;
-import org.assertj.core.api.Assertions;
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -1624,59 +1621,6 @@ public class FutureTest extends FutureTestBase {
     });
     promise.fail(failure);
     await();
-  }
-
-  @Test
-  public void testSuccessAssertion() {
-    ContextInternal context = (ContextInternal)vertx.getOrCreateContext();
-    List<Throwable> reports = new CopyOnWriteArrayList<>();
-    context.exceptionHandler(reports::add);
-    Exception failure = new Exception();
-    Future<String> fut = context.failedFuture(failure);
-    fut.assertSuccess(res -> {
-    });
-    TestUtils.assertWaitUntil(() -> !reports.isEmpty());
-    Throwable err = reports.get(0);
-    Assertions.assertThat(err)
-      .isInstanceOf(AssertionError.class)
-      .cause()
-      .isSameAs(failure);
-    reports.clear();
-    fut = context.succeededFuture("res");
-    AtomicInteger passes = new AtomicInteger();
-    fut.assertSuccess(res -> {
-      passes.incrementAndGet();
-      vertx.runOnContext(v -> passes.incrementAndGet());
-    });
-    TestUtils.assertWaitUntil(() -> passes.get() == 2);
-    assertEquals(0, reports.size());
-  }
-
-  @Test
-  public void testFailureAssertion() {
-    ContextInternal context = (ContextInternal)vertx.getOrCreateContext();
-    List<Throwable> reports = new CopyOnWriteArrayList<>();
-    context.exceptionHandler(reports::add);
-    Future<String> fut = context.succeededFuture("res");
-    fut.assertFailure(err -> {
-    });
-    TestUtils.assertWaitUntil(() -> !reports.isEmpty());
-    Throwable err = reports.get(0);
-    Assertions.assertThat(err)
-      .isInstanceOf(AssertionError.class);
-    reports.clear();
-    Exception failure = new Exception();
-    fut = context.failedFuture(failure);
-    AtomicReference<Throwable> ref = new AtomicReference<>();
-    AtomicInteger passes = new AtomicInteger();
-    fut.assertFailure(cause -> {
-      ref.set(cause);
-      passes.incrementAndGet();
-      vertx.runOnContext(v -> passes.incrementAndGet());
-    });
-    TestUtils.assertWaitUntil(() -> passes.get() == 2);
-    Assert.assertSame(failure, ref.get());
-    Assert.assertEquals(0, reports.size());
   }
 
   @Test
