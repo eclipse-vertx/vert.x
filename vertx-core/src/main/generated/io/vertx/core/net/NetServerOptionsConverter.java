@@ -59,21 +59,6 @@ public class NetServerOptionsConverter {
             obj.setTrafficShapingOptions(new io.vertx.core.net.TrafficShapingOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
-        case "tcpKeepAliveIdleSeconds":
-          if (member.getValue() instanceof Number) {
-            obj.setTcpKeepAliveIdleSeconds(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "tcpKeepAliveCount":
-          if (member.getValue() instanceof Number) {
-            obj.setTcpKeepAliveCount(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "tcpKeepAliveIntervalSeconds":
-          if (member.getValue() instanceof Number) {
-            obj.setTcpKeepAliveIntervalSeconds(((Number)member.getValue()).intValue());
-          }
-          break;
         case "registerWriteHandler":
           if (member.getValue() instanceof Boolean) {
             obj.setRegisterWriteHandler((Boolean)member.getValue());
@@ -105,9 +90,6 @@ public class NetServerOptionsConverter {
     if (obj.getTrafficShapingOptions() != null) {
       json.put("trafficShapingOptions", obj.getTrafficShapingOptions().toJson());
     }
-    json.put("tcpKeepAliveIdleSeconds", obj.getTcpKeepAliveIdleSeconds());
-    json.put("tcpKeepAliveCount", obj.getTcpKeepAliveCount());
-    json.put("tcpKeepAliveIntervalSeconds", obj.getTcpKeepAliveIntervalSeconds());
     json.put("registerWriteHandler", obj.isRegisterWriteHandler());
   }
 }
