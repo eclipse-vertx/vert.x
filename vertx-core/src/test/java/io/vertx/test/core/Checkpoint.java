@@ -7,7 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class Checkpoint implements Completable<Void> {
+public final class Checkpoint implements Completable<Object> {
 
   static final Exception SUCCESS = new Exception();
 
@@ -15,7 +15,7 @@ public final class Checkpoint implements Completable<Void> {
   final CountDownLatch latch = new CountDownLatch(1);
 
   @Override
-  public void complete(Void result, Throwable failure) {
+  public void complete(Object result, Throwable failure) {
     synchronized (this) {
       if (completion != null) {
         return;
