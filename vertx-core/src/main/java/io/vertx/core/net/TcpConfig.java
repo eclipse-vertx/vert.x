@@ -12,6 +12,9 @@ package io.vertx.core.net;
 
 import io.vertx.core.impl.Arguments;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static io.vertx.core.net.TCPSSLOptions.DEFAULT_SO_LINGER;
 
 /**
@@ -23,14 +26,10 @@ public class TcpConfig extends TransportConfig {
   private int receiveBufferSize;
   private int trafficClass;
   private boolean reuseAddress;
-  private boolean reusePort;
-  private boolean tcpNoDelay;
-  private boolean tcpKeepAlive;
+  private boolean soReusePort;
+  private boolean soKeepAlive;
   private int soLinger;
-  private boolean tcpFastOpen;
-  private boolean tcpCork;
-  private boolean tcpQuickAck;
-  private int tcpUserTimeout;
+  private Map<TcpOption<?>, Object> options;
 
   public TcpConfig() {
     init();
@@ -42,14 +41,10 @@ public class TcpConfig extends TransportConfig {
     this.receiveBufferSize = other.getReceiveBufferSize();
     this.reuseAddress = other.isReuseAddress();
     this.trafficClass = other.getTrafficClass();
-    this.reusePort = other.isReusePort();
-    this.tcpNoDelay = other.isTcpNoDelay();
-    this.tcpKeepAlive = other.isTcpKeepAlive();
+    this.soReusePort = other.isSoReusePort();
+    this.soKeepAlive = other.isSoKeepAlive();
     this.soLinger = other.getSoLinger();
-    this.tcpFastOpen = other.isTcpFastOpen();
-    this.tcpCork = other.isTcpCork();
-    this.tcpQuickAck = other.isTcpQuickAck();
-    this.tcpUserTimeout = other.getTcpUserTimeout();
+    this.options = other.options != null ? new HashMap<>(other.options) : null;
   }
 
   void init() {
@@ -57,14 +52,9 @@ public class TcpConfig extends TransportConfig {
     receiveBufferSize = NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE;
     reuseAddress = NetworkOptions.DEFAULT_REUSE_ADDRESS;
     trafficClass = NetworkOptions.DEFAULT_TRAFFIC_CLASS;
-    reusePort = NetworkOptions.DEFAULT_REUSE_PORT;
-    tcpNoDelay = TCPSSLOptions.DEFAULT_TCP_NO_DELAY;
-    tcpKeepAlive = TCPSSLOptions.DEFAULT_TCP_KEEP_ALIVE;
+    soReusePort = NetworkOptions.DEFAULT_REUSE_PORT;
     soLinger = DEFAULT_SO_LINGER;
-    tcpFastOpen = TCPSSLOptions.DEFAULT_TCP_FAST_OPEN;
-    tcpCork = TCPSSLOptions.DEFAULT_TCP_CORK;
-    tcpQuickAck = TCPSSLOptions.DEFAULT_TCP_QUICKACK;
-    tcpUserTimeout = TCPSSLOptions.DEFAULT_TCP_USER_TIMEOUT;
+    options = null;
   }
 
   @Override
@@ -153,8 +143,8 @@ public class TcpConfig extends TransportConfig {
   /**
    * @return  the value of reuse address - only supported by native transports
    */
-  public boolean isReusePort() {
-    return reusePort;
+  public boolean isSoReusePort() {
+    return soReusePort;
   }
 
   /**
@@ -162,47 +152,29 @@ public class TcpConfig extends TransportConfig {
    * <p/>
    * This is only supported by native transports.
    *
-   * @param reusePort  the value of reuse port
+   * @param soReusePort  the value of reuse port
    * @return a reference to this, so the API can be used fluently
    */
-  public TcpConfig setReusePort(boolean reusePort) {
-    this.reusePort = reusePort;
+  public TcpConfig setSoReusePort(boolean soReusePort) {
+    this.soReusePort = soReusePort;
     return this;
   }
 
   /**
-   * @return TCP no delay enabled ?
+   * @return is keep alive enabled?
    */
-  public boolean isTcpNoDelay() {
-    return tcpNoDelay;
+  public boolean isSoKeepAlive() {
+    return soKeepAlive;
   }
 
   /**
-   * Set whether TCP no delay is enabled
+   * Set whether keep alive is enabled
    *
-   * @param tcpNoDelay true if TCP no delay is enabled (Nagle disabled)
+   * @param keepAlive true if keep alive is enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public TcpConfig setTcpNoDelay(boolean tcpNoDelay) {
-    this.tcpNoDelay = tcpNoDelay;
-    return this;
-  }
-
-  /**
-   * @return is TCP keep alive enabled?
-   */
-  public boolean isTcpKeepAlive() {
-    return tcpKeepAlive;
-  }
-
-  /**
-   * Set whether TCP keep alive is enabled
-   *
-   * @param tcpKeepAlive true if TCP keep alive is enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TcpConfig setTcpKeepAlive(boolean tcpKeepAlive) {
-    this.tcpKeepAlive = tcpKeepAlive;
+  public TcpConfig setSoKeepAlive(boolean keepAlive) {
+    this.soKeepAlive = keepAlive;
     return this;
   }
 
@@ -229,74 +201,34 @@ public class TcpConfig extends TransportConfig {
   }
 
   /**
-   * @return wether {@code TCP_FASTOPEN} option is enabled
-   */
-  public boolean isTcpFastOpen() {
-    return tcpFastOpen;
-  }
-
-  /**
-   * Enable the {@code TCP_FASTOPEN} option - only with linux native transport.
+   * Returns a configurable TCP option.
    *
-   * @param tcpFastOpen the fast open value
+   * @param option the option to probe
+   * @return the option value or {@code null} when not set
    */
-  public TcpConfig setTcpFastOpen(boolean tcpFastOpen) {
-    this.tcpFastOpen = tcpFastOpen;
-    return this;
+  public <T> T getOption(TcpOption<T> option) {
+    return options != null ? option.type.cast(options.get(option)) : null;
   }
 
   /**
-   * @return wether {@code TCP_CORK} option is enabled
-   */
-  public boolean isTcpCork() {
-    return tcpCork;
-  }
-
-  /**
-   * Enable the {@code TCP_CORK} option - only with linux native transport.
+   * Configure a TCP option.
    *
-   * @param tcpCork the cork value
+   * @param option the option to configure
+   * @param value the value to set or {@code null} to unset
+   * @return a reference to this, so the API can be used fluently
    */
-  public TcpConfig setTcpCork(boolean tcpCork) {
-    this.tcpCork = tcpCork;
-    return this;
-  }
-
-  /**
-   * @return wether {@code TCP_QUICKACK} option is enabled
-   */
-  public boolean isTcpQuickAck() {
-    return tcpQuickAck;
-  }
-
-  /**
-   * Enable the {@code TCP_QUICKACK} option - only with linux native transport.
-   *
-   * @param tcpQuickAck the quick ack value
-   */
-  public TcpConfig setTcpQuickAck(boolean tcpQuickAck) {
-    this.tcpQuickAck = tcpQuickAck;
-    return this;
-  }
-
-  /**
-   *
-   * @return the {@code TCP_USER_TIMEOUT} value
-   */
-  public int getTcpUserTimeout() {
-    return tcpUserTimeout;
-  }
-
-  /**
-   * Sets the {@code TCP_USER_TIMEOUT} option - only with linux native transport.
-   *
-   * @param tcpUserTimeout the tcp user timeout value
-   */
-  public TcpConfig setTcpUserTimeout(int tcpUserTimeout) {
-    if (tcpUserTimeout < 0) {
-      throw new IllegalArgumentException("tcpUserTimeout must be >= 0");
+  public <T> TcpConfig setOption(TcpOption<T> option, T value) {
+    if (value == null) {
+      if (options != null) {
+        options.remove(option);
+      }
+    } else {
+      option.validate(value);
+      if (options == null) {
+        options = new HashMap<>();
+      }
+      options.put(option, value);
     }
-    this.tcpUserTimeout = tcpUserTimeout;
     return this;
   }
 }

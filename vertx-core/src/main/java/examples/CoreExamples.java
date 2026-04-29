@@ -522,7 +522,7 @@ public class CoreExamples {
 
     // Available on BSD
     tcpConfig
-      .setReusePort(reusePort);
+      .setSoReusePort(reusePort);
 
     vertx.createHttpServer(config);
   }

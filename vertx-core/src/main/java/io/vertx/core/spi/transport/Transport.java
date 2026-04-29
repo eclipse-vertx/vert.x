@@ -19,6 +19,7 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.transports.NioTransport;
 import io.vertx.core.net.TcpConfig;
+import io.vertx.core.net.TcpOption;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.*;
@@ -142,23 +143,23 @@ public interface Transport {
     }
   }
 
-  default void configure(TcpConfig options, boolean domainSocket, Bootstrap bootstrap) {
+  default void configure(TcpConfig config, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
-      bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-      bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+      NioTransport.configOption(bootstrap, config, TcpOption.NODELAY, ChannelOption.TCP_NODELAY);
+      bootstrap.option(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive());
     }
-    if (options.getSoLinger() != -1) {
-      bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (config.getSoLinger() != -1) {
+      bootstrap.option(ChannelOption.SO_LINGER, config.getSoLinger());
     }
   }
 
-  default void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
+  default void configure(TcpConfig config, boolean domainSocket, ServerBootstrap bootstrap) {
     if (!domainSocket) {
-      bootstrap.childOption(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
-      bootstrap.childOption(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
+      NioTransport.configChildOption(bootstrap, config, TcpOption.NODELAY, ChannelOption.TCP_NODELAY);
+      bootstrap.childOption(ChannelOption.SO_KEEPALIVE, config.isSoKeepAlive());
     }
-    if (options.getSoLinger() != -1) {
-      bootstrap.childOption(ChannelOption.SO_LINGER, options.getSoLinger());
+    if (config.getSoLinger() != -1) {
+      bootstrap.childOption(ChannelOption.SO_LINGER, config.getSoLinger());
     }
   }
 }
