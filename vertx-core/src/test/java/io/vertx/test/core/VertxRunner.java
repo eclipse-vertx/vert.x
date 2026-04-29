@@ -10,6 +10,7 @@ import org.junit.runners.model.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -79,16 +80,18 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     Checkpoint invocationCheckpoint = new Checkpoint();
     testContext.checkpoints.add(invocationCheckpoint);
     Method method = fMethod.getMethod();
-    Class<?>[] paramTypes = method.getParameterTypes();
-    Object[] params = new Object[paramTypes.length];
+    Parameter[] params = method.getParameters();
+    Object[] args = new Object[params.length];
     Annotation[][] paramsAnnotations = method.getParameterAnnotations();
     List<VertxInstance> vertxInstances = new ArrayList<>();
-    for (int i = 0;i < paramTypes.length;i++) {
-      if (paramTypes[i] == Checkpoint.class) {
+    for (int i = 0;i < params.length;i++) {
+      Parameter param = method.getParameters()[i];
+      Class<?> paramType = param.getType();
+      if (paramType == Checkpoint.class) {
         Checkpoint checkpoint = new Checkpoint();
-        params[i] = checkpoint;
+        args[i] = checkpoint;
         testContext.checkpoints.add(checkpoint);
-      } else if (paramTypes[i] == Vertx.class) {
+      } else if (paramType == Vertx.class) {
         Annotation[] paramAnnotations = paramsAnnotations[i];
         VertxProvider provider = null;
         for (Annotation paramAnnotation : paramAnnotations) {
@@ -116,7 +119,7 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
           throw new RuntimeException(e);
         }
         vertxInstances.add(new VertxInstance(provider, vertx));
-        params[i] = vertx;
+        args[i] = vertx;
         vertx.exceptionHandler(err -> {
           reportFailure(test, err);
         });
@@ -124,7 +127,7 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     }
     failureReporterMap.put(test, testContext);
     try {
-      method.invoke(test, (Object[]) params);
+      method.invoke(test, (Object[]) args);
     } catch (InvocationTargetException e) {
       PlatformDependent.throwException(e.getCause());
     } catch (IllegalAccessException e) {
@@ -136,7 +139,7 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
       // Now awaits checkpoints
       for (Checkpoint checkpoint : testContext.checkpoints) {
         if (!checkpoint.latch.await(10, TimeUnit.SECONDS)) {
-          throw new TimeoutException();
+          throw new TimeoutException("Unsatisfied checkpoint " + checkpoint.name);
         }
         checkpoint.awaitSuccess();
       }
