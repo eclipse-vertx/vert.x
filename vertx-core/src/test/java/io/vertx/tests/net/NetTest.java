@@ -2050,14 +2050,14 @@ public class NetTest {
         SocketAddress sockAddress = addresses.get(i);
         client
           .connect(sockAddress)
-          .assertSuccess(so -> {
+          .onComplete(onSuccess(so -> {
             Buffer received = Buffer.buffer();
             so.handler(received::appendBuffer);
             so.closeHandler(v -> {
               assertEquals(received.toString(), sockAddress.path());
               latch.countDown();
             });
-          });
+          }));
       }
     }
   }
@@ -2489,7 +2489,7 @@ public class NetTest {
             assertSame(thr, Thread.currentThread());
           }
         });
-        server.listen(testAddress).assertSuccess(s -> {
+        server.listen(testAddress).onComplete(onSuccess(s -> {
           assertSame(ctx, context);
           if (!worker) {
             assertSame(thr, Thread.currentThread());
@@ -2497,7 +2497,7 @@ public class NetTest {
           client = vertx.createNetClient(new NetClientOptions());
           client
             .connect(testAddress)
-            .assertSuccess(sock -> {
+            .onComplete(onSuccess(sock -> {
             assertSame(ctx, context);
             if (!worker) {
               assertSame(thr, Thread.currentThread());
@@ -2515,8 +2515,8 @@ public class NetTest {
                 checkpoint.succeed();
               }
             });
-          });
-        });
+          }));
+        }));
       }
     }
     MyVerticle verticle = new MyVerticle();
@@ -2617,13 +2617,13 @@ public class NetTest {
             assertSame(context, Vertx.currentContext());
             checkpoint2.succeed();
           });
-        }).listen(testAddress).assertSuccess(s -> {
+        }).listen(testAddress).onComplete(onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
           NetClient client = vertx.createNetClient();
           client.connect(testAddress)
-            .assertSuccess(res -> {
+            .onComplete(onSuccess(res -> {
             assertTrue(Vertx.currentContext().isWorkerContext());
             assertTrue(Context.isOnWorkerThread());
             assertSame(context, Vertx.currentContext());
@@ -2634,8 +2634,8 @@ public class NetTest {
               assertSame(context, Vertx.currentContext());
               res.close();
             });
-          });
-        });
+          }));
+        }));
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
   }
@@ -3213,7 +3213,7 @@ public class NetTest {
       @Override
       public void start() {
         NetClient client = vertx.createNetClient();
-        client.connect(testAddress).assertSuccess(so ->{
+        client.connect(testAddress).onComplete(onSuccess(so ->{
           assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();
           so.handler(buff -> {
@@ -3229,7 +3229,7 @@ public class NetTest {
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }
-        });
+        }));
 
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
@@ -3390,7 +3390,7 @@ public class NetTest {
     server.listen().await();
     client
       .connect(1234, "localhost")
-      .assertSuccess(so -> {
+      .onComplete(onSuccess(so -> {
         NetSocketInternal soInt = (NetSocketInternal) so;
         assertEquals(expectSSL, soInt.isSsl());
         ChannelHandlerContext chctx = soInt.channelHandlerContext();
@@ -3422,7 +3422,7 @@ public class NetTest {
         soInt
           .writeMessage(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/somepath"))
           .onComplete(checkpoint2);
-      });
+      }));
   }
 
   @Test
@@ -3551,7 +3551,7 @@ public class NetTest {
     startServer();
     client
       .connect(testAddress)
-      .assertSuccess(so -> so.closeHandler(v -> checkpoint.succeed()));
+      .onComplete(onSuccess(so -> so.closeHandler(v -> checkpoint.succeed())));
   }
 
   @Test
@@ -3634,25 +3634,27 @@ public class NetTest {
       });
     });
     startServer();
-    client.connect(testAddress, "localhost").assertSuccess(so -> {
-      so.pause();
-      AtomicBoolean closed = new AtomicBoolean();
-      AtomicBoolean ended = new AtomicBoolean();
-      Buffer received = Buffer.buffer();
-      so.handler(received::appendBuffer);
-      so.closeHandler(v2 -> {
-        assertFalse(ended.get());
-        assertEquals(Buffer.buffer(), received);
-        closed.set(true);
-        so.resume();
-      });
-      so.endHandler(v -> {
-        assertEquals(expected.toString(), received.toString());
-        assertTrue(closed.get());
-        ended.set(true);
-        checkpoint.succeed();
-      });
-    });
+    client
+      .connect(testAddress, "localhost")
+      .onComplete(onSuccess(so -> {
+        so.pause();
+        AtomicBoolean closed = new AtomicBoolean();
+        AtomicBoolean ended = new AtomicBoolean();
+        Buffer received = Buffer.buffer();
+        so.handler(received::appendBuffer);
+        so.closeHandler(v2 -> {
+          assertFalse(ended.get());
+          assertEquals(Buffer.buffer(), received);
+          closed.set(true);
+          so.resume();
+        });
+        so.endHandler(v -> {
+          assertEquals(expected.toString(), received.toString());
+          assertTrue(closed.get());
+          ended.set(true);
+          checkpoint.succeed();
+        });
+      }));
   }
 
   @Test
@@ -3858,9 +3860,9 @@ public class NetTest {
       .connectHandler(u -> fail("Should not be called"));
     startServer();
     client.connect(proxy.getPort(), proxy.getHost())
-      .assertSuccess(so -> {
+      .onComplete(onSuccess(so -> {
         so.closeHandler(event -> checkpoint.succeed());
-      });
+      }));
     try {
       checkpoint.awaitSuccess();
     } finally {

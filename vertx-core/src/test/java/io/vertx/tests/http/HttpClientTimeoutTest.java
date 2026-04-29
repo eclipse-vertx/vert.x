@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static io.vertx.test.core.TestUtils.onFailure;
+import static io.vertx.test.core.TestUtils.onSuccess;
 import static org.junit.Assert.*;
 
 public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
@@ -121,19 +123,19 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
             .send()
             .expecting(HttpResponseExpectation.SC_OK)
             .compose(HttpClientResponse::body))
-          .assertSuccess(buff -> {
+          .onComplete(onSuccess(buff -> {
             assertEquals("OK", buff.toString());
             latch.countDown();
-          });
+          }));
       } else {
         // Odd requests get a timeout less than the responseDelay, since we have a pool size of one and a delay all but
         // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
         // (requests + 1 / 2) connect attempts
         client
           .request(new RequestOptions(requestOptions).setConnectTimeout(responseDelay / 2))
-          .assertFailure(err -> {
+          .onComplete(onFailure(err -> {
             latch.countDown();
-          });
+          }));
       }
     }
 
@@ -155,9 +157,9 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
       public void start() throws Exception {
         client = vertx.createHttpClient(createBaseClientOptions(), new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0;i < n;i++) {
-          client.request(requestOptions).assertSuccess(req -> {
+          client.request(requestOptions).onComplete(onSuccess(req -> {
             req.idleTimeout(500);
-            req.send().assertSuccess(resp -> {
+            req.send().onComplete(onSuccess(resp -> {
               try {
                 Thread.sleep(150);
               } catch (InterruptedException e) {
@@ -165,8 +167,8 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
               }
               // Complete later, if some timeout tasks have been queued, this will be executed after
               vertx.runOnContext(v -> latch.countDown());
-            });
-          });
+            }));
+          }));
         }
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
@@ -183,12 +185,12 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     });
     client
       .request(requestOptions)
-      .assertSuccess(req -> {
+      .onComplete(onSuccess(req -> {
         req
           .exceptionHandler(exception::set)
           .idleTimeout(500)
           .end();
-    });
+    }));
   }
 
   @Test
@@ -231,18 +233,18 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
       });
     });
     startServer(testAddress);
-    client.request(requestOptions).assertSuccess(req -> {
-      req.response().assertFailure(err -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.response().onComplete(onFailure(rr -> {
         cp2.succeed();
-      });
-      req.setChunked(true).writeHead().assertSuccess(version -> req.idleTimeout(500));
+      }));
+      req.setChunked(true).writeHead().onComplete(onSuccess(version -> req.idleTimeout(500)));
       AtomicBoolean errored = new AtomicBoolean();
       req.exceptionHandler(err -> {
         if (errored.compareAndSet(false, true)) {
           cp3.succeed();
         }
       });
-    });
+    }));
   }
 
   @Test
@@ -253,8 +255,8 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     });
     startServer(testAddress);
     Buffer received = Buffer.buffer();
-    client.request(requestOptions).assertSuccess(req -> {
-      req.response().assertSuccess(resp -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.response().onComplete(onSuccess(resp -> {
         AtomicInteger count = new AtomicInteger();
         resp.exceptionHandler(t -> {
           if (count.getAndIncrement() == 0) {
@@ -274,7 +276,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
             Thread.currentThread().interrupt();
           }
         });
-      });
+      }));
       AtomicInteger count = new AtomicInteger();
       req.exceptionHandler(t -> {
         if (count.getAndIncrement() == 0) {
@@ -284,7 +286,7 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
         }
       });
       req.writeHead();
-    });
+    }));
   }
 
   @Test
@@ -293,13 +295,13 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     AtomicBoolean failed = new AtomicBoolean();
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setIdleTimeout(1000))
-      .compose(HttpClientRequest::send).assertFailure(t -> {
+      .compose(HttpClientRequest::send).onComplete(onFailure(t -> {
         // Catch the first, the second is going to be a connection closed exception when the
         // server is shutdown on testComplete
         if (failed.compareAndSet(false, true)) {
           checkpoint.succeed();
         }
-      });
+      }));
   }
 
   @Test
@@ -352,10 +354,10 @@ public abstract class HttpClientTimeoutTest extends HttpTestBase2 {
     for (int i = 0; i < 5; i++) {
       client.request(new RequestOptions(requestOptions).setIdleTimeout(500))
         .compose(HttpClientRequest::send)
-        .assertFailure(t -> {
+        .onComplete(onFailure(t -> {
           assertTrue(t instanceof TimeoutException);
           latch.countDown();
-        });
+        }));
     }
     // Now another request that should not timeout
     client.request(new RequestOptions(requestOptions).setIdleTimeout(3000))
