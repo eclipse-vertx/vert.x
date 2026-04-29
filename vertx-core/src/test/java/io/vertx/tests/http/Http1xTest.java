@@ -5697,4 +5697,21 @@ public class Http1xTest extends HttpTest {
       netClient.close();
     }
   }
+
+  // Host with no port (common when a proxy forwards hostname-only Host header)
+  @Test
+  public void testAbsoluteURINoPortInHostHeader() throws Exception {
+    server.requestHandler(req -> req.response().end(req.absoluteURI()));
+    startServer(testAddress);
+    Buffer body = client.request(new RequestOptions(requestOptions).setURI("/path"))
+      .compose(req -> {
+        req.putHeader("Host", "example.com");
+        return req.send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
+      })
+      .await();
+    Assert.assertEquals("absoluteURI() should not synthesize ':-1'", "http://example.com/path", body.toString());
+  }
+
 }
