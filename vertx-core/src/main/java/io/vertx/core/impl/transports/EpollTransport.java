@@ -18,12 +18,17 @@ import io.netty.channel.epoll.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
+import io.netty.channel.unix.UnixChannelOption;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.TcpConfig;
+import io.vertx.core.net.TcpOption;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.transport.Transport;
 
 import java.net.SocketAddress;
+
+import static io.vertx.core.impl.transports.NioTransport.configChildOption;
+import static io.vertx.core.impl.transports.NioTransport.configOption;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,7 +47,7 @@ public class EpollTransport implements Transport {
   }
 
   /**
-   * Set the number of of pending TFO connections in SYN-RCVD state for TCP_FASTOPEN
+   * Set the number of pending TFO connections in SYN-RCVD state for TCP_FASTOPEN
    * <p/>
    * If this value goes over a certain limit the server disables all TFO connections.
    */
@@ -126,29 +131,25 @@ public class EpollTransport implements Transport {
   }
 
   @Override
-  public void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
+  public void configure(TcpConfig config, boolean domainSocket, ServerBootstrap bootstrap) {
     if (!domainSocket) {
-      bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
-      if (options.isTcpFastOpen()) {
-        bootstrap.option(ChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
-      }
-      bootstrap.childOption(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
-      bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-      bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
+      bootstrap.option(UnixChannelOption.SO_REUSEPORT, config.isSoReusePort());
+      configOption(bootstrap, config, TcpOption.FASTOPEN, EpollChannelOption.TCP_FASTOPEN);
+      configChildOption(bootstrap, config, TcpOption.USER_TIMEOUT, EpollChannelOption.TCP_USER_TIMEOUT);
+      configChildOption(bootstrap, config, TcpOption.QUICKACK, EpollChannelOption.TCP_QUICKACK);
+      configChildOption(bootstrap, config, TcpOption.CORK, EpollChannelOption.TCP_CORK);
     }
-    Transport.super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(config, domainSocket, bootstrap);
   }
 
   @Override
-  public void configure(TcpConfig options, boolean domainSocket, Bootstrap bootstrap) {
+  public void configure(TcpConfig config, boolean domainSocket, Bootstrap bootstrap) {
     if (!domainSocket) {
-      if (options.isTcpFastOpen()) {
-        bootstrap.option(ChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
-      }
-      bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
-      bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-      bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
+      NioTransport.configOption(bootstrap, config, TcpOption.FASTOPEN_CONNECT, EpollChannelOption.TCP_FASTOPEN_CONNECT);
+      NioTransport.configOption(bootstrap, config, TcpOption.USER_TIMEOUT, EpollChannelOption.TCP_USER_TIMEOUT);
+      NioTransport.configOption(bootstrap, config, TcpOption.QUICKACK, EpollChannelOption.TCP_QUICKACK);
+      NioTransport.configOption(bootstrap, config, TcpOption.CORK, EpollChannelOption.TCP_CORK);
     }
-    Transport.super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(config, domainSocket, bootstrap);
   }
 }

@@ -10,19 +10,21 @@
  */
 package io.vertx.core.impl.transports;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFactory;
-import io.netty.channel.IoHandlerFactory;
-import io.netty.channel.ServerChannel;
+import io.netty.bootstrap.AbstractBootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.socket.nio.*;
+import io.vertx.core.net.TcpConfig;
+import io.vertx.core.net.TcpOption;
 import io.vertx.core.spi.transport.Transport;
 
 import java.net.SocketAddress;
 
 public class NioTransport implements Transport {
+
   /**
    * The NIO transport, always there.
    */
@@ -95,5 +97,19 @@ public class NioTransport implements Transport {
       return NioServerDomainSocketChannel::new;
     }
     return NioServerSocketChannel::new;
+  }
+
+  public static <T> void configOption(AbstractBootstrap<?, ?> bootstrap, TcpConfig config, TcpOption<T> tcpOption, ChannelOption<T> channelOption) {
+    T value = config.getOption(tcpOption);
+    if (value != null) {
+      bootstrap.option(channelOption, value);
+    }
+  }
+
+  public static <T> void configChildOption(ServerBootstrap bootstrap, TcpConfig config, TcpOption<T> tcpOption, ChannelOption<T> channelOption) {
+    T value = config.getOption(tcpOption);
+    if (value != null) {
+      bootstrap.childOption(channelOption, value);
+    }
   }
 }

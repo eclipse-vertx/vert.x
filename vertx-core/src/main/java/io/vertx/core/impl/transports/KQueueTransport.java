@@ -98,11 +98,11 @@ public class KQueueTransport implements Transport {
   }
 
   @Override
-  public void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
+  public void configure(TcpConfig config, boolean domainSocket, ServerBootstrap bootstrap) {
     if (!domainSocket) {
-      bootstrap.option(KQueueChannelOption.SO_REUSEPORT, options.isReusePort());
+      bootstrap.option(KQueueChannelOption.SO_REUSEPORT, config.isSoReusePort());
     }
-    Transport.super.configure(options, domainSocket, bootstrap);
+    Transport.super.configure(config, domainSocket, bootstrap);
   }
 
   @Override

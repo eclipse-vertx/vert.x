@@ -19,10 +19,14 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.channel.uring.*;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.TcpConfig;
+import io.vertx.core.net.TcpOption;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.spi.transport.Transport;
 
 import java.net.SocketAddress;
+
+import static io.vertx.core.impl.transports.NioTransport.configChildOption;
+import static io.vertx.core.impl.transports.NioTransport.configOption;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -129,31 +133,27 @@ public class IoUringTransport implements Transport {
   }
 
   @Override
-  public void configure(TcpConfig options, boolean domainSocket, ServerBootstrap bootstrap) {
+  public void configure(TcpConfig config, boolean domainSocket, ServerBootstrap bootstrap) {
     if (domainSocket) {
       throw new IllegalArgumentException();
     }
-    bootstrap.option(IoUringChannelOption.SO_REUSEPORT, options.isReusePort());
-    if (options.isTcpFastOpen()) {
-      bootstrap.option(IoUringChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
-    }
-    bootstrap.childOption(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
-    bootstrap.childOption(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-    bootstrap.childOption(IoUringChannelOption.TCP_CORK, options.isTcpCork());
-    Transport.super.configure(options, false, bootstrap);
+    bootstrap.option(IoUringChannelOption.SO_REUSEPORT, config.isSoReusePort());
+    configOption(bootstrap, config, TcpOption.FASTOPEN, IoUringChannelOption.TCP_FASTOPEN);
+    configChildOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
+    configChildOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
+    configChildOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
+    Transport.super.configure(config, false, bootstrap);
   }
 
   @Override
-  public void configure(TcpConfig options, boolean domainSocket, Bootstrap bootstrap) {
+  public void configure(TcpConfig config, boolean domainSocket, Bootstrap bootstrap) {
     if (domainSocket) {
       throw new IllegalArgumentException();
     }
-    if (options.isTcpFastOpen()) {
-      bootstrap.option(IoUringChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
-    }
-    bootstrap.option(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
-    bootstrap.option(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-    bootstrap.option(IoUringChannelOption.TCP_CORK, options.isTcpCork());
-    Transport.super.configure(options, false, bootstrap);
+    NioTransport.configOption(bootstrap, config, TcpOption.FASTOPEN_CONNECT, IoUringChannelOption.TCP_FASTOPEN_CONNECT);
+    NioTransport.configOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
+    NioTransport.configOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
+    NioTransport.configOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
+    Transport.super.configure(config, false, bootstrap);
   }
 }
