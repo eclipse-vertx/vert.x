@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.http.http3;
 
+import io.vertx.test.core.Checkpoint;
 import io.vertx.tests.http.HttpTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class Http3Test extends HttpTest {
   @Ignore("Introduce stream cancellation")
   @Test
   @Override
-  public void testResetClientRequestAwaitingResponse() {
+  public void testResetClientRequestAwaitingResponse(Checkpoint checkpoint) {
   }
 
   @Ignore("Implement compression")
@@ -35,7 +36,7 @@ public class Http3Test extends HttpTest {
   @Ignore("Requires fixe of stream cancellation")
   @Test
   @Override
-  public void testFollowRedirectPropagatesTimeout() {
+  public void testFollowRedirectPropagatesTimeout(Checkpoint checkpoint) {
   }
 
   @Ignore()
@@ -59,7 +60,7 @@ public class Http3Test extends HttpTest {
   @Ignore("Is this test valid ?")
   @Test
   @Override
-  public void testResetClientRequestResponseInProgress() throws Exception {
+  public void testResetClientRequestResponseInProgress(Checkpoint checkpoint) throws Exception {
   }
 
   @Ignore("Requires to implement client local address")
@@ -71,18 +72,18 @@ public class Http3Test extends HttpTest {
   @Ignore("Missing feature")
   @Test
   @Override
-  public void testDisableIdleTimeoutInPool() {
+  public void testDisableIdleTimeoutInPool(Checkpoint checkpoint) {
   }
 
   @Ignore("Cannot pass because stream channel does not detect the write failure")
   @Test
   @Override
-  public void testCancelPartialClientRequest() throws Exception {
+  public void testCancelPartialClientRequest(Checkpoint checkpoint) throws Exception {
   }
 
   @Ignore("Cannot pass because stream channel does not detect the write failure")
   @Test
   @Override
-  public void testCancelPartialServerResponse() throws Exception {
+  public void testCancelPartialServerResponse(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
   }
 }

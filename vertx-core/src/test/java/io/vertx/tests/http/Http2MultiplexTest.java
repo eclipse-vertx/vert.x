@@ -10,6 +10,7 @@
  */
 package io.vertx.tests.http;
 
+import io.vertx.test.core.Checkpoint;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -22,63 +23,54 @@ public class Http2MultiplexTest extends Http2Test {
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependency() throws Exception {
-    super.testStreamWeightAndDependency();
+  public void testStreamWeightAndDependency(Checkpoint checkpoint) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyChange() throws Exception {
-    super.testStreamWeightAndDependencyChange();
+  public void testStreamWeightAndDependencyChange(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3, Checkpoint checkpoint4) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testServerStreamPriorityNoChange() throws Exception {
-    super.testServerStreamPriorityNoChange();
+  public void testServerStreamPriorityNoChange(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testClientStreamPriorityNoChange() throws Exception {
-    super.testClientStreamPriorityNoChange();
+  public void testClientStreamPriorityNoChange(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
   public void testStreamWeightAndDependencyInheritance() throws Exception {
-    super.testStreamWeightAndDependencyInheritance();
   }
 
   @Test
   @Ignore
   @Override
   public void testDefaultStreamWeightAndDependency() throws Exception {
-    super.testDefaultStreamWeightAndDependency();
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyPushPromise() throws Exception {
-    super.testStreamWeightAndDependencyPushPromise();
+  public void testStreamWeightAndDependencyPushPromise(Checkpoint checkpoint) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testStreamWeightAndDependencyInheritancePushPromise() throws Exception {
-    super.testStreamWeightAndDependencyInheritancePushPromise();
+  public void testStreamWeightAndDependencyInheritancePushPromise(Checkpoint checkpoint) throws Exception {
   }
 
   @Test
   @Ignore
   @Override
-  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
-    super.testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed();
+  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed(Checkpoint checkpoint) throws Exception {
   }
 }

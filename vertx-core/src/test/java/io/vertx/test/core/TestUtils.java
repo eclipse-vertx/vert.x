@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -667,5 +668,14 @@ public class TestUtils {
         return false;
       }
     }
+  }
+
+  public static <T> Handler<T> atMostOnce(Consumer<T> consumer) {
+    AtomicBoolean called = new AtomicBoolean();
+    return result -> {
+      if (called.compareAndSet(false, true)) {
+        consumer.accept(result);
+      }
+    };
   }
 }
