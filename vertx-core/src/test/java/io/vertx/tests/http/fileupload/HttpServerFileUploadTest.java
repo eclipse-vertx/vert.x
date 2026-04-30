@@ -21,6 +21,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Assert;
 import org.junit.Test;
@@ -57,7 +58,9 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
     testDir = testFolder.newFolder();
   }
 
-  protected void testClientResetMultipartUploadCleansDecoder() throws Exception {
+  @Test
+  public void testClientResetMultipartUploadCleansDecoder() throws Exception {
+    Assume.assumeTrue(config.version() == HttpVersion.HTTP_1_1 || config.version() == HttpVersion.HTTP_2);
     AtomicReference<HttpClientRequest> clientRequest = new AtomicReference<>();
     AtomicBoolean completed = new AtomicBoolean();
     server.requestHandler(req -> {
@@ -77,8 +80,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
           }
         }));
         req.uploadHandler(upload -> {
-          upload.handler(buffer -> {
-          });
+          upload.handler(buffer -> {});
           HttpClientRequest request = clientRequest.get();
           if (request != null) {
             request.reset();
@@ -102,8 +104,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       request
         .putHeader(HttpHeaders.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary)
         .putHeader(HttpHeaders.CONTENT_LENGTH, "999999")
-        .response().onComplete(ar -> {
-        });
+        .response().onComplete(ar -> {});
       request.write(body);
     }));
     await();

@@ -616,9 +616,10 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   }
 
   private void endDecode() {
+    Exception failure = null;
     try {
       decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-      while (decoder.hasNext()) {
+      while (failure == null && decoder.hasNext()) {
         InterfaceHttpData data = decoder.next();
         if (data instanceof Attribute) {
           Attribute attr = (Attribute) data;
@@ -626,12 +627,14 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
             attributes().add(attr.getName(), attr.getValue());
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
-            handleException(e);
-            return;
+            failure = e;
           } finally {
             attr.release();
           }
         }
+      }
+      if (failure != null) {
+        handleException(failure);
       }
     } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
              HttpPostRequestDecoder.TooLongFormFieldException |
@@ -655,6 +658,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
         if (decoder != null) {
           upload = decoder.currentPartialHttpData();
           decoderToCleanup = decoder;
+          decoder = null;
         }
       }
       if (!response.ended()) {
@@ -683,17 +687,13 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
     HttpPostRequestDecoder decoderToCleanup;
     synchronized (conn) {
       decoderToCleanup = decoder;
+      decoder = null;
     }
     cleanupDecoder(decoderToCleanup);
   }
 
   private void cleanupDecoder(HttpPostRequestDecoder decoderToCleanup) {
     if (decoderToCleanup != null) {
-      synchronized (conn) {
-        if (decoder == decoderToCleanup) {
-          decoder = null;
-        }
-      }
       decoderToCleanup.destroy();
     }
   }
