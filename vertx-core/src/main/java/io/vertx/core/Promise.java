@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
  * The {@link #future()} method returns the {@link Future} associated with a promise, the future
  * can be used for getting notified of the promise completion and retrieve its value.
  * <p>
- * A promise extends {@code Handler<AsyncResult<T>>} so it can be used as a callback.
+ * A promise extends {@link Completable} so it can be used with {@link Future#onComplete(Completable)}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
