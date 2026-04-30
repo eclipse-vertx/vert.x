@@ -141,7 +141,7 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
       // Now awaits checkpoints
       for (Checkpoint checkpoint : testContext.checkpoints) {
         if (!checkpoint.latch.await(10, TimeUnit.SECONDS)) {
-          throw new TimeoutException("Unsatisfied checkpoint " + checkpoint.name);
+          throw new TimeoutException("Unsatisfied checkpoint");
         }
         checkpoint.awaitSuccess();
       }
