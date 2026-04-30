@@ -7,6 +7,8 @@ import org.junit.*;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.*;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -148,7 +150,17 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
     }
     return () -> {
       for (VertxInstance vertxInstance : vertxInstances) {
-        vertxInstance.provider.close(vertxInstance.vertx, Duration.ofSeconds(10));
+        try {
+          vertxInstance.provider.close(vertxInstance.vertx, Duration.ofSeconds(10));
+        } catch (Exception ignore) {
+        } finally {
+          if (vertxInstance.provider instanceof Closeable) {
+            try {
+              ((Closeable)vertxInstance.provider).close();
+            } catch (Exception ignore) {
+            }
+          }
+        }
       }
       return null;
     };
