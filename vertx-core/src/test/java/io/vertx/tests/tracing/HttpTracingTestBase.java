@@ -11,17 +11,24 @@
 package io.vertx.tests.tracing;
 
 import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingOptions;
+import io.vertx.test.core.ProvidedBy;
+import io.vertx.test.core.VertxProvider;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.SimpleHttpTest;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.SimpleHttpTest2;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
@@ -30,23 +37,39 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class HttpTracingTestBase extends SimpleHttpTest {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
+
+  public class TracingVertxProvider implements VertxProvider {
+
+    @Override
+    public Vertx call() throws Exception {
+      FakeTracer tracer = new FakeTracer();
+      HttpTracingTestBase.this.tracer = tracer;
+      return Vertx.builder()
+        .withTracer(options -> tracer)
+        .build();
+    }
+  }
 
   private FakeTracer tracer;
 
   protected HttpTracingTestBase(HttpConfig config) {
-    super(config, ReportMode.FORBIDDEN);
+    super(config);
   }
 
+  @Before
   @Override
-  protected VertxTracer getTracer() {
-    return tracer = new FakeTracer();
+  public void before(@ProvidedBy(TracingVertxProvider.class) Vertx vertx) throws Exception {
+    super.before(vertx);
   }
 
   @Test
   public void testHttpServerRequest() throws Exception {
     server.requestHandler(req -> {
-      Assert.assertNotNull(tracer.activeSpan());
+      assertNotNull(tracer.activeSpan());
       req.response().end();
     });
     startServer();
@@ -56,18 +79,18 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest {
       tracer.activate(rootSpan);
       client.request(HttpMethod.GET,"/1")
         .compose(HttpClientRequest::send).onComplete(TestUtils.onSuccess(resp -> {
-          Assert.assertEquals(rootSpan, tracer.activeSpan());
-          Assert.assertEquals(200, resp.statusCode());
+          assertEquals(rootSpan, tracer.activeSpan());
+          assertEquals(200, resp.statusCode());
         }));
     });
-    waitUntil(() -> tracer.getFinishedSpans().size() == 2);
+    TestUtils.waitUntil(() -> tracer.getFinishedSpans().size() == 2);
     assertSingleTrace(tracer.getFinishedSpans());
   }
 
   @Test
   public void testHttpServerRequestWithClient() throws Exception {
     server.requestHandler(req -> {
-      Assert.assertNotNull(tracer.activeSpan());
+      assertNotNull(tracer.activeSpan());
       switch (req.path()) {
         case "/1": {
           vertx.setTimer(10, id1 -> {
@@ -106,11 +129,11 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest {
           .expecting(HttpResponseExpectation.SC_OK)
           .compose(HttpClientResponse::end))
         .onComplete(TestUtils.onSuccess(v2 -> {
-          Assert.assertEquals(rootSpan, tracer.activeSpan());
+          assertEquals(rootSpan, tracer.activeSpan());
         }));
     });
     // client request to /1, server request /1, client request /2, server request /2
-    waitUntil(() -> tracer.getFinishedSpans().size() == 6);
+    TestUtils.waitUntil(() -> tracer.getFinishedSpans().size() == 6);
     assertSingleTrace(tracer.getFinishedSpans());
   }
 
@@ -121,7 +144,7 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest {
     AtomicBoolean ssl = new AtomicBoolean();
     server.requestHandler(serverReq -> {
       ssl.set(serverReq.isSSL());
-      Assert.assertNotNull(tracer.activeSpan());
+      assertNotNull(tracer.activeSpan());
       switch (serverReq.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
@@ -151,15 +174,15 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest {
       client.request(HttpMethod.GET,"/1")
         .compose(HttpClientRequest::send)
         .onComplete(TestUtils.onSuccess(resp -> {
-          Assert.assertEquals(rootSpan, tracer.activeSpan());
-          Assert.assertEquals(200, resp.statusCode());
+          assertEquals(rootSpan, tracer.activeSpan());
+          assertEquals(200, resp.statusCode());
         }));
     });
 
 
-    waitUntil(() -> tracer.getFinishedSpans().size() == 4);
+    TestUtils.waitUntil(() -> tracer.getFinishedSpans().size() == 4);
     List<Span> finishedSpans = tracer.getFinishedSpans();
-    Assert.assertEquals(4, finishedSpans.size());
+    assertEquals(4, finishedSpans.size());
     assertSingleTrace(finishedSpans);
 
     Map<Integer, Span> spanMap = finishedSpans.stream()
@@ -169,33 +192,33 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest {
       .filter(mockSpan ->  mockSpan.getTags().get("span_kind").equals("server"))
       .filter(mockSpan -> mockSpan.getTags().get("http.url").contains(config.host() + ":" + config.port() + "/2"))
       .collect(Collectors.toList());
-    Assert.assertEquals(1, lastServerSpans.size());
+    assertEquals(1, lastServerSpans.size());
 
     String scheme = ssl.get() ? "https" : "http";
     for (Span server2Span: lastServerSpans) {
-      Assert.assertEquals(scheme, server2Span.getTags().get("url.scheme"));
-      Assert.assertEquals("/2", server2Span.getTags().get("url.path"));
-      Assert.assertEquals("q=true", server2Span.getTags().get("url.query"));
+      assertEquals(scheme, server2Span.getTags().get("url.scheme"));
+      assertEquals("/2", server2Span.getTags().get("url.path"));
+      assertEquals("q=true", server2Span.getTags().get("url.query"));
       Span client2Span = spanMap.get(server2Span.parentId);
-      Assert.assertEquals("GET", client2Span.operation);
-      Assert.assertEquals(scheme + "://" + config.host() + ":" + config.port() + "/2?q=true", client2Span.getTags().get("url.full"));
-      Assert.assertEquals("200", client2Span.getTags().get("http.response.status_code"));
-      Assert.assertEquals("client", client2Span.getTags().get("span_kind"));
+      assertEquals("GET", client2Span.operation);
+      assertEquals(scheme + "://" + config.host() + ":" + config.port() + "/2?q=true", client2Span.getTags().get("url.full"));
+      assertEquals("200", client2Span.getTags().get("http.response.status_code"));
+      assertEquals("client", client2Span.getTags().get("span_kind"));
       Span server1Span = spanMap.get(client2Span.parentId);
-      Assert.assertEquals("GET", server1Span.operation);
-      Assert.assertEquals("200", client2Span.getTags().get("http.response.status_code"));
-      Assert.assertEquals("server", server1Span.getTags().get("span_kind"));
+      assertEquals("GET", server1Span.operation);
+      assertEquals("200", client2Span.getTags().get("http.response.status_code"));
+      assertEquals("server", server1Span.getTags().get("span_kind"));
       Span client1Span = spanMap.get(server1Span.parentId);
-      Assert.assertEquals("GET", client1Span.operation);
-      Assert.assertEquals(scheme + "://" + config.host() + ":" + config.port() + "/1", client1Span.getTags().get("url.full"));
-      Assert.assertEquals("200", client2Span.getTags().get("http.response.status_code"));
-      Assert.assertEquals("client", client1Span.getTags().get("span_kind"));
+      assertEquals("GET", client1Span.operation);
+      assertEquals(scheme + "://" + config.host() + ":" + config.port() + "/1", client1Span.getTags().get("url.full"));
+      assertEquals("200", client2Span.getTags().get("http.response.status_code"));
+      assertEquals("client", client1Span.getTags().get("span_kind"));
     }
   }
 
   private void assertSingleTrace(List<Span> spans) {
     for (int i = 1; i < spans.size(); i++) {
-      Assert.assertEquals(spans.get(i - 1).traceId, spans.get(i).traceId);
+      assertEquals(spans.get(i - 1).traceId, spans.get(i).traceId);
     }
   }
 }

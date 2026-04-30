@@ -220,14 +220,14 @@ public class RunnerTest {
   }
 
   @Test
-  public void testVertxProvider() {
-    InjectProvidedInstance.metricsEnabled = false;
-    Result result = runTest(InjectProvidedInstance.class);
+  public void testStaticVertxProvider() {
+    InjectStaticProvidedInstance.metricsEnabled = false;
+    Result result = runTest(InjectStaticProvidedInstance.class);
     assertEquals(0, result.getFailureCount());
-    assertTrue(InjectProvidedInstance.metricsEnabled);
+    assertTrue(InjectStaticProvidedInstance.metricsEnabled);
   }
 
-  public static class ConfiguredVertxProvider implements VertxProvider {
+  public static class StaticConfiguredVertxProvider implements VertxProvider {
     @Override
     public Vertx call() {
       return Vertx.builder()
@@ -238,13 +238,43 @@ public class RunnerTest {
   }
 
   @RunWith(VertxRunner.class)
-  public static class InjectProvidedInstance {
+  public static class InjectStaticProvidedInstance {
 
     public static boolean metricsEnabled;
 
     @Test
-    public void test(@ProvidedBy(ConfiguredVertxProvider.class) Vertx vertx) {
+    public void test(@ProvidedBy(StaticConfiguredVertxProvider.class) Vertx vertx) {
       metricsEnabled = vertx.isMetricsEnabled();
+    }
+  }
+
+  @Test
+  public void testVertxProvider() {
+    Result result = runTest(InjectProvidedInstance.class);
+    assertEquals(0, result.getFailureCount());
+  }
+
+  @RunWith(VertxRunner.class)
+  public static class InjectProvidedInstance {
+
+    public class ConfiguredVertxProvider implements VertxProvider {
+
+      @Override
+      public Vertx call() {
+        Vertx vertx = Vertx.builder()
+          .with(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true)))
+          .withMetrics(new FakeMetricsFactory())
+          .build();
+        InjectProvidedInstance.this.vertx = vertx;
+        return vertx;
+      }
+    }
+
+    private Vertx vertx;
+
+    @Test
+    public void test(@ProvidedBy(ConfiguredVertxProvider.class) Vertx vertx) {
+      assertSame(vertx, this.vertx);
     }
   }
 }
