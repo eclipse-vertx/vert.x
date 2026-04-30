@@ -1614,10 +1614,10 @@ public class Http1xTest extends HttpTest {
 
     CountDownLatch latchConns = new CountDownLatch(numRequests);
     Set<Thread> threads = ConcurrentHashMap.newKeySet();
-    Future<String> listenLatch = vertx.deployVerticle(() -> new AbstractVerticle() {
+    Future<String> listenLatch = vertx.deployVerticle(() -> new VerticleBase() {
       Thread thread;
       @Override
-      public void start(Promise<Void> startPromise) {
+      public Future<?> start() throws Exception {
         HttpServer theServer = vertx.createHttpServer();
         servers.add(theServer);
         theServer.requestHandler(req -> {
@@ -1635,12 +1635,14 @@ public class Http1xTest extends HttpTest {
           requestCount.put(theServer, icnt);
           latchConns.countDown();
           req.response().end();
-        }).listen(testAddress).onComplete(TestUtils.onSuccess(s -> {
-          if (s.actualPort() > 0) {
-            assertEquals(config.port(), s.actualPort());
-          }
-          startPromise.complete();
-        }));
+        });
+        return theServer
+          .listen(testAddress)
+          .andThen(TestUtils.onSuccess(s -> {
+            if (s.actualPort() > 0) {
+              assertEquals(config.port(), s.actualPort());
+            }
+          }));
       }
     }, new DeploymentOptions().setInstances(numServers));
     listenLatch.await();
@@ -2940,11 +2942,7 @@ public class Http1xTest extends HttpTest {
         }
       });
     });
-    CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(testAddress).onComplete(TestUtils.onSuccess(v -> {
-      listenLatch.countDown();
-    }));
-    TestUtils.awaitLatch(listenLatch);
+    server.listen(testAddress).await();
     AtomicInteger status = new AtomicInteger();
     client = vertx.httpClientBuilder()
       .with(new HttpClientOptions().setPipelining(false).setKeepAlive(true))
@@ -4624,16 +4622,18 @@ public class Http1xTest extends HttpTest {
     CountDownLatch latch = checkpoint.asLatch(instances);
     Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
     Set<Integer> ports = Collections.synchronizedSet(new HashSet<>());
-    vertx.deployVerticle(() -> new AbstractVerticle() {
+    vertx.deployVerticle(() -> new VerticleBase() {
       @Override
-      public void start(Promise<Void> startFuture) {
+      public Future<?> start() {
         List<Future<HttpServer>> futures = new ArrayList<>();
         for (int bindPort : bindPorts) {
           futures.add(vertx.createHttpServer().requestHandler(req -> {
             req.response().end();
           }).listen(bindPort, DEFAULT_HTTP_HOST));
         }
-        Future.all(futures).onComplete(TestUtils.onSuccess(cf -> {
+        return Future
+          .all(futures)
+          .andThen(TestUtils.onSuccess(cf -> {
           futures.stream()
             .map(Future::result)
             .map(HttpServer::actualPort)
@@ -4641,7 +4641,6 @@ public class Http1xTest extends HttpTest {
             assertTrue(port > 0);
             ports.add(port);
           });
-          startFuture.complete();
         }));
       }
     }, new DeploymentOptions().setInstances(instances)).onComplete(TestUtils.onSuccess(id -> {
@@ -5427,14 +5426,15 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testServerRollingUpdate() throws Exception {
 
-    class WebServer extends AbstractVerticle {
+    class WebServer extends VerticleBase {
       HttpServer server;
       final String msg;
       WebServer(String msg) {
         this.msg = msg;
       }
+
       @Override
-      public void start(Promise<Void> startPromise) {
+      public Future<?> start() {
         server = vertx.createHttpServer().requestHandler(req -> {
           req
             .connection()
@@ -5445,17 +5445,11 @@ public class Http1xTest extends HttpTest {
             });
           req.response().setChunked(true).write(msg);
         });
-        server
-          .listen(8080, "localhost")
-          .<Void>mapEmpty()
-          .onComplete(startPromise);
+        return server.listen(8080, "localhost");
       }
       @Override
-      public void stop(Promise<Void> stopPromise) {
-        server
-          .shutdown()
-          .<Void>mapEmpty()
-          .onComplete(stopPromise);
+      public Future<?> stop() {
+        return server.shutdown();
       }
     }
 

@@ -2823,22 +2823,21 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     int numReq = 16;
     CountDownLatch latch = checkpoint.asLatch(numReq);
     Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start(Promise<Void> startPromise) {
-        HttpServer server = createHttpServer();
-        server.requestHandler(req -> {
-          req.response().end(body);
-        }).listen(testAddress)
-          .<Void>mapEmpty()
-          .onComplete(startPromise);
-      }
-    })
+    vertx.deployVerticle(new VerticleBase() {
+        @Override
+        public Future<?> start() {
+          HttpServer server = createHttpServer();
+          server.requestHandler(req -> {
+            req.response().end(body);
+          });
+          return server.listen(testAddress);
+        }
+      })
       .await(20, TimeUnit.SECONDS);
-    vertx.deployVerticle(new AbstractVerticle() {
+    vertx.deployVerticle(new VerticleBase() {
       HttpClient client;
       @Override
-      public void start(Promise<Void> startPromise) {
+      public Future<?> start() throws Exception {
         client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0; i < numReq; i++) {
           client.request(requestOptions)
@@ -2853,6 +2852,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
               }))
             .onComplete(TestUtils.onSuccess(v -> latch.countDown()));
         }
+        return super.start();
       }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
   }
@@ -2863,28 +2863,27 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     int numReq = 1;
     CountDownLatch latch = checkpoint.asLatch(numReq);
     Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start(Promise<Void> startPromise) {
-        HttpServer server = createHttpServer();
-        server.requestHandler(req -> {
-          req.end().onComplete(TestUtils.onSuccess(v -> {
-            req.response().end();
-          }));
-          req.pause();
-          vertx.setTimer(10, id -> {
-            req.resume();
+    vertx.deployVerticle(new VerticleBase() {
+        @Override
+        public Future<?> start() throws Exception {
+          HttpServer server = createHttpServer();
+          server.requestHandler(req -> {
+            req.end().onComplete(TestUtils.onSuccess(v -> {
+              req.response().end();
+            }));
+            req.pause();
+            vertx.setTimer(10, id -> {
+              req.resume();
+            });
           });
-        }).listen(testAddress)
-          .<Void>mapEmpty()
-          .onComplete(startPromise);
-      }
+          return server.listen(testAddress);
+        }
     }, new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER))
       .await(20, TimeUnit.SECONDS);
-    vertx.deployVerticle(new AbstractVerticle() {
+    vertx.deployVerticle(new VerticleBase() {
       HttpClient client;
       @Override
-      public void start(Promise<Void> startPromise) {
+      public Future<?> start() throws Exception {
         client = createHttpClient(new PoolOptions().setHttp1MaxSize(1));
         for (int i = 0; i < numReq; i++) {
           client.request(requestOptions).
@@ -2893,10 +2892,11 @@ public abstract class HttpTest extends SimpleHttpTest2 {
               .compose(HttpClientResponse::end))
             .onComplete(TestUtils.onSuccess(v -> latch.countDown()));
         }
+        return super.start();
       }
       @Override
-      public void stop(Promise<Void> stopPromise) throws Exception {
-        client.close().onComplete(stopPromise);
+      public Future<?> stop() {
+        return client.close();
       }
     });
   }

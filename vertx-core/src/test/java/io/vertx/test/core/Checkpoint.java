@@ -7,6 +7,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * <p>A checkpoint is an exit condition of a {@link VertxRunner} managed test.</p>
+ *
+ * <p>Usually a @BeforeClass/@Before/@Test/@After/@AfterClass declares a set of checkpoint as method parameters.</p>
+ *
+ * <ul>
+ *   <li>when all checkpoints are succeeded, the test passes</li>
+ *   <li>when at least one checkpoint is failed, the test fails </li>
+ * </ul>
+ */
 public final class Checkpoint implements Completable<Object> {
 
   static final Exception SUCCESS = new Exception();
@@ -25,6 +35,13 @@ public final class Checkpoint implements Completable<Object> {
     latch.countDown();
   }
 
+  /**
+   * Returns a {@link CountDownLatch} wrapping this checkpoint, when the latch reaches {@code zero}, the checkpoint
+   * is succeeded.
+   *
+   * @param count the latch count
+   * @return the latch
+   */
   public CountDownLatch asLatch(int count) {
     return new CountingCheckpoint(this, count);
   }
