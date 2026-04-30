@@ -10,15 +10,14 @@ import org.junit.runners.model.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 public class VertxRunner extends BlockJUnit4ClassRunner {
 
@@ -101,7 +100,20 @@ public class VertxRunner extends BlockJUnit4ClassRunner {
             ProvidedBy providedBy = (ProvidedBy) paramAnnotation;
             try {
               Class<? extends VertxProvider> providerClass = providedBy.value();
-              provider = providerClass.getConstructor().newInstance();
+              Constructor<?>[] ctors = providerClass.getConstructors();
+              Callable<? extends  VertxProvider> toUse = () -> {
+                throw new AssertionError("The test provider does not provide a  no arg constructor");
+              };
+              for (Constructor<?> ctor : ctors) {
+                if (ctor.getParameterCount() == 0) {
+                  toUse = () -> providerClass.cast(ctor.newInstance());
+                  break;
+                } else if (ctor.getParameterCount() == 1 && ctor.getParameterTypes()[0].isInstance(test)) {
+                  toUse = () -> providerClass.cast(ctor.newInstance(test));
+                  break;
+                }
+              }
+              provider = toUse.call();
               break;
             } catch (Exception e) {
               // Handle me
