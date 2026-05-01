@@ -64,15 +64,14 @@ public class TcpHttpServer implements HttpServerInternal {
   private HttpServerMetrics<?, ?> httpMetrics;
 
   public TcpHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions,
-                       SSLEngineOptions engineOptions, HttpServerMetrics<?, ?> httpMetrics, boolean registerWebSocketWriteHandlers) {
+                       SSLEngineOptions engineOptions, boolean manageMetrics, boolean registerWebSocketWriteHandlers) {
     this.vertx = vertx;
     this.config = config;
     this.ssl = sslOptions != null;
     this.sslOptions = sslOptions;
     this.engineOptions = engineOptions;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
-    this.httpMetrics = httpMetrics;
-    this.manageMetrics = httpMetrics == null;
+    this.manageMetrics = manageMetrics;
   }
 
   @Override
@@ -272,13 +271,16 @@ public class TcpHttpServer implements HttpServerInternal {
       initializer.configurePipeline(soi.channel(), null, null, ((NetSocketImpl) so).metrics());
     });
     tcpServer = server;
-    if (manageMetrics) {
-      httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address, null) : null;
-    }
-    closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p ));
+
+    closeSequence = new CloseSequence(p -> doClose(server, p), p -> doShutdown(server, p));
     Promise<HttpServer> result = context.promise();
     tcpServer.listen(listenContext, address).onComplete(ar -> {
       if (ar.succeeded()) {
+        if (manageMetrics) {
+          var actualAddress = SocketAddress.inetSocketAddress(tcpServer.actualPort(), address.host());
+          httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, actualAddress, null) : null;
+        }
+
         result.complete(this);
       } else {
         result.fail(ar.cause());
@@ -333,6 +335,11 @@ public class TcpHttpServer implements HttpServerInternal {
       };
     }
     return completable;
+  }
+
+  @Override
+  public void setMetrics(HttpServerMetrics<?, ?> httpMetrics) {
+    this.httpMetrics = httpMetrics;
   }
 
   @Override
