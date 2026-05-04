@@ -723,19 +723,6 @@
       </plugin>
 
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>native-image-jar</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>
