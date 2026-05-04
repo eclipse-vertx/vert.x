@@ -67,8 +67,12 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
       if (req.method() == HttpMethod.POST) {
         Context context = Vertx.currentContext();
         req.setExpectMultipart(true);
-        req.exceptionHandler(err -> context.runOnContext(v -> {
-          if (completed.compareAndSet(false, true)) {
+        req.exceptionHandler(err -> {
+          if (!completed.compareAndSet(false, true)) {
+            return;
+          }
+          // Defer until handleException cleanup runs.
+          context.runOnContext(v -> {
             req.headers().set(HttpHeaders.CONTENT_TYPE, "text/plain");
             try {
               req.setExpectMultipart(true);
@@ -77,8 +81,8 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
               Assert.assertTrue(e.getMessage(), e.getMessage().contains("valid content-type"));
             }
             testComplete();
-          }
-        }));
+          });
+        });
         req.uploadHandler(upload -> {
           upload.handler(buffer -> {});
           HttpClientRequest request = clientRequest.get();
