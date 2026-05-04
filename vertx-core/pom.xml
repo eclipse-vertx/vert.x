@@ -295,6 +295,71 @@
           </configuration>
         </plugin>
 
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>default-jar</id>
+              <goals>
+                <goal>single</goal>
+              </goals>
+              <phase>package</phase>
+              <configuration>
+                <formats>
+                  <format>jar</format>
+                </formats>
+                <appendAssemblyId>false</appendAssemblyId>
+                <archive>
+                  <manifest>
+                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                  </manifest>
+                  <!-- Generate a jar INDEX.LIST -->
+                  <index>true</index>
+                  <manifestEntries>
+                    <!-- Add the Maven coordinates in the manifest -->
+                    <Maven-Group-Id>${project.groupId}</Maven-Group-Id>
+                    <Maven-Artifact-Id>${project.artifactId}</Maven-Artifact-Id>
+                    <Maven-Version>${project.version}</Maven-Version>
+                    <!-- Multi-Release -->
+                    <Multi-Release>true</Multi-Release>
+                  </manifestEntries>
+                </archive>
+                <inlineDescriptors>
+                  <inlineDescriptor>
+                    <id>jar</id>
+                    <includeBaseDirectory>false</includeBaseDirectory>
+                    <fileSets>
+                      <fileSet>
+                        <directory>${project.build.outputDirectory}</directory>
+                        <outputDirectory>/</outputDirectory>
+                        <excludes>
+                          <exclude>examples/**</exclude>
+                        </excludes>
+                      </fileSet>
+                    </fileSets>
+                  </inlineDescriptor>
+                </inlineDescriptors>
+                <attach>true</attach>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <!-- Need to use this version specifically -->
+          <version>2.3.1</version>
+          <executions>
+            <execution>
+              <id>default-jar</id>
+              <phase>none</phase>
+            </execution>
+          </executions>
+        </plugin>
+
       </plugins>
     </pluginManagement>
     <plugins>
