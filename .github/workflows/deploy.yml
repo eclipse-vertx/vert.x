@@ -24,8 +24,8 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: |
-            ${{ inputs.jdk }}
             21
+            ${{ inputs.jdk }}
           distribution: temurin
       - name: Get project version
         run: echo "PROJECT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=project.version -q -DforceStdout | grep -v '\[')" >> $GITHUB_ENV
