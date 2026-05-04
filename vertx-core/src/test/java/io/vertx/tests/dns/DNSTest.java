@@ -12,6 +12,7 @@
 package io.vertx.tests.dns;
 
 import io.netty.handler.codec.dns.DnsMessage;
+import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.resolver.dns.DnsNameResolverTimeoutException;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
@@ -28,6 +29,7 @@ import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
@@ -354,6 +356,27 @@ public class DNSTest extends VertxTestBase {
         testComplete();
       }));
     await();
+  }
+
+  @Test
+  public void testLookup6ThenLookup4() throws Exception {
+    final String ipv4 = "10.0.0.1";
+    mockDnsServer.store(questionRecord -> {
+      if (questionRecord.type() == DnsRecordType.AAAA) {
+        return List.of(MockDnsServer.aaaa("vertx.io", 100, "::1"));
+      }
+      if (questionRecord.type() == DnsRecordType.A) {
+        return List.of(MockDnsServer.a("vertx.io", 100, ipv4));
+      }
+      return List.of();
+    });
+    DnsClient dns = prepareDns();
+
+    String ipv6Result = dns.lookup6("vertx.io").await();
+    Assert.assertEquals("0:0:0:0:0:0:0:1", ipv6Result);
+
+    String ipv4Result = dns.lookup4("vertx.io").await();
+    Assert.assertEquals(ipv4, ipv4Result);
   }
 
   @Test
