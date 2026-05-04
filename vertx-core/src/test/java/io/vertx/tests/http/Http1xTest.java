@@ -40,12 +40,11 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
+import io.vertx.test.fakedns.Host;
+import io.vertx.test.fakedns.Hosts;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.tls.Cert;
-import org.junit.Assume;
-import org.junit.Ignore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Duration;
 import java.util.*;
@@ -3525,22 +3524,9 @@ public class Http1xTest extends HttpTest {
     promise.succeed();
   }
 
-  public static class TestVertxProvider implements VertxProvider {
-    @Override
-    public Vertx call() {
-      VertxOptions options = new VertxOptions();
-      options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
-        "127.0.0.1 localhost\n" +
-        "127.0.0.1 host0\n" +
-        "127.0.0.1 host1\n" +
-        "127.0.0.1 host2\n"));
-      return Vertx.vertx(options);
-    }
-  }
-
-
+  @Hosts({@Host(name = "host0"), @Host(name = "host1") , @Host(name = "host2")})
   @Test
-  public void testPerHostPooling(@ProvidedBy(TestVertxProvider.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerHostPooling(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
       .setKeepAlive(true)
       .setPipelining(false), new PoolOptions().setHttp1MaxSize(1));
@@ -3552,7 +3538,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPerPeerPooling(@ProvidedBy(TestVertxProvider.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerPeerPooling(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setKeepAlive(true)
         .setPipelining(false), new PoolOptions().setHttp1MaxSize(1));
@@ -3564,7 +3550,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPerPeerPoolingWithProxy(@ProvidedBy(TestVertxProvider.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerPeerPoolingWithProxy(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setKeepAlive(true)
         .setPipelining(false).setProxyOptions(new ProxyOptions()

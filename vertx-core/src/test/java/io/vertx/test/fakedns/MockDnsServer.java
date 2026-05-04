@@ -18,6 +18,7 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.dns.*;
+import io.netty.util.concurrent.SingleThreadEventExecutor;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
@@ -28,14 +29,14 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class MockDnsServer {
-  private Channel channel;
-  private volatile RecordStore store;
 
   public static final int PORT = 53530;
   public static final String IP_ADDRESS = "127.0.0.1";
@@ -43,11 +44,18 @@ public class MockDnsServer {
   private String ipAddress = IP_ADDRESS;
   private int port = PORT;
 
-  private final ContextInternal context;
+  private EventLoopGroup eventLoop;
+  private Channel channel;
+  private RecordStore store;
+  private List<Throwable> failures = new CopyOnWriteArrayList<>();
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
   public MockDnsServer(Vertx vertx) {
-    this.context = (ContextInternal) vertx.getOrCreateContext();
+    this.eventLoop = ((VertxInternal) vertx).nettyEventLoopGroup().next();
+  }
+
+  public MockDnsServer() {
+    this.eventLoop = null;
   }
 
   public MockDnsServer store(RecordStore store) {
@@ -74,12 +82,16 @@ public class MockDnsServer {
   }
 
   public void start() {
-    if (this.channel != null) {
+    if (channel != null) {
       throw new IllegalStateException();
     }
+    EventLoopGroup eventLoop = this.eventLoop;
+    if (eventLoop == null) {
+      eventLoop = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+    }
     Bootstrap bootstrap = new Bootstrap()
-      .group(context.nettyEventLoop())
-      .channelFactory(context.owner().transport().datagramChannelFactory())
+      .group(eventLoop)
+      .channelFactory(NioDatagramChannel::new)
       .handler(new ChannelInitializer<DatagramChannel>() {
         @Override
         protected void initChannel(DatagramChannel ch) throws Exception {
@@ -98,12 +110,12 @@ public class MockDnsServer {
                 response.addRecord(DnsSection.QUESTION, dnsRecord);
                 RecordStore s = store;
                 if (s != null) {
-                  ContextInternal prev = context.beginDispatch();
                   Collection<DnsRecord> records;
                   try {
                     records = s.getRecords((DnsQuestion) dnsRecord);
-                  } finally {
-                    context.endDispatch(prev);
+                  } catch(Throwable failure) {
+                    failures.add(failure);
+                    return;
                   }
                   if (records != null) {
                     for (DnsRecord record : records) {
@@ -116,27 +128,45 @@ public class MockDnsServer {
             });
         }
       });
-    ChannelFuture fut = null;
+    boolean started = false;
+    ChannelFuture fut;
     try {
       fut = bootstrap.bind(ipAddress, port).sync();
+      started = true;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       PlatformDependent.throwException(e);
       return;
+    } finally {
+      if (!started && this.eventLoop == null) {
+        eventLoop.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+      }
     }
     if (fut.isSuccess()) {
-      this.channel = fut.channel();
+      channel = fut.channel();
     } else {
+      if (this.eventLoop == null) {
+        eventLoop.shutdownGracefully(0, 10, TimeUnit.SECONDS);
+      }
       PlatformDependent.throwException(fut.cause());
     }
   }
 
-  public void stop() throws Exception {
+  public List<Throwable> stop() throws Exception {
     Channel channel = this.channel;
     this.channel = null;
     if (channel != null) {
-      channel.close().sync();
+      try {
+        channel.close().sync();
+      } finally {
+        if (this.eventLoop == null) {
+          channel
+            .eventLoop()
+            .shutdownGracefully(0, 10, TimeUnit.SECONDS);
+        }
+      }
     }
+    return failures;
   }
 
   public static DnsRecord a(String domainName, int ttl, String ip) {
