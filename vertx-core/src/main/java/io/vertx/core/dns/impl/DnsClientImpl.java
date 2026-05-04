@@ -97,7 +97,7 @@ public class DnsClientImpl implements DnsClient {
         builder.queryTimeoutMillis(options.getQueryTimeout());
         builder.recursionDesired(options.isRecursionDesired());
         resolver = builder.eventLoop(el).build();
-        ipv4Resolvers.put(el, resolver);
+        resolversToUse.put(el, resolver);
       }
     }
     return resolver;
