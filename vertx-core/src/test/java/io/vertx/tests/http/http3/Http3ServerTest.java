@@ -26,10 +26,12 @@ import io.vertx.core.net.QuicServer;
 import io.vertx.core.net.QuicStream;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -174,6 +176,8 @@ public class Http3ServerTest extends VertxTestBase {
 
   @Test
   public void testServerShutdown() throws Exception{
+    // See https://github.com/netty/netty/issues/16718
+    Assume.assumeFalse("Not supported yet with io_uring", TRANSPORT == Transport.IO_URING);
     testServerConnectionShutdown(false);
   }
 
