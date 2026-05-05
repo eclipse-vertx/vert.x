@@ -70,6 +70,11 @@ public class HttpServerOptionsConverter {
             obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "http2MaxSmallContinuationFrames":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2MaxSmallContinuationFrames(((Number)member.getValue()).intValue());
+          }
+          break;
         case "http2RstFloodMaxRstFramePerWindow":
           if (member.getValue() instanceof Number) {
             obj.setHttp2RstFloodMaxRstFramePerWindow(((Number)member.getValue()).intValue());
@@ -202,6 +207,7 @@ public class HttpServerOptionsConverter {
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ClearTextEnabled", obj.isHttp2ClearTextEnabled());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
+    json.put("http2MaxSmallContinuationFrames", obj.getHttp2MaxSmallContinuationFrames());
     json.put("http2RstFloodMaxRstFramePerWindow", obj.getHttp2RstFloodMaxRstFramePerWindow());
     json.put("http2RstFloodWindowDuration", obj.getHttp2RstFloodWindowDuration());
     if (obj.getHttp2RstFloodWindowDurationTimeUnit() != null) {
