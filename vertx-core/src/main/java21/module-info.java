@@ -30,6 +30,7 @@ module io.vertx.core {
   requires static io.netty.transport.unix.common;
   requires static io.netty.codec.haproxy;
   requires static io.netty.codec.classes.quic;
+  requires static io.netty.tcnative.classes.openssl;
 
   // Annotation processing
 

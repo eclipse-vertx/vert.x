@@ -633,6 +633,19 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * @return whether to use or not Hybrid key exchange protocol x25519MLKEM768
+   */
+  public boolean isUseHybrid() {
+    SSLOptions o = sslOptions;
+    return o != null && o.isUseHybrid();
+  }
+
+  public TCPSSLOptions setUseHybrid(boolean useHybrid) {
+    getOrCreateSSLOptions().setUseHybrid(useHybrid);
+    return this;
+  }
+
+  /**
    * @return the SSL engine implementation to use
    */
   public SSLEngineOptions getSslEngineOptions() {

@@ -28,13 +28,15 @@ import java.util.concurrent.TimeUnit;
 class VertxSniHandler extends SniHandler {
 
   private final Executor delegatedTaskExec;
+  private final boolean useHybrid;
   private final HostAndPort remoteAddress;
 
   public VertxSniHandler(AsyncMapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec,
-      HostAndPort remoteAddress) {
+      boolean useHybrid, HostAndPort remoteAddress) {
     super(mapping, handshakeTimeoutMillis);
 
     this.delegatedTaskExec = delegatedTaskExec;
+    this.useHybrid = useHybrid;
     this.remoteAddress = remoteAddress;
   }
 
@@ -45,6 +47,9 @@ class VertxSniHandler extends SniHandler {
       sslHandler = context.newHandler(allocator, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
     } else {
       sslHandler = context.newHandler(allocator, delegatedTaskExec);
+    }
+    if (useHybrid) {
+      SslChannelProvider.applyHybridCurves(sslHandler);
     }
     sslHandler.setHandshakeTimeout(handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     return sslHandler;
