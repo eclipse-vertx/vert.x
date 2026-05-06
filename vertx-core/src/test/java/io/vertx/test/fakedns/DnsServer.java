@@ -60,7 +60,7 @@ public class DnsServer implements TestRule {
     return result;
   }
 
-  private class Lifecycle extends Statement {
+  private static class Lifecycle extends Statement {
 
     private final MockDnsServer server;
     private final Statement base;
