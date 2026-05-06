@@ -14,12 +14,17 @@ package io.vertx.test.http;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.VertxProvider;
 import io.vertx.test.core.VertxRunner;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.fakedns.DnsServer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.runner.RunWith;
 
 import java.io.BufferedWriter;
@@ -47,6 +52,9 @@ public abstract class AbstractHttpTest2 {
   public static final int DEFAULT_HTTPS_PORT = Integer.parseInt(System.getProperty("vertx.httpsPort", "4043"));;
   public static final String DEFAULT_HTTPS_HOST_AND_PORT = DEFAULT_HTTPS_HOST + ":" + DEFAULT_HTTPS_PORT;;
   public static final String DEFAULT_TEST_URI = "some-uri";
+
+  @Rule
+  public DnsServer dnsServer = new DnsServer();
 
   protected Vertx vertx;
   protected HttpServer server;
@@ -169,5 +177,14 @@ public abstract class AbstractHttpTest2 {
       out.write(content);
     }
     return file;
+  }
+
+  public class VertxProviderWithResolver implements VertxProvider {
+    @Override
+    public Vertx call() {
+      return Vertx.vertx(new VertxOptions()
+        .setAddressResolverOptions(new AddressResolverOptions()
+          .addServer("127.0.0.1:" + dnsServer.port())));
+    }
   }
 }

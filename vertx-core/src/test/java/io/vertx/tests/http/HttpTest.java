@@ -76,20 +76,8 @@ import static org.junit.Assume.assumeTrue;
  */
 public abstract class HttpTest extends SimpleHttpTest2 {
 
-  @Rule
-  public DnsServer dnsServer = new DnsServer();
-
   protected HttpTest(HttpConfig config) {
     super(config);
-  }
-
-  public class VertxProviderWithResolver implements VertxProvider {
-    @Override
-    public Vertx call() {
-      return Vertx.vertx(new VertxOptions()
-        .setAddressResolverOptions(new AddressResolverOptions()
-          .addServer("127.0.0.1:" + dnsServer.port())));
-    }
   }
 
   @Test
