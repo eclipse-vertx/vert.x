@@ -41,9 +41,9 @@ public class SSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "useHybrid":
+        case "useHybridKeyExchangeProtocol":
           if (member.getValue() instanceof Boolean) {
-            obj.setUseHybrid((Boolean)member.getValue());
+            obj.setuseHybridKeyExchangeProtocol((Boolean)member.getValue());
           }
           break;
         case "enabledSecureTransportProtocols":
@@ -101,7 +101,7 @@ public class SSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("useHybrid", obj.isUseHybrid());
+    json.put("useHybridKeyExchangeProtocol", obj.isuseHybridKeyExchangeProtocol());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));

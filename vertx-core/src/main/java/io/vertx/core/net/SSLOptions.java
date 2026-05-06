@@ -71,7 +71,7 @@ public class SSLOptions {
   List<String> crlPaths;
   List<Buffer> crlValues;
   private boolean useAlpn;
-  private boolean useHybrid;
+  private boolean useHybridKeyExchangeProtocol;
   private Set<String> enabledSecureTransportProtocols;
   private List<String> applicationLayerProtocols;
 
@@ -96,7 +96,7 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.useHybrid = other.useHybrid;
+    this.useHybridKeyExchangeProtocol = other.useHybridKeyExchangeProtocol;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
     this.applicationLayerProtocols = other.getApplicationLayerProtocols() != null ? new ArrayList<>(other.getApplicationLayerProtocols()) : null;
   }
@@ -119,7 +119,7 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
-    useHybrid = DEFAULT_USE_HYBRID;
+    useHybridKeyExchangeProtocol = DEFAULT_USE_HYBRID;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
     applicationLayerProtocols = null;
   }
@@ -264,12 +264,12 @@ public class SSLOptions {
   /**
    * @return whether to use or not Hybrid key exchange protocol x25519MLKEM768
    */
-  public boolean isUseHybrid() {
-    return useHybrid;
+  public boolean isuseHybridKeyExchangeProtocol() {
+    return useHybridKeyExchangeProtocol;
   }
 
-  public SSLOptions setUseHybrid(boolean useHybrid) {
-    this.useHybrid = useHybrid;
+  public SSLOptions setuseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
     return this;
   }
 
@@ -385,7 +385,7 @@ public class SSLOptions {
          Objects.equals(crlPaths, that.crlPaths) &&
          Objects.equals(crlValues, that.crlValues) &&
          useAlpn == that.useAlpn &&
-         useHybrid == that.useHybrid &&
+         useHybridKeyExchangeProtocol == that.useHybridKeyExchangeProtocol &&
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;
@@ -393,7 +393,7 @@ public class SSLOptions {
 
   @Override
   public int hashCode() {
-    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, useHybrid, enabledSecureTransportProtocols);
+    return Objects.hash(sslHandshakeTimeoutUnit.toNanos(sslHandshakeTimeout), keyCertOptions, trustOptions, enabledCipherSuites, crlPaths, crlValues, useAlpn, useHybridKeyExchangeProtocol, enabledSecureTransportProtocols);
   }
 
   /**

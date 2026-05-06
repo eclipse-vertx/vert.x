@@ -813,11 +813,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setUseHybrid(boolean useHybrid) {
-    return (HttpClientOptions) super.setUseHybrid(useHybrid);
-  }
-
-  @Override
   public HttpClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }

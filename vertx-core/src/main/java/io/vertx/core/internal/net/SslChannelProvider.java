@@ -42,16 +42,16 @@ public class SslChannelProvider {
 
   private final Executor workerPool;
   private final boolean sni;
-  private final boolean useHybrid;
+  private final boolean useHybridKeyExchangeProtocol;
   private final SslContextProvider sslContextProvider;
 
   public SslChannelProvider(VertxInternal vertx,
                             SslContextProvider sslContextProvider,
                             boolean sni,
-                            boolean useHybrid) {
+                            boolean useHybridKeyExchangeProtocol) {
     this.workerPool = vertx.internalWorkerPool().executor();
     this.sni = sni;
-    this.useHybrid = useHybrid;
+    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
     this.sslContextProvider = sslContextProvider;
   }
 
@@ -72,7 +72,7 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    if (useHybrid) {
+    if (useHybridKeyExchangeProtocol) {
       applyHybridCurves(sslHandler);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
@@ -96,7 +96,7 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    if (useHybrid) {
+    if (useHybridKeyExchangeProtocol) {
       applyHybridCurves(sslHandler);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
@@ -106,7 +106,7 @@ public class SslChannelProvider {
   private SniHandler createSniHandler(List<String> applicationProtocols, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     return new VertxSniHandler(((ServerSslContextProvider)sslContextProvider).serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec,
-      useHybrid, remoteAddress);
+      useHybridKeyExchangeProtocol, remoteAddress);
   }
 
   static void applyHybridCurves(SslHandler sslHandler) {
