@@ -45,6 +45,7 @@ public class MockDnsServer {
   private int port = PORT;
 
   private EventLoopGroup eventLoop;
+  private ChannelFactory<? extends Channel> channelFactory;
   private Channel channel;
   private RecordStore store;
   private List<Throwable> failures = new CopyOnWriteArrayList<>();
@@ -52,6 +53,7 @@ public class MockDnsServer {
 
   public MockDnsServer(Vertx vertx) {
     this.eventLoop = ((VertxInternal) vertx).nettyEventLoopGroup().next();
+    this.channelFactory = ((VertxInternal) vertx).transport().datagramChannelFactory();
   }
 
   public MockDnsServer() {
@@ -86,12 +88,14 @@ public class MockDnsServer {
       throw new IllegalStateException();
     }
     EventLoopGroup eventLoop = this.eventLoop;
+    ChannelFactory<? extends Channel> channelFactory = this.channelFactory;
     if (eventLoop == null) {
       eventLoop = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+      channelFactory = NioDatagramChannel::new;
     }
     Bootstrap bootstrap = new Bootstrap()
       .group(eventLoop)
-      .channelFactory(NioDatagramChannel::new)
+      .channelFactory(channelFactory)
       .handler(new ChannelInitializer<DatagramChannel>() {
         @Override
         protected void initChannel(DatagramChannel ch) throws Exception {
