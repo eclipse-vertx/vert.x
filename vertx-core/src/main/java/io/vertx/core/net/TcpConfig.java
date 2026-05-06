@@ -53,6 +53,7 @@ public class TcpConfig extends TransportConfig {
     reuseAddress = NetworkOptions.DEFAULT_REUSE_ADDRESS;
     trafficClass = NetworkOptions.DEFAULT_TRAFFIC_CLASS;
     soReusePort = NetworkOptions.DEFAULT_REUSE_PORT;
+    soKeepAlive = TCPSSLOptions.DEFAULT_TCP_KEEP_ALIVE;
     soLinger = DEFAULT_SO_LINGER;
     options = null;
   }
