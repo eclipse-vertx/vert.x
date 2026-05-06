@@ -425,6 +425,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setUseHybrid(boolean useHybrid) {
+    super.setUseHybrid(useHybrid);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);
     return this;

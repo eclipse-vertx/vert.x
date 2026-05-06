@@ -133,12 +133,12 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
         ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
         ClientSslContextManager clientSslContextManager = (ClientSslContextManager)sslContextManager;
         f = clientSslContextManager.resolveSslContextProvider(clientSSLOptions, context)
-          .map(p -> new SslChannelProvider(context.owner(), p, false));
+          .map(p -> new SslChannelProvider(context.owner(), p, false, clientSSLOptions.isUseHybrid()));
       } else {
         ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
         ServerSslContextManager serverSslContextManager = (ServerSslContextManager)sslContextManager;
         f = serverSslContextManager.resolveSslContextProvider(serverSSLOptions, context)
-          .map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni()));
+          .map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni(), serverSSLOptions.isUseHybrid()));
       }
       return f.compose(provider -> {
         PromiseInternal<Void> p = context.promise();

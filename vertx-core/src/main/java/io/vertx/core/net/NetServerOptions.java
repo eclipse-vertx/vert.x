@@ -236,6 +236,12 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions setUseHybrid(boolean useHybrid) {
+    super.setUseHybrid(useHybrid);
+    return this;
+  }
+
+  @Override
   public NetServerOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     super.setSslEngineOptions(sslEngineOptions);
     return this;
