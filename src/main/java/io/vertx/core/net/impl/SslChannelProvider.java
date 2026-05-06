@@ -20,6 +20,7 @@ import io.netty.internal.tcnative.SSL;
 import io.netty.util.AsyncMapping;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.VertxException;
+import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
@@ -30,6 +31,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+
+import static io.vertx.core.net.impl.SslContextProvider.DEFAULT_SNI_CACHE_SIZE;
 
 /**
  * Provider for {@link SslHandler} and {@link SniHandler}.
@@ -44,11 +47,12 @@ public class SslChannelProvider {
   private final boolean useWorkerPool;
   private final boolean sni;
   private final boolean useAlpn;
+  private final boolean useHybrid;
   private final boolean trustAll;
   private final SslContextProvider sslContextProvider;
   private final SslContext[] sslContexts = new SslContext[2];
   private final Map<String, SslContext>[] sslContextMaps = new Map[]{
-    new ConcurrentHashMap<>(), new ConcurrentHashMap<>()
+    new LruCache<>(DEFAULT_SNI_CACHE_SIZE), new LruCache<>(DEFAULT_SNI_CACHE_SIZE)
   };
 
   public SslChannelProvider(SslContextProvider sslContextProvider,
