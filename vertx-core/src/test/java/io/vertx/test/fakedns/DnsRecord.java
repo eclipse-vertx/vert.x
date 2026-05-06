@@ -1,8 +1,10 @@
 package io.vertx.test.fakedns;
 
-public @interface Host {
+public @interface DnsRecord {
 
   String name();
+
+  String type() default "A";
 
   String address() default "127.0.0.1";
 

@@ -1,7 +1,6 @@
 package io.vertx.test.fakedns;
 
 import io.netty.handler.codec.dns.DnsQuestion;
-import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.util.internal.PlatformDependent;
 import org.junit.rules.TestRule;
@@ -38,23 +37,21 @@ public class DnsServer implements TestRule {
   @Override
   public Statement apply(Statement base, Description description) {
     Statement result = base;
-    Hosts repeat = description.getAnnotation(Hosts.class);
-    if( repeat != null ) {
+    WithDnsServer config = description.getAnnotation(WithDnsServer.class);
+    if( config != null ) {
       MockDnsServer server = new MockDnsServer();
-      server.port(port);
+      server.port(config.port());
       server.store(new MockDnsServer.RecordStore() {
         @Override
-        public Collection<DnsRecord> getRecords(DnsQuestion question) throws UnknownHostException {
+        public Collection<io.netty.handler.codec.dns.DnsRecord> getRecords(DnsQuestion question) {
           String name = question.name();
           if (name.endsWith(".")) {
             name = name.substring(0, name.length() - 1);
           }
-          List<DnsRecord> responses = new ArrayList<>();
-          if (question.type() == DnsRecordType.A) {
-            for (Host host : repeat.value()) {
-              if (host.name().equals(name)) {
-                responses.add(MockDnsServer.a(host.name(), host.ttl(), host.address()));
-              }
+          List<io.netty.handler.codec.dns.DnsRecord> responses = new ArrayList<>();
+          for (DnsRecord record : config.records()) {
+            if (question.type().name().equals(record.type()) && record.name().equals(name)) {
+              responses.add(MockDnsServer.a(record.name(), record.ttl(), record.address()));
             }
           }
           return responses;

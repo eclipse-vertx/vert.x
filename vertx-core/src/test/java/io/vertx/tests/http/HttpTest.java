@@ -35,9 +35,8 @@ import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
-import io.vertx.test.fakedns.DnsServer;
-import io.vertx.test.fakedns.Host;
-import io.vertx.test.fakedns.Hosts;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
@@ -45,7 +44,6 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.*;
@@ -5850,13 +5848,13 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     }
   }
 
-  @Hosts({@Host(name = "vertx.io", address = "127.0.0.1"), @Host(name = "vertx.io", address = "127.0.0.2")})
+  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
   public void testDnsClientSideLoadBalancingDisabled(Checkpoint checkpoint, @ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
     testDnsClientSideLoadBalancing(checkpoint, false, vertx);
   }
 
-  @Hosts({@Host(name = "vertx.io", address = "127.0.0.1"), @Host(name = "vertx.io", address = "127.0.0.2")})
+  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
   public void testDnsClientSideLoadBalancingEnabled(Checkpoint checkpoint, @ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
     testDnsClientSideLoadBalancing(checkpoint, true, vertx);

@@ -23,8 +23,8 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.fakedns.Host;
-import io.vertx.test.fakedns.Hosts;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
@@ -103,28 +103,28 @@ public class Http1xProxyTest extends HttpTestBase2 {
     assertEquals(Collections.singleton(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, "localhost")), filtered);
   }
 
-  @Hosts(@Host(name = "www1.example1.com"))
+  @WithDnsServer(records = @DnsRecord(name = "www1.example1.com"))
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNonProxyHosts1(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
     testNonProxyHosts(vertx, Collections.singletonList("www1.example1.com"), "www1.example1.com", false);
   }
 
-  @Hosts(@Host(name = "www2.example1.com"))
+  @WithDnsServer(records = @DnsRecord(name = "www2.example1.com"))
   @WithProxy(kind = ProxyKind.HTTP, localhosts = {"localhost", "www2.example1.com"})
   @Test
   public void testNonProxyHosts2(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
     testNonProxyHosts(vertx, Collections.singletonList("www1.example1.com"), "www2.example1.com", true);
   }
 
-  @Hosts(@Host(name = "www1.example2.com"))
+  @WithDnsServer(records = @DnsRecord(name = "www1.example2.com"))
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNonProxyHosts3(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
     testNonProxyHosts(vertx, Collections.singletonList("*.example2.com"), "www1.example2.com", false);
   }
 
-  @Hosts(@Host(name = "www2.example2.com"))
+  @WithDnsServer(records = @DnsRecord(name = "www2.example2.com"))
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
   public void testNonProxyHosts4(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {

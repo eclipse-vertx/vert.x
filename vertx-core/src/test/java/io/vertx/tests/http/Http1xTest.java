@@ -40,8 +40,8 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
-import io.vertx.test.fakedns.Host;
-import io.vertx.test.fakedns.Hosts;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.tls.Cert;
 import org.junit.*;
@@ -3524,7 +3524,7 @@ public class Http1xTest extends HttpTest {
     promise.succeed();
   }
 
-  @Hosts({@Host(name = "host0"), @Host(name = "host1") , @Host(name = "host2")})
+  @WithDnsServer(records = {@DnsRecord(name = "host0"), @DnsRecord(name = "host1") , @DnsRecord(name = "host2")})
   @Test
   public void testPerHostPooling(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()

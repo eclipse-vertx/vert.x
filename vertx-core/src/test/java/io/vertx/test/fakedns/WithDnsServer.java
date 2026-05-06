@@ -7,8 +7,16 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-public @interface Hosts {
+public @interface WithDnsServer {
 
-  Host[] value();
+  /**
+   * @return the server port
+   */
+  int port() default 53530;
+
+  /**
+   * @return the array of records the dns server responds.
+   */
+  DnsRecord[] records();
 
 }
