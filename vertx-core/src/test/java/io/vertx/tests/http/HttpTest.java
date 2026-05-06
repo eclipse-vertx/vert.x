@@ -35,7 +35,8 @@ import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
-import io.vertx.test.fakedns.MockDnsServer;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpClientConfig;
 import io.vertx.test.http.HttpConfig;
@@ -43,10 +44,10 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.io.Closeable;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -5848,57 +5849,19 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     }
   }
 
-  public static class VertxIoResolvingVertxProvider implements VertxProvider, Closeable {
-
-    private Vertx vertx;
-    private MockDnsServer server;
-
-    public VertxIoResolvingVertxProvider() {
-      vertx = Vertx.vertx();
-      try {
-        server = new MockDnsServer(vertx);
-        server.store(question -> List.of(
-          MockDnsServer.a("vertx.io", 100, "127.0.0.1"),
-          MockDnsServer.a("vertx.io", 100, "127.0.0.2")
-        ));
-        server.start();
-      } catch (Exception e) {
-        vertx.close().await();
-      }
-    }
-
-    @Override
-    public Vertx call() {
-      return Vertx.vertx(new VertxOptions()
-        .setAddressResolverOptions(new AddressResolverOptions()
-          .addServer(server.localAddress().getAddress().getHostAddress() + ":" + server.localAddress().getPort())));
-    }
-
-    @Override
-    public void close() throws IOException {
-      if (server != null) {
-        try {
-          server.stop();
-        } catch (Exception ignore) {
-        }
-      }
-      if (vertx != null) {
-        vertx.close().await();
-      }
-    }
-  }
-
+  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
-  public void testDnsClientSideLoadBalancingDisabled(Checkpoint checkpoint, @ProvidedBy(VertxIoResolvingVertxProvider.class) Vertx vertx) throws Exception {
-    testDnsClientSideLoadBalancing(checkpoint, false, vertx);
+  public void testDnsClientSideLoadBalancingDisabled(Checkpoint checkpoint) throws Exception {
+    testDnsClientSideLoadBalancing(checkpoint, false);
   }
 
+  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
-  public void testDnsClientSideLoadBalancingEnabled(Checkpoint checkpoint, @ProvidedBy(VertxIoResolvingVertxProvider.class) Vertx vertx) throws Exception {
-    testDnsClientSideLoadBalancing(checkpoint, true, vertx);
+  public void testDnsClientSideLoadBalancingEnabled(Checkpoint checkpoint) throws Exception {
+    testDnsClientSideLoadBalancing(checkpoint, true);
   }
 
-  private void testDnsClientSideLoadBalancing(Checkpoint checkpoint, boolean enabled, Vertx vertx) throws Exception {
+  private void testDnsClientSideLoadBalancing(Checkpoint checkpoint, boolean enabled) throws Exception {
     AtomicInteger val = new AtomicInteger();
     HttpClient client = config
       .forClient()

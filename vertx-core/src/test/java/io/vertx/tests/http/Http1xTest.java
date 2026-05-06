@@ -40,12 +40,11 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.tls.Cert;
-import org.junit.Assume;
-import org.junit.Ignore;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.*;
 
 import java.time.Duration;
 import java.util.*;
@@ -3525,26 +3524,13 @@ public class Http1xTest extends HttpTest {
     promise.succeed();
   }
 
-  public static class TestVertxProvider implements VertxProvider {
-    @Override
-    public Vertx call() {
-      VertxOptions options = new VertxOptions();
-      options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
-        "127.0.0.1 localhost\n" +
-        "127.0.0.1 host0\n" +
-        "127.0.0.1 host1\n" +
-        "127.0.0.1 host2\n"));
-      return Vertx.vertx(options);
-    }
-  }
-
-
+  @WithDnsServer(records = {@DnsRecord(name = "host0"), @DnsRecord(name = "host1") , @DnsRecord(name = "host2")})
   @Test
-  public void testPerHostPooling(@ProvidedBy(TestVertxProvider.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerHostPooling(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
       .setKeepAlive(true)
       .setPipelining(false), new PoolOptions().setHttp1MaxSize(1));
-    testPerXXXPooling(vertx, checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
+    testPerXXXPooling(checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost("host" + i)
       .setURI("/somepath"))
@@ -3552,11 +3538,11 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPerPeerPooling(@ProvidedBy(TestVertxProvider.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerPeerPooling(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setKeepAlive(true)
         .setPipelining(false), new PoolOptions().setHttp1MaxSize(1));
-    testPerXXXPooling(vertx, checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
+    testPerXXXPooling(checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
       .setServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST))
       .setPort(DEFAULT_HTTP_PORT)
       .setHost("host" + i)
@@ -3564,20 +3550,20 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPerPeerPoolingWithProxy(@ProvidedBy(TestVertxProvider.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerPeerPoolingWithProxy(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setKeepAlive(true)
         .setPipelining(false).setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost(DEFAULT_HTTP_HOST)
             .setPort(DEFAULT_HTTP_PORT)), new PoolOptions().setHttp1MaxSize(1));
-    testPerXXXPooling(vertx, checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
+    testPerXXXPooling(checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
       .setPort(80)
       .setHost("host" + i)
       .setURI("/somepath")), req -> req.authority().toString());
   }
 
-  private void testPerXXXPooling(Vertx vertx,  Checkpoint checkpoint1, Checkpoint checkpoint2, Function<Integer, Future<HttpClientRequest>> requestProvider, Function<HttpServerRequest, String> keyExtractor) throws Exception {
+  private void testPerXXXPooling(Checkpoint checkpoint1, Checkpoint checkpoint2, Function<Integer, Future<HttpClientRequest>> requestProvider, Function<HttpServerRequest, String> keyExtractor) throws Exception {
     // Even though we use the same server host, we pool per peer host
     int numPeers = 3;
     int numRequests = 5;
