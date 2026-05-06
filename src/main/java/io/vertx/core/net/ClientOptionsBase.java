@@ -341,6 +341,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (ClientOptionsBase) super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  }
+
+  @Override
   public ClientOptionsBase setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (ClientOptionsBase) super.setSslEngineOptions(sslEngineOptions);
   }

@@ -264,6 +264,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (NetClientOptions) super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  }
+
+  @Override
   public NetClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (NetClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }

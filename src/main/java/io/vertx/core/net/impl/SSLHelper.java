@@ -128,6 +128,7 @@ public class SSLHelper {
   private final ClientAuth clientAuth;
   private final boolean client;
   private final boolean useAlpn;
+  private final boolean useHybridKeyExchangeProtocol;
   private final String endpointIdentificationAlgorithm;
   private final SSLEngineOptions sslEngineOptions;
   private final List<String> applicationProtocols;
@@ -142,6 +143,7 @@ public class SSLHelper {
     this.sslEngineOptions = options.getSslEngineOptions();
     this.ssl = options.isSsl();
     this.useAlpn = options.isUseAlpn();
+    this.useHybridKeyExchangeProtocol = options.isUseHybridKeyExchangeProtocol();
     this.client = options instanceof ClientOptionsBase;
     this.trustAll = options instanceof ClientOptionsBase && ((ClientOptionsBase)options).isTrustAll();
     this.clientAuth = options instanceof NetServerOptions ? ((NetServerOptions)options).getClientAuth() : ClientAuth.NONE;
@@ -263,6 +265,7 @@ public class SSLHelper {
       c.sslContextProvider(), c.sslOptions.getSslHandshakeTimeout(), c.sslOptions.getSslHandshakeTimeoutUnit(), sni,
       trustAll,
       useAlpn,
+      useHybridKeyExchangeProtocol,
       ctx.owner().getInternalWorkerPool().executor(),
       c.useWorkerPool
     ));

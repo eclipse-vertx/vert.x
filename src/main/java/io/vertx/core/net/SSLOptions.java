@@ -40,6 +40,11 @@ public class SSLOptions {
   public static final boolean DEFAULT_USE_ALPN = false;
 
   /**
+   * Default use hybrid = false
+   */
+  public static final boolean DEFAULT_USE_HYBRID = false;
+
+  /**
    * The default value of SSL handshake timeout = 10
    */
   public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
@@ -66,6 +71,7 @@ public class SSLOptions {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
+  private boolean useHybridKeyExchangeProtocol;
   private Set<String> enabledSecureTransportProtocols;
 
   /**
@@ -99,6 +105,7 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
+    this.useHybridKeyExchangeProtocol = other.useHybridKeyExchangeProtocol;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
@@ -110,6 +117,7 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
+    useHybridKeyExchangeProtocol = DEFAULT_USE_HYBRID;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
   }
 
@@ -247,6 +255,36 @@ public class SSLOptions {
   }
 
   /**
+   * @return whether the hybrid key exchange protocol X25519MLKEM768 is enabled
+   */
+  public boolean isUseHybridKeyExchangeProtocol() {
+    return useHybridKeyExchangeProtocol;
+  }
+
+  /**
+   * Enable or disable the hybrid post-quantum key exchange protocol X25519MLKEM768.
+   * <p>
+   * When enabled, TLS connections will use X25519MLKEM768 for key exchange, providing
+   * protection against quantum computer attacks.
+   * <p>
+   * This feature requires OpenSSL and will not work with the JDK SSL engine. You must:
+   * <ul>
+   *   <li>Use {@link OpenSSLEngineOptions} as the SSL engine</li>
+   *   <li>Have {@code io.netty:netty-tcnative-classes} on the classpath</li>
+   *   <li>Have an OpenSSL provider (e.g. {@code io.smallrye:smallrye-openssl}) on the classpath</li>
+   * </ul>
+   * If OpenSSL is not available, the TLS handshake will fail rather than silently falling back
+   * to a non-quantum-safe key exchange.
+   *
+   * @param useHybridKeyExchangeProtocol {@code true} to enable hybrid key exchange
+   * @return a reference to this, so the API can be used fluently
+   */
+  public SSLOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
+    return this;
+  }
+
+  /**
    * Returns the enabled SSL/TLS protocols
    * @return the enabled protocols
    */
@@ -340,6 +378,7 @@ public class SSLOptions {
          Objects.equals(crlPaths, that.crlPaths) &&
          Objects.equals(crlValues, that.crlValues) &&
          useAlpn == that.useAlpn &&
+         useHybridKeyExchangeProtocol == that.useHybridKeyExchangeProtocol &&
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;

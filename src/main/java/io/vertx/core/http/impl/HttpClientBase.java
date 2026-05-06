@@ -190,7 +190,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
       public Endpoint<HttpClientConnection> create(ContextInternal ctx, Runnable dispose) {
         int maxPoolSize = options.getMaxWebSockets();
         ClientMetrics metrics = HttpClientBase.this.metrics != null ? HttpClientBase.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientBase.this, netClient, proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientBase.this, netClient, proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, false, key.peerAddr, key.serverAddr);
         return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
       }
     };
