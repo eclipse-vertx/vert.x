@@ -476,6 +476,11 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
+  public EventBusOptions setUseHybrid(boolean useHybrid) {
+    return (EventBusOptions) super.setUseHybrid(useHybrid);
+  }
+
+  @Override
   public EventBusOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (EventBusOptions) super.setSslEngineOptions(sslEngineOptions);
   }
