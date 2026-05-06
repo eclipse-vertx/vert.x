@@ -97,6 +97,27 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
 
+  /**
+   * Default value for tcp keepalive idle time.
+   * <p>
+   * {@code -1} defaults to OS settings
+   */
+  public static final int DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS = -1;
+
+  /**
+   * Default value for tcp keepalive count.
+   * <p>
+   * {@code -1} defaults to OS settings
+   */
+  public static final int DEFAULT_TCP_KEEAPLIVE_COUNT = -1;
+
+  /**
+   * Default value for tcp keepalive interval.
+   * <p>
+   * {@code -1} defaults to OS settings
+   */
+  public static final int DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS = -1;
+
   private TcpConfig transportOptions;
   private int idleTimeout;
   private int readIdleTimeout;
@@ -762,6 +783,65 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
     transportOptions.setOption(TcpOption.USER_TIMEOUT, tcpUserTimeout);
+    return this;
+  }
+
+  /**
+   * @return the time in seconds the connection needs to remain idle before TCP starts sending keepalive probes
+   */
+  public int getTcpKeepAliveIdleSeconds() {
+    return getOrDefaultOption(TcpOption.KEEPIDLE);
+  }
+
+  /**
+   * The time in seconds the connection needs to remain idle before TCP starts sending keepalive probes,
+   * if the socket option keepalive has been set.
+   * <p>
+   * Only works with linux native support (EPoll, IoUring).
+   *
+   * @param tcpKeepAliveIdleSeconds idle time in seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpKeepAliveIdleSeconds(int tcpKeepAliveIdleSeconds) {
+    transportOptions.setOption(TcpOption.KEEPIDLE, tcpKeepAliveIdleSeconds);
+    return this;
+  }
+
+  /**
+   * @return the maximum number of keepalive probes TCP should send before dropping the connection.
+   */
+  public int getTcpKeepAliveCount() {
+    return getOrDefaultOption(TcpOption.KEEPCNT);
+  }
+
+  /**
+   * The maximum number of keepalive probes TCP should send before dropping the connection.
+   * <p>
+   * Only works with linux native support (EPoll, IoUring).
+   * @param tcpKeepAliveCount number of probes
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpKeepAliveCount(int tcpKeepAliveCount) {
+    transportOptions.setOption(TcpOption.KEEPCNT, tcpKeepAliveCount);
+    return this;
+  }
+
+  /**
+   * @return the time in seconds between individual keepalive probes (while the channel is idle).
+   */
+  public int getTcpKeepAliveIntervalSeconds() {
+    return getOrDefaultOption(TcpOption.KEEPINTVL);
+  }
+
+  /**
+   * The time in seconds between individual keepalive probes (while the channel is idle).
+   * <p>
+   * Only works with linux native support (EPoll, IoUring).
+   * @param tcpKeepAliveIntervalSeconds interval in seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpKeepAliveIntervalSeconds(int tcpKeepAliveIntervalSeconds) {
+    transportOptions.setOption(TcpOption.KEEPINTVL, tcpKeepAliveIntervalSeconds);
     return this;
   }
 
