@@ -29,6 +29,7 @@ import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import org.assertj.core.api.Assertions;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -106,32 +107,32 @@ public class Http1xProxyTest extends HttpTestBase2 {
   @WithDnsServer(records = @DnsRecord(name = "www1.example1.com"))
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
-  public void testNonProxyHosts1(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
-    testNonProxyHosts(vertx, Collections.singletonList("www1.example1.com"), "www1.example1.com", false);
+  public void testNonProxyHosts1() throws Exception {
+    testNonProxyHosts(Collections.singletonList("www1.example1.com"), "www1.example1.com", false);
   }
 
   @WithDnsServer(records = @DnsRecord(name = "www2.example1.com"))
   @WithProxy(kind = ProxyKind.HTTP, localhosts = {"localhost", "www2.example1.com"})
   @Test
-  public void testNonProxyHosts2(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
-    testNonProxyHosts(vertx, Collections.singletonList("www1.example1.com"), "www2.example1.com", true);
+  public void testNonProxyHosts2() throws Exception {
+    testNonProxyHosts(Collections.singletonList("www1.example1.com"), "www2.example1.com", true);
   }
 
   @WithDnsServer(records = @DnsRecord(name = "www1.example2.com"))
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
-  public void testNonProxyHosts3(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
-    testNonProxyHosts(vertx, Collections.singletonList("*.example2.com"), "www1.example2.com", false);
+  public void testNonProxyHosts3() throws Exception {
+    testNonProxyHosts(Collections.singletonList("*.example2.com"), "www1.example2.com", false);
   }
 
   @WithDnsServer(records = @DnsRecord(name = "www2.example2.com"))
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
-  public void testNonProxyHosts4(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
-    testNonProxyHosts(vertx, Collections.singletonList("*.example2.com"), "www2.example2.com", false);
+  public void testNonProxyHosts4() throws Exception {
+    testNonProxyHosts(Collections.singletonList("*.example2.com"), "www2.example2.com", false);
   }
 
-  private void testNonProxyHosts(Vertx vertx,  List<String> nonProxyHosts, String host, boolean proxied) throws Exception {
+  private void testNonProxyHosts(List<String> nonProxyHosts, String host, boolean proxied) throws Exception {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setNonProxyHosts(nonProxyHosts)
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));

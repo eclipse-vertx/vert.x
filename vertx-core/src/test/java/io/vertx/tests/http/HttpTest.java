@@ -44,6 +44,7 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
@@ -5850,17 +5851,17 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
-  public void testDnsClientSideLoadBalancingDisabled(Checkpoint checkpoint, @ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
-    testDnsClientSideLoadBalancing(checkpoint, false, vertx);
+  public void testDnsClientSideLoadBalancingDisabled(Checkpoint checkpoint) throws Exception {
+    testDnsClientSideLoadBalancing(checkpoint, false);
   }
 
   @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
   @Test
-  public void testDnsClientSideLoadBalancingEnabled(Checkpoint checkpoint, @ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
-    testDnsClientSideLoadBalancing(checkpoint, true, vertx);
+  public void testDnsClientSideLoadBalancingEnabled(Checkpoint checkpoint) throws Exception {
+    testDnsClientSideLoadBalancing(checkpoint, true);
   }
 
-  private void testDnsClientSideLoadBalancing(Checkpoint checkpoint, boolean enabled, Vertx vertx) throws Exception {
+  private void testDnsClientSideLoadBalancing(Checkpoint checkpoint, boolean enabled) throws Exception {
     AtomicInteger val = new AtomicInteger();
     HttpClient client = config
       .forClient()

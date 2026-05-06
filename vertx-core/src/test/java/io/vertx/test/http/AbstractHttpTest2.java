@@ -18,6 +18,7 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.VertxProvider;
 import io.vertx.test.core.VertxRunner;
 import io.vertx.test.core.VertxTestBase;
@@ -89,7 +90,7 @@ public abstract class AbstractHttpTest2 {
   protected abstract HttpClientBuilder httpClientBuilder(Vertx vertx);
 
   @Before
-  public void before(Vertx vertx) throws Exception {
+  public void before(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx) throws Exception {
     this.vertx = vertx;
     setUp();
   }
@@ -182,9 +183,13 @@ public abstract class AbstractHttpTest2 {
   public class VertxProviderWithResolver implements VertxProvider {
     @Override
     public Vertx call() {
-      return Vertx.vertx(new VertxOptions()
-        .setAddressResolverOptions(new AddressResolverOptions()
-          .addServer("127.0.0.1:" + dnsServer.port())));
+      VertxOptions options = new VertxOptions();
+      if (dnsServer.isStarted()) {
+        options
+          .setAddressResolverOptions(new AddressResolverOptions()
+            .addServer("127.0.0.1:" + dnsServer.port()));
+      }
+      return Vertx.vertx(options);
     }
   }
 }

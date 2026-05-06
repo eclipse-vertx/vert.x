@@ -1,18 +1,18 @@
 package io.vertx.test.fakedns;
 
 import io.netty.handler.codec.dns.DnsQuestion;
-import io.netty.handler.codec.dns.DnsRecordType;
 import io.netty.util.internal.PlatformDependent;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class DnsServer implements TestRule {
+
+  private static final ThreadLocal<Boolean> STARTED = new ThreadLocal<>();
 
   private final int port;
 
@@ -29,10 +29,8 @@ public class DnsServer implements TestRule {
   }
 
   public boolean isStarted() {
-    return started;
+    return STARTED.get() == Boolean.TRUE;
   }
-
-  public boolean started;
 
   @Override
   public Statement apply(Statement base, Description description) {
@@ -76,11 +74,11 @@ public class DnsServer implements TestRule {
     public void evaluate() throws Throwable {
       List<Throwable> failures;
       server.start();
-      boolean started = true;
+      STARTED.set(true);
       try {
         base.evaluate();
       } finally {
-        started = false;
+        STARTED.remove();
         failures = server.stop();
       }
       if (failures.size() > 0) {

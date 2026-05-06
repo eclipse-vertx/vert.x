@@ -3526,11 +3526,11 @@ public class Http1xTest extends HttpTest {
 
   @WithDnsServer(records = {@DnsRecord(name = "host0"), @DnsRecord(name = "host1") , @DnsRecord(name = "host2")})
   @Test
-  public void testPerHostPooling(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerHostPooling(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
       .setKeepAlive(true)
       .setPipelining(false), new PoolOptions().setHttp1MaxSize(1));
-    testPerXXXPooling(vertx, checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
+    testPerXXXPooling(checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost("host" + i)
       .setURI("/somepath"))
@@ -3538,11 +3538,11 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPerPeerPooling(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerPeerPooling(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setKeepAlive(true)
         .setPipelining(false), new PoolOptions().setHttp1MaxSize(1));
-    testPerXXXPooling(vertx, checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
+    testPerXXXPooling(checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
       .setServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST))
       .setPort(DEFAULT_HTTP_PORT)
       .setHost("host" + i)
@@ -3550,20 +3550,20 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPerPeerPoolingWithProxy(@ProvidedBy(VertxProviderWithResolver.class) Vertx vertx, Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+  public void testPerPeerPoolingWithProxy(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     HttpClient client = vertx.createHttpClient(new HttpClientOptions()
         .setKeepAlive(true)
         .setPipelining(false).setProxyOptions(new ProxyOptions()
             .setType(ProxyType.HTTP)
             .setHost(DEFAULT_HTTP_HOST)
             .setPort(DEFAULT_HTTP_PORT)), new PoolOptions().setHttp1MaxSize(1));
-    testPerXXXPooling(vertx, checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
+    testPerXXXPooling(checkpoint1, checkpoint2, (i) -> client.request(new RequestOptions()
       .setPort(80)
       .setHost("host" + i)
       .setURI("/somepath")), req -> req.authority().toString());
   }
 
-  private void testPerXXXPooling(Vertx vertx,  Checkpoint checkpoint1, Checkpoint checkpoint2, Function<Integer, Future<HttpClientRequest>> requestProvider, Function<HttpServerRequest, String> keyExtractor) throws Exception {
+  private void testPerXXXPooling(Checkpoint checkpoint1, Checkpoint checkpoint2, Function<Integer, Future<HttpClientRequest>> requestProvider, Function<HttpServerRequest, String> keyExtractor) throws Exception {
     // Even though we use the same server host, we pool per peer host
     int numPeers = 3;
     int numRequests = 5;
