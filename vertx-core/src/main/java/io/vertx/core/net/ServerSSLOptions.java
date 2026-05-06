@@ -129,8 +129,8 @@ public class ServerSSLOptions extends SSLOptions {
   }
 
   @Override
-  public ServerSSLOptions setUseHybrid(boolean useHybrid) {
-    return (ServerSSLOptions) super.setUseHybrid(useHybrid);
+  public ServerSSLOptions setuseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (ServerSSLOptions) super.setuseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
   }
 
   @Override

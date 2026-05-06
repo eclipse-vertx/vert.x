@@ -116,11 +116,6 @@ public class TCPSSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "useHybrid":
-          if (member.getValue() instanceof Boolean) {
-            obj.setUseHybrid((Boolean)member.getValue());
-          }
-          break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
@@ -205,7 +200,6 @@ public class TCPSSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("useHybrid", obj.isUseHybrid());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
