@@ -12,11 +12,15 @@ package io.vertx.core.internal.net;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
+import io.netty.handler.ssl.ReferenceCountedOpenSslEngine;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.internal.tcnative.SSL;
 import io.netty.util.concurrent.ImmediateExecutor;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.ClientSslContextProvider;
 import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
@@ -34,15 +38,20 @@ import java.util.concurrent.TimeUnit;
  */
 public class SslChannelProvider {
 
+  private static final Logger log = LoggerFactory.getLogger(SslChannelProvider.class);
+
   private final Executor workerPool;
   private final boolean sni;
+  private final boolean useHybridKeyExchangeProtocol;
   private final SslContextProvider sslContextProvider;
 
   public SslChannelProvider(VertxInternal vertx,
                             SslContextProvider sslContextProvider,
-                            boolean sni) {
+                            boolean sni,
+                            boolean useHybridKeyExchangeProtocol) {
     this.workerPool = vertx.internalWorkerPool().executor();
     this.sni = sni;
+    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
     this.sslContextProvider = sslContextProvider;
   }
 
@@ -62,6 +71,9 @@ public class SslChannelProvider {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, peer.host(), peer.port(), delegatedTaskExec);
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
+    }
+    if (useHybridKeyExchangeProtocol) {
+      applyHybridCurves(sslHandler);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
@@ -84,13 +96,31 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
+    if (useHybridKeyExchangeProtocol) {
+      applyHybridCurves(sslHandler);
+    }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
   private SniHandler createSniHandler(List<String> applicationProtocols, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(((ServerSslContextProvider)sslContextProvider).serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, remoteAddress);
+    return new VertxSniHandler(((ServerSslContextProvider)sslContextProvider).serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec,
+      useHybridKeyExchangeProtocol, remoteAddress);
+  }
+
+  static void applyHybridCurves(SslHandler sslHandler) {
+    try {
+      long sslPtr = ((ReferenceCountedOpenSslEngine) sslHandler.engine()).sslPointer();
+      boolean success = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
+      if (!success) {
+        log.error("Failed to set hybrid PQC groups on SSL instance, closing engine to prevent non-PQC fallback");
+        sslHandler.engine().closeOutbound();
+      }
+    } catch (Exception e) {
+      log.error("Unable to apply hybrid PQC curves: " + e.getMessage() + ", closing engine to prevent non-PQC fallback");
+      sslHandler.engine().closeOutbound();
+    }
   }
 
 }

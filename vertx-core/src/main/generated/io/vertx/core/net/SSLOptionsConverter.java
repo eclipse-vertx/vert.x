@@ -41,6 +41,11 @@ public class SSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
+        case "useHybridKeyExchangeProtocol":
+          if (member.getValue() instanceof Boolean) {
+            obj.setuseHybridKeyExchangeProtocol((Boolean)member.getValue());
+          }
+          break;
         case "enabledSecureTransportProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
@@ -96,6 +101,7 @@ public class SSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("useHybridKeyExchangeProtocol", obj.isuseHybridKeyExchangeProtocol());
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));

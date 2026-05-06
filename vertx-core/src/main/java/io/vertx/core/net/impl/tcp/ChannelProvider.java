@@ -114,7 +114,7 @@ public final class ChannelProvider {
       } else {
         applicationProtocols = null;
       }
-      SslChannelProvider sslChannelProvider = new SslChannelProvider(context.owner(), sslContextProvider, false);
+      SslChannelProvider sslChannelProvider = new SslChannelProvider(context.owner(), sslContextProvider, false, sslOptions.isuseHybridKeyExchangeProtocol());
       SslHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName, applicationProtocols, sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);

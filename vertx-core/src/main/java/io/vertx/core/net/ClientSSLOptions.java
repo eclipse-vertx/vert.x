@@ -131,6 +131,11 @@ public class ClientSSLOptions extends SSLOptions {
   }
 
   @Override
+  public ClientSSLOptions setuseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (ClientSSLOptions) super.setuseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  }
+
+  @Override
   public ClientSSLOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
     return (ClientSSLOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }

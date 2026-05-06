@@ -37,6 +37,7 @@ open module io.vertx.core.tests {
   requires io.netty.handler.proxy;
   requires io.netty.codec.http3;
   requires io.netty.codec.dns;
+  requires static io.netty.tcnative.classes.openssl;
   requires jdk.management;
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;

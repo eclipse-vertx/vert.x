@@ -129,6 +129,11 @@ public class ServerSSLOptions extends SSLOptions {
   }
 
   @Override
+  public ServerSSLOptions setuseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (ServerSSLOptions) super.setuseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  }
+
+  @Override
   public ServerSSLOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
     return (ServerSSLOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }
