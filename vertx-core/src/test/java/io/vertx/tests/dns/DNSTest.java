@@ -24,6 +24,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.apache.directory.server.dns.messages.DnsMessage;
+import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Test;
 
@@ -349,6 +350,27 @@ public class DNSTest extends VertxTestBase {
         testComplete();
       }));
     await();
+  }
+
+  @Test
+  public void testLookup6ThenLookup4() throws Exception {
+    final String ipv4 = "10.0.0.1";
+    dnsServer.store(questionRecord -> {
+      if (questionRecord.getRecordType() == RecordType.AAAA) {
+        return Collections.singleton(FakeDNSServer.aaaa("vertx.io", 100).ipAddress("::1"));
+      }
+      if (questionRecord.getRecordType() == RecordType.A) {
+        return Collections.singleton(FakeDNSServer.a("vertx.io", 100).ipAddress(ipv4));
+      }
+      return Collections.emptySet();
+    });
+    DnsClient dns = prepareDns();
+
+    String ipv6Result = dns.lookup6("vertx.io").await();
+    assertEquals("0:0:0:0:0:0:0:1", ipv6Result);
+
+    String ipv4Result = dns.lookup4("vertx.io").await();
+    assertEquals(ipv4, ipv4Result);
   }
 
   @Test
