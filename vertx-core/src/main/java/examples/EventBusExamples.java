@@ -173,4 +173,49 @@ public class EventBusExamples {
   class MyPOJO {
 
   }
+
+  public void example13(Vertx vertx) {
+    EventBus eb = vertx.eventBus();
+
+    MessageConsumerOptions options = new MessageConsumerOptions()
+      .setAddress("news.uk.sport")
+      .setAutoAck(false);  // Enable manual ack mode
+
+    eb.consumer(options, message -> {
+      System.out.println("Received: " + message.body());
+      // Perform async operation
+      vertx.setTimer(1000, id -> {
+        // Ack the message after async work
+        message.ack();
+      });
+    });
+  }
+
+  public void example14(Vertx vertx) {
+    EventBus eb = vertx.eventBus();
+
+    MessageConsumerOptions options = new MessageConsumerOptions()
+      .setAddress("order.process")
+      .setAutoAck(false);
+
+    eb.<String>consumer(options, message -> {
+      String orderId = message.body();
+
+      // Simulate async database operation
+      processOrderAsync(orderId, result -> {
+        if (result.succeeded()) {
+          System.out.println("Order processed: " + orderId);
+          // Ack the message after async work is done
+          message.ack();
+        } else {
+          System.err.println("Order processing failed: " + result.cause());
+          message.ack();  // Still ack even on failure
+        }
+      });
+    });
+  }
+
+  private void processOrderAsync(String orderId, io.vertx.core.Handler<io.vertx.core.AsyncResult<Void>> handler) {
+    // Simulated async operation
+  }
 }

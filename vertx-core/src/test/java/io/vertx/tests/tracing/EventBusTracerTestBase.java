@@ -14,6 +14,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumerOptions;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -300,5 +301,73 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 8);
     assertEquals(Arrays.asList("sendRequest[the_address]", "receiveResponse[]", "sendRequest[generated]", "receiveResponse[]"), ebTracer.sendEvents);
     assertEquals(Arrays.asList("receiveRequest[the_address]", "sendResponse[]", "receiveRequest[generated]", "sendResponse[]"), ebTracer.receiveEvents);
+  }
+
+  @Test
+  public void testEventBusSendManualAck() throws Exception {
+    EventBusTracer ebTracer = new EventBusTracer();
+    tracer = ebTracer;
+
+    CountDownLatch ackLatch = new CountDownLatch(1);
+
+    MessageConsumerOptions options = new MessageConsumerOptions()
+      .setAddress("the_address")
+      .setAutoAck(false);
+
+    vertx2.eventBus().consumer(options, msg -> {
+      assertEquals("msg", msg.body());
+      vertx2.executeBlocking(() -> {
+        ackLatch.await();
+        return null;
+      }).onSuccess(v -> msg.ack());
+    }).completion().await();
+
+    vertx1.runOnContext(v -> {
+      Context ctx = vertx1.getOrCreateContext();
+      sendKey.put(ctx, ebTracer.sendVal);
+      vertx1.eventBus().send("the_address", "msg");
+    });
+
+    waitUntil(() -> ebTracer.receiveEvents.contains("receiveRequest[the_address]"));
+    assertFalse(ebTracer.receiveEvents.contains("sendResponse[]"));
+
+    ackLatch.countDown();
+    waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
+    assertEquals(Arrays.asList("receiveRequest[the_address]", "sendResponse[]"), ebTracer.receiveEvents);
+  }
+
+  @Test
+  public void testEventBusPublishManualAck() throws Exception {
+    EventBusTracer ebTracer = new EventBusTracer();
+    tracer = ebTracer;
+
+    CountDownLatch ackLatch = new CountDownLatch(1);
+
+    MessageConsumerOptions options = new MessageConsumerOptions()
+      .setAddress("the_address")
+      .setAutoAck(false);
+
+    for (int i = 0; i < 2; i++) {
+      vertx2.eventBus().consumer(options, msg -> {
+        assertEquals("msg", msg.body());
+        vertx2.executeBlocking(() -> {
+          ackLatch.await();
+          return null;
+        }).onSuccess(v -> msg.ack());
+      }).completion().await();
+    }
+
+    vertx1.runOnContext(v -> {
+      Context ctx = vertx1.getOrCreateContext();
+      sendKey.put(ctx, ebTracer.sendVal);
+      vertx1.eventBus().publish("the_address", "msg");
+    });
+
+    waitUntil(() -> ebTracer.receiveEvents.stream().filter(e -> e.equals("receiveRequest[the_address]")).count() == 2);
+    assertEquals(0, ebTracer.receiveEvents.stream().filter(e -> e.equals("sendResponse[]")).count());
+
+    ackLatch.countDown();
+    waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 6);
+    assertEquals(2, ebTracer.receiveEvents.stream().filter(e -> e.equals("sendResponse[]")).count());
   }
 }

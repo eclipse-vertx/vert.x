@@ -27,6 +27,11 @@ public class MessageConsumerOptionsConverter {
             obj.setMaxBufferedMessages(((Number)member.getValue()).intValue());
           }
           break;
+        case "autoAck":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAutoAck((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -41,5 +46,6 @@ public class MessageConsumerOptionsConverter {
     }
     json.put("localOnly", obj.isLocalOnly());
     json.put("maxBufferedMessages", obj.getMaxBufferedMessages());
+    json.put("autoAck", obj.isAutoAck());
   }
 }

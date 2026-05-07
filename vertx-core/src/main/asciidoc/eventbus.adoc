@@ -240,6 +240,33 @@ persisted in storage, or `false` if not.
 * A message consumer which processes an order might acknowledge with `true` when the order has been successfully processed
 so it can be deleted from the database
 
+==== Observability and Message Processing
+
+When messages are consumed, Vert.x automatically manages observability signals (tracing and metrics) to track message processing lifecycle.
+By default, these signals are completed when the message handler returns.
+
+This works well for synchronous handlers but may not be ideal for asynchronous or blocking operations.
+
+For example, if your handler performs work on a worker thread, the tracer span would be closed before the actual work completes, resulting in inaccurate trace timing and context loss.
+
+You can enable *manual ack mode* to defer the completion of observability signals until you explicitly signal that processing is complete:
+
+IMPORTANT: Message acknowledgment in Vert.x event bus is purely for observability purposes (tracing and metrics).
+It does NOT send any acknowledgment back to the message producer and does NOT affect message delivery semantics.
+This is different from traditional message queue acknowledgment patterns.
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example13}
+----
+
+In manual ack mode, you must explicitly call {@link io.vertx.core.eventbus.Message#ack()} to complete the observability signals:
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example14}
+----
+
 ==== Sending with timeouts
 
 When sending a message with a reply handler, you can specify a timeout in the {@link io.vertx.core.eventbus.DeliveryOptions}.

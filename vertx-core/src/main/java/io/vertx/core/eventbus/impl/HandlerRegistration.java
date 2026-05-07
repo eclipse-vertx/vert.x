@@ -29,17 +29,20 @@ public abstract class HandlerRegistration<T> implements Closeable {
   protected final EventBusImpl bus;
   protected final String address;
   protected final boolean src;
+  protected final boolean autoAck;
   private Consumer<Promise<Void>> registered;
   private Object metric;
 
   HandlerRegistration(ContextInternal context,
                       EventBusImpl bus,
                       String address,
-                      boolean src) {
+                      boolean src,
+                      boolean autoAck) {
     this.context = context;
     this.bus = bus;
     this.src = src;
     this.address = address;
+    this.autoAck = autoAck;
   }
 
   void receive(MessageImpl msg) {
@@ -104,19 +107,27 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   private void dispatch(ContextInternal ctx, MessageImpl<?, T> message, Handler<Message<T>> handler) {
     Object m = metric;
-    VertxTracer tracer = ctx.tracer();
     if (bus.metrics != null) {
       bus.metrics.messageDelivered(m, message.isLocal());
     }
-    if (tracer != null && !src) {
-      message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+    if (ctx.tracer() != null && !src) {
+      traceReceive(ctx, message);
       dispatchMessage(message, ctx, handler);
-      Object trace = message.trace;
-      if (message.replyAddress == null && trace != null) {
-        tracer.sendResponse(ctx, null, trace, null, TagExtractor.empty());
+      if (message.replyAddress == null && autoAck) {
+        message.ack();
       }
     } else {
       dispatchMessage(message, ctx, handler);
+    }
+  }
+
+  private void traceReceive(ContextInternal ctx, MessageImpl<?, T> message) {
+    VertxTracer tracer = ctx.tracer();
+    String operation = message.isSend() ? "send" : "publish";
+    if ((message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, operation, message.headers(), MessageTagExtractor.INSTANCE)) != null) {
+      message.ackHandler = v -> {
+        tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
+      };
     }
   }
 

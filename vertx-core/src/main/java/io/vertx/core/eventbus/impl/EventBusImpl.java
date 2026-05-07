@@ -14,9 +14,9 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -172,7 +172,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     checkStarted();
     String address = options.getAddress();
     Arguments.require(options.getAddress() != null, "Consumer address must not be null");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, options.isLocalOnly(), options.getMaxBufferedMessages());
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, options.isLocalOnly(), options.getMaxBufferedMessages(), options.isAutoAck());
   }
 
   @Override
@@ -187,7 +187,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, false, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, false, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES, MessageConsumerOptions.DEFAULT_AUTO_ACK);
   }
 
   @Override
@@ -202,7 +202,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   public <T> MessageConsumer<T> localConsumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, true, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES);
+    return new MessageConsumerImpl<>(vertx.getOrCreateContext(), this, address, true, MessageConsumerOptions.DEFAULT_MAX_BUFFERED_MESSAGES, MessageConsumerOptions.DEFAULT_AUTO_ACK);
   }
 
   @Override
