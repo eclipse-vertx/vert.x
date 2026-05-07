@@ -21,6 +21,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfig;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -54,6 +56,62 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
+  }
+
+  @Test
+  public void testClientResetMultipartUploadCleansDecoder() throws Exception {
+    Assume.assumeTrue(config.version() == HttpVersion.HTTP_1_1 || config.version() == HttpVersion.HTTP_2);
+    AtomicReference<HttpClientRequest> clientRequest = new AtomicReference<>();
+    AtomicBoolean completed = new AtomicBoolean();
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        Context context = Vertx.currentContext();
+        req.setExpectMultipart(true);
+        req.exceptionHandler(err -> {
+          if (!completed.compareAndSet(false, true)) {
+            return;
+          }
+          // Defer until handleException cleanup runs.
+          context.runOnContext(v -> {
+            req.headers().set(HttpHeaders.CONTENT_TYPE, "text/plain");
+            try {
+              req.setExpectMultipart(true);
+              Assert.fail("Should throw IllegalStateException");
+            } catch (IllegalStateException e) {
+              Assert.assertTrue(e.getMessage(), e.getMessage().contains("valid content-type"));
+            }
+            testComplete();
+          });
+        });
+        req.uploadHandler(upload -> {
+          upload.handler(buffer -> {});
+          HttpClientRequest request = clientRequest.get();
+          if (request != null) {
+            request.reset();
+          }
+        });
+      }
+    });
+    startServer(testAddress);
+
+    String boundary = "multipart-cleanup";
+    String body = "--" + boundary + "\r\n" +
+      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+      "Content-Type: text/plain\r\n" +
+      "\r\n" +
+      "content";
+
+    client.request(new RequestOptions(requestOptions)
+      .setMethod(HttpMethod.POST)
+      .setURI("/form")).onComplete(TestUtils.onSuccess(request -> {
+      clientRequest.set(request);
+      request
+        .putHeader(HttpHeaders.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary)
+        .putHeader(HttpHeaders.CONTENT_LENGTH, "999999")
+        .response().onComplete(ar -> {});
+      request.write(body);
+    }));
+    await();
   }
 
   @Test

@@ -567,8 +567,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
         } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                  HttpPostRequestDecoder.TooLongFormFieldException |
                  HttpPostRequestDecoder.TooManyFormFieldsException e) {
-          decoder.destroy();
-          decoder = null;
+          cleanupDecoder();
           handleException(e);
         }
       }
@@ -617,9 +616,10 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   }
 
   private void endDecode() {
+    Exception failure = null;
     try {
       decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-      while (decoder.hasNext()) {
+      while (failure == null && decoder.hasNext()) {
         InterfaceHttpData data = decoder.next();
         if (data instanceof Attribute) {
           Attribute attr = (Attribute) data;
@@ -627,11 +627,14 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
             attributes().add(attr.getName(), attr.getValue());
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
-            handleException(e);
+            failure = e;
           } finally {
             attr.release();
           }
         }
+      }
+      if (failure != null) {
+        handleException(failure);
       }
     } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
              HttpPostRequestDecoder.TooLongFormFieldException |
@@ -640,8 +643,7 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
     }  catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
       // ignore this as it is expected
     } finally {
-      decoder.destroy();
-      decoder = null;
+      cleanupDecoder();
     }
   }
 
@@ -649,11 +651,14 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
     HttpEventHandler handler = null;
     Http1ServerResponse resp = null;
     InterfaceHttpData upload = null;
+    HttpPostRequestDecoder decoderToCleanup = null;
     synchronized (conn) {
       if (!isEnded()) {
         handler = eventHandler;
         if (decoder != null) {
           upload = decoder.currentPartialHttpData();
+          decoderToCleanup = decoder;
+          decoder = null;
         }
       }
       if (!response.ended()) {
@@ -663,14 +668,33 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
         resp = response;
       }
     }
-    if (resp != null) {
-      resp.handleException(t);
+    try {
+      if (resp != null) {
+        resp.handleException(t);
+      }
+      if (upload instanceof NettyFileUpload) {
+        ((NettyFileUpload) upload).handleException(t);
+      }
+      if (handler != null) {
+        handler.handleException(t);
+      }
+    } finally {
+      cleanupDecoder(decoderToCleanup);
     }
-    if (upload instanceof NettyFileUpload) {
-      ((NettyFileUpload) upload).handleException(t);
+  }
+
+  private void cleanupDecoder() {
+    HttpPostRequestDecoder decoderToCleanup;
+    synchronized (conn) {
+      decoderToCleanup = decoder;
+      decoder = null;
     }
-    if (handler != null) {
-      handler.handleException(t);
+    cleanupDecoder(decoderToCleanup);
+  }
+
+  private void cleanupDecoder(HttpPostRequestDecoder decoderToCleanup) {
+    if (decoderToCleanup != null) {
+      decoderToCleanup.destroy();
     }
   }
 
