@@ -55,6 +55,12 @@ public class TransportTest extends AsyncTestBase {
     } catch (ClassNotFoundException ignore) {
       // Expected
     }
+    try {
+      Class<?> clazz = classLoader.loadClass("io.netty.channel.uring.IoUring");
+      fail("Was not expected to load IoUring class from " + clazz.getProtectionDomain().getCodeSource().getLocation());
+    } catch (ClassNotFoundException ignore) {
+      // Expected
+    }
     testNetServer(new VertxOptions());
     assertFalse(vertx.isNativeTransportEnabled());
   }
