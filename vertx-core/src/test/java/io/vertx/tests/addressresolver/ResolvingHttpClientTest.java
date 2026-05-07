@@ -231,7 +231,7 @@ public class ResolvingHttpClientTest extends VertxTestBase {
           .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())))
         .withAddressResolver(resolver)
         .build();
-      ((HttpClientImpl)((CleanableHttpClient)client).delegate).proxyFilter(so -> {
+      ((HttpClientImpl)client.unwrap()).proxyFilter(so -> {
         return accept && so.host().equals("s1.example.com");
       });
       Set<String> responses = Collections.synchronizedSet(new HashSet<>());
