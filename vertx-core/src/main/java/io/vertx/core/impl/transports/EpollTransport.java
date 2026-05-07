@@ -136,16 +136,9 @@ public class EpollTransport implements Transport {
       bootstrap.childOption(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
       bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
-
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIdleSeconds() != -1) {
-        bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
-      }
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveCount() != -1) {
-        bootstrap.option(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
-      }
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
-        bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
-      }
+      bootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+      bootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
+      bootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
     }
     Transport.super.configure(options, domainSocket, bootstrap);
   }
@@ -159,16 +152,9 @@ public class EpollTransport implements Transport {
       bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
-
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIdleSeconds() != -1) {
-        bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
-      }
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveCount() != -1) {
-        bootstrap.option(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
-      }
-      if (options.isTcpKeepAlive() && options.getTcpKeepAliveIntervalSeconds() != -1) {
-        bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
-      }
+      bootstrap.option(EpollChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+      bootstrap.option(EpollChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
+      bootstrap.option(EpollChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
     }
     Transport.super.configure(options, connectTimeout, domainSocket, bootstrap);
   }
