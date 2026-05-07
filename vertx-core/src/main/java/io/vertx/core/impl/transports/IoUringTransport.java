@@ -141,6 +141,9 @@ public class IoUringTransport implements Transport {
     bootstrap.childOption(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
     bootstrap.childOption(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.childOption(IoUringChannelOption.TCP_CORK, options.isTcpCork());
+    bootstrap.childOption(IoUringChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+    bootstrap.childOption(IoUringChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
+    bootstrap.childOption(IoUringChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
     Transport.super.configure(options, false, bootstrap);
   }
 
@@ -155,6 +158,9 @@ public class IoUringTransport implements Transport {
     bootstrap.option(IoUringChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
     bootstrap.option(IoUringChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.option(IoUringChannelOption.TCP_CORK, options.isTcpCork());
+    bootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+    bootstrap.option(IoUringChannelOption.TCP_KEEPCNT, options.getTcpKeepAliveCount());
+    bootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
     Transport.super.configure(options, connectTimeout, false, bootstrap);
   }
 }
