@@ -297,21 +297,21 @@ public class NetTest {
     assertEquals(randLong, options.getSslHandshakeTimeout());
     assertIllegalArgumentException(() -> options.setSslHandshakeTimeout(-123));
 
-    assertEquals(NetClientOptions.DEFAULT_TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+    assertEquals(NetClientOptions.DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS, options.getTcpKeepAliveIdleSeconds());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setTcpKeepAliveIdleSeconds(rand));
     assertEquals(rand, options.getTcpKeepAliveIdleSeconds());
     assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(0));
     assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(-123));
 
-    assertEquals(NetClientOptions.DEFAULT_TCP_KEEPCNT, options.getTcpKeepAliveCount());
+    assertEquals(NetClientOptions.DEFAULT_TCP_KEEAPLIVE_COUNT, options.getTcpKeepAliveCount());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setTcpKeepAliveCount(rand));
     assertEquals(rand, options.getTcpKeepAliveCount());
     assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(0));
     assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(-123));
 
-    assertEquals(NetClientOptions.DEFAULT_TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
+    assertEquals(NetClientOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS, options.getTcpKeepAliveIntervalSeconds());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setTcpKeepAliveIntervalSeconds(rand));
     assertEquals(rand, options.getTcpKeepAliveIntervalSeconds());
@@ -440,21 +440,21 @@ public class NetTest {
     assertEquals(randomProxyTimeout, options.getProxyProtocolTimeout());
     assertIllegalArgumentException(() -> options.setProxyProtocolTimeout(-123));
 
-    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPIDLE, options.getTcpKeepAliveIdleSeconds());
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS, options.getTcpKeepAliveIdleSeconds());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setTcpKeepAliveIdleSeconds(rand));
     assertEquals(rand, options.getTcpKeepAliveIdleSeconds());
     assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(0));
     assertIllegalArgumentException(() -> options.setTcpKeepAliveIdleSeconds(-123));
 
-    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPCNT, options.getTcpKeepAliveCount());
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEAPLIVE_COUNT, options.getTcpKeepAliveCount());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setTcpKeepAliveCount(rand));
     assertEquals(rand, options.getTcpKeepAliveCount());
     assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(0));
     assertIllegalArgumentException(() -> options.setTcpKeepAliveCount(-123));
 
-    assertEquals(NetServerOptions.DEFAULT_TCP_KEEPINTVL, options.getTcpKeepAliveIntervalSeconds());
+    assertEquals(NetServerOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS, options.getTcpKeepAliveIntervalSeconds());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setTcpKeepAliveIntervalSeconds(rand));
     assertEquals(rand, options.getTcpKeepAliveIntervalSeconds());

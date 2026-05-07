@@ -57,7 +57,7 @@ public class TcpOption<T> {
    * <p>
    * The maximum number of keepalive probes TCP should send before dropping the connection.
    */
-  public static final TcpOption<Integer> KEEPCNT = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEPCNT) {
+  public static final TcpOption<Integer> KEEPCNT = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_COUNT) {
     @Override
     protected void validate(final Integer value) {
       if (value < -1) {
@@ -71,7 +71,7 @@ public class TcpOption<T> {
    * <p>
    * The time (in seconds) the connection needs to remain idle before TCP starts sending keepalive probes, if enabled.
    */
-  public static final TcpOption<Integer> KEEPIDLE = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEPIDLE) {
+  public static final TcpOption<Integer> KEEPIDLE = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS) {
     @Override
     protected void validate(final Integer value) {
       if (value < -1) {
@@ -85,7 +85,7 @@ public class TcpOption<T> {
    * <p>
    * The time (in seconds) between individual keepalive probes.
    */
-  public static final TcpOption<Integer> KEEPINTVL = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEPINTVL) {
+  public static final TcpOption<Integer> KEEPINTVL = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS) {
     @Override
     protected void validate(final Integer value) {
       if (value < -1) {

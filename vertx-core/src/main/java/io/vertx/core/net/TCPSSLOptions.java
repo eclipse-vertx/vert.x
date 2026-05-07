@@ -102,21 +102,21 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * <p>
    * {@code -1} defaults to OS settings
    */
-  public static final int DEFAULT_TCP_KEEPIDLE = -1;
+  public static final int DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS = -1;
 
   /**
    * Default value for tcp keepalive count.
    * <p>
    * {@code -1} defaults to OS settings
    */
-  public static final int DEFAULT_TCP_KEEPCNT = -1;
+  public static final int DEFAULT_TCP_KEEAPLIVE_COUNT = -1;
 
   /**
    * Default value for tcp keepalive interval.
    * <p>
    * {@code -1} defaults to OS settings
    */
-  public static final int DEFAULT_TCP_KEEPINTVL = -1;
+  public static final int DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS = -1;
 
   private TcpConfig transportOptions;
   private int idleTimeout;
