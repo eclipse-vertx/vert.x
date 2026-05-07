@@ -23,7 +23,6 @@ import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetSocketInternal;
-import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.RepeatRule;
 import io.vertx.test.core.VertxTestBase;
@@ -180,7 +179,7 @@ public class VertxTest extends VertxTestBase {
       client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/").onSuccess(req -> {
         req.send();
       });
-      TcpHttpClientTransport channelConnector = (TcpHttpClientTransport)(((CleanableHttpClient) client).delegate).tcpTransport();
+      TcpHttpClientTransport channelConnector = (TcpHttpClientTransport)(((CleanableHttpClient) client).unwrap()).tcpTransport();
       NetClientInternal netClient = channelConnector.client();
       netClient.closeFuture().onComplete(ar -> {
         closed2.set(true);
