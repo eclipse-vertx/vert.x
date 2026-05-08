@@ -10,47 +10,65 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.Future;
+
 import java.lang.ref.Cleaner;
+import java.lang.ref.WeakReference;
 import java.time.Duration;
-import java.util.function.Consumer;
 
 /**
  * Base object for cleanable proxies.
  */
-public class CleanableObject {
+public class CleanableObject<T> {
 
   public static final Duration DEFAULT_CLEAN_TIMEOUT = Duration.ofSeconds(30);
 
-  private static class Action implements Runnable {
+  private static class Action<T> extends WeakReference<CleanableResource<T>> implements Runnable {
 
-    private Consumer<Duration> dispose;
     private Duration timeout = DEFAULT_CLEAN_TIMEOUT;
+    private Future<Void> closeFuture;
 
-    public Action(Consumer<Duration> dispose) {
-      this.dispose = dispose;
+    public Action(CleanableResource<T> resource) {
+      super(resource);
     }
 
     @Override
     public void run() {
-      Consumer<Duration> d = dispose;
-      dispose = null;
-      d.accept(timeout);
+      CleanableResource<T> d = get();
+      if (d != null) {
+        closeFuture = d.shutdown(timeout);
+      }
     }
   }
 
   private Cleaner.Cleanable cleanable;
-  private Action action;
+  private Action<T> action;
 
-  public CleanableObject(Cleaner cleaner, Consumer<Duration> dispose) {
-    this.action = new Action(dispose);
+  public CleanableObject(Cleaner cleaner, CleanableResource<T> dispose) {
+    this.action = new Action<>(dispose);
     this.cleanable = cleaner.register(this, action);
   }
 
-  protected final void clean(Duration timeout) {
+  protected final T get() {
+    Action<T> action = this.action;
+    CleanableResource<T> resource;
+    return action != null && (resource = action.get()) != null ? resource.get() : null;
+  }
+
+  protected final T getOrDie() {
+    T resource = get();
+    if (resource == null) {
+      throw new IllegalStateException();
+    } else {
+      return resource;
+    }
+  }
+
+  public final Future<Void> shutdown(Duration timeout) {
     if (timeout.isNegative()) {
       throw new IllegalArgumentException();
     }
-    Action action;
+    Action<T> action;
     Cleaner.Cleanable cleanable;
     synchronized (this) {
       action = this.action;
@@ -62,6 +80,9 @@ public class CleanableObject {
       assert cleanable != null;
       action.timeout = timeout;
       cleanable.clean();
+      return action.closeFuture;
+    } else {
+      return Future.succeededFuture();
     }
   }
 }

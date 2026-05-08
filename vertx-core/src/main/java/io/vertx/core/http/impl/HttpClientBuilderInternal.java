@@ -10,6 +10,7 @@ import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.quic.QuicHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
+import io.vertx.core.impl.CleanableResource;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -347,12 +348,13 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
         cf_.add(completion -> impl.close().onComplete(completion));
         return impl;
       });
-      client = new CleanableHttpClient(client, vertx.cleaner(), timeout -> closeFuture.close());
+      HttpClientImpl real = (HttpClientImpl)client;
+      client = new CleanableHttpClient(vertx.cleaner(), real);
       closeable = closeFuture;
     } else {
       HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
       closeable = impl;
-      client = new CleanableHttpClient(impl, vertx.cleaner(), impl::shutdown);
+      client = new CleanableHttpClient(vertx.cleaner(), impl);
     }
     cf.add(closeable);
     return client;

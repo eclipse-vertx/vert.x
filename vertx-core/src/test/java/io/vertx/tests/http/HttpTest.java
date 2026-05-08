@@ -3784,7 +3784,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public Future<Void> end() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();
-    Function<HttpClientResponse, Future<RequestOptions>> handler = ((HttpClientImpl)((CleanableHttpClient)client).delegate).redirectHandler();
+    Function<HttpClientResponse, Future<RequestOptions>> handler = (((CleanableHttpClient)client).unwrap()).redirectHandler();
     Future<RequestOptions> redirection = handler.apply(resp);
     if (expectedAbsoluteURI != null) {
       RequestOptions expectedOptions = new RequestOptions().setAbsoluteURI(location);

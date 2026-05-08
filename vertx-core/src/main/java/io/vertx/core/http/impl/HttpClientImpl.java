@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
+import io.vertx.core.impl.CleanableResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -46,7 +47,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider {
+public class HttpClientImpl extends HttpClientBase implements HttpClientInternal, MetricsProvider, CleanableResource<HttpClientInternal> {
 
   // Pattern to check we are not dealing with an absoluate URI
   static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
@@ -240,6 +241,11 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         key.authority,
         key.server);
     };
+  }
+
+  @Override
+  public HttpClientInternal get() {
+    return this;
   }
 
   @Override

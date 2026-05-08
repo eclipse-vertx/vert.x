@@ -16,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpClientConnection;
 import io.vertx.core.impl.CleanableObject;
+import io.vertx.core.impl.CleanableResource;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpClientTransport;
 import io.vertx.core.internal.http.HttpClientInternal;
@@ -25,7 +26,6 @@ import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
 import java.time.Duration;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -34,103 +34,94 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableHttpClient extends CleanableObject implements HttpClientInternal {
+public class CleanableHttpClient extends CleanableObject<HttpClientInternal> implements HttpClientInternal {
 
-  public final HttpClientInternal delegate;
-
-  public CleanableHttpClient(HttpClientInternal delegate, Cleaner cleaner, Consumer<Duration> dispose) {
+  public CleanableHttpClient(Cleaner cleaner, CleanableResource<HttpClientInternal> dispose) {
     super(cleaner, dispose);
-    this.delegate = delegate;
   }
 
   @Override
   public Future<HttpClientRequest> request(RequestOptions options) {
-    return delegate.request(options);
+    return getOrDie().request(options);
   }
 
   @Override
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
-    return delegate.updateSSLOptions(options, force);
-  }
-
-  @Override
-  public Future<Void> shutdown(Duration timeout) {
-    clean(timeout);
-    return delegate.closeFuture();
+    return getOrDie().updateSSLOptions(options, force);
   }
 
   @Override
   public VertxInternal vertx() {
-    return delegate.vertx();
+    return getOrDie().vertx();
   }
 
   @Override
   public boolean isMetricsEnabled() {
-    return delegate.isMetricsEnabled();
+    return getOrDie().isMetricsEnabled();
   }
 
   @Override
   public Metrics getMetrics() {
-    return delegate.getMetrics();
+    return getOrDie().getMetrics();
   }
 
   @Override
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
-    return delegate.redirectHandler();
+    return getOrDie().redirectHandler();
   }
 
   @Override
   public HttpClientTransport tcpTransport() {
-    return delegate.tcpTransport();
+    return getOrDie().tcpTransport();
   }
 
   @Override
   public HttpClientTransport quicTransport() {
-    return delegate.quicTransport();
+    return getOrDie().quicTransport();
   }
 
   @Override
   public HttpClientInternal exceptionHandler(Handler<Throwable> handler) {
-    return delegate.exceptionHandler(handler);
+    return getOrDie().exceptionHandler(handler);
   }
 
   @Override
   public HttpClientOptions options() {
-    return delegate.options();
+    return getOrDie().options();
   }
 
   @Override
   public HttpClientConfig config() {
-    return delegate.config();
+    return getOrDie().config();
   }
 
   @Override
   public Future<Void> closeFuture() {
-    return delegate.closeFuture();
+    return getOrDie().closeFuture();
   }
 
   @Override
   public void close(Completable<Void> completion) {
-    delegate.close(completion);
+    getOrDie().close(completion);
   }
 
   @Override
   public Future<HttpClientConnection> connect(HttpConnectOptions options) {
-    return delegate.connect(options);
+    return getOrDie().connect(options);
   }
 
   @Override
   public EndpointResolverInternal originResolver() {
-    return delegate.originResolver();
+    return getOrDie().originResolver();
   }
 
   @Override
   public EndpointResolverInternal resolver() {
-    return delegate.resolver();
+    return getOrDie().resolver();
   }
 
   @Override
   public HttpClientInternal unwrap() {
-    return delegate;
+    return get();
   }
 }

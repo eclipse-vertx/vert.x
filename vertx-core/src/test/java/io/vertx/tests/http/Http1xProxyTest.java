@@ -90,7 +90,7 @@ public class Http1xProxyTest extends HttpTestBase2 {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())));
     Set<SocketAddress> filtered = Collections.synchronizedSet(new HashSet<>());
-    ((HttpClientImpl)((CleanableHttpClient)client).delegate).proxyFilter(so -> {
+    ((HttpClientImpl)((CleanableHttpClient)client).unwrap()).proxyFilter(so -> {
       filtered.add(so);
       return accept;
     });

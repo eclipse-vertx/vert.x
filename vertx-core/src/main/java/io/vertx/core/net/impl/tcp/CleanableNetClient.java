@@ -14,6 +14,7 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.CleanableObject;
+import io.vertx.core.impl.CleanableResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
@@ -21,7 +22,6 @@ import io.vertx.core.spi.metrics.Metrics;
 
 import java.lang.ref.Cleaner;
 import java.time.Duration;
-import java.util.function.Consumer;
 
 /**
  * A lightweight proxy of Vert.x {@link NetClient} that can be collected by the garbage collector and release
@@ -29,72 +29,63 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CleanableNetClient extends CleanableObject implements NetClientInternal {
+public class CleanableNetClient extends CleanableObject<NetClientInternal> implements NetClientInternal {
 
-  private final NetClientInternal client;
-
-  public CleanableNetClient(NetClientInternal client, Cleaner cleaner, Consumer<Duration> dispose) {
-    super(cleaner, dispose);
-    this.client = client;
+  public CleanableNetClient(Cleaner cleaner, CleanableResource<NetClientInternal> resource) {
+    super(cleaner, resource);
   }
 
   public NetClientInternal unwrap() {
-    return client;
+    return get();
   }
 
   @Override
   public Future<NetSocket> connect(int port, String host) {
-    return client.connect(port, host);
+    return getOrDie().connect(port, host);
   }
 
   @Override
   public Future<NetSocket> connect(int port, String host, String serverName) {
-    return client.connect(port, host, serverName);
+    return getOrDie().connect(port, host, serverName);
   }
 
   @Override
   public Future<NetSocket> connect(SocketAddress remoteAddress) {
-    return client.connect(remoteAddress);
+    return getOrDie().connect(remoteAddress);
   }
 
   @Override
   public Future<NetSocket> connect(SocketAddress remoteAddress, String serverName) {
-    return client.connect(remoteAddress, serverName);
+    return getOrDie().connect(remoteAddress, serverName);
   }
 
   @Override
   public Future<NetSocket> connect(ConnectOptions connectOptions) {
-    return client.connect(connectOptions);
+    return getOrDie().connect(connectOptions);
   }
 
   @Override
   public Future<Boolean> updateSSLOptions(ClientSSLOptions options, boolean force) {
-    return client.updateSSLOptions(options, force);
+    return getOrDie().updateSSLOptions(options, force);
   }
 
   @Override
   public void close(Completable<Void> completion) {
-    client.close(completion);
+    getOrDie().close(completion);
   }
 
   @Override
   public void connectInternal(ConnectOptions connectOptions, Promise<NetSocket> connectHandler, ContextInternal context) {
-    client.connectInternal(connectOptions, connectHandler, context);
+    getOrDie().connectInternal(connectOptions, connectHandler, context);
   }
 
   @Override
   public Future<Void> closeFuture() {
-    return client.closeFuture();
-  }
-
-  @Override
-  public Future<Void> shutdown(Duration timeout) {
-    clean(timeout);
-    return client.closeFuture();
+    return getOrDie().closeFuture();
   }
 
   @Override
   public Metrics getMetrics() {
-    return client.getMetrics();
+    return getOrDie().getMetrics();
   }
 }

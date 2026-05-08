@@ -61,7 +61,7 @@ public class NetClientBuilder {
     return this;
   }
 
-  public NetClientInternal build() {
+  public NetClientImpl build() {
     return new NetClientImpl(vertx, config, protocol, sslOptions, sslEngineOptions, registerWriteHandler);
   }
 }
