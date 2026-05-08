@@ -19,6 +19,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -60,8 +61,12 @@ public class CleanableWebSocketClient implements WebSocketClient, MetricsProvide
     return delegate.webSocket();
   }
 
+  @Override
   public Future<WebSocket> connect(WebSocketConnectOptions options) {
-    return delegate.connect(options);
+    Future<WebSocket> fut = delegate.connect(options);
+    // Keep this cleanable wrapper reachable until the connect attempt completes.
+    fut.onComplete(ar -> Reference.reachabilityFence(CleanableWebSocketClient.this));
+    return fut;
   }
 
   @Override
