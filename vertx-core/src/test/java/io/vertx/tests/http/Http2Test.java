@@ -897,7 +897,7 @@ public class Http2Test extends HttpTest {
     Path webroot = Files.createTempDirectory("webroot");
     File res = new File(webroot.toFile(), "large.dat");
     RandomAccessFile f = new RandomAccessFile(res, "rw");
-    f.setLength(1024 * 1024);
+    f.setLength(16 * 1024 * 1024);
 
     AtomicInteger errors = new AtomicInteger();
     vertx.getOrCreateContext().exceptionHandler(err -> {

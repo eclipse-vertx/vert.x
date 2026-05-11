@@ -5,6 +5,9 @@ on:
       branch:
         required: true
         type: string
+      io_uring_supported:
+        default: false
+        type: boolean
 jobs:
   CI:
     strategy:
@@ -15,9 +18,9 @@ jobs:
           - os: ubuntu-latest
             jdk: 11
             profile: '-PNativeEpoll'
-#          - os: ubuntu-latest
-#            jdk: 11
-#            profile: '-PNativeIoUring'
+          - os: ubuntu-latest
+            jdk: 11
+            profile: '-PNativeIoUring'
           - os: ubuntu-latest
             jdk: 11
             profile: '-PNativeEpoll+DomainSockets'
@@ -35,6 +38,7 @@ jobs:
       jdk: ${{ matrix.jdk }}
       os: ${{ matrix.os }}
       profile: ${{ matrix.profile }}
+      io_uring_supported: ${{ inputs.io_uring_supported }}
     secrets: inherit
   Deploy:
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}

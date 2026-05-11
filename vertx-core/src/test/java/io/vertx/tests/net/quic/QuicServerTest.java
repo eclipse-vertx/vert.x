@@ -22,10 +22,12 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.*;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import javax.crypto.KeyGenerator;
@@ -319,6 +321,8 @@ public class QuicServerTest extends VertxTestBase {
   }
 
   private void testShutdownServer(Duration grace) throws Exception {
+    // See https://github.com/netty/netty/issues/16718
+    Assume.assumeFalse("Not supported yet with io_uring", TRANSPORT == Transport.IO_URING);
     disableThreadChecks();
     int numStreams = 5;
     int numConnections = 2;

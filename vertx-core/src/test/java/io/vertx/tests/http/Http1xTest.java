@@ -38,7 +38,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
 import io.vertx.test.fakedns.DnsRecord;
 import io.vertx.test.fakedns.WithDnsServer;
@@ -60,7 +59,6 @@ import java.util.stream.Stream;
 import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
-import static io.vertx.test.core.VertxTestBase.TRANSPORT;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.*;
 
@@ -1061,7 +1059,6 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testPipeliningOrder(Checkpoint checkpoint) throws Exception {
-    Assume.assumeFalse(TRANSPORT == Transport.IO_URING);
     client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
     int requests = 100;
 

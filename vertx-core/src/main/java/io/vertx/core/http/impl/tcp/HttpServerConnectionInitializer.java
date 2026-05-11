@@ -270,10 +270,10 @@ public class HttpServerConnectionInitializer {
    * @return the name of the handler to use
    */
   private static String computeChannelName(ChannelPipeline pipeline) {
-    if (pipeline.get(ChunkedWriteHandler.class) != null) {
-      return "chunkedWriter";
-    } else if (pipeline.get(IdleStateHandler.class) != null) {
+    if (pipeline.get(IdleStateHandler.class) != null) {
       return "idle";
+    } else if (pipeline.get(ChunkedWriteHandler.class) != null) {
+      return "chunkedWriter";
     } else {
       return "handler";
     }
