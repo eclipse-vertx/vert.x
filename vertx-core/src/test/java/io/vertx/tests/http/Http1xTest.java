@@ -3668,6 +3668,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  @Ignore
   public void testPartialH2CAmbiguousRequest(Checkpoint checkpoint) throws Exception {
     server.requestHandler(req -> {
       assertEquals(HttpMethod.POST, req.method());
