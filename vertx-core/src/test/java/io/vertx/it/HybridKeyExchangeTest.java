@@ -29,6 +29,7 @@ import io.vertx.test.tls.Trust;
 import io.vertx.test.http.HttpTestBase;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +44,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -72,28 +72,24 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(nonHybridClientSsl)
       .build();
 
-    CompletableFuture<Boolean> cf1 = new CompletableFuture<>();
-    CompletableFuture<Boolean> cf2 = new CompletableFuture<>();
+    var bodyBuffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .await();
+    assertEquals("hybrid-ok", bodyBuffer.toString());
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
-        resp.body().onComplete(onSuccess(body -> {
-          assertEquals("hybrid-ok", body.toString());
-          cf1.complete(true);
-        }));
-      }));
-    }));
 
-    client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        cf2.complete(true);
-      })
-    );
-
-    CompletableFuture.allOf(cf1, cf2).thenAccept((v) -> testComplete()).get();
+    try {
+      client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+        .compose(HttpClientRequest::send)
+        .await();
+      fail("Expected SSLHandshakeException");
+    } catch (Exception expected) {
+      assertEquals(SSLHandshakeException.class, expected.getClass());
+    }
+    testComplete();
   }
 
   @Test
@@ -104,7 +100,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
       .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -138,28 +133,25 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(nonHybridClientSsl)
       .build();
 
-    CompletableFuture<Boolean> cf1 = new CompletableFuture<>();
-    CompletableFuture<Boolean> cf2 = new CompletableFuture<>();
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
-        resp.body().onComplete(onSuccess(body -> {
-          assertEquals("mtls-hybrid-ok", body.toString());
-          cf1.complete(true);
-        }));
-      }));
-    }));
+    var buffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .await();
 
-    client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        cf2.complete(true);
-      })
-    );
+    assertEquals("mtls-hybrid-ok", buffer.toString());
 
-    CompletableFuture.allOf(cf1, cf2).thenAccept((v) -> testComplete()).get();
+    try {
+      client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+        .compose(HttpClientRequest::send)
+        .await();
+      fail("Expected a SSLHandshakeException");
+    } catch (Exception e) {
+      assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
+    }
+    testComplete();
   }
 
   @Test
@@ -168,7 +160,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -185,14 +176,15 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        System.out.println("this is the err " + err);
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        testComplete();
-      })
-    );
-    await();
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+        .compose(HttpClientRequest::send)
+        .await();
+      fail("Expected a thing");
+    } catch ( Exception e) {
+        assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
+    }
+    testComplete();
   }
 
   @Test
@@ -200,7 +192,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -218,13 +209,15 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        testComplete();
-      })
-    );
-    await();
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+        .compose(HttpClientRequest::send)
+        .await();
+      fail("Expected an exceptin");
+    } catch (Exception e) {
+      assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
+    }
+    testComplete();
   }
 
   @Test
@@ -233,7 +226,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -251,13 +243,15 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        testComplete();
-      })
-    );
-    await();
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+        .compose(HttpClientRequest::send)
+        .await();
+      fail("qsdfqsfd");
+    } catch (Exception e) {
+      assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
+    }
+    testComplete();
   }
 
   @Test
@@ -265,9 +259,8 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
-      .setKeyCertOptions(Cert.SNI_PEM.get());
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -287,17 +280,12 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(hybridClientSsl)
       .build();
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
-        resp.body().onComplete(onSuccess(body -> {
-          assertEquals("sni-hybrid-ok", body.toString());
-          testComplete();
-        }));
-      }));
-    }));
-    await();
+    var body = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .await();
+      assertEquals("sni-hybrid-ok", body.toString());
   }
 
   @Test
@@ -305,9 +293,8 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
-      .setKeyCertOptions(Cert.SNI_PEM.get());
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -324,12 +311,15 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        testComplete();
-      })
-    );
+    try {
+      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+        .compose(HttpClientRequest::send)
+        .await();
+      fail("Was expecting a SSLHandshakException");
+    } catch(Exception e) {
+        assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
+    }
+    testComplete();
     await();
   }
 
@@ -339,7 +329,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
@@ -405,7 +394,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
       .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
 
-    server.close();
     server = vertx.httpServerBuilder()
       .with(new HttpServerConfig(new HttpServerOptions()
         .setPort(DEFAULT_HTTPS_PORT)
