@@ -262,12 +262,30 @@ public class SSLOptions {
   }
 
   /**
-   * @return whether to use or not Hybrid key exchange protocol x25519MLKEM768
+   * @return whether the hybrid key exchange protocol X25519MLKEM768 is enabled
    */
   public boolean isUseHybridKeyExchangeProtocol() {
     return useHybridKeyExchangeProtocol;
   }
 
+  /**
+   * Enable or disable the hybrid post-quantum key exchange protocol X25519MLKEM768.
+   * <p>
+   * When enabled, TLS connections will use X25519MLKEM768 for key exchange, providing
+   * protection against quantum computer attacks.
+   * <p>
+   * This feature requires OpenSSL and will not work with the JDK SSL engine. You must:
+   * <ul>
+   *   <li>Use {@link OpenSSLEngineOptions} as the SSL engine</li>
+   *   <li>Have {@code io.netty:netty-tcnative-classes} on the classpath</li>
+   *   <li>Have an OpenSSL provider (e.g. {@code io.smallrye:smallrye-openssl}) on the classpath</li>
+   * </ul>
+   * If OpenSSL is not available, the TLS handshake will fail rather than silently falling back
+   * to a non-quantum-safe key exchange.
+   *
+   * @param useHybridKeyExchangeProtocol {@code true} to enable hybrid key exchange
+   * @return a reference to this, so the API can be used fluently
+   */
   public SSLOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
     this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
     return this;

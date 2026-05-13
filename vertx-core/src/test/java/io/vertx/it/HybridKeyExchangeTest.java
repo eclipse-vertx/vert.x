@@ -261,6 +261,79 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   }
 
   @Test
+  public void testHybridKeyExchangeWithSNI() throws Exception {
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions()
+      .setUseHybridKeyExchangeProtocol(true)
+      .setSni(true)
+      .setKeyCertOptions(Cert.SNI_PEM.get());
+
+    server.close();
+    server = vertx.httpServerBuilder()
+      .with(new HttpServerConfig(new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)))
+      .with(new OpenSSLEngineOptions())
+      .with(serverSslOptions)
+      .build();
+    server.requestHandler(req -> req.response().end("sni-hybrid-ok"));
+    startServer(server);
+
+    ClientSSLOptions hybridClientSsl = new ClientSSLOptions()
+      .setUseHybridKeyExchangeProtocol(true)
+      .setTrustAll(true);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setSsl(true))
+      .with(new OpenSSLEngineOptions())
+      .with(hybridClientSsl)
+      .build();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
+        resp.body().onComplete(onSuccess(body -> {
+          assertEquals("sni-hybrid-ok", body.toString());
+          testComplete();
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testHybridFailsWithSNIWhenPqcNotAvailable() throws Exception {
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions()
+      .setUseHybridKeyExchangeProtocol(true)
+      .setSni(true)
+      .setKeyCertOptions(Cert.SNI_PEM.get());
+
+    server.close();
+    server = vertx.httpServerBuilder()
+      .with(new HttpServerConfig(new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)))
+      .with(serverSslOptions)
+      .build();
+    server.requestHandler(req -> req.response().end("should-not-reach"));
+    startServer(server);
+
+    ClientSSLOptions clientSsl = new ClientSSLOptions()
+      .setTrustAll(true);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setSsl(true))
+      .with(clientSsl)
+      .build();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
+      onFailure(err -> {
+        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
+        testComplete();
+      })
+    );
+    await();
+  }
+
+  @Test
   public void testHybridWithRawNettySocket() throws Exception {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)

@@ -187,7 +187,6 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-tcnative-classes</artifactId>
-      <version>2.0.76.Final</version>
     </dependency>
     <dependency>
       <groupId>io.smallrye</groupId>
