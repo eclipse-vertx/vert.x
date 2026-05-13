@@ -330,4 +330,15 @@ public class SslExamples {
       .with(new OpenSSLEngineOptions())
       .build();
   }
+  public void examplePkcs11(Vertx vertx) {
+    ServerSSLOptions options = new ServerSSLOptions()
+            .setKeyCertOptions(
+                    new KeyStoreOptions().
+                            setType("PKCS11").
+                            setPath("NONE").
+                            setAlias("myAlias").
+                            setProvider("SunPKCS11-hsm").
+                            setPassword("password-of-your-keystore")
+            );
+  }
 }

@@ -113,3 +113,10 @@ Buffer configuration is also supported:
 ----
 
 Keep in mind that pem configuration, the private key is not crypted.
+
+Lastly server private key and certificate can also be provided using PKCS#11 (https://en.wikipedia.org/wiki/PKCS_11) so that they can be stored on an HSM. This works for a single SNI. 
+
+[source,$lang]
+----
+{@link examples.SslExamples#examplePkcs11}
+----
