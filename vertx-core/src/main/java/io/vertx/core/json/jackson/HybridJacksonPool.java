@@ -141,8 +141,8 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
       Node next = topStacks.get(vThreadBufferRecycler.slot);
       while (true) {
         newHead.level = next == null ? 1 : next.level + 1;
+        newHead.next = next;
         if (topStacks.compareAndSet(vThreadBufferRecycler.slot, next, newHead)) {
-          newHead.next = next;
           return;
         } else {
           next = topStacks.get(vThreadBufferRecycler.slot);
