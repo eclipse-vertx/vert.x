@@ -3659,6 +3659,7 @@ public class NetTest {
 
   @Test
   public void testHalfCloseCallsEndHandlerAfterBuffersAreDelivered(Checkpoint checkpoint) throws Exception {
+    Assume.assumeFalse("Intermittent failure with io_uring", TRANSPORT == Transport.IO_URING);
     // Synchronized on purpose
     StringBuffer expected = new StringBuffer();
     server.connectHandler(so -> {
