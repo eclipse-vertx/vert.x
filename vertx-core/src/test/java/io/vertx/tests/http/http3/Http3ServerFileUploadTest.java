@@ -10,7 +10,9 @@
  */
 package io.vertx.tests.http.http3;
 
+import io.vertx.core.transport.Transport;
 import io.vertx.tests.http.fileupload.HttpServerFileUploadTest;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,5 +40,12 @@ public class Http3ServerFileUploadTest extends HttpServerFileUploadTest {
     // On my machine, takes about 40secs to complete
     // 40secs correspond to QuicChannel timeout after the connection is closed
     super.testBrokenFormUploadLargeFile();
+  }
+
+  @Test
+  @Override
+  public void testFormUploadVeryLargeFileStreamToDisk() {
+    Assume.assumeFalse("Not supported yet with io_uring", TRANSPORT == Transport.IO_URING);
+    super.testFormUploadVeryLargeFileStreamToDisk();
   }
 }
