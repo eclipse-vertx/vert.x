@@ -40,7 +40,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   @Test
   public void testHybridKeyExchangeHandshake() throws Exception {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
     server.close();
@@ -55,7 +55,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     startServer(server);
 
     ClientSSLOptions hybridClientSsl = new ClientSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
       .with(new HttpClientOptions().setSsl(true))
@@ -64,7 +64,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .build();
 
     ClientSSLOptions nonHybridClientSsl = new ClientSSLOptions()
-      .setuseHybridKeyExchangeProtocol(false)
+      .setUseHybridKeyExchangeProtocol(false)
       .setTrustAll(true);
     HttpClientAgent client2 = vertx.httpClientBuilder()
       .with(new HttpClientOptions().setSsl(true))
@@ -99,7 +99,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   @Test
   public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
       .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
@@ -119,7 +119,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     startServer(server);
 
     ClientSSLOptions hybridClientSsl = new ClientSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
@@ -129,7 +129,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .build();
 
     ClientSSLOptions nonHybridClientSsl = new ClientSSLOptions()
-      .setuseHybridKeyExchangeProtocol(false)
+      .setUseHybridKeyExchangeProtocol(false)
       .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
       .setTrustAll(true);
     HttpClientAgent client2 = vertx.httpClientBuilder()
@@ -163,9 +163,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   }
 
   @Test
-  public void testHybridFailsWhenPqcNotAvailable() throws Exception {
+  public void testHybridFailsServerSideWhenPqcNotAvailable() throws Exception {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
     server.close();
@@ -179,7 +179,72 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     startServer(server);
 
     ClientSSLOptions clientSsl = new ClientSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setTrustAll(true);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setSsl(true))
+      .with(clientSsl)
+      .build();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
+      onFailure(err -> {
+        System.out.println("this is the err " + err);
+        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
+        testComplete();
+      })
+    );
+    await();
+  }
+
+  @Test
+  public void testHybridFailsClientSideWhenPqcNotAvailable() throws Exception {
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions()
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+
+    server.close();
+    server = vertx.httpServerBuilder()
+      .with(new HttpServerConfig(new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)))
+      .with(serverSslOptions)
+      .build();
+    server.requestHandler(req -> req.response().end("should-not-reach"));
+    startServer(server);
+
+    ClientSSLOptions clientSsl = new ClientSSLOptions()
+      .setUseHybridKeyExchangeProtocol(true)
+      .setTrustAll(true);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setSsl(true))
+      .with(clientSsl)
+      .build();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
+      onFailure(err -> {
+        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
+        testComplete();
+      })
+    );
+    await();
+  }
+
+  @Test
+  public void testHybridFailsWhenPqcNotAvailable() throws Exception {
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions()
+      .setUseHybridKeyExchangeProtocol(true)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+
+    server.close();
+    server = vertx.httpServerBuilder()
+      .with(new HttpServerConfig(new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)))
+      .with(serverSslOptions)
+      .build();
+    server.requestHandler(req -> req.response().end("should-not-reach"));
+    startServer(server);
+
+    ClientSSLOptions clientSsl = new ClientSSLOptions()
+      .setUseHybridKeyExchangeProtocol(true)
       .setTrustAll(true);
     client = vertx.httpClientBuilder()
       .with(new HttpClientOptions().setSsl(true))
@@ -198,7 +263,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   @Test
   public void testHybridWithRawNettySocket() throws Exception {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
     server.close();
@@ -262,7 +327,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   @Test
   public void testHybridMTLSWithRawNettySocket() throws Exception {
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
-      .setuseHybridKeyExchangeProtocol(true)
+      .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
       .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());

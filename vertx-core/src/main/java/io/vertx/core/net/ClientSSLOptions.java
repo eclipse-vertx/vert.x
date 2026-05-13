@@ -131,8 +131,8 @@ public class ClientSSLOptions extends SSLOptions {
   }
 
   @Override
-  public ClientSSLOptions setuseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
-    return (ClientSSLOptions) super.setuseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  public ClientSSLOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (ClientSSLOptions) super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
   }
 
   @Override

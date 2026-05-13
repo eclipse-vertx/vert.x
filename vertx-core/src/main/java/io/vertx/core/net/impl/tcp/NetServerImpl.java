@@ -236,7 +236,7 @@ public class NetServerImpl implements NetServerInternal {
         } else {
           applicationProtocols = null;
         }
-        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni(), sslOptions.isuseHybridKeyExchangeProtocol());
+        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni(), sslOptions.isUseHybridKeyExchangeProtocol());
         ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(applicationProtocols, sslOptions.getSslHandshakeTimeout(),
           sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();

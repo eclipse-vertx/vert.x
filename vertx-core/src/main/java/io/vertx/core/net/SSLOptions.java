@@ -264,11 +264,11 @@ public class SSLOptions {
   /**
    * @return whether to use or not Hybrid key exchange protocol x25519MLKEM768
    */
-  public boolean isuseHybridKeyExchangeProtocol() {
+  public boolean isUseHybridKeyExchangeProtocol() {
     return useHybridKeyExchangeProtocol;
   }
 
-  public SSLOptions setuseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+  public SSLOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
     this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
     return this;
   }
