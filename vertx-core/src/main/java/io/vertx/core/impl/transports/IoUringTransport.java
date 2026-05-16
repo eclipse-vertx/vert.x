@@ -71,7 +71,7 @@ public class IoUringTransport implements Transport {
 
   @Override
   public boolean supportFileRegion() {
-    return !DISABLE_SENDFILE && IoUring.isSpliceSupported();
+    return !DISABLE_SENDFILE;
   }
 
   @Override
