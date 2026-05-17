@@ -148,4 +148,18 @@ public interface ConnectionPool<C> {
    *         to take decisions, this can be used for statistic or testing purpose
    */
   int requests();
+
+  /**
+   * Removes all connections from the pool and returns them in the handler. The pool
+   * is blocked from creating new connections until {@link #resume()} is invoked.
+   *
+   * @param handler the callback handler with the result
+   */
+  void suspend(Handler<AsyncResult<List<Future<C>>>> handler);
+
+  /**
+   * Allows a {@link #suspend suspended} connection pool to continue allocating
+   * and serving new connections.
+   */
+  void resume();
 }
