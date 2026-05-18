@@ -796,6 +796,41 @@ public class NameResolverTest extends VertxTestBase {
   }
 
   @Test
+  public void testTcpFallbackWhenUdpFails() throws Exception {
+    // Verify normal UDP resolution works
+    AddressResolverOptions optionsWithoutFallback = getAddressResolverOptions()
+      .setUseTcpForFallbackDnsResolving(false)
+      .setQueryTimeout(5000);
+
+    VertxInternal vertxWithoutFallback = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(optionsWithoutFallback));
+
+    CountDownLatch noFallbackLatch = new CountDownLatch(1);
+    resolve(vertxWithoutFallback, "vertx.io").onComplete(onSuccess(resolved -> {
+      assertEquals("127.0.0.1", resolved.getHostAddress());
+      noFallbackLatch.countDown();
+    }));
+
+    assertTrue("Normal UDP resolution should succeed", noFallbackLatch.await(2, TimeUnit.SECONDS));
+
+    // Verify TCP fallback works by using extremely short timeout
+    // This forces UDP to timeout quickly, but TCP fallback should still succeed
+    AddressResolverOptions tcpFallbackOptions = getAddressResolverOptions()
+      .setUseTcpForFallbackDnsResolving(true)
+      .setQueryTimeout(1); // Extremely short timeout to force UDP timeout
+
+    VertxInternal vertxWithFallback = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(tcpFallbackOptions));
+
+    CountDownLatch fallbackLatch = new CountDownLatch(1);
+    resolve(vertxWithFallback, "vertx.io").onComplete(onSuccess(resolved -> {
+      assertEquals("127.0.0.1", resolved.getHostAddress());
+      fallbackLatch.countDown();
+    }));
+
+    assertTrue("TCP fallback resolution should succeed within timeout", fallbackLatch.await(5, TimeUnit.SECONDS));
+    testComplete();
+  }
+
+  @Test
   public void testParseResolvConf() {
     assertEquals(-1, NameResolver.parseLinux("options").ndots());
     assertEquals(4, NameResolver.parseLinux("options ndots: 4").ndots());
