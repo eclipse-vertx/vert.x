@@ -122,9 +122,11 @@ public class FileResolverImpl implements FileResolver {
     if (this.cache == null) {
       return resolved;
     }
-    // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
-    // corrupting the content.
-    if (!resolved.exists()) {
+    // Java 25 considers that the empty always exists unlike previous versions, so we need
+    // to check that as well
+    if (resolved.getPath().isEmpty() || !resolved.exists()) {
+      // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
+      // corrupting the content.
       synchronized (cache) {
         // When an absolute file is here, if it falls under the cache directory, then it should be made relative as it
         // could mean that a previous resolution has been used to resolve a non local file system resource

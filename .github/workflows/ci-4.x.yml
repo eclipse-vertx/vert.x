@@ -15,12 +15,12 @@ jobs:
     name: Run tests
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-2022]
         profile: [""]
         jdk: [8]
         include:
           - os: ubuntu-latest
-            jdk: 21
+            jdk: 25
           - os: ubuntu-latest
             jdk: 8
             profile: '-PtestNativeTransport'

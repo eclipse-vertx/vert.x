@@ -17,6 +17,8 @@ import org.apache.logging.log4j.message.FormattedMessage;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 
+import static io.vertx.core.logging.JULLogDelegate.logMessage;
+
 /**
  * A {@link LogDelegate} which delegates to Apache Log4j 2
  *
@@ -156,7 +158,7 @@ public class Log4j2LogDelegate implements LogDelegate {
     if (message instanceof Message) {
       logger.logIfEnabled(FQCN, level, null, (Message) message, t);
     } else {
-      logger.logIfEnabled(FQCN, level, null, message, t);
+      logger.logIfEnabled(FQCN, level, null, logMessage(message, t), t);
     }
   }
 

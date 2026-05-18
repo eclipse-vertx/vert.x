@@ -238,8 +238,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     synchronized (this) {
       responses.add(stream);
       this.isConnect = connect;
-      if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(request.uri, request);
+      if (metrics != null) {
+        Object metric = stream.metric;
+        if (metric != null) {
+          metrics.requestBegin(metric, request.uri, request);
+        } else {
+          stream.metric = metrics.requestBegin(request.uri, request);
+        }
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
@@ -364,10 +369,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private long bytesWritten;
     private long readWindow;
 
-    Stream(Http1xClientConnection conn, ContextInternal context, int id) {
+    Stream(Http1xClientConnection conn, ContextInternal context, Object metric, int id) {
       this.conn = conn;
       this.context = context;
       this.id = id;
+      this.metric = metric;
       this.promise = context.promise();
     }
 
@@ -430,8 +436,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<Throwable> exceptionHandler;
     private Handler<Void> closeHandler;
 
-    StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
-      super(conn, context, id);
+    StreamImpl(ContextInternal context, Http1xClientConnection conn, Object metric, int id) {
+      super(conn, context, metric, id);
 
       this.queue = new InboundBuffer<>(context, 5)
         .handler(item -> {
@@ -1301,7 +1307,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         if (closed) {
           stream = null;
         } else {
-          stream = new StreamImpl(context, this, seq++);
+          Object metric;
+          if (metrics != null) {
+            metric = metrics.init();
+          } else {
+            metric = null;
+          }
+          stream = new StreamImpl(context, this, metric, seq++);
           requests.add(stream);
           if (requests.size() == 1) {
             stream.promise.complete(stream);

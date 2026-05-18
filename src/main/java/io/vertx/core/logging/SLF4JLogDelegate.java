@@ -19,6 +19,7 @@ import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 import org.slf4j.spi.LocationAwareLogger;
 
+import static io.vertx.core.logging.JULLogDelegate.logMessage;
 import static org.slf4j.spi.LocationAwareLogger.*;
 
 /**
@@ -163,7 +164,7 @@ public class SLF4JLogDelegate implements LogDelegate {
   }
 
   private void log(int level, Object message, Throwable t, Object... params) {
-    String msg = (message == null) ? "NULL" : message.toString();
+    String msg = logMessage(message, t);
 
     // We need to compute the right parameters.
     // If we have both parameters and an error, we need to build a new array [params, t]

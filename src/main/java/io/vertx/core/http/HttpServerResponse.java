@@ -42,6 +42,11 @@ import java.util.Set;
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
  * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
+ * <p>
+ * Any response should end with a terminal action, which are {@link #end()} or {@link #sendFile(String)} for successful
+ * completion of the request, or {@link #reset()} for erroneous completion of the request, so you can only call one of
+ * the three methods as the last step in dealing with your response, but you must call one of the three methods.
+ * </p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -312,6 +317,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * the actual response won't get written until this method gets called.
    * <p>
    * Once the response has ended, it cannot be used any more.
+   * </p>
+   * <p>
+   * This is a terminal action, like {@link #sendFile(String)} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
    *
    * @return a future completed with the body result
    */
@@ -396,8 +406,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #sendFile(String, long)} using offset @code{0} which means starting from the beginning of the file.
    *
-   * @param filename  path to the file to serve
-   * @return a future completed with the body result
+   * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
+   * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
+   * </p>
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
+   * @return a future notified when the response has been written
    */
   default Future<Void> sendFile(String filename) {
     return sendFile(filename, 0);
@@ -406,6 +422,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #sendFile(String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
    * file.
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
    *
    * @param filename  path to the file to serve
    * @param offset offset to start serving from
@@ -421,6 +441,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * (where supported by the underlying operating system.
    * This is a very efficient way to serve files.<p>
    * The actual serve is asynchronous and may not complete until some time after this method has returned.
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
    *
    * @param filename  path to the file to serve
    * @param offset offset to start serving from
@@ -432,6 +456,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #sendFile(String)} but providing a handler which will be notified once the file has been completely
    * written to the wire.
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
    *
    * @param filename path to the file to serve
    * @param resultHandler  handler that will be called on completion
@@ -445,6 +473,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #sendFile(String, long)} but providing a handler which will be notified once the file has been completely
    * written to the wire.
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
    *
    * @param filename path to the file to serve
    * @param offset the offset to serve from
@@ -459,6 +491,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #sendFile(String, long, long)} but providing a handler which will be notified once the file has been
    * completely written to the wire.
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
+   * three methods as the last step in dealing with your response.
+   * </p>
    *
    * @param filename path to the file to serve
    * @param offset the offset to serve from
@@ -672,7 +708,8 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<HttpServerResponse> push(HttpMethod method, HostAndPort authority, String path, MultiMap headers);
 
   /**
-   * Reset this HTTP/2 stream with the error code {@code 0}.
+   * Equivalent to calling {@link #reset(long)} with {@code 0}.
+   * @see #reset(long)
    */
   default boolean reset() {
     return reset(0L);
@@ -687,6 +724,10 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * </ul>
    * <p/>
    * When the response has already been sent nothing happens and {@code false} is returned as indicator.
+   * <p>
+   * This is a terminal action, like {@link #end()} and {@link #sendFile(String)}, so you can only call one of the three
+   * methods as the last step in dealing with your response.
+   * </p>
    *
    * @param code the error code
    * @return {@code true} when reset has been performed

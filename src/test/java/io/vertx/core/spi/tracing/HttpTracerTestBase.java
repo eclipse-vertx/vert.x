@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
@@ -65,7 +66,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       }
       @Override
       public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
-        assertTrue(seq.compareAndSet(1, 2));
+        assertTrue(seq.compareAndSet(2, 3));
         assertNotNull(response);
         assertTrue(response instanceof HttpServerResponse);
         assertNull(failure);
@@ -78,11 +79,15 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       assertEquals(1, seq.get());
       ContextInternal ctx = (ContextInternal) Vertx.currentContext();
       assertSame(val, key.get(ctx));
-      req.response().closeHandler(v -> {
-        assertNull(key.get(ctx));
-        assertEquals(2, seq.get());
+      HttpServerResponse resp = req.response();
+      resp.endHandler(v -> {
+        assertTrue(seq.compareAndSet(1, 2));
       });
-      req.response().end();
+      resp.closeHandler(v -> {
+        assertNull(key.get(ctx));
+        assertEquals(3, seq.get());
+      });
+      resp.end();
     }).listen(DEFAULT_HTTP_PORT, "localhost", onSuccess(v -> {
       latch.countDown();
     }));

@@ -148,6 +148,9 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     if (options == null) {
       throw new IllegalArgumentException("Invalid null value passed for traffic shaping options update");
     }
+    if (!listening) {
+      throw new IllegalStateException("Listening initialization not completed yet");
+    }
     TCPServerBase server = actualServer;
     // Update the traffic shaping options only for the actual/main server
     if (server != null && server != this) {
@@ -189,7 +192,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     }
 
     this.listenContext = context;
-    this.listening = true;
     this.eventLoop = context.nettyEventLoop();
 
     SocketAddress bindAddress;
@@ -285,7 +287,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           }
           listening = false;
         });
-
+        this.listening = true;
         return bindFuture;
       } else {
         // Server already exists with that host/port - we will use that
@@ -298,6 +300,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         listenContext.addCloseHook(this);
         main.bindFuture.onComplete(promise);
+        this.listening = true;
         return promise.future();
       }
     }

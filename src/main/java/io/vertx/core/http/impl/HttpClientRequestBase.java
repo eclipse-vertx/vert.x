@@ -28,11 +28,10 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpClientRequestBase implements HttpClientRequest {
+public abstract class HttpClientRequestBase implements HttpClientRequestInternal {
 
   protected final ContextInternal context;
   protected final HttpClientStream stream;
-  protected final SocketAddress server;
   protected final boolean ssl;
   private io.vertx.core.http.HttpMethod method;
   private String host;
@@ -53,7 +52,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
-    this.server = server;
     this.host = host;
     this.port = port;
     this.ssl = stream.connection().isSsl();
@@ -76,6 +74,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     } else {
       return host + ':' + port;
     }
+  }
+
+  public Object metric() {
+    return stream.metric();
   }
 
   @Override
@@ -233,7 +235,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
           return;
         }
       }
-      cause = timeoutEx(timeoutMs, method, server, uri);
+      cause = timeoutEx(timeoutMs, method, stream.connection().remoteAddress(), uri);
     }
     reset(cause);
   }

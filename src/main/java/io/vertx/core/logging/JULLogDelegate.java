@@ -22,6 +22,39 @@ import java.util.logging.LogRecord;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public class JULLogDelegate implements LogDelegate {
+
+  private static final String MISSING_LOG_MESSAGE = "<missing-log-message>";
+
+  /**
+   * Best effort to provide a human-readable message from the {@code message} and {@code cause}
+   * @param message the message
+   * @param cause the throwable
+   * @return the log message, never {@code null}
+   */
+  static String logMessage(Object message, Throwable cause) {
+    String msg;
+    if (message != null) {
+      msg = message.toString();
+    } else if (cause != null) {
+      msg = cause.getMessage();
+    } else {
+      msg = null;
+    }
+    if (msg == null) {
+      msg = MISSING_LOG_MESSAGE;
+    }
+    return msg;
+  }
+
+  /**
+   * Best effort to provide a human-readable message from the {@code message}
+   * @param message the message
+   * @return the log message, never {@code null}
+   */
+  static String logMessage(Object message) {
+    return logMessage(message, null);
+  }
+
   private final java.util.logging.Logger logger;
 
   JULLogDelegate(final String name) {
@@ -151,7 +184,7 @@ public class JULLogDelegate implements LogDelegate {
     if (!logger.isLoggable(level)) {
       return;
     }
-    String msg = (message == null) ? "NULL" : message.toString();
+    String msg = logMessage(message, t);
     LogRecord record = new LogRecord(level, msg);
     record.setLoggerName(logger.getName());
     if (t != null) {

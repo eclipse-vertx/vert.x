@@ -11,7 +11,10 @@
 
 package io.vertx.core;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.ServiceLoader;
 
 /**
  * A helper class for loading factories from the classpath.
@@ -45,29 +48,26 @@ public class ServiceHelper {
   }
 
   public static <T> Collection<T> loadFactories(Class<T> clazz, ClassLoader classLoader) {
-    List<T> list = new ArrayList<>();
-    ServiceLoader<T> factories;
     if (classLoader != null) {
-      factories = ServiceLoader.load(clazz, classLoader);
-    } else {
-      // this is equivalent to:
-      // ServiceLoader.load(clazz, TCCL);
-      factories = ServiceLoader.load(clazz);
+      return loadFactories(ServiceLoader.load(clazz, classLoader));
     }
+    classLoader = Thread.currentThread().getContextClassLoader();
+    List<T> list = loadFactories(ServiceLoader.load(clazz, classLoader));
+    if (list.isEmpty() && classLoader != ServiceHelper.class.getClassLoader()) {
+      // By default, ServiceLoader.load uses the TCCL, this may not be enough in environment dealing with
+      // classloaders differently such as OSGi. So we should try to use the  classloader having loaded this
+      // class. In OSGi it would be the bundle exposing vert.x and so have access to all its classes.
+      list = loadFactories(ServiceLoader.load(clazz, ServiceHelper.class.getClassLoader()));
+    }
+    return list;
+  }
+
+  private static <T> List<T> loadFactories(ServiceLoader<T> factories) {
+    List<T> list = new ArrayList<>();
     if (factories.iterator().hasNext()) {
       factories.iterator().forEachRemaining(list::add);
       return list;
-    } else {
-      // By default ServiceLoader.load uses the TCCL, this may not be enough in environment dealing with
-      // classloaders differently such as OSGi. So we should try to use the  classloader having loaded this
-      // class. In OSGi it would be the bundle exposing vert.x and so have access to all its classes.
-      factories = ServiceLoader.load(clazz, ServiceHelper.class.getClassLoader());
-      if (factories.iterator().hasNext()) {
-        factories.iterator().forEachRemaining(list::add);
-        return list;
-      } else {
-        return Collections.emptyList();
-      }
     }
+    return list;
   }
 }

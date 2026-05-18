@@ -1102,7 +1102,7 @@ public class BufferTest {
   public void testLength() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
     Buffer buffer = Buffer.buffer(bytes);
-    assertEquals(100, Buffer.buffer(buffer.getByteBuf()).length());
+    assertEquals(100, TestUtils.leftPad(1, Buffer.buffer(buffer.getByteBuf())).length());
   }
 
   @Test

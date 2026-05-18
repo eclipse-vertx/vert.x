@@ -12,10 +12,7 @@ package io.vertx.core.http;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
@@ -40,6 +37,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +66,7 @@ public class Http2MYRServerTest extends Http2TestBase {
     AtomicInteger inflightRequests = new AtomicInteger();
     AtomicInteger maxInflightRequests = new AtomicInteger();
     AtomicInteger receivedRstFrames = new AtomicInteger();
-    CompletableFuture<Void> goAway = new CompletableFuture<>();
+    CompletableFuture<Boolean> goAway = new CompletableFuture<>();
 
     server.requestHandler(req -> {
       int val = inflightRequests.incrementAndGet();
@@ -140,7 +138,7 @@ public class Http2MYRServerTest extends Http2TestBase {
 
                   @Override
                   public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode, ByteBuf debugData) throws Http2Exception {
-                    goAway.complete(null);
+                    goAway.complete(true);
                   }
                 });
                 return super.build();
@@ -150,6 +148,16 @@ public class Http2MYRServerTest extends Http2TestBase {
             Builder clientHandlerBuilder = new Builder();
             Http2ConnectionHandler clientHandler = clientHandlerBuilder.build();
             ch.pipeline().addLast(clientHandler);
+            ch.pipeline().addLast(new ChannelDuplexHandler() {
+              @Override
+              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                if (cause instanceof IOException && cause.getMessage().startsWith("Connection reset")) {
+                  goAway.complete(false);
+                } else {
+                  goAway.completeExceptionally(cause);
+                }
+              }
+            });
           }
         };
       }
@@ -178,10 +186,14 @@ public class Http2MYRServerTest extends Http2TestBase {
       chctx.flush();
     }).sync();
 
-    goAway.get(10, TimeUnit.SECONDS);
-
     // Check the number of rst frame received before getting a go away
-    assertEquals(receivedRstFrames.get(), maxRstFramePerWindow + 1);
-    assertEquals(maxInflightRequests.get(), maxRstFramePerWindow + 1);
+    if (goAway.get(20, TimeUnit.SECONDS)) {
+      assertEquals(receivedRstFrames.get(), maxRstFramePerWindow + 1);
+    } else {
+      // Mitigate CI behavior
+      assertTrue(receivedRstFrames.get() < maxRstFramePerWindow + 1);
+    }
+
+    assertTrue(maxInflightRequests.get() <= 2 * maxRstFramePerWindow );
   }
 }

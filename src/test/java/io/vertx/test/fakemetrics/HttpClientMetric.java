@@ -16,6 +16,7 @@ import io.vertx.core.spi.observability.HttpRequest;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class HttpClientMetric {
 
   public final EndpointMetric endpoint;
-  public final HttpRequest request;
+  public final AtomicReference<HttpRequest> request;
   public final AtomicInteger requestEnded = new AtomicInteger();
   public final AtomicInteger responseBegin = new AtomicInteger();
   public final AtomicLong bytesRead = new AtomicLong();
@@ -32,6 +33,11 @@ public class HttpClientMetric {
 
   public HttpClientMetric(EndpointMetric endpoint, HttpRequest request) {
     this.endpoint = endpoint;
-    this.request = request;
+    this.request = new AtomicReference<>(request);
+  }
+
+  public HttpClientMetric(EndpointMetric endpoint) {
+    this.endpoint = endpoint;
+    this.request = new AtomicReference<>();
   }
 }
