@@ -40,6 +40,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeHandshake() throws Exception {
+    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -81,19 +82,20 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     assertEquals("hybrid-ok", bodyBuffer.toString());
 
 
-    try {
-      client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
-        .compose(HttpClientRequest::send)
-        .await();
-      fail("Expected SSLHandshakeException");
-    } catch (Exception expected) {
-      assertEquals(SSLHandshakeException.class, expected.getClass());
-    }
-    testComplete();
+    client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+      });
+    await();
+    System.out.println("end");
   }
 
   @Test
   public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
+    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
@@ -142,20 +144,21 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .await();
 
     assertEquals("mtls-hybrid-ok", buffer.toString());
-
-    try {
-      client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
-        .compose(HttpClientRequest::send)
-        .await();
-      fail("Expected a SSLHandshakeException");
-    } catch (Exception e) {
-      assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
-    }
-    testComplete();
+    System.out.println("yes");
+    client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+      });
+    await();
+    System.out.println("end");
   }
 
   @Test
   public void testHybridFailsServerSideWhenPqcNotAvailable() throws Exception {
+    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -175,20 +178,23 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(new HttpClientOptions().setSsl(true))
       .with(clientSsl)
       .build();
-
-    try {
-      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
-        .compose(HttpClientRequest::send)
-        .await();
-      fail("Expected a thing");
-    } catch ( Exception e) {
-        assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
-    }
-    testComplete();
+    System.out.println("hoho");
+    var f = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .onComplete(ar -> {
+        System.out.println("in here");
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+        client.close();
+        server.close();
+      });
+    await();
+    System.out.println("end");
   }
 
   @Test
   public void testHybridFailsClientSideWhenPqcNotAvailable() throws Exception {
+    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
@@ -209,15 +215,15 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    try {
-      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
-        .compose(HttpClientRequest::send)
-        .await();
-      fail("Expected an exceptin");
-    } catch (Exception e) {
-      assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
-    }
-    testComplete();
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+      });
+    await();
+    System.out.println("end");
   }
 
   @Test
@@ -243,15 +249,14 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    try {
-      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
-        .compose(HttpClientRequest::send)
-        .await();
-      fail("qsdfqsfd");
-    } catch (Exception e) {
-      assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
-    }
-    testComplete();
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+      });
+    await();
   }
 
   @Test
@@ -285,7 +290,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .expecting(HttpResponseExpectation.SC_OK)
       .compose(HttpClientResponse::body)
       .await();
-      assertEquals("sni-hybrid-ok", body.toString());
+    assertEquals("sni-hybrid-ok", body.toString());
   }
 
   @Test
@@ -311,15 +316,13 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(clientSsl)
       .build();
 
-    try {
-      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
-        .compose(HttpClientRequest::send)
-        .await();
-      fail("Was expecting a SSLHandshakException");
-    } catch(Exception e) {
-        assertTrue(e instanceof javax.net.ssl.SSLHandshakeException);
-    }
-    testComplete();
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+      });
     await();
   }
 
@@ -454,6 +457,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       ch.close().sync();
     } finally {
       group.shutdownGracefully();
+      testComplete();
     }
   }
 

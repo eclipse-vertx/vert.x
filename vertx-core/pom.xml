@@ -189,12 +189,6 @@
       <artifactId>netty-tcnative-classes</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.smallrye</groupId>
-      <artifactId>smallrye-openssl</artifactId>
-      <classifier>linux-x86_64</classifier>
-      <version>0.1.4</version>
-    </dependency>
-    <dependency>
       <groupId>com.aayushatharva.brotli4j</groupId>
       <artifactId>brotli4j</artifactId>
       <version>1.23.0</version>
@@ -1043,6 +1037,13 @@
           <classifier>linux-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-openssl</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <version>0.1.4</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -1073,6 +1074,13 @@
           <classifier>linux-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-openssl</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <version>0.1.4</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -1101,6 +1109,13 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-codec-native-quic</artifactId>
           <classifier>linux-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-openssl</artifactId>
+          <classifier>linux-aarch_64</classifier>
+          <version>0.1.4</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
