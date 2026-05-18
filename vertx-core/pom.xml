@@ -427,7 +427,7 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+                <classpathDependencyExclude>io.smallrye:smallrye-openssl</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
