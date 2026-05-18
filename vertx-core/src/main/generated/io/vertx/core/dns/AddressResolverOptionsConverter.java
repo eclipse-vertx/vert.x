@@ -102,6 +102,11 @@ public class AddressResolverOptionsConverter {
             obj.setRoundRobinInetAddress((Boolean)member.getValue());
           }
           break;
+        case "useTcpForFallbackDnsResolving":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseTcpForFallbackDnsResolving((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -141,5 +146,6 @@ public class AddressResolverOptionsConverter {
     json.put("ndots", obj.getNdots());
     json.put("rotateServers", obj.isRotateServers());
     json.put("roundRobinInetAddress", obj.isRoundRobinInetAddress());
+    json.put("useTcpForFallbackDnsResolving", obj.isUseTcpForFallbackDnsResolving());
   }
 }

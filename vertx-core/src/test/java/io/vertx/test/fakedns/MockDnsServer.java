@@ -11,17 +11,18 @@
 package io.vertx.test.fakedns;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.dns.*;
 import io.netty.handler.codec.dns.DnsRecord;
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.Vertx;
-import io.vertx.core.internal.VertxInternal;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,21 +43,15 @@ public class MockDnsServer {
   private String ipAddress = IP_ADDRESS;
   private int port = PORT;
 
-  private EventLoopGroup eventLoop;
-  private ChannelFactory<? extends Channel> channelFactory;
-  private Channel channel;
+  private final EventLoopGroup eventLoop = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+  private final ChannelFactory<? extends Channel> channelFactory = NioDatagramChannel::new;
+  private Channel udpChannel;
+  private Channel tcpChannel;
   private RecordStore store;
-  private List<Throwable> failures = new CopyOnWriteArrayList<>();
+  private final List<Throwable> failures = new CopyOnWriteArrayList<>();
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
-
-  public MockDnsServer(Vertx vertx) {
-    this.eventLoop = ((VertxInternal) vertx).nettyEventLoopGroup().next();
-    this.channelFactory = ((VertxInternal) vertx).transport().datagramChannelFactory();
-  }
-
-  public MockDnsServer() {
-    this.eventLoop = null;
-  }
+  private boolean enableTcp = false;
+  private boolean enableUdp = true;
 
   public MockDnsServer store(RecordStore store) {
     this.store = store;
@@ -68,7 +63,12 @@ public class MockDnsServer {
   }
 
   public InetSocketAddress localAddress() {
-    return (InetSocketAddress) channel.localAddress();
+    if (udpChannel != null) {
+      return (InetSocketAddress) udpChannel.localAddress();
+    } if (tcpChannel != null) {
+      return (InetSocketAddress) tcpChannel.localAddress();
+    }
+    throw new IllegalStateException("At least one of the channels must be started");
   }
 
   public MockDnsServer ipAddress(String ipAddress) {
@@ -81,28 +81,41 @@ public class MockDnsServer {
     return this;
   }
 
+  public MockDnsServer enableTcp(boolean enableTcp) {
+    this.enableTcp = enableTcp;
+    return this;
+  }
+
+  public MockDnsServer enableUdp(boolean enableUdp) {
+    this.enableUdp = enableUdp;
+    return this;
+  }
+
   public void start() {
-    if (channel != null) {
+    if (udpChannel != null || tcpChannel != null) {
       throw new IllegalStateException();
     }
-    EventLoopGroup eventLoop = this.eventLoop;
-    ChannelFactory<? extends Channel> channelFactory = this.channelFactory;
-    if (eventLoop == null) {
-      eventLoop = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
-      channelFactory = NioDatagramChannel::new;
+    if (enableUdp) {
+      startUdp();
     }
+    if (enableTcp) {
+      startTcp();
+    }
+  }
+
+  private void startUdp() {
     Bootstrap bootstrap = new Bootstrap()
       .group(eventLoop)
       .channelFactory(channelFactory)
       .handler(new ChannelInitializer<DatagramChannel>() {
         @Override
-        protected void initChannel(DatagramChannel ch) throws Exception {
+        protected void initChannel(DatagramChannel ch) {
           ChannelPipeline p = ch.pipeline();
           p.addLast(new DatagramDnsQueryDecoder())
             .addLast(new DatagramDnsResponseEncoder())
             .addLast(new SimpleChannelInboundHandler<DatagramDnsQuery>() {
               @Override
-              protected void channelRead0(ChannelHandlerContext ctx, DatagramDnsQuery msg) throws UnknownHostException {
+              protected void channelRead0(ChannelHandlerContext ctx, DatagramDnsQuery msg) {
                 DnsRecord dnsRecord = msg.recordAt(DnsSection.QUESTION);
                 synchronized (MockDnsServer.this) {
                   currentMessage.add(msg);
@@ -140,33 +153,78 @@ public class MockDnsServer {
       PlatformDependent.throwException(e);
       return;
     } finally {
-      if (!started && this.eventLoop == null) {
+      if (!started) {
         eventLoop.shutdownGracefully(0, 10, TimeUnit.SECONDS);
       }
     }
     if (fut.isSuccess()) {
-      channel = fut.channel();
+      udpChannel = fut.channel();
     } else {
-      if (this.eventLoop == null) {
-        eventLoop.shutdownGracefully(0, 10, TimeUnit.SECONDS);
-      }
       PlatformDependent.throwException(fut.cause());
     }
   }
 
-  public List<Throwable> stop() throws Exception {
-    Channel channel = this.channel;
-    this.channel = null;
-    if (channel != null) {
-      try {
-        channel.close().sync();
-      } finally {
-        if (this.eventLoop == null) {
-          channel
-            .eventLoop()
-            .shutdownGracefully(0, 10, TimeUnit.SECONDS);
+  private void startTcp() {
+    ServerBootstrap tcpBootstrap = new ServerBootstrap()
+      .group(eventLoop)
+      .channel(NioServerSocketChannel.class)
+      .childHandler(new ChannelInitializer<SocketChannel>() {
+        @Override
+        protected void initChannel(SocketChannel ch) {
+          ChannelPipeline p = ch.pipeline();
+          p.addLast(new TcpDnsQueryDecoder())
+            .addLast(new TcpDnsResponseEncoder())
+            .addLast(new SimpleChannelInboundHandler<DnsQuery>() {
+              @Override
+              protected void channelRead0(ChannelHandlerContext ctx, DnsQuery msg) {
+                DnsRecord dnsRecord = msg.recordAt(DnsSection.QUESTION);
+                synchronized (MockDnsServer.this) {
+                  currentMessage.add(msg);
+                }
+
+                DefaultDnsResponse response = new DefaultDnsResponse(msg.id(), DnsOpCode.QUERY);
+                response.addRecord(DnsSection.QUESTION, dnsRecord);
+                RecordStore s = store;
+                if (s != null) {
+                  Collection<DnsRecord> records;
+                  try {
+                    records = s.getRecords((DnsQuestion) dnsRecord);
+                  } catch (Throwable failure) {
+                    failures.add(failure);
+                    return;
+                  }
+                  if (records != null) {
+                    for (DnsRecord record : records) {
+                      response.addRecord(DnsSection.ANSWER, record);
+                    }
+                  }
+                }
+                ctx.writeAndFlush(response);
+              }
+            });
         }
-      }
+      });
+    try {
+      ChannelFuture tcpFut = tcpBootstrap.bind(ipAddress, port).sync();
+      tcpChannel = tcpFut.channel();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      PlatformDependent.throwException(e);
+    }
+  }
+
+  public List<Throwable> stop() throws Exception {
+    Channel tc = this.tcpChannel;
+    this.tcpChannel = null;
+    Channel channel = this.udpChannel;
+    this.udpChannel = null;
+
+    if (channel != null) {
+      channel.eventLoop().parent().shutdownGracefully(0, 10, TimeUnit.SECONDS);
+      channel.close().sync();
+    } else if (tc != null) {
+      tc.eventLoop().parent().shutdownGracefully(0, 10, TimeUnit.SECONDS);
+      tc.close().sync();
     }
     return failures;
   }
