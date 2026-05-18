@@ -60,8 +60,8 @@ public class TcpOption<T> {
   public static final TcpOption<Integer> KEEPCNT = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_COUNT) {
     @Override
     protected void validate(final Integer value) {
-      if (value < -1) {
-        throw new IllegalArgumentException("KEEPCNT must be >= -1");
+      if (value == 0 || value < -1) {
+        throw new IllegalArgumentException("KEEPCNT must be > 0 or == -1");
       }
     }
   };
@@ -74,8 +74,8 @@ public class TcpOption<T> {
   public static final TcpOption<Integer> KEEPIDLE = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS) {
     @Override
     protected void validate(final Integer value) {
-      if (value < -1) {
-        throw new IllegalArgumentException("KEEPIDLE must be >= -1");
+      if (value == 0 || value < -1) {
+        throw new IllegalArgumentException("KEEPIDLE must be > 0 or == -1");
       }
     }
   };
@@ -88,8 +88,8 @@ public class TcpOption<T> {
   public static final TcpOption<Integer> KEEPINTVL = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS) {
     @Override
     protected void validate(final Integer value) {
-      if (value < -1) {
-        throw new IllegalArgumentException("KEEPINTVL must be >= -1");
+      if (value == 0 || value < -1) {
+        throw new IllegalArgumentException("KEEPINTVL must be > 0 or == -1");
       }
     }
   };
