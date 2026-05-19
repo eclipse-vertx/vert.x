@@ -40,35 +40,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class HybridKeyExchangeTest extends HttpTestBase {
 
-  private static final boolean PQC_SUPPORTED;
-
-  static {
-    boolean supported;
-    try {
-      SslContext ctx = SslContextBuilder.forClient()
-        .sslProvider(SslProvider.OPENSSL)
-        .trustManager(InsecureTrustManagerFactory.INSTANCE)
-        .build();
-      SslHandler handler = ctx.newHandler(ByteBufAllocator.DEFAULT);
-      try {
-        long sslPtr = ((ReferenceCountedOpenSslEngine) handler.engine()).sslPointer();
-        supported = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
-      } finally {
-        handler.engine().closeOutbound();
-      }
-    } catch (Exception e) {
-      supported = false;
-    }
-    PQC_SUPPORTED = supported;
-  }
-
-  private void assumePqcSupported() {
-    Assume.assumeTrue("X25519MLKEM768 not supported by the available OpenSSL", PQC_SUPPORTED);
-  }
 
   @Test
   public void testHybridKeyExchangeHandshake() throws Exception {
-    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -122,7 +96,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
-    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
@@ -280,7 +253,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeWithSNI() throws Exception {
-    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
@@ -348,7 +320,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridWithRawNettySocket() throws Exception {
-    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -412,7 +383,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridMTLSWithRawNettySocket() throws Exception {
-    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
