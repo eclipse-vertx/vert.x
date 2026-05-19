@@ -128,6 +128,7 @@ public class SSLHelper {
   private final ClientAuth clientAuth;
   private final boolean client;
   private final boolean useAlpn;
+  private final boolean useHybrid;
   private final String endpointIdentificationAlgorithm;
   private final SSLEngineOptions sslEngineOptions;
   private final List<String> applicationProtocols;
@@ -139,6 +140,7 @@ public class SSLHelper {
   private Future<CachedProvider> cachedProvider;
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
+    this.useHybrid = options.isUseHybrid();
     this.sslEngineOptions = options.getSslEngineOptions();
     this.ssl = options.isSsl();
     this.useAlpn = options.isUseAlpn();
@@ -264,7 +266,8 @@ public class SSLHelper {
       trustAll,
       useAlpn,
       ctx.owner().getInternalWorkerPool().executor(),
-      c.useWorkerPool
+      c.useWorkerPool,
+      useHybrid
     ));
   }
 

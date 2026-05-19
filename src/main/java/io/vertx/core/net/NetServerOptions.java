@@ -221,8 +221,8 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setUseAlpn(boolean useAlpn) {
-    super.setUseAlpn(useAlpn);
+  public NetServerOptions setUseHybrid(boolean useHybrid) {
+    super.setUseHybrid(useHybrid);
     return this;
   }
 
