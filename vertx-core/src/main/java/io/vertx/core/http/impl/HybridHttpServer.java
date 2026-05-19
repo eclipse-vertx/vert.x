@@ -57,18 +57,18 @@ public class HybridHttpServer implements HttpServerInternal {
     this.engineOptions = engineOptions;
   }
 
-  public HttpServerInternal tcpServer(HttpServerMetrics<?, ?> httpMetrics) {
+  public HttpServerInternal tcpServer() {
     if (tcpServer == null) {
-      TcpHttpServer server = new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), engineOptions, httpMetrics, false);
+      TcpHttpServer server = new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), engineOptions, false, false);
       setHandlers(server);
       tcpServer = server;
     }
     return tcpServer;
   }
 
-  public HttpServerInternal quicServer(HttpServerMetrics<?, ?> httpMetrics) {
+  public HttpServerInternal quicServer() {
     if (quicServer == null) {
-      QuicHttpServer server = new QuicHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), httpMetrics);
+      QuicHttpServer server = new QuicHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), false);
       setHandlers(server);
       quicServer = server;
     }
@@ -158,11 +158,8 @@ public class HybridHttpServer implements HttpServerInternal {
 
   @Override
   public Future<HttpServer> listen(ContextInternal context) {
-    SocketAddress tcpLocalAddress = SocketAddress.inetSocketAddress(config.getTcpPort(), config.getTcpHost());
-    SocketAddress udpLocalAddress = SocketAddress.inetSocketAddress(config.getQuicPort(), config.getQuicHost());
-    httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, tcpLocalAddress, udpLocalAddress) : null;
-    return listen(tcpServer(httpMetrics).listen(context),
-      quicServer(httpMetrics).listen(context));
+    return listen(tcpServer().listen(context),
+      quicServer().listen(context)).onSuccess(this::createMetrics);
   }
 
   @Override
@@ -173,8 +170,17 @@ public class HybridHttpServer implements HttpServerInternal {
     HttpServerConfig config = new HttpServerConfig(this.config);
     config.setHost(address.host());
     config.setPort(address.port());
-    httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, address, address) : null;
-    return listen(tcpServer(httpMetrics).listen(context, address), quicServer(httpMetrics).listen(context, address));
+    return listen(tcpServer().listen(context, address), quicServer().listen(context, address)).onSuccess(this::createMetrics);
+  }
+
+  private void createMetrics(HttpServer ignored) {
+    SocketAddress tcpLocalAddress = SocketAddress.inetSocketAddress(tcpServer.actualPort(), config.getTcpHost());
+    SocketAddress udpLocalAddress = SocketAddress.inetSocketAddress(quicServer.actualPort(), config.getQuicHost());
+
+    httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, tcpLocalAddress, udpLocalAddress) : null;
+
+    tcpServer.setMetrics(httpMetrics);
+    quicServer.setMetrics(httpMetrics);
   }
 
   private Future<HttpServer> listen(Future<HttpServer> f1, Future<HttpServer> f2) {

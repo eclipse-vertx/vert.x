@@ -86,10 +86,10 @@ public class HttpServerBuilderImpl implements HttpServerBuilder {
         if (sslOptions != null) {
           sslOptions = sslOptions.copy();
         }
-        server = new CleanableHttpServer(vertx, new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions, sslEngineOptions, null, registerWebSocketWriteHandlers));
+        server = new CleanableHttpServer(vertx, new TcpHttpServer(vertx, new HttpServerConfig(config), sslOptions, sslEngineOptions, true, registerWebSocketWriteHandlers));
       }
     } else if (useQuic) {
-      server = new CleanableHttpServer(vertx, new QuicHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), null));
+      server = new CleanableHttpServer(vertx, new QuicHttpServer(vertx, new HttpServerConfig(config), sslOptions.copy(), true));
     } else {
       throw new IllegalArgumentException("You must set at least one supported HTTP version");
     }

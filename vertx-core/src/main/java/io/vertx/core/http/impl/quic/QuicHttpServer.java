@@ -48,9 +48,10 @@ public class QuicHttpServer implements HttpServerInternal {
   private Handler<Throwable> exceptionHandler;
   private QuicServerImpl quicServer;
   private HttpServerMetrics<?, ?> httpMetrics;
+  private ConnectionHandler internalConnectionHandler;
   private volatile int actualPort;
 
-  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions, HttpServerMetrics<?, ?> httpMetrics) {
+  public QuicHttpServer(VertxInternal vertx, HttpServerConfig config, ServerSSLOptions sslOptions, boolean manageMetrics) {
 
     // We own the copy
     sslOptions.setApplicationLayerProtocols(Arrays.asList(Http3.supportedApplicationProtocols()));
@@ -61,8 +62,7 @@ public class QuicHttpServer implements HttpServerInternal {
     this.http3Config = config.getHttp3Config() != null ? config.getHttp3Config() : new Http3ServerConfig();
     this.quicConfig = config.getQuicConfig() != null ? config.getQuicConfig() : new QuicServerConfig();
     this.actualPort = 0;
-    this.httpMetrics = httpMetrics;
-    this.manageMetrics = httpMetrics == null;
+    this.manageMetrics = manageMetrics;
   }
 
   @Override
@@ -139,7 +139,6 @@ public class QuicHttpServer implements HttpServerInternal {
   private static class ConnectionHandler implements Handler<QuicConnection> {
 
     private final QuicServer transport;
-    private final HttpServerMetrics<?, ?> httpMetrics;
     private final Handler<HttpServerRequest> requestHandler;
     private final Handler<HttpConnection> connectionHandler;
     private final boolean handle100ContinueAutomatically;
@@ -148,9 +147,9 @@ public class QuicHttpServer implements HttpServerInternal {
     private final int maxFormBufferedSize;
     private final Http3Settings localSettings;
     private final boolean logEnabled;
+    private HttpServerMetrics<?, ?> httpMetrics;
 
     public ConnectionHandler(QuicServer transport,
-                             HttpServerMetrics<?, ?> httpMetrics,
                              Handler<HttpServerRequest> requestHandler,
                              Handler<HttpConnection> connectionHandler,
                              boolean handle100ContinueAutomatically,
@@ -160,7 +159,6 @@ public class QuicHttpServer implements HttpServerInternal {
                              Http3Settings localSettings,
                              boolean logEnabled) {
       this.transport = transport;
-      this.httpMetrics = httpMetrics;
       this.requestHandler = requestHandler;
       this.connectionHandler = connectionHandler;
       this.handle100ContinueAutomatically = handle100ContinueAutomatically;
@@ -198,6 +196,10 @@ public class QuicHttpServer implements HttpServerInternal {
         ctx.dispatch(http3Connection, handler);
       }
     }
+
+    void setMetrics(HttpServerMetrics<?, ?> httpMetrics) {
+      this.httpMetrics = httpMetrics;
+    }
   }
 
   @Override
@@ -228,9 +230,6 @@ public class QuicHttpServer implements HttpServerInternal {
       requestHandler = this.requestHandler;
       connectionHandler = this.connectionHandler;
       quicServer = new QuicServerImpl(vertx, quicConfig, "http", sslOptions);
-      if (manageMetrics) {
-        httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, null, address) : null;
-      }
     }
 
     if (requestHandler == null) {
@@ -240,14 +239,23 @@ public class QuicHttpServer implements HttpServerInternal {
     boolean logEnabled = quicConfig.getLogConfig() != null && quicConfig.getLogConfig().isEnabled();
     quicConfig.setLogConfig(null);
 
-    quicServer.connectHandler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
+    internalConnectionHandler = new ConnectionHandler(quicServer, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),
-      http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled));
+      http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled);
+
+    quicServer.connectHandler(internalConnectionHandler);
     quicServer.exceptionHandler(exceptionHandler);
     return quicServer
       .bind(current, address)
       .map(addr -> {
         actualPort = addr.port();
+
+        if (manageMetrics) {
+          var actualAddress = SocketAddress.inetSocketAddress(actualPort, address.host());
+          httpMetrics = vertx.metrics() != null ? vertx.metrics().createHttpServerMetrics(config, null, actualAddress) : null;
+          internalConnectionHandler.setMetrics(httpMetrics);
+        }
+
         return this;
       });
   }
@@ -279,6 +287,13 @@ public class QuicHttpServer implements HttpServerInternal {
   @Override
   public int actualPort() {
     return actualPort;
+  }
+
+  @Override
+  public void setMetrics(HttpServerMetrics<?, ?> httpMetrics) {
+    this.httpMetrics = httpMetrics;
+    
+    internalConnectionHandler.setMetrics(httpMetrics);
   }
 
   @Override
