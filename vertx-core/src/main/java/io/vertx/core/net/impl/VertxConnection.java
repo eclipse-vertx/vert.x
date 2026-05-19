@@ -512,17 +512,11 @@ public class VertxConnection extends ConnectionBase {
    */
   private void sendFileRegion(FileChannel fc, long offset, long length, ChannelPromise writeFuture) {
     if (length < MAX_REGION_SIZE) {
-      FileRegion region = new DefaultFileRegion(fc, offset, length);
-      // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
-      // as been sent as the caller can need it again
-      region.retain();
+      FileRegion region = new UncloseableFileRegion(fc, offset, length);
       writeToChannel(region, writeFuture);
     } else {
       ChannelPromise promise = chctx.newPromise();
-      FileRegion region = new DefaultFileRegion(fc, offset, MAX_REGION_SIZE);
-      // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
-      // as been sent as we need it again
-      region.retain();
+      FileRegion region = new UncloseableFileRegion(fc, offset, MAX_REGION_SIZE);
       writeToChannel(region, promise);
       promise.addListener(future -> {
         if (future.isSuccess()) {

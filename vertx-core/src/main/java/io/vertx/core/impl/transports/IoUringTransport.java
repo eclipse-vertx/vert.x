@@ -67,11 +67,6 @@ public class IoUringTransport implements Transport {
   }
 
   @Override
-  public boolean supportFileRegion() {
-    return false;
-  }
-
-  @Override
   public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
       return new DomainSocketAddress(address.path());
