@@ -447,6 +447,18 @@
             </configuration>
           </execution>
           <execution>
+            <id>hybrid-key-exchange</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/HybridKeyExchangeTest.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
             <id>no-native</id>
             <goals>
               <goal>integration-test</goal>
@@ -1193,6 +1205,11 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-codec-native-quic</artifactId>
           <classifier>windows-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
           <scope>test</scope>
         </dependency>
       </dependencies>
