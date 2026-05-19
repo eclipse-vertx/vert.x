@@ -40,7 +40,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeHandshake() throws Exception {
-    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -90,12 +89,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         testComplete();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
   public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
-    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
@@ -144,7 +141,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .await();
 
     assertEquals("mtls-hybrid-ok", buffer.toString());
-    System.out.println("yes");
     client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .compose(HttpClientRequest::send)
       .onComplete(ar -> {
@@ -153,12 +149,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         testComplete();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
   public void testHybridFailsServerSideWhenPqcNotAvailable() throws Exception {
-    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -178,10 +172,8 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(new HttpClientOptions().setSsl(true))
       .with(clientSsl)
       .build();
-    System.out.println("hoho");
     var f = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .onComplete(ar -> {
-        System.out.println("in here");
         assertTrue(ar.failed());
         assertTrue(ar.cause() instanceof SSLHandshakeException);
         testComplete();
@@ -189,12 +181,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         server.close();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
   public void testHybridFailsClientSideWhenPqcNotAvailable() throws Exception {
-    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
@@ -223,7 +213,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         testComplete();
       });
     await();
-    System.out.println("end");
   }
 
   @Test

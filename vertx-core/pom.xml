@@ -428,6 +428,7 @@
               </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.smallrye:smallrye-openssl</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -444,18 +445,6 @@
               <systemProperties>
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
               </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
-            <id>hybrid-key-exchange</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/HybridKeyExchangeTest.java</include>
-              </includes>
             </configuration>
           </execution>
           <execution>
@@ -1213,6 +1202,43 @@
           <scope>test</scope>
         </dependency>
       </dependencies>
+    </profile>
+
+    <profile>
+      <id>HybridKeyExchangeOnly</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+            <executions>
+              <execution>
+                <id>hybrid-key-exchange</id>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+                <configuration>
+                  <skip>false</skip>
+                  <includes>
+                    <include>io/vertx/it/HybridKeyExchangeTest.java</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
 
   </profiles>

@@ -14,6 +14,12 @@ on:
       profile:
         default: ''
         type: 'string'
+      container:
+        default: ''
+        type: 'string'
+      mvn_args:
+        default: ''
+        type: 'string'
       io_uring_supported:
         default: false
         type: boolean
@@ -21,7 +27,12 @@ jobs:
   Test:
     name: Run tests
     runs-on: ${{ inputs.os }}
+    container: ${{ inputs.container || null }}
     steps:
+      - name: Install container dependencies
+        if: ${{ inputs.container != '' }}
+        run: |
+          apt-get update && apt-get install -y git maven openssl libssl-dev libapr1t64
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -33,10 +44,10 @@ jobs:
           distribution: temurin
       - name: Run tests
         if: ${{ runner.os != 'Linux' || inputs.profile != '-PNativeIoUring'}}
-        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }}
+        run: mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }} ${{ inputs.mvn_args }}
       - name: Run tests
         if: ${{ runner.os == 'Linux' && inputs.profile == '-PNativeIoUring' && inputs.io_uring_supported }}
         run: |
           # io_uring testing requires more locked memory for kernel ring buffers than the default 8MB limit
           sudo prlimit --pid $$ --memlock=16777216:16777216
-          mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }}
+          mvn -s .github/maven-ci-settings.xml -q clean verify -B ${{ inputs.profile }} ${{ inputs.mvn_args }}
