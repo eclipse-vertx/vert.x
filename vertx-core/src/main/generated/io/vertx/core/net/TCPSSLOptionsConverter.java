@@ -113,6 +113,21 @@ public class TCPSSLOptionsConverter {
             obj.setTcpUserTimeout(((Number)member.getValue()).intValue());
           }
           break;
+        case "tcpKeepAliveIdleSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpKeepAliveIdleSeconds(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "tcpKeepAliveCount":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpKeepAliveCount(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "tcpKeepAliveIntervalSeconds":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpKeepAliveIntervalSeconds(((Number)member.getValue()).intValue());
+          }
+          break;
         case "sslHandshakeTimeout":
           if (member.getValue() instanceof Number) {
             obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
@@ -167,6 +182,9 @@ public class TCPSSLOptionsConverter {
     json.put("tcpCork", obj.isTcpCork());
     json.put("tcpQuickAck", obj.isTcpQuickAck());
     json.put("tcpUserTimeout", obj.getTcpUserTimeout());
+    json.put("tcpKeepAliveIdleSeconds", obj.getTcpKeepAliveIdleSeconds());
+    json.put("tcpKeepAliveCount", obj.getTcpKeepAliveCount());
+    json.put("tcpKeepAliveIntervalSeconds", obj.getTcpKeepAliveIntervalSeconds());
     json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
     if (obj.getSslHandshakeTimeoutUnit() != null) {
       json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());

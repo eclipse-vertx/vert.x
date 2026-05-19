@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
 
@@ -97,6 +98,27 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
 
+  /**
+   * Default value for tcp keepalive idle time.
+   * <p>
+   * {@code -1} defaults to OS settings
+   */
+  public static final int DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS = -1;
+
+  /**
+   * Default value for tcp keepalive count.
+   * <p>
+   * {@code -1} defaults to OS settings
+   */
+  public static final int DEFAULT_TCP_KEEPALIVE_COUNT = -1;
+
+  /**
+   * Default value for tcp keepalive interval.
+   * <p>
+   * {@code -1} defaults to OS settings
+   */
+  public static final int DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS = -1;
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -111,6 +133,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpCork;
   private boolean tcpQuickAck;
   private int tcpUserTimeout;
+  private int tcpKeepAliveIdleSeconds;
+  private int tcpKeepAliveCount;
+  private int tcpKeepAliveIntervalSeconds;
 
   private Set<String> enabledCipherSuites;
   private List<String> crlPaths;
@@ -144,6 +169,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.tcpCork = other.isTcpCork();
     this.tcpQuickAck = other.isTcpQuickAck();
     this.tcpUserTimeout = other.getTcpUserTimeout();
+    this.tcpKeepAliveIdleSeconds = other.getTcpKeepAliveIdleSeconds();
+    this.tcpKeepAliveCount = other.getTcpKeepAliveCount();
+    this.tcpKeepAliveIntervalSeconds = other.getTcpKeepAliveIntervalSeconds();
 
     SSLOptions sslOptions = other.sslOptions;
     if (sslOptions != null) {
@@ -240,6 +268,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     tcpCork = DEFAULT_TCP_CORK;
     tcpQuickAck = DEFAULT_TCP_QUICKACK;
     tcpUserTimeout = DEFAULT_TCP_USER_TIMEOUT;
+    tcpKeepAliveIdleSeconds = DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS;
+    tcpKeepAliveCount = DEFAULT_TCP_KEEPALIVE_COUNT;
+    tcpKeepAliveIntervalSeconds = DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS;
     sslOptions = null;
   }
 
@@ -701,6 +732,62 @@ public abstract class TCPSSLOptions extends NetworkOptions {
       throw new IllegalArgumentException("tcpUserTimeout must be >= 0");
     }
     this.tcpUserTimeout = tcpUserTimeout;
+    return this;
+  }
+
+  /**
+   * @return the time in seconds the connection needs to remain idle before TCP starts sending keepalive probes
+   */
+  public int getTcpKeepAliveIdleSeconds() {
+    return tcpKeepAliveIdleSeconds;
+  }
+
+  /**
+   * The time in seconds the connection needs to remain idle before TCP starts sending keepalive probes,
+   * if the socket option keepalive has been set.
+   *
+   * @param tcpKeepAliveIdleSeconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpKeepAliveIdleSeconds(int tcpKeepAliveIdleSeconds) {
+    Arguments.require(tcpKeepAliveIdleSeconds > 0 || tcpKeepAliveIdleSeconds == DEFAULT_TCP_KEEPALIVE_IDLE_SECONDS, "tcpKeepAliveIdleSeconds must be > 0");
+    this.tcpKeepAliveIdleSeconds = tcpKeepAliveIdleSeconds;
+    return this;
+  }
+
+  /**
+   * @return the maximum number of keepalive probes TCP should send before dropping the connection.
+   */
+  public int getTcpKeepAliveCount() {
+    return tcpKeepAliveCount;
+  }
+
+  /**
+   * The maximum number of keepalive probes TCP should send before dropping the connection.
+   * @param tcpKeepAliveCount
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpKeepAliveCount(int tcpKeepAliveCount) {
+    Arguments.require(tcpKeepAliveCount > 0 || tcpKeepAliveCount == DEFAULT_TCP_KEEPALIVE_COUNT, "tcpKeepAliveCount must be > 0");
+    this.tcpKeepAliveCount = tcpKeepAliveCount;
+    return this;
+  }
+
+  /**
+   * @return the time in seconds between individual keepalive probes.
+   */
+  public int getTcpKeepAliveIntervalSeconds() {
+    return tcpKeepAliveIntervalSeconds;
+  }
+
+  /**
+   * The time in seconds between individual keepalive probes.
+   * @param tcpKeepAliveIntervalSeconds
+   * @return
+   */
+  public TCPSSLOptions setTcpKeepAliveIntervalSeconds(int tcpKeepAliveIntervalSeconds) {
+    Arguments.require(tcpKeepAliveIntervalSeconds > 0 || tcpKeepAliveIntervalSeconds == DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS, "tcpKeepAliveIntervalSeconds must be > 0");
+    this.tcpKeepAliveIntervalSeconds = tcpKeepAliveIntervalSeconds;
     return this;
   }
 
