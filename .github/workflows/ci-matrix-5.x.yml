@@ -30,6 +30,10 @@ jobs:
             jdk: 11
             container: 'ubuntu:26.04'
             mvn_args: '-pl vertx-core -PHybridKeyExchangeOnly'
+          - os: ubuntu-24.04-arm
+            jdk: 11
+            container: 'ubuntu:26.04'
+            mvn_args: '-pl vertx-core -PHybridKeyExchangeOnly'
           - os: windows-2022
             jdk: 11
             stable: true
