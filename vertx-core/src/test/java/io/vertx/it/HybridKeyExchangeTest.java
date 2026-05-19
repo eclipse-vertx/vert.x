@@ -17,6 +17,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.internal.tcnative.SSL;
@@ -27,6 +28,7 @@ import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import io.vertx.test.http.HttpTestBase;
+import org.junit.Assume;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -38,9 +40,35 @@ import java.util.concurrent.TimeUnit;
  */
 public class HybridKeyExchangeTest extends HttpTestBase {
 
+  private static final boolean PQC_SUPPORTED;
+
+  static {
+    boolean supported;
+    try {
+      SslContext ctx = SslContextBuilder.forClient()
+        .sslProvider(SslProvider.OPENSSL)
+        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+        .build();
+      SslHandler handler = ctx.newHandler(ByteBufAllocator.DEFAULT);
+      try {
+        long sslPtr = ((ReferenceCountedOpenSslEngine) handler.engine()).sslPointer();
+        supported = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
+      } finally {
+        handler.engine().closeOutbound();
+      }
+    } catch (Exception e) {
+      supported = false;
+    }
+    PQC_SUPPORTED = supported;
+  }
+
+  private void assumePqcSupported() {
+    Assume.assumeTrue("X25519MLKEM768 not supported by the available OpenSSL", PQC_SUPPORTED);
+  }
+
   @Test
   public void testHybridKeyExchangeHandshake() throws Exception {
-    System.out.println("begin");
+    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -90,12 +118,11 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         testComplete();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
   public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
-    System.out.println("begin");
+    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
@@ -144,7 +171,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .await();
 
     assertEquals("mtls-hybrid-ok", buffer.toString());
-    System.out.println("yes");
     client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .compose(HttpClientRequest::send)
       .onComplete(ar -> {
@@ -153,12 +179,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         testComplete();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
   public void testHybridFailsServerSideWhenPqcNotAvailable() throws Exception {
-    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -178,10 +202,8 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(new HttpClientOptions().setSsl(true))
       .with(clientSsl)
       .build();
-    System.out.println("hoho");
     var f = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .onComplete(ar -> {
-        System.out.println("in here");
         assertTrue(ar.failed());
         assertTrue(ar.cause() instanceof SSLHandshakeException);
         testComplete();
@@ -189,12 +211,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         server.close();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
   public void testHybridFailsClientSideWhenPqcNotAvailable() throws Exception {
-    System.out.println("begin");
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
@@ -223,7 +243,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         testComplete();
       });
     await();
-    System.out.println("end");
   }
 
   @Test
@@ -261,6 +280,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeWithSNI() throws Exception {
+    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
@@ -328,6 +348,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridWithRawNettySocket() throws Exception {
+    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -391,6 +412,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridMTLSWithRawNettySocket() throws Exception {
+    assumePqcSupported();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
