@@ -26,10 +26,6 @@ public class UncloseableFileRegion extends DefaultFileRegion {
     super(fileChannel, position, count);
   }
 
-  public UncloseableFileRegion(File file, long position, long count) {
-    super(file, position, count);
-  }
-
   @Override
   protected void deallocate() {
 
