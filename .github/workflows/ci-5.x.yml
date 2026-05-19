@@ -2,7 +2,7 @@ name: vert.x (5.x)
 on:
   push:
     branches:
-      - update_
+      - master
   pull_request:
     branches:
       - master
