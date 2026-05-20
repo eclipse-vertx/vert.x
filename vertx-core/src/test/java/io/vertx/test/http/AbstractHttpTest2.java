@@ -11,19 +11,19 @@
 
 package io.vertx.test.http;
 
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.transport.Transport;
 import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.VertxProvider;
 import io.vertx.test.core.VertxRunner;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.DnsServer;
+import junit.framework.AssertionFailedError;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
@@ -38,6 +38,8 @@ import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static io.vertx.test.core.VertxTestBase.TRANSPORT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -189,7 +191,23 @@ public abstract class AbstractHttpTest2 {
           .setAddressResolverOptions(new AddressResolverOptions()
             .addServer("127.0.0.1:" + dnsServer.port()));
       }
-      return Vertx.vertx(options);
+      Transport transport = TRANSPORT;
+      VertxBuilder builder = Vertx.builder();
+      builder.with(options);
+      builder.withTransport(transport);
+      Vertx vertx = builder.build();
+      if (!transport.name().equals("nio")) {
+        if (!vertx.isNativeTransportEnabled()) {
+          AssertionFailedError afe = new AssertionFailedError("Expected native transport");
+          Throwable cause = vertx.unavailableNativeTransportCause();
+          if (cause != null) {
+            afe.initCause(cause);
+          }
+          throw afe;
+        }
+        Assert.assertTrue(vertx.isNativeTransportEnabled());
+      }
+      return vertx;
     }
   }
 }
