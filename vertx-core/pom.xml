@@ -31,6 +31,7 @@
     <jmh.version>1.37</jmh.version>
     <vertx.surefire.nettyTransport>jdk</vertx.surefire.nettyTransport>
     <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
+    <smallrye.openssl.version>0.1.4</smallrye.openssl.version>
   </properties>
 
   <dependencies>
@@ -1054,7 +1055,7 @@
           <groupId>io.smallrye</groupId>
           <artifactId>smallrye-openssl</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>0.1.4</version>
+          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -1091,7 +1092,7 @@
           <groupId>io.smallrye</groupId>
           <artifactId>smallrye-openssl</artifactId>
           <classifier>linux-x86_64</classifier>
-          <version>0.1.4</version>
+          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -1128,7 +1129,7 @@
           <groupId>io.smallrye</groupId>
           <artifactId>smallrye-openssl</artifactId>
           <classifier>linux-aarch_64</classifier>
-          <version>0.1.4</version>
+          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
