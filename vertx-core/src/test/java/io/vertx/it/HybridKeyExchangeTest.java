@@ -116,7 +116,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .await();
     assertEquals("hybrid-ok", bodyBuffer.toString());
 
-
     client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .compose(HttpClientRequest::send)
       .onComplete(ar -> {
@@ -169,7 +168,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(nonHybridClientSsl)
       .build();
 
-
     var buffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
       .compose(HttpClientRequest::send)
@@ -210,7 +208,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       .with(new HttpClientOptions().setSsl(true))
       .with(clientSsl)
       .build();
-    var f = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
       .onComplete(ar -> {
         assertTrue(ar.failed());
         assertTrue(ar.cause() instanceof SSLHandshakeException);

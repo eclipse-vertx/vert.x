@@ -40,7 +40,6 @@ jobs:
       os: ${{ matrix.os }}
       profile: ${{ matrix.profile }}
       container: ${{ matrix.container }}
-      mvn_args: ${{ matrix.mvn_args }}
       io_uring_supported: ${{ inputs.io_uring_supported }}
     secrets: inherit
   Deploy:
