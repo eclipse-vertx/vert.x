@@ -138,9 +138,15 @@ public class EpollTransport implements Transport {
       configChildOption(bootstrap, config, TcpOption.USER_TIMEOUT, EpollChannelOption.TCP_USER_TIMEOUT);
       configChildOption(bootstrap, config, TcpOption.QUICKACK, EpollChannelOption.TCP_QUICKACK);
       configChildOption(bootstrap, config, TcpOption.CORK, EpollChannelOption.TCP_CORK);
-      configChildOption(bootstrap, config, TcpOption.KEEPCNT, EpollChannelOption.TCP_KEEPCNT);
-      configChildOption(bootstrap, config, TcpOption.KEEPINTVL, EpollChannelOption.TCP_KEEPINTVL);
-      configChildOption(bootstrap, config, TcpOption.KEEPIDLE, EpollChannelOption.TCP_KEEPIDLE);
+      if (!config.isNullOrZero(TcpOption.KEEPCNT)) {
+        configChildOption(bootstrap, config, TcpOption.KEEPCNT, EpollChannelOption.TCP_KEEPCNT);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPINTVL)) {
+        configChildOption(bootstrap, config, TcpOption.KEEPINTVL, EpollChannelOption.TCP_KEEPINTVL);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPIDLE)) {
+        configChildOption(bootstrap, config, TcpOption.KEEPIDLE, EpollChannelOption.TCP_KEEPIDLE);
+      }
     }
     Transport.super.configure(config, domainSocket, bootstrap);
   }
@@ -152,9 +158,15 @@ public class EpollTransport implements Transport {
       configOption(bootstrap, config, TcpOption.USER_TIMEOUT, EpollChannelOption.TCP_USER_TIMEOUT);
       configOption(bootstrap, config, TcpOption.QUICKACK, EpollChannelOption.TCP_QUICKACK);
       configOption(bootstrap, config, TcpOption.CORK, EpollChannelOption.TCP_CORK);
-      configOption(bootstrap, config, TcpOption.KEEPCNT, EpollChannelOption.TCP_KEEPCNT);
-      configOption(bootstrap, config, TcpOption.KEEPINTVL, EpollChannelOption.TCP_KEEPINTVL);
-      configOption(bootstrap, config, TcpOption.KEEPIDLE, EpollChannelOption.TCP_KEEPIDLE);
+      if (!config.isNullOrZero(TcpOption.KEEPCNT)) {
+        configOption(bootstrap, config, TcpOption.KEEPCNT, EpollChannelOption.TCP_KEEPCNT);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPINTVL)) {
+        configOption(bootstrap, config, TcpOption.KEEPINTVL, EpollChannelOption.TCP_KEEPINTVL);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPIDLE)) {
+        configOption(bootstrap, config, TcpOption.KEEPIDLE, EpollChannelOption.TCP_KEEPIDLE);
+      }
     }
     Transport.super.configure(config, domainSocket, bootstrap);
   }

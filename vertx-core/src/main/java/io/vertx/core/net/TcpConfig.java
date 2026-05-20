@@ -212,6 +212,17 @@ public class TcpConfig extends TransportConfig {
   }
 
   /**
+   * Returns true if the given option is not set or set to {@code 0}.
+   * @param option a tcp option
+   * @return true if the given option is not set or set to {@code 0}.
+   * @param <T> the value type of the option, must be a {@link Number}.
+   */
+  public <T extends Number> boolean isNullOrZero(TcpOption<T> option) {
+    Number value = getOption(option);
+    return value == null || value.longValue() == 0;
+  }
+
+  /**
    * Configure a TCP option.
    *
    * @param option the option to configure
