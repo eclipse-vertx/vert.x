@@ -12,22 +12,27 @@
 package io.vertx.it.jackson;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.VertxTestBase2;
 import org.junit.Test;
 
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.test.http.HttpTestBase.DEFAULT_HTTP_PORT;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JacksonAbsenceTest extends VertxTestBase {
+public class JacksonAbsenceTest extends VertxTestBase2 {
 
   @Test
   public void testJsonObject() {
@@ -57,43 +62,29 @@ public class JacksonAbsenceTest extends VertxTestBase {
 
   @Test
   public void testHttp() {
-    Vertx vertx = Vertx.vertx();
-    try {
-      vertx.createHttpServer().requestHandler(req -> {
+    vertx.createHttpServer().requestHandler(req -> {
         req.response().end("hello");
-      }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).onComplete(onSuccess(s -> {
-        HttpClient client = vertx.createHttpClient();
-        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-          .compose(req -> req
-            .send()
-            .compose(HttpClientResponse::body))
-          .onComplete(onSuccess(body -> {
-            assertEquals("hello", body.toString());
-            testComplete();
-        }));
-      }));
-      await();
-    } finally {
-      vertx.close();
-    }
+      }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+      .await();
+    HttpClient client = vertx.createHttpClient();
+    Buffer body = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals("hello", body.toString());
   }
 
   @Test
   public void testEventBus() {
-    Vertx vertx = Vertx.vertx();
-    try {
-      EventBus eb = vertx.eventBus();
-      eb.consumer("the-address", msg -> {
-        assertEquals("ping", msg.body());
-        msg.reply("pong");
-      });
-      eb.request("the-address", "ping").onComplete(onSuccess(resp -> {
-        assertEquals("pong", resp.body());
-        testComplete();
-      }));
-      await();
-    } finally {
-      vertx.close();
-    }
+    EventBus eb = vertx.eventBus();
+    eb.consumer("the-address", msg -> {
+      assertEquals("ping", msg.body());
+      msg.reply("pong");
+    });
+    Message<?> resp = eb.request("the-address", "ping")
+      .await();
+    assertEquals("pong", resp.body());
   }
 }
