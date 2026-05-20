@@ -1162,6 +1162,12 @@
           <classifier>osx-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+          <classifier>osx-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -1192,6 +1198,12 @@
           <classifier>osx-aarch_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+          <classifier>osx-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -1212,6 +1224,7 @@
         <dependency>
           <groupId>io.netty</groupId>
           <artifactId>netty-tcnative-boringssl-static</artifactId>
+          <classifier>windows-x86_64</classifier>
           <scope>test</scope>
         </dependency>
       </dependencies>
