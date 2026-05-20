@@ -14,6 +14,7 @@ package io.vertx.core.impl.transports;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.channel.unix.DomainSocketAddress;
@@ -137,9 +138,15 @@ public class IoUringTransport implements Transport {
       configChildOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
       configChildOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
       configChildOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
-      configChildOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
-      configChildOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
-      configChildOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
+      if (!config.isNullOrZero(TcpOption.KEEPCNT)) {
+        configChildOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPINTVL)) {
+        configChildOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPIDLE)) {
+        configChildOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
+      }
     }
     Transport.super.configure(config, domainSocket, bootstrap);
   }
@@ -151,9 +158,15 @@ public class IoUringTransport implements Transport {
       configOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
       configOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
       configOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
-      configOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
-      configOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
-      configOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
+      if (!config.isNullOrZero(TcpOption.KEEPCNT)) {
+        configOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPINTVL)) {
+        configOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
+      }
+      if (!config.isNullOrZero(TcpOption.KEEPIDLE)) {
+        configOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
+      }
     }
     Transport.super.configure(config, domainSocket, bootstrap);
   }
