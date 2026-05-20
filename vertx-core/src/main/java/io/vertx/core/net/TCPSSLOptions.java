@@ -100,23 +100,23 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   /**
    * Default value for tcp keepalive idle time.
    * <p>
-   * {@code -1} defaults to OS settings
+   * A value of {@code 0} means: Do not set this socket option, which will result in an OS-specific default value.
    */
-  public static final int DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS = -1;
+  public static final int DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS = 0;
 
   /**
    * Default value for tcp keepalive count.
    * <p>
-   * {@code -1} defaults to OS settings
+   * A value of {@code 0} means: Do not set this socket option, which will result in an OS-specific default value.
    */
-  public static final int DEFAULT_TCP_KEEAPLIVE_COUNT = -1;
+  public static final int DEFAULT_TCP_KEEAPLIVE_COUNT = 0;
 
   /**
    * Default value for tcp keepalive interval.
    * <p>
-   * {@code -1} defaults to OS settings
+   * A value of {@code 0} means: Do not set this socket option, which will result in an OS-specific default value.
    */
-  public static final int DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS = -1;
+  public static final int DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS = 0;
 
   private TcpConfig transportOptions;
   private int idleTimeout;

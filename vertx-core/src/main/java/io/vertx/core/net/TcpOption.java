@@ -56,12 +56,14 @@ public class TcpOption<T> {
    * The {@code TCP_KEEPCNT} option - only with Linux native transport.
    * <p>
    * The maximum number of keepalive probes TCP should send before dropping the connection.
+   * <p>
+   * A value of {@code 0} means: Do not set this socket option, which will result in an OS-specific default value.
    */
   public static final TcpOption<Integer> KEEPCNT = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_COUNT) {
     @Override
     protected void validate(final Integer value) {
-      if (value == 0 || value < -1) {
-        throw new IllegalArgumentException("KEEPCNT must be > 0 or == -1");
+      if (value < 0) {
+        throw new IllegalArgumentException("KEEPCNT must be >= 0");
       }
     }
   };
@@ -70,12 +72,14 @@ public class TcpOption<T> {
    * The {@code TCP_KEEPIDLE} option - only with Linux native transport.
    * <p>
    * The time (in seconds) the connection needs to remain idle before TCP starts sending keepalive probes, if enabled.
+   * <p>
+   * A value of {@code 0} means: Do not set this socket option, which will result in an OS-specific default value.
    */
   public static final TcpOption<Integer> KEEPIDLE = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_IDLE_SECONDS) {
     @Override
     protected void validate(final Integer value) {
-      if (value == 0 || value < -1) {
-        throw new IllegalArgumentException("KEEPIDLE must be > 0 or == -1");
+      if (value < 0) {
+        throw new IllegalArgumentException("KEEPIDLE must be >= 0");
       }
     }
   };
@@ -84,12 +88,14 @@ public class TcpOption<T> {
    * The {@code TCP_KEEPINTVL} option - only with Linux native transport.
    * <p>
    * The time (in seconds) between individual keepalive probes.
+   * <p>
+   * A value of {@code 0} means: Do not set this socket option, which will result in an OS-specific default value.
    */
   public static final TcpOption<Integer> KEEPINTVL = new TcpOption<>(Integer.class, TCPSSLOptions.DEFAULT_TCP_KEEAPLIVE_INTERVAL_SECONDS) {
     @Override
     protected void validate(final Integer value) {
-      if (value == 0 || value < -1) {
-        throw new IllegalArgumentException("KEEPINTVL must be > 0 or == -1");
+      if (value < 0) {
+        throw new IllegalArgumentException("KEEPINTVL must be >= 0");
       }
     }
   };
