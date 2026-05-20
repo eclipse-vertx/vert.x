@@ -31,6 +31,7 @@
     <jmh.version>1.37</jmh.version>
     <vertx.surefire.nettyTransport>jdk</vertx.surefire.nettyTransport>
     <vertx.surefire.useDomainSockets>false</vertx.surefire.useDomainSockets>
+    <smallrye.openssl.version>0.1.4</smallrye.openssl.version>
   </properties>
 
   <dependencies>
@@ -186,8 +187,7 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <scope>test</scope>
+      <artifactId>netty-tcnative-classes</artifactId>
     </dependency>
     <dependency>
       <groupId>com.aayushatharva.brotli4j</groupId>
@@ -428,6 +428,7 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.smallrye:smallrye-openssl</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
@@ -445,6 +446,18 @@
               <systemProperties>
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
               </systemProperties>
+            </configuration>
+          </execution>
+          <execution>
+            <id>hybrid-key-exchange</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/HybridKeyExchangeTest.java</include>
+              </includes>
             </configuration>
           </execution>
           <execution>
@@ -1038,6 +1051,13 @@
           <classifier>linux-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-openssl</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <version>${smallrye.openssl.version}</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -1068,6 +1088,13 @@
           <classifier>linux-x86_64</classifier>
           <scope>test</scope>
         </dependency>
+        <dependency>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-openssl</artifactId>
+          <classifier>linux-x86_64</classifier>
+          <version>${smallrye.openssl.version}</version>
+          <scope>test</scope>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -1096,6 +1123,13 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-codec-native-quic</artifactId>
           <classifier>linux-aarch_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.smallrye</groupId>
+          <artifactId>smallrye-openssl</artifactId>
+          <classifier>linux-aarch_64</classifier>
+          <version>${smallrye.openssl.version}</version>
           <scope>test</scope>
         </dependency>
       </dependencies>
@@ -1173,6 +1207,11 @@
           <groupId>io.netty</groupId>
           <artifactId>netty-codec-native-quic</artifactId>
           <classifier>windows-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
           <scope>test</scope>
         </dependency>
       </dependencies>

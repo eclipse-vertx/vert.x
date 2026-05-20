@@ -15,6 +15,7 @@ jobs:
         include:
           - os: ubuntu-latest
             jdk: 11
+            container: 'ubuntu:26.04'
           - os: ubuntu-latest
             jdk: 11
             profile: '-PNativeEpoll'
@@ -38,6 +39,7 @@ jobs:
       jdk: ${{ matrix.jdk }}
       os: ${{ matrix.os }}
       profile: ${{ matrix.profile }}
+      container: ${{ matrix.container }}
       io_uring_supported: ${{ inputs.io_uring_supported }}
     secrets: inherit
   Deploy:

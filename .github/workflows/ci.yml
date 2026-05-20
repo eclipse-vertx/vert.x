@@ -14,6 +14,9 @@ on:
       profile:
         default: ''
         type: 'string'
+      container:
+        default: ''
+        type: 'string'
       io_uring_supported:
         default: false
         type: boolean
@@ -21,7 +24,12 @@ jobs:
   Test:
     name: Run tests
     runs-on: ${{ inputs.os }}
+    container: ${{ inputs.container || null }}
     steps:
+      - name: Install container dependencies
+        if: ${{ inputs.container != '' }}
+        run: |
+          apt-get update && apt-get install -y git maven openssl libssl-dev libapr1t64
       - name: Checkout
         uses: actions/checkout@v2
         with:

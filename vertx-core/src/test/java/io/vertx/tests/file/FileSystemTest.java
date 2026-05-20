@@ -517,6 +517,7 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testChownToRootFails() throws Exception {
+    Assume.assumeFalse("Running as root, chown to root will succeed", "root".equals(System.getProperty("user.name")));
     testChownFails("root");
   }
 
