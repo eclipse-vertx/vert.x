@@ -13,6 +13,7 @@ package io.vertx.it;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -27,6 +28,7 @@ import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import io.vertx.test.http.HttpTestBase;
+import org.junit.Assume;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -38,8 +40,42 @@ import java.util.concurrent.TimeUnit;
  */
 public class HybridKeyExchangeTest extends HttpTestBase {
 
+  private static void assumeMlKemAvailable() {
+    boolean available = OpenSsl.isAvailable();
+    if (!available) {
+      System.err.println("OpenSSL is not available: " + OpenSsl.unavailabilityCause());
+      Assume.assumeTrue("OpenSSL is not available", false);
+      return;
+    }
+    String version = OpenSsl.versionString();
+    System.out.println("OpenSSL available: version=" + version + " (" + Long.toHexString(OpenSsl.version()) + ")");
+    Assume.assumeFalse("BoringSSL does not support X25519MLKEM768", version.contains("BoringSSL"));
+    boolean mlkem;
+    try {
+      SslContext ctx = SslContextBuilder.forClient()
+        .sslProvider(SslProvider.OPENSSL)
+        .trustManager(InsecureTrustManagerFactory.INSTANCE)
+        .build();
+      SslHandler handler = ctx.newHandler(ByteBufAllocator.DEFAULT);
+      try {
+        long sslPtr = ((ReferenceCountedOpenSslEngine) handler.engine()).sslPointer();
+        mlkem = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
+      } finally {
+        handler.engine().closeOutbound();
+      }
+    } catch (Exception e) {
+      System.err.println("Failed to probe X25519MLKEM768 support: " + e.getMessage());
+      mlkem = false;
+    }
+    if (!mlkem) {
+      System.err.println("X25519MLKEM768 is not supported by OpenSSL " + OpenSsl.versionString());
+    }
+    Assume.assumeTrue("X25519MLKEM768 not supported by OpenSSL " + OpenSsl.versionString(), mlkem);
+  }
+
   @Test
   public void testHybridKeyExchangeHandshake() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -93,6 +129,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
@@ -153,6 +190,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridFailsServerSideWhenPqcNotAvailable() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -185,6 +223,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridFailsClientSideWhenPqcNotAvailable() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setKeyCertOptions(Cert.SERVER_PEM.get());
 
@@ -217,6 +256,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridFailsWhenPqcNotAvailable() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -250,6 +290,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridKeyExchangeWithSNI() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
@@ -284,6 +325,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridFailsWithSNIWhenPqcNotAvailable() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
@@ -317,6 +359,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridWithRawNettySocket() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setKeyCertOptions(Cert.SERVER_PEM.get());
@@ -380,6 +423,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
 
   @Test
   public void testHybridMTLSWithRawNettySocket() throws Exception {
+    assumeMlKemAvailable();
     ServerSSLOptions serverSslOptions = new ServerSSLOptions()
       .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
