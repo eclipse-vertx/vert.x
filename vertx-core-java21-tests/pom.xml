@@ -28,6 +28,7 @@
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
     <maven.install.skip>true</maven.install.skip>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
   <dependencies>
