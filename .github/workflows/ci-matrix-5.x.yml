@@ -30,9 +30,9 @@ jobs:
           - os: windows-2022
             jdk: 11
             stable: true
-#          - os: macos-latest
-#            jdk: 11
-#            profile: '-PNativeKQueue'
+          - os: macos-latest
+            jdk: 11
+            profile: '-PNativeKQueue'
     uses: ./.github/workflows/ci.yml
     with:
       branch: ${{ inputs.branch }}
