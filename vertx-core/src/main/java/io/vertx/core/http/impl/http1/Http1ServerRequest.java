@@ -21,10 +21,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.HttpEventHandler;
-import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.http.impl.NettyFileUpload;
-import io.vertx.core.http.impl.NettyFileUploadDataFactory;
+import io.vertx.core.http.impl.*;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
@@ -32,8 +29,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
-import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
@@ -45,8 +40,6 @@ import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
-import java.nio.charset.Charset;
-import java.util.Objects;
 import java.util.Set;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -54,7 +47,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1ServerRequest extends HttpServerRequestInternal implements io.vertx.core.spi.observability.HttpRequest {
+public class Http1ServerRequest extends HttpServerRequestBase implements io.vertx.core.spi.observability.HttpRequest {
 
   private static final HostAndPort NULL_HOST_AND_PORT = HostAndPort.create("", -1);
 
@@ -77,8 +70,6 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   private Http1ServerResponse response;
 
   // Cache this for performance
-  private QueryParamDecoder queryParamDecoder;
-  private MultiMap params;
   private MultiMap headers;
   private String absoluteURI;
 
@@ -92,10 +83,10 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
   private volatile InboundMessageQueue<Object> queue;
 
   Http1ServerRequest(Http1ServerConnection conn, HttpRequest request, ContextInternal context) {
+    super(conn.queryParamDecoder());
     this.conn = conn;
     this.context = context;
     this.request = request;
-    this.queryParamDecoder = conn.queryParamDecoder();
   }
 
   private InboundMessageQueue<Object> queue() {
@@ -316,41 +307,6 @@ public class Http1ServerRequest extends HttpServerRequestInternal implements io.
       this.headers = headers;
     }
     return headers;
-  }
-
-  @Override
-  public HttpServerRequest setParamsCharset(String charset) {
-    Objects.requireNonNull(charset, "Charset must not be null");
-    Charset cs = Charset.forName(charset);
-    if (!queryParamDecoder.charset().equals(cs)) {
-      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
-        .setMaxSize(queryParamDecoder.maxParams())
-        .setUseSemicolonAsDelimiter(queryParamDecoder.isAcceptSemiColonDelimiter())
-        .setCharset(cs));
-      params = null;
-    }
-    return this;
-  }
-
-  @Override
-  public String getParamsCharset() {
-    return queryParamDecoder.charset().name();
-  }
-
-  @Override
-  public MultiMap params(boolean semicolonIsNormalChar) {
-    if (queryParamDecoder.isAcceptSemiColonDelimiter() == semicolonIsNormalChar) {
-      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
-        .setCharset(queryParamDecoder.charset())
-        .setMaxSize(queryParamDecoder.maxParams())
-        .setUseSemicolonAsDelimiter(!semicolonIsNormalChar)
-      );
-      params = null;
-    }
-    if (params == null) {
-      params = queryParamDecoder.decode(uri());
-    }
-    return params;
   }
 
   @Override

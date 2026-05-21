@@ -111,6 +111,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public QueryParamDecoder queryParamDecoder() {
+    return delegate.queryParamDecoder();
+  }
+
+  @Override
   public long bytesRead() {
     return delegate.bytesRead();
   }

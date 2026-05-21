@@ -37,4 +37,10 @@ public abstract class HttpServerRequestInternal implements HttpServerRequest {
   public boolean isValidAuthority() {
     return authority() != null;
   }
+
+  /**
+   * @return the request query param decoder
+   */
+  public abstract QueryParamDecoder queryParamDecoder();
+
 }
