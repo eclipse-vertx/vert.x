@@ -2384,7 +2384,7 @@ public class Http1xTest extends HttpTest {
       req.response().end();
     });
     startServer(testAddress);
-    vertx.createHttpClient()
+    client
       .request(new RequestOptions(requestOptions).setURI("/?t=" + longParam))
       .compose(req -> req
         .send()
