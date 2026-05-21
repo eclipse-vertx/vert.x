@@ -361,32 +361,30 @@ public final class HttpUtils {
     return nettySettings;
   }
 
-  public static void fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings, Http2Settings nettySettings) {
-    if (vertxSettings != null) {
-      if (!server && vertxSettings.isPushEnabled() != DEFAULT_ENABLE_PUSH) {
-        nettySettings.pushEnabled(vertxSettings.isPushEnabled());
-      }
-      if (vertxSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
-        nettySettings.put('\u0001', (Long)vertxSettings.getHeaderTableSize());
-      }
-      if (vertxSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
-        nettySettings.initialWindowSize(vertxSettings.getInitialWindowSize());
-      }
-      if (vertxSettings.getMaxConcurrentStreams() != DEFAULT_MAX_CONCURRENT_STREAMS) {
-        nettySettings.maxConcurrentStreams(vertxSettings.getMaxConcurrentStreams());
-      }
-      if (vertxSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
-        nettySettings.maxFrameSize(vertxSettings.getMaxFrameSize());
-      }
-      if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
-        nettySettings.maxHeaderListSize(vertxSettings.getMaxHeaderListSize());
-      }
-      Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
-      if (extraSettings != null) {
-        extraSettings.forEach((code, setting) -> {
-          nettySettings.put((char)(int)code, setting);
-        });
-      }
+  private static void fromVertxInitialSettings(boolean server, io.vertx.core.http.Http2Settings vertxSettings, Http2Settings nettySettings) {
+    if (!server && vertxSettings.isPushEnabled() != DEFAULT_ENABLE_PUSH) {
+      nettySettings.pushEnabled(vertxSettings.isPushEnabled());
+    }
+    if (vertxSettings.getHeaderTableSize() != DEFAULT_HEADER_TABLE_SIZE) {
+      nettySettings.put('\u0001', (Long)vertxSettings.getHeaderTableSize());
+    }
+    if (vertxSettings.getInitialWindowSize() != DEFAULT_INITIAL_WINDOW_SIZE) {
+      nettySettings.initialWindowSize(vertxSettings.getInitialWindowSize());
+    }
+    if (vertxSettings.getMaxConcurrentStreams() != DEFAULT_MAX_CONCURRENT_STREAMS) {
+      nettySettings.maxConcurrentStreams(vertxSettings.getMaxConcurrentStreams());
+    }
+    if (vertxSettings.getMaxFrameSize() != DEFAULT_MAX_FRAME_SIZE) {
+      nettySettings.maxFrameSize(vertxSettings.getMaxFrameSize());
+    }
+    if (vertxSettings.getMaxHeaderListSize() != DEFAULT_MAX_HEADER_LIST_SIZE) {
+      nettySettings.maxHeaderListSize(vertxSettings.getMaxHeaderListSize());
+    }
+    Map<Integer, Long> extraSettings = vertxSettings.getExtraSettings();
+    if (extraSettings != null) {
+      extraSettings.forEach((code, setting) -> {
+        nettySettings.put((char)(int)code, setting);
+      });
     }
   }
 

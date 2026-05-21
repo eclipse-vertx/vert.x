@@ -47,8 +47,7 @@ public class VertxHttp2ClientUpgradeCodec implements HttpClientUpgradeHandler.Up
 
   @Override
   public Collection<CharSequence> setUpgradeHeaders(ChannelHandlerContext ctx, HttpRequest upgradeRequest) {
-    Http2Settings nettySettings = new Http2Settings();
-    HttpUtils.fromVertxInitialSettings(false, settings, nettySettings);
+    Http2Settings nettySettings = HttpUtils.fromVertxInitialSettings(false, settings);
     Buffer buf = Buffer.buffer();
     for (CharObjectMap.PrimitiveEntry<Long> entry : nettySettings.entries()) {
       buf.appendUnsignedShort(entry.key());
