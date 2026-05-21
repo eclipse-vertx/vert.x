@@ -12,7 +12,6 @@ package io.vertx.tests.http.http3;
 
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.*;
-import io.vertx.test.fakemetrics.*;
 import io.vertx.tests.metrics.HttpMetricsTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -21,7 +20,7 @@ import org.junit.Test;
 public class Http3MetricsTest extends HttpMetricsTestBase {
 
   public Http3MetricsTest() {
-    super(Http3Config.INSTANCE, HttpVersion.HTTP_3, ThreadingModel.EVENT_LOOP);
+    super(Http3Configurator.INSTANCE, HttpVersion.HTTP_3, ThreadingModel.EVENT_LOOP);
   }
 
   @Ignore

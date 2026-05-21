@@ -19,8 +19,8 @@ import io.netty.util.internal.StringUtil;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpServerConfig;
+import io.vertx.test.http.HttpConfigurator;
+import io.vertx.test.http.HttpServerConfigurator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -56,7 +56,7 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
 
   private final CompressionConfig compressionConfig;
 
-  protected HttpCompressionTest(HttpConfig config, CompressionConfig compressionConfig) {
+  protected HttpCompressionTest(HttpConfigurator config, CompressionConfig compressionConfig) {
     super(config);
     this.compressionConfig = compressionConfig;
   }
@@ -118,7 +118,7 @@ public abstract class HttpCompressionTest extends HttpCompressionTestBase {
   private void testServerStandardCompression(Function<HttpServerResponse, Future<?>> sender) throws Exception {
     waitFor(2);
     server.close();
-    HttpServerConfig options = config.forServer();
+    HttpServerConfigurator options = config.forServer();
     options.setCompression(serverCompressionConfig().get());
     server = options.create(vertx);
     server.requestHandler(req -> {

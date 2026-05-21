@@ -18,7 +18,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CompressionConfig;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest;
 
 import java.util.Optional;
@@ -44,7 +44,7 @@ public abstract class HttpCompressionTestBase extends SimpleHttpTest {
 
   protected Buffer compressedTestString;
 
-  public HttpCompressionTestBase(HttpConfig config) {
+  public HttpCompressionTestBase(HttpConfigurator config) {
     super(config);
   }
 

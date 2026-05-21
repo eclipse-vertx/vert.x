@@ -14,7 +14,7 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.tests.http.Http2TestBase;
 import org.junit.Assume;
@@ -51,7 +51,7 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
   private HttpServerOptions serverOptions;
 
   public Http2MetricsTest(HttpClientOptions clientOptions, HttpServerOptions serverOptions, ThreadingModel threadingModel) {
-    super(new HttpConfig.Http1xOr2Config() {
+    super(new HttpConfigurator.Http1XOr2Configurator() {
       @Override
       public HttpVersion version() {
         return HttpVersion.HTTP_2;

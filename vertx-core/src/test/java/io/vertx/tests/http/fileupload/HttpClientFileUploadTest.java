@@ -17,7 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.Utils;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -41,7 +41,7 @@ public abstract class HttpClientFileUploadTest extends SimpleHttpTest {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
-  protected HttpClientFileUploadTest(HttpConfig config) {
+  protected HttpClientFileUploadTest(HttpConfigurator config) {
     super(config, ReportMode.FORBIDDEN);
   }
 

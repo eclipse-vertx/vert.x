@@ -20,7 +20,7 @@ import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.VertxProvider;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.SimpleHttpTest2;
 import org.junit.Before;
@@ -51,7 +51,7 @@ public abstract class HttpTracingTestBase extends SimpleHttpTest2 {
 
   private FakeTracer tracer;
 
-  protected HttpTracingTestBase(HttpConfig config) {
+  protected HttpTracingTestBase(HttpConfigurator config) {
     super(config);
   }
 

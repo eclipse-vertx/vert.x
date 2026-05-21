@@ -40,9 +40,9 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.TrustAllTrustManager;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpClientConfig;
-import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpServerConfig;
+import io.vertx.test.http.HttpClientConfigurator;
+import io.vertx.test.http.HttpConfigurator;
+import io.vertx.test.http.HttpServerConfigurator;
 import io.vertx.test.http.SimpleHttpTest;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -92,7 +92,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
   @Rule
   public TemporaryFolder testFolder = new TemporaryFolder();
 
-  public HttpTLSTest(HttpConfig config) {
+  public HttpTLSTest(HttpConfigurator config) {
     super(config, ReportMode.FORBIDDEN);
   }
 
@@ -1251,7 +1251,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
     }
 
     TLSTest run(boolean shouldPass) {
-      HttpClientConfig clientCfg = test.config.forClient();
+      HttpClientConfigurator clientCfg = test.config.forClient();
       clientCfg.setSsl(clientSSL);
       clientCfg.setForceSni(clientForceSNI);
       clientCfg.setVerifyHost(clientVerifyHost);
@@ -1298,7 +1298,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
         builder.with(new JdkSSLEngineOptions());
       }
       test.client = builder.build();
-      HttpServerConfig serverCfg = test.config.forServer();
+      HttpServerConfigurator serverCfg = test.config.forServer();
       serverCfg.setSsl(serverSSL);
       serverCfg.setUseProxyProtocol(serverUsesProxyProtocol);
       if (serverSSL) {
@@ -1673,7 +1673,7 @@ public abstract class HttpTLSTest extends SimpleHttpTest {
       });
     startServer(testAddress);
     Function<HttpClient, Future<Buffer>> request = client -> client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body));
-    HttpClientConfig clientCfg = config
+    HttpClientConfigurator clientCfg = config
       .forClient()
       .setSsl(true)
       .setVerifyHost(false)

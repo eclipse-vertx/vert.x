@@ -10,13 +10,13 @@
  */
 package io.vertx.it.networklogging;
 
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.netty.TestLoggerFactory;
 
 public class Http1Test extends HttpTestBase {
 
   public Http1Test() {
-    super(HttpConfig.Http1x.DEFAULT);
+    super(HttpConfigurator.Http1x.DEFAULT);
   }
 
   @Override

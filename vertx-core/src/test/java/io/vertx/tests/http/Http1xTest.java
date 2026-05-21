@@ -43,7 +43,7 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.*;
 import io.vertx.test.fakedns.DnsRecord;
 import io.vertx.test.fakedns.WithDnsServer;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.tls.Cert;
 import org.junit.*;
 
@@ -71,7 +71,7 @@ import static org.junit.Assert.*;
 public class Http1xTest extends HttpTest {
 
   public Http1xTest() {
-    super(HttpConfig.Http1x.DEFAULT);
+    super(HttpConfigurator.Http1x.DEFAULT);
   }
 
   @Test

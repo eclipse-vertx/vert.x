@@ -10,7 +10,7 @@
  */
 package io.vertx.tests.http.fileupload;
 
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 
 /**
  */
@@ -21,6 +21,6 @@ public class Http2ServerFileUploadTest extends HttpServerFileUploadTest {
   }
 
   protected Http2ServerFileUploadTest(boolean multiplex) {
-    super(new HttpConfig.H2(multiplex));
+    super(new HttpConfigurator.H2(multiplex));
   }
 }

@@ -11,12 +11,12 @@
 package io.vertx.it.networklogging;
 
 import io.vertx.test.netty.TestLoggerFactory;
-import io.vertx.tests.http.http3.Http3Config;
+import io.vertx.tests.http.http3.Http3Configurator;
 
 public class Http3Test extends HttpTestBase {
 
   public Http3Test() {
-    super(Http3Config.INSTANCE);
+    super(Http3Configurator.INSTANCE);
   }
 
   @Override

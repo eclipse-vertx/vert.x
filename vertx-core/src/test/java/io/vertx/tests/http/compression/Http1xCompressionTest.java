@@ -16,20 +16,20 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpServerConfig;
+import io.vertx.test.http.HttpConfigurator;
+import io.vertx.test.http.HttpServerConfigurator;
 import org.junit.Test;
 
 public class Http1xCompressionTest extends HttpCompressionTest {
 
   public Http1xCompressionTest(CompressionConfig config) {
-    super(HttpConfig.Http1x.DEFAULT, config);
+    super(HttpConfigurator.Http1x.DEFAULT, config);
   }
 
   @Test
   public void testServerCompressionBelowThreshold() throws Exception {
     // set compression threshold to be greater than the content string size so it WILL NOT be compressed
-    HttpServerConfig httpServerOptions = config.forServer();
+    HttpServerConfigurator httpServerOptions = config.forServer();
     httpServerOptions.setCompression(serverCompressionConfig().get().setContentSizeThreshold(COMPRESS_TEST_STRING.length() * 2));
 
     doTest(httpServerOptions, onSuccess(resp -> {
@@ -48,7 +48,7 @@ public class Http1xCompressionTest extends HttpCompressionTest {
   @Test
   public void testServerCompressionAboveThreshold() throws Exception {
     // set compression threshold to be less than the content string size so it WILL be compressed
-    HttpServerConfig httpServerOptions = config.forServer();
+    HttpServerConfigurator httpServerOptions = config.forServer();
     httpServerOptions.setCompression(serverCompressionConfig().get().setContentSizeThreshold(COMPRESS_TEST_STRING.length() / 2));
 
     doTest(httpServerOptions, onSuccess(resp -> {
@@ -63,7 +63,7 @@ public class Http1xCompressionTest extends HttpCompressionTest {
     }));
   }
 
-  private void doTest(HttpServerConfig serverConfig, Handler<AsyncResult<HttpClientResponse>> handler) throws Exception {
+  private void doTest(HttpServerConfigurator serverConfig, Handler<AsyncResult<HttpClientResponse>> handler) throws Exception {
     server.close();
     server = serverConfig.create(vertx);
     server.requestHandler(req -> {

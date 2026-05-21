@@ -38,8 +38,8 @@ import io.vertx.test.core.*;
 import io.vertx.test.fakedns.DnsRecord;
 import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.fakestream.FakeStream;
-import io.vertx.test.http.HttpClientConfig;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpClientConfigurator;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
@@ -74,7 +74,7 @@ import static org.junit.Assume.assumeTrue;
  */
 public abstract class HttpTest extends SimpleHttpTest2 {
 
-  protected HttpTest(HttpConfig config) {
+  protected HttpTest(HttpConfigurator config) {
     super(config);
   }
 
@@ -4346,11 +4346,11 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     server.requestHandler(req -> {
       req.response().end();
     });
-    HttpClientConfig options = config.forClient().setKeepAliveTimeout(Duration.ofSeconds(3));
+    HttpClientConfigurator options = config.forClient().setKeepAliveTimeout(Duration.ofSeconds(3));
     testKeepAliveTimeout(checkpoint, options, new PoolOptions(), 1);
   }
 
-  protected void testKeepAliveTimeout(Checkpoint checkpoint, HttpClientConfig options, PoolOptions poolOptions, int numReqs) throws Exception {
+  protected void testKeepAliveTimeout(Checkpoint checkpoint, HttpClientConfigurator options, PoolOptions poolOptions, int numReqs) throws Exception {
     startServer(testAddress);
     client = options.create(vertx, poolOptions.setCleanerPeriod(1));
     AtomicInteger respCount = new AtomicInteger();
@@ -4386,7 +4386,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     testPoolNotExpiring(checkpoint, config.forClient().setKeepAliveTimeout(Duration.ofSeconds(0)), new PoolOptions().setCleanerPeriod(10));
   }
 
-  private void testPoolNotExpiring(Checkpoint checkpoint, HttpClientConfig options, PoolOptions poolOptions) throws Exception {
+  private void testPoolNotExpiring(Checkpoint checkpoint, HttpClientConfigurator options, PoolOptions poolOptions) throws Exception {
     AtomicLong now = new AtomicLong();
     server.requestHandler(req -> {
       req.response().end();

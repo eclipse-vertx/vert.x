@@ -9,9 +9,9 @@ import io.vertx.core.net.SocketAddress;
 
 public class SimpleHttpTest2 extends AbstractHttpTest2 {
 
-  protected final HttpConfig config;
+  protected final HttpConfigurator config;
 
-  public SimpleHttpTest2(HttpConfig config) {
+  public SimpleHttpTest2(HttpConfigurator config) {
     this.config = config;
   }
 

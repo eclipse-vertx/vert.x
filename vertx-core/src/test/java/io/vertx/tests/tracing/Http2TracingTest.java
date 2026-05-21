@@ -10,7 +10,7 @@
  */
 package io.vertx.tests.tracing;
 
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 
 public class Http2TracingTest extends HttpTracingTestBase {
 
@@ -19,6 +19,6 @@ public class Http2TracingTest extends HttpTracingTestBase {
   }
 
   protected Http2TracingTest(boolean multiplex) {
-    super(new HttpConfig.H2(multiplex));
+    super(new HttpConfigurator.H2(multiplex));
   }
 }

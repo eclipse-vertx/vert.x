@@ -6,13 +6,13 @@ import io.vertx.core.net.SocketAddress;
 
 public class SimpleHttpTest extends AbstractHttpTest {
 
-  protected final HttpConfig config;
+  protected final HttpConfigurator config;
 
-  public SimpleHttpTest(HttpConfig config) {
+  public SimpleHttpTest(HttpConfigurator config) {
     this.config = config;
   }
 
-  public SimpleHttpTest(HttpConfig config, ReportMode reportMode) {
+  public SimpleHttpTest(HttpConfigurator config, ReportMode reportMode) {
     super(reportMode);
     this.config = config;
   }

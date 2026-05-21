@@ -14,7 +14,7 @@ package io.vertx.tests.tls;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.HttpTestBase;
 
 /**
@@ -27,7 +27,7 @@ public class Http2TLSTest extends HttpTCPTLSTest {
   }
 
   protected Http2TLSTest(boolean multiplex) {
-    super(new HttpConfig.Http2(multiplex) {
+    super(new HttpConfigurator.Http2(multiplex) {
       @Override
       protected HttpServerOptions createBaseServerOptions(int port, String host, boolean multiplex) {
         return new HttpServerOptions()
