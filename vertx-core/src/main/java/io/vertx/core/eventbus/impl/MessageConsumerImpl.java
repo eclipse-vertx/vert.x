@@ -11,7 +11,10 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.internal.ContextInternal;
@@ -36,8 +39,8 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private boolean registered;
   private boolean full;
 
-  MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages) {
-    super(context, eventBus, address, false);
+  MessageConsumerImpl(ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly, int maxBufferedMessages, boolean autoAck) {
+    super(context, eventBus, address, false, autoAck);
     this.localOnly = localOnly;
     this.result = context.promise();
     this.maxBufferedMessages = maxBufferedMessages;
