@@ -2,7 +2,6 @@ package io.vertx.it.jacksonv3;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.Json;

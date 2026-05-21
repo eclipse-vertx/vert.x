@@ -11,29 +11,20 @@
 
 package io.vertx.tests.jacksonv3;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.cfg.EnumFeature;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.v3.DatabindCodec;
-import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
 import io.vertx.tests.json.jackson.JacksonDatabindTestBase;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
