@@ -10,13 +10,13 @@
  */
 package io.vertx.it.networklogging;
 
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.netty.TestLoggerFactory;
 
 public class Http2Test extends HttpTestBase {
 
   public Http2Test() {
-    super(HttpConfig.H2.CODEC);
+    super(HttpConfigurator.H2.CODEC);
   }
 
   @Override

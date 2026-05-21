@@ -18,7 +18,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Rule;
 import org.junit.Assert;
@@ -45,7 +45,7 @@ public abstract class HttpServerFileUploadTest extends SimpleHttpTest {
 
   protected File testDir;
 
-  protected HttpServerFileUploadTest(HttpConfig config) {
+  protected HttpServerFileUploadTest(HttpConfigurator config) {
     super(config, ReportMode.FORBIDDEN);
   }
 

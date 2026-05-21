@@ -22,7 +22,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,7 +42,7 @@ public abstract class HttpMetricsTestBase extends SimpleHttpTest {
   private final HttpVersion protocol;
   private final ThreadingModel threadingModel;
 
-  public HttpMetricsTestBase(HttpConfig config,  HttpVersion protocol, ThreadingModel threadingModel) {
+  public HttpMetricsTestBase(HttpConfigurator config, HttpVersion protocol, ThreadingModel threadingModel) {
     super(config, ReportMode.FORBIDDEN);
     this.protocol = protocol;
     this.threadingModel = threadingModel;

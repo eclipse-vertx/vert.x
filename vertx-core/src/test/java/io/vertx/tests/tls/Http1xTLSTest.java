@@ -17,7 +17,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.*;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class Http1xTLSTest extends HttpTCPTLSTest {
 
   public Http1xTLSTest() {
-    super(new HttpConfig.Http1xOr2Config() {
+    super(new HttpConfigurator.Http1XOr2Configurator() {
       @Override
       public HttpVersion version() {
         return HttpVersion.HTTP_1_1;

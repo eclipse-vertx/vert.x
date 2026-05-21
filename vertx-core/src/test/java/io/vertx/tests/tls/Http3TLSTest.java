@@ -11,7 +11,7 @@
 
 package io.vertx.tests.tls;
 
-import io.vertx.tests.http.http3.Http3Config;
+import io.vertx.tests.http.http3.Http3Configurator;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ import org.junit.Test;
 public class Http3TLSTest extends HttpTLSTest {
 
   public Http3TLSTest() {
-    super(new Http3Config(DEFAULT_HTTPS_PORT, "localhost"));
+    super(new Http3Configurator(DEFAULT_HTTPS_PORT, "localhost"));
   }
 
   @Ignore("Handle this")

@@ -19,7 +19,7 @@ import org.junit.Test;
 public class Http3ServerFileUploadTest extends HttpServerFileUploadTest {
 
   public Http3ServerFileUploadTest() {
-    super(new Http3Config());
+    super(new Http3Configurator());
   }
 
   @Ignore("Intermittent failure with timeout on CI")

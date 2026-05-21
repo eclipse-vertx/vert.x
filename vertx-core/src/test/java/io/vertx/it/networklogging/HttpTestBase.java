@@ -19,7 +19,7 @@ import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServer;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Test;
 
@@ -27,11 +27,11 @@ import java.util.function.Predicate;
 
 public abstract class HttpTestBase extends VertxTestBase {
 
-  private final HttpConfig config;
+  private final HttpConfigurator config;
   private HttpServer server;
   private HttpClient client;
 
-  public HttpTestBase(HttpConfig config) {
+  public HttpTestBase(HttpConfigurator config) {
     this.config = config;
   }
 

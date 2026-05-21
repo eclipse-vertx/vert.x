@@ -18,7 +18,7 @@ import org.junit.Test;
 public class Http3Test extends HttpTest {
 
   public Http3Test() {
-    super(Http3Config.INSTANCE);
+    super(Http3Configurator.INSTANCE);
   }
 
   @Ignore("Introduce stream cancellation")

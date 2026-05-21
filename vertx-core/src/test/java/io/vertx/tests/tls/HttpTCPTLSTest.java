@@ -38,7 +38,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.proxy.ProxyKind;
 import io.vertx.test.proxy.WithProxy;
@@ -62,14 +62,14 @@ public abstract class HttpTCPTLSTest extends HttpTLSTest {
   public Proxy proxy = new Proxy();
 
   protected HttpClientOptions createBaseClientOptions() {
-    return ((HttpConfig.Http1xOr2Config)config).createBaseClientOptions();
+    return ((HttpConfigurator.Http1XOr2Configurator)config).createBaseClientOptions();
   }
 
   protected HttpServerOptions createBaseServerOptions() {
-    return ((HttpConfig.Http1xOr2Config)config).createBaseServerOptions();
+    return ((HttpConfigurator.Http1XOr2Configurator)config).createBaseServerOptions();
   }
 
-  public HttpTCPTLSTest(HttpConfig config) {
+  public HttpTCPTLSTest(HttpConfigurator config) {
     super(config);
   }
 

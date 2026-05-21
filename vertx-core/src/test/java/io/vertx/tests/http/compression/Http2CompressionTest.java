@@ -11,7 +11,7 @@
 
 package io.vertx.tests.http.compression;
 
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -20,6 +20,6 @@ import io.vertx.test.http.HttpConfig;
 public class Http2CompressionTest extends HttpCompressionTest {
 
   public Http2CompressionTest(CompressionConfig config) {
-    super(HttpConfig.H2.CODEC, config);
+    super(HttpConfigurator.H2.CODEC, config);
   }
 }

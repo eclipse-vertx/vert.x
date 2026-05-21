@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 import static io.vertx.test.http.HttpTestBase.*;
 
-public interface HttpConfig {
+public interface HttpConfigurator {
 
   HttpVersion version();
 
@@ -31,10 +31,10 @@ public interface HttpConfig {
 
   String host();
 
-  HttpServerConfig forServer();
-  HttpClientConfig forClient();
+  HttpServerConfigurator forServer();
+  HttpClientConfigurator forClient();
 
-  abstract class Http1xOr2Config implements HttpConfig {
+  abstract class Http1XOr2Configurator implements HttpConfigurator {
 
 
     public abstract HttpServerOptions createBaseServerOptions();
@@ -42,69 +42,69 @@ public interface HttpConfig {
     public abstract HttpClientOptions createBaseClientOptions();
 
     @Override
-    public HttpClientConfig forClient() {
+    public HttpClientConfigurator forClient() {
       HttpClientOptions options = createBaseClientOptions();
-      return new HttpClientConfig() {
+      return new HttpClientConfigurator() {
         @Override
-        public HttpClientConfig setSsl(boolean ssl) {
+        public HttpClientConfigurator setSsl(boolean ssl) {
           options.setSsl(ssl);
           return this;
         }
         @Override
-        public HttpClientConfig setVerifyHost(boolean verify) {
+        public HttpClientConfigurator setVerifyHost(boolean verify) {
           options.setVerifyHost(verify);
           return this;
         }
         @Override
-        public HttpClientConfig setForceSni(boolean forceSni) {
+        public HttpClientConfigurator setForceSni(boolean forceSni) {
           options.setForceSni(forceSni);
           return this;
         }
         @Override
-        public HttpClientConfig setProxyOptions(ProxyOptions proxyOptions) {
+        public HttpClientConfigurator setProxyOptions(ProxyOptions proxyOptions) {
           options.setProxyOptions(proxyOptions);
           return this;
         }
         @Override
-        public HttpClientConfig setConnectTimeout(Duration connectTimeout) {
+        public HttpClientConfigurator setConnectTimeout(Duration connectTimeout) {
           options.setConnectTimeout((int)connectTimeout.toMillis());
           return this;
         }
         @Override
-        public HttpClientConfig setDecompressionSupported(boolean decompressionSupported) {
+        public HttpClientConfigurator setDecompressionSupported(boolean decompressionSupported) {
           options.setDecompressionSupported(decompressionSupported);
           return this;
         }
         @Override
-        public HttpClientConfig setLocalAddress(String localAddress) {
+        public HttpClientConfigurator setLocalAddress(String localAddress) {
           options.setLocalAddress(localAddress);
           return this;
         }
         @Override
-        public HttpClientConfig setLogActivity(boolean logActivity) {
+        public HttpClientConfigurator setLogActivity(boolean logActivity) {
           options.setLogActivity(logActivity);
           return this;
         }
         @Override
-        public HttpClientConfig setMetricsName(String name) {
+        public HttpClientConfigurator setMetricsName(String name) {
           options.setMetricsName(name);
           return this;
         }
         @Override
-        public HttpClientConfig setIdleTimeout(Duration timeout) {
+        public HttpClientConfigurator setIdleTimeout(Duration timeout) {
           options.setIdleTimeout((int)timeout.toMillis());
           options.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);
           return this;
         }
 
         @Override
-        public HttpClientConfig setKeepAliveTimeout(Duration timeout) {
+        public HttpClientConfigurator setKeepAliveTimeout(Duration timeout) {
           options.setKeepAliveTimeout((int)timeout.toSeconds());
           options.setHttp2KeepAliveTimeout((int)timeout.toSeconds());
           return this;
         }
         @Override
-        public HttpClientConfig configureSsl(Consumer<ClientSSLOptions> configurator) {
+        public HttpClientConfigurator configureSsl(Consumer<ClientSSLOptions> configurator) {
           // Trigger creation of lazy SSL options
           options.setKeyCertOptions(options.getKeyCertOptions());
           configurator.accept(options.getSslOptions());
@@ -118,26 +118,26 @@ public interface HttpConfig {
     }
 
     @Override
-    public HttpServerConfig forServer() {
+    public HttpServerConfigurator forServer() {
       HttpServerOptions options = createBaseServerOptions();
-      return new HttpServerConfig() {
+      return new HttpServerConfigurator() {
         @Override
-        public HttpServerConfig setSsl(boolean ssl) {
+        public HttpServerConfigurator setSsl(boolean ssl) {
           options.setSsl(ssl);
           return this;
         }
         @Override
-        public HttpServerConfig setUseProxyProtocol(boolean useProxyProtocol) {
+        public HttpServerConfigurator setUseProxyProtocol(boolean useProxyProtocol) {
           options.setUseProxyProtocol(useProxyProtocol);
           return this;
         }
         @Override
-        public HttpServerConfig setDecompressionSupported(boolean supported) {
+        public HttpServerConfigurator setDecompressionSupported(boolean supported) {
           options.setDecompressionSupported(supported);
           return this;
         }
         @Override
-        public HttpServerConfig setCompression(CompressionConfig compression) {
+        public HttpServerConfigurator setCompression(CompressionConfig compression) {
           if (compression != null) {
             options.setCompression(compression);
             options.setCompressionSupported(true);
@@ -148,38 +148,38 @@ public interface HttpConfig {
           return this;
         }
         @Override
-        public HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes) {
+        public HttpServerConfigurator setMaxFormBufferedBytes(int maxFormBufferedBytes) {
           options.setMaxFormBufferedBytes(maxFormBufferedBytes);
           return this;
         }
         @Override
-        public HttpServerConfig setMaxFormAttributeSize(int maxSize) {
+        public HttpServerConfigurator setMaxFormAttributeSize(int maxSize) {
           options.setMaxFormAttributeSize(maxSize);
           return this;
         }
         @Override
-        public HttpServerConfig setMaxFormFields(int maxFormFields) {
+        public HttpServerConfigurator setMaxFormFields(int maxFormFields) {
           options.setMaxFormFields(maxFormFields);
           return this;
         }
         @Override
-        public HttpServerConfig setLogActivity(boolean logActivity) {
+        public HttpServerConfigurator setLogActivity(boolean logActivity) {
           options.setLogActivity(logActivity);
           return this;
         }
         @Override
-        public HttpServerConfig setIdleTimeout(Duration timeout) {
+        public HttpServerConfigurator setIdleTimeout(Duration timeout) {
           options.setIdleTimeout((int)timeout.toMillis());
           options.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);
           return this;
         }
         @Override
-        public HttpServerConfig setHandle100ContinueAutomatically(boolean b) {
+        public HttpServerConfigurator setHandle100ContinueAutomatically(boolean b) {
           options.setHandle100ContinueAutomatically(b);
           return this;
         }
         @Override
-        public HttpServerConfig configureSsl(Consumer<ServerSSLOptions> configurator) {
+        public HttpServerConfigurator configureSsl(Consumer<ServerSSLOptions> configurator) {
           // Trigger creation of lazy SSL options
           options.setKeyCertOptions(options.getKeyCertOptions());
           configurator.accept(options.getSslOptions());
@@ -195,9 +195,9 @@ public interface HttpConfig {
     }
   }
 
-  class Http1x extends Http1xOr2Config {
+  class Http1x extends Http1XOr2Configurator {
 
-    public static HttpConfig DEFAULT = new HttpConfig.Http1x(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
+    public static HttpConfigurator DEFAULT = new HttpConfigurator.Http1x(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
 
     private final int port;
     private final String host;
@@ -233,7 +233,7 @@ public interface HttpConfig {
     }
   }
 
-  abstract class Http2 extends Http1xOr2Config {
+  abstract class Http2 extends Http1XOr2Configurator {
 
     private final boolean multiplex;
     private final int port;
@@ -307,8 +307,8 @@ public interface HttpConfig {
 
   class H2C extends Http2 {
 
-    public static HttpConfig CODEC = new H2C(false);
-    public static HttpConfig MULTIPLEX = new H2C(true);
+    public static HttpConfigurator CODEC = new H2C(false);
+    public static HttpConfigurator MULTIPLEX = new H2C(true);
 
     public H2C(boolean multiplex) {
       super(multiplex);

@@ -22,8 +22,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpServerConfig;
+import io.vertx.test.http.HttpConfigurator;
+import io.vertx.test.http.HttpServerConfigurator;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -31,7 +31,7 @@ import java.util.Optional;
 public class Http1xCompressionThresholdTest extends HttpCompressionTestBase {
 
   public Http1xCompressionThresholdTest() {
-    super(HttpConfig.Http1x.DEFAULT);
+    super(HttpConfigurator.Http1x.DEFAULT);
   }
 
   @Override
@@ -53,7 +53,7 @@ public class Http1xCompressionThresholdTest extends HttpCompressionTestBase {
   @Test
   public void testServerCompressionBelowThreshold() throws Exception {
     // set compression threshold to be greater than the content string size so it WILL NOT be compressed
-    HttpServerConfig httpServerOptions = config.forServer();
+    HttpServerConfigurator httpServerOptions = config.forServer();
     httpServerOptions.setCompression(new io.vertx.core.http.CompressionConfig()
       .addCompressor(io.vertx.tests.http.compression.CompressionConfig.gzip(6).compressor)
       .setContentSizeThreshold(COMPRESS_TEST_STRING.length() * 2)
@@ -75,7 +75,7 @@ public class Http1xCompressionThresholdTest extends HttpCompressionTestBase {
   @Test
   public void testServerCompressionAboveThreshold() throws Exception {
     // set compression threshold to be less than the content string size so it WILL be compressed
-    HttpServerConfig config = this.config.forServer();
+    HttpServerConfigurator config = this.config.forServer();
     config.setCompression(new io.vertx.core.http.CompressionConfig()
       .addCompressor(io.vertx.tests.http.compression.CompressionConfig.gzip(6).compressor)
       .setContentSizeThreshold(COMPRESS_TEST_STRING.length() / 2)
@@ -93,7 +93,7 @@ public class Http1xCompressionThresholdTest extends HttpCompressionTestBase {
     }));
   }
 
-  private void doTest(HttpServerConfig config, Handler<AsyncResult<HttpClientResponse>> handler) throws Exception {
+  private void doTest(HttpServerConfigurator config, Handler<AsyncResult<HttpClientResponse>> handler) throws Exception {
     HttpServer server = config.create(vertx);
     try {
       server.requestHandler(req -> {

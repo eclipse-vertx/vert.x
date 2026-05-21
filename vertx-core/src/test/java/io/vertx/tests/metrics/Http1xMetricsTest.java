@@ -13,7 +13,7 @@ package io.vertx.tests.metrics;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,7 +27,7 @@ public class Http1xMetricsTest extends HttpMetricsTestBase {
   }
 
   protected Http1xMetricsTest(ThreadingModel threadingModel) {
-    super(HttpConfig.Http1x.DEFAULT, HttpVersion.HTTP_1_1, threadingModel);
+    super(HttpConfigurator.Http1x.DEFAULT, HttpVersion.HTTP_1_1, threadingModel);
   }
 
   @Test

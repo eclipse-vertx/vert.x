@@ -15,6 +15,6 @@ import io.vertx.tests.http.fileupload.HttpClientFileUploadTest;
 public class Http3ClientFileUploadTest extends HttpClientFileUploadTest {
 
   public Http3ClientFileUploadTest() {
-    super(new Http3Config());
+    super(new Http3Configurator());
   }
 }

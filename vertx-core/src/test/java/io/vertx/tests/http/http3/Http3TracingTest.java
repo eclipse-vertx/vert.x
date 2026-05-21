@@ -15,7 +15,7 @@ import io.vertx.tests.tracing.HttpTracingTestBase;
 public class Http3TracingTest extends HttpTracingTestBase {
 
   public Http3TracingTest() {
-    super(Http3Config.INSTANCE);
+    super(Http3Configurator.INSTANCE);
   }
 
 }

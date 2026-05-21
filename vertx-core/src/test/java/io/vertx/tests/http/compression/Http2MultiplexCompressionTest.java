@@ -1,6 +1,6 @@
 package io.vertx.tests.http.compression;
 
-import io.vertx.test.http.HttpConfig;
+import io.vertx.test.http.HttpConfigurator;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -8,6 +8,6 @@ import io.vertx.test.http.HttpConfig;
 public class Http2MultiplexCompressionTest extends HttpCompressionTest {
 
   public Http2MultiplexCompressionTest(CompressionConfig config) {
-    super(HttpConfig.H2.MULTIPLEX, config);
+    super(HttpConfigurator.H2.MULTIPLEX, config);
   }
 }
