@@ -21,7 +21,6 @@
   </parent>
 
   <artifactId>vertx-core-logging</artifactId>
-  <version>5.1.0-SNAPSHOT</version>
 
   <name>Vert.x Core Logging</name>
 

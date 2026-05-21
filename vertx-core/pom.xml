@@ -21,7 +21,6 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>5.1.0-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -273,11 +272,6 @@
               <vertx.useDomainSockets>${vertx.surefire.useDomainSockets}</vertx.useDomainSockets>
               <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
-            <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-            <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
-            <argLine>-Xmx1200M</argLine>
-            <forkCount>1</forkCount>
-            <reuseForks>true</reuseForks>
             <properties>
               <!--
                 Uncomment to make a JVM heap dump after all tests have been executed, stored in ${project.build.directory}/dumps/dump-XXX.hprof
