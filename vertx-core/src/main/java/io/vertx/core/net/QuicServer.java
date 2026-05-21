@@ -14,7 +14,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServer;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 /**

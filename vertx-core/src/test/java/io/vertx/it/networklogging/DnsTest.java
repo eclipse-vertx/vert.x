@@ -15,7 +15,6 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.MockDnsServer;
-import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Test;
 
 public class DnsTest extends VertxTestBase {

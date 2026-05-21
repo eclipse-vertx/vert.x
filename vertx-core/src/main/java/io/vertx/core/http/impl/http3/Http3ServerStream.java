@@ -19,7 +19,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.http.impl.HttpResponseHead;
@@ -29,11 +28,9 @@ import io.vertx.core.http.impl.headers.HttpHeaders;
 import io.vertx.core.http.impl.headers.HttpRequestHeaders;
 import io.vertx.core.http.impl.headers.HttpResponseHeaders;
 import io.vertx.core.http.impl.observability.ServerStreamObserver;
-import io.vertx.core.http.impl.observability.StreamObserver;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

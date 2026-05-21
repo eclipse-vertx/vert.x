@@ -25,7 +25,6 @@ import io.vertx.core.spi.metrics.Metrics;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

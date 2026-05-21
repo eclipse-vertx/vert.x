@@ -10,7 +10,6 @@ import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.quic.QuicHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
-import io.vertx.core.impl.CleanableResource;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;

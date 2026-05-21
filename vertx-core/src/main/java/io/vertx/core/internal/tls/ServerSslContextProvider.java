@@ -19,7 +19,6 @@ import io.vertx.core.http.ClientAuth;
 import io.vertx.core.spi.tls.SslContextFactory;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SNIHostName;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.security.cert.CRL;

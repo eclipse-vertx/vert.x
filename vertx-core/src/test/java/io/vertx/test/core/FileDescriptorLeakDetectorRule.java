@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertTrue;
 
 public class FileDescriptorLeakDetectorRule implements TestRule {
 

@@ -80,7 +80,7 @@ public class PrivateKeyParser {
 
   /**
    * Gets the algorithm used by a PKCS#8 encoded private key.
-   * 
+   *
    * @param encodedKey The encoded private key.
    * @return The algorithm name, either <em>RSA</em> or <em>EC</em>, depending on
    *         the algorithm identifier found in the encoded key.

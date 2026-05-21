@@ -3,7 +3,6 @@ package io.vertx.it;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerAdapter;
 import io.vertx.core.spi.logging.LogDelegate;
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 

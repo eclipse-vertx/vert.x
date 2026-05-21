@@ -20,7 +20,6 @@ import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.tests.timer.TimerTest;
 import io.vertx.tests.vertx.VertxTest;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -1609,4 +1608,3 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 }
-

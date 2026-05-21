@@ -12,11 +12,8 @@
 package io.vertx.core.shareddata;
 
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 
-import java.util.Objects;
 
 /**
  * An asynchronous counter that can be used to across the cluster to maintain a consistent count.

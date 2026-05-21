@@ -14,11 +14,9 @@ package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
-import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.SysProps;
 import io.vertx.core.json.JsonObject;
 
-import java.io.File;
 
 /**
  * Vert.x file system base configuration, this class can be extended by provider implementations to configure

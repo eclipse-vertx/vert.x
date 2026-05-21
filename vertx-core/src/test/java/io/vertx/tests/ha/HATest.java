@@ -16,7 +16,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -431,4 +430,3 @@ public class HATest extends VertxTestBase {
 
 
 }
-

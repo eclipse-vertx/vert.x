@@ -13,18 +13,10 @@ package io.vertx.core.spi.tls;
 
 import io.netty.handler.codec.quic.BoringSSLKeylog;
 import io.netty.handler.codec.quic.QuicSslContextBuilder;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
 import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.OpenSslServerContext;
-import io.netty.handler.ssl.OpenSslServerSessionContext;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.*;
-import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 

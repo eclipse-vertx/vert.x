@@ -14,7 +14,6 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.net.*;
-import io.vertx.core.tracing.TracingPolicy;
 
 import java.time.Duration;
 import java.util.ArrayList;

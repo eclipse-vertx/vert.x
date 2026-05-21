@@ -21,7 +21,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.spi.json.JsonCodec;
 import io.vertx.test.core.TestUtils;
-import io.vertx.tests.json.jackson.JsonParserTest;
 import org.junit.Assume;
 import org.junit.Test;
 

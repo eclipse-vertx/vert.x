@@ -19,7 +19,6 @@ import io.vertx.core.ThreadingModel;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.jackson.DatabindCodec;
-import org.junit.Assume;
 import org.junit.Test;
 
 import java.lang.reflect.ParameterizedType;

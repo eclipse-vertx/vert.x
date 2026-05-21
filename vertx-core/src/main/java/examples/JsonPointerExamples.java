@@ -15,7 +15,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
 
-import java.net.URI;
 
 public class JsonPointerExamples {
 

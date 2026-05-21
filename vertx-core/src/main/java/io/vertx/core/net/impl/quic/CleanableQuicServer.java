@@ -15,14 +15,11 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.net.QuicEndpointConfig;
 import io.vertx.core.net.QuicServerConfig;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
-import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

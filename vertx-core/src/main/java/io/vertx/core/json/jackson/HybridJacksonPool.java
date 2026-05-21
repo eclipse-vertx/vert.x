@@ -1,10 +1,7 @@
 package io.vertx.core.json.jackson;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.concurrent.atomic.AtomicReferenceArray;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.core.util.BufferRecycler;

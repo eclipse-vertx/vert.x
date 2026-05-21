@@ -208,4 +208,3 @@ public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
     }
   }
 }
-

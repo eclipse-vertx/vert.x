@@ -20,8 +20,6 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.lang.ref.Cleaner;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**

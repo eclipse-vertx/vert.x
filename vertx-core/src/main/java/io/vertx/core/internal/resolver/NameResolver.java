@@ -21,11 +21,8 @@ import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.net.Address;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.endpoint.EndpointBuilder;
 import io.vertx.core.spi.dns.AddressResolverProvider;
-import io.vertx.core.spi.endpoint.EndpointResolver;
 
 import java.io.File;
 import java.net.InetAddress;

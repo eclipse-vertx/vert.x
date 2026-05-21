@@ -15,7 +15,6 @@ import io.vertx.core.spi.context.storage.ContextLocal;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

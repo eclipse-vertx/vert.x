@@ -32,7 +32,6 @@ import java.util.Enumeration;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

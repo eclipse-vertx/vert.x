@@ -43,5 +43,3 @@ final class ConcurrentAccessMode implements AccessMode {
     return res;
   }
 }
-
-

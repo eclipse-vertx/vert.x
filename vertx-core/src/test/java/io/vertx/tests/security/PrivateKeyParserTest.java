@@ -26,7 +26,6 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
 
-import io.vertx.core.Vertx;
 import io.vertx.test.core.TestUtils;
 
 

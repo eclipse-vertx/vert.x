@@ -14,7 +14,6 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.impl.CookieImpl;
 
 /**

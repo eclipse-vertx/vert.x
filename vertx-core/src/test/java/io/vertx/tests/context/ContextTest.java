@@ -21,8 +21,6 @@ import io.vertx.core.spi.context.storage.AccessMode;
 import io.vertx.core.spi.context.storage.ContextLocal;
 import io.vertx.test.core.ContextLocalHelper;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.fakemetrics.FakeMetricsFactory;
-import org.junit.Assume;
 import org.junit.Test;
 
 import java.net.URL;

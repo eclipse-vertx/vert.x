@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static io.vertx.test.http.HttpTestBase.*;
-import static org.junit.Assert.assertTrue;
 
 public interface HttpConfig {
 

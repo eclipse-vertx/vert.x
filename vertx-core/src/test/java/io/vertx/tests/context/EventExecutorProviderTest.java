@@ -17,7 +17,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxBootstrap;
 import io.vertx.test.core.AsyncTestBase;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.*;

@@ -11,12 +11,10 @@
 package io.vertx.core.net.impl.tcp;
 
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.net.TcpClientConfig;
-import io.vertx.core.spi.metrics.TransportMetrics;
 
 /**
  * A builder to configure NetClient plugins.

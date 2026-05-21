@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static io.vertx.core.net.endpoint.LoadBalancer.*;
 import static org.junit.Assert.assertEquals;

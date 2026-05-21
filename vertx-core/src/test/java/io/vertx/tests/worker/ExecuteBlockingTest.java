@@ -15,7 +15,6 @@ import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.VertxException;
 import io.vertx.core.impl.VertxThread;
-import io.vertx.it.vertx.CustomVertxThread;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

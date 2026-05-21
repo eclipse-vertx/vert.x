@@ -341,4 +341,3 @@ public abstract class StreamChannelBase<S extends StreamChannelBase<S>> extends 
     }
   }
 }
-

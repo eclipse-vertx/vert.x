@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.spi.observability.HttpRequest;
 
 /**

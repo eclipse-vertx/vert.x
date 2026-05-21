@@ -4,12 +4,9 @@ import io.vertx.core.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.*;
-import io.vertx.core.spi.metrics.TransportMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 public class CleanableNetServer extends NetServerImpl implements Closeable {
 

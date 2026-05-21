@@ -11,8 +11,6 @@
 package io.vertx.core.http;
 
 import io.vertx.core.VertxException;
-import io.vertx.core.http.impl.HttpUtils;
-import io.vertx.core.net.impl.ConnectionBase;
 
 /**
  * Signals a HTTP connection close.

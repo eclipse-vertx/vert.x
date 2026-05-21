@@ -10,10 +10,8 @@
  */
 package io.vertx.core.internal.pool;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 

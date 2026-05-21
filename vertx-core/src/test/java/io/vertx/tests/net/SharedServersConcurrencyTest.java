@@ -18,8 +18,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.core.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**

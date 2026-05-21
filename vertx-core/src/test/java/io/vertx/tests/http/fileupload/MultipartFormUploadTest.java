@@ -16,7 +16,6 @@
 package io.vertx.tests.http.fileupload;
 
 import io.netty.handler.codec.http.multipart.HttpPostRequestEncoder;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientForm;
 import io.vertx.core.http.ClientMultipartForm;
@@ -26,12 +25,10 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpTestBase;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.nio.file.Files;

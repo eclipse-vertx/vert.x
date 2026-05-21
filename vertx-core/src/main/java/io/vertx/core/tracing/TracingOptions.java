@@ -14,7 +14,6 @@ package io.vertx.core.tracing;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.VertxTracerFactory;
 
 /**
  * Vert.x tracing base configuration, this class can be extended by provider implementations to configure

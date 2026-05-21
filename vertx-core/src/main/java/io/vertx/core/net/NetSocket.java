@@ -323,4 +323,3 @@ public interface NetSocket extends StreamChannel {
   List<Map.Entry<Buffer, Buffer>> proxyProtocolV2HeaderTLVs();
 
 }
-

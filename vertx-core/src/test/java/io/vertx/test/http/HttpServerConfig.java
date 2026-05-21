@@ -2,10 +2,8 @@ package io.vertx.test.http;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.CompressionConfig;
-import io.vertx.core.http.HttpClientBuilder;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerBuilder;
-import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
 
 import java.time.Duration;

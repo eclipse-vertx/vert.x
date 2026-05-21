@@ -11,7 +11,6 @@
 
 package io.vertx.it.jackson;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -21,7 +20,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.core.VertxTestBase2;
 import org.junit.Test;
 

@@ -12,7 +12,6 @@ package io.vertx.tests.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import io.vertx.test.faketracer.FakeTracer;

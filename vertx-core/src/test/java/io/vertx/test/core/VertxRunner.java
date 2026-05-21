@@ -1,14 +1,12 @@
 package io.vertx.test.core;
 
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.junit.*;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.*;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.time.Duration;
@@ -16,8 +14,6 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 public class VertxRunner extends BlockJUnit4ClassRunner {
 

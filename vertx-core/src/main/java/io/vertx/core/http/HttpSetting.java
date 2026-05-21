@@ -10,10 +10,7 @@
  */
 package io.vertx.core.http;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
-import io.vertx.core.impl.Arguments;
 
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.LongConsumer;
 

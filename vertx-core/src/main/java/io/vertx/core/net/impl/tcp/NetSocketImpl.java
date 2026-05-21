@@ -189,4 +189,3 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
     super.handleClosed();
   }
 }
-

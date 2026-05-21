@@ -38,7 +38,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.test.core.Repeat;
 import org.junit.Assert;
 import org.junit.Test;
 

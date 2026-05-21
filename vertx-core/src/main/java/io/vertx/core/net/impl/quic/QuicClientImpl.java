@@ -40,7 +40,6 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**

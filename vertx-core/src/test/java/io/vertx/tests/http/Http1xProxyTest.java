@@ -12,7 +12,6 @@ package io.vertx.tests.http;
 
 import io.netty.handler.proxy.ProxyConnectException;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CleanableHttpClient;
@@ -21,7 +20,6 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.Checkpoint;
-import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakedns.DnsRecord;
 import io.vertx.test.fakedns.WithDnsServer;
@@ -29,7 +27,6 @@ import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import org.assertj.core.api.Assertions;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 

@@ -18,7 +18,6 @@ import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.FakeQuicEndpointMetrics;
 import io.vertx.test.fakemetrics.FakeTransportMetrics;
 import io.vertx.test.fakemetrics.ConnectionMetric;
-import io.vertx.test.core.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

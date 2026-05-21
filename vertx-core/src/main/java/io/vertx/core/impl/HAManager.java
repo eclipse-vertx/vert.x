@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
 import io.vertx.core.impl.verticle.VerticleManager;

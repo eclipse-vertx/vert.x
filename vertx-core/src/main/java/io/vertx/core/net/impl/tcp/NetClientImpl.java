@@ -419,4 +419,3 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
     context.emit(th, connectHandler::tryFail);
   }
 }
-

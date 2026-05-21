@@ -44,7 +44,6 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;

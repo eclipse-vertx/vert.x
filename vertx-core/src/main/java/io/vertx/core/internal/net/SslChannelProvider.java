@@ -25,7 +25,6 @@ import io.vertx.core.internal.tls.ClientSslContextProvider;
 import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 
 import java.util.List;
 import java.util.concurrent.Executor;

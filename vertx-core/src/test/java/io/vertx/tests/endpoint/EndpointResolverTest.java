@@ -15,13 +15,11 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.endpoint.Endpoint;
 import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.net.endpoint.ServerEndpoint;
-import io.vertx.core.net.endpoint.ServerInteraction;
 import io.vertx.core.net.endpoint.impl.EndpointResolverImpl;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakeresolver.*;
 import org.junit.Test;
 
-import java.net.ConnectException;
 import java.util.List;
 import java.util.function.Predicate;
 

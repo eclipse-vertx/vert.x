@@ -12,8 +12,6 @@ package io.vertx.core;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * An expectation, very much like a predicate with the ability to provide a meaningful description of the failure.

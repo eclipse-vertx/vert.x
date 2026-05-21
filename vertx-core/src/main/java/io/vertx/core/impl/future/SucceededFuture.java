@@ -11,7 +11,6 @@
 
 package io.vertx.core.impl.future;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

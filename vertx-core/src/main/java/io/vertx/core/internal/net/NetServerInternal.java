@@ -15,7 +15,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.ServerSslContextProvider;
-import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.metrics.MetricsProvider;
 

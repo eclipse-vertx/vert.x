@@ -20,10 +20,8 @@ import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
 import io.vertx.core.internal.net.NetServerInternal;
-import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.tls.Cert;
-import org.apache.logging.log4j.core.jmx.Server;
 import org.junit.Test;
 
 import static io.vertx.test.core.AssertExpectations.that;

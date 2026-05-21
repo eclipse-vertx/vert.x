@@ -13,7 +13,6 @@ package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
 
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import java.util.Objects;

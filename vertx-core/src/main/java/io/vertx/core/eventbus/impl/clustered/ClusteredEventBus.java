@@ -30,7 +30,6 @@ import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.metrics.EventBusMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -389,4 +388,3 @@ public final class ClusteredEventBus extends EventBusImpl {
       });
   }
 }
-
