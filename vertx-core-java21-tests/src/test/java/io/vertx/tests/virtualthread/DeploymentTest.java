@@ -15,12 +15,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpTestBase;
-import junit.framework.AssertionFailedError;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;

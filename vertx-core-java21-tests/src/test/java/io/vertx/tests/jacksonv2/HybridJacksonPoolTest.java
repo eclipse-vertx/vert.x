@@ -2,7 +2,6 @@ package io.vertx.tests.jacksonv2;
 
 import com.fasterxml.jackson.core.util.BufferRecycler;
 import io.vertx.core.json.jackson.HybridJacksonPool;
-import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
