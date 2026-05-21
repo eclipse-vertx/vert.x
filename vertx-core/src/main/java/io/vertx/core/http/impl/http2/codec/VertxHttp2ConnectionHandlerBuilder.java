@@ -44,7 +44,7 @@ public class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionImpl> e
   }
 
   public VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
-    HttpUtils.fromVertxInitialSettings(server, settings, initialSettings());
+    initialSettings(HttpUtils.fromVertxInitialSettings(server, settings));
     return this;
   }
 
