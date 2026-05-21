@@ -11,7 +11,6 @@
 
 package io.vertx.tests.tls;
 
-import io.vertx.test.http.HttpConfig;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

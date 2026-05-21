@@ -21,7 +21,6 @@
   </parent>
 
   <artifactId>vertx-core-java21-it</artifactId>
-  <version>5.1.0-SNAPSHOT</version>
 
   <name>Vert.x Core Jackson v3 plugin</name>
 
@@ -91,10 +90,11 @@
               <includes>
                 <include>io/vertx/tests/virtualthread/**</include>
               </includes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/default</reportsDirectory>
             </configuration>
           </execution>
           <execution>
-            <id>jacksonv2-test</id>
+            <id>test-jacksonv2</id>
             <configuration>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>tools.jackson.core:jackson-core</classpathDependencyExclude>
@@ -103,13 +103,14 @@
               <includes>
                 <include>io/vertx/tests/jacksonv2/**</include>
               </includes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/jacksonv2</reportsDirectory>
             </configuration>
             <goals>
               <goal>test</goal>
             </goals>
           </execution>
           <execution>
-            <id>jacksonv3-test</id>
+            <id>test-jacksonv3</id>
             <configuration>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
@@ -118,6 +119,7 @@
               <includes>
                 <include>io/vertx/tests/jacksonv3/**</include>
               </includes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/jacksonv3</reportsDirectory>
             </configuration>
             <goals>
               <goal>test</goal>
@@ -128,7 +130,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.5.3</version>
         <configuration>
           <useModulePath>false</useModulePath>
         </configuration>

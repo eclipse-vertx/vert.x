@@ -12,9 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.http.HttpProtocol;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.SocketAddress;
 
-import java.time.Duration;
 import java.util.Objects;
 
 /**

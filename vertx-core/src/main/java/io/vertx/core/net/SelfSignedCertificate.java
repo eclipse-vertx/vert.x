@@ -12,7 +12,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.net.impl.SelfSignedCertificateImpl;
 
 /**

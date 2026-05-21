@@ -115,4 +115,3 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(randPassword, options.getPassword());
   }
 }
-

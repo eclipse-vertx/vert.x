@@ -19,7 +19,6 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.http.SimpleHttpTest;
 import org.junit.Rule;
 import org.junit.Assert;

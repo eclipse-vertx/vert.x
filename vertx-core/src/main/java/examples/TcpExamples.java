@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.net.*;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tim on 19/01/15.

@@ -13,7 +13,6 @@ package io.vertx.core.impl.verticle;
 
 import io.vertx.core.Deployable;
 import io.vertx.core.Promise;
-import io.vertx.core.Verticle;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.concurrent.Callable;

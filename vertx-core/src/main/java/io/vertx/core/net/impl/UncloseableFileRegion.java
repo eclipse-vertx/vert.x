@@ -12,7 +12,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.DefaultFileRegion;
 
-import java.io.File;
 import java.nio.channels.FileChannel;
 
 /**

@@ -11,10 +11,8 @@
 package io.vertx.core.internal;
 
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 
-import java.util.function.BiConsumer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

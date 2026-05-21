@@ -13,7 +13,6 @@ package io.vertx.test.core;
 
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
-import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.metrics.MetricsOptions;

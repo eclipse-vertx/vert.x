@@ -56,7 +56,6 @@ import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.metrics.WebSocketMetrics;
 import io.vertx.core.spi.tracing.SpanKind;

@@ -11,7 +11,6 @@
 
 package io.vertx.tests.http.headers;
 
-import io.netty.handler.codec.Headers;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.impl.headers.HttpHeaders;

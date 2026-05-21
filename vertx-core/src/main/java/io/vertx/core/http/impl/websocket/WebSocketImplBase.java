@@ -40,7 +40,6 @@ import javax.net.ssl.SSLSession;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.net.impl.VertxHandler.*;
 

@@ -10,8 +10,6 @@
  */
 package io.vertx.core.spi.context.storage;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.function.Supplier;
 
 /**

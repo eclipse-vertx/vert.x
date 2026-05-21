@@ -12,7 +12,6 @@
 package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;

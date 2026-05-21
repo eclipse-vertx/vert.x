@@ -1,6 +1,5 @@
 package io.vertx.tests.http;
 
-import io.vertx.core.Future;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpClientAgent;
 import io.vertx.core.http.HttpClientOptions;
@@ -13,7 +12,6 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpConfig;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 

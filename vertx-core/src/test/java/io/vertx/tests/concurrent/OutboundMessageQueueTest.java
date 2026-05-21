@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.concurrent;
 
-import io.netty.channel.EventLoop;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.EventExecutor;
 import io.vertx.core.internal.concurrent.OutboundMessageQueue;

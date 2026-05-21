@@ -11,7 +11,6 @@
 package io.vertx.tests.tracing;
 
 import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;

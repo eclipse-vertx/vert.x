@@ -26,4 +26,3 @@ public @interface Repeat {
   public abstract int times();
 
 }
-

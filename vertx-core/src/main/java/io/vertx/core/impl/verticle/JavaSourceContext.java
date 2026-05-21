@@ -14,7 +14,6 @@ package io.vertx.core.impl.verticle;
 import javax.tools.JavaFileObject.Kind;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /**

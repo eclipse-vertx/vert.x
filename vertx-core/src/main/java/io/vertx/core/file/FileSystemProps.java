@@ -12,7 +12,6 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Represents properties of the file system.

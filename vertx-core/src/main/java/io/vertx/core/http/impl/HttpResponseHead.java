@@ -11,8 +11,6 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.spi.observability.HttpResponse;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>

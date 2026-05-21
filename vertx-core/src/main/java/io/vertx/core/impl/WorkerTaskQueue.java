@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.core.Promise;
 
-import java.util.List;
 
 /**
  * Worker task queue

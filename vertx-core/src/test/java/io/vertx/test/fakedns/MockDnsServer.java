@@ -19,10 +19,8 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.handler.codec.dns.*;
 import io.netty.handler.codec.dns.DnsRecord;
-import io.netty.util.concurrent.SingleThreadEventExecutor;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.Vertx;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 
 import java.net.InetAddress;

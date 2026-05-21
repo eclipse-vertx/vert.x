@@ -12,10 +12,7 @@ package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 /**
  * Pipe data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to

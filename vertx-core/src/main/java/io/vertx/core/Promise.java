@@ -16,7 +16,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.future.PromiseImpl;
 
-import java.util.function.BiConsumer;
 
 /**
  * Represents the writable side of an action that may, or may not, have occurred yet.

@@ -19,8 +19,6 @@ import io.vertx.core.json.pointer.impl.JsonPointerImpl;
 
 import java.net.URI;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /**
  * Implementation of <a href="https://tools.ietf.org/html/rfc6901">RFC6901 Json Pointers</a>.

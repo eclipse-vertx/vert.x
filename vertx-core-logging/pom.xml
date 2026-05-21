@@ -21,7 +21,6 @@
   </parent>
 
   <artifactId>vertx-core-logging</artifactId>
-  <version>5.1.0-SNAPSHOT</version>
 
   <name>Vert.x Core Logging</name>
 
@@ -186,6 +185,7 @@
                 <classpathDependencyExclude>org.slf4j:*</classpathDependencyExclude>
                 <classpathDependencyExclude>org.apache.logging.log4j:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/jul</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -204,6 +204,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>org.apache.logging.log4j:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/slf4j</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -218,6 +219,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>org.slf4j:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/log4j</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -236,6 +238,7 @@
                 <classpathDependencyExclude>org.slf4j:*</classpathDependencyExclude>
                 <classpathDependencyExclude>org.apache.logging.log4j:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/classpath-logging-selection-jul</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -253,6 +256,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>org.apache.logging.log4j:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/classpath-logging-selection-slf4j</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -270,6 +274,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>org.slf4j:*</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/classpath-logging-selection-log4j2</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -284,6 +289,7 @@
               <includes>
                 <include>**/LoggingSelectionTest.java</include>
               </includes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/classpath-logging-selection-slf4j-over-log4j</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -301,6 +307,7 @@
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/jul</additionalClasspathElement>
               </additionalClasspathElements>
+              <reportsDirectory>${project.build.directory}/surefire-reports/classpath-logging-selection-force-jul</reportsDirectory>
             </configuration>
           </execution>
           <execution>
@@ -318,6 +325,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
               </classpathDependencyExcludes>
+              <reportsDirectory>${project.build.directory}/surefire-reports/classpath-logging-selection-slf4j-no-impl</reportsDirectory>
             </configuration>
           </execution>
         </executions>

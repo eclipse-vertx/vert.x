@@ -512,4 +512,3 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return true;
   }
 }
-

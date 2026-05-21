@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.internal.ContextInternal;
 
 /**
  * WARNING : this class is not deprecated, however we encourage instead to use {@link VerticleBase}

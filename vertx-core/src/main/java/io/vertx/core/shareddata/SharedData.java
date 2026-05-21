@@ -16,7 +16,6 @@ import io.vertx.core.Future;
 import io.vertx.core.VertxException;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**

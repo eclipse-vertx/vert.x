@@ -15,7 +15,6 @@ import io.vertx.core.Vertx;
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 /**
  * A factory for Vert.x instance.

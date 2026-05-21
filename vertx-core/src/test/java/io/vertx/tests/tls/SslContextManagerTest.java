@@ -24,7 +24,6 @@ import io.vertx.core.net.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.apache.logging.log4j.core.jmx.Server;
 import org.junit.Test;
 
 import javax.net.ssl.SSLContext;

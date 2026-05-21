@@ -284,5 +284,3 @@ public class ContextTaskTest extends VertxTestBase {
   // TODO : remove dispatchFromIO
 
 }
-
-

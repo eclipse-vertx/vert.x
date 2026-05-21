@@ -16,7 +16,6 @@ import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextBuilder;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.WorkerPool;
-import io.vertx.core.internal.deployment.DeploymentContext;
 
 import java.util.Objects;
 

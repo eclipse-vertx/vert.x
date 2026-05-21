@@ -11,7 +11,6 @@
 package io.vertx.tests.streams;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.streams.Pipe;

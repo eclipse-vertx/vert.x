@@ -11,11 +11,9 @@
 package io.vertx.core.net.impl;
 
 import io.vertx.core.Future;
-import io.vertx.core.http.ClientAuth;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.tls.ServerSslContextManager;
 import io.vertx.core.internal.tls.ServerSslContextProvider;
-import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ServerSSLOptions;
 

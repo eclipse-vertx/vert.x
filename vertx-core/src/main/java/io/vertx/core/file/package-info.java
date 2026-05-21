@@ -10,4 +10,3 @@
  */
 
 package io.vertx.core.file;
-

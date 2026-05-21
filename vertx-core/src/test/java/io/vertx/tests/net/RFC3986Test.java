@@ -11,7 +11,6 @@
 package io.vertx.tests.net;
 
 import io.vertx.core.internal.net.RFC3986;
-import org.junit.ComparisonFailure;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

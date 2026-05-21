@@ -10,7 +10,6 @@
  */
 package io.vertx.tests.http.sendfile;
 
-import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
@@ -19,7 +18,6 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
 import org.junit.Assert;

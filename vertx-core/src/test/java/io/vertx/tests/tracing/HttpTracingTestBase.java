@@ -16,18 +16,13 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpResponseExpectation;
-import io.vertx.core.spi.VertxTracerFactory;
-import io.vertx.core.spi.tracing.VertxTracer;
-import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.VertxProvider;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
 import io.vertx.test.http.HttpConfig;
-import io.vertx.test.http.SimpleHttpTest;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.SimpleHttpTest2;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 

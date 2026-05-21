@@ -13,7 +13,6 @@ package io.vertx.core.impl.verticle;
 import io.vertx.core.*;
 import io.vertx.core.impl.deployment.DefaultDeployment;
 import io.vertx.core.internal.deployment.Deployment;
-import io.vertx.core.impl.ServiceHelper;
 import io.vertx.core.impl.*;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
@@ -23,7 +22,6 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;

@@ -16,7 +16,6 @@ import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  * Future implementation.

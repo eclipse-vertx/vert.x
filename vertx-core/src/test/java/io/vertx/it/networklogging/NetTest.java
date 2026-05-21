@@ -11,28 +11,18 @@
 package io.vertx.it.networklogging;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.LogConfig;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.QuicClient;
-import io.vertx.core.net.QuicClientConfig;
-import io.vertx.core.net.QuicConnection;
-import io.vertx.core.net.QuicServer;
-import io.vertx.core.net.QuicServerConfig;
-import io.vertx.core.net.QuicStream;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
-import io.vertx.tests.net.quic.QuicClientTest;
 import org.junit.Test;
 
 import java.util.function.Predicate;
 
-import static io.vertx.tests.net.quic.QuicServerTest.SSL_OPTIONS;
 
 public class NetTest extends VertxTestBase {
 

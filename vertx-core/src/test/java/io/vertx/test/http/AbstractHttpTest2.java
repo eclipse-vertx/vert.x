@@ -19,7 +19,6 @@ import io.vertx.core.transport.Transport;
 import io.vertx.test.core.ProvidedBy;
 import io.vertx.test.core.VertxProvider;
 import io.vertx.test.core.VertxRunner;
-import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.DnsServer;
 import junit.framework.AssertionFailedError;
 import org.junit.After;

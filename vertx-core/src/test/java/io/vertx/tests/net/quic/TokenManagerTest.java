@@ -13,7 +13,6 @@ package io.vertx.tests.net.quic;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.impl.quic.TokenManager;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import org.junit.Assert;

@@ -22,4 +22,3 @@ public @interface DetectFileDescriptorLeaks {
   long iterations() default 20;
   long tearDown() default 20;
 }
-

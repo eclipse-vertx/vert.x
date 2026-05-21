@@ -12,7 +12,6 @@
 package io.vertx.tests.eventbus;
 
 import io.vertx.core.Completable;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;

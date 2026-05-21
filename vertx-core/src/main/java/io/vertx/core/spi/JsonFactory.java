@@ -11,7 +11,6 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.json.Json;
 import io.vertx.core.json.jackson.JacksonFactory;
 import io.vertx.core.spi.json.JsonCodec;
 

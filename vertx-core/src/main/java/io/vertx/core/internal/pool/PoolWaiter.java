@@ -11,7 +11,6 @@
 package io.vertx.core.internal.pool;
 
 import io.vertx.core.Completable;
-import io.vertx.core.Promise;
 import io.vertx.core.internal.ContextInternal;
 
 /**

@@ -13,7 +13,6 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
-import java.util.Objects;
 
 /**
  * Configuration of an endpoint.
