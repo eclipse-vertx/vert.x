@@ -830,6 +830,60 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testConfigureQueryParamsCharsetDecoding() throws Exception {
+    testConfigureQueryParamsDecoding(
+      new QueryParamDecoderConfig().setCharset(StandardCharsets.ISO_8859_1),
+      "/?param=%E2%82%AC",
+      params -> {
+        String val = params.get("param");
+        assertEquals("\u00E2\u0082\u00AC", val);
+      });
+  }
+
+  @Test
+  public void testConfigureQueryParamsSemicolonDelimiterDecoding() throws Exception {
+    MultiMap p = TestUtils.randomMultiMap(10);
+    testConfigureQueryParamsDecoding(
+      new QueryParamDecoderConfig().setUseSemicolonAsDelimiter(false),
+      "/some?" + generateQueryString(p, ';'),
+      params -> {
+        assertEquals(params.size(), params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), params.get(entry.getKey()));
+        }
+      });
+  }
+
+  @Test
+  public void testConfigureQueryParamsMaxSizeDecoding() throws Exception {
+    int maxSize = 10;
+    MultiMap p = TestUtils.randomMultiMap(maxSize + 1);
+    testConfigureQueryParamsDecoding(
+      new QueryParamDecoderConfig().setMaxSize(maxSize),
+      "/some?" + generateQueryString(p, '&'),
+      params -> {
+        assertEquals(maxSize, params.size());
+        for (Map.Entry<String, String> entry : params) {
+          assertEquals(entry.getValue(), params.get(entry.getKey()));
+        }
+      });
+  }
+
+  private void testConfigureQueryParamsDecoding(QueryParamDecoderConfig queryParamDecoderConfig, String uri, Consumer<MultiMap> checker) throws Exception {
+    server = vertx.httpServerBuilder()
+      .with(config.forServer()
+        .config().setQueryParamConfig(queryParamDecoderConfig))
+      .with(config.forServer().sslOptions())
+      .build();
+    server.requestHandler(req -> {
+      checker.accept(req.params());
+      req.response().end();
+    });
+    startServer(testAddress);
+    sendAndAwait(new RequestOptions(requestOptions).setURI(uri));
+  }
+
+  @Test
   public void testMissingContentTypeMultipartRequest() throws Exception {
     testInvalidMultipartRequest(null, HttpMethod.POST);
   }

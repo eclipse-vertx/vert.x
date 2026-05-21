@@ -35,10 +35,7 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.Http1ServerConfig;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.http1.Http1ServerConnection;
 import io.vertx.core.http.impl.http1.VertxHttpRequestDecoder;
 import io.vertx.core.http.impl.http1.VertxHttpResponseEncoder;
@@ -237,6 +234,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE,
         HttpServerOptions.DEFAULT_MAX_FORM_FIELDS,
         HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE,
+        new QueryParamDecoderConfig(),
         new Http1ServerConfig(),
         false,
         null,

@@ -35,6 +35,7 @@ import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.impl.MessageWrite;
@@ -79,6 +80,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
   private final int maxFormAttributeSize;
   private final int maxFormFields;
   private final int maxFormBufferedBytes;
+  private final QueryParamDecoder queryParamDecoder;
   private final Http1ServerConfig serverConfig;
   private final boolean registerWebSocketWriteHandlers;
   private final WebSocketServerConfig webSocketConfig;
@@ -105,6 +107,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
                                int maxFormAttributeSize,
                                int maxFormFields,
                                int maxFormBufferedBytes,
+                               QueryParamDecoderConfig queryParamDecoderConfig,
                                Http1ServerConfig serverConfig,
                                boolean registerWebSocketWriteHandlers,
                                WebSocketServerConfig webSocketConfig,
@@ -120,6 +123,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
+    this.queryParamDecoder = new QueryParamDecoder(queryParamDecoderConfig);
     this.serverConfig = serverConfig;
     this.registerWebSocketWriteHandlers = registerWebSocketWriteHandlers;
     this.webSocketConfig = webSocketConfig;
@@ -144,6 +148,10 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
 
   int maxFormBufferedBytes() {
     return maxFormBufferedBytes;
+  }
+
+  QueryParamDecoder queryParamDecoder() {
+    return queryParamDecoder;
   }
 
   @Override

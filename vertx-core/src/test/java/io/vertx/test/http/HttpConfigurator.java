@@ -179,10 +179,24 @@ public interface HttpConfigurator {
           return this;
         }
         @Override
+        public HttpServerConfig config() {
+          return new HttpServerConfig(options);
+        }
+        @Override
+        public ServerSSLOptions sslOptions() {
+          if (options.isSsl()) {
+            return options.getSslOptions();
+          } else {
+            return null;
+          }
+        }
+        @Override
         public HttpServerConfigurator configureSsl(Consumer<ServerSSLOptions> configurator) {
-          // Trigger creation of lazy SSL options
-          options.setKeyCertOptions(options.getKeyCertOptions());
-          configurator.accept(options.getSslOptions());
+          if (options.isSsl()) {
+            // Trigger creation of lazy SSL options
+            options.setKeyCertOptions(options.getKeyCertOptions());
+            configurator.accept(options.getSslOptions());
+          }
           return this;
         }
         @Override

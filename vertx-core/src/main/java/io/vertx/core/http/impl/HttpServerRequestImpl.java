@@ -29,12 +29,12 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.HttpServerRequestInternal;
+import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;
 
@@ -61,9 +61,8 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   private MultiMap headersMap;
   private HostAndPort authority;
   private HostAndPort realAuthority;
-  private Charset paramsCharset = StandardCharsets.UTF_8;
+  private QueryParamDecoder queryParamDecoder;
   private MultiMap params;
-  private boolean semicolonIsNormalCharInParams;
   private String absoluteURI;
   private MultiMap attributes;
   private HttpEventHandler eventHandler;
@@ -79,6 +78,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
                                int maxFormAttributeSize,
                                int maxFormFields,
                                int maxFormBufferedBytes,
+                               QueryParamDecoder queryParamDecoder,
                                String serverOrigin) {
     this.handler = handler;
     this.context = context;
@@ -90,6 +90,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
+    this.queryParamDecoder = queryParamDecoder;
   }
 
   public void init() {
@@ -381,9 +382,12 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   @Override
   public HttpServerRequest setParamsCharset(String charset) {
     Objects.requireNonNull(charset, "Charset must not be null");
-    Charset current = paramsCharset;
-    paramsCharset = Charset.forName(charset);
-    if (!paramsCharset.equals(current)) {
+    Charset cs = Charset.forName(charset);
+    if (!queryParamDecoder.charset().equals(cs)) {
+      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
+        .setMaxSize(queryParamDecoder.maxParams())
+        .setUseSemicolonAsDelimiter(queryParamDecoder.isAcceptSemiColonDelimiter())
+        .setCharset(cs));
       params = null;
     }
     return this;
@@ -391,17 +395,22 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
 
   @Override
   public String getParamsCharset() {
-    return paramsCharset.name();
+    return queryParamDecoder.charset().name();
   }
   @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
-    synchronized (connection) {
-      if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
-        params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
-        semicolonIsNormalCharInParams = semicolonIsNormalChar;
-      }
-      return params;
+    if (queryParamDecoder.isAcceptSemiColonDelimiter() == semicolonIsNormalChar) {
+      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
+        .setCharset(queryParamDecoder.charset())
+        .setMaxSize(queryParamDecoder.maxParams())
+        .setUseSemicolonAsDelimiter(!semicolonIsNormalChar)
+      );
+      params = null;
     }
+    if (params == null) {
+      params = queryParamDecoder.decode(uri());
+    }
+    return params;
   }
 
   @Override

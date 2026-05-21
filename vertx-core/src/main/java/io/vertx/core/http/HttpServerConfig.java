@@ -63,6 +63,7 @@ public class HttpServerConfig {
   private int maxFormAttributeSize;
   private int maxFormFields;
   private int maxFormBufferedBytes;
+  private QueryParamDecoderConfig queryParamDecoderConfig;
   private boolean handle100ContinueAutomatically;
   private boolean strictThreadMode;
   private ObservabilityConfig observabilityConfig;
@@ -141,6 +142,7 @@ public class HttpServerConfig {
     this.maxFormAttributeSize = HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     this.maxFormFields = HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
     this.maxFormBufferedBytes = HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
+    this.queryParamDecoderConfig = null;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     this.strictThreadMode = HttpServerOptions.DEFAULT_STRICT_THREAD_MODE_STRICT;
     this.observabilityConfig = null;
@@ -163,6 +165,7 @@ public class HttpServerConfig {
     this.maxFormAttributeSize = other.maxFormAttributeSize;
     this.maxFormFields = other.maxFormFields;
     this.maxFormBufferedBytes = other.maxFormBufferedBytes;
+    this.queryParamDecoderConfig = other.queryParamDecoderConfig != null ? new QueryParamDecoderConfig(other.queryParamDecoderConfig) : null;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.strictThreadMode = other.strictThreadMode;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
@@ -411,6 +414,33 @@ public class HttpServerConfig {
    */
   public HttpServerConfig setMaxFormBufferedBytes(int maxFormBufferedBytes) {
     this.maxFormBufferedBytes = maxFormBufferedBytes;
+    return this;
+  }
+
+  /**
+   * @return the configuration for parsing HTTP request query parameters, when the configuration is {@code null}, the default configuration
+   * is used:
+   *
+   * <ul>
+   *   <li>{@link QueryParamDecoderConfig#DEFAULT_MAX_SIZE}</li>
+   *   <li>{@link QueryParamDecoderConfig#DEFAULT_CHARSET}</li>
+   *   <li>{@link QueryParamDecoderConfig#DEFAULT_USE_SEMICOLON_AS_DELIMITER}</li>
+   * </ul>
+   *
+   * @see HttpServerRequest#params()
+   */
+  public QueryParamDecoderConfig getQueryParamConfig() {
+    return queryParamDecoderConfig;
+  }
+
+  /**
+   * Set the configuration for parsing HTTP request query parameters.
+   *
+   * @param queryParamDecoderConfig the configuration
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerConfig setQueryParamConfig(QueryParamDecoderConfig queryParamDecoderConfig) {
+    this.queryParamDecoderConfig = queryParamDecoderConfig;
     return this;
   }
 
