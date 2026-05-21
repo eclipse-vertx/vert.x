@@ -102,9 +102,13 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
       Http2ServerConnection http2Conn = (Http2ServerConnection) conn;
       http2Conn.streamHandler(stream -> {
         HttpServerConfig config = server.config;
+        FormDecoderConfig formDecoderConfig = config.getFormDecoderConfig();
+        int maxFormAttributeSize = formDecoderConfig != null ? formDecoderConfig.getMaxAttributeSize() : HttpServerOptions.DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
+        int maxFormFields = formDecoderConfig != null ? formDecoderConfig.getMaxFields() : HttpServerOptions.DEFAULT_MAX_FORM_FIELDS;
+        int maxFormBufferedBytes = formDecoderConfig != null ? formDecoderConfig.getMaxBufferedBytes() : HttpServerOptions.DEFAULT_MAX_FORM_BUFFERED_SIZE;
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
-          config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
-          config.getMaxFormBufferedBytes(), queryParamDecoder, serverOrigin);
+          config.isHandle100ContinueAutomatically(), maxFormAttributeSize, maxFormFields,
+          maxFormBufferedBytes, queryParamDecoder, serverOrigin);
         request.init();
       });
     }

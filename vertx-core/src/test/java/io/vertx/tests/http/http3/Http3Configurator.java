@@ -89,19 +89,29 @@ public class Http3Configurator implements HttpConfigurator {
       public HttpServerConfigurator setCompression(CompressionConfig compression) {
         throw new UnsupportedOperationException();
       }
+      private FormDecoderConfig formDecoderConfig() {
+        FormDecoderConfig cfg = config.getFormDecoderConfig();
+        if (cfg == null) {
+          config.setFormDecoderConfig(cfg = new FormDecoderConfig());
+        }
+        return cfg;
+      }
       @Override
       public HttpServerConfigurator setMaxFormBufferedBytes(int maxFormBufferedBytes) {
-        config.setMaxFormBufferedBytes(maxFormBufferedBytes);
+        formDecoderConfig()
+          .setMaxBufferedBytes(maxFormBufferedBytes);
         return this;
       }
       @Override
       public HttpServerConfigurator setMaxFormAttributeSize(int maxSize) {
-        config.setMaxFormAttributeSize(maxSize);
+        formDecoderConfig()
+          .setMaxAttributeSize(maxSize);
         return this;
       }
       @Override
       public HttpServerConfigurator setMaxFormFields(int maxFormFields) {
-        config.setMaxFormFields(maxFormFields);
+        formDecoderConfig()
+          .setMaxFields(maxFormFields);
         return this;
       }
       @Override

@@ -12,43 +12,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.http.ClientForm;
-import io.vertx.core.http.ClientMultipartForm;
-import io.vertx.core.http.CompressionConfig;
-import io.vertx.core.http.Cookie;
-import io.vertx.core.http.Http1ClientConfig;
-import io.vertx.core.http.Http1ServerConfig;
-import io.vertx.core.http.Http2ClientConfig;
-import io.vertx.core.http.Http2ServerConfig;
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.Http3ClientConfig;
-import io.vertx.core.http.Http3Settings;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientAgent;
-import io.vertx.core.http.HttpClientConfig;
-import io.vertx.core.http.HttpClientConnection;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnectOptions;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpResponseExpectation;
-import io.vertx.core.http.HttpResponseHead;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerConfig;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.HttpSettings;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.PoolOptions;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.WebSocket;
-import io.vertx.core.http.WebSocketClient;
-import io.vertx.core.http.WebSocketConnectOptions;
-import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.JksOptions;
@@ -82,7 +46,8 @@ public class HttpExamples {
   public void configurationOfAnHttpServer(Vertx vertx) {
     HttpServerConfig config = new HttpServerConfig()
       .setVersions(HttpVersion.HTTP_1_1)
-      .setMaxFormFields(512)
+      .setFormDecoderConfig(new FormDecoderConfig()
+        .setMaxFields(512))
       .setHttp1Config(new Http1ServerConfig()
         .setMaxInitialLineLength(1024))
       .setCompressionConfig(new CompressionConfig()
@@ -275,6 +240,12 @@ public class HttpExamples {
         MultiMap formAttributes = request.formAttributes();
       });
     });
+  }
+
+  public void configurationOfFormMaxAttributeSize(int maxAttrSize) {
+    HttpServerConfig config = new HttpServerConfig()
+      .setFormDecoderConfig(
+        new FormDecoderConfig().setMaxAttributeSize(maxAttrSize));
   }
 
   public void serverRequestHandleMultipartUpload(HttpServer server) {

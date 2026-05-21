@@ -247,8 +247,10 @@ public class QuicHttpServer implements HttpServerInternal {
     QueryParamDecoderConfig queryParamDecoderConfig = config.getQueryParamConfig() != null ?  config.getQueryParamConfig() : new QueryParamDecoderConfig();
     QueryParamDecoder queryParamDecoder = new QueryParamDecoder(queryParamDecoderConfig);
 
+    FormDecoderConfig formDecoderConfig = config.getFormDecoderConfig() != null ? config.getFormDecoderConfig() : new FormDecoderConfig();
+
     quicServer.connectHandler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
-      config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),
+      config.isHandle100ContinueAutomatically(), formDecoderConfig.getMaxAttributeSize(), formDecoderConfig.getMaxFields(), formDecoderConfig.getMaxBufferedBytes(),
       queryParamDecoder, http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(),
       logEnabled));
     quicServer.exceptionHandler(exceptionHandler);
