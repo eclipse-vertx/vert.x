@@ -26,12 +26,12 @@ import java.util.Map;
 public class QueryParamDecoder {
 
   private final Charset charset;
-  private final boolean acceptSemiColonDelimiter;
+  private final boolean useSemiColonAsDelimiter;
   private final int maxSize;
 
   public QueryParamDecoder(QueryParamDecoderConfig config) {
     this.charset = config.getCharset();
-    this.acceptSemiColonDelimiter = config.isUseSemicolonAsDelimiter();
+    this.useSemiColonAsDelimiter = config.isUseSemicolonAsDelimiter();
     this.maxSize = config.getMaxSize();
   }
 
@@ -45,8 +45,8 @@ public class QueryParamDecoder {
   /**
    * @return whether to treat semicolon as a delimiter or part of the parameter
    */
-  public boolean isAcceptSemiColonDelimiter() {
-    return acceptSemiColonDelimiter;
+  public boolean isUseSemiColonAsDelimiter() {
+    return useSemiColonAsDelimiter;
   }
 
   /**
@@ -63,10 +63,10 @@ public class QueryParamDecoder {
   }
 
   public void appendTo(String uri, MultiMap params) {
-    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset, true, maxSize, !acceptSemiColonDelimiter);
-    Map<String, List<String>> prms = queryStringDecoder.parameters();
-    if (!prms.isEmpty()) {
-      for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
+    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset, true, maxSize, !useSemiColonAsDelimiter);
+    Map<String, List<String>> parameters = queryStringDecoder.parameters();
+    if (!parameters.isEmpty()) {
+      for (Map.Entry<String, List<String>> entry: parameters.entrySet()) {
         params.add(entry.getKey(), entry.getValue());
       }
     }

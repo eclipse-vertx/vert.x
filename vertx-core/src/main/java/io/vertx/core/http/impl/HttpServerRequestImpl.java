@@ -28,20 +28,17 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
-import io.vertx.core.internal.http.HttpServerRequestInternal;
 import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
-import java.nio.charset.Charset;
-import java.util.Objects;
 import java.util.Set;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpServerRequestImpl extends HttpServerRequestInternal {
+public class HttpServerRequestImpl extends HttpServerRequestBase {
 
   private final ContextInternal context;
   private final HttpServerStream stream;
@@ -61,8 +58,6 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   private MultiMap headersMap;
   private HostAndPort authority;
   private HostAndPort realAuthority;
-  private QueryParamDecoder queryParamDecoder;
-  private MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
   private HttpEventHandler eventHandler;
@@ -80,6 +75,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
                                int maxFormBufferedBytes,
                                QueryParamDecoder queryParamDecoder,
                                String serverOrigin) {
+    super(queryParamDecoder);
     this.handler = handler;
     this.context = context;
     this.stream = stream;
@@ -90,7 +86,6 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
     this.maxFormAttributeSize = maxFormAttributeSize;
     this.maxFormFields = maxFormFields;
     this.maxFormBufferedBytes = maxFormBufferedBytes;
-    this.queryParamDecoder = queryParamDecoder;
   }
 
   public void init() {
@@ -377,40 +372,6 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
   @Override
   public MultiMap headers() {
     return headersMap;
-  }
-
-  @Override
-  public HttpServerRequest setParamsCharset(String charset) {
-    Objects.requireNonNull(charset, "Charset must not be null");
-    Charset cs = Charset.forName(charset);
-    if (!queryParamDecoder.charset().equals(cs)) {
-      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
-        .setMaxSize(queryParamDecoder.maxParams())
-        .setUseSemicolonAsDelimiter(queryParamDecoder.isAcceptSemiColonDelimiter())
-        .setCharset(cs));
-      params = null;
-    }
-    return this;
-  }
-
-  @Override
-  public String getParamsCharset() {
-    return queryParamDecoder.charset().name();
-  }
-  @Override
-  public MultiMap params(boolean semicolonIsNormalChar) {
-    if (queryParamDecoder.isAcceptSemiColonDelimiter() == semicolonIsNormalChar) {
-      queryParamDecoder = new QueryParamDecoder(new QueryParamDecoderConfig()
-        .setCharset(queryParamDecoder.charset())
-        .setMaxSize(queryParamDecoder.maxParams())
-        .setUseSemicolonAsDelimiter(!semicolonIsNormalChar)
-      );
-      params = null;
-    }
-    if (params == null) {
-      params = queryParamDecoder.decode(uri());
-    }
-    return params;
   }
 
   @Override
