@@ -25,6 +25,7 @@ import io.vertx.core.http.impl.http1.Http1ServerConnection;
 import io.vertx.core.http.impl.http1.Http1ServerRequestHandler;
 import io.vertx.core.http.impl.http2.Http2ServerConnection;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.QueryParamDecoder;
 
 import java.util.ArrayList;
 
@@ -44,6 +45,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
   public final Handler<HttpConnection> connectionHandler;
   public final Handler<Throwable> exceptionHandler;
   public final int connectionWindowSize;
+  private final QueryParamDecoder queryParamDecoder;
 
   public HttpServerConnectionHandler(
     TcpHttpServer server,
@@ -64,6 +66,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
     this.connectionWindowSize = connectionWindowSize;
+    this.queryParamDecoder = new QueryParamDecoder(server.config.getQueryParamConfig() != null ? server.config.getQueryParamConfig() : new QueryParamDecoderConfig());
   }
 
   // TOdo : improve this
@@ -101,7 +104,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
         HttpServerConfig config = server.config;
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
           config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(),
-          config.getMaxFormBufferedBytes(), serverOrigin);
+          config.getMaxFormBufferedBytes(), queryParamDecoder, serverOrigin);
         request.init();
       });
     }

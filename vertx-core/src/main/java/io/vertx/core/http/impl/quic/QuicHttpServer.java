@@ -22,6 +22,7 @@ import io.vertx.core.http.impl.http3.Http3ServerConnection;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.http.HttpServerInternal;
+import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.quic.QuicServerImpl;
@@ -146,6 +147,7 @@ public class QuicHttpServer implements HttpServerInternal {
     private final int maxFormAttributeSize;
     private final int maxFormFields;
     private final int maxFormBufferedSize;
+    private final QueryParamDecoder queryParamDecoder;
     private final Http3Settings localSettings;
     private final boolean logEnabled;
 
@@ -157,6 +159,7 @@ public class QuicHttpServer implements HttpServerInternal {
                              int maxFormAttributeSize,
                              int maxFormFields,
                              int maxFormBufferedSize,
+                             QueryParamDecoder queryParamDecoder,
                              Http3Settings localSettings,
                              boolean logEnabled) {
       this.transport = transport;
@@ -167,6 +170,7 @@ public class QuicHttpServer implements HttpServerInternal {
       this.maxFormAttributeSize = maxFormAttributeSize;
       this.maxFormFields = maxFormFields;
       this.maxFormBufferedSize = maxFormBufferedSize;
+      this.queryParamDecoder = queryParamDecoder;
       this.localSettings = localSettings;
       this.logEnabled = logEnabled;
     }
@@ -188,7 +192,7 @@ public class QuicHttpServer implements HttpServerInternal {
       http3Connection.streamHandler(stream -> {
         HttpServerRequestImpl request = new HttpServerRequestImpl(requestHandler, stream, stream.context(),
           handle100ContinueAutomatically, maxFormAttributeSize,
-          maxFormFields, maxFormBufferedSize, serverOrigin);
+          maxFormFields, maxFormBufferedSize, queryParamDecoder, serverOrigin);
         request.init();
       });
 
@@ -240,9 +244,13 @@ public class QuicHttpServer implements HttpServerInternal {
     boolean logEnabled = quicConfig.getLogConfig() != null && quicConfig.getLogConfig().isEnabled();
     quicConfig.setLogConfig(null);
 
+    QueryParamDecoderConfig queryParamDecoderConfig = config.getQueryParamConfig() != null ?  config.getQueryParamConfig() : new QueryParamDecoderConfig();
+    QueryParamDecoder queryParamDecoder = new QueryParamDecoder(queryParamDecoderConfig);
+
     quicServer.connectHandler(new ConnectionHandler(quicServer, httpMetrics, requestHandler, connectionHandler,
       config.isHandle100ContinueAutomatically(), config.getMaxFormAttributeSize(), config.getMaxFormFields(), config.getMaxFormBufferedBytes(),
-      http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(), logEnabled));
+      queryParamDecoder, http3Config.getInitialSettings() != null ? http3Config.getInitialSettings().copy() : new Http3Settings(),
+      logEnabled));
     quicServer.exceptionHandler(exceptionHandler);
     return quicServer
       .bind(current, address)

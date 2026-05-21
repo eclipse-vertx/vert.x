@@ -63,7 +63,7 @@ public class Http3Configurator implements HttpConfigurator {
 
   @Override
   public HttpServerConfigurator forServer() {
-    io.vertx.core.http.HttpServerConfig config = new io.vertx.core.http.HttpServerConfig();
+    HttpServerConfig config = new HttpServerConfig();
     config.setVersions(HttpVersion.HTTP_3);
     config.setQuicPort(port);
     config.setQuicHost(host);
@@ -118,6 +118,14 @@ public class Http3Configurator implements HttpConfigurator {
       public HttpServerConfigurator setHandle100ContinueAutomatically(boolean b) {
         config.setHandle100ContinueAutomatically(b);
         return this;
+      }
+      @Override
+      public HttpServerConfig config() {
+        return config;
+      }
+      @Override
+      public ServerSSLOptions sslOptions() {
+        return sslOptions;
       }
       @Override
       public HttpServerConfigurator configureSsl(Consumer<ServerSSLOptions> configurator) {
