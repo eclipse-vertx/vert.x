@@ -196,6 +196,7 @@ public class NameResolverTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
     assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
     assertEquals(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS, options.getSearchDomains());
+    assertEquals(AddressResolverOptions.DEFAULT_USE_TCP_FOR_FALLBACK_DNS_RESOLVING, options.isUseTcpForFallbackDnsResolving());
 
     boolean optResourceEnabled = TestUtils.randomBoolean();
     List<String> servers = Arrays.asList("1.2.3.4", "5.6.7.8");
@@ -210,11 +211,13 @@ public class NameResolverTest extends VertxTestBase {
     for (int i = 0; i < 2; i++) {
       searchDomains.add(TestUtils.randomAlphaString(15));
     }
+    boolean useTcpForFallbackDnsResolving = true;
 
     assertSame(options, options.setOptResourceEnabled(optResourceEnabled));
     assertSame(options, options.setServers(new ArrayList<>(servers)));
     assertSame(options, options.setCacheMinTimeToLive(0));
     assertSame(options, options.setCacheMinTimeToLive(minTTL));
+    assertSame(options, options.setUseTcpForFallbackDnsResolving(useTcpForFallbackDnsResolving));
     try {
       options.setCacheMinTimeToLive(-1);
       fail("Should throw exception");
@@ -308,6 +311,7 @@ public class NameResolverTest extends VertxTestBase {
     assertEquals(rdFlag, jsonCopy.getRdFlag());
     assertEquals(ndots, jsonCopy.getNdots());
     assertEquals(searchDomains, jsonCopy.getSearchDomains());
+    assertEquals(useTcpForFallbackDnsResolving, jsonCopy.isUseTcpForFallbackDnsResolving());
   }
 
   @Test
@@ -323,6 +327,7 @@ public class NameResolverTest extends VertxTestBase {
     assertEquals(AddressResolverOptions.DEFAULT_RD_FLAG, options.getRdFlag());
     assertEquals(AddressResolverOptions.DEFAULT_SEARCH_DOMAINS, options.getSearchDomains());
     assertEquals(AddressResolverOptions.DEFAULT_NDOTS, options.getNdots());
+    assertEquals(AddressResolverOptions.DEFAULT_USE_TCP_FOR_FALLBACK_DNS_RESOLVING, options.isUseTcpForFallbackDnsResolving());
   }
 
   @Test
@@ -788,6 +793,41 @@ public class NameResolverTest extends VertxTestBase {
             addSearchDomain("foo.com")
     ));
     testNet("host1");
+  }
+
+  @Test
+  public void testTcpFallbackWhenUdpFails() throws Exception {
+    // Verify normal UDP resolution works
+    AddressResolverOptions optionsWithoutFallback = getAddressResolverOptions()
+      .setUseTcpForFallbackDnsResolving(false)
+      .setQueryTimeout(5000);
+
+    VertxInternal vertxWithoutFallback = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(optionsWithoutFallback));
+
+    CountDownLatch noFallbackLatch = new CountDownLatch(1);
+    resolve(vertxWithoutFallback, "vertx.io").onComplete(onSuccess(resolved -> {
+      assertEquals("127.0.0.1", resolved.getHostAddress());
+      noFallbackLatch.countDown();
+    }));
+
+    assertTrue("Normal UDP resolution should succeed", noFallbackLatch.await(2, TimeUnit.SECONDS));
+
+    // Verify TCP fallback works by using extremely short timeout
+    // This forces UDP to timeout quickly, but TCP fallback should still succeed
+    AddressResolverOptions tcpFallbackOptions = getAddressResolverOptions()
+      .setUseTcpForFallbackDnsResolving(true)
+      .setQueryTimeout(1); // Extremely short timeout to force UDP timeout
+
+    VertxInternal vertxWithFallback = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(tcpFallbackOptions));
+
+    CountDownLatch fallbackLatch = new CountDownLatch(1);
+    resolve(vertxWithFallback, "vertx.io").onComplete(onSuccess(resolved -> {
+      assertEquals("127.0.0.1", resolved.getHostAddress());
+      fallbackLatch.countDown();
+    }));
+
+    assertTrue("TCP fallback resolution should succeed within timeout", fallbackLatch.await(5, TimeUnit.SECONDS));
+    testComplete();
   }
 
   @Test
