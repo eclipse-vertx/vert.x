@@ -46,6 +46,12 @@ public class SslChannelProvider {
 
   public SslChannelProvider(VertxInternal vertx,
                             SslContextProvider sslContextProvider,
+                            boolean sni) {
+    this(vertx, sslContextProvider, sni, false);
+  }
+
+  public SslChannelProvider(VertxInternal vertx,
+                            SslContextProvider sslContextProvider,
                             boolean sni,
                             boolean useHybridKeyExchangeProtocol) {
     this.workerPool = vertx.internalWorkerPool().executor();
