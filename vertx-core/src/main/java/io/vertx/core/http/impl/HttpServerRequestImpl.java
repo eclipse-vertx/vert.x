@@ -142,17 +142,31 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
 
   private void handleException(Throwable cause) {
     boolean notify;
+    HttpPostRequestDecoder decoderToCleanup;
     synchronized (connection) {
       notify = !ended;
+      decoderToCleanup = notify ? postRequestDecoder : null;
     }
-    if (notify) {
-      notifyException(cause);
+    try {
+      if (notify) {
+        notifyException(cause);
+      }
+      response.handleException(cause);
+    } finally {
+      cleanupPostRequestDecoder(decoderToCleanup);
     }
-    response.handleException(cause);
   }
 
   private void handleClosed(Void v) {
-    response.handleClose(v);
+    HttpPostRequestDecoder decoderToCleanup;
+    synchronized (connection) {
+      decoderToCleanup = postRequestDecoder;
+    }
+    try {
+      response.handleClose(v);
+    } finally {
+      cleanupPostRequestDecoder(decoderToCleanup);
+    }
   }
 
   private void notifyException(Throwable failure) {
@@ -179,8 +193,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
       } catch (HttpPostRequestDecoder.ErrorDataDecoderException |
                HttpPostRequestDecoder.TooLongFormFieldException |
                HttpPostRequestDecoder.TooManyFormFieldsException e) {
-        postRequestDecoder.destroy();
-        postRequestDecoder = null;
+        cleanupPostRequestDecoder();
         handleException(e);
       }
     }
@@ -216,8 +229,7 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
         } catch (Exception e) {
           handleException(e);
         } finally {
-          postRequestDecoder.destroy();
-          postRequestDecoder = null;
+          cleanupPostRequestDecoder();
         }
       }
       handler = eventHandler;
@@ -229,13 +241,38 @@ public class HttpServerRequestImpl extends HttpServerRequestInternal {
 
   public void handleReset(long errorCode) {
     boolean notify;
+    HttpPostRequestDecoder decoderToCleanup;
     synchronized (connection) {
       notify = !ended;
+      decoderToCleanup = postRequestDecoder;
     }
-    if (notify) {
-      notifyException(new StreamResetException(errorCode));
+    try {
+      if (notify) {
+        notifyException(new StreamResetException(errorCode));
+      }
+      response.handleReset(errorCode);
+    } finally {
+      cleanupPostRequestDecoder(decoderToCleanup);
     }
-    response.handleReset(errorCode);
+  }
+
+  private void cleanupPostRequestDecoder() {
+    HttpPostRequestDecoder decoderToCleanup;
+    synchronized (connection) {
+      decoderToCleanup = postRequestDecoder;
+    }
+    cleanupPostRequestDecoder(decoderToCleanup);
+  }
+
+  private void cleanupPostRequestDecoder(HttpPostRequestDecoder decoderToCleanup) {
+    if (decoderToCleanup != null) {
+      synchronized (connection) {
+        if (postRequestDecoder == decoderToCleanup) {
+          postRequestDecoder = null;
+        }
+      }
+      decoderToCleanup.destroy();
+    }
   }
 
   private void checkEnded() {
