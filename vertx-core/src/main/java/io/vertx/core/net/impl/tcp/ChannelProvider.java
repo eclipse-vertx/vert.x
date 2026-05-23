@@ -18,6 +18,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.ProxyConnectionEvent;
 import io.netty.handler.proxy.ProxyHandler;
@@ -187,6 +190,7 @@ public final class ChannelProvider {
     final int proxyPort = proxyOptions.getPort();
     final String proxyUsername = proxyOptions.getUsername();
     final String proxyPassword = proxyOptions.getPassword();
+    final String proxyAuthorization = proxyOptions.getProxyAuthorization();
     final ProxyType proxyType = proxyOptions.getType();
 
     vertx.nameResolver().resolve(proxyHost).onComplete(dnsRes -> {
@@ -198,8 +202,7 @@ public final class ChannelProvider {
         switch (proxyType) {
           default:
           case HTTP:
-            proxy = proxyUsername != null && proxyPassword != null
-              ? new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new HttpProxyHandler(proxyAddr);
+            proxy = createHttpProxyHandler(proxyAddr, proxyUsername, proxyPassword, proxyAuthorization);
             break;
           case SOCKS5:
             proxy = proxyUsername != null && proxyPassword != null
@@ -254,5 +257,17 @@ public final class ChannelProvider {
         channelHandler.setFailure(dnsRes.cause());
       }
     });
+  }
+
+  private static ProxyHandler createHttpProxyHandler(InetSocketAddress proxyAddr, String proxyUsername, String proxyPassword,
+                                                     String proxyAuthorization) {
+    if (proxyAuthorization != null) {
+      // Some proxy schemes produce their challenge token outside Netty's Basic-only credential constructor.
+      HttpHeaders headers = new DefaultHttpHeaders();
+      headers.set(HttpHeaderNames.PROXY_AUTHORIZATION, proxyAuthorization);
+      return new HttpProxyHandler(proxyAddr, headers);
+    }
+    return proxyUsername != null && proxyPassword != null
+      ? new HttpProxyHandler(proxyAddr, proxyUsername, proxyPassword) : new HttpProxyHandler(proxyAddr);
   }
 }

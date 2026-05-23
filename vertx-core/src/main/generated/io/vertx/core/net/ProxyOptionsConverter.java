@@ -32,6 +32,11 @@ public class ProxyOptionsConverter {
             obj.setPassword((String)member.getValue());
           }
           break;
+        case "proxyAuthorization":
+          if (member.getValue() instanceof String) {
+            obj.setProxyAuthorization((String)member.getValue());
+          }
+          break;
         case "type":
           if (member.getValue() instanceof String) {
             obj.setType(io.vertx.core.net.ProxyType.valueOf((String)member.getValue()));
@@ -60,6 +65,9 @@ public class ProxyOptionsConverter {
     }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
+    }
+    if (obj.getProxyAuthorization() != null) {
+      json.put("proxyAuthorization", obj.getProxyAuthorization());
     }
     if (obj.getType() != null) {
       json.put("type", obj.getType().name());

@@ -186,6 +186,52 @@ public class Http1xProxyTest extends HttpTestBase2 {
 
   @WithProxy(kind = ProxyKind.HTTP)
   @Test
+  public void testHttpProxyRequestCustomAuthorization() throws Exception {
+    String authorization = "Negotiate token";
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())
+        .setProxyAuthorization(authorization)));
+
+    foo(new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setURI("/"));
+
+    assertEquals(authorization, proxy.lastRequestHeaders().get("Proxy-Authorization"));
+  }
+
+  @WithProxy(kind = ProxyKind.HTTP)
+  @Test
+  public void testHttpsProxyRequestCustomAuthorization() throws Exception {
+    String authorization = "Negotiate token";
+
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server.requestHandler(req -> req.response().end());
+    startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
+
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setSsl(true)
+      .setTrustOptions(Cert.SERVER_JKS.get())
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.port())
+        .setProxyAuthorization(authorization)));
+
+    client.request(new RequestOptions()
+        .setHost(DEFAULT_HTTPS_HOST)
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setURI("/"))
+      .compose(req -> req.send()
+        .expecting(HttpResponseExpectation.SC_OK))
+      .compose(HttpClientResponse::end)
+      .await();
+
+    assertEquals(HttpMethod.CONNECT, proxy.lastMethod());
+    assertEquals(authorization, proxy.lastRequestHeaders().get("Proxy-Authorization"));
+  }
+
+  @WithProxy(kind = ProxyKind.HTTP)
+  @Test
   public void testHttpProxyFtpRequest() throws Exception {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost(DEFAULT_HTTP_HOST).setPort(proxy.port())));
