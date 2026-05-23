@@ -2412,7 +2412,8 @@ The `CONNECT` protocol uses HTTP/1.x but can connect to HTTP/1.x and HTTP/2 serv
 
 Connecting to `h2c` (unencrypted HTTP/2 servers) is likely not supported by http proxies since they will support HTTP/1.1 only.
 
-The proxy can be configured in the {@link io.vertx.core.http.HttpClientConfig} by setting a {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
+The proxy can be configured in the {@link io.vertx.core.http.HttpClientConfig} by setting a {@link io.vertx.core.net.ProxyOptions}
+object containing proxy type, hostname, port and optionally username and password or a prebuilt `Proxy-Authorization` value.
 
 Here's an example of using an HTTP proxy:
 

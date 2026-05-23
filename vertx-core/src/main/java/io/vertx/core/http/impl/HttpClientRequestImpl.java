@@ -96,8 +96,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         String addPort = (authority.port() != -1 && authority.port() != defaultPort) ? (":" + authority.port()) : "";
         requestURI = "http://" + authority.host() + addPort + requestURI;
       }
-      if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
-        headers().add("Proxy-Authorization", "Basic " + Base64.getEncoder()
+      if (proxyOptions.getProxyAuthorization() != null) {
+        headers().add(PROXY_AUTHORIZATION, proxyOptions.getProxyAuthorization());
+      } else if (proxyOptions.getUsername() != null && proxyOptions.getPassword() != null) {
+        headers().add(PROXY_AUTHORIZATION, "Basic " + Base64.getEncoder()
           .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
     }

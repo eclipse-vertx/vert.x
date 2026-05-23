@@ -76,18 +76,17 @@ public final class EndpointKey {
     if (options1 != null && options2 != null) {
       return Objects.equals(options1.getHost(), options2.getHost()) &&
         options1.getPort() == options2.getPort() &&
+        Objects.equals(options1.getType(), options2.getType()) &&
         Objects.equals(options1.getUsername(), options2.getUsername()) &&
-        Objects.equals(options1.getPassword(), options2.getPassword());
+        Objects.equals(options1.getPassword(), options2.getPassword()) &&
+        Objects.equals(options1.getProxyAuthorization(), options2.getProxyAuthorization());
     }
     return false;
   }
 
   private static int hashCode(ProxyOptions options) {
-    if (options.getUsername() != null && options.getPassword() != null) {
-      return Objects.hash(options.getHost(), options.getPort(), options.getType(), options.getUsername(), options.getPassword());
-    } else {
-      return Objects.hash(options.getHost(), options.getPort(), options.getType());
-    }
+    return Objects.hash(options.getHost(), options.getPort(), options.getType(), options.getUsername(),
+      options.getPassword(), options.getProxyAuthorization());
   }
 
   @Override

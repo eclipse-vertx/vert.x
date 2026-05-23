@@ -53,6 +53,7 @@ public class ProxyOptions {
   private int port;
   private String username;
   private String password;
+  private String proxyAuthorization;
   private ProxyType type;
   private Duration connectTimeout;
 
@@ -76,6 +77,7 @@ public class ProxyOptions {
     port = other.getPort();
     username = other.getUsername();
     password = other.getPassword();
+    proxyAuthorization = other.getProxyAuthorization();
     type = other.getType();
     connectTimeout = other.getConnectTimeout();
   }
@@ -182,6 +184,28 @@ public class ProxyOptions {
    */
   public ProxyOptions setPassword(String password) {
     this.password = password;
+    return this;
+  }
+
+  /**
+   * Get the Proxy-Authorization header value.
+   *
+   * @return the Proxy-Authorization header value
+   */
+  public String getProxyAuthorization() {
+    return proxyAuthorization;
+  }
+
+  /**
+   * Set the Proxy-Authorization header value.
+   * <p>
+   * When set, this value is sent instead of the Basic value derived from the username and password.
+   *
+   * @param proxyAuthorization the Proxy-Authorization header value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions setProxyAuthorization(String proxyAuthorization) {
+    this.proxyAuthorization = proxyAuthorization;
     return this;
   }
 
