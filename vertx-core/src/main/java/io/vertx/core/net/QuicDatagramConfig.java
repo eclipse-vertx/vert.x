@@ -11,11 +11,13 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * QUIC datagram configuration.
  */
 @DataObject
+@Unstable
 public class QuicDatagramConfig {
 
   public static final boolean DEFAULT_ENABLED = false;

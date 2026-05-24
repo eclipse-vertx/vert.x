@@ -11,6 +11,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * HTTP/3 server configuration.
@@ -18,6 +19,7 @@ import io.vertx.codegen.annotations.DataObject;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class Http3ServerConfig {
 
   private Http3Settings initialSettings;

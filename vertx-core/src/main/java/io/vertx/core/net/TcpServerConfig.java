@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import java.time.Duration;
 
 import static io.vertx.core.net.NetServerOptions.*;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Configuration of a {@link NetServer}
@@ -22,6 +23,7 @@ import static io.vertx.core.net.NetServerOptions.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class TcpServerConfig extends TcpEndpointConfig {
 
   private int port;

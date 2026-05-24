@@ -12,6 +12,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Generic client/server observability config.
@@ -19,6 +20,7 @@ import io.vertx.core.tracing.TracingPolicy;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class ObservabilityConfig {
 
   private String metricsName;

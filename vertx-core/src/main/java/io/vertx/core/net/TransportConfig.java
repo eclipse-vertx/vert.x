@@ -10,9 +10,12 @@
  */
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.Unstable;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 public abstract class TransportConfig {
 
   protected abstract TransportConfig copy();

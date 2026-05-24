@@ -11,6 +11,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-quic-qlog-main-schema/">QLog</a> configuration.
@@ -18,6 +19,7 @@ import io.vertx.codegen.annotations.DataObject;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class QLogConfig {
 
   private String path;

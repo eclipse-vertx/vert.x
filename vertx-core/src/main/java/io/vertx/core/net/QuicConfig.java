@@ -11,12 +11,14 @@
 package io.vertx.core.net;
 
 import java.time.Duration;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Quic transport options.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
+@Unstable
 public class QuicConfig extends TransportConfig {
 
   public static final long DEFAULT_MAX_INITIAL_DATA = 10_485_760L;

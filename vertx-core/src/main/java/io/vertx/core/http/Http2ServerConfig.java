@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import java.time.Duration;
 
 import static io.vertx.core.http.HttpServerOptions.*;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * HTTP/2 server configuration.
@@ -22,6 +23,7 @@ import static io.vertx.core.http.HttpServerOptions.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class Http2ServerConfig {
 
   private Http2Settings initialSettings;

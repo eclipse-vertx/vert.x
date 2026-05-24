@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 import static io.vertx.core.net.NetworkOptions.DEFAULT_REUSE_ADDRESS;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Configuration of a Quic client.
@@ -23,6 +24,7 @@ import static io.vertx.core.net.NetworkOptions.DEFAULT_REUSE_ADDRESS;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public abstract class QuicEndpointConfig extends EndpointConfig {
 
   /**

@@ -15,6 +15,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
 
 import static io.vertx.core.http.HttpServerOptions.*;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * HTTP/1.x server configuration.
@@ -22,6 +23,7 @@ import static io.vertx.core.http.HttpServerOptions.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class Http1ServerConfig {
 
   private int maxChunkSize;

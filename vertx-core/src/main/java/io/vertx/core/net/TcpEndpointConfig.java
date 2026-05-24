@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
 import java.util.Objects;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Should this be {@code TcpConfig} instead ?
@@ -21,6 +22,7 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public abstract class TcpEndpointConfig extends EndpointConfig {
 
   private TcpConfig transportConfig;

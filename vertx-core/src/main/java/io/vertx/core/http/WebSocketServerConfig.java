@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static io.vertx.core.http.HttpServerOptions.*;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * WebSocket server configuration.
@@ -25,6 +26,7 @@ import static io.vertx.core.http.HttpServerOptions.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class WebSocketServerConfig {
 
   private List<String> subProtocols;

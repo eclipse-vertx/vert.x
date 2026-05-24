@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 
 import java.time.Duration;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * HTTP/1.x client configuration.
@@ -21,6 +22,7 @@ import java.time.Duration;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class Http1ClientConfig {
 
   private boolean keepAlive;
