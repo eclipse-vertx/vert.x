@@ -25,6 +25,7 @@ import java.util.*;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class HttpServerConfig {
 
   /**
@@ -417,7 +418,6 @@ public class HttpServerConfig {
   /**
    * @return whether to use the strict thread mode.
    */
-  @Unstable("Experimental")
   public boolean getStrictThreadMode() {
     return strictThreadMode;
   }
@@ -429,7 +429,6 @@ public class HttpServerConfig {
    * @param strictThreadMode whether to use the strict thread mode
    * @return a reference to this, so the API can be used fluently
    */
-  @Unstable("Experimental")
   public HttpServerConfig setStrictThreadMode(boolean strictThreadMode) {
     this.strictThreadMode = strictThreadMode;
     return this;

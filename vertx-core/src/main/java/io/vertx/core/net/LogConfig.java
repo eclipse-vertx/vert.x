@@ -14,6 +14,7 @@ import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.util.Objects;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Generic purpose logging of network operations configuration.
@@ -21,6 +22,7 @@ import java.util.Objects;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class LogConfig {
 
   private boolean enabled;

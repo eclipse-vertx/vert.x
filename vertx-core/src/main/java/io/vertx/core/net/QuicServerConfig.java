@@ -17,6 +17,7 @@ import java.util.Objects;
 
 import static io.vertx.core.net.NetServerOptions.DEFAULT_HOST;
 import static io.vertx.core.net.NetServerOptions.DEFAULT_PORT;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * <p>Configuration of a Quic server.</p>
@@ -27,6 +28,7 @@ import static io.vertx.core.net.NetServerOptions.DEFAULT_PORT;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public class QuicServerConfig extends QuicEndpointConfig {
 
   public static final boolean DEFAULT_LOAD_BALANCED = false;

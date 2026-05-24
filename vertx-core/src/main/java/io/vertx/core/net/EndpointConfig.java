@@ -13,6 +13,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 
 import java.time.Duration;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * Configuration of an endpoint.
@@ -20,6 +21,7 @@ import java.time.Duration;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @DataObject
+@Unstable
 public abstract class EndpointConfig {
 
   private Duration idleTimeout;

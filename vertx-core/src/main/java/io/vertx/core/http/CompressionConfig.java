@@ -22,11 +22,13 @@ import io.vertx.core.impl.Arguments;
 
 import java.util.ArrayList;
 import java.util.List;
+import io.vertx.codegen.annotations.Unstable;
 
 /**
  * HTTP compression configuration.
  */
 @DataObject
+@Unstable
 public class CompressionConfig {
 
   private boolean compressionEnabled;
