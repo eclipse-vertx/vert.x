@@ -137,13 +137,13 @@ public class IoUringTransport implements Transport {
       configChildOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
       configChildOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
       configChildOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
-      if (!config.isNullOrZero(TcpOption.KEEPCNT)) {
+      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPCNT)) {
         configChildOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
       }
-      if (!config.isNullOrZero(TcpOption.KEEPINTVL)) {
+      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPINTVL)) {
         configChildOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
       }
-      if (!config.isNullOrZero(TcpOption.KEEPIDLE)) {
+      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPIDLE)) {
         configChildOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
       }
     }
@@ -157,13 +157,13 @@ public class IoUringTransport implements Transport {
       configOption(bootstrap, config, TcpOption.USER_TIMEOUT, IoUringChannelOption.TCP_USER_TIMEOUT);
       configOption(bootstrap, config, TcpOption.QUICKACK, IoUringChannelOption.TCP_QUICKACK);
       configOption(bootstrap, config, TcpOption.CORK, IoUringChannelOption.TCP_CORK);
-      if (!config.isNullOrZero(TcpOption.KEEPCNT)) {
+      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPCNT)) {
         configOption(bootstrap, config, TcpOption.KEEPCNT, IoUringChannelOption.TCP_KEEPCNT);
       }
-      if (!config.isNullOrZero(TcpOption.KEEPINTVL)) {
+      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPINTVL)) {
         configOption(bootstrap, config, TcpOption.KEEPINTVL, IoUringChannelOption.TCP_KEEPINTVL);
       }
-      if (!config.isNullOrZero(TcpOption.KEEPIDLE)) {
+      if (!EpollTransport.isNullOrZero(config, TcpOption.KEEPIDLE)) {
         configOption(bootstrap, config, TcpOption.KEEPIDLE, IoUringChannelOption.TCP_KEEPIDLE);
       }
     }
