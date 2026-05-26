@@ -205,7 +205,6 @@ public class Http1xProxyTest extends HttpTestBase2 {
   public void testHttpsProxyRequestCustomAuthorization() throws Exception {
     String authorization = "Negotiate token";
 
-    server.close();
     server = vertx.createHttpServer(createBaseServerOptions()
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
