@@ -116,13 +116,12 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
   }
 
   private void testLockReleased(Consumer<CountDownLatch> action) throws Exception {
-    Lock lock = awaitFuture(vertices[0].sharedData().getLockWithTimeout("pimpo", getLockTimeout()));
+    Lock lock1 = vertices[0].sharedData().getLockWithTimeout("pimpo", getLockTimeout()).await();
     Future<Lock> fut = vertices[1].sharedData().getLockWithTimeout("pimpo", getLockTimeout());
     CountDownLatch closeLatch = new CountDownLatch(1);
     action.accept(closeLatch);
     awaitLatch(closeLatch);
-    // Eventually acquired after node1 goes down
-    Lock lock2 = awaitFuture(fut);
+    Lock lock2 = fut.await();
     lock2.release();
   }
 
