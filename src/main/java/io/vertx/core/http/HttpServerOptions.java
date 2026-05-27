@@ -107,6 +107,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_FORM_BUFFERED_SIZE = 1024;
 
   /**
+   * The default behavior of the semicolon as a delimiter : {@code true}
+   */
+  public static final boolean DEFAULT_USE_SEMICOLON_AS_QUERY_PARAM_DELIMITER = true;
+
+  /**
    * Default value of whether 100-Continue should be handled automatically = {@code false}
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
@@ -219,6 +224,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxFormAttributeSize;
   private int maxFormFields;
   private int maxFormBufferedBytes;
+  private boolean useSemicolonAsQueryParamDelimiter;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private boolean http2ClearTextEnabled;
@@ -268,6 +274,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxFormAttributeSize = other.getMaxFormAttributeSize();
     this.maxFormFields = other.getMaxFormFields();
     this.maxFormBufferedBytes = other.getMaxFormBufferedBytes();
+    this.useSemicolonAsQueryParamDelimiter = other.isUseSemicolonAsQueryParamDelimiter();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ClearTextEnabled = other.http2ClearTextEnabled;
@@ -324,6 +331,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
+    useSemicolonAsQueryParamDelimiter = DEFAULT_USE_SEMICOLON_AS_QUERY_PARAM_DELIMITER;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
@@ -892,6 +900,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setMaxFormBufferedBytes(int maxFormBufferedBytes) {
     this.maxFormBufferedBytes = maxFormBufferedBytes;
+    return this;
+  }
+
+  /**
+   * @return whether to use the semicolon char {@code ;} as a delimiter for query string parameters.
+   */
+  public boolean isUseSemicolonAsQueryParamDelimiter() {
+    return useSemicolonAsQueryParamDelimiter;
+  }
+
+  /**
+   * Configure whether to use the semicolon char {@code ;} as a delimiter for query string parameters.
+   *
+   * @param useSemicolonAsDelimiter whether to allow semicolon to be used as a delimiter or it is a an actual parameter name or value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setUseSemicolonAsQueryParamDelimiter(boolean useSemicolonAsDelimiter) {
+    this.useSemicolonAsQueryParamDelimiter = useSemicolonAsDelimiter;
     return this;
   }
 

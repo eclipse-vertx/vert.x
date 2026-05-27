@@ -155,6 +155,11 @@ public class HttpServerOptionsConverter {
             obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
           }
           break;
+        case "useSemicolonAsQueryParamDelimiter":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseSemicolonAsQueryParamDelimiter((Boolean)member.getValue());
+          }
+          break;
         case "webSocketAllowServerNoContext":
           if (member.getValue() instanceof Boolean) {
             obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
@@ -230,6 +235,7 @@ public class HttpServerOptionsConverter {
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
+    json.put("useSemicolonAsQueryParamDelimiter", obj.isUseSemicolonAsQueryParamDelimiter());
     json.put("webSocketAllowServerNoContext", obj.getWebSocketAllowServerNoContext());
     json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
