@@ -1155,6 +1155,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (HttpClientOptions) super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  }
+
+  @Override
   public HttpClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (HttpClientOptions) super.setSslEngineOptions(sslEngineOptions);
   }

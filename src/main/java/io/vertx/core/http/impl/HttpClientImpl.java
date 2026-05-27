@@ -172,7 +172,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
     ContextInternal context = vertx.getOrCreateContext();
     Promise<HttpClientConnection> promise = context.promise();
-    HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
+    HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), options.isUseHybridKeyExchangeProtocol(), peer, server);
     connector.httpConnect(context, promise);
     return promise.future();
   }
@@ -353,7 +353,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       public Endpoint<Lease<HttpClientConnection>> create(ContextInternal ctx, Runnable dispose) {
         int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
         ClientMetrics metrics = HttpClientImpl.this.metrics != null ? HttpClientImpl.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), key.peerAddr, key.serverAddr);
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientImpl.this, netClient, proxyOptions, metrics, options.getProtocolVersion(), key.ssl, options.isUseAlpn(), options.isUseHybridKeyExchangeProtocol(), key.peerAddr, key.serverAddr);
         return new SharedClientHttpStreamEndpoint(
           HttpClientImpl.this,
           metrics,

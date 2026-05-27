@@ -553,6 +553,11 @@ public class WebSocketClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public WebSocketClientOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
+    return (WebSocketClientOptions)super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  }
+
+  @Override
   public WebSocketClientOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     return (WebSocketClientOptions)super.setSslEngineOptions(sslEngineOptions);
   }
