@@ -11,6 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.Context;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.spi.observability.HttpRequest;
 
@@ -20,6 +21,13 @@ import io.vertx.core.spi.observability.HttpRequest;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public abstract class HttpServerRequestInternal implements HttpServerRequest {
+
+  public abstract boolean isUseSemicolonAsQueryParamDelimiter();
+
+  @Override
+  public MultiMap params() {
+    return params(!isUseSemicolonAsQueryParamDelimiter());
+  }
 
   /**
    * @return the Vert.x context associated with this server request

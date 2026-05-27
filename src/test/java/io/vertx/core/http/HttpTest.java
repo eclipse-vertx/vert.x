@@ -928,6 +928,55 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testUseQueryParamsSemicolonDelimiterDecoding() throws Exception {
+    MultiMap actual = TestUtils.randomMultiMap(10);
+    testConfigureQueryParamsSemicolonDelimiterDecoding(actual, createBaseServerOptions().setUseSemicolonAsQueryParamDelimiter(true), params -> {
+      assertEquals(actual.size(), params.size());
+      for  (Map.Entry<String, String> header : params) {
+        assertEquals(actual.get(header.getKey()), header.getValue());
+      }
+    });
+  }
+
+  @Test
+  public void testDoNotUseQueryParamsSemicolonDelimiterDecoding() throws Exception {
+    MultiMap actual = TestUtils.randomMultiMap(10);
+    testConfigureQueryParamsSemicolonDelimiterDecoding(actual, createBaseServerOptions().setUseSemicolonAsQueryParamDelimiter(false), params -> {
+      assertEquals(1, params.size());
+    });
+  }
+
+  @Test
+  public void testDefaultQueryParamsSemicolonDelimiterDecoding() throws Exception {
+    MultiMap actual = TestUtils.randomMultiMap(10);
+    testConfigureQueryParamsSemicolonDelimiterDecoding(actual, createBaseServerOptions(), params -> {
+      assertEquals(actual.size(), params.size());
+      for  (Map.Entry<String, String> header : params) {
+        assertEquals(actual.get(header.getKey()), header.getValue());
+      }
+    });
+  }
+
+  private void testConfigureQueryParamsSemicolonDelimiterDecoding(MultiMap p, HttpServerOptions options, Consumer<MultiMap> checker) throws Exception {
+    server.close();
+    server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      MultiMap params = req.params();
+      checker.accept(params);
+      req.response().end();
+    });
+    startServer(testAddress);
+    client
+      .request(new RequestOptions(requestOptions).setURI("/some?" + generateQueryString(p, ';')))
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .map(HttpClientResponse::body))
+      .onComplete(onSuccess(v -> testComplete()));
+    await();
+  }
+
+  @Test
   public void testMissingContentTypeMultipartRequest() throws Exception {
     testInvalidMultipartRequest(null, HttpMethod.POST);
   }

@@ -54,6 +54,11 @@ public class HttpServerRequestWrapper extends HttpServerRequestInternal {
   }
 
   @Override
+  public boolean isUseSemicolonAsQueryParamDelimiter() {
+    return delegate.isUseSemicolonAsQueryParamDelimiter();
+  }
+
+  @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     return delegate.exceptionHandler(handler);
   }

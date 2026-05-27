@@ -352,6 +352,11 @@ public class Http2ServerRequest extends HttpServerRequestInternal implements Htt
   }
 
   @Override
+  public boolean isUseSemicolonAsQueryParamDelimiter() {
+    return stream.conn.options.isUseSemicolonAsQueryParamDelimiter();
+  }
+
+  @Override
   public HttpServerRequest setParamsCharset(String charset) {
     Objects.requireNonNull(charset, "Charset must not be null");
     Charset current = paramsCharset;

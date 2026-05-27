@@ -329,6 +329,11 @@ public class Http1xServerRequest extends HttpServerRequestInternal implements io
   }
 
   @Override
+  public boolean isUseSemicolonAsQueryParamDelimiter() {
+    return conn.options.isUseSemicolonAsQueryParamDelimiter();
+  }
+
+  @Override
   public MultiMap params(boolean semicolonIsNormalChar) {
     if (params == null || semicolonIsNormalChar != semicolonIsNormalCharInParams) {
       params = HttpUtils.params(uri(), paramsCharset, semicolonIsNormalChar);
