@@ -109,19 +109,22 @@ public class SSLHelperTest extends VertxTestBase {
     SSLContext context = SSLContext.getInstance("TLS");
     context.init(null, null, null);
     SSLEngine engine = context.createSSLEngine();
+    List<String> configuredCipherSuites = new ArrayList<>(Arrays.asList(engine.getEnabledCipherSuites()));
+    assertTrue(configuredCipherSuites.size() > 1);
+    Collections.shuffle(configuredCipherSuites, new Random(12345));
     HttpServerOptions options = new HttpServerOptions();
-    for (String suite : engine.getEnabledCipherSuites()) {
+    for (String suite : configuredCipherSuites) {
       options.addEnabledCipherSuite(suite);
     }
-    assertEquals(new ArrayList<>(options.getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
-    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    assertEquals(new ArrayList<>(options.getEnabledCipherSuites()), configuredCipherSuites);
+    assertEquals(new ArrayList<>(new HttpServerOptions(options).getEnabledCipherSuites()), configuredCipherSuites);
     JsonObject json = options.toJson();
-    assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()), Arrays.asList(engine.getEnabledCipherSuites()));
+    assertEquals(new ArrayList<>(new HttpServerOptions(json).getEnabledCipherSuites()),configuredCipherSuites);
     SSLHelper helper = new SSLHelper(options.setKeyCertOptions(Cert.SERVER_JKS.get()), null);
     helper
       .buildContextProvider(options.getSslOptions(), (ContextInternal) vertx.getOrCreateContext())
       .onComplete(onSuccess(sslContextProvider -> {
-        assertEquals(new HashSet<>(Arrays.asList(createEngine(sslContextProvider).getEnabledCipherSuites())), new HashSet<>(Arrays.asList(engine.getEnabledCipherSuites())));
+        assertEquals(Arrays.asList(createEngine(sslContextProvider).getEnabledCipherSuites()), configuredCipherSuites);
         testComplete();
       }));
     await();

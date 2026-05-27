@@ -62,7 +62,7 @@ public class SslContextProvider {
     this.clientAuth = clientAuth;
     this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
     this.applicationProtocols = applicationProtocols;
-    this.enabledCipherSuites = new HashSet<>(enabledCipherSuites);
+    this.enabledCipherSuites = new LinkedHashSet<>(enabledCipherSuites);
     this.enabledProtocols = enabledProtocols;
     this.keyManagerFactory = keyManagerFactory;
     this.trustManagerFactory = trustManagerFactory;
