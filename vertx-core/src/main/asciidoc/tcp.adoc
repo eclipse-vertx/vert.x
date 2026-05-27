@@ -298,7 +298,7 @@ only apply to creating initial connections.
 
 By default, multiple connection attempts are disabled.
 
-[[logging_network_activity]]
+[[tcp_logging_network_activity]]
 === Logging network activity
 
 For debugging purposes, network activity can be logged:
