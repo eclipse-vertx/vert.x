@@ -461,7 +461,7 @@ By default, a validation token is valid for 30 seconds, you can configure also c
 {@link examples.QuicExamples#configurationOfQuicServerAddressValidationDuration}
 ----
 
-[[logging_network_activity]]
+[[quic_logging_network_activity]]
 === Logging network activity
 
 For debugging purposes, stream network activity can be logged:
