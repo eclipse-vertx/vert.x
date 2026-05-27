@@ -2135,7 +2135,7 @@ On the client
 {@link examples.HttpExamples#configurationOfAnHttpClientLogging}
 ----
 
-See the chapter on <<logging_network_activity, logging network activity>> for a detailed explanation.
+See network activity logging for <<tcp_logging_network_activity, TCP>> / <<quic_logging_network_activity, QUIC>> for detailed explanations.
 
 === Server Name Indication (SNI)
 
