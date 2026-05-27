@@ -128,7 +128,7 @@ public class QuicClientConfig extends QuicEndpointConfig {
   }
 
   /**
-   * Set the connect timeout.
+   * Set the connect timeout, the value must be greater or equals than zero, use {@code 0} to disable timeout.
    *
    * @param connectTimeout  connect timeout
    * @return a reference to this, so the API can be used fluently
