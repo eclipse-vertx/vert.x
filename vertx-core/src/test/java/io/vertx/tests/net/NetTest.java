@@ -4204,6 +4204,21 @@ public class NetTest {
   }
 
   @Test
+  public void testDisableConnectTimeout() throws Exception {
+    Vertx vertx = Vertx.vertx();
+    Future<NetSocket> fut;
+    try {
+      NetClient client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(0));
+      fut = client.connect(1234, NON_ROUTABLE_HOST);
+      Thread.sleep(1000);
+      assertFalse(fut.isComplete());
+    } finally {
+      vertx.close().await();
+    }
+    assertWaitUntil(fut::failed);
+  }
+
+  @Test
   public void testConnectTimeoutOverride(Checkpoint checkpoint) {
     client = vertx.createNetClient();
     client.connect(new ConnectOptions()
