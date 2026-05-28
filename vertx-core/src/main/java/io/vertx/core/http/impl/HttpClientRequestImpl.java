@@ -53,6 +53,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private int maxRedirects;
   private int numberOfRedirections;
   private final MultiMap headers;
+  private String connectProtocol;
   private boolean trailersSent;
   private boolean headersSent;
   private StreamPriority priority;
@@ -184,6 +185,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public MultiMap headers() {
     return headers;
+  }
+
+  @Override
+  public String connectProtocol() {
+    return connectProtocol;
+  }
+
+  @Override
+  public HttpClientRequestImpl connectProtocol(String protocol) {
+    this.connectProtocol = protocol;
+    return this;
   }
 
   @Override
@@ -533,7 +545,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (uri.isEmpty()) {
         uri = "/";
       }
-      HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri, headers, authority(), absoluteURI(), traceOperation);
+      HttpRequestHead head = new HttpRequestHead(ssl ? "https" : "http", method, uri,  connectProtocol, headers, authority(), absoluteURI(), traceOperation);
       future = stream.writeHead(head, chunked, buff, writeEnd, priority, connect);
     } else {
       if (buff == null && !end) {

@@ -492,6 +492,12 @@ public interface HttpHeaders {
   CharSequence PSEUDO_METHOD = Http2Headers.PseudoHeaderName.METHOD.value();
 
   /**
+   * HTTP/2 {@code :protocol} pseudo header
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence PSEUDO_PROTOCOL = Http2Headers.PseudoHeaderName.PROTOCOL.value();
+
+  /**
    * Create an optimized {@link CharSequence} which can be used as header name or value.
    * This should be used if you expect to use it multiple times liked for example adding the same header name or value
    * for multiple responses or requests.
