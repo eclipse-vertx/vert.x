@@ -240,6 +240,25 @@ persisted in storage, or `false` if not.
 * A message consumer which processes an order might acknowledge with `true` when the order has been successfully processed
 so it can be deleted from the database
 
+==== Observability and Message Processing
+
+When messages are consumed, Vert.x automatically manages observability signals such as tracing to track the message processing lifecycle.
+By default, these signals are completed when the message handler returns.
+
+This works well for synchronous handlers but may not be ideal for asynchronous or blocking operations.
+
+For example, if your handler performs work on a worker thread, the tracer span would be closed before the actual work completes, resulting in inaccurate trace timing and context loss.
+
+For asynchronous processing, you can register a processor with {@link io.vertx.core.eventbus.MessageConsumer#processor(java.util.function.Function)}.
+The future returned by the processor signals the completion of message processing.
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example13}
+----
+
+IMPORTANT: When a processor is used, the returned future completion defines the end of processing for all event bus messaging paradigms except request/reply.
+
 ==== Sending with timeouts
 
 When sending a message with a reply handler, you can specify a timeout in the {@link io.vertx.core.eventbus.DeliveryOptions}.

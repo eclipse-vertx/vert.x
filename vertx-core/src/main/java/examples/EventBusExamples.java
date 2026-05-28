@@ -11,6 +11,7 @@
 
 package examples;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.*;
@@ -172,5 +173,20 @@ public class EventBusExamples {
 
   class MyPOJO {
 
+  }
+
+  public void example13(Vertx vertx) {
+    EventBus eb = vertx.eventBus();
+
+    eb.<String>consumer("order.process").processor(message -> {
+      String orderId = message.body();
+      Future<Void> future = processOrderAsync(orderId);
+      return future;
+    });
+  }
+
+  private Future<Void> processOrderAsync(String orderId) {
+    // Simulated async operation
+    return Future.succeededFuture();
   }
 }
