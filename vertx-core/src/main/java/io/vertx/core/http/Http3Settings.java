@@ -65,7 +65,7 @@ public class Http3Settings extends HttpSettings {
   }
 
   public Http3Settings() {
-    super(8);
+    super(9);
   }
 
   public Http3Settings(Http3Settings other) {

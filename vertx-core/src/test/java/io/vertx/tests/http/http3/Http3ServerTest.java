@@ -411,7 +411,8 @@ public class Http3ServerTest extends VertxTestBase {
         .setInitialSettings(new io.vertx.core.http.Http3Settings()
           .setMaxFieldSectionSize(1024)
           .setQPackBlockedStreams(1024)
-          .setQPackMaxTableCapacity(1024)));
+          .setQPackMaxTableCapacity(1024)
+          .set(HttpSettings.ENABLE_CONNECT_PROTOCOL, true)));
     server = vertx.createHttpServer(config, sslOptions());
 
     server.connectionHandler(connection -> {
@@ -443,7 +444,8 @@ public class Http3ServerTest extends VertxTestBase {
     Http3Settings settings = connection.remoteSettings();
     Assert.assertEquals(1024L, (long)settings.maxFieldSectionSize());
     Assert.assertEquals(1024L, (long)settings.qpackMaxTableCapacity());
-    Assert.assertEquals(1024L, (long)settings.qpackBlockedStreams());
+    Assert.assertEquals(1024L, (long)settings.qpackMaxTableCapacity());
+    Assert.assertEquals(true, settings.connectProtocolEnabled());
   }
 
   @Test
@@ -464,6 +466,31 @@ public class Http3ServerTest extends VertxTestBase {
     Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
     Http3TestClient.Client.Stream stream = connection.stream();
     stream.write(new DefaultHttp3Headers().method("CONNECT").authority("whatever.com"), true, false);
+    await();
+  }
+
+  @Test
+  public void testExtendedConnect() throws Exception {
+    server.close();
+    Http3ServerConfig cfg = new Http3ServerConfig()
+      .setInitialSettings(new io.vertx.core.http.Http3Settings()
+        .set(HttpSettings.ENABLE_CONNECT_PROTOCOL, true));
+    server = vertx.createHttpServer(serverConfig().setHttp3Config(cfg), sslOptions());
+    server.requestHandler(req -> {
+      Assert.assertEquals("the-protocol", req.connectProtocol());
+      testComplete();
+    });
+
+    server.listen(8443, "localhost").await();
+
+    Http3TestClient.Client.Connection connection = client.connect(new InetSocketAddress(NetUtil.LOCALHOST4, 8443));
+    Http3TestClient.Client.Stream stream = connection.stream();
+    stream.write(new DefaultHttp3Headers()
+      .method("CONNECT")
+      .authority("whatever.com")
+      .scheme("https")
+      .path("/")
+      .protocol("the-protocol"), true, false);
     await();
   }
 
