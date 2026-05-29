@@ -18,26 +18,31 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.*;
 
 public class Http1xSendFileTest extends HttpSendFileTest {
 
   @Test
-  public void testSendFileWithConnectionCloseHeader() throws Exception {
+  public void testSendFileWithConnectionCloseHeader(Checkpoint checkpoint) throws Exception {
     String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
-    sendFile("test-send-file.html", content, false,
+    sendFile(checkpoint, "test-send-file.html", content, false,
       () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
   }
 
   @Test
-  public void testSendFileFailsWhenClientClosesConnection() throws Exception {
+  public void testSendFileFailsWhenClientClosesConnection(Checkpoint checkpoint) throws Exception {
     // 10 megs
     final File f = setupFile("file.pdf", TestUtils.randomUnicodeString(10 * 1024 * 1024));
     CyclicBarrier barrier = new CyclicBarrier(1);
@@ -46,7 +51,7 @@ public class Http1xSendFileTest extends HttpSendFileTest {
         barrier.await(10, TimeUnit.SECONDS);
         req.response().sendFile(f.getAbsolutePath()).onComplete(TestUtils.onFailure(err -> {
           // Broken pipe
-          testComplete();
+          checkpoint.succeed();
         }));
       } catch (Exception e) {
         // this was the bug reported with issues/issue-80
@@ -67,29 +72,27 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     } finally {
       client.close();
     }
-    await();
+    checkpoint.awaitSuccess();
   }
 
   @Test
-  public void testSendFilePipelined() throws Exception {
+  public void testSendFilePipelined(Checkpoint checkpoint) throws Exception {
     int n = 2;
-    waitFor(n);
     File sent = TestUtils.tmpFile(".dat", 16 * 1024);
     server.requestHandler(
       req -> {
         req.response().sendFile(sent.getAbsolutePath());
       });
     startServer(testAddress);
-    client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true), new PoolOptions().setHttp1MaxSize(1));
+    CountDownLatch latch = checkpoint.asLatch(n);
     for (int i = 0;i < n;i++) {
       client.request(requestOptions)
         .compose(req -> req.send().compose(HttpClientResponse::body))
         .onComplete(TestUtils.onSuccess(body -> {
-          complete();
+          latch.countDown();
         }));
     }
-    await();
   }
 
   @Test
@@ -103,11 +106,10 @@ public class Http1xSendFileTest extends HttpSendFileTest {
     // Now test with timeout relative to this delay
     int timeout = delay / 2;
     delay = retrieveFileFromServer(file, createBaseServerOptions().setIdleTimeout(timeout).setIdleTimeoutUnit(TimeUnit.MILLISECONDS));
-    Assert.assertTrue(delay > timeout);
+    assertThat(delay).isGreaterThan(timeout);
   }
 
   private int retrieveFileFromServer(File file, HttpServerOptions options) throws Exception {
-    server.close().await();
     server = vertx
       .createHttpServer(options)
       .requestHandler(
@@ -131,7 +133,7 @@ public class Http1xSendFileTest extends HttpSendFileTest {
           return resp.end();
         }))
       .map(v -> length[0]).await();
-    Assert.assertEquals((int)len, file.length());
+    assertEquals((int)len, file.length());
     return (int) (System.currentTimeMillis() - now);
   }
 }
