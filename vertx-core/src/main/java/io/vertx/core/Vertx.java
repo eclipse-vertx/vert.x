@@ -48,6 +48,7 @@ import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.transport.Transport;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -594,6 +595,17 @@ public interface Vertx extends Measured {
   default Timer timer(long delay, TimeUnit unit) {
     ContextInternal ctx = (ContextInternal) getOrCreateContext();
     return ctx.timer(delay, unit);
+  }
+
+  /**
+   * Like {@link #timer(long, TimeUnit)}.
+   *
+   * @param delay the delay
+   * @return the timer object
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Timer timer(Duration delay) {
+    return timer(delay.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /**

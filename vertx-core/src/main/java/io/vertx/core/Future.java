@@ -11,6 +11,7 @@
 
 package io.vertx.core;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
@@ -18,6 +19,7 @@ import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -632,6 +634,17 @@ public interface Future<T> extends AsyncResult<T> {
   Future<T> timeout(long delay, TimeUnit unit);
 
   /**
+   * Like {@link #timeout(long, TimeUnit)}.
+   *
+   * @param delay the delay
+   * @return the timeout future
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default Future<T> timeout(Duration delay) {
+    return timeout(delay.toMillis(), TimeUnit.MILLISECONDS);
+  }
+
+  /**
    * Bridges this Vert.x future to a {@link CompletionStage} instance.
    * <p>
    * The {@link CompletionStage} handling methods will be called from the thread that resolves this future.
@@ -744,6 +757,19 @@ public interface Future<T> extends AsyncResult<T> {
       }
     }
     return getOrFail();
+  }
+
+  /**
+   * Like {@link #await()} but with a timeout.
+   *
+   * @param timeout the timeout
+   * @return the result
+   * @throws TimeoutException when the timeout fires before the future completes
+   * @throws IllegalStateException when called from a vertx event-loop or worker thread
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default T await(Duration timeout) throws TimeoutException {
+    return await(timeout.toMillis(), TimeUnit.MILLISECONDS);
   }
 
   /**
