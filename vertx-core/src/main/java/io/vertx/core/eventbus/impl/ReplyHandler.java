@@ -85,7 +85,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  protected void dispatchMessage(Message<T> reply, ContextInternal context, Function<Message<T>, Future<Void>> processor /* null */, Completable<Void> completion) {
+  protected void dispatchMessage(Message<T> reply, ContextInternal context, Function<Message<T>, Future<?>> processor /* null */, Completable<Object> completion) {
     if (context.owner().cancelTimer(timeoutID)) {
       unregister();
       if (reply.body() instanceof ReplyException) {

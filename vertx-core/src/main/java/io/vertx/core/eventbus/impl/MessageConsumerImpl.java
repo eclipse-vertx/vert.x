@@ -29,7 +29,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private static final Logger log = LoggerFactory.getLogger(MessageConsumerImpl.class);
 
   private final boolean localOnly;
-  private Function<Message<T>, Future<Void>> processor;
+  private Function<Message<T>, Future<?>> processor;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
   private final int maxBufferedMessages;
@@ -54,7 +54,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       }
       @Override
       protected void handleMessage(Message<T> msg) {
-        Function<Message<T>, Future<Void>> processor;
+        Function<Message<T>, Future<?>> processor;
         synchronized (MessageConsumerImpl.this) {
           processor = MessageConsumerImpl.this.processor;
         }
@@ -120,13 +120,13 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  protected void dispatchMessage(Message<T> msg, ContextInternal context, Function<Message<T>, Future<Void>> processor, Completable<Void> completion) {
+  protected void dispatchMessage(Message<T> msg, ContextInternal context, Function<Message<T>, Future<?>> processor, Completable<Object> completion) {
     if (processor == null) {
       throw new NullPointerException();
     }
     context.dispatch(msg, message -> {
       try {
-        Future<Void> future = processor.apply(message);
+        Future<?> future = processor.apply(message);
         if (future == null) {
           completion.fail(new NullPointerException("processor returned null"));
         } else {
@@ -156,7 +156,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return this;
   }
 
-  private static class HandlerAdapter<BODY_TYPE> implements Function<Message<BODY_TYPE>, Future<Void>> {
+  private static class HandlerAdapter<BODY_TYPE> implements Function<Message<BODY_TYPE>, Future<?>> {
     final Handler<Message<BODY_TYPE>> h;
 
     HandlerAdapter(Handler<Message<BODY_TYPE>> h) {
@@ -164,14 +164,14 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     }
 
     @Override
-    public Future<Void> apply(Message<BODY_TYPE> msg) {
+    public Future<?> apply(Message<BODY_TYPE> msg) {
       h.handle(msg);
       return Future.succeededFuture();
     }
   }
 
   @Override
-  public synchronized MessageConsumer<T> processor(Function<Message<T>, Future<Void>> processor) {
+  public synchronized MessageConsumer<T> processor(Function<Message<T>, Future<?>> processor) {
     if (processor != null) {
       this.processor = processor;
       registerIfNeeded();

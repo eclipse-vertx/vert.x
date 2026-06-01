@@ -52,7 +52,7 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    * @return this consumer
    */
   @GenIgnore(PERMITTED_TYPE)
-  MessageConsumer<T> processor(Function<Message<T>, Future<Void>> processor);
+  MessageConsumer<T> processor(Function<Message<T>, Future<?>> processor);
 
   @Override
   MessageConsumer<T> pause();
