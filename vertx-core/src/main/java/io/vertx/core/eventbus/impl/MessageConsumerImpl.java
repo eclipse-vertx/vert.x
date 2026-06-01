@@ -20,6 +20,8 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.function.Function;
+
 /**
  */
 public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements MessageConsumer<T> {
@@ -27,7 +29,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private static final Logger log = LoggerFactory.getLogger(MessageConsumerImpl.class);
 
   private final boolean localOnly;
-  private Handler<Message<T>> handler;
+  private Function<Message<T>, Future<?>> processor;
   private Handler<Void> endHandler;
   private Handler<Message<T>> discardHandler;
   private final int maxBufferedMessages;
@@ -52,12 +54,12 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       }
       @Override
       protected void handleMessage(Message<T> msg) {
-        Handler<Message<T>> handler;
+        Function<Message<T>, Future<?>> processor;
         synchronized (MessageConsumerImpl.this) {
-          handler = MessageConsumerImpl.this.handler;
+          processor = MessageConsumerImpl.this.processor;
         }
-        if (handler != null) {
-          dispatchMessage(handler, (MessageImpl<?, T>) msg, context.duplicate());
+        if (processor != null) {
+          dispatchMessage(processor, (MessageImpl<?, T>) msg, context.duplicate());
         } else {
           handleDiscard(msg, false);
         }
@@ -77,7 +79,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized Future<Void> unregister() {
-    handler = null;
+    processor = null;
     if (endHandler != null) {
       endHandler.handle(null);
     }
@@ -118,11 +120,22 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  protected void dispatchMessage(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
-    if (handler == null) {
+  protected void dispatchMessage(Message<T> msg, ContextInternal context, Function<Message<T>, Future<?>> processor, Completable<Object> completion) {
+    if (processor == null) {
       throw new NullPointerException();
     }
-    context.dispatch(msg, handler);
+    context.dispatch(msg, message -> {
+      try {
+        Future<?> future = processor.apply(message);
+        if (future == null) {
+          completion.fail(new NullPointerException("processor returned null"));
+        } else {
+          future.onComplete(completion);
+        }
+      } catch (Exception e) {
+        completion.fail(e);
+      }
+    });
   }
 
   /*
@@ -135,26 +148,53 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   @Override
   public synchronized MessageConsumer<T> handler(Handler<Message<T>> h) {
     if (h != null) {
-      synchronized (this) {
-        handler = h;
-        if (!registered) {
-          registered = true;
-          Promise<Void> p = result;
-          Promise<Void> registration = context.promise();
-          register(true, localOnly, registration);
-          registration.future().onComplete(ar -> {
-            if (ar.succeeded()) {
-              p.tryComplete();
-            } else {
-              p.tryFail(ar.cause());
-            }
-          });
-        }
-      }
+      processor = new HandlerAdapter<>(h);
+      registerIfNeeded();
     } else {
       unregister();
     }
     return this;
+  }
+
+  private static class HandlerAdapter<BODY_TYPE> implements Function<Message<BODY_TYPE>, Future<?>> {
+    final Handler<Message<BODY_TYPE>> h;
+
+    HandlerAdapter(Handler<Message<BODY_TYPE>> h) {
+      this.h = h;
+    }
+
+    @Override
+    public Future<?> apply(Message<BODY_TYPE> msg) {
+      h.handle(msg);
+      return Future.succeededFuture();
+    }
+  }
+
+  @Override
+  public synchronized MessageConsumer<T> processor(Function<Message<T>, Future<?>> processor) {
+    if (processor != null) {
+      this.processor = processor;
+      registerIfNeeded();
+    } else {
+      unregister();
+    }
+    return this;
+  }
+
+  private void registerIfNeeded() {
+    if (!registered) {
+      registered = true;
+      Promise<Void> p = result;
+      Promise<Void> registration = context.promise();
+      register(true, localOnly, registration);
+      registration.future().onComplete(ar -> {
+        if (ar.succeeded()) {
+          p.tryComplete();
+        } else {
+          p.tryFail(ar.cause());
+        }
+      });
+    }
   }
 
   @Override
@@ -194,9 +234,5 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   @Override
   public synchronized MessageConsumer<T> exceptionHandler(Handler<Throwable> handler) {
     return this;
-  }
-
-  public synchronized Handler<Message<T>> getHandler() {
-    return handler;
   }
 }

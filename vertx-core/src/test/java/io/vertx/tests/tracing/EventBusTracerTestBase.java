@@ -11,6 +11,7 @@
 package io.vertx.tests.tracing;
 
 import io.vertx.core.Context;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
@@ -300,5 +301,69 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 8);
     assertEquals(Arrays.asList("sendRequest[the_address]", "receiveResponse[]", "sendRequest[generated]", "receiveResponse[]"), ebTracer.sendEvents);
     assertEquals(Arrays.asList("receiveRequest[the_address]", "sendResponse[]", "receiveRequest[generated]", "sendResponse[]"), ebTracer.receiveEvents);
+  }
+
+  @Test
+  public void testEventBusSendProcessor() throws Exception {
+    EventBusTracer ebTracer = new EventBusTracer();
+    tracer = ebTracer;
+
+    Promise<Void> completion = Promise.promise();
+
+    vertx2.eventBus().<String>consumer("the_address")
+      .processor(msg -> {
+        assertEquals("msg", msg.body());
+        return completion.future();
+      }).completion().await();
+
+    vertx1.runOnContext(v -> {
+      Context ctx = vertx1.getOrCreateContext();
+      sendKey.put(ctx, ebTracer.sendVal);
+      vertx1.eventBus().send("the_address", "msg");
+    });
+
+    waitUntil(() -> ebTracer.receiveEvents.contains("receiveRequest[the_address]"));
+    assertFalse(ebTracer.receiveEvents.contains("sendResponse[]"));
+
+    completion.complete();
+    waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
+    assertEquals(Arrays.asList("receiveRequest[the_address]", "sendResponse[]"), ebTracer.receiveEvents);
+  }
+
+  @Test
+  public void testEventBusPublishProcessor() throws Exception {
+    EventBusTracer ebTracer = new EventBusTracer();
+    tracer = ebTracer;
+
+    Promise<Void> completion1 = Promise.promise();
+    Promise<Void> completion2 = Promise.promise();
+
+    vertx2.eventBus().<String>consumer("the_address")
+      .processor(msg -> {
+        assertEquals("msg", msg.body());
+        return completion1.future();
+      }).completion().await();
+
+    vertx2.eventBus().<String>consumer("the_address")
+      .processor(msg -> {
+        assertEquals("msg", msg.body());
+        return completion2.future();
+      }).completion().await();
+
+    vertx1.runOnContext(v -> {
+      Context ctx = vertx1.getOrCreateContext();
+      sendKey.put(ctx, ebTracer.sendVal);
+      vertx1.eventBus().publish("the_address", "msg");
+    });
+
+    waitUntil(() -> ebTracer.receiveEvents.stream().filter(e -> e.equals("receiveRequest[the_address]")).count() == 2);
+    assertEquals(0, ebTracer.receiveEvents.stream().filter(e -> e.equals("sendResponse[]")).count());
+
+    completion1.complete();
+    waitUntil(() -> ebTracer.receiveEvents.stream().filter(e -> e.equals("sendResponse[]")).count() == 1);
+
+    completion2.complete();
+    waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 6);
+    assertEquals(2, ebTracer.receiveEvents.stream().filter(e -> e.equals("sendResponse[]")).count());
   }
 }

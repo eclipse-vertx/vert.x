@@ -11,10 +11,15 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
+
+import java.util.function.Function;
+
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
 
 /**
  * An event bus consumer object representing a stream of message to an {@link EventBus} address that can
@@ -37,6 +42,17 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
 
   @Override
   MessageConsumer<T> handler(Handler<Message<T>> handler);
+
+  /**
+   * Set a processor for the consumer.
+   * <p>
+   * The returned future completion signals the completion of message processing.
+   *
+   * @param processor the processor
+   * @return this consumer
+   */
+  @GenIgnore(PERMITTED_TYPE)
+  MessageConsumer<T> processor(Function<Message<T>, Future<?>> processor);
 
   @Override
   MessageConsumer<T> pause();

@@ -22,6 +22,8 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.function.Function;
+
 class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
 
   private static final Completable<Void> NULL_COMPLETABLE = (res, err) -> {};
@@ -83,7 +85,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  protected void dispatchMessage(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
+  protected void dispatchMessage(Message<T> reply, ContextInternal context, Function<Message<T>, Future<?>> processor /* null */, Completable<Object> completion) {
     if (context.owner().cancelTimer(timeoutID)) {
       unregister();
       if (reply.body() instanceof ReplyException) {
@@ -93,5 +95,6 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
         result.complete(reply);
       }
     }
+    completion.succeed();
   }
 }

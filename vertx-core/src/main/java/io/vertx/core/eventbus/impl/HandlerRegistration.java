@@ -22,6 +22,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class HandlerRegistration<T> implements Closeable {
 
@@ -59,7 +60,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   protected abstract void doReceive(Message<T> msg);
 
-  protected abstract void dispatchMessage(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
+  protected abstract void dispatchMessage(Message<T> msg, ContextInternal context, Function<Message<T>, Future<?>> processor, Completable<Object> completion);
 
   synchronized void register(boolean broadcast, boolean localOnly, Completable<Void> promise) {
     if (registered != null) {
@@ -91,18 +92,18 @@ public abstract class HandlerRegistration<T> implements Closeable {
     return promise.future();
   }
 
-  void dispatchMessage(Handler<Message<T>> handler, MessageImpl<?, T> message, ContextInternal context) {
+  void dispatchMessage(Function<Message<T>, Future<?>> processor, MessageImpl<?, T> message, ContextInternal context) {
     Handler<DeliveryContext<?>>[] interceptors = message.bus.inboundInterceptors();
     if (interceptors.length > 0) {
-      Runnable dispatch = () -> dispatch(context, message, handler);
+      Runnable dispatch = () -> dispatch(context, message, processor);
       DeliveryContextImpl<T> deliveryCtx = new DeliveryContextImpl<>(message, interceptors, context, message.receivedBody, dispatch);
       deliveryCtx.next();
     } else {
-      dispatch(context, message, handler);
+      dispatch(context, message, processor);
     }
   }
 
-  private void dispatch(ContextInternal ctx, MessageImpl<?, T> message, Handler<Message<T>> handler) {
+  private void dispatch(ContextInternal ctx, MessageImpl<?, T> message, Function<Message<T>, Future<?>> processor) {
     Object m = metric;
     VertxTracer tracer = ctx.tracer();
     if (bus.metrics != null) {
@@ -110,15 +111,42 @@ public abstract class HandlerRegistration<T> implements Closeable {
     }
     if (tracer != null && !src) {
       message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
-      dispatchMessage(message, ctx, handler);
-      Object trace = message.trace;
-      if (message.replyAddress == null && trace != null) {
-        tracer.sendResponse(ctx, null, trace, null, TagExtractor.empty());
+      Promise<Object> completion = ctx.promise();
+      dispatchMessage(message, ctx, processor, completion);
+      if (message.replyAddress == null && message.trace != null) {
+        completion.future().onComplete(new TraceNoReplyCompletion(tracer, ctx, message.trace));
       }
     } else {
-      dispatchMessage(message, ctx, handler);
+      dispatchMessage(message, ctx, processor, NO_OP);
     }
   }
+
+  private static class TraceNoReplyCompletion implements Handler<AsyncResult<Object>> {
+    final VertxTracer tracer;
+    final ContextInternal ctx;
+    final Object trace;
+
+    TraceNoReplyCompletion(VertxTracer tracer, ContextInternal ctx, Object trace) {
+      this.tracer = tracer;
+      this.ctx = ctx;
+      this.trace = trace;
+    }
+
+    @Override
+    public void handle(AsyncResult<Object> ar) {
+      if (ar.succeeded()) {
+        tracer.sendResponse(ctx, null, trace, null, TagExtractor.empty());
+      } else {
+        tracer.sendResponse(ctx, null, trace, ar.cause(), TagExtractor.empty());
+      }
+    }
+  }
+
+  private static final Completable<Object> NO_OP = new Completable<>() {
+    @Override
+    public void complete(Object result, Throwable failure) {
+    }
+  };
 
   void discardMessage(Message<T> msg) {
     if (bus.metrics != null) {
