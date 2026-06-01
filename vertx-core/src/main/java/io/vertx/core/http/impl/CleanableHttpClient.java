@@ -61,7 +61,8 @@ public class CleanableHttpClient extends CleanableObject<HttpClientInternal> imp
 
   @Override
   public Metrics getMetrics() {
-    return getOrDie().getMetrics();
+    HttpClientInternal delegate = get();
+    return delegate == null ? null : delegate.getMetrics();
   }
 
   @Override

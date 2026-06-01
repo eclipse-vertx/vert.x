@@ -29,6 +29,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
@@ -1275,4 +1276,17 @@ public class MetricsTest extends VertxTestBase {
       assertNull(all.get("vert.x-virtual-thread"));
     }
   }
+
+  @Test
+  public void testGetMetricsOnClosedClient() {
+    HttpClientAgent httpClient = vertx.createHttpClient();
+    assertNotNull(((MetricsProvider)httpClient).getMetrics());
+    httpClient.close().await();
+    assertNull(((MetricsProvider)httpClient).getMetrics());
+    NetClient tcpClient = vertx.createNetClient();
+    assertNotNull(((MetricsProvider)tcpClient).getMetrics());
+    tcpClient.close().await();
+    assertNull(((MetricsProvider)tcpClient).getMetrics());
+  }
+
 }

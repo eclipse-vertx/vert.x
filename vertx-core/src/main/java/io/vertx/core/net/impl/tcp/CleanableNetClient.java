@@ -85,6 +85,7 @@ public class CleanableNetClient extends CleanableObject<NetClientInternal> imple
 
   @Override
   public Metrics getMetrics() {
-    return getOrDie().getMetrics();
+    NetClientInternal delegate = get();
+    return delegate == null ? null : delegate.getMetrics();
   }
 }
