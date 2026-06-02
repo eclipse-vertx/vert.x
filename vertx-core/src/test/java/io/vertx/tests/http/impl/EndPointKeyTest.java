@@ -42,6 +42,16 @@ public class EndPointKeyTest {
     assertNotEquals(key5, key6);
     assertNotEquals(key5.hashCode(), key6.hashCode());
     assertNotEquals(key1.hashCode(), key6.hashCode());
+    EndpointKey key7 = new EndpointKey(false, HttpVersion.HTTP_1_1, null,
+      new ProxyOptions().setProxyAuthorization("Negotiate token-1"), addr, peer);
+    EndpointKey key8 = new EndpointKey(false, HttpVersion.HTTP_1_1, null,
+      new ProxyOptions().setProxyAuthorization("Negotiate token-1"), addr, peer);
+    EndpointKey key9 = new EndpointKey(false, HttpVersion.HTTP_1_1, null,
+      new ProxyOptions().setProxyAuthorization("Negotiate token-2"), addr, peer);
+    assertEquals(key7, key8);
+    assertEquals(key7.hashCode(), key8.hashCode());
+    assertNotEquals(key7, key9);
+    assertNotEquals(key7.hashCode(), key9.hashCode());
   }
 
 }

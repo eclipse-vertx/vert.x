@@ -31,6 +31,7 @@ public class ProxyOptionsTest extends VertxTestBase {
   int randPort;
   String randUsername;
   String randPassword;
+  String randProxyAuthorization;
 
   @Override
   public void setUp() throws Exception {
@@ -40,6 +41,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     randPort = TestUtils.randomPortInt();
     randUsername = TestUtils.randomAlphaString(10);
     randPassword = TestUtils.randomAlphaString(10);
+    randProxyAuthorization = "Negotiate " + TestUtils.randomAlphaString(10);
   }
 
   @Test
@@ -69,6 +71,10 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(null, options.getPassword());
     assertEquals(options, options.setPassword(randPassword));
     assertEquals(randPassword, options.getPassword());
+
+    assertEquals(null, options.getProxyAuthorization());
+    assertEquals(options, options.setProxyAuthorization(randProxyAuthorization));
+    assertEquals(randProxyAuthorization, options.getProxyAuthorization());
   }
 
   @Test
@@ -79,6 +85,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     options.setPort(randPort);
     options.setUsername(randUsername);
     options.setPassword(randPassword);
+    options.setProxyAuthorization(randProxyAuthorization);
 
     ProxyOptions copy = new ProxyOptions(options);
     assertEquals(randType, copy.getType());
@@ -86,6 +93,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(randHost, copy.getHost());
     assertEquals(randUsername, copy.getUsername());
     assertEquals(randPassword, copy.getPassword());
+    assertEquals(randProxyAuthorization, copy.getProxyAuthorization());
   }
 
   @Test
@@ -97,6 +105,7 @@ public class ProxyOptionsTest extends VertxTestBase {
     assertEquals(def.getHost(), options.getHost());
     assertEquals(def.getUsername(), options.getUsername());
     assertEquals(def.getPassword(), options.getPassword());
+    assertEquals(def.getProxyAuthorization(), options.getProxyAuthorization());
   }
 
   @Test
@@ -106,12 +115,14 @@ public class ProxyOptionsTest extends VertxTestBase {
         .put("host", randHost)
         .put("port", randPort)
         .put("username", randUsername)
-        .put("password", randPassword);
+        .put("password", randPassword)
+        .put("proxyAuthorization", randProxyAuthorization);
     ProxyOptions options = new ProxyOptions(json);
     assertEquals(randType, options.getType());
     assertEquals(randPort, options.getPort());
     assertEquals(randHost, options.getHost());
     assertEquals(randUsername, options.getUsername());
     assertEquals(randPassword, options.getPassword());
+    assertEquals(randProxyAuthorization, options.getProxyAuthorization());
   }
 }
