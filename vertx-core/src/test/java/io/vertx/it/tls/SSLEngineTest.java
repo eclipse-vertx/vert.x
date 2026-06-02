@@ -128,4 +128,83 @@ public class SSLEngineTest extends HttpTestBase {
       .onComplete(onSuccess(v -> testComplete()));
     await();
   }
+
+  @Test
+  public void testWebSocketDefaultEngine() {
+    doWebSocketTest(null, null, "jdk");
+  }
+
+  @Test
+  public void testWebSocketJdkEngine() {
+    doWebSocketTest(new JdkSSLEngineOptions(), null, "jdk");
+  }
+
+  @Test
+  public void testWebSocketOpenSSLEngine() {
+    doWebSocketTest(new OpenSSLEngineOptions(), OPEN_SSL ? null : "OpenSSL is not available", "openssl");
+  }
+
+  private void doWebSocketTest(SSLEngineOptions engine, String error, String expectedSslContext) {
+    server.close();
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setSslEngineOptions(engine)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setKeyCertOptions(Cert.SERVER_PEM.get())
+      .setSsl(true);
+    server = vertx.createHttpServer(serverOptions);
+    server.webSocketHandler(ws -> {
+      assertTrue(ws.isSsl());
+      ws.textMessageHandler(msg -> ws.writeTextMessage(msg));
+    });
+    try {
+      startServer();
+      if (error != null) {
+        fail("Was expecting failure: " + error);
+      }
+    } catch (Exception e) {
+      if (error == null) {
+        fail(e);
+      } else {
+        assertEquals(error, e.getMessage());
+        return;
+      }
+    }
+    NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
+    assertEquals(tcpServer.actualPort(), server.actualPort());
+    ServerSslContextProvider provider = tcpServer.sslContextProvider();
+    SslContext ctx = provider.createServerContext(null);
+    switch (expectedSslContext != null ? expectedSslContext : "jdk") {
+      case "jdk":
+        assertTrue(ctx.sessionContext().getClass().getName().equals("sun.security.ssl.SSLSessionContextImpl"));
+        break;
+      case "openssl":
+        assertTrue(ctx.sessionContext() instanceof OpenSslSessionContext);
+        break;
+    }
+    WebSocketClient wsClient = vertx.createWebSocketClient(new WebSocketClientOptions()
+      .setSslEngineOptions(engine)
+      .setSsl(true)
+      .setTrustAll(true));
+    wsClient.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .onComplete(onSuccess(ws -> {
+        String sessionClass = ws.sslSession().getClass().getName();
+        switch (expectedSslContext != null ? expectedSslContext : "jdk") {
+          case "jdk":
+            assertTrue("Expected JDK SSL session but got: " + sessionClass,
+              sessionClass.equals("sun.security.ssl.SSLSessionImpl"));
+            break;
+          case "openssl":
+            assertTrue("Expected OpenSSL session but got: " + sessionClass,
+              sessionClass.startsWith("io.netty.handler.ssl."));
+            break;
+        }
+        ws.writeTextMessage("test");
+        ws.textMessageHandler(msg -> {
+          assertEquals("test", msg);
+          testComplete();
+        });
+      }));
+    await();
+  }
 }
