@@ -614,7 +614,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     CountDownLatch latch = new CountDownLatch(1);
     client.connectionHandler(conn -> {
-      assertEquals(max == null ? 0xFFFFFFFFL : max, conn.remoteSettings().getMaxConcurrentStreams());
+      assertEquals(max == null ? 100 : max, conn.remoteSettings().getMaxConcurrentStreams());
       latch.countDown();
     });
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
