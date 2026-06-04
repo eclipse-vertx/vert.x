@@ -17,9 +17,6 @@ on:
       container:
         default: ''
         type: 'string'
-      io_uring_supported:
-        default: false
-        type: boolean
 jobs:
   Test:
     name: Run tests
@@ -40,10 +37,10 @@ jobs:
           java-version: ${{ inputs.jdk }}
           distribution: temurin
       - name: Run tests
-        if: ${{ runner.os != 'Linux' || inputs.profile != '-PNativeIoUring'}}
+        if: ${{ runner.os != 'Linux' || inputs.container != ''  }}
         run: mvn -s .github/maven-ci-settings.xml -q clean verify -B -Pcheckstyle ${{ inputs.profile }}
       - name: Run tests
-        if: ${{ runner.os == 'Linux' && inputs.profile == '-PNativeIoUring' && inputs.io_uring_supported }}
+        if: ${{ runner.os == 'Linux' && inputs.container == '' }}
         run: |
           # io_uring testing requires more locked memory for kernel ring buffers than the default 8MB limit
           sudo prlimit --pid $$ --memlock=16777216:16777216

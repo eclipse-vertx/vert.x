@@ -14,4 +14,3 @@ jobs:
     secrets: inherit
     with:
       branch: ${{ github.event.pull_request.head.sha || github.ref_name }}
-      io_uring_supported: true
