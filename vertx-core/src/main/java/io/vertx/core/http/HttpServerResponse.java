@@ -358,6 +358,18 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
+   * Same as {@link #sendFile(String, long, long, SendFileOptions)} with offset {@code 0} and length
+   * {@code Long.MAX_VALUE} which means until the end of the file.
+   *
+   * @param filename path to the file to serve
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  default Future<Void> sendFile(String filename, SendFileOptions options) {
+    return sendFile(filename, 0, options);
+  }
+
+  /**
    * Same as {@link #sendFile(String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
    * file.
    * <p>
@@ -371,6 +383,19 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   default Future<Void> sendFile(String filename, long offset) {
     return sendFile(filename, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Same as {@link #sendFile(String, long, long, SendFileOptions)} using length {@code Long.MAX_VALUE}
+   * which means until the end of the file.
+   *
+   * @param filename path to the file to serve
+   * @param offset offset to start serving from
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  default Future<Void> sendFile(String filename, long offset, SendFileOptions options) {
+    return sendFile(filename, offset, Long.MAX_VALUE, options);
   }
 
   /**
@@ -392,6 +417,22 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> sendFile(String filename, long offset, long length);
 
   /**
+   * Same as {@link #sendFile(String, long, long)} with send-file options.
+   * <p>
+   * {@link SendFileOptions#getChunkSize()} configures the chunk size used by the fallback streaming path.
+   * It is ignored when the file-region/sendfile path is used.
+   *
+   * @param filename path to the file to serve
+   * @param offset offset to start serving from
+   * @param length the number of bytes to send
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  default Future<Void> sendFile(String filename, long offset, long length, SendFileOptions options) {
+    return sendFile(filename, offset, length);
+  }
+
+  /**
    * Same as {@link #sendFile(FileChannel, long)} using length @code{Long.MAX_VALUE} which means until the end of the
    * file.
    * <p>
@@ -406,6 +447,20 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Unstable
   default Future<Void> sendFile(FileChannel channel) {
     return sendFile(channel, 0);
+  }
+
+  /**
+   * Same as {@link #sendFile(FileChannel, long, long, SendFileOptions)} with offset {@code 0} and length
+   * {@code Long.MAX_VALUE} which means until the end of the file.
+   *
+   * @param channel the file channel to the file to serve
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(FileChannel channel, SendFileOptions options) {
+    return sendFile(channel, 0, options);
   }
 
   /**
@@ -424,6 +479,21 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Unstable
   default Future<Void> sendFile(FileChannel channel, long offset) {
     return sendFile(channel, offset, Long.MAX_VALUE);
+  }
+
+  /**
+   * Same as {@link #sendFile(FileChannel, long, long, SendFileOptions)} using length {@code Long.MAX_VALUE}
+   * which means until the end of the file.
+   *
+   * @param channel the file channel to the file to serve
+   * @param offset offset to start serving from
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(FileChannel channel, long offset, SendFileOptions options) {
+    return sendFile(channel, offset, Long.MAX_VALUE, options);
   }
 
   /**
@@ -450,6 +520,24 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> sendFile(FileChannel channel, long offset, long length);
 
   /**
+   * Same as {@link #sendFile(FileChannel, long, long)} with send-file options.
+   * <p>
+   * {@link SendFileOptions#getChunkSize()} configures the chunk size used by the fallback streaming path.
+   * It is ignored when the file-region/sendfile path is used.
+   *
+   * @param channel the file channel to the file to serve
+   * @param offset offset to start serving from
+   * @param length the number of bytes to send
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(FileChannel channel, long offset, long length, SendFileOptions options) {
+    return sendFile(channel, offset, length);
+  }
+
+  /**
    * Same as {@link #sendFile(FileChannel)} with {@link RandomAccessFile}
    * <p>
    * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
@@ -463,6 +551,20 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @Unstable
   default Future<Void> sendFile(RandomAccessFile file) {
     return sendFile(file, 0);
+  }
+
+  /**
+   * Same as {@link #sendFile(RandomAccessFile, long, long, SendFileOptions)} with offset {@code 0} and length
+   * {@code Long.MAX_VALUE} which means until the end of the file.
+   *
+   * @param file the file to serve
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(RandomAccessFile file, SendFileOptions options) {
+    return sendFile(file, 0, options);
   }
 
   /**
@@ -484,6 +586,21 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
+   * Same as {@link #sendFile(RandomAccessFile, long, long, SendFileOptions)} using length {@code Long.MAX_VALUE}
+   * which means until the end of the file.
+   *
+   * @param file the file to serve
+   * @param offset offset to start serving from
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(RandomAccessFile file, long offset, SendFileOptions options) {
+    return sendFile(file, offset, Long.MAX_VALUE, options);
+  }
+
+  /**
    * Same as {@link #sendFile(FileChannel, long, long)} with {@link RandomAccessFile}
    * <p>
    * This is a terminal action, like {@link #end()} and {@link #reset()}, so you can only call one of the
@@ -498,6 +615,24 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Unstable
   Future<Void> sendFile(RandomAccessFile file, long offset, long length);
+
+  /**
+   * Same as {@link #sendFile(RandomAccessFile, long, long)} with send-file options.
+   * <p>
+   * {@link SendFileOptions#getChunkSize()} configures the chunk size used by the fallback streaming path.
+   * It is ignored when the file-region/sendfile path is used.
+   *
+   * @param file the file to serve
+   * @param offset offset to start serving from
+   * @param length the number of bytes to send
+   * @param options send-file options
+   * @return a future completed with the body result
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Unstable
+  default Future<Void> sendFile(RandomAccessFile file, long offset, long length, SendFileOptions options) {
+    return sendFile(file, offset, length);
+  }
 
   /**
    * @return has the response already ended?

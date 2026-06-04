@@ -511,6 +511,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> sendFile(String filename, long offset, long length) {
+    return sendFile(filename, offset, length, new SendFileOptions());
+  }
+
+  @Override
+  public Future<Void> sendFile(String filename, long offset, long length, SendFileOptions options) {
     if (offset < 0) {
       return context.failedFuture("offset : " + offset + " (expected: >= 0)");
     }
@@ -521,14 +526,19 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       checkValid();
     }
     if (conn.supportsSendFile()) {
-      return sendFileInternal(filename, offset, length);
+      return sendFileInternal(filename, offset, length, options);
     } else {
-      return sendAsyncFile(filename, offset, length);
+      return sendAsyncFile(filename, offset, length, options);
     }
   }
 
   @Override
   public Future<Void> sendFile(RandomAccessFile file, long offset, long length) {
+    return sendFile(file, offset, length, new SendFileOptions());
+  }
+
+  @Override
+  public Future<Void> sendFile(RandomAccessFile file, long offset, long length, SendFileOptions options) {
     if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
@@ -538,11 +548,16 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } catch (IOException e) {
       return context.failedFuture(e);
     }
-    return sendFileInternal(offset, length, size, file, null, false);
+    return sendFileInternal(offset, length, size, file, null, false, options);
   }
 
   @Override
   public Future<Void> sendFile(FileChannel channel, long offset, long length) {
+    return sendFile(channel, offset, length, new SendFileOptions());
+  }
+
+  @Override
+  public Future<Void> sendFile(FileChannel channel, long offset, long length, SendFileOptions options) {
     if (!headersMap.contains(io.vertx.core.http.HttpHeaders.CONTENT_TYPE)) {
       headersMap.set(CONTENT_TYPE, APPLICATION_OCTET_STREAM);
     }
@@ -552,13 +567,14 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     } catch (IOException e) {
       return context.failedFuture(e);
     }
-    return sendFileInternal(offset, length, size, null, channel, false);
+    return sendFileInternal(offset, length, size, null, channel, false, options);
   }
 
-  private Future<Void> sendAsyncFile(String filename, long offset, long length) {
+  private Future<Void> sendAsyncFile(String filename, long offset, long length, SendFileOptions options) {
     return HttpUtils
       .resolveFile(context, filename, offset, length)
       .compose(file -> {
+        file.setReadBufferSize(options.getChunkSize());
         long fileLength = file.getReadLength();
         long contentLength = Math.min(length, fileLength);
         // fail early before status code/headers are written to the response
@@ -578,7 +594,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       });
   }
 
-  private Future<Void> sendFileInternal(String filename, long offset, long length) {
+  private Future<Void> sendFileInternal(String filename, long offset, long length, SendFileOptions options) {
     File file = context.owner().fileResolver().resolve(filename);
     long size;
     RandomAccessFile raf;
@@ -595,10 +611,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       headersMap.set(CONTENT_TYPE, mimeType);
     }
-    return sendFileInternal(offset, length, size, raf, null, true);
+    return sendFileInternal(offset, length, size, raf, null, true, options);
   }
 
-  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel channel, boolean close) {
+  private Future<Void> sendFileInternal(long offset, long length, long size, RandomAccessFile file, FileChannel channel, boolean close, SendFileOptions options) {
     Future<Void> fut = null;
     try {
       long actualLength = Math.min(length, size - offset);
@@ -612,9 +628,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           channel = file.getChannel();
         }
         if (close) {
-          chunkedFile = new ChunkedNioFile(channel, actualOffset, actualLength, 8192);
+          chunkedFile = new ChunkedNioFile(channel, actualOffset, actualLength, options.getChunkSize());
         } else {
-          chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength);
+          chunkedFile = new UncloseableChunkedNioFile(channel, actualOffset, actualLength, options.getChunkSize());
         }
       } catch (IOException e) {
         return context.failedFuture(e);

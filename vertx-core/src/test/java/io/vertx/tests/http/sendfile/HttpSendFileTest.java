@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.SendFileOptions;
 import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.FileDescriptorLeakDetectorRule;
@@ -88,6 +89,50 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
         }))
         .compose(HttpClientResponse::body))
       .await();
+  }
+
+  @Test
+  public void testSendFileWithOptions() throws Exception {
+    String content = TestUtils.randomUnicodeString(10000);
+    File file = setupFile("test-send-file-options.html", content);
+    SendFileOptions options = new SendFileOptions().setChunkSize(32 * 1024);
+
+    server.requestHandler(req -> req.response().sendFile(file.getAbsolutePath(), options));
+    startServer(testAddress);
+
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .expecting(that(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertEquals("text/html", resp.headers().get("Content-Type"));
+          assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
+        }))
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals(content, body.toString());
+  }
+
+  @Test
+  public void testSendFileRangeWithOptions() throws Exception {
+    String content = "0123456789abcdefghijklmnopqrstuvwxyz";
+    File file = setupFile("test-send-file-options-range.html", content);
+    SendFileOptions options = new SendFileOptions().setChunkSize(4);
+
+    server.requestHandler(req -> req.response().sendFile(file.getAbsolutePath(), 10, 12, options));
+    startServer(testAddress);
+
+    Buffer body = client.request(requestOptions)
+      .compose(req -> req
+        .send()
+        .expecting(that(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertEquals("text/html", resp.headers().get("Content-Type"));
+          assertEquals("12", resp.headers().get("content-length"));
+        }))
+        .compose(HttpClientResponse::body))
+      .await();
+    assertEquals("abcdefghijkl", body.toString());
   }
 
   @Test
@@ -275,6 +320,17 @@ public abstract class HttpSendFileTest extends HttpTestBase2 {
   public void testSendFileWithFileChannel() throws Exception {
     int fileLength = 16 * 1024 * 1024;
     BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) -> response.sendFile(file.getChannel());
+    try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
+      assertTrue(raf.getChannel().isOpen());
+    }
+  }
+
+  @Test
+  public void testSendFileWithFileChannelAndOptions() throws Exception {
+    int fileLength = 64 * 1024;
+    SendFileOptions options = new SendFileOptions().setChunkSize(1024);
+    BiFunction<RandomAccessFile, HttpServerResponse, Future<?>> sender = (file, response) ->
+      response.sendFile(file.getChannel(), options);
     try (RandomAccessFile raf = testSendFileWithFileChannel(fileLength, sender, "application/octet-stream", fileLength)) {
       assertTrue(raf.getChannel().isOpen());
     }

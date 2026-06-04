@@ -11,6 +11,7 @@
 package io.vertx.core.net.impl;
 
 import io.netty.handler.stream.ChunkedNioFile;
+import io.vertx.core.http.SendFileOptions;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -23,8 +24,8 @@ import java.nio.channels.FileChannel;
  */
 public class UncloseableChunkedNioFile extends ChunkedNioFile {
 
-  public UncloseableChunkedNioFile(FileChannel in, long offset, long length) throws IOException {
-    super(in, offset, length, 8192);
+  public UncloseableChunkedNioFile(FileChannel in, long offset, long length, int chunkSize) throws IOException {
+    super(in, offset, length, chunkSize);
   }
 
   @Override
