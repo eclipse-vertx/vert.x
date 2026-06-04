@@ -19,6 +19,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
 import io.vertx.core.Future;
+import io.vertx.core.http.SendFileOptions;
 import io.vertx.core.Promise;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.impl.EventLoopExecutor;
@@ -530,12 +531,16 @@ public class VertxConnection extends ConnectionBase {
   }
 
   public ChannelFuture sendFile(FileChannel fc, long offset, long length) {
+    return sendFile(fc, offset, length, SendFileOptions.DEFAULT_CHUNK_SIZE);
+  }
+
+  public ChannelFuture sendFile(FileChannel fc, long offset, long length, int chunkSize) {
     // Write the content.
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
       try {
-        writeToChannel(new UncloseableChunkedNioFile(fc, offset, length), writeFuture);
+        writeToChannel(new UncloseableChunkedNioFile(fc, offset, length, chunkSize), writeFuture);
       } catch (IOException e) {
         return chctx.newFailedFuture(e);
       }
