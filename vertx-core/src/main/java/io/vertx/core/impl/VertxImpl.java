@@ -449,6 +449,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     NetClientInternal tcpClient = new NetClientBuilder(this, config.getTcpConfig())
       .protocol("http")
       .sslOptions(options.getSslOptions())
+      .sslEngineOptions(options.getSslEngineOptions())
       .build();
     TcpHttpClientTransport channelConnector = TcpHttpClientTransport.create(tcpClient, config, false, httpMetrics);
     return new WebSocketClientImpl(this, o, options, channelConnector, httpMetrics);
