@@ -293,6 +293,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxFormFields = DEFAULT_MAX_FORM_FIELDS;
     maxFormBufferedBytes = DEFAULT_MAX_FORM_BUFFERED_SIZE;
     strictThreadMode = DEFAULT_STRICT_THREAD_MODE_STRICT;
+    compressionLevel = DEFAULT_COMPRESSION_LEVEL;
     compression = new CompressionConfig();
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     http1Config = new Http1ServerConfig();
