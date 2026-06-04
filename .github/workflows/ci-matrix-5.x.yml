@@ -5,9 +5,6 @@ on:
       branch:
         required: true
         type: string
-      io_uring_supported:
-        default: false
-        type: boolean
 jobs:
   CI:
     strategy:
@@ -40,7 +37,6 @@ jobs:
       os: ${{ matrix.os }}
       profile: ${{ matrix.profile }}
       container: ${{ matrix.container }}
-      io_uring_supported: ${{ inputs.io_uring_supported }}
     secrets: inherit
   Deploy:
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
