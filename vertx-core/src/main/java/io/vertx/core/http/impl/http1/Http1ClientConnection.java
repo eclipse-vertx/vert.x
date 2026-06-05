@@ -92,6 +92,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   private final Deque<Stream> pending;
   private final Deque<Stream> inflight;
+  private Stream current;
   private boolean closed;
   private boolean evicted;
 
@@ -179,7 +180,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   @Override
   public synchronized long activeStreams() {
-    return (pending.isEmpty() && inflight.isEmpty()) ? 0 : 1;
+    return (pending.isEmpty() && current == null && inflight.isEmpty()) ? 0 : 1;
   }
 
   /**
@@ -266,12 +267,15 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   private static boolean isZstdAvailable() {
     return Zstd.isAvailable();
   }
+
   private void beginRequest(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> promise) {
     stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
+      assert current == null;
       Stream removed = pending.removeFirst();
       assert stream == removed;
+      current = removed;
       inflight.addLast(stream);
       this.isConnect = connect;
       if (clientMetrics != null) {
@@ -295,6 +299,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void writeBufferToChannel(Stream s, ByteBuf buff, boolean end, Promise<Void> listener) {
+    assert current == s;
     s.bytesWritten += buff != null ? buff.readableBytes() : 0L;
     Object msg;
     if (isConnect) {
@@ -326,6 +331,8 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     Stream next;
     boolean responseEnded;
     synchronized (this) {
+      assert s == current;
+      current = null;
       s.requestEnded = true;
       next = pending.peek();
       responseEnded = s.responseEnded;
@@ -356,12 +363,11 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       return null;
     }
     stream.reset = true;
-    if (!inflight.contains(stream)) {
-      pending.remove(stream);
-      return true;
+    boolean removed = pending.remove(stream);
+    if (!removed) {
+      close();
     }
-    close();
-    return false;
+    return removed;
   }
 
   private void writeHead(Stream stream, io.vertx.core.http.impl.HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Promise<Void> listener) {
@@ -779,7 +785,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private boolean checkLifecycle() {
-    if (wantClose || (shutdownInitiated != null && pending.isEmpty() && inflight.isEmpty())) {
+    if (wantClose || (shutdownInitiated != null && pending.isEmpty() && current == null && inflight.isEmpty())) {
       closeInternal();
       return true;
     } else if (!isConnect) {
@@ -1253,10 +1259,14 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       }
     }
     Deque<Stream> pending;
-    List<Stream> inflight;
+    Deque<Stream> inflight;
     synchronized (this) {
+      Stream c = current;
       pending = new ArrayDeque<>(this.pending);
-      inflight = new ArrayList<>(this.inflight);
+      inflight = new ArrayDeque<>(this.inflight);
+      if (c != null && !inflight.contains(c)) {
+        inflight.add(c);
+      }
     }
     for (Stream stream : pending) {
       Promise<HttpClientStream> promise = stream.promise;
@@ -1282,7 +1292,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
   protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
-      if (pending.isEmpty() && inflight.isEmpty()) {
+      if (pending.isEmpty() && current == null && inflight.isEmpty()) {
         return;
       }
     }
@@ -1292,9 +1302,12 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   @Override
   public boolean handleException(Throwable e) {
     boolean ret = super.handleException(e);
-    List<Stream> allStreams = new ArrayList<>(pending.size() + inflight.size());
+    List<Stream> allStreams = new ArrayList<>(pending.size() + 1 + inflight.size());
     synchronized (this) {
       allStreams.addAll(pending);
+      if (current != null && !inflight.contains(current)) {
+        allStreams.add(current);
+      }
       allStreams.addAll(inflight);
     }
     for (Stream stream : allStreams) {
@@ -1311,7 +1324,6 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   private void createStream(ContextInternal context, Promise<HttpClientStream> promise) {
-    Stream current;
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       Object result;
@@ -1329,7 +1341,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
             }
             Stream stream = new StreamImpl(context, this, seq++, metric);
             pending.addLast(stream);
-            if (pending.size() > 1 || ((current = inflight.peekLast()) != null && !current.requestEnded)) {
+            if (pending.size() > 1 || current != null) {
               stream.promise = promise;
               return;
             }
