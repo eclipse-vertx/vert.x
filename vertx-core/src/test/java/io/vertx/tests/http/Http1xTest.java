@@ -4781,6 +4781,21 @@ public class Http1xTest extends HttpTest {
     }));
   }
 
+  @Test
+  public void testApplyIdleTimeoutOnCurrentStreamReceived(Checkpoint checkpoint) throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client = config.forClient().setIdleTimeout(Duration.ofSeconds(1)).create(vertx);
+    client.request(new RequestOptions(requestOptions).setMethod(PUT)).onComplete(TestUtils.onSuccess(req -> {
+      req.connection().closeHandler(v -> {
+        checkpoint.succeed();
+      });
+      req.setChunked(true).writeHead();
+    }));
+  }
+
   @Ignore("fixme - does not pass anymore")
   @Test
   public void testClientConnectionShutdownTimedOut(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3) throws Exception {
