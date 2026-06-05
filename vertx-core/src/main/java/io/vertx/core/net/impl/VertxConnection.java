@@ -73,7 +73,8 @@ public class VertxConnection extends ConnectionBase {
   // State accessed exclusively from the event loop thread
   private ScheduledFuture<?> shutdownTimeout;
   private ChannelPromise shutdown;
-  private boolean closeSent;
+  private boolean closeForcibly;
+  private ChannelPromise closeSent;
 
   public VertxConnection(ContextInternal context, ChannelHandlerContext chctx) {
     this(context, chctx, false);
@@ -113,6 +114,7 @@ public class VertxConnection extends ConnectionBase {
       if (shutdown == null) {
         ChannelPromise promise = chctx.newPromise();
         shutdown = promise;
+        closeForcibly = true;
         handleShutdown(shutdownEvent.timeout(), promise);
       } else {
         log.debug("Client shutdown after connection shutdown, ignoring ShutdownEvent");
@@ -230,9 +232,11 @@ public class VertxConnection extends ConnectionBase {
   }
 
   private void terminateClose(ChannelPromise promise) {
-    if (!closeSent) {
-      closeSent = true;
-      writeClose(promise);
+    if (closeSent == null) {
+      closeSent = promise;
+      if (!draining) {
+        writeClose(promise);
+      }
     } else {
       completeWhenChannelIsClosed(promise);
     }
@@ -248,13 +252,18 @@ public class VertxConnection extends ConnectionBase {
    * This method is exclusively called on the event-loop thread and relays a channel user event.
    */
   protected void writeClose(ChannelPromise promise) {
+    assert !draining;
+    ChannelPromise channelPromise = chctx.newPromise();
+    // Give a chance of pending message to be written
+    outboundMessageQueue.close();
     // Make sure everything is flushed out on close
-    ChannelPromise channelPromise = chctx
-      .newPromise()
-      .addListener((ChannelFutureListener) f -> {
-        chctx.close(promise);
-      });
-    writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
+    unsafeWrite(Unpooled.EMPTY_BUFFER, true, channelPromise);
+    //
+    if (channelPromise.isDone() || closeForcibly) {
+      chctx.close(promise);
+    } else {
+      channelPromise.addListener((ChannelFutureListener) f -> chctx.close(promise));
+    }
   }
 
   protected void handleClosed() {
@@ -591,6 +600,8 @@ public class VertxConnection extends ConnectionBase {
    */
   private class InternalMessageChannel extends OutboundMessageQueue<MessageWrite> implements Predicate<MessageWrite>, OutboundWriteQueue {
 
+    private boolean notClosing;
+
     public InternalMessageChannel(io.vertx.core.internal.EventExecutor eventLoop) {
       super(eventLoop);
     }
@@ -607,18 +618,27 @@ public class VertxConnection extends ConnectionBase {
 
     @Override
     protected void handleDispose(MessageWrite write) {
-      write.cancel(CLOSED_EXCEPTION);
+      if (channel.isActive()) {
+        write.write();
+      } else {
+        write.cancel(CLOSED_EXCEPTION);
+      }
     }
 
     @Override
     protected void startDraining() {
+      notClosing = closeSent == null;
       draining = true;
     }
 
     @Override
     protected void stopDraining() {
       draining = false;
-      if (!read) {
+      ChannelPromise closePromise = closeSent;
+      boolean close = closePromise != null && notClosing;
+      if (close) {
+        writeClose(closePromise);
+      } else if (!read) {
         checkFlush();
       }
     }

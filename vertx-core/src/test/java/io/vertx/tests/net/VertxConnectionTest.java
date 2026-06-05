@@ -14,10 +14,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -26,6 +23,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.net.impl.ShutdownEvent;
 import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
@@ -44,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 public class VertxConnectionTest extends VertxTestBase {
@@ -618,6 +617,151 @@ public class VertxConnectionTest extends VertxTestBase {
     assertEquals(1L, shutdown.get());
     // The broadcaster of the event controls the channel close
     assertEquals(0L, closed.get());
+  }
+
+  @Test
+  public void testCloseWhenNotWritable() {
+    AtomicBoolean channelClosed = new AtomicBoolean();
+    AtomicBoolean written = new AtomicBoolean();
+    AtomicBoolean cancelled = new AtomicBoolean();
+    AtomicBoolean opClosed = new AtomicBoolean();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        if ("test".equals(event)) {
+          while (channel.isWritable()) {
+            chctx.write(Unpooled.copiedBuffer(TestUtils.randomAlphaString(1024), StandardCharsets.UTF_8));
+          }
+          writeToChannel(new MessageWrite() {
+            @Override
+            public void write() {
+              written.set(true);
+            }
+            @Override
+            public void cancel(Throwable cause) {
+              cancelled.set(true);
+            }
+          });
+          close().onComplete(ar -> opClosed.set(true));
+        } else {
+          super.handleEvent(event);
+        }
+      }
+      @Override
+      protected void handleClosed() {
+        channelClosed.set(true);
+        super.handleClosed();
+      }
+    });
+    AtomicReference<ChannelHandlerContext> flushOp = new AtomicReference<>();
+    channel.pipeline().addFirst(new ChannelOutboundHandlerAdapter() {
+      @Override
+      public void flush(ChannelHandlerContext ctx) throws Exception {
+        flushOp.set(ctx);
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    assertFalse(channelClosed.get());
+    assertFalse(opClosed.get());
+    assertTrue(written.get());
+    assertFalse(cancelled.get());
+    assertTrue(channel.isActive());
+    flushOp.get().flush();
+    assertTrue(channelClosed.get());
+    assertTrue(opClosed.get());
+    assertTrue(written.get());
+    assertFalse(cancelled.get());
+    assertFalse(channel.isActive());
+  }
+
+  @Test
+  public void testCloseForciblyWhenNotWritable() {
+    AtomicBoolean channelClosed = new AtomicBoolean();
+    AtomicBoolean written = new AtomicBoolean();
+    AtomicBoolean cancelled = new AtomicBoolean();
+    AtomicBoolean last = new AtomicBoolean();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        if ("test".equals(event)) {
+          while (channel.isWritable()) {
+            chctx.write(Unpooled.copiedBuffer(TestUtils.randomAlphaString(1024), StandardCharsets.UTF_8));
+          }
+          VertxConnection connection = this;
+          writeToChannel(new MessageWrite() {
+            @Override
+            public void write() {
+              written.set(true);
+              ChannelPromise cp = connection.channel().newPromise();
+              cp.addListener((ChannelFutureListener) future -> last.set(future.isSuccess()));
+              connection.unsafeWrite("LAST", false, cp);
+            }
+            @Override
+            public void cancel(Throwable cause) {
+              cancelled.set(true);
+            }
+          });
+        } else {
+          super.handleEvent(event);
+        }
+      }
+      @Override
+      protected void handleClosed() {
+        channelClosed.set(true);
+        super.handleClosed();
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    channel.pipeline().fireUserEventTriggered(new ShutdownEvent(Duration.ZERO));
+    assertTrue(channelClosed.get());
+    assertTrue(written.get());
+    assertFalse(cancelled.get());
+    assertFalse(channel.isActive());
+    assertTrue(last.get());
+  }
+
+  @Test
+  public void testCloseForciblyWhenDraining() {
+    AtomicBoolean written = new AtomicBoolean();
+    AtomicBoolean cancelled = new AtomicBoolean();
+    AtomicBoolean channelClosed = new AtomicBoolean();
+    AtomicBoolean last = new AtomicBoolean();
+    EmbeddedChannel channel = channel((ctx, chctx) -> new VertxConnection(ctx, chctx) {
+      @Override
+      protected void handleEvent(Object event) {
+        VertxConnection connection = this;
+        if ("test".equals(event)) {
+          writeToChannel(new MessageWrite() {
+            @Override
+            public void write() {
+              written.set(true);
+              ChannelPromise cp = connection.channel().newPromise();
+              cp.addListener((ChannelFutureListener) future -> last.set(future.isSuccess()));
+              connection.unsafeWrite("LAST", false, cp);
+              connection.close();
+            }
+            @Override
+            public void cancel(Throwable cause) {
+              cancelled.set(true);
+              MessageWrite.super.cancel(cause);
+            }
+          });
+        } else {
+          super.handleEvent(event);
+        }
+      }
+      @Override
+      protected void handleClosed() {
+        channelClosed.set(true);
+        super.handleClosed();
+      }
+    });
+    channel.pipeline().fireUserEventTriggered("test");
+    assertTrue(channelClosed.get());
+    assertTrue(written.get());
+    assertFalse(cancelled.get());
+    assertFalse(channel.isActive());
+    assertTrue(last.get());
   }
 
   private <C extends VertxConnection> EmbeddedChannel channel(BiFunction<ContextInternal, ChannelHandlerContext, C> connectionFactory) {
