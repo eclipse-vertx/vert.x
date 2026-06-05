@@ -4496,4 +4496,73 @@ public class NetTest {
     assertEquals("127.0.0.1", remove.hostAddress());
     assertWaitUntil(() -> connects.get() == 1);
   }
+
+  private void untilFull(NetSocket so, Runnable action, Runnable done) {
+    int count = 0;
+    while (so.writeQueueFull()) {
+      action.run();
+      count++;
+    }
+    if (count > 0) {
+      vertx.setTimer(1, v -> {
+        untilFull(so, action, done);
+      });
+    } else {
+      done.run();
+    }
+  }
+
+  @Test
+  public void testCloseUnwritableSocket(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
+    AtomicBoolean closing = new AtomicBoolean();
+    AtomicBoolean closed = new AtomicBoolean();
+    server.connectHandler(so -> {
+      so.handler(chunk -> {
+        untilFull(so, () -> so.write(TestUtils.randomAlphaString(1024)), () -> {
+          so.closeHandler(v -> {
+            closed.set(true);
+            checkpoint1.succeed();
+          });
+          closing.set(true);
+          so
+            .close()
+            .onComplete(checkpoint2);
+        });
+      });
+    });
+    startServer();
+    NetSocket socket = client.connect(testAddress).await();
+    socket.pause();
+    socket.write("test").await();
+    TestUtils.assertWaitUntil(closing::get);
+    assertWaitUntil(closed::get);
+    socket.resume();
+  }
+
+  @Test
+  public void testCloseServerUnwritableSocket(Checkpoint checkpoint1, Checkpoint checkpoint2, Checkpoint checkpoint3) throws Exception {
+    AtomicBoolean closing = new AtomicBoolean();
+    AtomicBoolean closed = new AtomicBoolean();
+    server.connectHandler(so -> {
+      so.handler(chunk -> {
+        untilFull(so, () -> so.write(TestUtils.randomAlphaString(1024)), () -> {
+          so.write("LAST").onComplete(ar -> checkpoint3.succeed());
+          so.closeHandler(v -> {
+            closed.set(true);
+            checkpoint1.succeed();
+          });
+          closing.set(true);
+          server
+            .close()
+            .onComplete(checkpoint2);
+        });
+      });
+    });
+    startServer();
+    NetSocket socket = client.connect(testAddress).await();
+    socket.pause();
+    socket.write("test").await();
+    TestUtils.assertWaitUntil(closing::get);
+    TestUtils.assertWaitUntil(closed::get);
+  }
 }
