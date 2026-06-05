@@ -4652,7 +4652,9 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
       .onComplete(TestUtils.onSuccess(req -> {
-      req.connect().onComplete(TestUtils.onSuccess(resp -> clientHandler.handle(resp.netSocket())));
+      req.connect().onComplete(TestUtils.onSuccess(resp -> {
+        clientHandler.handle(resp.netSocket());
+      }));
     }));
   }
 
