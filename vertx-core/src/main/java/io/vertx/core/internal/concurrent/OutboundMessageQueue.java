@@ -101,18 +101,23 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
    */
   private int drainMessageQueue() {
     draining++;
+    startDraining();
     try {
-      int flags = mqp.drain();
-      overflow |= (flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
-      if ((flags & MessagePassingQueue.WRITABLE_MASK) != 0) {
-        handleDrained(numberOfUnwritableSignals(flags));
+      try {
+        int flags = mqp.drain();
+        overflow |= (flags & MessagePassingQueue.DRAIN_REQUIRED_MASK) != 0;
+        if ((flags & MessagePassingQueue.WRITABLE_MASK) != 0) {
+          handleDrained(numberOfUnwritableSignals(flags));
+        }
+        return flags;
+      } finally {
+        draining--;
+        if (draining == 0 && closed) {
+          releaseMessages();
+        }
       }
-      return flags;
     } finally {
-      draining--;
-      if (draining == 0 && closed) {
-        releaseMessages();
-      }
+      stopDraining();
     }
   }
 
@@ -121,9 +126,7 @@ public class OutboundMessageQueue<M> implements Predicate<M> {
       return;
     }
     assert(draining == 0);
-    startDraining();
     drainMessageQueue();
-    stopDraining();
   }
 
   /**
