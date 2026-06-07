@@ -267,7 +267,7 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     writeToChannel(new MessageWrite() {
       @Override
       public void write() {
-        Http1ServerConnection.this.write(msg, false, promise);
+        Http1ServerConnection.this.unsafeWrite(msg, false, promise);
         if (msg.isEnded()) {
           responseComplete();
         }

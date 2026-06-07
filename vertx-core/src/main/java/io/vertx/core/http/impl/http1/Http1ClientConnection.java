@@ -292,7 +292,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
         stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, tracingPolicy, new ObservableRequest(request), operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
-    write(nettyRequest, false, promise);
+    unsafeWrite(nettyRequest, promise);
     if (end) {
       endRequest(stream);
     }
@@ -305,10 +305,10 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
     if (isConnect) {
       msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
       if (end) {
-        write(msg, false, listener)
+        unsafeWrite(msg, listener)
           .addListener(v -> closeInternal());
       } else {
-        write(msg, false);
+        unsafeWrite(msg, listener);
       }
     } else {
       if (end) {
@@ -320,7 +320,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
       } else {
         msg = new DefaultHttpContent(buff);
       }
-      write(msg, false, listener);
+      unsafeWrite(msg, listener);
       if (end) {
         endRequest(s);
       }
