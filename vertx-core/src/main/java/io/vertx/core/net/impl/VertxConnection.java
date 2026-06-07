@@ -397,19 +397,26 @@ public class VertxConnection extends ConnectionBase {
   }
 
   /**
-   * Like {@link #write(Object, boolean, ChannelPromise)}.
+   * Like {@link #unsafeWrite(Object, boolean, ChannelPromise)} with flush = false.
    */
-  public final ChannelPromise write(Object msg, boolean forceFlush, Promise<Void> promise) {
+  public final ChannelPromise unsafeWrite(Object msg, Promise<Void> promise) {
+    return unsafeWrite(msg, false, promise);
+  }
+
+  /**
+   * Like {@link #unsafeWrite(Object, boolean, ChannelPromise)}.
+   */
+  public final ChannelPromise unsafeWrite(Object msg, boolean flush, Promise<Void> promise) {
     ChannelPromise channelPromise = promise == null ? voidPromise : newChannelPromise(promise);
-    write(msg, forceFlush, channelPromise);
+    unsafeWrite(msg, flush, channelPromise);
     return channelPromise;
   }
 
   /**
-   * Like {@link #write(Object, boolean, ChannelPromise)}.
+   * Like {@link #unsafeWrite(Object, boolean, ChannelPromise)}.
    */
-  public final ChannelPromise write(Object msg, boolean forceFlush) {
-    return write(msg, forceFlush, voidPromise);
+  public final ChannelPromise unsafeWrite(Object msg, boolean flush) {
+    return unsafeWrite(msg, flush, voidPromise);
   }
 
   /**
@@ -418,15 +425,14 @@ public class VertxConnection extends ConnectionBase {
    * <p>This method directly writes to the channel pipeline and bypasses the outbound queue.</p>
    *
    * @param msg the message to write
-   * @param forceFlush flush when {@code true} or there is no read in progress
+   * @param flush flush when {@code true} or there is no read in progress
    * @param promise the promise receiving the completion event
    */
-  public final ChannelPromise write(Object msg, boolean forceFlush, ChannelPromise promise) {
+  public final ChannelPromise unsafeWrite(Object msg, boolean flush, ChannelPromise promise) {
     assert chctx.executor().inEventLoop();
     if (METRICS_ENABLED) {
       reportsBytesWritten(msg);
     }
-    boolean flush = (!read && !draining) || forceFlush;
     needsFlush = !flush;
     if (flush) {
       chctx.writeAndFlush(msg, promise);
@@ -452,7 +458,7 @@ public class VertxConnection extends ConnectionBase {
     return writeToChannel(new MessageWrite() {
       @Override
       public void write() {
-        VertxConnection.this.write(msg, forceFlush, promise);
+        unsafeWrite(msg, forceFlush, promise);
       }
 
       @Override
@@ -563,6 +569,9 @@ public class VertxConnection extends ConnectionBase {
     @Override
     public boolean write(MessageWrite msg) {
       msg.write();
+      if (!read) {
+        checkFlush();
+      }
       return true;
     }
 

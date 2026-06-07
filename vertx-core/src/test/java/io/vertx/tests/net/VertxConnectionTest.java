@@ -396,10 +396,10 @@ public class VertxConnectionTest extends VertxTestBase {
       if (event == inbound1) {
         connection.pause();
         pipeline.fireChannelRead(inbound2);
-        connection.write(outbound1, false);
+        connection.unsafeWrite(outbound1, false);
         pipeline.fireChannelReadComplete();
       } else if (event == inbound2) {
-        connection.write(outbound2, false);
+        connection.unsafeWrite(outbound2, false);
       }
     };
     pipeline.fireChannelRead(inbound1);
@@ -496,7 +496,7 @@ public class VertxConnectionTest extends VertxTestBase {
     disableThreadChecks();
     connectHandler = conn -> {
       Promise<Void> promise = Promise.promise();
-      ChannelPromise channelPromise = ((VertxConnection) conn).write(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8), false, promise);
+      ChannelPromise channelPromise = ((VertxConnection) conn).unsafeWrite(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8), true, promise);
       Future<Void> future = promise.future();
       future.onComplete(onSuccess(v -> {
         new Thread(() -> {
@@ -765,7 +765,7 @@ public class VertxConnectionTest extends VertxTestBase {
     pipeline.fireChannelRead(factory.next());
     assertEquals(0, count.get());
     Object expected = new Object();
-    connection.write(expected, false);
+    connection.unsafeWrite(expected, false);
     connection.resume();
     assertEquals(0, count.get());
     assertTrue(ch.hasPendingTasks());
