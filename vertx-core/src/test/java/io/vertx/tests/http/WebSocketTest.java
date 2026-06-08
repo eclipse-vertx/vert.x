@@ -1766,15 +1766,13 @@ public class WebSocketTest extends VertxTestBase2 {
   }
 
   @Test
-  public void testHandshakeTimeoutFires(Checkpoint checkpoint) throws Exception {
+  public void testHandshakeTimeoutFires(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     NetServer server = vertx.createNetServer()
-      .connectHandler(so -> {
-
-      })
+      .connectHandler(so -> checkpoint2.succeed())
       .listen(1234, DEFAULT_HTTP_HOST)
       .await(20, TimeUnit.SECONDS);
     try {
-      client = vertx.createWebSocketClient(new WebSocketClientOptions().setConnectTimeout(1000));
+      client = vertx.createWebSocketClient();
       WebSocketConnectOptions options = new WebSocketConnectOptions()
         .setPort(1234)
         .setHost(DEFAULT_HTTP_HOST)
@@ -1782,8 +1780,9 @@ public class WebSocketTest extends VertxTestBase2 {
         .setTimeout(1000);
       client.connect(options).onComplete(TestUtils.onFailure(err -> {
         assertEquals(WebSocketHandshakeException.class, err.getClass());
-        checkpoint.succeed();
+        checkpoint1.succeed();
       }));
+      checkpoint1.awaitSuccess();
     } finally {
       server.close();
     }
