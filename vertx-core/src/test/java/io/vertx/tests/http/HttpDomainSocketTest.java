@@ -12,42 +12,49 @@ package io.vertx.tests.http;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpTestBase2;
 import org.junit.Test;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
-public class HttpDomainSocketTest extends HttpTestBase {
+public class HttpDomainSocketTest extends HttpTestBase2 {
 
   @Test
   public void testListenDomainSocketAddressNative() throws Exception {
-    VertxInternal vx = (VertxInternal) vertx(() -> Vertx.vertx(new VertxOptions().setPreferNativeTransport(true)));
-    assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
-    testListenDomainSocketAddress(vx);
+    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    try {
+      assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+      testListenDomainSocketAddress(vx);
+    } finally {
+      vx.close().await();
+    }
   }
 
   @Test
   public void testListenDomainSocketAddressJdk() throws Exception {
-    VertxInternal vx = (VertxInternal) vertx(() -> Vertx.vertx(new VertxOptions().setPreferNativeTransport(false)));
-    assumeFalse("Native transport must not be enabled", vx.isNativeTransportEnabled());
-    testListenDomainSocketAddress(vx);
+    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(false));
+    try {
+      assumeFalse("Native transport must not be enabled", vx.isNativeTransportEnabled());
+      testListenDomainSocketAddress(vx);
+    } finally {
+      vx.close().await();
+    }
   }
 
-  private void testListenDomainSocketAddress(VertxInternal vx) throws Exception {
-    assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
+  private void testListenDomainSocketAddress(Vertx vx) throws Exception {
+    assumeTrue("Transport must support domain sockets", ((VertxInternal)vx).transport().supportsDomainSockets());
     int len = 3;
-    waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();
     for (int i = 0;i < len;i++) {
       File sockFile = TestUtils.tmpFile(".sock");
@@ -62,24 +69,15 @@ public class HttpDomainSocketTest extends HttpTestBase {
     for (int i = 0;i < len;i++) {
       SocketAddress sockAddress = addresses.get(i);
       for (int j = 0;j < len;j++) {
-        client
+        Buffer body = client
           .request(new RequestOptions(requestOptions).setServer(sockAddress))
           .compose(req -> req
             .send()
-            .compose(resp -> {
-              assertEquals(200, resp.statusCode());
-              return resp.body();
-            }))
-          .onComplete(onSuccess(body -> {
-            assertEquals(sockAddress.path(), body.toString());
-            complete();
-          }));
+            .expecting(HttpResponseExpectation.SC_OK)
+            .compose(HttpClientResponse::body))
+          .await();
+        assertEquals(sockAddress.path(), body.toString());
       }
-    }
-    try {
-      await();
-    } finally {
-      vx.close();
     }
   }
 }

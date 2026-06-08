@@ -20,12 +20,10 @@ import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.Checkpoint;
+import io.vertx.test.core.VertxTestBase2;
 import io.vertx.test.http.HttpTestBase;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +39,7 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class FileResolverTestBase extends VertxTestBase {
+public abstract class FileResolverTestBase extends VertxTestBase2 {
 
   private final String cacheBaseDir;
 
@@ -50,7 +48,6 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   private ClassLoader testCL;
 
   public FileResolverTestBase() {
-    super(ReportMode.FORBIDDEN);
     try {
       cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getCanonicalPath();
     } catch (IOException e) {
@@ -58,9 +55,8 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     }
   }
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void before() throws Exception {
     testCL = Thread.currentThread().getContextClassLoader();
     File baseDir = new File(new File(new File(new File("src"), "test"), "classpath"), "fileresolver");
     Assert.assertTrue(baseDir.exists() && baseDir.isDirectory());
@@ -69,11 +65,10 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     resolver = new FileResolverImpl();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void after() throws Exception {
     Thread.currentThread().setContextClassLoader(testCL);
     resolver.close();
-    super.tearDown();
   }
 
   protected ClassLoader resourcesLoader(File baseDir) throws Exception {
@@ -252,12 +247,16 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testCacheDirDeletedOnVertxClose() {
-    VertxInternal vertx2 = (VertxInternal) vertx();
-    File file = resolveFile(vertx2, "webroot/somefile.html");
-    Assert.assertTrue(file.exists());
-    File cacheDir = file.getParentFile().getParentFile();
-    Assert.assertTrue(cacheDir.exists());
-    vertx2.close().await();
+    VertxInternal vertx2 = (VertxInternal) Vertx.vertx();
+    File cacheDir;
+    try {
+      File file = resolveFile(vertx2, "webroot/somefile.html");
+      Assert.assertTrue(file.exists());
+      cacheDir = file.getParentFile().getParentFile();
+      Assert.assertTrue(cacheDir.exists());
+    } finally {
+      vertx2.close().await();
+    }
     Assert.assertFalse(cacheDir.exists());
   }
 
@@ -277,25 +276,24 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testSendFileFromClasspath() {
-    waitFor(2);
-    vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT)).requestHandler(res -> {
+  public void testSendFileFromClasspath(Checkpoint checkpoint) {
+    vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT))
+      .requestHandler(res -> {
       res.response()
         .sendFile("webroot/somefile.html")
-        .onComplete(TestUtils.onSuccess(v -> complete()));
-    }).listen().onComplete(TestUtils.onSuccess(res -> {
-      vertx.createHttpClient(new HttpClientOptions())
-        .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
-        .compose(req -> req
-          .send()
-          .expecting(HttpResponseExpectation.SC_OK)
-          .compose(HttpClientResponse::body))
-        .onComplete(TestUtils.onSuccess(body -> {
-          Assert.assertTrue(body.toString().startsWith("<html><body>blah</body></html>"));
-          complete();
-        }));
-    }));
-    await();
+        .onComplete(checkpoint);
+    }).listen()
+      .await();
+
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientOptions());
+    Buffer body = client
+      .request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", "/")
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body))
+      .await();
+    Assert.assertTrue(body.toString().startsWith("<html><body>blah</body></html>"));
   }
 
   @Test
@@ -346,34 +344,41 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     testCaching(false);
   }
 
-  private void testCaching(boolean enabled) throws Exception {
-    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setFileSystemOptions(new FileSystemOptions().setFileCachingEnabled(enabled)));
-    File tmp = File.createTempFile("vertx", ".bin");
-    tmp.deleteOnExit();
-    URL url = tmp.toURI().toURL();
-    Files.write(tmp.toPath(), "foo".getBytes());
-    ClassLoader old = Thread.currentThread().getContextClassLoader();
+  private void testCaching(boolean cacheEnabled) throws Exception {
+    VertxOptions options = new VertxOptions()
+      .setFileSystemOptions(new FileSystemOptions()
+        .setFileCachingEnabled(cacheEnabled));
+    VertxInternal vertx = (VertxInternal) Vertx.vertx(options);
     try {
-      Thread.currentThread().setContextClassLoader(new ClassLoader() {
-        @Override
-        public URL getResource(String name) {
-          if ("foo".equals(name)) {
-            return url;
+      File tmp = File.createTempFile("vertx", ".bin");
+      tmp.deleteOnExit();
+      URL url = tmp.toURI().toURL();
+      Files.write(tmp.toPath(), "foo".getBytes());
+      ClassLoader old = Thread.currentThread().getContextClassLoader();
+      try {
+        Thread.currentThread().setContextClassLoader(new ClassLoader() {
+          @Override
+          public URL getResource(String name) {
+            if ("foo".equals(name)) {
+              return url;
+            }
+            return super.getResource(name);
           }
-          return super.getResource(name);
-        }
-      });
-      File f = resolveFile(vertx, "foo");
-      Assert.assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
-      Files.write(tmp.toPath(), "bar".getBytes());
-      f = resolveFile(vertx, "foo");
-      if (enabled) {
+        });
+        File f = resolveFile(vertx, "foo");
         Assert.assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
-      } else {
-        Assert.assertEquals("bar", new String(Files.readAllBytes(f.toPath())));
+        Files.write(tmp.toPath(), "bar".getBytes());
+        f = resolveFile(vertx, "foo");
+        if (cacheEnabled) {
+          Assert.assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
+        } else {
+          Assert.assertEquals("bar", new String(Files.readAllBytes(f.toPath())));
+        }
+      } finally {
+        Thread.currentThread().setContextClassLoader(old);
       }
     } finally {
-      Thread.currentThread().setContextClassLoader(old);
+      vertx.close().await();
     }
   }
 

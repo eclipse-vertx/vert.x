@@ -10,115 +10,117 @@
  */
 package io.vertx.tests.http;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Expectation;
 import io.vertx.core.http.*;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpTestBase2;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static org.junit.Assert.*;
 
-public class HttpResponseExpectationTest extends HttpTestBase {
+public class HttpResponseExpectationTest extends HttpTestBase2 {
 
   @Test
   public void testExpectFail() throws Exception {
-    testExpectation(true,
+    assertNotNull(testExpectation(
       resp -> false,
-      HttpServerResponse::end);
+      HttpServerResponse::end)
+    );
   }
 
   @Test
   public void testExpectPass() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       resp -> true,
-      HttpServerResponse::end);
+      HttpServerResponse::end));
   }
 
   @Test
   public void testExpectStatusFail() throws Exception {
-    testExpectation(true,
+    assertNotNull(testExpectation(
       HttpResponseExpectation.status(200),
-      resp -> resp.setStatusCode(201).end());
+      resp -> resp.setStatusCode(201).end()));
   }
 
   @Test
   public void testExpectStatusPass() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       HttpResponseExpectation.status(200),
-      resp -> resp.setStatusCode(200).end());
+      resp -> resp.setStatusCode(200).end()));
   }
 
   @Test
   public void testExpectStatusRangeFail() throws Exception {
-    testExpectation(true,
+    assertNotNull(testExpectation(
       HttpResponseExpectation.SC_SUCCESS,
-      resp -> resp.setStatusCode(500).end());
+      resp -> resp.setStatusCode(500).end()));
   }
 
   @Test
   public void testExpectStatusRangePass1() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       HttpResponseExpectation.SC_SUCCESS,
-      resp -> resp.setStatusCode(200).end());
+      resp -> resp.setStatusCode(200).end()));
   }
 
   @Test
   public void testExpectStatusRangePass2() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       HttpResponseExpectation.SC_SUCCESS,
-      resp -> resp.setStatusCode(299).end());
+      resp -> resp.setStatusCode(299).end()));
   }
 
   @Test
   public void testExpectContentTypeFail() throws Exception {
-    testExpectation(true,
+    assertNotNull(testExpectation(
       HttpResponseExpectation.JSON,
-      HttpServerResponse::end);
+      HttpServerResponse::end));
   }
 
   @Test
   public void testExpectOneOfContentTypesFail() throws Exception {
-    testExpectation(true,
+    assertNotNull(testExpectation(
       HttpResponseExpectation.contentType(Arrays.asList("text/plain", "text/csv")),
-      httpServerResponse -> httpServerResponse.putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML).end());
+      httpServerResponse -> httpServerResponse.putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML).end()));
   }
 
   @Test
   public void testExpectContentTypePass() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       HttpResponseExpectation.JSON,
-      resp -> resp.putHeader("content-type", "application/JSON").end());
+      resp -> resp.putHeader("content-type", "application/JSON").end()));
   }
 
   @Test
   public void testExpectContentTypeWithEncodingPass() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       HttpResponseExpectation.JSON,
-      resp -> resp.putHeader("content-type", "application/JSON;charset=UTF-8").end());
+      resp -> resp.putHeader("content-type", "application/JSON;charset=UTF-8").end()));
   }
 
   @Test
   public void testExpectOneOfContentTypesPass() throws Exception {
-    testExpectation(false,
+    assertNull(testExpectation(
       HttpResponseExpectation.contentType(Arrays.asList("text/plain", "text/HTML")),
-      httpServerResponse -> httpServerResponse.putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML).end());
+      httpServerResponse -> httpServerResponse.putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.TEXT_HTML).end()));
   }
 
   @Test
   public void testExpectCustomException() throws Exception {
     Expectation<HttpResponseHead> predicate = ((Expectation<HttpResponseHead>) value -> false)
       .wrappingFailure((r,e) -> new CustomException("boom"));
-
-    testExpectation(true, predicate, HttpServerResponse::end, ar -> {
-      Throwable cause = ar.cause();
-      assertThat(cause, a -> a.isInstanceOf(CustomException.class));
-      CustomException customException = (CustomException) cause;
-      assertEquals("boom", customException.getMessage());
-    });
+    Throwable cause = testExpectation(predicate, HttpServerResponse::end);
+    Assertions
+      .assertThat(cause)
+      .isNotNull()
+      .isInstanceOf(CustomException.class);
+    CustomException customException = (CustomException) cause;
+    assertEquals("boom", customException.getMessage());
   }
 
 /*
@@ -153,17 +155,18 @@ public class HttpResponseExpectationTest extends HttpTestBase {
     Expectation<HttpResponseHead> predicate = HttpResponseExpectation.SC_SUCCESS
       .wrappingFailure((value, err) -> new CustomException(uuid, String.valueOf(value.statusCode())));
 
-    testExpectation(true, predicate, httpServerResponse -> {
+    Throwable cause = testExpectation(predicate, httpServerResponse -> {
       httpServerResponse
         .setStatusCode(statusCode)
         .end(TestUtils.randomBuffer(2048));
-    }, ar -> {
-      Throwable cause = ar.cause();
-      assertThat(cause, a -> a.isInstanceOf(CustomException.class));
-      CustomException customException = (CustomException) cause;
-      assertEquals(String.valueOf(statusCode), customException.getMessage());
-      assertEquals(uuid, customException.tag);
     });
+    Assertions
+      .assertThat(cause)
+      .isNotNull()
+      .isInstanceOf(CustomException.class);
+    CustomException customException = (CustomException) cause;
+    assertEquals(String.valueOf(statusCode), customException.getMessage());
+    assertEquals(uuid, customException.tag);
   }
 
   @Test
@@ -173,9 +176,11 @@ public class HttpResponseExpectationTest extends HttpTestBase {
         throw new IndexOutOfBoundsException("boom");
       });
 
-    testExpectation(true, predicate, HttpServerResponse::end, ar -> {
-      assertThat(ar.cause(), a -> a.isInstanceOf(IndexOutOfBoundsException.class));
-    });
+    Throwable cause = testExpectation(predicate, HttpServerResponse::end);
+    Assertions
+      .assertThat(cause)
+      .isNotNull()
+      .isInstanceOf(IndexOutOfBoundsException.class);
   }
 
   @Test
@@ -183,9 +188,11 @@ public class HttpResponseExpectationTest extends HttpTestBase {
     Expectation<HttpResponseHead> predicate = ((Expectation<HttpResponseHead>) value -> false)
       .wrappingFailure((v,e) -> null);
 
-    testExpectation(true, predicate, HttpServerResponse::end, ar -> {
-      assertThat(ar.cause(), a -> a.isNotInstanceOf(NullPointerException.class));
-    });
+    Throwable cause = testExpectation(predicate, HttpServerResponse::end);
+    Assertions
+      .assertThat(cause)
+      .isNotNull()
+      .isNotInstanceOf(NullPointerException.class);
   }
 
   private static class CustomException extends Exception {
@@ -202,32 +209,20 @@ public class HttpResponseExpectationTest extends HttpTestBase {
     }
   }
 
-  private void testExpectation(boolean shouldFail,
-                               Expectation<HttpResponseHead> expectation,
-                               Consumer<HttpServerResponse> server) throws Exception {
-    testExpectation(shouldFail, expectation, server, null);
-  }
-
-  private void testExpectation(boolean shouldFail,
-                               Expectation<HttpResponseHead> expectation,
-                               Consumer<HttpServerResponse> server,
-                               Consumer<AsyncResult<?>> resultTest) throws Exception {
+  private Throwable testExpectation(Expectation<HttpResponseHead> expectation,
+                                    Consumer<HttpServerResponse> server) throws Exception {
     this.server.requestHandler(request -> server.accept(request.response()));
     startServer();
-    client
-      .request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/test")
-      .compose(request -> request
-        .send()
-        .expecting(expectation))
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          assertFalse("Expected response success", shouldFail);
-        } else {
-          assertTrue("Expected response failure", shouldFail);
-        }
-        if (resultTest != null) resultTest.accept(ar);
-        testComplete();
-      });
-    await();
+    try {
+      client
+        .request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/test")
+        .compose(request -> request
+          .send()
+          .expecting(expectation))
+        .await();
+      return null;
+    } catch (Exception e) {
+      return e;
+    }
   }
 }

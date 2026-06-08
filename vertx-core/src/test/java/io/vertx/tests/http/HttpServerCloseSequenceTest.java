@@ -2,18 +2,23 @@ package io.vertx.tests.http;
 
 import io.vertx.core.Closeable;
 import io.vertx.core.Completable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.internal.http.HttpServerInternal;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpTestBase2;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public class HttpServerCloseSequenceTest extends HttpTestBase {
+import static io.vertx.test.core.TestUtils.assertWaitUntil;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class HttpServerCloseSequenceTest extends HttpTestBase2 {
 
   @Test
   public void testHttpServerImplCloseSequence() throws Exception {
@@ -37,21 +42,17 @@ public class HttpServerCloseSequenceTest extends HttpTestBase {
     assertFalse(testHandler.isClosed());
     assertFalse(testHandler.isClosing());
 
-    customServer
-      .shutdown(10, TimeUnit.SECONDS)
-      .onComplete(onSuccess(v2 -> {
-        assertTrue(((HttpServerInternal) customServer).isClosed());
-        assertTrue("TestHandler should be closed during shutdown", testHandler.isClosed());
-        testComplete();
-      }));
+    Future<Void> fut = customServer
+      .shutdown(10, TimeUnit.SECONDS);
 
-    vertx.setTimer(15, v -> {
-      assertFalse(testHandler.isClosed());
-      assertTrue(testHandler.isClosing());
-      testHandler.close();
-    });
+    assertWaitUntil(testHandler::isClosing);
+    assertFalse(testHandler.isClosed());
 
-    await();
+    testHandler.close();
+    fut.await();
+
+    assertTrue(((HttpServerInternal) customServer).isClosed());
+    assertTrue("TestHandler should be closed during shutdown", testHandler.isClosed());
   }
 
   private static class TestHandler implements Handler<HttpServerRequest>, Closeable {
