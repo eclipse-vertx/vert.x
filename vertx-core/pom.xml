@@ -17,7 +17,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-core-aggregator</artifactId>
-    <version>5.1.2</version>
+    <version>5.1.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
