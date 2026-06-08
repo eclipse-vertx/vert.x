@@ -23,8 +23,9 @@ import io.vertx.core.http.impl.ClientMultipartFormImpl;
 import io.vertx.core.http.impl.ClientMultipartFormUpload;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.test.core.Checkpoint;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpTestBase2;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -37,9 +38,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Fail.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assume.assumeTrue;
 
-public class MultipartFormUploadTest extends HttpTestBase {
+public class MultipartFormUploadTest extends HttpTestBase2 {
 
   @ClassRule
   public static TemporaryFolder testFolder = new TemporaryFolder();
@@ -53,13 +57,13 @@ public class MultipartFormUploadTest extends HttpTestBase {
   }
 
   @Test
-  public void testSimpleAttribute() throws Exception {
+  public void testSimpleAttribute(Checkpoint checkpoint) throws Exception {
     Buffer result = Buffer.buffer();
     ContextInternal context = vertx.getOrCreateContext();
     ClientMultipartFormUpload upload = new ClientMultipartFormUpload(context, (ClientMultipartFormImpl) ClientForm.form().attribute("foo", "bar"), false, HttpPostRequestEncoder.EncoderMode.RFC1738);
     upload.endHandler(v -> {
       assertEquals("foo=bar", result.toString());
-      testComplete();
+      checkpoint.succeed();
     });
     upload.handler(result::appendBuffer);
     upload.resume();
@@ -67,38 +71,38 @@ public class MultipartFormUploadTest extends HttpTestBase {
   }
 
   @Test
-  public void testFileUploadEventLoopContext() throws Exception {
-    testFileUpload(vertx.createEventLoopContext(), false);
+  public void testFileUploadEventLoopContext(Checkpoint checkpoint) throws Exception {
+    testFileUpload(checkpoint, vertx.createEventLoopContext(), false);
   }
 
   @Test
-  public void testFileUploadWorkerContext() throws Exception {
-    testFileUpload(vertx.createWorkerContext(), false);
+  public void testFileUploadWorkerContext(Checkpoint checkpoint) throws Exception {
+    testFileUpload(checkpoint, vertx.createWorkerContext(), false);
   }
 
   @Test
-  public void testFileUploadVirtualThreadContext() throws Exception {
+  public void testFileUploadVirtualThreadContext(Checkpoint checkpoint) throws Exception {
     assumeTrue(vertx.isVirtualThreadAvailable());
-    testFileUpload(vertx.createVirtualThreadContext(), false);
+    testFileUpload(checkpoint, vertx.createVirtualThreadContext(), false);
   }
 
   @Test
-  public void testFileUploadPausedEventLoopContext() throws Exception {
-    testFileUpload(vertx.createEventLoopContext(), true);
+  public void testFileUploadPausedEventLoopContext(Checkpoint checkpoint) throws Exception {
+    testFileUpload(checkpoint, vertx.createEventLoopContext(), true);
   }
 
   @Test
-  public void testFileUploadPausedWorkerContext() throws Exception {
-    testFileUpload(vertx.createWorkerContext(), true);
+  public void testFileUploadPausedWorkerContext(Checkpoint checkpoint) throws Exception {
+    testFileUpload(checkpoint, vertx.createWorkerContext(), true);
   }
 
   @Test
-  public void testFileUploadPausedVirtualThreadContext() throws Exception {
+  public void testFileUploadPausedVirtualThreadContext(Checkpoint checkpoint) throws Exception {
     assumeTrue(vertx.isVirtualThreadAvailable());
-    testFileUpload(vertx.createVirtualThreadContext(), true);
+    testFileUpload(checkpoint, vertx.createVirtualThreadContext(), true);
   }
 
-  private void testFileUpload(ContextInternal context, boolean paused) throws Exception {
+  private void testFileUpload(Checkpoint checkpoint, ContextInternal context, boolean paused) throws Exception {
     File file = testFolder.newFile();
     Files.write(file.toPath(), TestUtils.randomByteArray(32 * 1024));
 
@@ -116,7 +120,7 @@ public class MultipartFormUploadTest extends HttpTestBase {
         upload.endHandler(v2 -> {
           assertEquals(0, end.getAndIncrement());
           assertFalse(buffers.isEmpty());
-          testComplete();
+          checkpoint.succeed();
         });
         upload.handler(buffer -> {
           assertEquals(0, end.get());
@@ -133,6 +137,5 @@ public class MultipartFormUploadTest extends HttpTestBase {
         fail(e);
       }
     });
-    await();
   }
 }

@@ -20,26 +20,25 @@ import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.core.Checkpoint;
+import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
 import javax.net.ssl.SSLSessionContext;
 
 import static io.vertx.test.core.AssertExpectations.that;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SSLEngineTest extends HttpTestBase {
-
-  private static boolean hasAlpn() {
-    return JdkSSLEngineOptions.isAlpnAvailable();
-  }
+public class SSLEngineTest extends HttpTestBase2 {
 
   private static final boolean OPEN_SSL = Boolean.getBoolean("vertx-test-alpn-openssl");
 
-  public SSLEngineTest() {
+  private static boolean hasAlpn() {
+    return JdkSSLEngineOptions.isAlpnAvailable();
   }
 
   @Test
@@ -73,148 +72,127 @@ public class SSLEngineTest extends HttpTestBase {
   }
 
   private void doTest(SSLEngineOptions sslEngineOptions,
-                      boolean useAlpn, HttpVersion version, String error, String expectedEngine, boolean expectCause) {
-    doSslEngineTest(
-      sslEngineOptions,
-      error,
-      expectedEngine,
-      expectCause,
-      opts -> opts.setUseAlpn(useAlpn),
-      srv -> srv.requestHandler(req -> {
-        assertEquals(req.version(), version);
-        assertTrue(req.isSSL());
-        req.response().end();
-      }),
-      (engineOptions, expectedEng) -> {
-        client = vertx.createHttpClient(new HttpClientOptions()
-          .setSslEngineOptions(engineOptions)
-          .setSsl(true)
-          .setUseAlpn(useAlpn)
-          .setTrustAll(true)
-          .setProtocolVersion(version));
-        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-          .compose(req -> req
-            .send()
-            .expecting(that(resp -> assertEquals(200, resp.statusCode())))
-            .compose(HttpClientResponse::end))
-          .onComplete(onSuccess(v -> testComplete()));
-        await();
-      }
-    );
-  }
-
-  @Test
-  public void testWebSocketDefaultEngine() {
-    doWebSocketTest(null, null, "jdk");
-  }
-
-  @Test
-  public void testWebSocketJdkEngine() {
-    doWebSocketTest(new JdkSSLEngineOptions(), null, "jdk");
-  }
-
-  @Test
-  public void testWebSocketOpenSSLEngine() {
-    doWebSocketTest(new OpenSSLEngineOptions(), OPEN_SSL ? null : "OpenSSL is not available", "openssl");
-  }
-
-  private void doWebSocketTest(SSLEngineOptions sslEngineOptions, String error, String expectedEngine) {
-    doSslEngineTest(
-      sslEngineOptions,
-      error,
-      expectedEngine,
-      false,
-      opts -> {
-      },
-      srv -> srv.webSocketHandler(ws -> {
-        assertTrue(ws.isSsl());
-        ws.textMessageHandler(msg -> ws.writeTextMessage(msg));
-      }),
-      (engineOptions, expectedEng) -> {
-        WebSocketClient wsClient = vertx.createWebSocketClient(new WebSocketClientOptions()
-          .setSslEngineOptions(engineOptions)
-          .setSsl(true)
-          .setTrustAll(true));
-        wsClient.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-          .onComplete(onSuccess(ws -> {
-            assertSslSessionContextType(expectedEng, ws.sslSession().getSessionContext());
-            ws.writeTextMessage("test");
-            ws.textMessageHandler(msg -> {
-              assertEquals("test", msg);
-              testComplete();
-            });
-          }));
-        await();
-      }
-    );
-  }
-
-  private void doSslEngineTest(
-    SSLEngineOptions sslEngineOptions,
-    String error,
-    String expectedEngine,
-    boolean expectCause,
-    java.util.function.Consumer<HttpServerOptions> serverOptionsConfigurator,
-    java.util.function.Consumer<HttpServer> serverHandlerSetup,
-    java.util.function.BiConsumer<SSLEngineOptions, String> clientTestLogic
-  ) {
-    server.close();
-    HttpServerOptions options = new HttpServerOptions()
+                      boolean useAlpn,
+                      HttpVersion version,
+                      String error,
+                      String expectedEngine,
+                      boolean expectCause) {
+    TestServer test = new TestServer(new HttpServerOptions()
       .setSslEngineOptions(sslEngineOptions)
-      .setPort(DEFAULT_HTTP_PORT)
-      .setHost(DEFAULT_HTTP_HOST)
-      .setKeyCertOptions(Cert.SERVER_PEM.get())
-      .setSsl(true);
-
-    serverOptionsConfigurator.accept(options);
-
-    server = vertx.createHttpServer(options);
-
-    serverHandlerSetup.accept(server);
-
+      .setUseAlpn(useAlpn), expectedEngine);
+    server.requestHandler(req -> {
+      assertEquals(req.version(), version);
+      assertTrue(req.isSSL());
+      req.response().end();
+    });
     try {
-      startServer();
-      if (error != null) {
-        fail("Was expecting failure: " + error);
-      }
+      test.setUp();
+      assertNull("Was expecting failure: " + error, error);
     } catch (Exception e) {
-      if (error == null) {
-        fail(e);
-      } else {
-        assertEquals(error, e.getMessage());
-        if (expectCause) {
-          assertNotSame(e, e.getCause());
-        }
-        return;
+      assertNotNull(error);
+      assertEquals(error, e.getMessage());
+      if (expectCause) {
+        assertNotSame(e, e.getCause());
       }
+      return;
     }
-    NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
-    assertEquals(tcpServer.actualPort(), server.actualPort());
-    ServerSslContextProvider provider = tcpServer.sslContextProvider();
-    SslContext ctx = provider.createServerContext(null);
-
-    assertSslSessionContextType(expectedEngine != null ? expectedEngine : "jdk", ctx.sessionContext());
-
-    clientTestLogic.accept(sslEngineOptions, expectedEngine != null ? expectedEngine : "jdk");
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setSslEngineOptions(sslEngineOptions)
+      .setSsl(true)
+      .setUseAlpn(useAlpn)
+      .setTrustAll(true)
+      .setProtocolVersion(version));
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+      .compose(req -> req
+        .send()
+        .expecting(that(resp -> assertEquals(200, resp.statusCode())))
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
-  private void assertSslSessionContextType(String engine, SSLSessionContext sessionContext) {
-    String className = sessionContext.getClass().getName();
-    switch (engine) {
-      case "jdk":
-        assertTrue(
-          "Expected JDK SSL session context but got: " + className,
-          className.equals("sun.security.ssl.SSLSessionContextImpl")
-        );
-        break;
-      case "openssl":
-        assertTrue(
-          "Expected OpenSSL session context but got: " + className,
-          sessionContext instanceof OpenSslSessionContext
-        );
-        break;
-      default:
-        fail("Unknown SSL context type: " + engine);
+  @Test
+  public void testWebSocketDefaultEngine(Checkpoint checkpoint) {
+    doWebSocketTest(checkpoint, null, null, "jdk");
+  }
+
+  @Test
+  public void testWebSocketJdkEngine(Checkpoint checkpoint) {
+    doWebSocketTest(checkpoint, new JdkSSLEngineOptions(), null, "jdk");
+  }
+
+  @Test
+  public void testWebSocketOpenSSLEngine(Checkpoint checkpoint) {
+    doWebSocketTest(checkpoint, new OpenSSLEngineOptions(), OPEN_SSL ? null : "OpenSSL is not available", "openssl");
+  }
+
+  private void doWebSocketTest(Checkpoint checkpoint, SSLEngineOptions sslEngineOptions, String error, String expectedEngine) {
+    TestServer test = new TestServer(new HttpServerOptions()
+      .setSslEngineOptions(sslEngineOptions), expectedEngine);
+    server.webSocketHandler(ws -> {
+      assertTrue(ws.isSsl());
+      ws.textMessageHandler(ws::writeTextMessage);
+    });
+    try {
+      test.setUp();
+      assertNull("Was expecting failure: " + error, error);
+    } catch (Exception e) {
+      assertNotNull(error);
+      assertEquals(error, e.getMessage());
+      checkpoint.succeed();
+      return;
+    }
+    WebSocketClient wsClient = vertx.createWebSocketClient(new WebSocketClientOptions()
+      .setSslEngineOptions(sslEngineOptions)
+      .setSsl(true)
+      .setTrustAll(true));
+    WebSocket ws = wsClient.connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/").await();
+    test.assertSslSessionContextType(ws.sslSession().getSessionContext());
+    ws.writeTextMessage("test");
+    ws.textMessageHandler(msg -> {
+      assertEquals("test", msg);
+      checkpoint.succeed();
+    });
+  }
+
+  private class TestServer {
+
+    final String expectedEngine;
+    String resolvedEngine;
+
+    TestServer(HttpServerOptions options, String expectedEngine) {
+      this.expectedEngine = expectedEngine;
+      server = vertx.createHttpServer(options
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setKeyCertOptions(Cert.SERVER_PEM.get())
+        .setSsl(true));
+    }
+
+    void setUp() throws Exception {
+      startServer();
+      resolvedEngine = expectedEngine != null ? expectedEngine : "jdk";
+      NetServerInternal tcpServer = ((VertxInternal) vertx).sharedTcpServers().values().iterator().next();
+      assertEquals(tcpServer.actualPort(), server.actualPort());
+      ServerSslContextProvider provider = tcpServer.sslContextProvider();
+      SslContext ctx = provider.createServerContext(null);
+      assertSslSessionContextType(ctx.sessionContext());
+    }
+
+    void assertSslSessionContextType(SSLSessionContext sessionContext) {
+      String className = sessionContext.getClass().getName();
+      switch (resolvedEngine) {
+        case "jdk":
+          assertEquals("Expected JDK SSL session context but got: " + className, "sun.security.ssl.SSLSessionContextImpl", className);
+          break;
+        case "openssl":
+          assertTrue(
+            "Expected OpenSSL session context but got: " + className,
+            sessionContext instanceof OpenSslSessionContext
+          );
+          break;
+        default:
+          fail("Unknown SSL context type: " + resolvedEngine);
+      }
     }
   }
 }

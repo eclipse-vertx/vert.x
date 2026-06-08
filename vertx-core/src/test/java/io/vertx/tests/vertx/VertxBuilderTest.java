@@ -12,24 +12,34 @@ package io.vertx.tests.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.VertxTestBase2;
 import io.vertx.test.fakemetrics.FakeVertxMetrics;
 import io.vertx.test.faketracer.FakeTracer;
 import org.junit.Test;
 
-public class VertxBuilderTest extends VertxTestBase {
+import static org.junit.Assert.assertEquals;
+
+public class VertxBuilderTest extends VertxTestBase2 {
 
   @Test
   public void testTracerFactoryDoesNotRequireOptions() {
     FakeTracer tracer = new FakeTracer();
-    Vertx vertx = vertx(() -> Vertx.builder().withTracer(options -> tracer).build());
-    assertEquals(tracer, ((VertxInternal)vertx).tracer());
+    Vertx vertx = Vertx.builder().withTracer(options -> tracer).build();
+    try {
+      assertEquals(tracer, ((VertxInternal)vertx).tracer());
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test
   public void testMetricsFactoryDoesNotRequireOptions() {
     FakeVertxMetrics metrics = new FakeVertxMetrics();
-    Vertx vertx = vertx(() -> Vertx.builder().withMetrics(options -> metrics).build());
-    assertEquals(metrics, ((VertxInternal)vertx).metrics());
+    Vertx vertx = Vertx.builder().withMetrics(options -> metrics).build();
+    try {
+      assertEquals(metrics, ((VertxInternal)vertx).metrics());
+    } finally {
+      vertx.close().await();
+    }
   }
 }

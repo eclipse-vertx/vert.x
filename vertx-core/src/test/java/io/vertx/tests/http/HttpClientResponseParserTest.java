@@ -15,9 +15,12 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.core.Checkpoint;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -26,8 +29,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 
-public abstract class HttpClientResponseParserTest extends HttpTestBase {
+public abstract class HttpClientResponseParserTest extends HttpTestBase2 {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
@@ -44,8 +48,7 @@ public abstract class HttpClientResponseParserTest extends HttpTestBase {
   }
 
   @Test
-  public void shouldParseHttpsStream() throws Exception {
-    vertx.exceptionHandler(this::fail);
+  public void shouldParseHttpsStream(Checkpoint checkpoint) throws Exception {
 
     char[] firstLine = new char[1024 * 32];
     Arrays.fill(firstLine, 'a');
@@ -59,21 +62,24 @@ public abstract class HttpClientResponseParserTest extends HttpTestBase {
       response.write("\n");
       response.end(new String(secondLine), UTF_8.name());
     });
+
     startServer();
 
     List<String> lines = Collections.synchronizedList(new ArrayList<>());
-    waitFor(3);
-    client.request(requestOptions.setPort(server.actualPort())).onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        resp.exceptionHandler(this::fail);
-        RecordParser.newDelimited("\n", resp).endHandler(v -> complete()).handler(buff -> {
-          lines.add(buff.toString(UTF_8));
-          complete();
-        });
-      }));
-    }));
 
-    await();
+    client.request(requestOptions.setPort(server.actualPort()))
+      .onComplete(TestUtils.onSuccess(req -> {
+        req.send()
+          .onComplete(TestUtils.onSuccess(resp -> {
+            resp.exceptionHandler(err -> Assert.fail(err.getMessage()));
+            RecordParser
+              .newDelimited("\n", resp)
+              .handler(buff -> lines.add(buff.toString(UTF_8)))
+              .endHandler(v -> checkpoint.succeed());
+          }));
+      }));
+
+    checkpoint.await();
 
     assertEquals(2, lines.size());
     assertEquals(new String(firstLine), lines.get(0));
