@@ -51,5 +51,17 @@
         </pluginRepository>
       </pluginRepositories>
     </profile>
+
+    <profile>
+      <id>network-retry-config</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <aether.connector.http.retryHandler.serviceUnavailable>403,429,503</aether.connector.http.retryHandler.serviceUnavailable>
+        <aether.connector.http.retryHandler.count>5</aether.connector.http.retryHandler.count>
+        <aether.connector.http.retryHandler.interval>3000</aether.connector.http.retryHandler.interval>
+      </properties>
+    </profile>
   </profiles>
 </settings>
