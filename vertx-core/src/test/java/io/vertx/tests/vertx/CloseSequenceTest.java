@@ -14,23 +14,22 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.CloseSequence;
-import io.vertx.test.core.AsyncTestBase;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class CloseSequenceTest extends AsyncTestBase {
+import static org.junit.Assert.*;
+
+public class CloseSequenceTest {
 
   private AtomicReference<Completable<Void>> ref1;
   private AtomicReference<Completable<Void>> ref2;
   private AtomicReference<Completable<Void>> ref3;
   private CloseSequence seq;
 
-  @Override
   @Before
-  public void setUp() throws Exception {
-    super.setUp();
+  public void setUp() {
     ref1 = new AtomicReference<>();
     ref2 = new AtomicReference<>();
     ref3 = new AtomicReference<>();

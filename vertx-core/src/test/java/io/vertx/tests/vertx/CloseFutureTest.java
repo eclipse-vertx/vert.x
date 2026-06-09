@@ -15,7 +15,6 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.internal.CloseFuture;
-import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
 import java.lang.ref.Cleaner;
@@ -24,8 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.vertx.tests.vertx.VertxTest.runGC;
+import static org.junit.Assert.*;
 
-public class CloseFutureTest extends AsyncTestBase {
+public class CloseFutureTest {
 
   @Test
   public void testHookCompletion() {

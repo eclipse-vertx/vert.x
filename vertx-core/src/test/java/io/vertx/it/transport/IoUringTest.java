@@ -12,10 +12,11 @@ package io.vertx.it.transport;
 
 import io.vertx.core.impl.Utils;
 import io.vertx.core.transport.Transport;
-import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
-public class IoUringTest extends AsyncTestBase {
+import static org.junit.Assert.*;
+
+public class IoUringTest {
   @Test
   public void testNativeTransportFallback() {
     if (Utils.isLinux()) {

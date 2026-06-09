@@ -15,12 +15,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WriteStreamTest extends AsyncTestBase {
+import static org.junit.Assert.*;
+
+public class WriteStreamTest {
 
   static class StreamBase<T> implements WriteStream<T> {
     @Override public StreamBase<T> exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }

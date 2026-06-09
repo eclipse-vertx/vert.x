@@ -18,17 +18,18 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.tracing.TracingOptions;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.*;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class VertxOptionsTest extends VertxTestBase {
+public class VertxOptionsTest {
 
   @Test
   public void testOptions() {

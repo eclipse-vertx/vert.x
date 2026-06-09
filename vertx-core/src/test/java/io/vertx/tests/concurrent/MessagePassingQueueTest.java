@@ -11,8 +11,9 @@
 package io.vertx.tests.concurrent;
 
 import io.vertx.core.streams.impl.MessagePassingQueue;
-import io.vertx.test.core.AsyncTestBase;
 import junit.framework.AssertionFailedError;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -24,11 +25,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.streams.impl.MessagePassingQueue.*;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class MessagePassingQueueTest extends AsyncTestBase {
+public class MessagePassingQueueTest {
 
   private List<Integer> output = Collections.synchronizedList(new ArrayList<>());
   private MessagePassingQueue.MpSc<Integer> queue;
@@ -44,15 +46,13 @@ public class MessagePassingQueueTest extends AsyncTestBase {
     return res;
   }
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    disableThreadChecks();
+  @Before
+  public void setUp() {
     output = Collections.synchronizedList(new ArrayList<>());
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() {
     queue = null;
   }
 
@@ -211,7 +211,7 @@ public class MessagePassingQueueTest extends AsyncTestBase {
           try {
             thread.join();
           } catch (InterruptedException e) {
-            fail(e);
+            throw new RuntimeException(e);
           }
           return true;
         default:
@@ -236,7 +236,7 @@ public class MessagePassingQueueTest extends AsyncTestBase {
           try {
             thread.join();
           } catch (InterruptedException e) {
-            fail(e);
+            throw new RuntimeException(e);
           }
           return true;
         default:
@@ -263,7 +263,7 @@ public class MessagePassingQueueTest extends AsyncTestBase {
           try {
             thread.join();
           } catch (InterruptedException e) {
-            fail(e);
+            throw new RuntimeException(e);
           }
           return true;
         case 1:

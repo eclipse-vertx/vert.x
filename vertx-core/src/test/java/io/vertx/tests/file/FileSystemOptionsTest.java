@@ -13,11 +13,12 @@ package io.vertx.tests.file;
 
 import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 import java.util.Random;
 
-public class FileSystemOptionsTest extends VertxTestBase {
+import static org.junit.Assert.*;
+
+public class FileSystemOptionsTest {
 
   @Test
   public void testDefaults() {

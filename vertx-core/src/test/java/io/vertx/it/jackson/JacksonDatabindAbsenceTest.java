@@ -13,13 +13,14 @@ package io.vertx.it.jackson;
 
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JacksonDatabindAbsenceTest extends VertxTestBase {
+public class JacksonDatabindAbsenceTest {
 
   @Test
   public void testJsonObject() {
