@@ -5533,7 +5533,9 @@ public class Http1xTest extends HttpTest {
       });
     server.listen(testAddress).await();
 
-    HttpClientAgent client = vertx.httpClientBuilder().withConnectHandler(conn -> {
+    client = vertx
+      .httpClientBuilder()
+      .withConnectHandler(conn -> {
       List<Object> invalidMessages = new ArrayList<>();
       ((HttpClientConnection) conn).invalidMessageHandler(invalidMessages::add);
       conn.exceptionHandler(err -> {
