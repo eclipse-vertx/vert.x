@@ -752,7 +752,7 @@ public class QuicServerTest extends VertxTestBase {
     client.tokenHandler((token) -> {
       if (executed.compareAndSet(false, true)) {
         try {
-          Thread.sleep(20);
+          Thread.sleep(500);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
