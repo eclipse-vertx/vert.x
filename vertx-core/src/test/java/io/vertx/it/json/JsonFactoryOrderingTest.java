@@ -13,7 +13,6 @@ package io.vertx.it.json;
 
 import io.vertx.core.json.Json;
 import io.vertx.core.spi.JsonFactory;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.io.File;
@@ -21,10 +20,12 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.TreeMap;
 
+import static org.junit.Assert.*;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JsonFactoryOrderingTest extends VertxTestBase {
+public class JsonFactoryOrderingTest {
 
   static {
     // Make sure that the default Jackson codec is initialized before running this test

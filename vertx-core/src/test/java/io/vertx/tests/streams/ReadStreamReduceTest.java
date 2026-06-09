@@ -11,24 +11,25 @@
 package io.vertx.tests.streams;
 
 import io.vertx.core.Future;
-import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ReadStreamReduceTest extends AsyncTestBase {
+import static org.junit.Assert.*;
+
+public class ReadStreamReduceTest {
 
   private FakeStream<Object> dst;
   private Object o1 = new Object();
   private Object o2 = new Object();
   private Object o3 = new Object();
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() {
     dst = new FakeStream<>();
   }
 

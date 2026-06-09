@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

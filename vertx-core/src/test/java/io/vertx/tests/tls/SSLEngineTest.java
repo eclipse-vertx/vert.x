@@ -14,13 +14,14 @@ package io.vertx.tests.tls;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SSLEngineTest extends VertxTestBase {
+public class SSLEngineTest {
 
 
   @Test

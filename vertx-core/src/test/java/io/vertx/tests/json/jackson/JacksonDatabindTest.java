@@ -21,6 +21,8 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.jackson.DatabindCodec;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;

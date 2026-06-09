@@ -14,13 +14,14 @@ package io.vertx.it.json;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CustomJsonFactoryTest extends VertxTestBase {
+public class CustomJsonFactoryTest {
 
   @Test
   public void testJsonObject() {

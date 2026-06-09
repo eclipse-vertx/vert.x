@@ -17,18 +17,18 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Base64;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class JacksonDatabindTestBase extends VertxTestBase {
+public abstract class JacksonDatabindTestBase {
 
   @Test
   public void testInstantDecoding() {

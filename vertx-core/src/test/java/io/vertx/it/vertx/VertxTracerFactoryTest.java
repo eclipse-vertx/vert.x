@@ -13,13 +13,14 @@ package io.vertx.it.vertx;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VertxTracerFactoryTest extends AsyncTestBase {
+public class VertxTracerFactoryTest {
 
   @Test
   public void testNoOptions() {

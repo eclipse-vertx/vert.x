@@ -12,7 +12,6 @@ package io.vertx.tests.file;
 
 import io.vertx.core.VertxException;
 import io.vertx.core.file.impl.FileCache;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -21,7 +20,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 
-public class FileCacheTest extends VertxTestBase {
+import static org.junit.Assert.*;
+
+public class FileCacheTest {
 
   @Test
   public void testMutateCacheContentOnly() throws IOException {

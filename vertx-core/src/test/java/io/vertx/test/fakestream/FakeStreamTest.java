@@ -13,7 +13,7 @@ package io.vertx.test.fakestream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.test.core.AsyncTestBase;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -27,15 +27,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class FakeStreamTest extends AsyncTestBase {
+import static org.junit.Assert.*;
+
+public class FakeStreamTest {
 
   private FakeStream<Integer> stream;
   private List<Integer> emitted;
   private int drained;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() {
     emitted = new ArrayList<>();
     stream = new FakeStream<>();
     stream.handler(emitted::add);

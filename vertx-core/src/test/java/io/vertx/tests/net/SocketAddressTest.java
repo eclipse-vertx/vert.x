@@ -3,7 +3,6 @@ package io.vertx.tests.net;
 import io.netty.util.NetUtil;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -11,10 +10,9 @@ import java.net.InetSocketAddress;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
-public class SocketAddressTest extends VertxTestBase {
+public class SocketAddressTest {
 
   @Test
   public void testInetSocketAddressFromUnresolvedAddress() {

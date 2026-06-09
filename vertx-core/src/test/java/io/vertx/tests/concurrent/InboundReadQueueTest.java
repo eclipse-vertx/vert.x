@@ -1,15 +1,15 @@
 package io.vertx.tests.concurrent;
 
 import io.vertx.core.streams.impl.MessagePassingQueue;
-import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.core.streams.impl.MessagePassingQueue.drainResult;
+import static org.junit.Assert.*;
 
-public class InboundReadQueueTest extends AsyncTestBase {
+public class InboundReadQueueTest {
 
   final MessagePassingQueue.Factory factory = MessagePassingQueue.SPSC;
 

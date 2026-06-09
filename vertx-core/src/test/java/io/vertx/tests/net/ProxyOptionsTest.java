@@ -15,16 +15,17 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.core.VertxTestBase;
+import org.junit.Before;
 import org.junit.Test;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class ProxyOptionsTest extends VertxTestBase {
+public class ProxyOptionsTest {
 
   ProxyType randType;
   String randHost;
@@ -33,9 +34,8 @@ public class ProxyOptionsTest extends VertxTestBase {
   String randPassword;
   String randProxyAuthorization;
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() {
     randType = TestUtils.randomElement(ProxyType.values());
     randHost = TestUtils.randomAlphaString(10);
     randPort = TestUtils.randomPortInt();
