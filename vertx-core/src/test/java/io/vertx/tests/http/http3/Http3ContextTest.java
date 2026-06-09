@@ -19,36 +19,37 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase2;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-public class Http3ContextTest extends VertxTestBase {
+import static org.junit.Assert.*;
+
+public class Http3ContextTest extends VertxTestBase2 {
 
   private HttpServer server;
   private HttpClientConfig clientConfig;
   private HttpClientAgent client;
 
   public Http3ContextTest() {
-    super(ReportMode.FORBIDDEN);
   }
 
-  @Override
+  @Before
   public void setUp() throws Exception {
-    super.setUp();
     clientConfig = new HttpClientConfig();
     clientConfig.setVersions(HttpVersion.HTTP_3);
     server = vertx.createHttpServer(new HttpServerConfig().setVersions(HttpVersion.HTTP_3), new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()));
     client = vertx.createHttpClient(clientConfig, new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()));
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() throws Exception {
     server.close().await();
     client.close().await();
-    super.tearDown();
   }
 
   @Test
@@ -65,17 +66,11 @@ public class Http3ContextTest extends VertxTestBase {
 
     server.requestHandler(req -> {
       Context ctx = Vertx.currentContext();
-      Assert.assertEquals(threadingModel, ctx.threadingModel());
+      assertEquals(threadingModel, ctx.threadingModel());
       assertIsDuplicate(req, ctx);
-      Buffer body = Buffer.buffer();
-      req.handler(chunk -> {
-        Assert.assertSame(ctx, Vertx.currentContext());
-        body.appendBuffer(chunk);
-      });
-      req.endHandler(v -> {
-        Assert.assertSame(ctx, Vertx.currentContext());
+      req.body().onComplete(TestUtils.onSuccess(body -> {
         req.response().end(body);
-      });
+      }));
     });
 
     ContextInternal serverCtx = ((VertxInternal) vertx).createContext(threadingModel);
@@ -85,10 +80,10 @@ public class Http3ContextTest extends VertxTestBase {
       .compose(request -> request
         .send(Buffer.buffer("payload"))
         .expecting(HttpResponseExpectation.SC_OK)
-      )
-      .compose(HttpClientResponse::body).await();
+        .compose(HttpClientResponse::body)
+      ).await();
 
-    Assert.assertEquals("payload", response.toString());
+    assertEquals("payload", response.toString());
   }
 
   @Test
@@ -115,19 +110,19 @@ public class Http3ContextTest extends VertxTestBase {
     HttpClientRequest request1 = Future.<HttpClientRequest>future(p -> connectionCtx.runOnContext(v -> client.request(HttpMethod.POST, 8443, "localhost", "/").onComplete(p))).await();
 
     Buffer body = request1.send().compose(response -> {
-      Assert.assertSame(connectionCtx, Vertx.currentContext());
+      assertSame(connectionCtx, Vertx.currentContext());
       return response.body();
     }).await();
-    Assert.assertEquals("Hello World", body.toString());
+    assertEquals("Hello World", body.toString());
 
     HttpClientRequest request2 = Future.<HttpClientRequest>future(p -> streamCtx.runOnContext(v -> client.request(HttpMethod.POST, 8443, "localhost", "/").onComplete(p))).await();
     body = request2.send().compose(response -> {
-      Assert.assertSame(streamCtx, Vertx.currentContext());
+      assertSame(streamCtx, Vertx.currentContext());
       return response.body();
     }).await();
-    Assert.assertEquals("Hello World", body.toString());
+    assertEquals("Hello World", body.toString());
 
-    Assert.assertSame(request1.connection(), request2.connection());
+    assertSame(request1.connection(), request2.connection());
   }
 
   private void assertIsDuplicate(HttpServerRequest request, Context context) {
@@ -135,8 +130,8 @@ public class Http3ContextTest extends VertxTestBase {
   }
 
   private void assertIsDuplicate(HttpServerRequest request, ContextInternal context) {
-    Assert.assertTrue(context.isDuplicate());
+    assertTrue(context.isDuplicate());
     HttpServerConnection connection = (HttpServerConnection) request.connection();
-    Assert.assertSame(connection.context(), context.unwrap());
+    assertSame(connection.context(), context.unwrap());
   }
 }
