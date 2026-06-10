@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
+import io.vertx.core.impl.SysProps;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.http.HttpHeadersInternal;
 
@@ -37,6 +38,9 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
 
   private static final int COLON_AND_SPACE_SHORT = (COLON << 8) | SP;
   private static final int CRLF_SHORT = (CR << 8) | LF;
+  private static final int DEFAULT_BUCKET_SIZE = 16;
+  private static final int BUCKET_SIZE = bucketSize();
+  private static final int BUCKET_MASK = BUCKET_SIZE - 1;
   private static final BiConsumer<CharSequence, CharSequence> HTTP_VALIDATOR;
 
   static {
@@ -45,6 +49,16 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
     } else {
       HTTP_VALIDATOR = null;
     }
+  }
+
+  private static int bucketSize() {
+    int size = Integer.getInteger(
+      SysProps.HTTP1X_HEADERS_BUCKET_SIZE.name, DEFAULT_BUCKET_SIZE);
+    return size > 0 && Integer.bitCount(size) == 1 ? size : DEFAULT_BUCKET_SIZE;
+  }
+
+  private static int bucketIndex(int hash) {
+    return hash & BUCKET_MASK;
   }
 
   /**
@@ -140,7 +154,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
   public Http1xHeaders add(CharSequence name, CharSequence value) {
     Objects.requireNonNull(value);
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     add0(h, i, name, value);
     modCount++;
     return this;
@@ -164,7 +178,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
   @Override
   public Http1xHeaders add(CharSequence name, Iterable values) {
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     for (Object vstr: values) {
       add0(h, i, name, toValidCharSequence(vstr));
     }
@@ -199,7 +213,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
   public Http1xHeaders remove(CharSequence name) {
     Objects.requireNonNull(name, "name");
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     remove0(h, i, name);
     modCount++;
     return this;
@@ -213,7 +227,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
   @Override
   public Http1xHeaders set(CharSequence name, CharSequence value) {
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     remove0(h, i, name);
     if (value != null) {
       add0(h, i, name, value);
@@ -241,7 +255,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
   public Http1xHeaders set(CharSequence name, Iterable values) {
     Objects.requireNonNull(values, "values");
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     remove0(h, i, name);
     for (Object v: values) {
       if (v == null) {
@@ -300,7 +314,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
     Objects.requireNonNull(name, "name");
     LinkedList<String> values = null;
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     MapEntry[] etr = entries;
     if (etr != null) {
       Http1xHeaders.MapEntry e = etr[i];
@@ -664,7 +678,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
   private void addAll(Http1xHeaders headers) {
     for (MapEntry c = headers.head;c != null;c = c.after) {
       int h = AsciiString.hashCode(c.key);
-      int i = h & 0x0000000F;
+      int i = bucketIndex(h);
       add0(h, i, c.key, c.value);
     }
   }
@@ -674,7 +688,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
     for (Map.Entry<String, String> entry: map) {
       String key = entry.getKey();
       int h = AsciiString.hashCode(key);
-      int i = h & 0x0000000F;
+      int i = bucketIndex(h);
       add0(h, i, key, entry.getValue());
     }
   }
@@ -691,7 +705,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
     Http1xHeaders state = ref;
     assert state != null;
     head = null;
-    entries = new MapEntry[16];
+    entries = new MapEntry[BUCKET_SIZE];
     ref = null;
     addAll(state);
   }
@@ -700,7 +714,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
     MapEntry[] etr = entries;
     if (etr != null) {
       int h = AsciiString.hashCode(name);
-      int i = h & 0x0000000F;
+      int i = bucketIndex(h);
       Http1xHeaders.MapEntry e = etr[i];
       while (e != null) {
         CharSequence key = e.key;
@@ -792,7 +806,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
       validator.accept(name, value);
     }
     if (entries == null) {
-      entries = new MapEntry[16];
+      entries = new MapEntry[BUCKET_SIZE];
     }
 
     // Update the hash table.
@@ -813,7 +827,7 @@ public final class Http1xHeaders extends HttpHeaders implements MultiMap {
 
   private CharSequence get0(CharSequence name) {
     int h = AsciiString.hashCode(name);
-    int i = h & 0x0000000F;
+    int i = bucketIndex(h);
     CharSequence value = null;
     MapEntry[] etr = entries;
     if (etr != null) {

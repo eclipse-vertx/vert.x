@@ -103,6 +103,12 @@ public enum SysProps {
   INTERN_COMMON_HTTP_REQUEST_HEADERS_TO_LOWER_CASE("vertx.internCommonHttpRequestHeadersToLowerCase"),
 
   /**
+   * Configure the number of buckets used by HTTP/1.x headers.
+   */
+  @Unstable
+  HTTP1X_HEADERS_BUCKET_SIZE("vertx.http1xHeadersBucketSize"),
+
+  /**
    * Configure the Vert.x logger.
    *
    * Documented and tested.
