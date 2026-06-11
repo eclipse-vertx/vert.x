@@ -12,12 +12,12 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.impl.WorkerExecutor;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.internal.ContextInternal;
 
 import java.time.Duration;
 import java.util.List;
@@ -707,6 +707,9 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   private CountDownLatch trySuspend() {
+    if (isComplete()) {
+      return null;
+    }
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     CountDownLatch latch;
     if (executor != null) {
