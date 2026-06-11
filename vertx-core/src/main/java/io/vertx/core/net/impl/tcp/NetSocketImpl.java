@@ -127,7 +127,7 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
       applicationProtocols = null;
     }
     if (chctx.pipeline().get("ssl") == null) {
-      doPause();
+      chctx.channel().config().setAutoRead(false);
       Future<SslChannelProvider> f;
       if (sslOptions instanceof ClientSSLOptions) {
         ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
@@ -145,6 +145,7 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
         ChannelPromise promise = chctx.newPromise();
         writeToChannel(msg, true, promise);
         promise.addListener(res -> {
+          chctx.channel().config().setAutoRead(true);
           if (res.isSuccess()) {
             ChannelPromise channelPromise = chctx.newPromise();
             chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
@@ -159,13 +160,16 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
             }
             chctx.pipeline().addFirst("ssl", sslHandler);
             channelPromise.addListener(p);
+            doPause();
           } else {
             p.fail(res.cause());
           }
         });
         return p.future();
       }).transform(ar -> {
-        doResume();
+        if (ar.succeeded()) {
+          doResume();
+        }
         return (Future<Void>) ar;
       });
     } else {

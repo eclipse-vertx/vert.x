@@ -2089,6 +2089,31 @@ public class NetTest {
     }
   }
 
+  @Test
+  public void testDirectTlsUpgrade(Checkpoint checkpoint) throws Exception {
+    server.connectHandler(socket -> {
+      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .onComplete(TestUtils.onSuccess(v1 -> {
+        socket.handler(socket::write);
+        socket.endHandler(v2 -> socket.end());
+      }));
+    });
+    server.listen(1234, "localhost").await();
+    NetSocket socket = client.connect(new ConnectOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setSslOptions(new ClientSSLOptions()
+      .setHostnameVerificationAlgorithm("")
+      .setTrustAll(true))).await();
+    socket.handler(chunk -> {
+      assertEquals("test", chunk.toString());
+      socket.end();
+    });
+    socket.endHandler(v -> checkpoint.succeed());
+    socket.write("test").await();
+  }
+
   public static class NativeVertxProvider implements VertxProvider {
     @Override
     public Vertx call() throws Exception {
