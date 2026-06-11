@@ -878,6 +878,19 @@ public class BufferTest {
     assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (ByteBuffer) null));
   }
 
+  @Test
+  public void testSetBytesByteBufferUsesRemaining() {
+    ByteBuffer src = ByteBuffer.wrap(new byte[] { 10, 20, 30, 40, 50 });
+    src.position(2);
+
+    Buffer dst = Buffer.buffer();
+    dst.setBytes(1, src);
+
+    assertEquals(4, dst.length());
+    assertTrue(TestUtils.byteArraysEqual(new byte[] { 0, 30, 40, 50 }, dst.getBytes()));
+    assertEquals(src.limit(), src.position());
+  }
+
   private void testSetBytesBuffer(Buffer buff, Function<byte[], Buffer> bufferFactory) throws Exception {
     Buffer b = bufferFactory.apply(TestUtils.randomByteArray(100));
     buff.setBuffer(50, b);
