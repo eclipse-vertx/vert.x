@@ -26,6 +26,7 @@ import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.Pump;
@@ -41,10 +42,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.security.cert.X509Certificate;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -58,6 +63,7 @@ import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.OPTIONS;
 import static io.vertx.core.http.HttpMethod.PUT;
+import static io.vertx.core.net.SocketAddress.inetSocketAddress;
 import static io.vertx.test.core.TestUtils.*;
 import static java.util.Collections.singletonList;
 
@@ -105,7 +111,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testListenSocketAddress() {
     NetClient netClient = vertx.createNetClient();
     server = vertx.createHttpServer().requestHandler(req -> req.response().end());
-    SocketAddress sockAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
+    SocketAddress sockAddress = inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
     server.listen(sockAddress, onSuccess(server -> {
       netClient.connect(sockAddress, onSuccess(sock -> {
         sock.handler(buf -> {
@@ -293,7 +299,7 @@ public abstract class HttpTest extends HttpTestBase {
         request.response().end();
       });
     startServer(testAddress);
-    SocketAddress server = SocketAddress.inetSocketAddress(port, host);
+    SocketAddress server = inetSocketAddress(port, host);
     client.request(new RequestOptions().setServer(server)).compose(req -> req.send().compose(resp -> {
       assertEquals(200, resp.statusCode());
       return resp.body();
@@ -4415,6 +4421,33 @@ public abstract class HttpTest extends HttpTestBase {
     MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://" + DEFAULT_HTTP_HOST_AND_PORT;
+    class MockHttpConn implements HttpConnection {
+      public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) { throw new UnsupportedOperationException(); }
+      public HttpConnection goAwayHandler(@Nullable Handler<GoAway> handler) { throw new UnsupportedOperationException(); }
+      public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public Future<Void> shutdown(long timeout, TimeUnit unit) { throw new UnsupportedOperationException(); }
+      public HttpConnection closeHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public Future<Void> close() { throw new UnsupportedOperationException(); }
+      public Http2Settings settings() { throw new UnsupportedOperationException(); }
+      public Future<Void> updateSettings(Http2Settings settings) { throw new UnsupportedOperationException(); }
+      public HttpConnection updateSettings(Http2Settings settings, Handler<AsyncResult<Void>> completionHandler) { throw new UnsupportedOperationException(); }
+      public Http2Settings remoteSettings() { throw new UnsupportedOperationException(); }
+      public HttpConnection remoteSettingsHandler(Handler<Http2Settings> handler) { throw new UnsupportedOperationException(); }
+      public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) { throw new UnsupportedOperationException(); }
+      public Future<Buffer> ping(Buffer data) { throw new UnsupportedOperationException(); }
+      public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) { throw new UnsupportedOperationException(); }
+      public HttpConnection exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
+      public SocketAddress remoteAddress() { throw new UnsupportedOperationException(); }
+      public SocketAddress remoteAddress(boolean real) { throw new UnsupportedOperationException(); }
+      public SocketAddress localAddress() { throw new UnsupportedOperationException(); }
+      public SocketAddress localAddress(boolean real) { throw new UnsupportedOperationException(); }
+      public SSLSession sslSession() { throw new UnsupportedOperationException(); }
+      public X509Certificate[] peerCertificateChain() { throw new UnsupportedOperationException(); }
+      public List<Certificate> peerCertificates() { throw new UnsupportedOperationException(); }
+      public String indicatedServerName() { throw new UnsupportedOperationException(); }
+
+      public boolean isSsl() { return true; }
+    }
     class MockReq implements HttpClientRequest {
       public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> write(Buffer data) { throw new UnsupportedOperationException(); }
@@ -4466,7 +4499,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }
       public boolean reset(long code, Throwable cause) { return false; }
-      public HttpConnection connection() { throw new UnsupportedOperationException(); }
+      public HttpConnection connection() { return new MockHttpConn(); }
       public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public StreamPriority getStreamPriority() { return null; }
@@ -4482,9 +4515,9 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<HttpClientResponse> otherwise(Function<Throwable, HttpClientResponse> mapper) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> otherwise(HttpClientResponse value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setHost(String host) { throw new UnsupportedOperationException(); }
-      public String getHost() { throw new UnsupportedOperationException(); }
+      public String getHost() { return DEFAULT_HTTP_HOST; }
       public HttpClientRequest setPort(int port) { throw new UnsupportedOperationException(); }
-      public int getPort() { throw new UnsupportedOperationException(); }
+      public int getPort() { return DEFAULT_HTTP_PORT; }
       public HttpClientRequest setMethod(HttpMethod method) { throw new UnsupportedOperationException(); }
       public HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
@@ -4571,6 +4604,146 @@ public abstract class HttpTest extends HttpTestBase {
         }));
     }));
     await();
+  }
+
+  @Test
+  public void testFollowRedirectHandlerDefaultHeaderFilteringSameOrigin() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringSameOrigin(
+      createBaseClientOptions(),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertEquals("secret", result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertNull(result.getString(HttpHeaders.COOKIE.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertEquals("test", result.getString("test"));
+  }
+
+  @Test
+  public void testFollowRedirectHandlerHeaderFilteringSameOrigin() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringSameOrigin(
+      createBaseClientOptions()
+        .setSameOriginRedirectBlockedHeaders(Collections.singleton("test")),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertEquals("secret", result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.COOKIE.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertNull(result.getString("test"));
+  }
+
+  private JsonObject testFollowRedirectHandlerHeaderFilteringSameOrigin(HttpClientOptions options, RequestOptions request) throws Exception {
+    String scheme = options.isSsl() ? "https" : "http";
+    request
+      .setHost("localhost")
+      .setPort(DEFAULT_HTTP_PORT);
+    client.close();
+    client = vertx.createHttpClient(options);
+    return testFollowRedirectHandlerHeaderFiltering(
+      request,
+      scheme + "://localhost:" + DEFAULT_HTTP_PORT,
+      inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+  }
+
+  @Test
+  public void testFollowRedirectHandlerDefaultHeaderFilteringDifferentHost() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringDifferentHost(
+      createBaseClientOptions()
+        .setVerifyHost(false),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertNull(result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertNull(result.getString(HttpHeaders.COOKIE.toString()));
+    assertNull(result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertEquals("test", result.getString("test"));
+  }
+
+  @Test
+  public void testFollowRedirectHandlerHeaderFilteringDifferentHost() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringDifferentHost(
+      createBaseClientOptions()
+        .setVerifyHost(false)
+        .setCrossOriginRedirectBlockedHeaders(Collections.singleton("test")),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertEquals("secret", result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.COOKIE.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertNull(result.getString("test"));
+  }
+
+  private JsonObject testFollowRedirectHandlerHeaderFilteringDifferentHost(HttpClientOptions options, RequestOptions request) throws Exception {
+    String scheme = options.isSsl() ? "https" : "http";
+    request
+      .setHost("host1")
+      .setPort(DEFAULT_HTTP_PORT);
+    client.close();
+    client = vertx.createHttpClient(options);
+    return testFollowRedirectHandlerHeaderFiltering(
+      request,
+      scheme + "://host2:" + DEFAULT_HTTP_PORT,
+      inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+  }
+
+  public JsonObject testFollowRedirectHandlerHeaderFiltering(RequestOptions request,
+                                                             String location,
+                                                             SocketAddress... bindings) throws Exception {
+
+    Handler<HttpServerRequest> requestHandler = new Handler<HttpServerRequest>() {
+      int count = 0;
+      @Override
+      public void handle(HttpServerRequest request) {
+        switch (count++) {
+          case 0:
+            request
+              .response()
+              .putHeader(HttpHeaders.LOCATION, location)
+              .setStatusCode(302)
+              .end();
+            break;
+          case 1:
+            MultiMap headers = request.headers();
+            JsonObject body = new JsonObject();
+            headers.forEach(body::put);
+            request.response().end(body.encode());
+            break;
+          default:
+            request.response().setStatusCode(500).end();
+            break;
+        }
+      }
+    };
+
+    for (SocketAddress binding : bindings) {
+      HttpServer server = vertx.createHttpServer(createBaseServerOptions())
+        .requestHandler(requestHandler);
+      startServer(binding, server);
+    }
+
+    return client.request(request)
+      .compose(req -> req
+        .setFollowRedirects(true)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body).map(Buffer::toJsonObject))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
   }
 
   @Test
@@ -6400,8 +6573,8 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
     waitFor(2);
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    SocketAddress remote = inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
 
     HAProxy proxy = new HAProxy(testAddress, header);
@@ -6429,16 +6602,16 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHAProxyProtocolVersion1TCP4() throws Exception {
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    SocketAddress remote = inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
     testHAProxyProtocolAccepted(header, remote, local);
   }
 
   @Test
   public void testHAProxyProtocolVersion1TCP6() throws Exception {
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    SocketAddress remote = inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
+    SocketAddress local = inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
     Buffer header = HAProxy.createVersion1TCP6ProtocolHeader(remote, local);
     testHAProxyProtocolAccepted(header, remote, local);
   }
@@ -6452,16 +6625,16 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHAProxyProtocolVersion2TCP4() throws Exception {
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    SocketAddress remote = inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion2TCP4ProtocolHeader(remote, local);
     testHAProxyProtocolAccepted(header, remote, local);
   }
 
   @Test
   public void testHAProxyProtocolVersion2TCP6() throws Exception {
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    SocketAddress remote = inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
+    SocketAddress local = inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
     Buffer header = HAProxy.createVersion2TCP6ProtocolHeader(remote, local);
     testHAProxyProtocolAccepted(header, remote, local);
   }
@@ -6529,16 +6702,16 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHAProxyProtocolVersion2UDP4() throws Exception {
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    SocketAddress remote = inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion2UDP4ProtocolHeader(remote, local);
     testHAProxyProtocolRejected(header);
   }
 
   @Test
   public void testHAProxyProtocolVersion2UDP6() throws Exception {
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    SocketAddress remote = inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
+    SocketAddress local = inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
     Buffer header = HAProxy.createVersion2UDP6ProtocolHeader(remote, local);
     testHAProxyProtocolRejected(header);
   }
@@ -6588,8 +6761,8 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testHAProxyProtocolIllegalHeader() throws Exception {
     //IPv4 remote IPv6 Local
-    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
-    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    SocketAddress remote = inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
     testHAProxyProtocolIllegal(header);
   }
@@ -6604,7 +6777,7 @@ public abstract class HttpTest extends HttpTestBase {
         HttpServer server = vertx.createHttpServer(createBaseServerOptions());
         server.requestHandler(req -> {
         });
-        startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST), server);
+        startServer(inetSocketAddress(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST), server);
         servers.add(server);
       }
       HttpClient client = vertx.createHttpClient(createBaseClientOptions());

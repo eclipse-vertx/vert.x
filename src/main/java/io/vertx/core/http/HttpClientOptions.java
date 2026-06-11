@@ -24,6 +24,8 @@ import io.vertx.core.tracing.TracingPolicy;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.http.HttpHeaders.*;
+
 /**
  * Options describing how an {@link HttpClient} will make connections.
  *
@@ -242,6 +244,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
+  /**
+   * The default same-origin blocked header list = ({@code cookie}, {@code content-length})
+   */
+  public static final Set<String> DEFAULT_SAME_ORIGIN_REDIRECT_BLOCKED_HEADERS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    COOKIE.toString(),
+    CONTENT_LENGTH.toString()
+  )));
+
+  /**
+   * The default cross-origin blocked header list = ({@code authorization}, {@code cookie}, {@code proxy-authorization}, {@code content-length})
+   */
+  public static final Set<String> DEFAULT_CROSS_ORIGIN_REDIRECT_BLOCKED_HEADERS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+    AUTHORIZATION.toString(),
+    COOKIE.toString(),
+    PROXY_AUTHORIZATION.toString(),
+    CONTENT_LENGTH.toString()
+  )));
+
   private boolean verifyHost = true;
   private boolean keepAlive;
   private int keepAliveTimeout;
@@ -268,6 +288,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean http2ClearTextUpgradeWithPreflightRequest;
   private boolean sendUnmaskedFrames;
   private int maxRedirects;
+  private Set<String> sameOriginRedirectBlockedHeaders;
+  private Set<String> crossOriginRedirectBlockedHeaders;
   private boolean forceSni;
   private int decoderInitialBufferSize;
 
@@ -335,6 +357,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.http2ClearTextUpgradeWithPreflightRequest = other.http2ClearTextUpgradeWithPreflightRequest;
     this.sendUnmaskedFrames = other.isSendUnmaskedFrames();
     this.maxRedirects = other.maxRedirects;
+    this.sameOriginRedirectBlockedHeaders = other.sameOriginRedirectBlockedHeaders != null ? new HashSet<>(other.sameOriginRedirectBlockedHeaders) : null;
+    this.crossOriginRedirectBlockedHeaders = other.crossOriginRedirectBlockedHeaders != null ? new HashSet<>(other.crossOriginRedirectBlockedHeaders) : null;
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
     this.tryUsePerFrameWebSocketCompression = other.tryUsePerFrameWebSocketCompression;
@@ -1250,6 +1274,42 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
+    return this;
+  }
+
+  /**
+   * @return the set of blocked HTTP headers on a same-origin redirection, the default being {@link HttpClientOptions#DEFAULT_SAME_ORIGIN_REDIRECT_BLOCKED_HEADERS}
+   */
+  public Set<String> getSameOriginRedirectBlockedHeaders() {
+    return sameOriginRedirectBlockedHeaders;
+  }
+
+  /**
+   * Update the set of blocked HTTP headers on a same-origin redirection, setting to {@code null} means using the default configuration.
+   *
+   * @param sameOriginRedirectBlockedHeaders the new set of headers to block
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setSameOriginRedirectBlockedHeaders(Set<String> sameOriginRedirectBlockedHeaders) {
+    this.sameOriginRedirectBlockedHeaders = sameOriginRedirectBlockedHeaders;
+    return this;
+  }
+
+  /**
+   * @return the set of blocked HTTP headers on a cross-origin redirection, the default being {@link HttpClientOptions#DEFAULT_CROSS_ORIGIN_REDIRECT_BLOCKED_HEADERS}
+   */
+  public Set<String> getCrossOriginRedirectBlockedHeaders() {
+    return crossOriginRedirectBlockedHeaders;
+  }
+
+  /**
+   * Update the set of blocked HTTP headers on a cross-origin redirection, , setting to {@code null} means using the default configuration.
+   *
+   * @param crossOriginRedirectBlockedHeaders the new set of headers to block
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setCrossOriginRedirectBlockedHeaders(Set<String> crossOriginRedirectBlockedHeaders) {
+    this.crossOriginRedirectBlockedHeaders = crossOriginRedirectBlockedHeaders;
     return this;
   }
 

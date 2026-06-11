@@ -31,14 +31,13 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 
 import java.lang.ref.WeakReference;
-import java.net.URI;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
-import static io.vertx.core.http.HttpHeaders.*;
 
 /**
  * This class is thread-safe.
@@ -50,69 +49,34 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   // Pattern to check we are not dealing with an absoluate URI
   private static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
 
-  private static final Function<HttpClientResponse, Future<RequestOptions>> DEFAULT_HANDLER = resp -> {
-    try {
-      int statusCode = resp.statusCode();
-      String location = resp.getHeader(HttpHeaders.LOCATION);
-      if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307 || statusCode == 308)) {
-        HttpMethod m = resp.request().getMethod();
-        if (statusCode == 303) {
-          m = HttpMethod.GET;
-        } else if (m != HttpMethod.GET && m != HttpMethod.HEAD) {
-          return null;
-        }
-        URI uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
-        boolean ssl;
-        int port = uri.getPort();
-        String protocol = uri.getScheme();
-        char chend = protocol.charAt(protocol.length() - 1);
-        if (chend == 'p') {
-          ssl = false;
-          if (port == -1) {
-            port = 80;
-          }
-        } else if (chend == 's') {
-          ssl = true;
-          if (port == -1) {
-            port = 443;
-          }
-        } else {
-          return null;
-        }
-        String requestURI = uri.getPath();
-        if (requestURI == null || requestURI.isEmpty()) {
-          requestURI = "/";
-        }
-        String query = uri.getQuery();
-        if (query != null) {
-          requestURI += "?" + query;
-        }
-        RequestOptions options = new RequestOptions();
-        options.setMethod(m);
-        options.setHost(uri.getHost());
-        options.setPort(port);
-        options.setSsl(ssl);
-        options.setURI(requestURI);
-        options.setHeaders(resp.request().headers());
-        options.removeHeader(CONTENT_LENGTH);
-        return Future.succeededFuture(options);
-      }
-      return null;
-    } catch (Exception e) {
-      return Future.failedFuture(e);
-    }
-  };
-
   private static final Consumer<Endpoint<Lease<HttpClientConnection>>> EXPIRED_CHECKER = endpoint -> ((ClientHttpEndpointBase)endpoint).checkExpired();
 
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
   private final PoolOptions poolOptions;
+  private final Function<HttpClientResponse, Future<RequestOptions>> defaultRedirectHandler;
   private volatile Handler<HttpConnection> connectionHandler;
-  private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
+  private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler;
   private long timerID;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, PoolOptions poolOptions, CloseFuture closeFuture) {
     super(vertx, options, closeFuture);
+
+    Set<String> sameOriginRedirectBlockedHeaders = options.getSameOriginRedirectBlockedHeaders();
+    if (sameOriginRedirectBlockedHeaders == null) {
+      sameOriginRedirectBlockedHeaders = HttpClientOptions.DEFAULT_SAME_ORIGIN_REDIRECT_BLOCKED_HEADERS;
+    }
+    Set<String> crossOriginRedirectBlockedHeaders = options.getCrossOriginRedirectBlockedHeaders();
+    if (crossOriginRedirectBlockedHeaders == null) {
+      crossOriginRedirectBlockedHeaders = HttpClientOptions.DEFAULT_CROSS_ORIGIN_REDIRECT_BLOCKED_HEADERS;
+    }
+    Function<HttpClientResponse, Future<RequestOptions>> defaultRedirectHandler = new DefaultRedirectHandler(
+      new ArrayList<>(sameOriginRedirectBlockedHeaders),
+      new ArrayList<>(crossOriginRedirectBlockedHeaders)
+    );
+
+
+    this.defaultRedirectHandler = defaultRedirectHandler;
+    this.redirectHandler = defaultRedirectHandler;
     this.poolOptions = new PoolOptions(poolOptions);
     this.httpCM = httpConnectionManager();
     if (poolOptions.getCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
@@ -247,7 +211,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   @Override
   public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
-      handler = DEFAULT_HANDLER;
+      handler = defaultRedirectHandler;
     }
     redirectHandler = handler;
     return this;

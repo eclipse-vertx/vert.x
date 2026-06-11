@@ -51,6 +51,17 @@ import java.util.stream.Stream;
 public class Http2Test extends HttpTest {
 
   @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
+      "127.0.0.1 localhost\n" +
+      "127.0.0.1 host0\n" +
+      "127.0.0.1 host1\n" +
+      "127.0.0.1 host2\n"));
+    return options;
+  }
+
+  @Override
   protected HttpServerOptions createBaseServerOptions() {
     return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }

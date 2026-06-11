@@ -30,6 +30,16 @@ public class HttpClientOptionsConverter {
             obj.setAlpnVersions(list);
           }
           break;
+        case "crossOriginRedirectBlockedHeaders":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setCrossOriginRedirectBlockedHeaders(list);
+          }
+          break;
         case "decoderInitialBufferSize":
           if (member.getValue() instanceof Number) {
             obj.setDecoderInitialBufferSize(((Number)member.getValue()).intValue());
@@ -180,6 +190,16 @@ public class HttpClientOptionsConverter {
             obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
           }
           break;
+        case "sameOriginRedirectBlockedHeaders":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setSameOriginRedirectBlockedHeaders(list);
+          }
+          break;
         case "sendUnmaskedFrames":
           if (member.getValue() instanceof Boolean) {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
@@ -246,6 +266,11 @@ public class HttpClientOptionsConverter {
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
       json.put("alpnVersions", array);
     }
+    if (obj.getCrossOriginRedirectBlockedHeaders() != null) {
+      JsonArray array = new JsonArray();
+      obj.getCrossOriginRedirectBlockedHeaders().forEach(item -> array.add(item));
+      json.put("crossOriginRedirectBlockedHeaders", array);
+    }
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     json.put("decompressionSupported", obj.isDecompressionSupported());
     if (obj.getDefaultHost() != null) {
@@ -283,6 +308,11 @@ public class HttpClientOptionsConverter {
     json.put("poolEventLoopSize", obj.getPoolEventLoopSize());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
+    }
+    if (obj.getSameOriginRedirectBlockedHeaders() != null) {
+      JsonArray array = new JsonArray();
+      obj.getSameOriginRedirectBlockedHeaders().forEach(item -> array.add(item));
+      json.put("sameOriginRedirectBlockedHeaders", array);
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("shared", obj.isShared());

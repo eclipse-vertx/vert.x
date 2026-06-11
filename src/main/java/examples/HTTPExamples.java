@@ -53,6 +53,8 @@ import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * Created by tim on 09/01/15.
@@ -951,6 +953,12 @@ public class HTTPExamples {
       });
   }
 
+  public void configurationOfTheDefaultHttpClientRedirectHandler(Vertx vertx) {
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+        .setSameOriginRedirectBlockedHeaders(new HashSet<>(Arrays.asList("cookie", "content-length")))
+        .setCrossOriginRedirectBlockedHeaders(new HashSet<>(Arrays.asList("authorization", "cookie", "proxy-authorization", "content-length"))
+        ));
+  }
   private String resolveURI(String base, String uriRef) {
     throw new UnsupportedOperationException();
   }
