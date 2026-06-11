@@ -17,6 +17,7 @@ import tools.jackson.core.StreamReadFeature;
 import tools.jackson.core.StreamWriteFeature;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.MapperBuilder;
 import tools.jackson.databind.json.JsonMapper;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
@@ -33,13 +34,14 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class DatabindCodec extends JacksonCodec {
 
-  private static final ObjectMapper mapper = JsonMapper
+  private static ObjectMapper mapper = JsonMapper
     .builder(JacksonCodec.factory)
     .addModule(new VertxModule())
     .build();
@@ -49,6 +51,10 @@ public class DatabindCodec extends JacksonCodec {
    */
   public static ObjectMapper mapper() {
     return mapper;
+  }
+
+  public static void updateMapper(Function<MapperBuilder<ObjectMapper, ?>, ObjectMapper> f) {
+    mapper = f.apply(mapper().rebuild());
   }
 
   @Override
