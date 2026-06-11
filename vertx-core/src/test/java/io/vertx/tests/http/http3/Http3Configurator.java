@@ -23,6 +23,7 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTPS_HOST;
@@ -208,6 +209,24 @@ public class Http3Configurator implements HttpConfigurator {
       @Override
       public HttpClientConfigurator configureSsl(Consumer<ClientSSLOptions> configurator) {
         configurator.accept(sslOptions);
+        return this;
+      }
+      @Override
+      public HttpClientConfigurator setSameOriginRedirectBlockedHeaders(Set<String> headers) {
+        ClientRedirectConfig redirectConfig = config.getRedirectConfig();
+        if (redirectConfig == null) {
+          config.setRedirectConfig(redirectConfig = new ClientRedirectConfig());
+        }
+        redirectConfig.setSameOriginBlockedHeaders(headers);
+        return this;
+      }
+      @Override
+      public HttpClientConfigurator setCrossOriginRedirectBlockedHeaders(Set<String> headers) {
+        ClientRedirectConfig redirectConfig = config.getRedirectConfig();
+        if (redirectConfig == null) {
+          config.setRedirectConfig(redirectConfig = new ClientRedirectConfig());
+        }
+        redirectConfig.setCrossOriginBlockedHeaders(headers);
         return this;
       }
       @Override

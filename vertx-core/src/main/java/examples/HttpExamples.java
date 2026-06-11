@@ -32,6 +32,7 @@ import io.vertx.core.streams.ReadStream;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -1174,6 +1175,13 @@ public class HttpExamples {
       .onSuccess(response -> {
         System.out.println("Received response with status code " + response.statusCode());
       });
+  }
+
+  public void configurationOfTheDefaultHttpClientRedirectHandler(Vertx vertx) {
+    HttpClientAgent client = vertx.createHttpClient(new HttpClientConfig()
+      .setRedirectConfig(new ClientRedirectConfig()
+        .setSameOriginBlockedHeaders(Set.of("cookie", "content-length"))
+        .setCrossOriginBlockedHeaders(Set.of("authorization", "cookie", "proxy-authorization", "content-length"))));
   }
 
   public void configurationOfAnHttpClientRedirectHandler(Vertx vertx) {

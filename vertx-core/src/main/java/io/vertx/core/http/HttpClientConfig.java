@@ -134,6 +134,12 @@ public class HttpClientConfig {
     ClientRedirectConfig redirectConfig = new ClientRedirectConfig();
     redirectConfig.setMaxRedirects(options.getMaxRedirects());
     redirectConfig.setMaxBufferedSize(options.getMaxRedirectBufferedSize());
+    if (options.getCrossOriginRedirectBlockedHeaders() != null) {
+      redirectConfig.setCrossOriginBlockedHeaders(options.getCrossOriginRedirectBlockedHeaders());
+    }
+    if (options.getSameOriginRedirectBlockedHeaders() != null) {
+      redirectConfig.setSameOriginBlockedHeaders(options.getSameOriginRedirectBlockedHeaders());
+    }
 
     this.tcpConfig = new TcpClientConfig(options);
     this.quicConfig = defaultQuicConfig();

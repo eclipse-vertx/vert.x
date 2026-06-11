@@ -29,6 +29,7 @@ import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -167,12 +168,15 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
     Handler<HttpConnection> connectHandler = connectionHandler(config);
     List<HttpVersion> versions = config.getVersions();
-    int maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
-    int maxRedirectBufferedSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
     ClientRedirectConfig redirectConfig = config.getRedirectConfig();
-    if (redirectConfig != null) {
-      maxRedirects = redirectConfig.getMaxRedirects();
-      maxRedirectBufferedSize = redirectConfig.getMaxBufferedSize();
+    if (redirectConfig == null) {
+      redirectConfig = new ClientRedirectConfig();
+    }
+    if (redirectHandler == null) {
+      redirectHandler = new DefaultRedirectHandler(
+        new ArrayList<>(redirectConfig.getSameOriginBlockedHeaders()),
+        new ArrayList<>(redirectConfig.getCrossOriginBlockedHeaders())
+      );
     }
     return new LegacyHttpClient(
       vertx,
@@ -189,8 +193,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       config.isSsl(),
       config.getDefaultHost(),
       config.getDefaultPort(),
-      maxRedirects,
-      maxRedirectBufferedSize,
+      redirectConfig.getMaxRedirects(),
+      redirectConfig.getMaxBufferedSize(),
       versions,
       sslOptions,
       connectHandler,

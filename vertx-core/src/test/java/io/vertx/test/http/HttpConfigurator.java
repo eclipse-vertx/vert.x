@@ -18,6 +18,7 @@ import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.tests.http.Http2TestBase;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -108,6 +109,16 @@ public interface HttpConfigurator {
           // Trigger creation of lazy SSL options
           options.setKeyCertOptions(options.getKeyCertOptions());
           configurator.accept(options.getSslOptions());
+          return this;
+        }
+        @Override
+        public HttpClientConfigurator setSameOriginRedirectBlockedHeaders(Set<String> headers) {
+          options.setSameOriginRedirectBlockedHeaders(headers);
+          return this;
+        }
+        @Override
+        public HttpClientConfigurator setCrossOriginRedirectBlockedHeaders(Set<String> headers) {
+          options.setCrossOriginRedirectBlockedHeaders(headers);
           return this;
         }
         @Override

@@ -8,6 +8,7 @@ import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public interface HttpClientConfigurator {
@@ -24,6 +25,8 @@ public interface HttpClientConfigurator {
   HttpClientConfigurator setMetricsName(String name);
   HttpClientConfigurator configureSsl(Consumer<ClientSSLOptions> configurator);
   HttpClientConfigurator setMaxRedirectBufferSize(int maxRedirectBufferSize);
+  HttpClientConfigurator setSameOriginRedirectBlockedHeaders(Set<String> headers);
+  HttpClientConfigurator setCrossOriginRedirectBlockedHeaders(Set<String> headers);
   default HttpClientAgent create(Vertx vertx, PoolOptions poolOptions) {
     return builder(vertx).with(poolOptions).build();
   }

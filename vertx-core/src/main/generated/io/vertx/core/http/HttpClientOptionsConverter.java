@@ -132,6 +132,26 @@ public class HttpClientOptionsConverter {
             obj.setMaxRedirectBufferedSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "sameOriginRedirectBlockedHeaders":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setSameOriginRedirectBlockedHeaders(list);
+          }
+          break;
+        case "crossOriginRedirectBlockedHeaders":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.LinkedHashSet<java.lang.String> list =  new java.util.LinkedHashSet<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setCrossOriginRedirectBlockedHeaders(list);
+          }
+          break;
         case "forceSni":
           if (member.getValue() instanceof Boolean) {
             obj.setForceSni((Boolean)member.getValue());
@@ -199,6 +219,16 @@ public class HttpClientOptionsConverter {
     json.put("http2ClearTextUpgradeWithPreflightRequest", obj.isHttp2ClearTextUpgradeWithPreflightRequest());
     json.put("maxRedirects", obj.getMaxRedirects());
     json.put("maxRedirectBufferedSize", obj.getMaxRedirectBufferedSize());
+    if (obj.getSameOriginRedirectBlockedHeaders() != null) {
+      JsonArray array = new JsonArray();
+      obj.getSameOriginRedirectBlockedHeaders().forEach(item -> array.add(item));
+      json.put("sameOriginRedirectBlockedHeaders", array);
+    }
+    if (obj.getCrossOriginRedirectBlockedHeaders() != null) {
+      JsonArray array = new JsonArray();
+      obj.getCrossOriginRedirectBlockedHeaders().forEach(item -> array.add(item));
+      json.put("crossOriginRedirectBlockedHeaders", array);
+    }
     json.put("forceSni", obj.isForceSni());
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getTracingPolicy() != null) {
