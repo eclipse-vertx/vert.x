@@ -323,7 +323,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           c += m;
           leases = new LeaseImpl[m];
           for (int i = 0;i < m;i++) {
-            leases[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler);
+            PoolWaiter<C> w = pool.waiters.poll();
+            w.disposed = true;
+            leases[i] = new LeaseImpl<>(slot, w.handler);
           }
         } else {
           leases = null;
@@ -465,7 +467,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           if (m > 0) {
             extra = new LeaseImpl[m];
             for (int i = 0;i < m;i++) {
-              extra[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler);
+              PoolWaiter<C> w = pool.waiters.poll();
+              w.disposed = true;
+              extra[i] = new LeaseImpl<>(slot, w.handler);
             }
             slot.usage += m;
             return new Task() {
@@ -731,6 +735,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       if (!pool.closed && slot.connection != null) {
         PoolWaiter<C> waiter;
         if (slot.usage <= slot.concurrency && (waiter = pool.waiters.poll()) != null) {
+          waiter.disposed = true;
           LeaseImpl<C> lease = new LeaseImpl<>(slot, waiter.handler);
           return new Task() {
             @Override
