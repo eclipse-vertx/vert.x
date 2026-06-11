@@ -6,6 +6,8 @@ import io.vertx.core.Future;
 import io.vertx.core.http.impl.DefaultRedirectHandler;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.ClientSSLOptions;
+
+import java.util.ArrayList;
 import java.util.function.Function;
 
 /**
@@ -42,7 +44,10 @@ public interface HttpClientAgent extends HttpClient, Measured {
    * This is useful for building redirect handlers that need to delegate to the default behavior.
    */
   @GenIgnore
-  Function<HttpClientResponse, Future<RequestOptions>> DEFAULT_REDIRECT_HANDLER = new DefaultRedirectHandler();
+  Function<HttpClientResponse, Future<RequestOptions>> DEFAULT_REDIRECT_HANDLER = new DefaultRedirectHandler(
+    new ArrayList<>(HttpClientOptions.DEFAULT_SAME_ORIGIN_REDIRECT_BLOCKED_HEADERS),
+    new ArrayList<>(HttpClientOptions.DEFAULT_CROSS_ORIGIN_REDIRECT_BLOCKED_HEADERS)
+  );
 
   /**
    * <p>Update the client with new SSL {@code options}, the update happens if the options object is valid and different

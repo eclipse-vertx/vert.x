@@ -29,6 +29,7 @@ import io.vertx.core.net.impl.tcp.NetClientBuilder;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -167,6 +168,16 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
     Handler<HttpConnection> connectHandler = connectionHandler(config);
     List<HttpVersion> versions = config.getVersions();
+    if (redirectHandler == null) {
+      ClientRedirectConfig redirectConfig = config.getRedirectConfig();
+      if (redirectConfig == null) {
+        redirectConfig = new ClientRedirectConfig();
+      }
+      redirectHandler = new DefaultRedirectHandler(
+        new ArrayList<>(redirectConfig.getSameOriginBlockedHeaders()),
+        new ArrayList<>(redirectConfig.getCrossOriginBlockedHeaders())
+      );
+    }
     return new LegacyHttpClient(
       vertx,
       resolver,

@@ -110,7 +110,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.poolOptions = poolOptions;
     this.resourceManager = new ResourceManager<>();
     this.maxLifetime = MILLISECONDS.convert(poolOptions.getMaxLifetime(), poolOptions.getMaxLifetimeUnit());
-    this.redirectHandler = redirectHandler != null ? redirectHandler : DEFAULT_REDIRECT_HANDLER;
+    this.redirectHandler = Objects.requireNonNull(redirectHandler);
     this.followAlternativeServices = followAlternativeServices;
     this.verifyHost = verifyHost;
     this.defaultSsl = defaultSsl;

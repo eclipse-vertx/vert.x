@@ -10,38 +10,105 @@
  */
 package io.vertx.core.http.impl;
 
-import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 import io.vertx.core.Future;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.MultiMap;
+import io.vertx.core.http.*;
+import io.vertx.core.net.HostAndPort;
+
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
-
+/**
+ * <p>Default implementation of an HTTP redirection handler, this handler:</p>
+ *
+ * <ul>
+ *   <li>redirects the following status codes
+ *   <ul>
+ *     <li>303: always redirected as a GET method</li>
+ *     <li>301, 302, 307, 308: redirected only for GET and HEAD methods</li>
+ *   </ul>
+ *   </li>
+ *   <li>removes the following headers
+ *   <ul>
+ *     <li>same-origin: <i>cookie</i>, <i>content-length</i></li>
+ *     <li>cross-origin: <i>authorization</i>, <i>cookie</i>, <i>proxy-authorization</i>, <i>content-length</i></li>
+ *   </ul>
+ *   </li>
+ * </ul>
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
 public class DefaultRedirectHandler implements Function<HttpClientResponse, Future<RequestOptions>> {
 
-  public DefaultRedirectHandler() {
+  private final List<String> crossOriginBlockedHeaders;
+  private final List<String> sameOriginBlockedHeaders;
+
+  /**
+   * Create a redirect handler configured with stripped headers.
+   *
+   * @param sameOriginBlockedHeaders the same-origin stripped headers
+   * @param crossOriginBlockedHeaders the cross-origin stripped headers
+   */
+  public DefaultRedirectHandler(List<String> sameOriginBlockedHeaders, List<String> crossOriginBlockedHeaders) {
+    this.crossOriginBlockedHeaders = new ArrayList<>(crossOriginBlockedHeaders);
+    this.sameOriginBlockedHeaders = new ArrayList<>(sameOriginBlockedHeaders);
+  }
+
+  /**
+   * Returns whether the status code should be redirected.
+   *
+   * @implNote implements the default documented policy
+   * @param statusCode the HTTP status code
+   * @return whether to redirect
+   */
+  protected boolean wantRedirect(int statusCode) {
+    return statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307 || statusCode == 308;
+  }
+
+  /**
+   * Returns the list of stripped headers.
+   *
+   * @implNote returns {@link #sameOriginBlockedHeaders} when {@code sameOrigin == true}, {@link #crossOriginBlockedHeaders} when {@code sameOrigin == false}
+   * @param sameOrigin whether the request is a same-origin or cross-origin redirection.
+   * @return the list of stripped headers
+   */
+  protected List<String> strippedHeaders(boolean sameOrigin) {
+    return sameOrigin ? sameOriginBlockedHeaders : crossOriginBlockedHeaders;
+  }
+
+  /**
+   * Filter the {@code headers} before redirection.
+   *
+   * @implNote strip headers according to the documented policy
+   * @param sameOrigin whether the request is a same-origin or cross-origin redirection.
+   * @param headers the request headers of the redirected request
+   */
+  protected void filterHeaders(boolean sameOrigin, MultiMap headers) {
+    List<String> strippedHeaders = strippedHeaders(sameOrigin);
+    for (String s : strippedHeaders) {
+      headers.remove(s);
+    }
   }
 
   @Override
-  public Future<RequestOptions> apply(HttpClientResponse resp) {
+  public Future<RequestOptions> apply(HttpClientResponse response) {
     try {
-      int statusCode = resp.statusCode();
-      String location = resp.getHeader(HttpHeaders.LOCATION);
-      if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307
-                               || statusCode == 308)) {
-        HttpMethod m = resp.request().getMethod();
+      int statusCode = response.statusCode();
+      String location = response.getHeader(HttpHeaders.LOCATION);
+      if (location != null && wantRedirect(statusCode)) {
+        HttpClientRequest request = response.request();
+        HttpMethod m = request.getMethod();
         if (statusCode == 303) {
           m = HttpMethod.GET;
         } else if (m != HttpMethod.GET && m != HttpMethod.HEAD) {
           return null;
         }
-        URI uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
+        URI redirectUri = HttpUtils.resolveURIReference(request.absoluteURI(), location);
         boolean ssl;
-        int port = uri.getPort();
-        String protocol = uri.getScheme();
+        int port = redirectUri.getPort();
+        String protocol = redirectUri.getScheme();
         char chend = protocol.charAt(protocol.length() - 1);
         if (chend == 'p') {
           ssl = false;
@@ -56,27 +123,36 @@ public class DefaultRedirectHandler implements Function<HttpClientResponse, Futu
         } else {
           return null;
         }
-        String requestURI = uri.getPath();
-        if (requestURI == null || requestURI.isEmpty()) {
-          requestURI = "/";
+        String redirectRequestUri = redirectUri.getPath();
+        if (redirectRequestUri == null || redirectRequestUri.isEmpty()) {
+          redirectRequestUri = "/";
         }
-        String query = uri.getQuery();
-        if (query != null) {
-          requestURI += "?" + query;
+        String redirectQueryString = redirectUri.getQuery();
+        if (redirectQueryString != null) {
+          redirectRequestUri += "?" + redirectQueryString;
         }
+        MultiMap headers = request.headers();
+        boolean sameOrigin = isSameOrigin(request, ssl, redirectUri.getHost(), port);
+        filterHeaders(sameOrigin, headers);
         RequestOptions options = new RequestOptions();
         options.setMethod(m);
-        options.setHost(uri.getHost());
+        options.setHost(redirectUri.getHost());
         options.setPort(port);
         options.setSsl(ssl);
-        options.setURI(requestURI);
-        options.setHeaders(resp.request().headers());
-        options.removeHeader(CONTENT_LENGTH);
+        options.setURI(redirectRequestUri);
+        options.setHeaders(headers);
         return Future.succeededFuture(options);
       }
       return null;
     } catch (Exception e) {
       return Future.failedFuture(e);
     }
+  }
+
+  private static boolean isSameOrigin(HttpClientRequest request, boolean ssl, String host, int port) {
+    HostAndPort authority = request.authority();
+    int defaultPort = ssl ? 443 : 80;
+    int requestAuthority = authority.port() == -1 ? defaultPort : authority.port();
+    return request.connection().isSsl() == ssl && authority.host().equals(host) && requestAuthority == port;
   }
 }

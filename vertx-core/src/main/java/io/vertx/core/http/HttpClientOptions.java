@@ -24,6 +24,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static io.vertx.core.http.HttpHeaders.*;
+
 /**
  * Options describing how an {@link HttpClient} will make connections.
  *
@@ -163,6 +165,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
+  /**
+   * The default same-origin blocked header list = ({@code cookie}, {@code content-length})
+   */
+  public static final Set<String> DEFAULT_SAME_ORIGIN_REDIRECT_BLOCKED_HEADERS = Set.of(
+    COOKIE.toString(),
+    CONTENT_LENGTH.toString()
+  );
+
+  /**
+   * The default cross-origin blocked header list = ({@code authorization}, {@code cookie}, {@code proxy-authorization}, {@code content-length})
+   */
+  public static final Set<String> DEFAULT_CROSS_ORIGIN_REDIRECT_BLOCKED_HEADERS = Set.of(
+    AUTHORIZATION.toString(),
+    COOKIE.toString(),
+    PROXY_AUTHORIZATION.toString(),
+    CONTENT_LENGTH.toString()
+  );
+
   private Http1ClientConfig http1Config;
   private Http2ClientConfig http2Config;
   private boolean verifyHost;
@@ -171,6 +191,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int defaultPort;
   private HttpVersion protocolVersion;
   private int maxRedirects;
+  private Set<String> sameOriginRedirectBlockedHeaders;
+  private Set<String> crossOriginRedirectBlockedHeaders;
   private boolean forceSni;
 
   private TracingPolicy tracingPolicy;
@@ -211,6 +233,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
     this.maxRedirects = other.maxRedirects;
+    this.sameOriginRedirectBlockedHeaders = other.sameOriginRedirectBlockedHeaders != null ? new HashSet<>(other.sameOriginRedirectBlockedHeaders) : null;
+    this.crossOriginRedirectBlockedHeaders = other.crossOriginRedirectBlockedHeaders != null ? new HashSet<>(other.crossOriginRedirectBlockedHeaders) : null;
     this.forceSni = other.forceSni;
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
@@ -893,6 +917,42 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
+    return this;
+  }
+
+  /**
+   * @return the set of blocked HTTP headers on a same-origin redirection, the default being {@link HttpClientOptions#DEFAULT_SAME_ORIGIN_REDIRECT_BLOCKED_HEADERS}
+   */
+  public Set<String> getSameOriginRedirectBlockedHeaders() {
+    return sameOriginRedirectBlockedHeaders;
+  }
+
+  /**
+   * Update the set of blocked HTTP headers on a same-origin redirection.
+   *
+   * @param sameOriginRedirectBlockedHeaders the new set of headers to block
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setSameOriginRedirectBlockedHeaders(Set<String> sameOriginRedirectBlockedHeaders) {
+    this.sameOriginRedirectBlockedHeaders = Objects.requireNonNull(sameOriginRedirectBlockedHeaders);
+    return this;
+  }
+
+  /**
+   * @return the set of blocked HTTP headers on a cross-origin redirection, the default being {@link HttpClientOptions#DEFAULT_CROSS_ORIGIN_REDIRECT_BLOCKED_HEADERS}
+   */
+  public Set<String> getCrossOriginRedirectBlockedHeaders() {
+    return crossOriginRedirectBlockedHeaders;
+  }
+
+  /**
+   * Update the set of blocked HTTP headers on a cross-origin redirection.
+   *
+   * @param crossOriginRedirectBlockedHeaders the new set of headers to block
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setCrossOriginRedirectBlockedHeaders(Set<String> crossOriginRedirectBlockedHeaders) {
+    this.crossOriginRedirectBlockedHeaders = Objects.requireNonNull(crossOriginRedirectBlockedHeaders);
     return this;
   }
 

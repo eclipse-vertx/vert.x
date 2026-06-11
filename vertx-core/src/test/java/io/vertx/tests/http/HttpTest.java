@@ -32,6 +32,7 @@ import io.vertx.core.http.impl.tcp.TcpHttpServer;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
@@ -41,12 +42,14 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.http.HttpClientConfigurator;
 import io.vertx.test.http.HttpConfigurator;
 import io.vertx.test.http.SimpleHttpTest2;
+import io.vertx.test.tls.Cert;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
+import javax.net.ssl.SSLSession;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
@@ -64,6 +67,7 @@ import java.util.function.*;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.*;
+import static io.vertx.core.net.SocketAddress.inetSocketAddress;
 import static io.vertx.test.core.AssertExpectations.that;
 import static io.vertx.test.core.TestUtils.*;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -275,7 +279,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         request.response().end();
       });
     startServer(testAddress);
-    SocketAddress server = SocketAddress.inetSocketAddress(port, host);
+    SocketAddress server = inetSocketAddress(port, host);
     client.request(new RequestOptions().setServer(server))
       .compose(req -> req
         .send()
@@ -3683,7 +3687,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       req.response().end();
       checkpoint1.succeed();
     });
-    startServer(SocketAddress.inetSocketAddress(port, testAddress.host()), server2);
+    startServer(inetSocketAddress(port, testAddress.host()), server2);
     client.request(requestOptions)
       .compose(req -> req
         .setFollowRedirects(true)
@@ -3700,7 +3704,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   @Test
   public void testFollowRedirectWithCustomHandler(Checkpoint checkpoint1, Checkpoint checkpoint2) throws Exception {
     int basePort = config.port();
-    SocketAddress redirectedServerAddress = SocketAddress.inetSocketAddress(basePort + 1, testAddress.host());
+    SocketAddress redirectedServerAddress = inetSocketAddress(basePort + 1, testAddress.host());
     AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
       redirects.incrementAndGet();
@@ -3762,6 +3766,30 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://" + config.host() + ":" + config.port();
+
+    class MockHttpConn implements HttpConnection {
+      public HttpVersion protocolVersion() { return config.version(); }
+      public HttpConnection goAway(long errorCode, int lastStreamId, Buffer debugData) { throw new UnsupportedOperationException(); }
+      public HttpConnection goAwayHandler(Handler<GoAway> handler) { throw new UnsupportedOperationException(); }
+      public HttpConnection shutdownHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public Future<Void> shutdown(Duration timeout) { throw new UnsupportedOperationException(); }
+      public HttpConnection closeHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
+      public HttpSettings settings() { throw new UnsupportedOperationException(); }
+      public Future<Void> updateSettings(HttpSettings settings) { throw new UnsupportedOperationException(); }
+      public HttpSettings remoteSettings() { throw new UnsupportedOperationException(); }
+      public HttpConnection remoteSettingsHandler(Handler<HttpSettings> handler) { throw new UnsupportedOperationException(); }
+      public Future<Buffer> ping(Buffer data) { throw new UnsupportedOperationException(); }
+      public HttpConnection pingHandler(Handler<Buffer> handler) { throw new UnsupportedOperationException(); }
+      public HttpConnection exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
+      public SocketAddress remoteAddress() { throw new UnsupportedOperationException(); }
+      public SocketAddress remoteAddress(boolean real) { throw new UnsupportedOperationException(); }
+      public SocketAddress localAddress() { throw new UnsupportedOperationException(); }
+      public SocketAddress localAddress(boolean real) { throw new UnsupportedOperationException(); }
+      public boolean isSsl() { return true; }
+      public SSLSession sslSession() { throw new UnsupportedOperationException(); }
+      public String indicatedServerName() { return ""; }
+    }
+
     class MockReq implements HttpClientRequest {
       public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> write(Buffer data) { throw new UnsupportedOperationException(); }
@@ -3772,7 +3800,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
       public boolean isChunked() { return false; }
       public HttpClientRequest authority(HostAndPort authority) { throw new UnsupportedOperationException(); }
-      public HostAndPort authority() { throw new UnsupportedOperationException(); }
+      public HostAndPort authority() { return HostAndPort.authority(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT); }
       public HttpMethod getMethod() { return method; }
       public String absoluteURI() { return baseURI; }
       public HttpVersion version() { return HttpVersion.HTTP_1_1; }
@@ -3807,7 +3835,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public Future<Void> reset(long code) { return Future.failedFuture(new UnsupportedOperationException()); }
       public Future<Void> reset(long code, Throwable cause) { return Future.failedFuture(new UnsupportedOperationException()); }
       public Future<Boolean> cancel() { return Future.failedFuture(new UnsupportedOperationException()); }
-      public HttpClientConnection connection() { throw new UnsupportedOperationException(); }
+      public HttpConnection connection() { return new MockHttpConn(); }
       public Future<Void> writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public StreamPriority getStreamPriority() { return null; }
@@ -3839,7 +3867,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public Future<Void> end() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();
-    Function<HttpClientResponse, Future<RequestOptions>> handler = (((CleanableHttpClient)client).unwrap()).redirectHandler();
+    Function<HttpClientResponse, Future<RequestOptions>> handler = HttpClientAgent.DEFAULT_REDIRECT_HANDLER;
     Future<RequestOptions> redirection = handler.apply(resp);
     if (expectedAbsoluteURI != null) {
       RequestOptions expectedOptions = new RequestOptions().setAbsoluteURI(location);
@@ -3892,6 +3920,242 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         .setFollowRedirects(true)
         .send()
         .expecting(HttpResponseExpectation.SC_OK))
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectHandlerDefaultHeaderFilteringSameOrigin() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringSameOrigin(
+      config
+        .forClient(),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertEquals("secret", result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertNull(result.getString(HttpHeaders.COOKIE.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertEquals("test", result.getString("test"));
+  }
+
+  @Test
+  public void testFollowRedirectHandlerHeaderFilteringSameOrigin() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringSameOrigin(
+      config
+        .forClient()
+        .setSameOriginRedirectBlockedHeaders(Set.of("test")),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertEquals("secret", result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.COOKIE.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertNull(result.getString("test"));
+  }
+
+  private JsonObject testFollowRedirectHandlerHeaderFilteringSameOrigin(HttpClientConfigurator configurator, RequestOptions request) throws Exception {
+    String scheme = config.version() == HttpVersion.HTTP_1_1 ? "http" : "https";
+    request
+      .setHost("localhost")
+      .setPort(DEFAULT_HTTP_PORT);
+    client.close();
+    client = configurator
+      .configureSsl(options -> options.setHostnameVerificationAlgorithm(""))
+      .create(vertx);
+    return testFollowRedirectHandlerHeaderFiltering(
+      request,
+      scheme + "://localhost:" + DEFAULT_HTTP_PORT,
+      inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+  }
+
+  @WithDnsServer(records = { @DnsRecord(name = "host1.com"), @DnsRecord(name = "host2.com") })
+  @Test
+  public void testFollowRedirectHandlerDefaultHeaderFilteringDifferentHost() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringDifferentHost(
+      config
+        .forClient(),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertNull(result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertNull(result.getString(HttpHeaders.COOKIE.toString()));
+    assertNull(result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertEquals("test", result.getString("test"));
+  }
+
+  @WithDnsServer(records = { @DnsRecord(name = "host1.com"), @DnsRecord(name = "host2.com") })
+  @Test
+  public void testFollowRedirectHandlerHeaderFilteringDifferentHost() throws Exception {
+    JsonObject result = testFollowRedirectHandlerHeaderFilteringDifferentHost(
+      config
+        .forClient()
+        .setCrossOriginRedirectBlockedHeaders(Set.of("test")),
+      new RequestOptions()
+        .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+        .putHeader(HttpHeaders.COOKIE, "secret")
+        .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret")
+        .putHeader("test", "test")
+    );
+    assertEquals("secret", result.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.COOKIE.toString()));
+    assertEquals("secret", result.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+    assertNull(result.getString("test"));
+  }
+
+  private JsonObject testFollowRedirectHandlerHeaderFilteringDifferentHost(HttpClientConfigurator configurator, RequestOptions request) throws Exception {
+    String scheme = config.version() == HttpVersion.HTTP_1_1 ? "http" : "https";
+    request
+      .setHost("host1.com")
+      .setPort(DEFAULT_HTTP_PORT);
+    client.close();
+    client = configurator
+      .configureSsl(options -> options.setHostnameVerificationAlgorithm(""))
+      .create(vertx);
+    return testFollowRedirectHandlerHeaderFiltering(
+      request,
+      scheme + "://host2.com:" + DEFAULT_HTTP_PORT,
+      inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST));
+  }
+
+  @Test
+  public void testFollowRedirectHandlerHeaderFilteringDifferentPort() throws Exception {
+    String scheme = config.version() == HttpVersion.HTTP_1_1 ? "http" : "https";
+    RequestOptions request = new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+      .putHeader(HttpHeaders.COOKIE, "secret")
+      .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret");
+    JsonObject body = testFollowRedirectHandlerHeaderFiltering(
+      request,
+      scheme + "://" + DEFAULT_HTTPS_HOST + ":" + (DEFAULT_HTTP_PORT + 1),
+      inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST),
+      inetSocketAddress(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST));
+    assertNull(body.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertNull(body.getString(HttpHeaders.COOKIE.toString()));
+    assertNull(body.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+  }
+
+  @Test
+  public void testFollowRedirectHandlerHeaderFilteringDifferentScheme() throws Exception {
+
+    Assume.assumeTrue(config.version() == HttpVersion.HTTP_1_1);
+
+    Origin dst = new Origin("https", DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT);
+
+    // This proxy allows to test two consecutive to the same authority with both SSL and non SSL
+    NetServer proxy = vertx
+      .createNetServer()
+      .connectHandler(new Handler<NetSocket>() {
+        NetClient client = vertx.createNetClient();
+        int count = 0;
+        @Override
+        public void handle(NetSocket inbound) {
+          int val = count++;
+          switch (val) {
+            case 0:
+              proxy(inbound);
+              break;
+            case 1:
+              inbound
+                .upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+                .onComplete(TestUtils.onSuccess(v -> {
+                  proxy(inbound);
+                }));
+              break;
+            default:
+              inbound.close();
+              break;
+          }
+        }
+        void proxy(NetSocket inbound) {
+          inbound.pause();
+          client.connect(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST)
+            .onComplete(ar -> {
+              if (ar.succeeded()) {
+                NetSocket outbound = ar.result();
+                inbound.handler(outbound::write);
+                inbound.endHandler(v -> outbound.end());
+                outbound.handler(inbound::write);
+                outbound.endHandler(v -> inbound.end());
+                inbound.resume();
+              } else {
+                inbound.close();
+              }
+            });
+        }
+      });
+    proxy.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).await();
+
+    client.close();
+    client = config
+      .forClient()
+      .configureSsl(options -> {
+      options.setTrustAll(true);
+    }).create(vertx);
+
+    RequestOptions request = new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .putHeader(HttpHeaders.AUTHORIZATION, "secret")
+      .putHeader(HttpHeaders.COOKIE, "secret")
+      .putHeader(HttpHeaders.PROXY_AUTHORIZATION, "secret");
+
+    JsonObject body = testFollowRedirectHandlerHeaderFiltering(request, dst.toASCII().toString(), inetSocketAddress(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST));
+    assertNull(body.getString(HttpHeaders.AUTHORIZATION.toString()));
+    assertNull(body.getString(HttpHeaders.COOKIE.toString()));
+    assertNull(body.getString(HttpHeaders.PROXY_AUTHORIZATION.toString()));
+  }
+
+  public JsonObject testFollowRedirectHandlerHeaderFiltering(RequestOptions request,
+                                                             String location,
+                                                             SocketAddress... bindings) throws Exception {
+
+    Handler<HttpServerRequest> requestHandler = new Handler<>() {
+      int count = 0;
+      @Override
+      public void handle(HttpServerRequest request) {
+        switch (count++) {
+          case 0:
+            request
+              .response()
+              .putHeader(HttpHeaders.LOCATION, location)
+              .setStatusCode(302)
+              .end();
+            break;
+          case 1:
+            MultiMap headers = request.headers();
+            JsonObject body = new JsonObject();
+            headers.forEach(body::put);
+            request.response().end(body.encode());
+            break;
+          default:
+            request.response().setStatusCode(500).end();
+            break;
+        }
+      }
+    };
+
+    for (SocketAddress binding : bindings) {
+      HttpServer server = createHttpServer()
+        .requestHandler(requestHandler);
+      server.listen(binding).await();
+    }
+
+    return client.request(request)
+      .compose(req -> req
+        .setFollowRedirects(true)
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body).map(Buffer::toJsonObject))
       .await();
   }
 
@@ -5651,7 +5915,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         HttpServer server = createHttpServer();
         server.requestHandler(req -> {
         });
-        startServer(SocketAddress.inetSocketAddress(config.port() + i, config.host()), server);
+        startServer(inetSocketAddress(config.port() + i, config.host()), server);
         servers.add(server);
       }
       client = httpClientBuilder()

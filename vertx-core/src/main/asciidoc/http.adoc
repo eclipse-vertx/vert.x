@@ -1616,6 +1616,24 @@ The maximum redirects is `16` by default and can be changed with {@link io.vertx
 {@link examples.HttpExamples#configurationOfAnHttpClientRedirects}
 ----
 
+===== Default HTTP redirect policy
+
+By default the following request headers are not propagated to the redirected request:
+
+- same-origin redirect: `cookie`, `content-length`
+- cross-origin policy redirect: `authorization`, `proxy-authorization`, `cookie`, `content-length`
+
+You can configure the default policy configuration
+
+[source,$lang]
+----
+{@link examples.HttpExamples#configurationOfTheDefaultHttpClientRedirectHandler}
+----
+
+NOTE: this policy is applied since 5.1.3 and 4.5.29 releases.
+
+===== Custom HTTP redirect policy
+
 One size does not fit all and the default redirection policy may not be adapted to your needs.
 
 The default redirection policy can changed with a custom implementation:
@@ -1637,7 +1655,6 @@ The returned request must be unsent so the original request handlers can be sent
 Most of the original request settings will be propagated to the new request:
 
 * request headers, unless if you have set some headers
-* request body unless the returned request uses a `GET` method
 * response handler
 * request exception handler
 * request timeout
