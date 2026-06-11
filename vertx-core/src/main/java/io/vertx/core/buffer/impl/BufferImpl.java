@@ -502,7 +502,7 @@ public class BufferImpl implements BufferInternal {
   }
 
   public BufferImpl setBytes(int pos, ByteBuffer b) {
-    ensureLength(pos + b.limit());
+    ensureLength(pos + b.remaining());
     buffer.setBytes(pos, b);
     return this;
   }
