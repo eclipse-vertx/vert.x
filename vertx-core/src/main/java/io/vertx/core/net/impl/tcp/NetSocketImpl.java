@@ -167,9 +167,7 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
         });
         return p.future();
       }).transform(ar -> {
-        if (ar.succeeded()) {
-          doResume();
-        }
+        doResume();
         return (Future<Void>) ar;
       });
     } else {

@@ -47,6 +47,9 @@ import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.DnsServer;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -88,6 +91,9 @@ import static org.junit.Assume.assumeTrue;
  */
 @RunWith(VertxRunner.class)
 public class NetTest {
+
+  @Rule
+  public final DnsServer dnsServer = new DnsServer();
 
   public static class Provider implements VertxProvider {
 
@@ -2112,6 +2118,51 @@ public class NetTest {
     });
     socket.endHandler(v -> checkpoint.succeed());
     socket.write("test").await();
+  }
+
+  @WithDnsServer(records = {@DnsRecord(name = "example.com")})
+  @Test
+  public void testDirectTlsUpgradeFailureResumeReading(Checkpoint checkpoint) throws Exception {
+    server = vertx.createNetServer(new NetServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+    ).connectHandler(so -> {
+      fail();
+    });
+    server.listen(1234, "localhost").await();
+    Future<NetSocket> future = client.connect(new ConnectOptions()
+      .setPort(1234)
+      .setHost("example.com")
+      .setSslOptions(new ClientSSLOptions()
+        .setHostnameVerificationAlgorithm("HTTPS")
+        .setTrustAll(true)));
+    future.onComplete(TestUtils.onSuccess(socket -> {
+      NetSocketInternal soi = (NetSocketInternal) socket;
+      ChannelPipeline pipeline = soi
+        .channelHandlerContext()
+        .pipeline();
+      Object expectedMsg = new Object();
+      AtomicBoolean closed = new AtomicBoolean();
+      pipeline.addBefore("handler", "test", new ChannelDuplexHandler() {
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+          soi
+            .upgradeToSsl()
+            .onComplete(TestUtils.onFailure(err -> {
+              assertFalse(closed.get());
+              ctx.fireChannelRead(expectedMsg);
+            }));
+        }
+      });
+      soi.closeHandler(v -> {
+        closed.set(true);
+      });
+      soi.messageHandler(msg -> {
+        if (msg == expectedMsg) {
+          checkpoint.succeed();
+        }
+      });
+    }));
   }
 
   public static class NativeVertxProvider implements VertxProvider {
