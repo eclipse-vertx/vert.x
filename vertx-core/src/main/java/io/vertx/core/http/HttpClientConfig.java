@@ -29,6 +29,11 @@ import java.util.Objects;
 @Unstable
 public class HttpClientConfig {
 
+  /**
+   * Follow alternative service server advertisements = {@code false}
+   */
+  public static final boolean DEFAULT_FOLLOW_ALTERNATIVE_SERVICES = false;
+
   private static List<HttpVersion> toSupportedVersion(HttpVersion version) {
     switch (version) {
       case HTTP_1_0:
@@ -95,7 +100,7 @@ public class HttpClientConfig {
     this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
-    this.followAlternativeServices = HttpClientOptions.DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
+    this.followAlternativeServices = DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
   }
 
   public HttpClientConfig(HttpClientConfig other) {
@@ -141,7 +146,7 @@ public class HttpClientConfig {
     this.observabilityConfig = observabilityConfig;
     this.shared = options.isShared();
     this.name = options.getName();
-    this.followAlternativeServices = options.getFollowAlternativeServices();
+    this.followAlternativeServices = false;
   }
 
   /**
