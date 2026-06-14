@@ -223,6 +223,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
     this.name = other.name;
+    this.followAlternativeServices = other.followAlternativeServices;
   }
 
   /**

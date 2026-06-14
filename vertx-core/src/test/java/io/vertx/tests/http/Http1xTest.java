@@ -477,6 +477,7 @@ public class Http1xTest extends HttpTest {
     int http2ConnectionWindowSize = TestUtils.randomPositiveInt();
     int http2UpgradeMaxContentLength = TestUtils.randomPositiveInt();
     boolean decompressionSupported = rand.nextBoolean();
+    boolean followAlternativeServices = true;
     HttpVersion protocolVersion = HttpVersion.HTTP_1_0;
     int maxChunkSize = TestUtils.randomPositiveInt();
     int maxInitialLineLength = TestUtils.randomPositiveInt();
@@ -515,6 +516,7 @@ public class Http1xTest extends HttpTest {
     options.setHttp2MultiplexingLimit(http2MultiplexingLimit);
     options.setHttp2ConnectionWindowSize(http2ConnectionWindowSize);
     options.setDecompressionSupported(decompressionSupported);
+    options.setFollowAlternativeServices(followAlternativeServices);
     options.setProtocolVersion(protocolVersion);
     options.setMaxChunkSize(maxChunkSize);
     options.setMaxInitialLineLength(maxInitialLineLength);
