@@ -401,7 +401,7 @@ public class HttpAlternativesTest extends VertxTestBase {
         .end(request.authority().toString(false));
     });
     server.listen(8080).await();
-    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setFollowAlternativeServices(true));
+    client = vertx.createHttpClient(new HttpClientConfig(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2)).setFollowAlternativeServices(true));
     Buffer body = client.request(HttpMethod.GET, 8080, "host2.com", "/")
       .compose(request -> request
         .send()

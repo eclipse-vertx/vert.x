@@ -152,11 +152,6 @@ public class HttpClientOptionsConverter {
             obj.setName((String)member.getValue());
           }
           break;
-        case "followAlternativeServices":
-          if (member.getValue() instanceof Boolean) {
-            obj.setFollowAlternativeServices((Boolean)member.getValue());
-          }
-          break;
       }
     }
   }
@@ -207,6 +202,5 @@ public class HttpClientOptionsConverter {
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
-    json.put("followAlternativeServices", obj.getFollowAlternativeServices());
   }
 }
