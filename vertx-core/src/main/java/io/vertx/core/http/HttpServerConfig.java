@@ -124,8 +124,16 @@ public class HttpServerConfig {
       .setMaxFields(options.getMaxFormFields())
       .setMaxBufferedBytes(options.getMaxFormBufferedBytes());
 
+    QueryParamDecoderConfig queryParamDecoderConfig;
+    if (options.isUseSemicolonAsQueryParamDelimiter() == QueryParamDecoderConfig.DEFAULT_USE_SEMICOLON_AS_DELIMITER) {
+      queryParamDecoderConfig = null;
+    } else {
+      queryParamDecoderConfig = new QueryParamDecoderConfig().setUseSemicolonAsDelimiter(!QueryParamDecoderConfig.DEFAULT_USE_SEMICOLON_AS_DELIMITER);
+    }
+
     this.versions = versions;
     this.formDecoderConfig = formDecoderConfig;
+    this.queryParamDecoderConfig = queryParamDecoderConfig;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.strictThreadMode = options.getStrictThreadMode();
     this.observabilityConfig = observabilityConfig;

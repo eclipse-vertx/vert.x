@@ -231,6 +231,7 @@ public class HttpServerOptions extends NetServerOptions {
   private TimeUnit http2RstFloodWindowDurationTimeUnit;
   private boolean strictThreadMode;
   private boolean http2ClearTextEnabled;
+  private boolean useSemicolonAsQueryParamDelimiter;
 
   /**
    * Default constructor
@@ -263,6 +264,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.http2RstFloodWindowDurationTimeUnit = other.http2RstFloodWindowDurationTimeUnit;
     this.strictThreadMode = other.strictThreadMode;
     this.http2ClearTextEnabled = other.http2ClearTextEnabled;
+    this.useSemicolonAsQueryParamDelimiter = other.useSemicolonAsQueryParamDelimiter;
   }
 
   /**
@@ -304,6 +306,7 @@ public class HttpServerOptions extends NetServerOptions {
     registerWebSocketWriteHandlers = DEFAULT_REGISTER_WEBSOCKET_WRITE_HANDLERS;
     http2RstFloodWindowDurationTimeUnit = DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT;
     http2ClearTextEnabled = DEFAULT_HTTP2_CLEAR_TEXT_ENABLED;
+    useSemicolonAsQueryParamDelimiter = QueryParamDecoderConfig.DEFAULT_USE_SEMICOLON_AS_DELIMITER;
   }
 
   /**
@@ -924,6 +927,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setHttp2ClearTextEnabled(boolean http2ClearTextEnabled) {
     this.http2ClearTextEnabled = http2ClearTextEnabled;
+    return this;
+  }
+
+  /**
+   * @return whether to use the semicolon char {@code ;} as a delimiter for query string parameters.
+   */
+  public boolean isUseSemicolonAsQueryParamDelimiter() {
+    return useSemicolonAsQueryParamDelimiter;
+  }
+
+  /**
+   * Configure whether to use the semicolon char {@code ;} as a delimiter for query string parameters.
+   *
+   * @param useSemicolonAsDelimiter whether to allow semicolon to be used as a delimiter or it is a an actual parameter name or value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setUseSemicolonAsQueryParamDelimiter(boolean useSemicolonAsDelimiter) {
+    this.useSemicolonAsQueryParamDelimiter = useSemicolonAsDelimiter;
     return this;
   }
 
