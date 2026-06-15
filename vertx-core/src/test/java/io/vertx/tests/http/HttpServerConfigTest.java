@@ -42,4 +42,15 @@ public class HttpServerConfigTest {
       }
     }
   }
+
+  @Test
+  public void testUseSemicolonAsQueryParamDelimiter() {
+    HttpServerConfig cfg = new HttpServerConfig(new HttpServerOptions());
+    assertNull(cfg.getQueryParamConfig());
+    cfg = new HttpServerConfig(new HttpServerOptions().setUseSemicolonAsQueryParamDelimiter(true));
+    assertNull(cfg.getQueryParamConfig());
+    cfg = new HttpServerConfig(new HttpServerOptions().setUseSemicolonAsQueryParamDelimiter(false));
+    assertNotNull(cfg.getQueryParamConfig());
+    assertFalse(cfg.getQueryParamConfig().isUseSemicolonAsDelimiter());
+  }
 }
