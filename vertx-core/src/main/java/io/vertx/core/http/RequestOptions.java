@@ -118,6 +118,7 @@ public class RequestOptions extends HttpConnectOptions {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
     }
     setTraceOperation(other.traceOperation);
+    setRoutingKey(other.routingKey);
   }
 
   /**
