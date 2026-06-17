@@ -48,12 +48,14 @@ public class RequestOptionsTest {
       .setMethod(HttpMethod.PUT)
       .setPort(8443)
       .setSsl(true)
-      .setFollowRedirects(true);
+      .setFollowRedirects(true)
+      .setRoutingKey("user-123");
     RequestOptions copy = new RequestOptions(options);
     assertEquals(options.getMethod(), copy.getMethod());
     assertEquals(options.getPort(), copy.getPort());
     assertEquals(options.isSsl(), copy.isSsl());
     assertEquals(options.getFollowRedirects(), copy.getFollowRedirects());
+    assertEquals(options.getRoutingKey(), copy.getRoutingKey());
   }
 
   @Test
