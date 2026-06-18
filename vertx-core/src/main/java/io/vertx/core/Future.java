@@ -12,12 +12,12 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.impl.WorkerExecutor;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.WorkerExecutor;
 import io.vertx.core.impl.future.CompositeFutureImpl;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
+import io.vertx.core.internal.ContextInternal;
 
 import java.time.Duration;
 import java.util.List;
@@ -707,6 +707,9 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   private CountDownLatch trySuspend() {
+    if (isComplete()) {
+      return null;
+    }
     io.vertx.core.impl.WorkerExecutor executor = io.vertx.core.impl.WorkerExecutor.unwrapWorkerExecutor();
     CountDownLatch latch;
     if (executor != null) {
@@ -733,18 +736,12 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * Park the current thread until the {@code future} is completed, when the future
-   * is completed the thread is un-parked and
+   * If this {@link Future} is already completed or failed, then this method immediately returns the result or throws the failure, respectively.
+   * <p>
+   * Otherwise, the current thread is parked until this {@link Future} is completed or failed.
    *
-   * <ul>
-   *   <li>the result value is returned when the future was completed with a result</li>
-   *   <li>otherwise, the failure is thrown</li>
-   * </ul>
-   *
-   * This method must be called from a vertx virtual thread or a non vertx thread.
-   *
-   * @return the result
-   * @throws IllegalStateException when called from a vertx event-loop or worker thread
+   * @return the result when this {@link Future} is completed
+   * @throws IllegalStateException when the current thread must be parked and this method is called from a Vert.x event-loop or worker thread.
    */
   default T await() {
     CountDownLatch continuation = trySuspend();
@@ -763,9 +760,9 @@ public interface Future<T> extends AsyncResult<T> {
    * Like {@link #await()} but with a timeout.
    *
    * @param timeout the timeout
-   * @return the result
+   * @return the result when this {@link Future} is completed
    * @throws TimeoutException when the timeout fires before the future completes
-   * @throws IllegalStateException when called from a vertx event-loop or worker thread
+   * @throws IllegalStateException when the current thread must be parked and this method is called from a Vert.x event-loop or worker thread.
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   default T await(Duration timeout) throws TimeoutException {
@@ -777,9 +774,9 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @param timeout the timeout
    * @param unit the timeout unit
-   * @return the result
+   * @return the result when this {@link Future} is completed
    * @throws TimeoutException when the timeout fires before the future completes
-   * @throws IllegalStateException when called from a vertx event-loop or worker thread
+   * @throws IllegalStateException when the current thread must be parked and this method is called from a Vert.x event-loop or worker thread.
    */
   default T await(long timeout, TimeUnit unit) throws TimeoutException {
     if (unit == null) {
