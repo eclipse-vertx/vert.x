@@ -39,6 +39,7 @@ open module io.vertx.core.tests {
   requires io.netty.codec.dns;
   requires static io.netty.tcnative.classes.openssl;
   requires jdk.management;
+  requires static com.aayushatharva.brotli4j;
 
   provides VerticleFactory with ClasspathVerticleFactory, io.vertx.tests.vertx.AccessEventBusFromInitVerticleFactory;
 
