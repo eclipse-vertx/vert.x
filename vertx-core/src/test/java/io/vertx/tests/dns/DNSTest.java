@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
@@ -194,6 +195,24 @@ public class DNSTest extends VertxTestBase {
   }
 
   @Test
+  public void testResolveMXSortedByPriority() throws Exception {
+    mockDnsServer.store(question -> Arrays.asList(
+      MockDnsServer.mx("vertx.io", 100, "mx-high.vertx.io", 40000),
+      MockDnsServer.mx("vertx.io", 100, "mx-low.vertx.io", 10)
+    ));
+    DnsClient dns = prepareDns();
+
+    List<MxRecord> result = dns.resolveMX("vertx.io").await();
+    Assert.assertEquals(2, result.size());
+    MxRecord first = result.get(0);
+    Assert.assertEquals(10, first.priority());
+    Assert.assertEquals("mx-low.vertx.io", first.name());
+    MxRecord second = result.get(1);
+    Assert.assertEquals(40000, second.priority());
+    Assert.assertEquals("mx-high.vertx.io", second.name());
+  }
+
+  @Test
   public void testResolveTXT() throws Exception {
     final String txt = "vertx is awesome";
     mockDnsServer.testResolveTXT(txt);
@@ -286,6 +305,25 @@ public class DNSTest extends VertxTestBase {
         testComplete();
       }));
     await();
+  }
+
+  @Test
+  public void testResolveSRVSortedByPriority() throws Exception {
+    mockDnsServer.store(question -> Arrays.asList(
+      MockDnsServer.srv("_svc._tcp.vertx.io", 100, 40000, 40000, 80, "svc-high.vertx.io"),
+      MockDnsServer.srv("_svc._tcp.vertx.io", 100, 10, 1, 81, "svc-low.vertx.io")
+    ));
+    DnsClient dns = prepareDns();
+
+    List<SrvRecord> result = dns.resolveSRV("_svc._tcp.vertx.io").await();
+    Assert.assertEquals(2, result.size());
+    SrvRecord first = result.get(0);
+    Assert.assertEquals(10, first.priority());
+    Assert.assertEquals("svc-low.vertx.io", first.target());
+    SrvRecord second = result.get(1);
+    Assert.assertEquals(40000, second.priority());
+    Assert.assertEquals(40000, second.weight());
+    Assert.assertEquals("svc-high.vertx.io", second.target());
   }
 
   @Test

@@ -131,8 +131,9 @@ public interface DnsClient {
    * Try to resolve the SRV records for the given name.
    *
    * @param name  the name for which the SRV records should be resolved
-   * @return a future resolved with a List that contains all resolved {@link SrvRecord}s. If none was found it will
-   *                 get notified with an empty {@link java.util.List}. If an error occurs it will get failed.
+   * @return a future resolved with a List that contains all resolved {@link SrvRecord}s, sorted by
+   *                 their {@link SrvRecord#priority()}. If none was found it will get notified with an empty
+   *                 {@link java.util.List}.  If an error occurs it will get failed.
    */
   Future<List<SrvRecord>> resolveSRV(String name);
 
