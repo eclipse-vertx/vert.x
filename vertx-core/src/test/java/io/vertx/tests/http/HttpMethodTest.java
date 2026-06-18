@@ -59,6 +59,7 @@ public class HttpMethodTest {
     assertEquals("ORDERPATCH", HttpMethod.ORDERPATCH.name());
     assertEquals("ACL", HttpMethod.ACL.name());
     assertEquals("SEARCH", HttpMethod.SEARCH.name());
+    assertEquals("QUERY", HttpMethod.QUERY.name());
   }
 
   @Test
@@ -94,7 +95,8 @@ public class HttpMethodTest {
       HttpMethod.MKACTIVITY,
       HttpMethod.ORDERPATCH,
       HttpMethod.ACL,
-      HttpMethod.SEARCH
+      HttpMethod.SEARCH,
+      HttpMethod.QUERY
       )) {
       assertSame(HttpMethod.valueOf(method.name()), method);
       assertSame(method.name(), method.toString());
@@ -162,6 +164,7 @@ public class HttpMethodTest {
     assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.OPTIONS), HttpMethod.OPTIONS);
     assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.PATCH), HttpMethod.PATCH);
     assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.TRACE), HttpMethod.TRACE);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("QUERY")), HttpMethod.QUERY);
     assertEquals(HttpMethod.valueOf("foo").toNetty().name(), "foo");
     assertEquals(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("foo")).name(), "foo");
   }

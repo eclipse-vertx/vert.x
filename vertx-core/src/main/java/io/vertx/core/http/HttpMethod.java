@@ -74,6 +74,11 @@ public class HttpMethod {
   public static final HttpMethod PATCH;
 
   /**
+   * The RFC 10008 {@code QUERY} method, this instance is interned and uniquely used.
+   */
+  public static final HttpMethod QUERY;
+
+  /**
    * The RFC 2518/4918 {@code PROPFIND} method, this instance is interned and uniquely used.
    */
   public static final HttpMethod PROPFIND;
@@ -198,6 +203,7 @@ public class HttpMethod {
     TRACE = new HttpMethod(io.netty.handler.codec.http.HttpMethod.TRACE);
     CONNECT = new HttpMethod(io.netty.handler.codec.http.HttpMethod.CONNECT);
     PATCH = new HttpMethod(io.netty.handler.codec.http.HttpMethod.PATCH);
+    QUERY = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("QUERY"));
     PROPFIND = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("PROPFIND"));
     PROPPATCH = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("PROPPATCH"));
     MKCOL = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("MKCOL"));
@@ -252,7 +258,8 @@ public class HttpMethod {
       HttpMethod.MKACTIVITY,
       HttpMethod.ORDERPATCH,
       HttpMethod.ACL,
-      HttpMethod.SEARCH
+      HttpMethod.SEARCH,
+      HttpMethod.QUERY
     ));
   }
 
@@ -303,6 +310,8 @@ public class HttpMethod {
         return CONNECT;
       case "PATCH":
         return PATCH;
+      case "QUERY":
+        return QUERY;
       case "PROPFIND":
         return PROPFIND;
       case "PROPPATCH":
@@ -386,6 +395,8 @@ public class HttpMethod {
         return CONNECT;
       case "PATCH":
         return PATCH;
+      case "QUERY":
+        return QUERY;
       case "PROPFIND":
         return PROPFIND;
       case "PROPPATCH":
