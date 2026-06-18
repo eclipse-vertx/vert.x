@@ -14,9 +14,12 @@ package io.vertx.core.impl.future;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.core.impl.Utils;
+import io.vertx.core.internal.ContextInternal;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 /**
@@ -123,6 +126,18 @@ public final class FailedFuture<T> extends FutureBase<T> {
   @Override
   public Future<T> otherwise(T value) {
     return new SucceededFuture<>(context, value);
+  }
+
+  @Override
+  public T await() {
+    Utils.throwAsUnchecked(cause());
+    return null;
+  }
+
+  @Override
+  public T await(long timeout, TimeUnit unit) throws TimeoutException {
+    Utils.throwAsUnchecked(cause());
+    return null;
   }
 
   @Override
