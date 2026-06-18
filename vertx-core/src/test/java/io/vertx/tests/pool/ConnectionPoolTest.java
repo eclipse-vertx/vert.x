@@ -877,6 +877,46 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testCancelWaiterDispatchedByRecycle() throws Exception {
+    waitFor(1);
+    ContextInternal context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[]{1});
+
+    // Step 1: Acquire and establish a connection
+    CountDownLatch connectedLatch = new CountDownLatch(1);
+    AtomicReference<Lease<Connection>> leaseRef = new AtomicReference<>();
+    pool.acquire(context, 0, TestUtils.onSuccess2(lease -> {
+      leaseRef.set(lease);
+      connectedLatch.countDown();
+    }));
+    mgr.assertRequest().connect(new Connection(), 0);
+    TestUtils.awaitLatch(connectedLatch);
+
+    // Step 2: Queue a second waiter (pool is at capacity)
+    CompletableFuture<PoolWaiter<Connection>> waiterFut = new CompletableFuture<>();
+    pool.acquire(context, new PoolWaiter.Listener<>() {
+      @Override
+      public void onEnqueue(PoolWaiter<Connection> waiter) {
+        waiterFut.complete(waiter);
+      }
+    }, 0, (res, err) -> {
+    });
+    PoolWaiter<Connection> waiter = waiterFut.get(10, TimeUnit.SECONDS);
+    Assert.assertEquals(1, pool.waiters());
+
+    // Step 3: Recycle the first lease - dispatches connection to the queued waiter
+    leaseRef.get().recycle();
+
+    // Step 4: Cancel the waiter after recycle dispatched it - should return false
+    pool.cancel(waiter, TestUtils.onSuccess2(cancelled -> {
+      Assert.assertFalse(cancelled);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testConnectionSelector() throws Exception {
     waitFor(1);
     ContextInternal context = vertx.createEventLoopContext();
