@@ -137,7 +137,7 @@ public class DnsClientImpl implements DnsClient {
 
   @Override
   public Future<List<MxRecord>> resolveMX(String name) {
-    return queryAll(name, DnsRecordType.MX, RecordDecoder.MX);
+    return queryAll(name, DnsRecordType.MX, RecordDecoder.MX, Comparator.comparingInt(MxRecord::priority));
   }
 
   @Override
@@ -163,7 +163,7 @@ public class DnsClientImpl implements DnsClient {
 
   @Override
   public Future<List<SrvRecord>> resolveSRV(String name) {
-    return queryAll(name, DnsRecordType.SRV, RecordDecoder.SRV);
+    return queryAll(name, DnsRecordType.SRV, RecordDecoder.SRV, Comparator.comparingInt(SrvRecord::priority));
   }
 
   private Future<List<String>> resolveAll(String name, InternetProtocolFamily ipFamily) {
@@ -198,6 +198,11 @@ public class DnsClientImpl implements DnsClient {
   }
 
   private <T> Future<List<T>> queryAll(String name, DnsRecordType recordType, Function<DnsRecord, T> mapper) {
+    return queryAll(name, recordType, mapper, null);
+  }
+
+  private <T> Future<List<T>> queryAll(String name, DnsRecordType recordType, Function<DnsRecord, T> mapper,
+                                       Comparator<T> comparator) {
     Objects.requireNonNull(name);
     ContextInternal ctx = vertx.getOrCreateContext();
     DnsNameResolver resolver = resolver(ctx, InternetProtocolFamily.IPv4);
@@ -238,6 +243,9 @@ public class DnsClientImpl implements DnsClient {
                 ret.add(mapped);
               }
             }
+          }
+          if (comparator != null) {
+            ret.sort(comparator);
           }
           return Future.succeededFuture(ret);
         } finally {
