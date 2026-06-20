@@ -3236,16 +3236,16 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @Test
   public void testFollowRedirectQueryOn301() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 301, 200, 2,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 301, 301, 1,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/redirected");
+      "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectQueryOn302() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 302, 200, 2,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 302, 302, 1,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/redirected");
+      "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
@@ -3257,16 +3257,16 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @Test
   public void testFollowRedirectQueryOn307() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 307, 200, 2,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 307, 307, 1,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/redirected");
+      "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
   public void testFollowRedirectQueryOn308() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 308, 200, 2,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 308, 308, 1,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/redirected");
+      "http://" + config.host() + ":" + config.port() + "/somepath");
   }
 
   @Test
