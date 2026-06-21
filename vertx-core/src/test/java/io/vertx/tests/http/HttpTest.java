@@ -3235,16 +3235,16 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @Test
   public void testFollowRedirectQueryOn301() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 301, 301, 1,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 301, 200, 2,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/somepath");
+      "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectQueryOn302() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 302, 302, 1,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 302, 200, 2,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/somepath");
+      "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
@@ -3256,16 +3256,16 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @Test
   public void testFollowRedirectQueryOn307() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 307, 307, 1,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 307, 200, 2,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/somepath");
+      "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
   public void testFollowRedirectQueryOn308() throws Exception {
-    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 308, 308, 1,
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 308, 200, 2,
       "http://" + config.host() + ":" + config.port() + "/redirected",
-      "http://" + config.host() + ":" + config.port() + "/somepath");
+      "http://" + config.host() + ":" + config.port() + "/redirected");
   }
 
   @Test
@@ -3421,6 +3421,66 @@ public abstract class HttpTest extends SimpleHttpTest2 {
           });
         })
       ).await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithBody() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(2048);
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      if (redirected.compareAndSet(false, true)) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        });
+      } else {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
+          req.response().end();
+        });
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.SC_OK))
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithBodyExceedingLimit() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(1024 * 1024 + 1); // 1MB + 1B
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      if (redirected.compareAndSet(false, true)) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        });
+      } else {
+        fail("Should not redirect");
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.status(307)))
+      .await();
   }
 
   @Test
