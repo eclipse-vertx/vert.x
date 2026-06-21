@@ -12,6 +12,7 @@
 package io.vertx.tests.net;
 
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.test.core.TestUtils;
@@ -75,6 +76,31 @@ public class ProxyOptionsTest {
     assertEquals(null, options.getProxyAuthorization());
     assertEquals(options, options.setProxyAuthorization(randProxyAuthorization));
     assertEquals(randProxyAuthorization, options.getProxyAuthorization());
+
+    assertEquals(null, options.getSslOptions());
+    ClientSSLOptions sslOptions = new ClientSSLOptions();
+    assertEquals(options, options.setSslOptions(sslOptions));
+    assertSame(sslOptions, options.getSslOptions());
+  }
+
+  @Test
+  public void testCopyAndJsonSslOptions() {
+    ProxyOptions options = new ProxyOptions()
+      .setType(ProxyType.HTTPS)
+      .setSslOptions(new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS"));
+
+    // copy
+    ProxyOptions copy = new ProxyOptions(options);
+    assertEquals(ProxyType.HTTPS, copy.getType());
+    assertNotNull(copy.getSslOptions());
+    assertNotSame(options.getSslOptions(), copy.getSslOptions());
+    assertEquals("HTTPS", copy.getSslOptions().getHostnameVerificationAlgorithm());
+
+    // json round-trip
+    ProxyOptions fromJson = new ProxyOptions(options.toJson());
+    assertEquals(ProxyType.HTTPS, fromJson.getType());
+    assertNotNull(fromJson.getSslOptions());
+    assertEquals("HTTPS", fromJson.getSslOptions().getHostnameVerificationAlgorithm());
   }
 
   @Test
