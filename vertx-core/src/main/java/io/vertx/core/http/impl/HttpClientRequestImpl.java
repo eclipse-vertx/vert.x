@@ -41,6 +41,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
+  private static final int MAX_REDIRECT_BUFFER_SIZE = 1024 * 1024;
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
@@ -58,6 +59,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   private boolean isConnect;
   private String traceOperation;
+  private Buffer bodyBuffer;
+  private boolean bodyBufferCopied;
 
   public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream) {
     super(authority, connection, stream, stream.context().promise(), HttpMethod.GET, "/");
@@ -384,13 +387,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     next.pushHandler(pushHandler());
     next.setFollowRedirects(true);
     next.setMaxRedirects(maxRedirects);
-    ((HttpClientRequestImpl)next).numberOfRedirections = numberOfRedirections + 1;
+    HttpClientRequestImpl nextImpl = (HttpClientRequestImpl) next;
+    nextImpl.numberOfRedirections = numberOfRedirections + 1;
+    nextImpl.bodyBuffer = bodyBuffer;
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.idleTimeout(timeoutMs);
         }
-        next.end();
+        if (next.getMethod() == HttpMethod.QUERY && bodyBuffer != null) {
+          next.end(bodyBuffer);
+        } else {
+          next.end();
+        }
       } else {
         next.reset(0);
       }
@@ -504,6 +513,28 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       if (trailersSent) {
         return context.failedFuture(new IllegalStateException("Request already complete"));
+      }
+      if (followRedirects && getMethod() == HttpMethod.QUERY) {
+        if (buff != null) {
+          if (bodyBuffer == null) {
+            if (buff.length() > MAX_REDIRECT_BUFFER_SIZE) {
+              followRedirects = false;
+            } else {
+              bodyBuffer = buff;
+            }
+          } else {
+            if (bodyBuffer.length() + buff.length() > MAX_REDIRECT_BUFFER_SIZE) {
+              followRedirects = false;
+              bodyBuffer = null;
+            } else {
+              if (!bodyBufferCopied) {
+                bodyBuffer = Buffer.buffer().appendBuffer(bodyBuffer);
+                bodyBufferCopied = true;
+              }
+              bodyBuffer.appendBuffer(buff);
+            }
+          }
+        }
       }
       if (!headersSent) {
         if (!connect) {
