@@ -354,7 +354,7 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
         }
       }
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, sslContextManager, context)
         .proxyOptions(proxyOptions);
 
       SocketAddress captured = remoteAddress;

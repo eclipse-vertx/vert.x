@@ -56,6 +56,7 @@ public class ProxyOptions {
   private String proxyAuthorization;
   private ProxyType type;
   private Duration connectTimeout;
+  private ClientSSLOptions sslOptions;
 
   /**
    * Default constructor.
@@ -80,6 +81,7 @@ public class ProxyOptions {
     proxyAuthorization = other.getProxyAuthorization();
     type = other.getType();
     connectTimeout = other.getConnectTimeout();
+    sslOptions = other.sslOptions != null ? other.sslOptions.copy() : null;
   }
 
   /**
@@ -258,6 +260,34 @@ public class ProxyOptions {
    */
   public ProxyOptions setConnectTimeout(Duration connectTimeout) {
     this.connectTimeout = connectTimeout;
+    return this;
+  }
+
+  /**
+   * Get the SSL options used for the connection to the proxy itself.
+   * <p>
+   * Only relevant when {@link #getType()} is {@link ProxyType#HTTPS}.
+   *
+   * @return the proxy SSL options, or {@code null}
+   */
+  public ClientSSLOptions getSslOptions() {
+    return sslOptions;
+  }
+
+  /**
+   * Set the SSL options used for the connection to the proxy itself, when the proxy is reached over
+   * SSL/TLS ({@link ProxyType#HTTPS}).
+   * <p>
+   * These options are resolved independently of the origin SSL options, so the proxy presents and
+   * is validated against its own certificate and trust store. When left unset for an
+   * {@link ProxyType#HTTPS} proxy, the connection is still established over SSL/TLS using the default
+   * trust source, with hostname verification enabled against the proxy host.
+   *
+   * @param sslOptions the proxy SSL options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ProxyOptions setSslOptions(ClientSSLOptions sslOptions) {
+    this.sslOptions = sslOptions;
     return this;
   }
 }
