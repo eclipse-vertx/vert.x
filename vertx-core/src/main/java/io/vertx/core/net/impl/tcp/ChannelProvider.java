@@ -35,6 +35,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
 import io.vertx.core.net.impl.SslEngineUtils;
+import io.vertx.core.internal.tls.ClientSslContextManager;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
@@ -59,16 +60,19 @@ public final class ChannelProvider {
 
   private final Bootstrap bootstrap;
   private final SslContextProvider sslContextProvider;
+  private final ClientSslContextManager sslContextManager;
   private final ContextInternal context;
   private ProxyOptions proxyOptions;
   private String applicationProtocol;
 
   public ChannelProvider(Bootstrap bootstrap,
                          SslContextProvider sslContextProvider,
+                         ClientSslContextManager sslContextManager,
                          ContextInternal context) {
     this.bootstrap = bootstrap;
     this.context = context;
     this.sslContextProvider = sslContextProvider;
+    this.sslContextManager = sslContextManager;
   }
 
   /**
@@ -204,6 +208,7 @@ public final class ChannelProvider {
         switch (proxyType) {
           default:
           case HTTP:
+          case HTTPS:
             proxy = createHttpProxyHandler(proxyAddr, proxyUsername, proxyPassword, proxyAuthorization);
             break;
           case SOCKS5:
@@ -224,41 +229,82 @@ public final class ChannelProvider {
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
-        bootstrap.handler(new ChannelInitializer<Channel>() {
-          @Override
-          protected void initChannel(Channel ch) throws Exception {
-            ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addFirst("proxy", proxy);
-            pipeline.addLast(new ChannelInboundHandlerAdapter() {
-              @Override
-              public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-                if (evt instanceof ProxyConnectionEvent) {
-                  pipeline.remove(proxy);
-                  pipeline.remove(this);
-                  initSSL(peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
-                  connected(ch, ssl, channelHandler);
+        final ClientSSLOptions proxySslOptions;
+        final io.vertx.core.Future<SslChannelProvider> proxySslProviderFuture;
+        if (proxyType == ProxyType.HTTPS) {
+          proxySslOptions = resolveProxySslOptions();
+          List<String> resolvedGroups = SslEngineUtils.resolveKeyExchangeGroups(proxySslOptions.getKeyExchangeGroups(), proxySslOptions.getPqcEnforcementPolicy());
+          proxySslProviderFuture = sslContextManager.resolveSslContextProvider(proxySslOptions, context)
+            .map(p -> new SslChannelProvider(vertx, p, false, resolvedGroups));
+        } else {
+          proxySslOptions = null;
+          proxySslProviderFuture = context.succeededFuture(null);
+        }
+
+        proxySslProviderFuture.onComplete(ar -> {
+          if (ar.failed()) {
+            channelHandler.setFailure(ar.cause());
+            return;
+          }
+          SslChannelProvider proxySslChannelProvider = ar.result();
+          bootstrap.handler(new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel ch) {
+              ChannelPipeline pipeline = ch.pipeline();
+              ChannelInboundHandlerAdapter proxyConnected = new ChannelInboundHandlerAdapter() {
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+                  if (evt instanceof ProxyConnectionEvent) {
+                    pipeline.remove(proxy);
+                    pipeline.remove(this);
+                    initSSL(peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
+                    connected(ch, ssl, channelHandler);
+                  }
+                  ctx.fireUserEventTriggered(evt);
                 }
-                ctx.fireUserEventTriggered(evt);
-              }
 
-              @Override
-              public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                channelHandler.setFailure(cause);
+                @Override
+                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                  channelHandler.setFailure(cause);
+                }
+              };
+              if (proxySslChannelProvider != null) {
+                SslHandler proxySslHandler = proxySslChannelProvider.createClientSslHandler(
+                  HostAndPort.create(proxyHost, proxyPort), proxyHost, null,
+                  proxySslOptions.getSslHandshakeTimeout(), proxySslOptions.getSslHandshakeTimeoutUnit());
+                pipeline.addFirst("proxy-ssl", proxySslHandler);
+                pipeline.addAfter("proxy-ssl", "proxy", proxy);
+              } else {
+                pipeline.addFirst("proxy", proxy);
               }
-            });
-          }
-        });
-        ChannelFuture future = bootstrap.connect(targetAddress);
+              pipeline.addLast(proxyConnected);
+            }
+          });
+          ChannelFuture future = bootstrap.connect(targetAddress);
 
-        future.addListener(res -> {
-          if (!res.isSuccess()) {
-            channelHandler.setFailure(res.cause());
-          }
+          future.addListener(res -> {
+            if (!res.isSuccess()) {
+              channelHandler.setFailure(res.cause());
+            }
+          });
         });
       } else {
         channelHandler.setFailure(dnsRes.cause());
       }
     });
+  }
+
+
+  private ClientSSLOptions resolveProxySslOptions() {
+    ClientSSLOptions proxySslOptions = proxyOptions.getSslOptions();
+    proxySslOptions = proxySslOptions != null ? proxySslOptions.copy() : new ClientSSLOptions();
+    if (proxySslOptions.getHostnameVerificationAlgorithm() == null) {
+      proxySslOptions.setHostnameVerificationAlgorithm("HTTPS");
+    }
+    // ALPN is negotiated for the origin (leg 2), never for the proxy connection.
+    proxySslOptions.setUseAlpn(false);
+    proxySslOptions.setApplicationLayerProtocols(null);
+    return proxySslOptions;
   }
 
   private static ProxyHandler createHttpProxyHandler(InetSocketAddress proxyAddr, String proxyUsername, String proxyPassword,

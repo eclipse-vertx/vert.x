@@ -12,6 +12,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
@@ -141,7 +142,8 @@ public class VertxConnection extends ConnectionBase {
   }
 
   protected boolean supportsFileRegion() {
-    return vertx.transport().supportFileRegion() && !isSsl() &&!isTrafficShaped();
+    boolean sslChannel = chctx.pipeline().get(SslHandler.class) != null;
+    return vertx.transport().supportFileRegion() && !sslChannel && !isTrafficShaped();
   }
 
   /**
