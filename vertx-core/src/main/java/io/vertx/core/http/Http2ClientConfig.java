@@ -119,7 +119,7 @@ public class Http2ClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public Http2ClientConfig setKeepAliveTimeout(Duration keepAliveTimeout) {
-    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative() || keepAliveTimeout.isZero())) {
+    if (keepAliveTimeout != null && (keepAliveTimeout.isNegative())) {
       throw new IllegalArgumentException("HTTP/2 keepAliveTimeout must be >= 0");
     }
     this.keepAliveTimeout = keepAliveTimeout;
