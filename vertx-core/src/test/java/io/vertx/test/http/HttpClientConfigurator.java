@@ -23,6 +23,7 @@ public interface HttpClientConfigurator {
   HttpClientConfigurator setLogActivity(boolean logActivity);
   HttpClientConfigurator setMetricsName(String name);
   HttpClientConfigurator configureSsl(Consumer<ClientSSLOptions> configurator);
+  HttpClientConfigurator setMaxRedirectBufferSize(int maxRedirectBufferSize);
   default HttpClientAgent create(Vertx vertx, PoolOptions poolOptions) {
     return builder(vertx).with(poolOptions).build();
   }

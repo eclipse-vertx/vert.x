@@ -221,6 +221,11 @@ public class Http3Configurator implements HttpConfigurator {
         return this;
       }
       @Override
+      public HttpClientConfigurator setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+        config.setMaxRedirectBufferSize(maxRedirectBufferSize);
+        return this;
+      }
+      @Override
       public HttpClientBuilder builder(Vertx vertx) {
         return vertx.httpClientBuilder().with(config).with(sslOptions);
       }

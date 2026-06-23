@@ -69,6 +69,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private final String defaultHost;
   private final int defaultPort;
   private final int maxRedirects;
+  private final int maxRedirectBufferSize;
   private final List<HttpVersion> versions;
   private final Handler<HttpConnection> connectHandler;
   private volatile Handler<Throwable> exceptionHandler;
@@ -89,6 +90,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
                  String defaultHost,
                  int defaultPort,
                  int maxRedirects,
+                 int maxRedirectBufferSize,
                  List<HttpVersion> versions,
                  ClientSSLOptions sslOptions,
                  Handler<HttpConnection> connectHandler,
@@ -117,6 +119,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     this.defaultHost = defaultHost;
     this.defaultPort = defaultPort;
     this.maxRedirects = maxRedirects;
+    this.maxRedirectBufferSize = maxRedirectBufferSize;
     this.versions = versions;
     this.sslOptions = sslOptions;
     this.connectHandler = connectHandler;
@@ -790,6 +793,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   HttpClientRequestImpl createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
     HttpClientRequestImpl request = new HttpClientRequestImpl(connection, stream);
     request.init(options);
+    request.setMaxRedirectBufferSize(maxRedirectBufferSize);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
     if (rHandler != null) {
       request.setMaxRedirects(maxRedirects);
