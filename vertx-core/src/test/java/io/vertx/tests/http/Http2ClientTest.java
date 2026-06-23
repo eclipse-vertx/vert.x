@@ -191,6 +191,19 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testEnableConnectProtocolSetting() throws Exception {
+    io.vertx.core.http.Http2Settings settings = new io.vertx.core.http.Http2Settings();
+    settings.set(io.vertx.core.http.Http2Settings.ENABLE_CONNECT_PROTOCOL, true);
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setInitialSettings(settings));
+    server.requestHandler(req -> {
+    });
+    startServer();
+    HttpConnection connection = client.connect(requestOptions).await();
+    HttpSettings receivedSettings = connection.remoteSettings();
+    Assert.assertTrue(receivedSettings.get(Http2Settings.ENABLE_CONNECT_PROTOCOL));
+  }
+
+  @Test
   public void testReduceMaxConcurrentStreams() throws Exception {
     int initial = 10;
     int reduced = 5;
@@ -1655,6 +1668,30 @@ public class Http2ClientTest extends Http2TestBase {
         }));
     }));
     await();
+  }
+
+  @Test
+  public void testExtendedConnect() throws Exception {
+
+    HttpServerOptions options = createBaseServerOptions();
+    options.getInitialSettings().set(Http2Settings.ENABLE_CONNECT_PROTOCOL, true);
+
+    server.close();
+    server = vertx.createHttpServer(options);
+    server.requestHandler(request -> {
+      Assert.assertEquals("the-protocol", request.connectProtocol());
+      request.response().end();
+    });
+
+    startServer(testAddress);
+
+    client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.CONNECT))
+      .compose(request -> request.connectProtocol("the-protocol")
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
   }
 
   @Test

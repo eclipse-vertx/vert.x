@@ -66,6 +66,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public String connectProtocol() {
+    return null;
+  }
+
+  @Override
+  public HttpClientRequest connectProtocol(String protocol) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Future<Void> write(Buffer data) {
     throw new IllegalStateException();
   }

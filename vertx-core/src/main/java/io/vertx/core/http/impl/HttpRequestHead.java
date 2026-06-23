@@ -22,15 +22,17 @@ public class HttpRequestHead {
   public final String scheme;
   public final HttpMethod method;
   public final String uri;
+  public final String protocol;
   public final MultiMap headers;
   public final HostAndPort authority;
   public final String absoluteURI;
   public final String traceOperation;
 
-  public HttpRequestHead(String scheme, HttpMethod method, String uri, MultiMap headers, HostAndPort authority, String absoluteURI, String traceOperation) {
+  public HttpRequestHead(String scheme, HttpMethod method, String uri, String protocol, MultiMap headers, HostAndPort authority, String absoluteURI, String traceOperation) {
     this.scheme = scheme;
     this.method = method;
     this.uri = uri;
+    this.protocol = protocol;
     this.headers = headers;
     this.authority = authority;
     this.absoluteURI = absoluteURI;

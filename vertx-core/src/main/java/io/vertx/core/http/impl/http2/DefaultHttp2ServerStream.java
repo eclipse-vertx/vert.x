@@ -152,6 +152,7 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
       requestHeaders.scheme(),
       requestHeaders.method(),
       requestHeaders.path(),
+      requestHeaders.protocol(),
       map,
       requestHeaders.authority(),
       null,

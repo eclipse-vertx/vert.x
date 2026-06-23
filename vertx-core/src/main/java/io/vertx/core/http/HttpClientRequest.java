@@ -175,6 +175,20 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   MultiMap headers();
 
   /**
+   * @return the pseudo header {@code :protocol} to use for extended connect
+   */
+  String connectProtocol();
+
+  /**
+   * Set the {@code :protocol} pseudo header used for extended connect.
+   *
+   * @param protocol the pseudo header value
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest connectProtocol(String protocol);
+
+  /**
    * Put an HTTP header
    *
    * @param name  The header name

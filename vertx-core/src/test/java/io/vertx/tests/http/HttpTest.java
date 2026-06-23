@@ -3777,6 +3777,8 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public String getURI() { throw new UnsupportedOperationException(); }
       public HttpClientRequest setURI(String uri) { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
+      public String connectProtocol() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest connectProtocol(String protocol) { return null; }
       public String query() { throw new UnsupportedOperationException(); }
       public MultiMap headers() { return headers; }
       public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
