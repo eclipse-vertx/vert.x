@@ -3485,6 +3485,35 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testFollowRedirectQueryWithConfiguredBodyExceedingLimit() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(2048);
+    AtomicBoolean redirected = new AtomicBoolean();
+    server.requestHandler(req -> {
+      if (redirected.compareAndSet(false, true)) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.bodyHandler(body -> {
+          assertEquals(body, expected);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        });
+      } else {
+        fail("Should not redirect");
+      }
+    });
+    startServer(testAddress);
+    client = config.forClient().setMaxRedirectBufferSize(1024).create(vertx);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.status(307)))
+      .await();
+  }
+
+  @Test
   public void testFollowRedirectWithBody() throws Exception {
     testFollowRedirectWithBody(Function.identity());
   }
@@ -3887,6 +3916,8 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public boolean isFollowRedirects() { throw new UnsupportedOperationException(); }
       public int getMaxRedirects() { throw new UnsupportedOperationException(); }
+      public int getMaxRedirectBufferSize() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setMaxRedirectBufferSize(int maxRedirectBufferSize) { throw new UnsupportedOperationException(); }
       public int numberOfRedirections() { throw new UnsupportedOperationException(); }
       public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }

@@ -79,6 +79,7 @@ public class HttpClientConfig {
   private String defaultHost;
   private int defaultPort;
   private int maxRedirects;
+  private int maxRedirectBufferSize;
   private ObservabilityConfig observabilityConfig;
   private boolean shared;
   private String name;
@@ -97,6 +98,7 @@ public class HttpClientConfig {
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
+    this.maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
     this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
@@ -116,6 +118,7 @@ public class HttpClientConfig {
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.maxRedirects = other.maxRedirects;
+    this.maxRedirectBufferSize = other.maxRedirectBufferSize;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.shared = other.shared;
     this.name = other.name;
@@ -143,6 +146,7 @@ public class HttpClientConfig {
     this.defaultHost = options.getDefaultHost();
     this.defaultPort = options.getDefaultPort();
     this.maxRedirects = options.getMaxRedirects();
+    this.maxRedirectBufferSize = options.getMaxRedirectBufferSize();
     this.observabilityConfig = observabilityConfig;
     this.shared = options.isShared();
     this.name = options.getName();
@@ -448,6 +452,24 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
+    return this;
+  }
+
+  /**
+   * @return the maximum size of the redirect buffer when redirecting QUERY requests
+   */
+  public int getMaxRedirectBufferSize() {
+    return maxRedirectBufferSize;
+  }
+
+  /**
+   * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
+   *
+   * @param maxRedirectBufferSize the maximum buffer size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+    this.maxRedirectBufferSize = maxRedirectBufferSize;
     return this;
   }
 

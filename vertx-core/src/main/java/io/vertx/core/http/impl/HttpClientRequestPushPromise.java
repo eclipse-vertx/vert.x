@@ -108,6 +108,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public int getMaxRedirectBufferSize() {
+    return 0;
+  }
+
+  @Override
+  public HttpClientRequest setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
     throw new IllegalStateException();
   }

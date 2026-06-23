@@ -203,6 +203,7 @@ public class HttpMethod {
     TRACE = new HttpMethod(io.netty.handler.codec.http.HttpMethod.TRACE);
     CONNECT = new HttpMethod(io.netty.handler.codec.http.HttpMethod.CONNECT);
     PATCH = new HttpMethod(io.netty.handler.codec.http.HttpMethod.PATCH);
+    // TODO: Use Netty HttpMethod.QUERY in the next Netty bump
     QUERY = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("QUERY"));
     PROPFIND = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("PROPFIND"));
     PROPPATCH = new HttpMethod(io.netty.handler.codec.http.HttpMethod.valueOf("PROPPATCH"));
