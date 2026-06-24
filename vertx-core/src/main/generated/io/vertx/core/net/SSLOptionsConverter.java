@@ -41,9 +41,19 @@ public class SSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
-        case "useHybridKeyExchangeProtocol":
-          if (member.getValue() instanceof Boolean) {
-            obj.setUseHybridKeyExchangeProtocol((Boolean)member.getValue());
+        case "keyExchangeGroups":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setKeyExchangeGroups(list);
+          }
+          break;
+        case "pqcEnforcementPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setPqcEnforcementPolicy(io.vertx.core.net.PqcEnforcementPolicy.valueOf((String)member.getValue()));
           }
           break;
         case "enabledSecureTransportProtocols":
@@ -101,7 +111,14 @@ public class SSLOptionsConverter {
       json.put("crlValues", array);
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("useHybridKeyExchangeProtocol", obj.isUseHybridKeyExchangeProtocol());
+    if (obj.getKeyExchangeGroups() != null) {
+      JsonArray array = new JsonArray();
+      obj.getKeyExchangeGroups().forEach(item -> array.add(item));
+      json.put("keyExchangeGroups", array);
+    }
+    if (obj.getPqcEnforcementPolicy() != null) {
+      json.put("pqcEnforcementPolicy", obj.getPqcEnforcementPolicy().name());
+    }
     if (obj.getEnabledSecureTransportProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));

@@ -90,7 +90,7 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
     LogConfig logConfig = config.getLogConfig();
     this.config = config;
     this.registerWriteHandler = registerWriteHandler;
-    this.sslContextManager = new ClientSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions != null && sslOptions.isUseAlpn()));
+    this.sslContextManager = new ClientSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions != null && sslOptions.isUseAlpn(), sslOptions != null ? sslOptions.getPqcEnforcementPolicy() : null));
     this.metrics = vertx.metrics() != null ? vertx.metrics().createTcpClientMetrics(config, protocol) : null;
     this.logging = logConfig != null && logConfig.isEnabled() ? logConfig.getDataFormat() : null;
     this.idleTimeout = config.getIdleTimeout() != null ? config.getIdleTimeout() : Duration.ofMillis(0L);

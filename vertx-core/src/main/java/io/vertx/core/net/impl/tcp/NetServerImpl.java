@@ -85,6 +85,7 @@ public class NetServerImpl implements NetServerInternal {
 
   // Main
   private SslContextManager sslContextManager;
+  private List<String> resolvedKeyExchangeGroups;
   private SslContextProviderReference sslContextProviderRef;
   private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
@@ -236,7 +237,7 @@ public class NetServerImpl implements NetServerInternal {
         } else {
           applicationProtocols = null;
         }
-        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni(), sslOptions.isUseHybridKeyExchangeProtocol());
+        SslChannelProvider sslChannelProvider = new SslChannelProvider(vertx, sslContextProvider, sslOptions.isSni(), resolvedKeyExchangeGroups);
         ch.pipeline().addLast("ssl", sslChannelProvider.createServerHandler(applicationProtocols, sslOptions.getSslHandshakeTimeout(),
           sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(ch.remoteAddress())));
         ChannelPromise p = ch.newPromise();
@@ -430,7 +431,8 @@ public class NetServerImpl implements NetServerInternal {
 
         ServerSslContextManager sslContextManager;
         try {
-          sslContextManager = new ServerSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions.isUseAlpn()));
+          sslContextManager = new ServerSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions.isUseAlpn(), sslOptions.getPqcEnforcementPolicy()));
+          this.resolvedKeyExchangeGroups = SslContextManager.resolveKeyExchangeGroups(sslOptions.getKeyExchangeGroups(), sslOptions.getPqcEnforcementPolicy());
         } catch (Exception e) {
           return context.failedFuture(e);
         }
@@ -488,6 +490,7 @@ public class NetServerImpl implements NetServerInternal {
         // Server already exists with that host/port - we will use that
         actualServer = main;
         metrics = main.metrics;
+        resolvedKeyExchangeGroups = main.resolvedKeyExchangeGroups;
         trafficShapingHandler = main.trafficShapingHandler;
         initializer = new NetSocketInitializer(context, handler, exceptionHandler, trafficShapingHandler);
         worker = ch -> {
