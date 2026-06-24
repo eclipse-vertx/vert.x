@@ -151,15 +151,10 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       close = true;
     }
     if (close) {
-      if (connection != null) {
-        // Route the close through the pipeline tail so VertxHandler#close -> VertxConnection#writeClose
-        // flushes any pending writes (e.g. a response written from the user's exception handler) before
-        // closing the channel. A bare chctx.close() would let Netty's ChannelOutboundBuffer discard the
-        // unflushed entries.
-        chctx.channel().close();
-      } else {
-        chctx.close();
-      }
+      // Close through the channel so it traverses the pipeline tail into VertxHandler#close ->
+      // VertxConnection#writeClose, flushing pending writes before the channel closes -- the same
+      // path used by a regular connection close.
+      chctx.channel().close();
     }
   }
 
