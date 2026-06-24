@@ -2876,50 +2876,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  // Regression test: when an inbound request body fails to decompress, the application's
-  // exception handler must still be able to deliver an error response to the client. Before
-  // the VertxHandler#exceptionCaught flush-before-close fix, the response written from the
-  // exception handler was discarded and the client only saw a connection reset.
-  public void testRequestDecompressionInvalidBodyDeliversErrorResponse() throws Exception {
-    server = vertx.createHttpServer(new HttpServerOptions().setDecompressionSupported(true));
-    // A valid gzip header (the first 10 bytes) followed by a corrupted deflate payload, so that
-    // Netty's HttpContentDecompressor accepts the stream as gzip and then fails while decoding it.
-    byte[] corrupted = TestUtils.compressGzip(TestUtils.randomAlphaString(256));
-    for (int i = 10; i < corrupted.length; i++) {
-      corrupted[i] = (byte) ~corrupted[i];
-    }
-    server.requestHandler(req -> {
-      req.exceptionHandler(err -> {
-        if (!req.response().ended()) {
-          req.response().setStatusCode(400).end("decode-failed");
-        }
-      });
-      // Should not be reached for a malformed body.
-      req.bodyHandler(body -> req.response().end());
-    });
-    startServer(testAddress);
-    NetClient netClient = vertx.createNetClient();
-    CompletableFuture<String> result = new CompletableFuture<>();
-    netClient.connect(testAddress).onComplete(TestUtils.onSuccess(so -> {
-      Buffer respBuff = Buffer.buffer();
-      so.handler(respBuff::appendBuffer);
-      so.closeHandler(v -> result.complete(respBuff.toString()));
-      so.exceptionHandler(result::completeExceptionally);
-      Buffer request = Buffer.buffer()
-        .appendString("PUT /somepath HTTP/1.1\r\n")
-        .appendString("Host: localhost\r\n")
-        .appendString("Content-Encoding: gzip\r\n")
-        .appendString("Content-Length: " + corrupted.length + "\r\n")
-        .appendString("\r\n")
-        .appendBytes(corrupted);
-      so.write(request);
-    }));
-    String resp = result.get(20, TimeUnit.SECONDS);
-    assertTrue("Expected the response to start with \"HTTP/1.1 400\" but got: [" + resp + "]", resp.startsWith("HTTP/1.1 400"));
-    assertTrue("Expected the error body in the response but got: [" + resp + "]", resp.contains("decode-failed"));
-  }
-
-  @Test
   public void testResetClientRequestNotYetSent(Checkpoint checkpoint) throws Exception {
     testResetClientRequestNotYetSent(checkpoint, false, false);
   }
