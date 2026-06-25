@@ -151,9 +151,6 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       close = true;
     }
     if (close) {
-      // Close through the channel so it traverses the pipeline tail into VertxHandler#close ->
-      // VertxConnection#writeClose, flushing pending writes before the channel closes -- the same
-      // path used by a regular connection close.
       chctx.channel().close();
     }
   }
