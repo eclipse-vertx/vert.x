@@ -2209,8 +2209,8 @@ public class NetTest {
           .onComplete(onSuccess(so -> {
             Buffer received = Buffer.buffer();
             so.handler(received::appendBuffer);
-            so.closeHandler(v -> {
-              assertEquals(received.toString(), sockAddress.path());
+            so.endHandler(v -> {
+              assertEquals(sockAddress.path(), received.toString());
               latch.countDown();
             });
           }));
