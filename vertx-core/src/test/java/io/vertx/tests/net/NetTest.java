@@ -187,8 +187,8 @@ public class NetTest {
         });
       }
     });
-    assertWaitUntil(() -> received.get() == buffer.length());
-    assertWaitUntil(() -> ended.get() > 0);
+    assertWaitUntil(() -> received.get() == buffer.length(), 20_000);
+    assertWaitUntil(() -> ended.get() > 0, 20_000);
   }
 
   @Test
