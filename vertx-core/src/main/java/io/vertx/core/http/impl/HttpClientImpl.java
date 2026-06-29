@@ -187,8 +187,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   private Function<EndpointKey, SharedHttpClientConnectionGroup> httpEndpointProvider(boolean resolveOrigin, HttpClientTransport transport) {
     return (key) -> {
       int maxPoolSize = Math.max(poolOptions.getHttp1MaxSize(), poolOptions.getHttp2MaxSize());
-      SocketAddress address = SocketAddress.inetSocketAddress(key.authority.port(), key.authority.host());
-      ClientMetrics clientMetrics = HttpClientImpl.this.httpMetrics != null ? HttpClientImpl.this.httpMetrics.createEndpointMetrics(address, maxPoolSize) : null;
+      ClientMetrics clientMetrics = HttpClientImpl.this.httpMetrics != null ? HttpClientImpl.this.httpMetrics.createEndpointMetrics(key.server, maxPoolSize) : null;
       PoolMetrics poolMetrics = HttpClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("http", key.authority.toString(), maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       ClientSSLOptions sslOptions = key.sslOptions;

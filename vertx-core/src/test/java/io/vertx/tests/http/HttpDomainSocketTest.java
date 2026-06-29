@@ -12,9 +12,7 @@ package io.vertx.tests.http;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.RequestOptions;
+import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.TestUtils;
@@ -81,5 +79,46 @@ public class HttpDomainSocketTest extends HttpTestBase {
     } finally {
       vx.close();
     }
+  }
+
+  @Test
+  public void testMissingAuthority() throws Exception {
+    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    try {
+      assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+      testNoAuthority(vx, HttpVersion.HTTP_1_1);
+      testNoAuthority(vx, HttpVersion.HTTP_2);
+    } finally {
+      vx.close().await();
+    }
+  }
+
+  private void testNoAuthority(Vertx vx, HttpVersion version) throws Exception {
+    File sockFile = TestUtils.tmpFile(".sock");
+    SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
+    HttpServerBuilder serverBuilder = vx.httpServerBuilder()
+      .with(new HttpServerConfig().setVersions(version));
+    HttpClientBuilder clientBuilder = vx.httpClientBuilder()
+      .with(new HttpClientConfig()
+        .setHttp2Config(new Http2ClientConfig().setClearTextUpgrade(false))
+        .setVersions(version));
+    HttpServer server = serverBuilder
+      .build();
+    server.requestHandler(request -> {
+      assertNull(request.authority());
+      request
+        .response()
+        .end();
+    });
+    server
+      .listen(sockAddress)
+      .await();
+    HttpClient client = clientBuilder.build();
+    client.request(new RequestOptions().setServer(sockAddress))
+      .compose(request -> request
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::end))
+      .await();
   }
 }
