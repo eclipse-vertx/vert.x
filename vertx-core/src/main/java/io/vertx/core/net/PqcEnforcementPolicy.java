@@ -11,12 +11,14 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * Policy for enforcing post-quantum cryptography (PQC) key exchange.
  */
 @VertxGen
+@Unstable
 public enum PqcEnforcementPolicy {
   /**
    * No PQC enforcement. Key exchange groups are used as-is if specified.

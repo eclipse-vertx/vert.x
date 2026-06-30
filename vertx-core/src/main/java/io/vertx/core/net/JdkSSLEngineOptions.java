@@ -30,7 +30,6 @@ import javax.net.ssl.SSLEngine;
 public class JdkSSLEngineOptions extends SSLEngineOptions {
 
   private static Boolean jdkAlpnAvailable;
-  private static Boolean jdkPqcAvailable;
 
   /**
    * @return if alpn support is available via the JDK SSL engine
@@ -59,21 +58,11 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   /**
+   * TODO implement it when JDK add supports
    * @return if PQC key exchange (X25519MLKEM768) is available via the JDK SSL engine
    */
   public static synchronized boolean isPqcAvailable() {
-    if (jdkPqcAvailable == null) {
-      boolean available = false;
-      try {
-        Class<?> kemClass = Class.forName("javax.crypto.KEM");
-        java.lang.reflect.Method getInstance = kemClass.getDeclaredMethod("getInstance", String.class);
-        getInstance.invoke(null, "ML-KEM-768");
-        available = true;
-      } catch (Exception ignore) {
-      }
-      jdkPqcAvailable = available;
-    }
-    return jdkPqcAvailable;
+    return false;
   }
 
   public JdkSSLEngineOptions() {
