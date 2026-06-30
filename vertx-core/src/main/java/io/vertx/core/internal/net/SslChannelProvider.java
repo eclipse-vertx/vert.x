@@ -115,17 +115,21 @@ public class SslChannelProvider {
   }
 
   static void applyKeyExchangeGroups(SslHandler sslHandler, List<String> groups) {
-    String curvesList = String.join(":", groups);
+    javax.net.ssl.SSLEngine engine = sslHandler.engine();
     try {
-      long sslPtr = ((ReferenceCountedOpenSslEngine) sslHandler.engine()).sslPointer();
-      boolean success = SSL.setCurvesList(sslPtr, curvesList);
-      if (!success) {
-        log.error("Failed to set key exchange groups [" + curvesList + "] on SSL instance, closing engine");
-        sslHandler.engine().closeOutbound();
+      if (engine instanceof ReferenceCountedOpenSslEngine) {
+        long sslPtr = ((ReferenceCountedOpenSslEngine) engine).sslPointer();
+        boolean success = SSL.setCurvesList(sslPtr, String.join(":", groups));
+        if (!success) {
+          log.error("Failed to set key exchange groups " + groups + " on SSL instance, closing engine");
+          engine.closeOutbound();
+        }
+      } else {
+        SslEngineHelper.applyNamedGroups(engine, groups);
       }
     } catch (Exception e) {
       log.error("Unable to apply key exchange groups: " + e.getMessage() + ", closing engine");
-      sslHandler.engine().closeOutbound();
+      engine.closeOutbound();
     }
   }
 
