@@ -36,7 +36,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  */
 public final class WebSocketConnectionImpl extends VertxConnection {
 
-  private final long closingTimeoutMS;
+  private long closingTimeoutMS;
   private ScheduledFuture<?> closingTimeout;
   private final boolean server;
   private final WebSocketMetrics webSocketMetrics;
@@ -137,6 +137,7 @@ public final class WebSocketConnectionImpl extends VertxConnection {
 
   @Override
   public boolean handleException(Throwable t) {
+    closingTimeoutMS = 0L;
     WebSocketImplBase<?> ws = webSocket;
     if (ws != null) {
       ws.context().execute(t, ws::handleException);
