@@ -55,6 +55,10 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     CLIENT_AUTH_MAPPING.put(ClientAuth.NONE, io.netty.handler.ssl.ClientAuth.NONE);
   }
 
+  private static final List<String> PQ_COMPLIANT_GROUPS = List.of("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024");
+  private static final List<String> DEFAULT_KEY_EXCHANGE_GROUPS = List.of("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024", "X25519", "secp256r1", "x448",
+    "secp384r1", "secp521r1");
+
   protected final Supplier<SslContextFactory> supplier;
   protected final boolean useWorkerPool;
   private final Map<ConfigKey, Future<Config>> configMap;
@@ -146,13 +150,6 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     return engineOptions;
   }
 
-  private static final String X25519MLKEM768 = "X25519MLKEM768";
-
-  // If the user didn't specify any group we return a default list, with X25519MLKEM768 prepended.
-  // This list is the default when weak named curves are removed (see https://www.java.com/en/configure_crypto.html)
-  private static final List<String> DEFAULT_KEY_EXCHANGE_GROUPS = List.of(X25519MLKEM768, "X25519", "secp256r1", "x448",
-    "secp384r1", "secp521r1");
-
   /**
    * Resolve the effective key exchange groups based on the PQC enforcement policy.
    * Called once at startup to avoid per-connection computation and logging.
@@ -164,20 +161,20 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     switch (pqcPolicy) {
       case STRICT:
         if (groups != null && !groups.isEmpty()) {
-          if (!(groups.size() == 1 && groups.contains(X25519MLKEM768))) {
-            log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with [" + X25519MLKEM768 + "]");
+          if (!(PQ_COMPLIANT_GROUPS.containsAll(groups))) {
+            log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
           }
         }
-        return List.of(X25519MLKEM768);
+        return PQ_COMPLIANT_GROUPS;
       case CLIENT_NEGOTIATED:
         if (groups == null || groups.isEmpty()) {
           log.warn("No key exchange groups list was specified, a default list containing X25519MLKEM768 is selected");
           return DEFAULT_KEY_EXCHANGE_GROUPS;
         }
-        if (!groups.contains(X25519MLKEM768)) {
-          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + X25519MLKEM768 + " to key exchange groups " + groups);
+        if (groups.stream().noneMatch(PQ_COMPLIANT_GROUPS::contains)) {
+          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
           List<String> result = new ArrayList<>(groups.size() + 1);
-          result.add(X25519MLKEM768);
+          result.addAll(PQ_COMPLIANT_GROUPS);
           result.addAll(groups);
           return result;
         }
