@@ -10,6 +10,9 @@
  */
 package io.vertx.core.internal.net;
 
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
+
 import javax.net.ssl.SSLEngine;
 import java.util.List;
 
@@ -18,7 +21,10 @@ import java.util.List;
  */
 public class SslEngineHelper {
 
+  private static final Logger log = LoggerFactory.getLogger(SslEngineHelper.class);
+
   public static void applyNamedGroups(SSLEngine engine, List<String> groups) {
+    log.warn("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+");
   }
 
 }
