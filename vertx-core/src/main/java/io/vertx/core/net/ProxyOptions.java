@@ -264,7 +264,7 @@ public class ProxyOptions {
   }
 
   /**
-   * Get the SSL options used for the connection to the proxy itself.
+   * Get the SSL options used between the client and the proxy.
    * <p>
    * Only relevant when {@link #getType()} is {@link ProxyType#HTTPS}.
    *
