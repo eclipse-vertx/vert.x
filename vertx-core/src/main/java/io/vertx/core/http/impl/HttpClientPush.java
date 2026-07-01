@@ -48,6 +48,10 @@ public class HttpClientPush implements HttpRequest {
     return stream;
   }
 
+  public HostAndPort authority() {
+    return authority;
+  }
+
   @Override
   public long id() {
     return stream.id();
@@ -82,5 +86,4 @@ public class HttpClientPush implements HttpRequest {
   public HttpMethod method() {
     return method;
   }
-
 }

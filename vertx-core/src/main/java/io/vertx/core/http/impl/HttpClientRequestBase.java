@@ -45,14 +45,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
   private long lastDataReceived;
   protected Throwable reset;
 
-  HttpClientRequestBase(HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
+  HttpClientRequestBase(HostAndPort authority, HttpConnection connection, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, HttpMethod method, String uri) {
     this.connection = connection;
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
-    this.authority = stream.connection().authority();
+    this.authority = authority;
     this.ssl = stream.connection().isSsl();
 
     //
@@ -70,7 +70,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
     });
   }
 
-  protected HostAndPort authority() {
+  public HostAndPort authority() {
     return authority;
   }
 
@@ -171,7 +171,12 @@ public abstract class HttpClientRequestBase implements HttpClientRequestInternal
   }
 
   void handlePush(HttpClientPush push) {
-    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(connection, push.stream(), push.method(), push.uri(), push.headers());
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(connection,
+      push.stream(),
+      push.authority(),
+      push.method(),
+      push.uri(),
+      push.headers());
     if (pushHandler != null) {
       pushHandler.handle(pushReq);
     } else {
