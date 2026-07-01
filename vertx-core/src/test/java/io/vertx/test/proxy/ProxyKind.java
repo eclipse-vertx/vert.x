@@ -18,6 +18,11 @@ public enum ProxyKind {
   HTTP,
 
   /**
+   * HTTP proxy whose own connection (leg 1) is established over TLS
+   */
+  HTTPS,
+
+  /**
    * SOCKS4/4a tcp proxy
    */
   SOCKS4,
