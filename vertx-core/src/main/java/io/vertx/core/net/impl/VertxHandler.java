@@ -151,7 +151,7 @@ public final class VertxHandler<C extends VertxConnection> extends ChannelDuplex
       close = true;
     }
     if (close) {
-      chctx.close();
+      chctx.channel().close();
     }
   }
 
