@@ -1609,8 +1609,12 @@ Alternatively you can just parse the `Set-Cookie` headers yourself in the respon
 
 The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
 
-* a `301`, `302`, `307` or `308` status code along with an HTTP GET or HEAD method
+* a `301`, `302`, `307` or `308` status code along with an HTTP GET, HEAD, or QUERY method
 * a `303` status code, in addition the directed request perform an HTTP GET method
+
+When redirecting a `QUERY` request, the request body is buffered in memory and resent to the redirected location.
+By default, the maximum size of this buffer is limited to `4KB` (configured via {@link io.vertx.core.http.HttpClientConfig#setMaxRedirectBufferSize(int)}).
+If the body size exceeds this limit, the redirection is not followed.
 
 Here's an example:
 

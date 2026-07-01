@@ -555,7 +555,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             if (bodyBuffer == null) {
               bodyBuffer = new ArrayList<>();
             }
-            bodyBuffer.add(buff);
+            bodyBuffer.add(buff.copy());
           }
         }
       }

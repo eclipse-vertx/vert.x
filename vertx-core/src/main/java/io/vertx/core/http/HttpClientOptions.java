@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.impl.Arguments;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
@@ -134,9 +135,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
   /**
-   * Default max redirect buffer size = 1024 * 1024 bytes (1MB)
+   * Default max redirect buffer size = 4 * 1024 bytes (4KB)
    */
-  public static final int DEFAULT_MAX_REDIRECT_BUFFER_SIZE = 1024 * 1024;
+  public static final int DEFAULT_MAX_REDIRECT_BUFFER_SIZE = 4 * 1024;
 
   /*
    * Default force SNI = {@code false}
@@ -905,7 +906,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the maximum size of the redirect buffer when redirecting QUERY requests
+   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
    */
   public int getMaxRedirectBufferSize() {
     return maxRedirectBufferSize;
@@ -918,6 +919,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
     this.maxRedirectBufferSize = maxRedirectBufferSize;
     return this;
   }

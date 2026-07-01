@@ -107,7 +107,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   int getMaxRedirects();
 
   /**
-   * @return the maximum size of the redirect buffer in bytes when redirecting QUERY requests
+   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
    */
   int getMaxRedirectBufferSize();
 

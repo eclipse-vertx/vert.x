@@ -72,6 +72,7 @@ public class DefaultRedirectHandler implements Function<HttpClientResponse, Futu
         options.setURI(requestURI);
         options.setHeaders(resp.request().headers());
         options.removeHeader(CONTENT_LENGTH);
+        options.removeHeader(HttpHeaders.TRANSFER_ENCODING);
         return Future.succeededFuture(options);
       }
       return null;

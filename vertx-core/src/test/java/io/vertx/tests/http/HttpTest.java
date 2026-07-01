@@ -3426,21 +3426,22 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   @Test
   public void testFollowRedirectQueryWithBody() throws Exception {
     Buffer expected = TestUtils.randomBuffer(2048);
-    AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
-      if (redirected.compareAndSet(false, true)) {
+      if ("/".equals(req.path())) {
         assertEquals(HttpMethod.QUERY, req.method());
-        req.bodyHandler(body -> {
-          assertEquals(body, expected);
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
           String scheme = req.connection().isSsl() ? "https" : "http";
           req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
-        });
-      } else {
+        }));
+      } else if ("/whatever".equals(req.path())) {
         assertEquals(HttpMethod.QUERY, req.method());
-        req.bodyHandler(body -> {
-          assertEquals(body, expected);
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
           req.response().end();
-        });
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
       }
     });
     startServer(testAddress);
@@ -3457,16 +3458,15 @@ public abstract class HttpTest extends SimpleHttpTest2 {
 
   @Test
   public void testFollowRedirectQueryWithBodyExceedingLimit() throws Exception {
-    Buffer expected = TestUtils.randomBuffer(1024 * 1024 + 1); // 1MB + 1B
-    AtomicBoolean redirected = new AtomicBoolean();
+    Buffer expected = TestUtils.randomBuffer(4 * 1024 + 1); // 4KB + 1B
     server.requestHandler(req -> {
-      if (redirected.compareAndSet(false, true)) {
+      if ("/".equals(req.path())) {
         assertEquals(HttpMethod.QUERY, req.method());
-        req.bodyHandler(body -> {
-          assertEquals(body, expected);
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
           String scheme = req.connection().isSsl() ? "https" : "http";
           req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
-        });
+        }));
       } else {
         fail("Should not redirect");
       }
@@ -3486,15 +3486,14 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   @Test
   public void testFollowRedirectQueryWithConfiguredBodyExceedingLimit() throws Exception {
     Buffer expected = TestUtils.randomBuffer(2048);
-    AtomicBoolean redirected = new AtomicBoolean();
     server.requestHandler(req -> {
-      if (redirected.compareAndSet(false, true)) {
+      if ("/".equals(req.path())) {
         assertEquals(HttpMethod.QUERY, req.method());
-        req.bodyHandler(body -> {
-          assertEquals(body, expected);
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
           String scheme = req.connection().isSsl() ? "https" : "http";
           req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
-        });
+        }));
       } else {
         fail("Should not redirect");
       }
@@ -3510,6 +3509,82 @@ public abstract class HttpTest extends SimpleHttpTest2 {
         .send(expected)
         .expecting(HttpResponseExpectation.status(307)))
       .await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithMultipleBuffers() throws Exception {
+    Buffer chunk1 = TestUtils.randomBuffer(1024);
+    Buffer chunk2 = TestUtils.randomBuffer(1024);
+    Buffer expected = Buffer.buffer().appendBuffer(chunk1).appendBuffer(chunk2);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          req.response().end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> {
+      req.setFollowRedirects(true);
+      req.write(chunk1);
+      req.end(chunk2);
+      return req.response().expecting(HttpResponseExpectation.SC_OK);
+    }).await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithStream() throws Exception {
+    Buffer chunk1 = TestUtils.randomBuffer(1024);
+    Buffer chunk2 = TestUtils.randomBuffer(1024);
+    Buffer expected = Buffer.buffer().appendBuffer(chunk1).appendBuffer(chunk2);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          req.response().end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    FakeStream<Buffer> stream = new FakeStream<>();
+    stream.pause();
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    Future<HttpClientResponse> responseFuture = client.request(opts).compose(req -> {
+      req.setFollowRedirects(true);
+      return req.send(stream);
+    });
+    stream.write(chunk1);
+    stream.write(chunk2);
+    stream.end();
+    responseFuture.compose(HttpClientResponse::end).await();
   }
 
   @Test
