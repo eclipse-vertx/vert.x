@@ -131,8 +131,18 @@ public class ClientSSLOptions extends SSLOptions {
   }
 
   @Override
-  public ClientSSLOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
-    return (ClientSSLOptions) super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
+  public ClientSSLOptions setKeyExchangeGroups(List<String> keyExchangeGroups) {
+    return (ClientSSLOptions) super.setKeyExchangeGroups(keyExchangeGroups);
+  }
+
+  @Override
+  public ClientSSLOptions addKeyExchangeGroup(String group) {
+    return (ClientSSLOptions) super.addKeyExchangeGroup(group);
+  }
+
+  @Override
+  public ClientSSLOptions setPqcEnforcementPolicy(PqcEnforcementPolicy pqcEnforcementPolicy) {
+    return (ClientSSLOptions) super.setPqcEnforcementPolicy(pqcEnforcementPolicy);
   }
 
   @Override

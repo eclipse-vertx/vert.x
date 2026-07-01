@@ -57,6 +57,14 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
     return jdkAlpnAvailable;
   }
 
+  /**
+   * TODO implement it when JDK add supports
+   * @return if PQC key exchange (X25519MLKEM768) is available via the JDK SSL engine
+   */
+  public static synchronized boolean isPqcAvailable() {
+    return false;
+  }
+
   public JdkSSLEngineOptions() {
   }
 

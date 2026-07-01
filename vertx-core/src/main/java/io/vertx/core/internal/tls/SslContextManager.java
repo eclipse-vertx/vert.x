@@ -19,6 +19,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.utils.LruCache;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
  */
 public abstract class SslContextManager<P extends SslContextProvider> {
 
+  private static final Logger log = LoggerFactory.getLogger(SslContextManager.class);
+
   public static io.netty.handler.ssl.ClientAuth mapClientAuth(ClientAuth auth) {
     return CLIENT_AUTH_MAPPING.get(auth);
   }
@@ -50,6 +54,10 @@ public abstract class SslContextManager<P extends SslContextProvider> {
     CLIENT_AUTH_MAPPING.put(ClientAuth.REQUEST, io.netty.handler.ssl.ClientAuth.OPTIONAL);
     CLIENT_AUTH_MAPPING.put(ClientAuth.NONE, io.netty.handler.ssl.ClientAuth.NONE);
   }
+
+  private static final List<String> PQ_COMPLIANT_GROUPS = List.of("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024");
+  private static final List<String> DEFAULT_KEY_EXCHANGE_GROUPS = List.of("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024", "X25519", "secp256r1", "x448",
+    "secp384r1", "secp521r1");
 
   protected final Supplier<SslContextFactory> supplier;
   protected final boolean useWorkerPool;
@@ -73,6 +81,38 @@ public abstract class SslContextManager<P extends SslContextProvider> {
    * Resolve the ssl engine options to use for properly running the configured options.
    */
   public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn) {
+    return resolveEngineOptions(engineOptions, useAlpn, PqcEnforcementPolicy.RELAXED);
+  }
+
+  /**
+   * Resolve the ssl engine options to use for properly running the configured options,
+   * taking PQC enforcement policy into account.
+   */
+  public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn, PqcEnforcementPolicy pqcPolicy) {
+    if (pqcPolicy == null) {
+      pqcPolicy = PqcEnforcementPolicy.RELAXED;
+    }
+    if (pqcPolicy == PqcEnforcementPolicy.STRICT || pqcPolicy == PqcEnforcementPolicy.CLIENT_NEGOTIATED) {
+      if (engineOptions != null) {
+        boolean pqcSupported;
+        if (engineOptions instanceof JdkSSLEngineOptions) {
+          pqcSupported = JdkSSLEngineOptions.isPqcAvailable();
+        } else {
+          pqcSupported = OpenSSLEngineOptions.isPqcAvailable();
+        }
+        if (!pqcSupported) {
+          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but the configured SSL engine does not support it");
+        }
+      } else {
+        if (JdkSSLEngineOptions.isPqcAvailable()) {
+          engineOptions = new JdkSSLEngineOptions();
+        } else if (OpenSSLEngineOptions.isPqcAvailable()) {
+          engineOptions = new OpenSSLEngineOptions();
+        } else {
+          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but neither JDK nor OpenSSL support it");
+        }
+      }
+    }
     if (engineOptions == null) {
       if (useAlpn) {
         if (JdkSSLEngineOptions.isAlpnAvailable()) {
@@ -108,6 +148,41 @@ public abstract class SslContextManager<P extends SslContextProvider> {
       }
     }
     return engineOptions;
+  }
+
+  /**
+   * Resolve the effective key exchange groups based on the PQC enforcement policy.
+   * Called once at startup to avoid per-connection computation and logging.
+   */
+  public static List<String> resolveKeyExchangeGroups(List<String> groups, PqcEnforcementPolicy pqcPolicy) {
+    if (pqcPolicy == null) {
+      pqcPolicy = PqcEnforcementPolicy.RELAXED;
+    }
+    switch (pqcPolicy) {
+      case STRICT:
+        if (groups != null && !groups.isEmpty()) {
+          if (!(PQ_COMPLIANT_GROUPS.containsAll(groups))) {
+            log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
+          }
+        }
+        return PQ_COMPLIANT_GROUPS;
+      case CLIENT_NEGOTIATED:
+        if (groups == null || groups.isEmpty()) {
+          log.warn("No key exchange groups list was specified, a default list containing X25519MLKEM768 is selected");
+          return DEFAULT_KEY_EXCHANGE_GROUPS;
+        }
+        if (groups.stream().noneMatch(PQ_COMPLIANT_GROUPS::contains)) {
+          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
+          List<String> result = new ArrayList<>(groups.size() + 1);
+          result.addAll(PQ_COMPLIANT_GROUPS);
+          result.addAll(groups);
+          return result;
+        }
+        return groups;
+      case RELAXED:
+      default:
+        return groups;
+    }
   }
 
   public synchronized int sniEntrySize() {

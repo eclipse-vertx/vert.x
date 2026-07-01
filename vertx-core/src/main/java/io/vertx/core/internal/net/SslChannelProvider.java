@@ -41,22 +41,22 @@ public class SslChannelProvider {
 
   private final Executor workerPool;
   private final boolean sni;
-  private final boolean useHybridKeyExchangeProtocol;
+  private final List<String> keyExchangeGroups;
   private final SslContextProvider sslContextProvider;
 
   public SslChannelProvider(VertxInternal vertx,
                             SslContextProvider sslContextProvider,
                             boolean sni) {
-    this(vertx, sslContextProvider, sni, false);
+    this(vertx, sslContextProvider, sni, null);
   }
 
   public SslChannelProvider(VertxInternal vertx,
                             SslContextProvider sslContextProvider,
                             boolean sni,
-                            boolean useHybridKeyExchangeProtocol) {
+                            List<String> keyExchangeGroups) {
     this.workerPool = vertx.internalWorkerPool().executor();
     this.sni = sni;
-    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
+    this.keyExchangeGroups = keyExchangeGroups;
     this.sslContextProvider = sslContextProvider;
   }
 
@@ -77,8 +77,8 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    if (useHybridKeyExchangeProtocol) {
-      applyHybridCurves(sslHandler);
+    if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
+      applyKeyExchangeGroups(sslHandler, keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
@@ -101,8 +101,8 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    if (useHybridKeyExchangeProtocol) {
-      applyHybridCurves(sslHandler);
+    if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
+      applyKeyExchangeGroups(sslHandler, keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
@@ -111,20 +111,25 @@ public class SslChannelProvider {
   private SniHandler createSniHandler(List<String> applicationProtocols, long sslHandshakeTimeout, TimeUnit sslHandshakeTimeoutUnit, HostAndPort remoteAddress) {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     return new VertxSniHandler(((ServerSslContextProvider)sslContextProvider).serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec,
-      useHybridKeyExchangeProtocol, remoteAddress);
+      keyExchangeGroups, remoteAddress);
   }
 
-  static void applyHybridCurves(SslHandler sslHandler) {
+  static void applyKeyExchangeGroups(SslHandler sslHandler, List<String> groups) {
+    javax.net.ssl.SSLEngine engine = sslHandler.engine();
     try {
-      long sslPtr = ((ReferenceCountedOpenSslEngine) sslHandler.engine()).sslPointer();
-      boolean success = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
-      if (!success) {
-        log.error("Failed to set hybrid PQC groups on SSL instance, closing engine to prevent non-PQC fallback");
-        sslHandler.engine().closeOutbound();
+      if (engine instanceof ReferenceCountedOpenSslEngine) {
+        long sslPtr = ((ReferenceCountedOpenSslEngine) engine).sslPointer();
+        boolean success = SSL.setCurvesList(sslPtr, String.join(":", groups));
+        if (!success) {
+          log.error("Failed to set key exchange groups " + groups + " on SSL instance, closing engine");
+          engine.closeOutbound();
+        }
+      } else {
+        SslEngineHelper.applyNamedGroups(engine, groups);
       }
     } catch (Exception e) {
-      log.error("Unable to apply hybrid PQC curves: " + e.getMessage() + ", closing engine to prevent non-PQC fallback");
-      sslHandler.engine().closeOutbound();
+      log.error("Unable to apply key exchange groups: " + e.getMessage() + ", closing engine");
+      engine.closeOutbound();
     }
   }
 
