@@ -3989,8 +3989,8 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public boolean isFollowRedirects() { throw new UnsupportedOperationException(); }
       public int getMaxRedirects() { throw new UnsupportedOperationException(); }
-      public int getMaxRedirectBufferSize() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setMaxRedirectBufferSize(int maxRedirectBufferSize) { throw new UnsupportedOperationException(); }
+      public int maxRedirectBufferSize() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest maxRedirectBufferSize(int maxRedirectBufferSize) { throw new UnsupportedOperationException(); }
       public int numberOfRedirections() { throw new UnsupportedOperationException(); }
       public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
