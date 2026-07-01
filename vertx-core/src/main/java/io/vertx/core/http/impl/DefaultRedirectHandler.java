@@ -35,7 +35,7 @@ public class DefaultRedirectHandler implements Function<HttpClientResponse, Futu
         HttpMethod m = resp.request().getMethod();
         if (statusCode == 303) {
           m = HttpMethod.GET;
-        } else if (m != HttpMethod.GET && m != HttpMethod.HEAD) {
+        } else if (m != HttpMethod.GET && m != HttpMethod.HEAD && m != HttpMethod.QUERY) {
           return null;
         }
         URI uri = HttpUtils.resolveURIReference(resp.request().absoluteURI(), location);
@@ -72,6 +72,7 @@ public class DefaultRedirectHandler implements Function<HttpClientResponse, Futu
         options.setURI(requestURI);
         options.setHeaders(resp.request().headers());
         options.removeHeader(CONTENT_LENGTH);
+        options.removeHeader(HttpHeaders.TRANSFER_ENCODING);
         return Future.succeededFuture(options);
       }
       return null;

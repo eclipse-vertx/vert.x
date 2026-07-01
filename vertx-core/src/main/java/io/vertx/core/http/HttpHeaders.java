@@ -72,6 +72,14 @@ public interface HttpHeaders {
   CharSequence ACCEPT_PATCH = HttpHeaderNames.ACCEPT_PATCH;
 
   /**
+   * Accept-Query header name
+   * <p>
+   * TODO: Use {@code HttpHeaderNames.ACCEPT_QUERY} when bumping to the next Netty release
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence ACCEPT_QUERY = createOptimized("accept-query");
+
+  /**
    * Access-Control-Allow-Credentials header name
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
