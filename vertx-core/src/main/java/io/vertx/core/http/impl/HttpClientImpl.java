@@ -527,7 +527,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         });
       });
     });
-    return wrap(httpMethod, requestURI, headers, traceOperation, idleTimeout, followRedirects, proxyOptions, fut2);
+    return wrap(authority, httpMethod, requestURI, headers, traceOperation, idleTimeout, followRedirects, proxyOptions, fut2);
   }
 
   private Future<HttpClientRequest> doRequest(
@@ -698,7 +698,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       // I think this is not possible - so remove it
       return streamCtx.failedFuture("Cannot resolve address " + server);
     } else {
-      return wrap(method, requestURI, headers, traceOperation, idleTimeout, followRedirects, null, future);
+      return wrap(authority, method, requestURI, headers, traceOperation, idleTimeout, followRedirects, null, future);
     }
   }
 
@@ -738,7 +738,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     return resourceManager.withResourceAsync(key, provider, (group, created) -> function.apply(group));
   }
 
-  private Future<HttpClientRequest> wrap(HttpMethod method,
+  private Future<HttpClientRequest> wrap(HostAndPort authority,
+                                         HttpMethod method,
                                          String requestURI,
                                          MultiMap headers,
                                          String traceOperation,
@@ -756,7 +757,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       options.setFollowRedirects(followRedirects);
       options.setTraceOperation(traceOperation);
       HttpClientStream stream = res.stream;
-      HttpClientRequestImpl request = createRequest(stream.connection(), stream, options);
+      HttpClientRequestImpl request = createRequest(authority, stream.connection(), stream, options);
       if (res.alternative != null) {
         String altUsedValue;
         int defaultPort = stream.connection().isSsl() ? 443 : 80;
@@ -787,8 +788,8 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
     }
   }
 
-  HttpClientRequestImpl createRequest(HttpConnection connection, HttpClientStream stream, RequestOptions options) {
-    HttpClientRequestImpl request = new HttpClientRequestImpl(connection, stream);
+  HttpClientRequestImpl createRequest(HostAndPort authority, HttpConnection connection, HttpClientStream stream, RequestOptions options) {
+    HttpClientRequestImpl request = new HttpClientRequestImpl(authority, connection, stream);
     request.init(options);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
     if (rHandler != null) {
