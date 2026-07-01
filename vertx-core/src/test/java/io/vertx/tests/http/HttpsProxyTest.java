@@ -29,6 +29,10 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 /**
  * Tests for {@link ProxyType#HTTPS}: the connection to the proxy itself (leg 1) is established over
  * TLS. The proxying semantics (absolute-URI {@code GET} forwarding for plain origins, {@code CONNECT}
@@ -218,15 +222,13 @@ public class HttpsProxyTest extends HttpTestBase {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(proxy.port())));
 
-    try {
-      client.request(new RequestOptions().setMethod(HttpMethod.GET)
-          .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
-        .compose(req -> req.send())
-        .await();
-      fail("Expected the connection to the untrusted HTTPS proxy to fail");
-    } catch (Exception expected) {
-      // connect failed rather than hanging or silently downgrading
-    }
+    // connect must fail rather than hanging or silently downgrading
+    assertThatThrownBy(() -> client.request(new RequestOptions().setMethod(HttpMethod.GET)
+        .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
+      .compose(req -> req.send())
+      .await())
+      .isInstanceOf(SSLHandshakeException.class)
+      .hasStackTraceContaining("unable to find valid certification path");
   }
 
   @Test
@@ -241,15 +243,13 @@ public class HttpsProxyTest extends HttpTestBase {
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("127.0.0.1").setPort(proxy.port())
         .setSslOptions(trustingProxySsl())));
 
-    try {
-      client.request(new RequestOptions().setMethod(HttpMethod.GET)
-          .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
-        .compose(req -> req.send())
-        .await();
-      fail("Expected hostname verification against the proxy to fail");
-    } catch (Exception expected) {
-      // verification rejected the mismatched proxy hostname
-    }
+    // verification must reject the mismatched proxy hostname
+    assertThatThrownBy(() -> client.request(new RequestOptions().setMethod(HttpMethod.GET)
+        .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
+      .compose(req -> req.send())
+      .await())
+      .isInstanceOf(SSLHandshakeException.class)
+      .hasStackTraceContaining("No subject alternative names present");
   }
 
   @Test
@@ -261,14 +261,12 @@ public class HttpsProxyTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProxyOptions(httpsProxy(proxy.port())));
 
-    try {
-      client.request(new RequestOptions().setMethod(HttpMethod.GET)
-          .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
-        .compose(req -> req.send())
-        .await();
-      fail("Expected the TLS handshake against a plaintext proxy to fail");
-    } catch (Exception expected) {
-      // no silent downgrade: a HTTPS proxy type never falls back to plaintext
-    }
+    // no silent downgrade: a HTTPS proxy type never falls back to plaintext
+    assertThatThrownBy(() -> client.request(new RequestOptions().setMethod(HttpMethod.GET)
+        .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
+      .compose(req -> req.send())
+      .await())
+      .isInstanceOf(SSLHandshakeException.class)
+      .hasStackTraceContaining("not an SSL/TLS record");
   }
 }
