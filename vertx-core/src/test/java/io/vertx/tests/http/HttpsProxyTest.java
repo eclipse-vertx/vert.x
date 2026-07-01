@@ -19,9 +19,14 @@ import io.vertx.core.http.HttpResponseExpectation;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ClientSSLOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.http.HttpTestBase;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.proxy.ProxyKind;
@@ -32,6 +37,8 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.io.File;
+import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -171,6 +178,40 @@ public class HttpsProxyTest extends HttpTestBase {
       .await();
 
     assertEquals("Hello from origin", body.toString());
+  }
+
+  @Test
+  @WithProxy(kind = ProxyKind.HTTPS)
+  public void testHttpsProxy_sendFileThroughTunnel() throws Exception {
+    // A client NetSocket.sendFile() to a plain origin through the HTTPS proxy: the file must travel
+    // through the leg-1 TLS (the "proxy-ssl" SslHandler on the client pipeline). Because the origin is
+    // plain, the connection's isSsl() is false, so the old !isSsl() zero-copy check would send the raw
+    // file bytes bypassing the SslHandler and break the TLS tunnel. supportsFileRegion() must instead
+    // detect the SslHandler and fall back to chunked writes.
+    String content = TestUtils.randomUnicodeString(10000);
+    File file = Files.createTempFile("vertx", ".txt").toFile();
+    file.deleteOnExit();
+    Files.write(file.toPath(), content.getBytes("UTF-8"));
+    Buffer expected = Buffer.buffer(content);
+
+    // Plain origin. Not DEFAULT_HTTP_PORT: the proxy denies CONNECT to that port.
+    Buffer received = Buffer.buffer();
+    NetServer origin = vertx.createNetServer();
+    origin.connectHandler(sock -> sock.handler(buff -> {
+      received.appendBuffer(buff);
+      if (received.length() == expected.length()) {
+        assertEquals(expected, received);
+        testComplete();
+      }
+    }));
+    origin.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).await();
+
+    NetClient netClient = vertx.createNetClient(new NetClientOptions().setProxyOptions(proxy.options()));
+    NetSocket sock = netClient.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).await();
+    sock.sendFile(file.getAbsolutePath()).await();
+
+    await();
+    assertEquals(HttpMethod.CONNECT, proxy.lastMethod());
   }
 
   // --- Security / failure cases ---------------------------------------------
