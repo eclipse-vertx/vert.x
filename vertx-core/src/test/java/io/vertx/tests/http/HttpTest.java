@@ -44,6 +44,7 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.*;
@@ -3771,6 +3772,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
       public boolean isChunked() { return false; }
       public HttpClientRequest authority(HostAndPort authority) { throw new UnsupportedOperationException(); }
+      public HostAndPort authority() { throw new UnsupportedOperationException(); }
       public HttpMethod getMethod() { return method; }
       public String absoluteURI() { return baseURI; }
       public HttpVersion version() { return HttpVersion.HTTP_1_1; }
@@ -6123,5 +6125,41 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     System.out.println(delta);
     assertTrue(delta >= 500);
     assertTrue(delta <= 1000);
+  }
+
+  @Test
+  public void testNoAuthority() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
+    assertEquals(testAddress.toString(), testNoAuthority(false).toString());
+  }
+
+  @Test
+  public void testForceNoAuthority() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket() && config.version() != HttpVersion.HTTP_3);
+    assertEquals("null", testNoAuthority(true).toString());
+  }
+
+  public Buffer testNoAuthority(boolean force) throws Exception {
+    server.requestHandler(request -> {
+      request
+        .response()
+        .end("" + request.authority());
+    });
+
+    startServer(testAddress);
+
+    return client
+      .request(new RequestOptions().setServer(testAddress))
+      .compose(request -> {
+        assertEquals(testAddress.toString(), request.authority().toString());
+        if (force) {
+          request.authority(null);
+        }
+        return request
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
+      })
+      .await();
   }
 }

@@ -65,17 +65,27 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest drainHandler(Handler<Void> handler);
 
   /**
-   * Override the request authority, when using HTTP/1.x this overrides the request {@code host} header, when using
-   * HTTP/2 this sets the {@code authority} pseudo header. When the port is a negative value, the default
-   * scheme port will be used.
+   * Override the request authority initially set by the client.
    *
-   * <p>The default request authority is the server host and port when connecting to the server.
+   * <ul>
+   *   <li>when using HTTP/1.x this overrides the request {@code host} header</li>
+   *   <li>when using HTTP/2 this sets the {@code authority} pseudo header</li>
+   *
+   * When the port is a negative value, the default scheme port will be used.
+   *
+   * <p>According to the protocol, it can set to {@code null} (although it is not common), e.g. an HTTP/2 request
+   * can have a null authority when it carries an {@code host} header.</p>
    *
    * @param authority override the request authority
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   HttpClientRequest authority(HostAndPort authority);
+
+  /**
+   * @return the current request authority
+   */
+  HostAndPort authority();
 
   /**
    * Set the request to follow HTTP redirects up to {@link HttpClientOptions#getMaxRedirects()}.
