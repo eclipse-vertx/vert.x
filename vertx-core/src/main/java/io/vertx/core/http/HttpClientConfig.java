@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.impl.Arguments;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
@@ -456,7 +457,7 @@ public class HttpClientConfig {
   }
 
   /**
-   * @return the maximum size of the redirect buffer when redirecting QUERY requests
+   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
    */
   public int getMaxRedirectBufferSize() {
     return maxRedirectBufferSize;
@@ -469,6 +470,7 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
     this.maxRedirectBufferSize = maxRedirectBufferSize;
     return this;
   }
