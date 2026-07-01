@@ -59,8 +59,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean isConnect;
   private String traceOperation;
 
-  public HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
-    super(connection, stream, stream.context().promise(), HttpMethod.GET, "/");
+  public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream) {
+    super(authority, connection, stream, stream.context().promise(), HttpMethod.GET, "/");
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
