@@ -119,7 +119,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
    */
-  int getMaxRedirectBufferSize();
+  int maxRedirectBufferSize();
 
   /**
    * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
@@ -128,7 +128,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClientRequest setMaxRedirectBufferSize(int maxRedirectBufferSize);
+  HttpClientRequest maxRedirectBufferSize(int maxRedirectBufferSize);
 
   /**
    * @return the number of followed redirections for the current HTTP request

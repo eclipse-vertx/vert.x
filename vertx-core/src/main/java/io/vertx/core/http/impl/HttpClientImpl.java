@@ -794,7 +794,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
   HttpClientRequestImpl createRequest(HostAndPort authority, HttpConnection connection, HttpClientStream stream, RequestOptions options) {
     HttpClientRequestImpl request = new HttpClientRequestImpl(authority, connection, stream);
     request.init(options);
-    request.setMaxRedirectBufferSize(maxRedirectBufferSize);
+    request.maxRedirectBufferSize(maxRedirectBufferSize);
     Function<HttpClientResponse, Future<RequestOptions>> rHandler = redirectHandler;
     if (rHandler != null) {
       request.setMaxRedirects(maxRedirects);

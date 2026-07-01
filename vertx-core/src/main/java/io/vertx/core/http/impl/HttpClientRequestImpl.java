@@ -168,14 +168,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+  public synchronized HttpClientRequest maxRedirectBufferSize(int maxRedirectBufferSize) {
     Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
     this.maxRedirectBufferSize = maxRedirectBufferSize;
     return this;
   }
 
   @Override
-  public synchronized int getMaxRedirectBufferSize() {
+  public synchronized int maxRedirectBufferSize() {
     return maxRedirectBufferSize;
   }
 
