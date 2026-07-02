@@ -301,7 +301,9 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+    // Check if the origin ssl handler (named "ssl") is in the pipeline. We don't check for the presence
+    // of an SslHandler as that could be an instance of the handler for the https proxy.
+    return chctx.pipeline().get("ssl") != null;
   }
 
   public boolean isTrafficShaped() {

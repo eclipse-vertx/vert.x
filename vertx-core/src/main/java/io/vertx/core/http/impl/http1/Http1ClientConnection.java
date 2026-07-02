@@ -150,11 +150,6 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   @Override
-  public boolean isSsl() {
-    return ssl;
-  }
-
-  @Override
   public io.vertx.core.http.impl.HttpClientConnection evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;
