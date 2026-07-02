@@ -3144,6 +3144,39 @@ public class NetTest {
   }
 
   /**
+   * Same as {@link #testUpgradeSSLWithSocks5Proxy()} but through an HTTPS proxy: the connection to
+   * the proxy itself (leg 1) is TLS, and {@code upgradeToSsl} then establishes a second, nested TLS
+   * to the origin (leg 2). Guards the relative ordering of the two SslHandlers in the pipeline.
+   */
+  @Test
+  public void testUpgradeSSLWithHttpsConnectProxy() throws Exception {
+    NetServerOptions options = new NetServerOptions()
+        .setPort(1234)
+        .setHost("localhost")
+        .setSsl(true)
+        .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
+    server = vertx.createNetServer(options);
+    server.connectHandler(sock -> {
+
+    });
+
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setHostnameVerificationAlgorithm("HTTPS")
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(13128)
+          .setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())))
+        .setTrustOptions(Trust.SERVER_JKS_ROOT_CA.get());
+    client = vertx.createNetClient(clientOptions);
+    proxy = new HttpProxy().ssl(Cert.SERVER_JKS.get());
+    proxy.start(vertx);
+    server.listen().await();
+    client.connect(1234, "localhost")
+      .compose(NetSocket::upgradeToSsl)
+      .await();
+    // make sure we have gone through the proxy
+    assertEquals("localhost:1234", proxy.getLastUri());
+  }
+
+  /**
    * test http connect proxy for accessing a arbitrary server port
    * note that this may not work with a "real" proxy since there are usually access rules defined
    * that limit the target host and ports (e.g. connecting to localhost or to port 25 may not be allowed)
@@ -3157,6 +3190,27 @@ public class NetTest {
 
     });
     proxy = new HttpProxy();
+    proxy.start(vertx);
+    server.listen(1234, "localhost").await();
+    client.connect(1234, "localhost").await();
+    // make sure we have gone through the proxy
+    assertEquals("localhost:1234", proxy.getLastUri());
+  }
+
+  /**
+   * Same as {@link #testWithHttpConnectProxy()} but the connection to the proxy itself is over TLS
+   * (an {@link ProxyType#HTTPS} proxy).
+   */
+  @Test
+  public void testWithHttpsConnectProxy() throws Exception {
+    NetClientOptions clientOptions = new NetClientOptions()
+        .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(13128)
+          .setSslOptions(new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get())));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new HttpProxy().ssl(Cert.SERVER_JKS.get());
     proxy.start(vertx);
     server.listen(1234, "localhost").await();
     client.connect(1234, "localhost").await();

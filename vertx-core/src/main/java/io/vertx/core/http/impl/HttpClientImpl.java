@@ -191,10 +191,13 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       PoolMetrics poolMetrics = HttpClientImpl.this.httpMetrics != null ? vertx.metrics().createPoolMetrics("http", key.authority.toString(), maxPoolSize) : null;
       ProxyOptions proxyOptions = key.proxyOptions;
       ClientSSLOptions sslOptions = key.sslOptions;
-      if (proxyOptions != null && !key.ssl && proxyOptions.getType() == ProxyType.HTTP) {
+      boolean forwardProxy = false;
+      if (proxyOptions != null && !key.ssl && (proxyOptions.getType() == ProxyType.HTTP || proxyOptions.getType() == ProxyType.HTTPS)) {
         SocketAddress server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
         key = new EndpointKey(key.ssl, key.protocol, sslOptions, proxyOptions, server, key.authority);
-        proxyOptions = null;
+        // Forward mode: the single socket connects to the proxy as the server while the logical
+        // origin stays plain HTTP (key.ssl == false).
+        forwardProxy = true;
       }
       HttpVersion protocol = key.protocol;
       List<HttpVersion> protocols;
@@ -203,7 +206,7 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
       } else {
         protocols = List.of(protocol);
       }
-      HttpConnectParams params = new HttpConnectParams(protocols, sslOptions, proxyOptions, key.ssl);
+      HttpConnectParams params = new HttpConnectParams(protocols, sslOptions, proxyOptions, key.ssl, forwardProxy);
       Function<SharedHttpClientConnectionGroup, SharedHttpClientConnectionGroup.Pool> p = group -> {
         int queueMaxSize = poolOptions.getMaxWaitQueueSize();
         if (transport instanceof TcpHttpClientTransport) {

@@ -79,14 +79,15 @@ public final class EndpointKey {
         Objects.equals(options1.getType(), options2.getType()) &&
         Objects.equals(options1.getUsername(), options2.getUsername()) &&
         Objects.equals(options1.getPassword(), options2.getPassword()) &&
-        Objects.equals(options1.getProxyAuthorization(), options2.getProxyAuthorization());
+        Objects.equals(options1.getProxyAuthorization(), options2.getProxyAuthorization()) &&
+        Objects.equals(options1.getSslOptions(), options2.getSslOptions());
     }
     return false;
   }
 
   private static int hashCode(ProxyOptions options) {
     return Objects.hash(options.getHost(), options.getPort(), options.getType(), options.getUsername(),
-      options.getPassword(), options.getProxyAuthorization());
+      options.getPassword(), options.getProxyAuthorization(), options.getSslOptions());
   }
 
   @Override

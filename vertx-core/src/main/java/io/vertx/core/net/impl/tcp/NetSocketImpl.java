@@ -37,6 +37,7 @@ import io.vertx.core.net.impl.StreamChannelBase;
 import io.vertx.core.spi.metrics.TransportMetrics;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -148,7 +149,7 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
           chctx.channel().config().setAutoRead(true);
           if (res.isSuccess()) {
             ChannelPromise channelPromise = chctx.newPromise();
-            chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(channelPromise));
+            SslHandshakeCompletionHandler handshaker = new SslHandshakeCompletionHandler(channelPromise);
             ChannelHandler sslHandler;
             if (sslOptions instanceof ClientSSLOptions) {
               ClientSSLOptions clientSSLOptions = (ClientSSLOptions) sslOptions;
@@ -158,7 +159,13 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
               sslHandler = provider.createServerHandler(applicationProtocols, sslOptions.getSslHandshakeTimeout(),
                 sslOptions.getSslHandshakeTimeoutUnit(), HttpUtils.socketAddressToHostAndPort(chctx.channel().remoteAddress()));
             }
-            chctx.pipeline().addFirst("ssl", sslHandler);
+            if (chctx.pipeline().get("proxy-ssl") != null) {
+              chctx.pipeline().addAfter("proxy-ssl", "ssl", sslHandler);
+              chctx.pipeline().addAfter("ssl", "handshaker", handshaker);
+            } else {
+              chctx.pipeline().addFirst("handshaker", handshaker);
+              chctx.pipeline().addFirst("ssl", sslHandler);
+            }
             channelPromise.addListener(p);
             doPause();
           } else {
@@ -177,7 +184,15 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
 
   @Override
   public String applicationLayerProtocol() {
-    SslHandler handler = channel.pipeline().get(SslHandler.class);
+    // Use the innermost (last) SslHandler: when tunnelling through an HTTPS proxy the pipeline holds
+    // two SslHandlers (leg-1 to the proxy at the head, leg-2 to the origin after it), and the
+    // application protocol is negotiated on the origin (leg-2) handshake.
+    SslHandler handler = null;
+    for (Map.Entry<String, ChannelHandler> entry : channel.pipeline()) {
+      if (entry.getValue() instanceof SslHandler) {
+        handler = (SslHandler) entry.getValue();
+      }
+    }
     if (handler != null) {
       return handler.engine().getApplicationProtocol();
     } else {

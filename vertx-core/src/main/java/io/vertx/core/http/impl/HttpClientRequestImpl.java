@@ -89,7 +89,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     Boolean followRedirects = options.getFollowRedirects();
     long idleTimeout = options.getIdleTimeout();
     ProxyOptions proxyOptions = options.getProxyOptions();
-    if (proxyOptions != null && !useSSL && proxyOptions.getType() == ProxyType.HTTP) {
+    if (proxyOptions != null && !useSSL && (proxyOptions.getType() == ProxyType.HTTP || proxyOptions.getType() == ProxyType.HTTPS)) {
       HostAndPort authority = conn.authority();
       if (!ABS_URI_START_PATTERN.matcher(requestURI).find()) {
         int defaultPort = 80;
