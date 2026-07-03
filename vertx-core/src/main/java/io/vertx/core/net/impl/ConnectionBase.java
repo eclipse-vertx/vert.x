@@ -301,9 +301,18 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    // Check if the origin ssl handler (named "ssl") is in the pipeline. We don't check for the presence
-    // of an SslHandler as that could be an instance of the handler for the https proxy.
-    return chctx.pipeline().get("ssl") != null;
+    // Ignore a TLS leg to an HTTPS proxy ("proxy-ssl"): report whether the origin connection is encrypted.
+    ChannelHandler proxySsl = chctx.pipeline().get("proxy-ssl");
+    if (proxySsl == null) {
+      return chctx.pipeline().get(SslHandler.class) != null;
+    }
+    for (String name : chctx.pipeline().names()) {
+      ChannelHandler handler = chctx.pipeline().get(name);
+      if (handler != proxySsl && handler instanceof SslHandler) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public boolean isTrafficShaped() {
