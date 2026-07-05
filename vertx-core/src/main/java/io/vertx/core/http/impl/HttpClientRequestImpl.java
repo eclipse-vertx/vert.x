@@ -44,8 +44,6 @@ import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
-
-  private static final int MAX_REDIRECT_BUFFER_SIZE = 1024 * 1024;
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
