@@ -70,8 +70,9 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * <ul>
    *   <li>when using HTTP/1.x this overrides the request {@code host} header</li>
    *   <li>when using HTTP/2 this sets the {@code authority} pseudo header</li>
+   * </lu>
    *
-   * When the port is a negative value, the default scheme port will be used.
+   * <p>When the port is a negative value, the default scheme port will be used.</p>
    *
    * <p>According to the protocol, it can set to {@code null} (although it is not common), e.g. an HTTP/2 request
    * can have a null authority when it carries an {@code host} header.</p>
