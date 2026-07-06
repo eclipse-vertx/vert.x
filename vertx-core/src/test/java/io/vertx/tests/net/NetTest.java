@@ -40,6 +40,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetServerInternal;
@@ -4640,5 +4641,31 @@ public class NetTest {
     socket.write("test").await();
     TestUtils.assertWaitUntil(closing::get);
     TestUtils.assertWaitUntil(closed::get);
+  }
+
+  @Test
+  public void testFlushPendingWriteOnExceptionClose() throws Exception {
+    server.connectHandler(so -> {
+      so.exceptionHandler(err -> {});
+      so.handler(data -> {
+        VertxConnection conn = (VertxConnection) so;
+        // A response queued on the connection but not yet flushed (the state produced when a
+        // response is written while a read is in progress), then a pipeline failure that tears
+        // the connection down.
+        conn.unsafeWrite(Unpooled.copiedBuffer("pending-response", StandardCharsets.UTF_8), false);
+        conn.channelHandlerContext().pipeline().fireExceptionCaught(new RuntimeException("boom"));
+      });
+    });
+    startServer();
+    Buffer received = Buffer.buffer();
+    CompletableFuture<String> result = new CompletableFuture<>();
+    NetSocket socket = client.connect(testAddress).await();
+    socket.handler(received::appendBuffer);
+    socket.closeHandler(v -> result.complete(received.toString()));
+    socket.exceptionHandler(result::completeExceptionally);
+    socket.write("ping").await();
+    // With the fix the pending response is flushed before the connection closes; without it the
+    // client only sees the close (Netty discards the unflushed entry).
+    assertEquals("pending-response", result.get(20, TimeUnit.SECONDS));
   }
 }
