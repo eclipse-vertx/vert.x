@@ -300,6 +300,13 @@ public class TestUtils {
       } while (multiMap.contains(key));
       multiMap.set(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
     }
+    // Sanitize connection headers
+    multiMap.remove("te");
+    multiMap.remove("upgrade");
+    multiMap.remove("connection");
+    multiMap.remove("keep-alive");
+    multiMap.remove("proxy-connection");
+    multiMap.remove("transfer-encoding");
     return multiMap;
   }
 
