@@ -1368,6 +1368,48 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPipeliningPause(Checkpoint checkpoint) throws Exception {
+    Promise<Void> signal = Promise.promise();
+    server.requestHandler(req -> {
+      Future<Void> f = signal.future();
+      if (f.isComplete()) {
+        req.response().end();
+      } else {
+        req.pause();
+        f.onSuccess(v -> {
+          req.response().end();
+        });
+      }
+    });
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    NetSocket socket = client.connect(testAddress).await();
+    Buffer content = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    Buffer request = Buffer.buffer("POST / HTTP/1.1\r\n" +
+      "content-length: " + content.length() + "\r\n" +
+      "\r\n\r\n")
+      .appendBuffer(content);
+    IntConsumer[] task = new IntConsumer[1];
+
+    task[0] = times -> {
+      while (!socket.writeQueueFull()) {
+        socket.write(request);
+      }
+      if (times > 5) {
+        signal.succeed();
+        socket
+          .write(request)
+          .onComplete(checkpoint);
+      } else {
+        vertx.runOnContext(v -> {
+          task[0].accept(times + 1);
+        });
+      }
+    };
+    task[0].accept(0);
+  }
+
+  @Test
   public void testServerConnectionCloseBeforeRequestEnded(Checkpoint checkpoint) throws Exception {
     testServerConnectionClose(checkpoint, true);
   }
