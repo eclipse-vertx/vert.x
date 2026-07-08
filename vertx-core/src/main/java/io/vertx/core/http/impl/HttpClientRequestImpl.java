@@ -61,7 +61,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   private boolean isConnect;
   private String traceOperation;
-  private int maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
+  private int maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
   private List<Buffer> bodyBuffer;
 
   public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream) {

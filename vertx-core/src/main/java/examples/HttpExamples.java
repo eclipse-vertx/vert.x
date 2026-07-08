@@ -1163,7 +1163,10 @@ public class HttpExamples {
 
     HttpClientAgent client = vertx.createHttpClient(
       new HttpClientConfig()
-        .setMaxRedirects(32));
+        .setRedirectConfig(new ClientRedirectConfig()
+          .setMaxRedirects(32)
+          .setMaxBufferedSize(8 * 1024))
+    );
 
     client
       .request(HttpMethod.GET, "some-uri")

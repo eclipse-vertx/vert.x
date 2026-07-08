@@ -112,7 +112,7 @@ public interface HttpConfigurator {
         }
         @Override
         public HttpClientConfigurator setMaxRedirectBufferSize(int maxRedirectBufferSize) {
-          options.setMaxRedirectBufferSize(maxRedirectBufferSize);
+          options.setMaxRedirectBufferedSize(maxRedirectBufferSize);
           return this;
         }
         @Override

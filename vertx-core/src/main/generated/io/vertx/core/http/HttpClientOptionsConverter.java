@@ -127,9 +127,9 @@ public class HttpClientOptionsConverter {
             obj.setMaxRedirects(((Number)member.getValue()).intValue());
           }
           break;
-        case "maxRedirectBufferSize":
+        case "maxRedirectBufferedSize":
           if (member.getValue() instanceof Number) {
-            obj.setMaxRedirectBufferSize(((Number)member.getValue()).intValue());
+            obj.setMaxRedirectBufferedSize(((Number)member.getValue()).intValue());
           }
           break;
         case "forceSni":
@@ -198,7 +198,7 @@ public class HttpClientOptionsConverter {
     json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
     json.put("http2ClearTextUpgradeWithPreflightRequest", obj.isHttp2ClearTextUpgradeWithPreflightRequest());
     json.put("maxRedirects", obj.getMaxRedirects());
-    json.put("maxRedirectBufferSize", obj.getMaxRedirectBufferSize());
+    json.put("maxRedirectBufferedSize", obj.getMaxRedirectBufferedSize());
     json.put("forceSni", obj.isForceSni());
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getTracingPolicy() != null) {
