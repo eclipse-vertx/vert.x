@@ -107,6 +107,11 @@ public class HttpServerOptionsConverter {
             obj.setHttp2ClearTextEnabled((Boolean)member.getValue());
           }
           break;
+        case "useSemicolonAsQueryParamDelimiter":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseSemicolonAsQueryParamDelimiter((Boolean)member.getValue());
+          }
+          break;
         case "http2ConnectionWindowSize":
           if (member.getValue() instanceof Number) {
             obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
@@ -233,6 +238,7 @@ public class HttpServerOptionsConverter {
       json.put("alpnVersions", array);
     }
     json.put("http2ClearTextEnabled", obj.isHttp2ClearTextEnabled());
+    json.put("useSemicolonAsQueryParamDelimiter", obj.isUseSemicolonAsQueryParamDelimiter());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     json.put("decompressionSupported", obj.isDecompressionSupported());
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());

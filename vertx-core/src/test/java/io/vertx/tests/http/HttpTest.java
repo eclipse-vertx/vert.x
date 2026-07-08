@@ -44,6 +44,7 @@ import io.vertx.test.http.SimpleHttpTest2;
 import io.vertx.tests.http.http3.Http3Test;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.*;
@@ -3234,6 +3235,41 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testFollowRedirectQueryOn301() throws Exception {
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 301, 200, 2,
+      "http://" + config.host() + ":" + config.port() + "/redirected",
+      "http://" + config.host() + ":" + config.port() + "/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectQueryOn302() throws Exception {
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 302, 200, 2,
+      "http://" + config.host() + ":" + config.port() + "/redirected",
+      "http://" + config.host() + ":" + config.port() + "/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectQueryOn303() throws Exception {
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.GET, 303, 200, 2,
+      "http://" + config.host() + ":" + config.port() + "/redirected",
+      "http://" + config.host() + ":" + config.port() + "/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectQueryOn307() throws Exception {
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 307, 200, 2,
+      "http://" + config.host() + ":" + config.port() + "/redirected",
+      "http://" + config.host() + ":" + config.port() + "/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectQueryOn308() throws Exception {
+    testFollowRedirect(HttpMethod.QUERY, HttpMethod.QUERY, 308, 200, 2,
+      "http://" + config.host() + ":" + config.port() + "/redirected",
+      "http://" + config.host() + ":" + config.port() + "/redirected");
+  }
+
+  @Test
   public void testFollowRedirectGetOn301() throws Exception {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "http://" + config.host() + ":" + config.port() + "/redirected", "http://" + config.host() + ":" + config.port() + "/redirected");
   }
@@ -3386,6 +3422,170 @@ public abstract class HttpTest extends SimpleHttpTest2 {
           });
         })
       ).await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithBody() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(2048);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          req.response().end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.SC_OK))
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithBodyExceedingLimit() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(4 * 1024 + 1); // 4KB + 1B
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else {
+        fail("Should not redirect");
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.status(307)))
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithConfiguredBodyExceedingLimit() throws Exception {
+    Buffer expected = TestUtils.randomBuffer(2048);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else {
+        fail("Should not redirect");
+      }
+    });
+    startServer(testAddress);
+    client = config.forClient().setMaxRedirectBufferSize(1024).create(vertx);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> req
+        .setFollowRedirects(true)
+        .send(expected)
+        .expecting(HttpResponseExpectation.status(307)))
+      .await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithMultipleBuffers() throws Exception {
+    Buffer chunk1 = TestUtils.randomBuffer(1024);
+    Buffer chunk2 = TestUtils.randomBuffer(1024);
+    Buffer expected = Buffer.buffer().appendBuffer(chunk1).appendBuffer(chunk2);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          req.response().end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    client.request(opts).compose(req -> {
+      req.setFollowRedirects(true);
+      req.write(chunk1);
+      req.end(chunk2);
+      return req.response().expecting(HttpResponseExpectation.SC_OK);
+    }).await();
+  }
+
+  @Test
+  public void testFollowRedirectQueryWithStream() throws Exception {
+    Buffer chunk1 = TestUtils.randomBuffer(1024);
+    Buffer chunk2 = TestUtils.randomBuffer(1024);
+    Buffer expected = Buffer.buffer().appendBuffer(chunk1).appendBuffer(chunk2);
+    server.requestHandler(req -> {
+      if ("/".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          String scheme = req.connection().isSsl() ? "https" : "http";
+          req.response().setStatusCode(307).putHeader(HttpHeaders.LOCATION, scheme + "://" + config.host() + ":" + config.port() + "/whatever").end();
+        }));
+      } else if ("/whatever".equals(req.path())) {
+        assertEquals(HttpMethod.QUERY, req.method());
+        req.body().onComplete(TestUtils.onSuccess(body -> {
+          assertEquals(expected, body);
+          req.response().end();
+        }));
+      } else {
+        req.response().setStatusCode(404).end();
+      }
+    });
+    startServer(testAddress);
+    FakeStream<Buffer> stream = new FakeStream<>();
+    stream.pause();
+    RequestOptions opts = new RequestOptions()
+      .setMethod(QUERY)
+      .setHost(config.host())
+      .setPort(config.port());
+    Future<HttpClientResponse> responseFuture = client.request(opts).compose(req -> {
+      req.setFollowRedirects(true);
+      return req.send(stream);
+    });
+    stream.write(chunk1);
+    stream.write(chunk2);
+    stream.end();
+    responseFuture.compose(HttpClientResponse::end).await();
   }
 
   @Test
@@ -3771,6 +3971,7 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
       public boolean isChunked() { return false; }
       public HttpClientRequest authority(HostAndPort authority) { throw new UnsupportedOperationException(); }
+      public HostAndPort authority() { throw new UnsupportedOperationException(); }
       public HttpMethod getMethod() { return method; }
       public String absoluteURI() { return baseURI; }
       public HttpVersion version() { return HttpVersion.HTTP_1_1; }
@@ -3790,6 +3991,8 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public boolean isFollowRedirects() { throw new UnsupportedOperationException(); }
       public int getMaxRedirects() { throw new UnsupportedOperationException(); }
+      public int maxRedirectBufferSize() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest maxRedirectBufferSize(int maxRedirectBufferSize) { throw new UnsupportedOperationException(); }
       public int numberOfRedirections() { throw new UnsupportedOperationException(); }
       public HttpClientRequest redirectHandler(@Nullable Function<HttpClientResponse, Future<HttpClientRequest>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest earlyHintsHandler(@Nullable Handler<MultiMap> handler) { throw new UnsupportedOperationException(); }
@@ -6123,5 +6326,41 @@ public abstract class HttpTest extends SimpleHttpTest2 {
     System.out.println(delta);
     assertTrue(delta >= 500);
     assertTrue(delta <= 1000);
+  }
+
+  @Test
+  public void testNoAuthority() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
+    assertEquals(testAddress.toString(), testNoAuthority(false).toString());
+  }
+
+  @Test
+  public void testForceNoAuthority() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket() && config.version() != HttpVersion.HTTP_3);
+    assertEquals("null", testNoAuthority(true).toString());
+  }
+
+  public Buffer testNoAuthority(boolean force) throws Exception {
+    server.requestHandler(request -> {
+      request
+        .response()
+        .end("" + request.authority());
+    });
+
+    startServer(testAddress);
+
+    return client
+      .request(new RequestOptions().setServer(testAddress))
+      .compose(request -> {
+        assertEquals(testAddress.toString(), request.authority().toString());
+        if (force) {
+          request.authority(null);
+        }
+        return request
+          .send()
+          .expecting(HttpResponseExpectation.SC_OK)
+          .compose(HttpClientResponse::body);
+      })
+      .await();
   }
 }

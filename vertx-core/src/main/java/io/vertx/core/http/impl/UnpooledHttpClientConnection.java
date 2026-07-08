@@ -20,6 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.SocketAddress;
 
 import javax.net.ssl.SSLSession;
@@ -231,8 +232,16 @@ public class UnpooledHttpClientConnection implements io.vertx.core.http.HttpClie
         future = actual.createStream(context);
       }
     }
+    String host = options.getHost();
+    Integer port = options.getPort();
+    HostAndPort authority;
+    if (host != null && port != null) {
+      authority = HostAndPort.authority(host, port);
+    } else {
+      authority = actual.authority();
+    }
     return future.map(stream -> {
-      HttpClientRequestImpl request = new HttpClientRequestImpl(this, stream);
+      HttpClientRequestImpl request = new HttpClientRequestImpl(authority, this, stream);
       stream.closeHandler(this::checkPending);
       if (options != null) {
         request.init(options);

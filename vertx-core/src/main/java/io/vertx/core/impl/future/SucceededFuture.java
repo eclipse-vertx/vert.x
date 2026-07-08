@@ -16,7 +16,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.internal.ContextInternal;
 
+import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 /**
@@ -114,6 +117,21 @@ public final class SucceededFuture<T> extends FutureBase<T> {
   @Override
   public Future<T> otherwise(T value) {
     return this;
+  }
+
+  @Override
+  public T await() {
+    return result();
+  }
+
+  @Override
+  public T await(Duration timeout) throws TimeoutException {
+    return result();
+  }
+
+  @Override
+  public T await(long timeout, TimeUnit unit) throws TimeoutException {
+    return result();
   }
 
   @Override

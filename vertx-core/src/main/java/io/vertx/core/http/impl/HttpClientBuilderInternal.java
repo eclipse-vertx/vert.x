@@ -183,6 +183,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       config.getDefaultHost(),
       config.getDefaultPort(),
       config.getMaxRedirects(),
+      config.getMaxRedirectBufferSize(),
       versions,
       sslOptions,
       connectHandler,
@@ -210,6 +211,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       String defaultHost,
       int defaultPort,
       int maxRedirects,
+      int maxRedirectBufferSize,
       List<HttpVersion> versions,
       ClientSSLOptions sslOptions,
       Handler<HttpConnection> connectHandler,
@@ -217,7 +219,7 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       HttpClientTransport quicTransport,
       HttpClientConfig config,
       HttpClientOptions options) {
-      super(vertx, resolver, redirectHandler, httpMetrics, poolOptions, defaultProxyOptions, nonProxyHosts, loadBalancer, followAlternativeServices, resolverIdeTimeout, verifyHost, defaultSsl, defaultHost, defaultPort, maxRedirects, versions, sslOptions, connectHandler, tcpTransport, quicTransport);
+      super(vertx, resolver, redirectHandler, httpMetrics, poolOptions, defaultProxyOptions, nonProxyHosts, loadBalancer, followAlternativeServices, resolverIdeTimeout, verifyHost, defaultSsl, defaultHost, defaultPort, maxRedirects, maxRedirectBufferSize, versions, sslOptions, connectHandler, tcpTransport, quicTransport);
       this.config = config;
       this.options = options;
     }

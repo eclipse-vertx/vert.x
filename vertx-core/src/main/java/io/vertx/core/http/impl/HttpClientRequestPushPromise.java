@@ -18,6 +18,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.net.HostAndPort;
 
 import java.util.function.Function;
 
@@ -32,10 +33,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   public HttpClientRequestPushPromise(
     HttpConnection connection,
     HttpClientStream stream,
+    HostAndPort authority,
     HttpMethod method,
     String uri,
     MultiMap headers) {
-    super(connection, stream, stream.connection().context().promise(), method, uri);
+    super(authority, connection, stream, stream.connection().context().promise(), method, uri);
     this.stream = stream;
     this.headers = headers;
   }
@@ -103,6 +105,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public int numberOfRedirections() {
     return 0;
+  }
+
+  @Override
+  public int maxRedirectBufferSize() {
+    return 0;
+  }
+
+  @Override
+  public HttpClientRequest maxRedirectBufferSize(int maxRedirectBufferSize) {
+    throw new IllegalStateException();
   }
 
   @Override
