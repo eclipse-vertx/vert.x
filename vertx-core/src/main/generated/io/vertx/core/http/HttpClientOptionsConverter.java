@@ -127,6 +127,11 @@ public class HttpClientOptionsConverter {
             obj.setMaxRedirects(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxRedirectBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxRedirectBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "forceSni":
           if (member.getValue() instanceof Boolean) {
             obj.setForceSni((Boolean)member.getValue());
@@ -150,11 +155,6 @@ public class HttpClientOptionsConverter {
         case "name":
           if (member.getValue() instanceof String) {
             obj.setName((String)member.getValue());
-          }
-          break;
-        case "followAlternativeServices":
-          if (member.getValue() instanceof Boolean) {
-            obj.setFollowAlternativeServices((Boolean)member.getValue());
           }
           break;
       }
@@ -198,6 +198,7 @@ public class HttpClientOptionsConverter {
     json.put("http2ClearTextUpgrade", obj.isHttp2ClearTextUpgrade());
     json.put("http2ClearTextUpgradeWithPreflightRequest", obj.isHttp2ClearTextUpgradeWithPreflightRequest());
     json.put("maxRedirects", obj.getMaxRedirects());
+    json.put("maxRedirectBufferSize", obj.getMaxRedirectBufferSize());
     json.put("forceSni", obj.isForceSni());
     json.put("decoderInitialBufferSize", obj.getDecoderInitialBufferSize());
     if (obj.getTracingPolicy() != null) {
@@ -207,6 +208,5 @@ public class HttpClientOptionsConverter {
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }
-    json.put("followAlternativeServices", obj.getFollowAlternativeServices());
   }
 }

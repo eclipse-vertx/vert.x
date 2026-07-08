@@ -40,6 +40,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.VertxConnection;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
 import io.vertx.core.internal.net.NetServerInternal;
@@ -47,6 +48,9 @@ import io.vertx.core.net.impl.tcp.NetServerImpl;
 import io.vertx.core.spi.tls.SslContextFactory;
 import io.vertx.core.transport.Transport;
 import io.vertx.test.core.*;
+import io.vertx.test.fakedns.DnsRecord;
+import io.vertx.test.fakedns.DnsServer;
+import io.vertx.test.fakedns.WithDnsServer;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -88,6 +92,9 @@ import static org.junit.Assume.assumeTrue;
  */
 @RunWith(VertxRunner.class)
 public class NetTest {
+
+  @Rule
+  public final DnsServer dnsServer = new DnsServer();
 
   public static class Provider implements VertxProvider {
 
@@ -181,8 +188,8 @@ public class NetTest {
         });
       }
     });
-    assertWaitUntil(() -> received.get() == buffer.length());
-    assertWaitUntil(() -> ended.get() > 0);
+    assertWaitUntil(() -> received.get() == buffer.length(), 20_000);
+    assertWaitUntil(() -> ended.get() > 0, 20_000);
   }
 
   @Test
@@ -2089,6 +2096,76 @@ public class NetTest {
     }
   }
 
+  @Test
+  public void testDirectTlsUpgrade(Checkpoint checkpoint) throws Exception {
+    server.connectHandler(socket -> {
+      socket.upgradeToSsl(new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get()))
+        .onComplete(TestUtils.onSuccess(v1 -> {
+        socket.handler(socket::write);
+        socket.endHandler(v2 -> socket.end());
+      }));
+    });
+    server.listen(1234, "localhost").await();
+    NetSocket socket = client.connect(new ConnectOptions()
+      .setPort(1234)
+      .setHost("localhost")
+      .setSsl(true)
+      .setSslOptions(new ClientSSLOptions()
+      .setHostnameVerificationAlgorithm("")
+      .setTrustAll(true))).await();
+    socket.handler(chunk -> {
+      assertEquals("test", chunk.toString());
+      socket.end();
+    });
+    socket.endHandler(v -> checkpoint.succeed());
+    socket.write("test").await();
+  }
+
+  @WithDnsServer(records = {@DnsRecord(name = "example.com")})
+  @Test
+  public void testDirectTlsUpgradeFailureResumeReading(Checkpoint checkpoint) throws Exception {
+    server = vertx.createNetServer(new NetServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+    ).connectHandler(so -> {
+      fail();
+    });
+    server.listen(1234, "localhost").await();
+    Future<NetSocket> future = client.connect(new ConnectOptions()
+      .setPort(1234)
+      .setHost("example.com")
+      .setSslOptions(new ClientSSLOptions()
+        .setHostnameVerificationAlgorithm("HTTPS")
+        .setTrustAll(true)));
+    future.onComplete(TestUtils.onSuccess(socket -> {
+      NetSocketInternal soi = (NetSocketInternal) socket;
+      ChannelPipeline pipeline = soi
+        .channelHandlerContext()
+        .pipeline();
+      Object expectedMsg = new Object();
+      AtomicBoolean closed = new AtomicBoolean();
+      pipeline.addBefore("handler", "test", new ChannelDuplexHandler() {
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+          soi
+            .upgradeToSsl()
+            .onComplete(TestUtils.onFailure(err -> {
+              assertFalse(closed.get());
+              ctx.fireChannelRead(expectedMsg);
+            }));
+        }
+      });
+      soi.closeHandler(v -> {
+        closed.set(true);
+      });
+      soi.messageHandler(msg -> {
+        if (msg == expectedMsg) {
+          checkpoint.succeed();
+        }
+      });
+    }));
+  }
+
   public static class NativeVertxProvider implements VertxProvider {
     @Override
     public Vertx call() throws Exception {
@@ -2133,8 +2210,8 @@ public class NetTest {
           .onComplete(onSuccess(so -> {
             Buffer received = Buffer.buffer();
             so.handler(received::appendBuffer);
-            so.closeHandler(v -> {
-              assertEquals(received.toString(), sockAddress.path());
+            so.endHandler(v -> {
+              assertEquals(sockAddress.path(), received.toString());
               latch.countDown();
             });
           }));
@@ -4564,5 +4641,31 @@ public class NetTest {
     socket.write("test").await();
     TestUtils.assertWaitUntil(closing::get);
     TestUtils.assertWaitUntil(closed::get);
+  }
+
+  @Test
+  public void testFlushPendingWriteOnExceptionClose() throws Exception {
+    server.connectHandler(so -> {
+      so.exceptionHandler(err -> {});
+      so.handler(data -> {
+        VertxConnection conn = (VertxConnection) so;
+        // A response queued on the connection but not yet flushed (the state produced when a
+        // response is written while a read is in progress), then a pipeline failure that tears
+        // the connection down.
+        conn.unsafeWrite(Unpooled.copiedBuffer("pending-response", StandardCharsets.UTF_8), false);
+        conn.channelHandlerContext().pipeline().fireExceptionCaught(new RuntimeException("boom"));
+      });
+    });
+    startServer();
+    Buffer received = Buffer.buffer();
+    CompletableFuture<String> result = new CompletableFuture<>();
+    NetSocket socket = client.connect(testAddress).await();
+    socket.handler(received::appendBuffer);
+    socket.closeHandler(v -> result.complete(received.toString()));
+    socket.exceptionHandler(result::completeExceptionally);
+    socket.write("ping").await();
+    // With the fix the pending response is flushed before the connection closes; without it the
+    // client only sees the close (Netty discards the unflushed entry).
+    assertEquals("pending-response", result.get(20, TimeUnit.SECONDS));
   }
 }

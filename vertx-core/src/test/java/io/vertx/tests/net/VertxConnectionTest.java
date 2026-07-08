@@ -922,4 +922,27 @@ public class VertxConnectionTest extends VertxTestBase {
     outbound = ch.readOutbound();
     assertSame(expected, outbound);
   }
+
+  @Test
+  public void testFlushPendingWriteOnExceptionClose() {
+    EmbeddedChannel ch = new EmbeddedChannel();
+    ChannelPipeline pipeline = ch.pipeline();
+    pipeline.addLast(VertxHandler.create(chctx -> new TestConnection(chctx)));
+    TestConnection connection = (TestConnection) pipeline.get(VertxHandler.class).getConnection();
+    connection.exceptionHandler(err -> {});
+    // Queue a write without flushing it: this is the state produced when a response is written
+    // while a read is in progress (e.g. an inbound codec failing mid-decode, which is how a
+    // request-body decompression failure surfaces). The message sits in the channel outbound
+    // buffer as an unflushed entry.
+    Object response = new Object();
+    connection.unsafeWrite(response, false);
+    assertNull(ch.readOutbound());
+    // The failure surfaces as a caught exception that asks the connection to close. The close
+    // must flush the pending write before closing the channel, otherwise Netty's
+    // ChannelOutboundBuffer discards the unflushed entry and the peer never sees the response.
+    pipeline.fireExceptionCaught(new RuntimeException());
+    ch.runPendingTasks();
+    assertSame(response, ch.readOutbound());
+    assertFalse(ch.isOpen());
+  }
 }

@@ -286,6 +286,6 @@ public class CompressionConfig {
    */
   @GenIgnore
   public CompressionConfig addBrotli(int quality) {
-    return addCompressor(StandardCompressionOptions.brotli(quality, 4, BrotliMode.TEXT));
+    return addCompressor(StandardCompressionOptions.brotli(quality, 22, BrotliMode.TEXT));
   }
 }

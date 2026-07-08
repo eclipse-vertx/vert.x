@@ -111,6 +111,11 @@ public interface HttpConfigurator {
           return this;
         }
         @Override
+        public HttpClientConfigurator setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+          options.setMaxRedirectBufferSize(maxRedirectBufferSize);
+          return this;
+        }
+        @Override
         public HttpClientBuilder builder(Vertx vertx) {
           return vertx.httpClientBuilder().with(options);
         }

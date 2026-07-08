@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.impl.Arguments;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
@@ -28,6 +29,11 @@ import java.util.Objects;
 @DataObject
 @Unstable
 public class HttpClientConfig {
+
+  /**
+   * Follow alternative service server advertisements = {@code false}
+   */
+  public static final boolean DEFAULT_FOLLOW_ALTERNATIVE_SERVICES = false;
 
   private static List<HttpVersion> toSupportedVersion(HttpVersion version) {
     switch (version) {
@@ -74,6 +80,7 @@ public class HttpClientConfig {
   private String defaultHost;
   private int defaultPort;
   private int maxRedirects;
+  private int maxRedirectBufferSize;
   private ObservabilityConfig observabilityConfig;
   private boolean shared;
   private String name;
@@ -92,10 +99,11 @@ public class HttpClientConfig {
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
     this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
+    this.maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
     this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
-    this.followAlternativeServices = HttpClientOptions.DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
+    this.followAlternativeServices = DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
   }
 
   public HttpClientConfig(HttpClientConfig other) {
@@ -111,6 +119,7 @@ public class HttpClientConfig {
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.maxRedirects = other.maxRedirects;
+    this.maxRedirectBufferSize = other.maxRedirectBufferSize;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.shared = other.shared;
     this.name = other.name;
@@ -138,10 +147,11 @@ public class HttpClientConfig {
     this.defaultHost = options.getDefaultHost();
     this.defaultPort = options.getDefaultPort();
     this.maxRedirects = options.getMaxRedirects();
+    this.maxRedirectBufferSize = options.getMaxRedirectBufferSize();
     this.observabilityConfig = observabilityConfig;
     this.shared = options.isShared();
     this.name = options.getName();
-    this.followAlternativeServices = options.getFollowAlternativeServices();
+    this.followAlternativeServices = false;
   }
 
   /**
@@ -443,6 +453,25 @@ public class HttpClientConfig {
    */
   public HttpClientConfig setMaxRedirects(int maxRedirects) {
     this.maxRedirects = maxRedirects;
+    return this;
+  }
+
+  /**
+   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
+   */
+  public int getMaxRedirectBufferSize() {
+    return maxRedirectBufferSize;
+  }
+
+  /**
+   * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
+   *
+   * @param maxRedirectBufferSize the maximum buffer size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientConfig setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
+    this.maxRedirectBufferSize = maxRedirectBufferSize;
     return this;
   }
 

@@ -11,9 +11,9 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.impl.Arguments;
 import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpUtils;
@@ -134,6 +134,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_MAX_REDIRECTS = 16;
 
+  /**
+   * Default max redirect buffer size = 4 * 1024 bytes (4KB)
+   */
+  public static final int DEFAULT_MAX_REDIRECT_BUFFER_SIZE = 4 * 1024;
+
   /*
    * Default force SNI = {@code false}
    */
@@ -164,11 +169,6 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final boolean DEFAULT_HTTP_2_MULTIPLEX_IMPLEMENTATION = false;
 
-  /**
-   * Follow alternative service server advertisements = {@code false}
-   */
-  public static final boolean DEFAULT_FOLLOW_ALTERNATIVE_SERVICES = false;
-
   private Http1ClientConfig http1Config;
   private Http2ClientConfig http2Config;
   private boolean verifyHost;
@@ -177,14 +177,13 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int defaultPort;
   private HttpVersion protocolVersion;
   private int maxRedirects;
+  private int maxRedirectBufferSize;
   private boolean forceSni;
 
   private TracingPolicy tracingPolicy;
 
   private boolean shared;
   private String name;
-
-  private boolean followAlternativeServices;
 
   /**
    * Default constructor
@@ -219,6 +218,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
     this.maxRedirects = other.maxRedirects;
+    this.maxRedirectBufferSize = other.maxRedirectBufferSize;
     this.forceSni = other.forceSni;
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
@@ -256,11 +256,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
+    maxRedirectBufferSize = DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
     forceSni = DEFAULT_FORCE_SNI;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
     name = DEFAULT_NAME;
-    followAlternativeServices = DEFAULT_FOLLOW_ALTERNATIVE_SERVICES;
   }
 
   public Http1ClientConfig getHttp1Config() {
@@ -906,6 +906,25 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
+   */
+  public int getMaxRedirectBufferSize() {
+    return maxRedirectBufferSize;
+  }
+
+  /**
+   * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
+   *
+   * @param maxRedirectBufferSize the maximum buffer size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxRedirectBufferSize(int maxRedirectBufferSize) {
+    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
+    this.maxRedirectBufferSize = maxRedirectBufferSize;
+    return this;
+  }
+
+  /**
    * @return whether the client should always use SNI on TLS/SSL connections
    */
   public boolean isForceSni() {
@@ -1029,31 +1048,6 @@ public class HttpClientOptions extends ClientOptionsBase {
   public HttpClientOptions setName(String name) {
     Objects.requireNonNull(name, "Client name cannot be null");
     this.name = name;
-    return this;
-  }
-
-  /**
-   * @return whether the client follows alternative services advertisements
-   */
-  @Unstable
-  public boolean getFollowAlternativeServices() {
-    return followAlternativeServices;
-  }
-
-  /**
-   * <p>Configure whether the client follows alternative services advertisements, the default
-   * setting does not.</p>
-   *
-   * <p>Setting this to true, instructs the client to use most appropriate alternative services advertised by
-   * HTTP servers.</p>
-   *
-   * <p>The client only follows alternative services it can trust for a given origin, in practice this means
-   * this only the {@code https} scheme is supported and alternatives handshake uses the alternative origin.</p>
-   *
-   * @param followAlternativeServices the config value
-   */
-  public HttpClientOptions setFollowAlternativeServices(boolean followAlternativeServices) {
-    this.followAlternativeServices = followAlternativeServices;
     return this;
   }
 }

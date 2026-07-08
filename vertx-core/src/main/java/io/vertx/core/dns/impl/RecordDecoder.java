@@ -44,7 +44,7 @@ class RecordDecoder {
     static Function<DnsRecord, MxRecord> MX = record -> {
       if (record.type() == DnsRecordType.MX) {
         ByteBuf packet = ((DnsRawRecord)record).content();
-        int priority = packet.readShort();
+        int priority = packet.readUnsignedShort();
         String name = RecordDecoder.readName(packet);
         long ttl = record.timeToLive();
         return new MxRecordImpl(ttl, priority, name);
@@ -86,8 +86,8 @@ class RecordDecoder {
     static Function<DnsRecord, SrvRecord> SRV = record -> {
       if (record.type() == DnsRecordType.SRV) {
         ByteBuf packet = ((DnsRawRecord)record).content();
-        int priority = packet.readShort();
-        int weight = packet.readShort();
+        int priority = packet.readUnsignedShort();
+        int weight = packet.readUnsignedShort();
         int port = packet.readUnsignedShort();
         long ttl = record.timeToLive();
         String target = RecordDecoder.readName(packet);

@@ -26,6 +26,10 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 
+import java.util.ArrayList;
+import java.util.List;
+import io.netty.buffer.Unpooled;
+import io.netty.buffer.CompositeByteBuf;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
@@ -40,7 +44,6 @@ import static io.vertx.core.http.impl.HttpClientImpl.ABS_URI_START_PATTERN;
 public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
-
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
@@ -58,9 +61,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   private boolean isConnect;
   private String traceOperation;
+  private int maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
+  private List<Buffer> bodyBuffer;
 
-  public HttpClientRequestImpl(HttpConnection connection, HttpClientStream stream) {
-    super(connection, stream, stream.context().promise(), HttpMethod.GET, "/");
+  public HttpClientRequestImpl(HostAndPort authority, HttpConnection connection, HttpClientStream stream) {
+    super(authority, connection, stream, stream.context().promise(), HttpMethod.GET, "/");
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
@@ -158,6 +163,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized int getMaxRedirects() {
     return maxRedirects;
+  }
+
+  @Override
+  public synchronized HttpClientRequest maxRedirectBufferSize(int maxRedirectBufferSize) {
+    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
+    this.maxRedirectBufferSize = maxRedirectBufferSize;
+    return this;
+  }
+
+  @Override
+  public synchronized int maxRedirectBufferSize() {
+    return maxRedirectBufferSize;
   }
 
   @Override
@@ -384,13 +401,29 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     next.pushHandler(pushHandler());
     next.setFollowRedirects(true);
     next.setMaxRedirects(maxRedirects);
-    ((HttpClientRequestImpl)next).numberOfRedirections = numberOfRedirections + 1;
+    HttpClientRequestImpl nextImpl = (HttpClientRequestImpl) next;
+    nextImpl.numberOfRedirections = numberOfRedirections + 1;
+    nextImpl.bodyBuffer = bodyBuffer;
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.idleTimeout(timeoutMs);
         }
-        next.end();
+        if (next.getMethod() == HttpMethod.QUERY && bodyBuffer != null && !bodyBuffer.isEmpty()) {
+          Buffer redirectBody;
+          if (bodyBuffer.size() == 1) {
+            redirectBody = bodyBuffer.get(0);
+          } else {
+            CompositeByteBuf composite = Unpooled.compositeBuffer();
+            for (Buffer b : bodyBuffer) {
+              composite.addComponent(true, ((BufferInternal) b).getByteBuf());
+            }
+            redirectBody = BufferInternal.buffer(composite);
+          }
+          next.end(redirectBody);
+        } else {
+          next.end();
+        }
       } else {
         next.reset(0);
       }
@@ -504,6 +537,25 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       if (trailersSent) {
         return context.failedFuture(new IllegalStateException("Request already complete"));
+      }
+      if (followRedirects && getMethod() == HttpMethod.QUERY) {
+        if (buff != null) {
+          int currentLen = 0;
+          if (bodyBuffer != null) {
+            for (Buffer b : bodyBuffer) {
+              currentLen += b.length();
+            }
+          }
+          if (currentLen + buff.length() > maxRedirectBufferSize) {
+            followRedirects = false;
+            bodyBuffer = null;
+          } else {
+            if (bodyBuffer == null) {
+              bodyBuffer = new ArrayList<>();
+            }
+            bodyBuffer.add(buff.copy());
+          }
+        }
       }
       if (!headersSent) {
         if (!connect) {
