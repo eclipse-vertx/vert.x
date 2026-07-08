@@ -33,6 +33,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 
 import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +75,7 @@ public abstract class ConnectionBase {
   private Future<Void> closeFuture;
   private long remainingBytesRead;
   private long remainingBytesWritten;
+  private Map<Object, Object> attachments;
 
   protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
 
@@ -156,6 +158,24 @@ public abstract class ConnectionBase {
     return metric;
   }
 
+  /**
+   * Get an attachment previously stored with {@link #set(Object, Object)}.
+   */
+  @SuppressWarnings("unchecked")
+  public final synchronized <T> T get(Object key) {
+    return attachments != null ? (T) attachments.get(key) : null;
+  }
+
+  /**
+   * Store an attachment on this connection, associated with {@code key}.
+   */
+  public final synchronized void set(Object key, Object value) {
+    if (attachments == null) {
+      attachments = new HashMap<>();
+    }
+    attachments.put(key, value);
+  }
+
   public NetworkMetrics metrics() {
     return null;
   }
@@ -184,6 +204,9 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
+    synchronized (this) {
+      attachments = null;
+    }
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
       flushBytesRead();

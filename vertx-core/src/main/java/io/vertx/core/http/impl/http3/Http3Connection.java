@@ -26,6 +26,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.SocketAddress;
@@ -33,6 +34,7 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +42,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http3Connection implements HttpConnection {
+public abstract class Http3Connection implements HttpConnectionInternal {
 
   private final LongObjectMap<Http3Stream<?, ?>> streams;
   private final Http3FrameLogger frameLogger;
@@ -55,6 +57,7 @@ public abstract class Http3Connection implements HttpConnection {
   private Http3Settings localSettings;
   private Http3Settings remoteSettings;
   private Handler<HttpSettings> remoteSettingsHandler;
+  private Map<Object, Object> attachments;
 
   public Http3Connection(QuicConnectionInternal connection, Http3Settings localSettings, Http3FrameLogger frameLogger) {
     this.streams = new LongObjectHashMap<>();
@@ -291,10 +294,25 @@ public abstract class Http3Connection implements HttpConnection {
   }
 
   protected void handleClosed() {
+    attachments = null;
     Handler<Void> handler = closeHandler;
     if (handler != null) {
       context.emit(null, handler);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> T get(Object key) {
+    return attachments != null ? (T) attachments.get(key) : null;
+  }
+
+  @Override
+  public void set(Object key, Object value) {
+    if (attachments == null) {
+      attachments = new HashMap<>();
+    }
+    attachments.put(key, value);
   }
 
   private void sendGoAway(QuicStreamChannel controlStream, long streamId, PromiseInternal<Void> promise) {

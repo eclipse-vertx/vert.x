@@ -36,6 +36,7 @@ import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -49,7 +50,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnection, Http2Connection {
+abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameListener, HttpConnectionInternal, Http2Connection {
 
   private static final Logger log = LoggerFactory.getLogger(Http2ConnectionImpl.class);
 
