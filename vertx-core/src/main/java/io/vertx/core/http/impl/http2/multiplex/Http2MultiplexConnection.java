@@ -47,6 +47,7 @@ import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
@@ -57,7 +58,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
 
-public abstract class Http2MultiplexConnection<S extends Http2Stream> extends ConnectionBase implements HttpConnection {
+public abstract class Http2MultiplexConnection<S extends Http2Stream> extends ConnectionBase implements HttpConnectionInternal {
 
   protected final Http2MultiplexHandler handler;
   protected final TransportMetrics<?> transportMetrics;

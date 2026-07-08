@@ -26,6 +26,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.net.impl.VertxConnection;
 
 import java.time.Duration;
@@ -33,7 +34,7 @@ import java.time.Duration;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http1Connection extends VertxConnection implements io.vertx.core.http.HttpConnection {
+abstract class Http1Connection extends VertxConnection implements HttpConnectionInternal {
 
   protected boolean closeInitiated;
   protected Duration shutdownInitiated;
