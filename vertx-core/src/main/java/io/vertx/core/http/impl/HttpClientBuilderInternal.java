@@ -167,6 +167,13 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
     HttpClientOptions options = HttpClientBuilderInternal.this.clientOptions;
     Handler<HttpConnection> connectHandler = connectionHandler(config);
     List<HttpVersion> versions = config.getVersions();
+    int maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
+    int maxRedirectBufferedSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
+    ClientRedirectConfig redirectConfig = config.getRedirectConfig();
+    if (redirectConfig != null) {
+      maxRedirects = redirectConfig.getMaxRedirects();
+      maxRedirectBufferedSize = redirectConfig.getMaxBufferedSize();
+    }
     return new LegacyHttpClient(
       vertx,
       resolver,
@@ -182,8 +189,8 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       config.isSsl(),
       config.getDefaultHost(),
       config.getDefaultPort(),
-      config.getMaxRedirects(),
-      config.getMaxRedirectBufferSize(),
+      maxRedirects,
+      maxRedirectBufferedSize,
       versions,
       sslOptions,
       connectHandler,

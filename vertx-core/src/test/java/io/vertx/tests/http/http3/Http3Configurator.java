@@ -222,7 +222,12 @@ public class Http3Configurator implements HttpConfigurator {
       }
       @Override
       public HttpClientConfigurator setMaxRedirectBufferSize(int maxRedirectBufferSize) {
-        config.setMaxRedirectBufferSize(maxRedirectBufferSize);
+        ClientRedirectConfig redirectConfig = config.getRedirectConfig();
+        if (redirectConfig == null) {
+          redirectConfig = new ClientRedirectConfig();
+          config.setRedirectConfig(redirectConfig);
+        }
+        redirectConfig.setMaxBufferedSize(maxRedirectBufferSize);
         return this;
       }
       @Override

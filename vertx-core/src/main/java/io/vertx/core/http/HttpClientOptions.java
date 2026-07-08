@@ -137,7 +137,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * Default max redirect buffer size = 4 * 1024 bytes (4KB)
    */
-  public static final int DEFAULT_MAX_REDIRECT_BUFFER_SIZE = 4 * 1024;
+  public static final int DEFAULT_MAX_REDIRECT_BUFFERED_SIZE = 4 * 1024;
 
   /*
    * Default force SNI = {@code false}
@@ -177,7 +177,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int defaultPort;
   private HttpVersion protocolVersion;
   private int maxRedirects;
-  private int maxRedirectBufferSize;
+  private int maxRedirectBufferedSize;
   private boolean forceSni;
 
   private TracingPolicy tracingPolicy;
@@ -218,7 +218,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
     this.maxRedirects = other.maxRedirects;
-    this.maxRedirectBufferSize = other.maxRedirectBufferSize;
+    this.maxRedirectBufferedSize = other.maxRedirectBufferedSize;
     this.forceSni = other.forceSni;
     this.tracingPolicy = other.tracingPolicy;
     this.shared = other.shared;
@@ -256,7 +256,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
     maxRedirects = DEFAULT_MAX_REDIRECTS;
-    maxRedirectBufferSize = DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
+    maxRedirectBufferedSize = DEFAULT_MAX_REDIRECT_BUFFERED_SIZE;
     forceSni = DEFAULT_FORCE_SNI;
     tracingPolicy = DEFAULT_TRACING_POLICY;
     shared = DEFAULT_SHARED;
@@ -908,19 +908,19 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
    */
-  public int getMaxRedirectBufferSize() {
-    return maxRedirectBufferSize;
+  public int getMaxRedirectBufferedSize() {
+    return maxRedirectBufferedSize;
   }
 
   /**
    * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
    *
-   * @param maxRedirectBufferSize the maximum buffer size
+   * @param maxRedirectBufferedSize the maximum buffer size
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setMaxRedirectBufferSize(int maxRedirectBufferSize) {
-    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
-    this.maxRedirectBufferSize = maxRedirectBufferSize;
+  public HttpClientOptions setMaxRedirectBufferedSize(int maxRedirectBufferedSize) {
+    Arguments.require(maxRedirectBufferedSize >= 0, "Max redirect buffer size must be >= 0");
+    this.maxRedirectBufferedSize = maxRedirectBufferedSize;
     return this;
   }
 

@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.impl.Arguments;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Unstable;
@@ -79,8 +78,7 @@ public class HttpClientConfig {
   private boolean decompressionEnabled;
   private String defaultHost;
   private int defaultPort;
-  private int maxRedirects;
-  private int maxRedirectBufferSize;
+  private ClientRedirectConfig redirectConfig;
   private ObservabilityConfig observabilityConfig;
   private boolean shared;
   private String name;
@@ -98,8 +96,7 @@ public class HttpClientConfig {
     this.decompressionEnabled = HttpClientOptions.DEFAULT_DECOMPRESSION_SUPPORTED;
     this.defaultHost = HttpClientOptions.DEFAULT_DEFAULT_HOST;
     this.defaultPort = HttpClientOptions.DEFAULT_DEFAULT_PORT;
-    this.maxRedirects = HttpClientOptions.DEFAULT_MAX_REDIRECTS;
-    this.maxRedirectBufferSize = HttpClientOptions.DEFAULT_MAX_REDIRECT_BUFFER_SIZE;
+    this.redirectConfig = null;
     this.observabilityConfig = null;
     this.shared = HttpClientOptions.DEFAULT_SHARED;
     this.name = HttpClientOptions.DEFAULT_NAME;
@@ -118,8 +115,7 @@ public class HttpClientConfig {
     this.decompressionEnabled = other.decompressionEnabled;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
-    this.maxRedirects = other.maxRedirects;
-    this.maxRedirectBufferSize = other.maxRedirectBufferSize;
+    this.redirectConfig = other.redirectConfig != null ? new ClientRedirectConfig(other.redirectConfig) : null;
     this.observabilityConfig = other.observabilityConfig != null ? new ObservabilityConfig(other.observabilityConfig) : null;
     this.shared = other.shared;
     this.name = other.name;
@@ -135,6 +131,10 @@ public class HttpClientConfig {
         .setTracingPolicy(options.getTracingPolicy());
     }
 
+    ClientRedirectConfig redirectConfig = new ClientRedirectConfig();
+    redirectConfig.setMaxRedirects(options.getMaxRedirects());
+    redirectConfig.setMaxBufferedSize(options.getMaxRedirectBufferedSize());
+
     this.tcpConfig = new TcpClientConfig(options);
     this.quicConfig = defaultQuicConfig();
     this.ssl = options.isSsl();
@@ -146,8 +146,7 @@ public class HttpClientConfig {
     this.decompressionEnabled = options.isDecompressionSupported();
     this.defaultHost = options.getDefaultHost();
     this.defaultPort = options.getDefaultPort();
-    this.maxRedirects = options.getMaxRedirects();
-    this.maxRedirectBufferSize = options.getMaxRedirectBufferSize();
+    this.redirectConfig = redirectConfig;
     this.observabilityConfig = observabilityConfig;
     this.shared = options.isShared();
     this.name = options.getName();
@@ -442,7 +441,8 @@ public class HttpClientConfig {
    * @return the maximum number of redirection a request can follow
    */
   public int getMaxRedirects() {
-    return maxRedirects;
+    ClientRedirectConfig cfg = redirectConfig;
+    return cfg == null ? HttpClientOptions.DEFAULT_MAX_REDIRECTS : cfg.getMaxRedirects();
   }
 
   /**
@@ -452,26 +452,31 @@ public class HttpClientConfig {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientConfig setMaxRedirects(int maxRedirects) {
-    this.maxRedirects = maxRedirects;
+    if (redirectConfig == null) {
+      if (maxRedirects == HttpClientOptions.DEFAULT_MAX_REDIRECTS) {
+        return this;
+      }
+      redirectConfig = new ClientRedirectConfig();
+    }
+    redirectConfig.setMaxRedirects(maxRedirects);
     return this;
   }
 
   /**
-   * @return the maximum size in bytes of the redirect buffer when redirecting QUERY requests
+   * @return the client redirect config, it can be {@code null} in which case the default settings are used.
    */
-  public int getMaxRedirectBufferSize() {
-    return maxRedirectBufferSize;
+  public ClientRedirectConfig getRedirectConfig() {
+    return redirectConfig;
   }
 
   /**
-   * Set the maximum size of the redirect buffer in bytes when redirecting QUERY requests.
+   * Set the client redirect config, set to {@code null} to use the default config.
    *
-   * @param maxRedirectBufferSize the maximum buffer size
+   * @param redirectConfig the redirect config
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientConfig setMaxRedirectBufferSize(int maxRedirectBufferSize) {
-    Arguments.require(maxRedirectBufferSize >= 0, "Max redirect buffer size must be >= 0");
-    this.maxRedirectBufferSize = maxRedirectBufferSize;
+  public HttpClientConfig setRedirectConfig(ClientRedirectConfig redirectConfig) {
+    this.redirectConfig = redirectConfig;
     return this;
   }
 
