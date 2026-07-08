@@ -27,7 +27,6 @@ import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -41,7 +40,7 @@ import java.util.function.Function;
  */
 public class DatabindCodec extends JacksonCodec {
 
-  private static ObjectMapper mapper = JsonMapper
+  private static volatile ObjectMapper mapper = JsonMapper
     .builder(JacksonCodec.factory)
     .addModule(new VertxModule())
     .build();
@@ -53,7 +52,13 @@ public class DatabindCodec extends JacksonCodec {
     return mapper;
   }
 
-  public static void updateMapper(Function<MapperBuilder<ObjectMapper, ?>, ObjectMapper> f) {
+  /**
+   * this creates a @{@link MapperBuilder} from the already configured @{@link ObjectMapper}
+   * this builder is passed to the function which returns a new mapper
+   *
+   * @param f update mapper function
+   */
+  public static void rebuildMapper(Function<MapperBuilder<ObjectMapper, ?>, ObjectMapper> f) {
     mapper = f.apply(mapper().rebuild());
   }
 

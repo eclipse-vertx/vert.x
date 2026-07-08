@@ -27,7 +27,7 @@ public class MapperConfigurationTest {
     final ObjectMapper oldMapper = DatabindCodec.mapper();
     assertThrows(JacksonException.class, () -> oldMapper.readValue("{\"age\": null}", User.class));
 
-    DatabindCodec.updateMapper(builder -> builder.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).build());
+    DatabindCodec.rebuildMapper(builder -> builder.disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES).build());
 
     final ObjectMapper newMapper = DatabindCodec.mapper();
     newMapper.readValue("{\"age\": null}", User.class);
