@@ -11,13 +11,18 @@
 package io.vertx.core.impl;
 
 import java.util.concurrent.ThreadFactory;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import java.util.List;
 
 /**
- * Virtual thread support.
+ * Utils dependent on the JDK implementation.
+ *
+ * Java 21 and greater implementation.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VirtualThreadSupport {
+public class JdkDependent {
 
   public static final ThreadFactory VIRTUAL_THREAD_FACTORY;
   public static final boolean VIRTUAL_THREAD_AVAILABLE;
@@ -34,4 +39,9 @@ public class VirtualThreadSupport {
     return thread.isVirtual();
   }
 
+  public static void applyNamedGroups(SSLEngine engine, List<String> groups) {
+    SSLParameters params = engine.getSSLParameters();
+    params.setNamedGroups(groups.toArray(new String[0]));
+    engine.setSSLParameters(params);
+  }
 }

@@ -200,7 +200,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ExecutorService internalWorkerExec = executorServiceFactory.createExecutor(internalWorkerThreadFactory, internalBlockingPoolSize, internalBlockingPoolSize);
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", internalBlockingPoolSize) : null;
 
-    ThreadFactory virtualThreadFactory = VirtualThreadSupport.VIRTUAL_THREAD_FACTORY;
+    ThreadFactory virtualThreadFactory = JdkDependent.VIRTUAL_THREAD_FACTORY;
     PoolMetrics virtualThreadWorkerPoolMetrics = metrics != null && virtualThreadFactory != null ? metrics.createPoolMetrics("worker", "vert.x-virtual-thread", -1) : null;
 
     int numberOfEventLoops = options.getEventLoopPoolSize();
@@ -1206,7 +1206,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public boolean isVirtualThreadAvailable() {
-    return VirtualThreadSupport.VIRTUAL_THREAD_AVAILABLE;
+    return JdkDependent.VIRTUAL_THREAD_AVAILABLE;
   }
 
   private CloseFuture resolveCloseFuture() {

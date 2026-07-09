@@ -13,7 +13,7 @@ package io.vertx.tests.deployment;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.*;
-import io.vertx.core.impl.VirtualThreadSupport;
+import io.vertx.core.impl.JdkDependent;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.deployment.DeploymentContext;
@@ -1597,7 +1597,7 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testVirtualThreadsNotAvailable() {
-    Assume.assumeFalse(VirtualThreadSupport.VIRTUAL_THREAD_AVAILABLE);
+    Assume.assumeFalse(JdkDependent.VIRTUAL_THREAD_AVAILABLE);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() {
