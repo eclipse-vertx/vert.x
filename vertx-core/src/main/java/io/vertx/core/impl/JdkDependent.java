@@ -10,14 +10,23 @@
  */
 package io.vertx.core.impl;
 
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
+
+import javax.net.ssl.SSLEngine;
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * Pre Java 21 implementation : no virtual threads.
+ * Utils dependent on the JDK implementation.
+ *
+ * Pre Java 21 implementation.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class VirtualThreadSupport {
+public class JdkDependent {
+
+  private static final Logger log = LoggerFactory.getLogger(JdkDependent.class);
 
   public static final ThreadFactory VIRTUAL_THREAD_FACTORY;
   public static final boolean VIRTUAL_THREAD_AVAILABLE;
@@ -34,4 +43,7 @@ public class VirtualThreadSupport {
     return false;
   }
 
+  public static void applyNamedGroups(SSLEngine engine, List<String> groups) {
+    log.warn("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+");
+  }
 }
