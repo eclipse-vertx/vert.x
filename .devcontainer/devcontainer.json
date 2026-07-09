@@ -1,0 +1,22 @@
+{
+  "name": "Ubuntu 26.04 Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:dev-ubuntu26.04",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "25",
+      "installMaven": "true",
+      "mavenVersion": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack" // Installs Microsoft's Java Extension Pack (Debugger, Maven explorer, etc.)
+      ],
+      "settings": {
+        "redhat.telemetry.enabled": false
+      }
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y openssl libssl-dev libapr1t64"
+}
