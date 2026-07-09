@@ -57,7 +57,7 @@ public class HttpChannelConnector {
   private final ClientMetrics metrics;
   private final boolean ssl;
   private final boolean useAlpn;
-  private final boolean useHybridKeyExchangeProtocol;
+  private final List<String> resolvedKeyExchangeGroups;
   private final HttpVersion version;
   private final SocketAddress peerAddress;
   private final SocketAddress server;
@@ -69,7 +69,7 @@ public class HttpChannelConnector {
                               HttpVersion version,
                               boolean ssl,
                               boolean useAlpn,
-                              boolean useHybridKeyExchangeProtocol,
+                              List<String> resolvedKeyExchangeGroups,
                               SocketAddress peerAddress,
                               SocketAddress server) {
     this.client = client;
@@ -79,7 +79,7 @@ public class HttpChannelConnector {
     this.proxyOptions = proxyOptions;
     this.ssl = ssl;
     this.useAlpn = useAlpn;
-    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
+    this.resolvedKeyExchangeGroups = resolvedKeyExchangeGroups;
     this.version = version;
     this.peerAddress = peerAddress;
     this.server = server;
@@ -90,7 +90,7 @@ public class HttpChannelConnector {
   }
 
   private void connect(ContextInternal context, Promise<NetSocket> promise) {
-    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, useHybridKeyExchangeProtocol, false, promise, context, 0);
+    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, resolvedKeyExchangeGroups, false, promise, context, 0);
   }
 
   public Future<HttpClientConnection> wrap(ContextInternal context, NetSocket so_) {

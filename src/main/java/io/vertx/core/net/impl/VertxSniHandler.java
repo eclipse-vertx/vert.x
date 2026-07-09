@@ -17,6 +17,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsyncMapping;
 import io.vertx.core.net.HostAndPort;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
@@ -28,15 +29,15 @@ import java.util.concurrent.TimeUnit;
 class VertxSniHandler extends SniHandler {
 
   private final Executor delegatedTaskExec;
-  private final boolean useHybridKeyExchangeProtocol;
+  private final List<String> keyExchangeGroups;
   private final HostAndPort remoteAddress;
 
   public VertxSniHandler(AsyncMapping<? super String, ? extends SslContext> mapping, long handshakeTimeoutMillis, Executor delegatedTaskExec,
-      boolean useHybridKeyExchangeProtocol, HostAndPort remoteAddress) {
+                         List<String> keyExchangeGroups, HostAndPort remoteAddress) {
     super(mapping, handshakeTimeoutMillis);
 
     this.delegatedTaskExec = delegatedTaskExec;
-    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
+    this.keyExchangeGroups = keyExchangeGroups;
     this.remoteAddress = remoteAddress;
   }
 
@@ -48,8 +49,8 @@ class VertxSniHandler extends SniHandler {
     } else {
       sslHandler = context.newHandler(allocator, delegatedTaskExec);
     }
-    if (useHybridKeyExchangeProtocol) {
-      SslChannelProvider.applyHybridCurves(sslHandler);
+    if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
+      SslEngineUtils.applyKeyExchangeGroups(sslHandler.engine(), keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     return sslHandler;

@@ -40,9 +40,9 @@ public class SSLOptions {
   public static final boolean DEFAULT_USE_ALPN = false;
 
   /**
-   * Default use hybrid = false
+   * Default PQC enforcement policy = RELAXED
    */
-  public static final boolean DEFAULT_USE_HYBRID = false;
+  public static final PqcEnforcementPolicy DEFAULT_PQC_ENFORCEMENT_POLICY = PqcEnforcementPolicy.RELAXED;
 
   /**
    * The default value of SSL handshake timeout = 10
@@ -71,7 +71,8 @@ public class SSLOptions {
   private ArrayList<String> crlPaths;
   private ArrayList<Buffer> crlValues;
   private boolean useAlpn;
-  private boolean useHybridKeyExchangeProtocol;
+  private List<String> keyExchangeGroups;
+  private PqcEnforcementPolicy pqcEnforcementPolicy;
   private Set<String> enabledSecureTransportProtocols;
 
   /**
@@ -105,7 +106,8 @@ public class SSLOptions {
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.useHybridKeyExchangeProtocol = other.useHybridKeyExchangeProtocol;
+    this.keyExchangeGroups = other.keyExchangeGroups != null ? new ArrayList<>(other.keyExchangeGroups) : null;
+    this.pqcEnforcementPolicy = other.pqcEnforcementPolicy;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
   }
 
@@ -117,7 +119,8 @@ public class SSLOptions {
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
     useAlpn = DEFAULT_USE_ALPN;
-    useHybridKeyExchangeProtocol = DEFAULT_USE_HYBRID;
+    keyExchangeGroups = null;
+    pqcEnforcementPolicy = DEFAULT_PQC_ENFORCEMENT_POLICY;
     enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
   }
 
@@ -255,32 +258,63 @@ public class SSLOptions {
   }
 
   /**
-   * @return whether the hybrid key exchange protocol X25519MLKEM768 is enabled
+   * @return the list of key exchange group names, or {@code null} if not set
    */
-  public boolean isUseHybridKeyExchangeProtocol() {
-    return useHybridKeyExchangeProtocol;
+  public List<String> getKeyExchangeGroups() {
+    return keyExchangeGroups;
   }
 
   /**
-   * Enable or disable the hybrid post-quantum key exchange protocol X25519MLKEM768.
+   * Set the list of key exchange group names to use for TLS connections.
    * <p>
-   * When enabled, TLS connections will use X25519MLKEM768 for key exchange, providing
-   * protection against quantum computer attacks.
-   * <p>
-   * This feature requires OpenSSL and will not work with the JDK SSL engine. You must:
+   * The effective groups used during the TLS handshake depend on the {@link #getPqcEnforcementPolicy()}:
    * <ul>
-   *   <li>Use {@link OpenSSLEngineOptions} as the SSL engine</li>
-   *   <li>Have {@code io.netty:netty-tcnative-classes} on the classpath</li>
-   *   <li>Have an OpenSSL provider (e.g. {@code io.smallrye:smallrye-openssl}) on the classpath</li>
+   *   <li>{@link PqcEnforcementPolicy#RELAXED}: uses the specified groups as-is, or engine defaults if {@code null}</li>
+   *   <li>{@link PqcEnforcementPolicy#CLIENT_NEGOTIATED}: prepends {@code X25519MLKEM768} if not already present</li>
+   *   <li>{@link PqcEnforcementPolicy#STRICT}: replaces the list with only {@code X25519MLKEM768}</li>
    * </ul>
-   * If OpenSSL is not available, the TLS handshake will fail rather than silently falling back
-   * to a non-quantum-safe key exchange.
    *
-   * @param useHybridKeyExchangeProtocol {@code true} to enable hybrid key exchange
+   * @param keyExchangeGroups the key exchange group names
    * @return a reference to this, so the API can be used fluently
    */
-  public SSLOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
-    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
+  public SSLOptions setKeyExchangeGroups(List<String> keyExchangeGroups) {
+    this.keyExchangeGroups = keyExchangeGroups;
+    return this;
+  }
+
+  /**
+   * Add a key exchange group name.
+   *
+   * @param group the group name to add
+   * @return a reference to this, so the API can be used fluently
+   */
+  public SSLOptions addKeyExchangeGroup(String group) {
+    Objects.requireNonNull(group, "group");
+    if (keyExchangeGroups == null) {
+      keyExchangeGroups = new ArrayList<>();
+    }
+    keyExchangeGroups.add(group);
+    return this;
+  }
+
+  /**
+   * @return the PQC enforcement policy
+   */
+  public PqcEnforcementPolicy getPqcEnforcementPolicy() {
+    return pqcEnforcementPolicy;
+  }
+
+  /**
+   * Set the post-quantum cryptography enforcement policy.
+   * <p>
+   * When set to {@link PqcEnforcementPolicy#STRICT} or {@link PqcEnforcementPolicy#CLIENT_NEGOTIATED},
+   * the SSL engine will be automatically switched to OpenSSL if not already configured.
+   *
+   * @param pqcEnforcementPolicy the enforcement policy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public SSLOptions setPqcEnforcementPolicy(PqcEnforcementPolicy pqcEnforcementPolicy) {
+    this.pqcEnforcementPolicy = Objects.requireNonNull(pqcEnforcementPolicy, "pqcEnforcementPolicy");
     return this;
   }
 
@@ -378,7 +412,8 @@ public class SSLOptions {
          Objects.equals(crlPaths, that.crlPaths) &&
          Objects.equals(crlValues, that.crlValues) &&
          useAlpn == that.useAlpn &&
-         useHybridKeyExchangeProtocol == that.useHybridKeyExchangeProtocol &&
+         Objects.equals(keyExchangeGroups, that.keyExchangeGroups) &&
+         pqcEnforcementPolicy == that.pqcEnforcementPolicy &&
          Objects.equals(enabledSecureTransportProtocols, that.enabledSecureTransportProtocols);
     }
     return false;

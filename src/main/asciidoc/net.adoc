@@ -841,6 +841,50 @@ OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setOpenSslE
 and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
 OpenSSL to be installed on your OS depending on the tcnative implementation.
 
+==== Post Quantum Cryptography
+
+The rise of quantum computers will make key exchange protocols such as x25519 obsolete as they will be able to "crack" secret keys quickly.
+Vert.x supports post-quantum cryptography (PQC) key exchange via X25519MLKEM768 (official recommendation of NIST) to ensure sessions over TLS are safe against quantum computers.
+
+PQC is configured with two properties:
+
+- {@link io.vertx.core.net.SSLOptions#setKeyExchangeGroups} — a list of key exchange group names (e.g. `["X25519MLKEM768", "X25519"]`)
+- {@link io.vertx.core.net.SSLOptions#setPqcEnforcementPolicy} — the enforcement policy: `RELAXED` (default), `CLIENT_NEGOTIATED`, or `STRICT`
+
+The three enforcement modes behave as follows:
+
+- **RELAXED**: uses the specified key exchange groups as-is; if none are specified, the SSL engine negotiates normally. No PQC enforcement.
+- **CLIENT_NEGOTIATED**: the server requires PQC support (X25519MLKEM768 is prepended to the groups if not present), but tolerates clients that do not support PQC.
+- **STRICT**: both server and client must support PQC. The key exchange groups are replaced with only X25519MLKEM768. Non-PQC clients will fail the TLS handshake.
+
+For both `STRICT` and `CLIENT_NEGOTIATED`, the application fails with either "PQC enforcement policy requires X25519MLKEM768 but the configured SSL engine does not support it" or "PQC enforcement policy requires X25519MLKEM768 but neither JDK nor OpenSSL support it" if pqc is not supported by the SSL engine.
+
+For `STRICT` and `CLIENT_NEGOTIATED` modes, you need an SslEngine supporting X25519MLKEM768. `JdkSslEngine` supports it starting with JDK 27 (preview feature), and OpenSsl supports it starting with OpenSsl 3.5. If no `SslEngine` is specified by the user, the first engine supporting pqc will be selected, starting with `JdkSslEngine`
+
+Using OpenSsl >= 3.5 requires the following dependencies:
+
+- `io.netty:netty-tcnative-classes` (version managed by the Netty BOM)
+- An OpenSSL provider such as `io.smallrye:smallrye-openssl`
+
+**PQC enforcement policy summary:**
+[cols="1,1,1,2", options="header"]
+|===
+| pqc-enforcement-policy | server-pqc-supports | client-pqc-supports | Result
+.3+| strict
+| false | required / true / false | **app fails** with error "PQC enforcement policy STRICT requires X25519MLKEM768 but the configured SSL engine does not support it"
+| true  | true / required         | app starts and ssl handshake succeeds
+| true  | false                   | app starts but **ssl handshake fails**
+
+.2+| client_negotiated
+| false | required / true / false | **app fails** with error "PQC enforcement policy STRICT requires X25519MLKEM768 but the configured SSL engine does not support it"
+| true  | required / true / false | app starts and ssl handshake succeeds
+
+.3+| relaxed
+| true  | required / true / false | app starts and ssl handshake succeeds
+| false | true / false            | app starts and ssl handshake succeeds
+| false | required                | app starts but **ssl handshake fails**
+|===
+
 === Using a proxy for client connections
 
 The {@link io.vertx.core.net.NetClient} supports either a HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.

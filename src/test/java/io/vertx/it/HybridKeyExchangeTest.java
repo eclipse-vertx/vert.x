@@ -21,20 +21,25 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.internal.tcnative.SSL;
-import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.ClientAuth;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PqcEnforcementPolicy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Assume;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests hybrid key exchange (X25519MLKEM768) with OpenSSL.
+ * Tests PQC key exchange with OpenSSL.
  */
 public class HybridKeyExchangeTest extends HttpTestBase {
 
@@ -45,7 +50,9 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       Assume.assumeTrue("OpenSSL is not available", false);
       return;
     }
-    System.out.println("OpenSSL available: version=" + OpenSsl.versionString() + " (" + Long.toHexString(OpenSsl.version()) + ")");
+    String version = OpenSsl.versionString();
+    System.out.println("OpenSSL available: version=" + version + " (" + Long.toHexString(OpenSsl.version()) + ")");
+    Assume.assumeFalse("BoringSSL does not support X25519MLKEM768", version.contains("BoringSSL"));
     boolean mlkem;
     try {
       SslContext ctx = SslContextBuilder.forClient()
@@ -70,248 +77,397 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   }
 
   @Test
-  public void testHybridKeyExchangeHandshake() throws Exception {
+  public void testStrictPolicyHandshake() throws Exception {
     assumeMlKemAvailable();
-    server = vertx.createHttpServer(new HttpServerOptions()
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
-      .setSsl(true)
-      .setUseAlpn(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setKeyCertOptions(Cert.SERVER_PEM.get()));
-    server.requestHandler(req -> req.response().end("hybrid-ok"));
+      .setSsl(true);
+    serverOptions.setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("strict-ok"));
     startServer(server);
 
-    client = vertx.createHttpClient(new HttpClientOptions()
+    HttpClientOptions clientOptions = new HttpClientOptions();
+    clientOptions
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-        .setUseAlpn(true)
-      .setUseHybridKeyExchangeProtocol(true)
-      .setTrustAll(true));
-    HttpClient client2 = vertx.createHttpClient(new HttpClientOptions()
-      .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(false)
-      .setTrustAll(true));
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT);
 
-    CompletableFuture<Boolean> cf1 = new CompletableFuture<>();
-    CompletableFuture<Boolean> cf2 = new CompletableFuture<>();
+    client = vertx.createHttpClient(clientOptions);
 
-    Future<HttpClientRequest> reqSuccess = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
-        resp.body().onComplete(onSuccess(body -> {
-          assertEquals("hybrid-ok", body.toString());
-          cf1.complete(true);
-        }));
-      }));
-    }));
-
-    Future<HttpClientRequest> reqFail = client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(req -> {
-        assertTrue(req instanceof javax.net.ssl.SSLHandshakeException);
-        cf2.complete(true);
-      })
-    );
-
-    CompletableFuture.allOf(cf1, cf2).thenAccept((v) -> testComplete()).get();
+    Buffer bodyBuffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("strict-ok", bodyBuffer.toString());
   }
 
   @Test
-  public void testHybridKeyExchangeHandshakeMTLS() throws Exception {
+  public void testStrictPolicyRejectsNonPqcClient() throws Exception {
     assumeMlKemAvailable();
-    server = vertx.createHttpServer(new HttpServerOptions()
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setClientAuth(ClientAuth.REQUIRED)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions
+      .getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("should-not-reach"));
+    startServer(server);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    HttpClient client2 = vertx.createHttpClient(clientOptions);
+
+    client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
+        testComplete();
+      });
+    await();
+  }
+
+  @Test
+  public void testClientNegotiatedPolicyAllowsNonPqcClient() throws Exception {
+    assumeMlKemAvailable();
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setSsl(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions
+      .getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.CLIENT_NEGOTIATED)
+      .setKeyExchangeGroups(Collections.singletonList("X25519"))
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("client-negotiated-ok"));
+    startServer(server);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true);
+    client = vertx.createHttpClient(clientOptions);
+
+    Buffer bodyBuffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("client-negotiated-ok", bodyBuffer.toString());
+  }
+
+  @Test
+  public void testClientNegotiatedPolicyWithPqcClient() throws Exception {
+    assumeMlKemAvailable();
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setSsl(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions
+      .getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.CLIENT_NEGOTIATED)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("pqc-negotiated-ok"));
+    startServer(server);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    clientOptions
+      .getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT);
+    client = vertx.createHttpClient(clientOptions);
+
+    Buffer bodyBuffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("pqc-negotiated-ok", bodyBuffer.toString());
+  }
+
+  @Test
+  public void testStrictPolicyMTLS() throws Exception {
+    assumeMlKemAvailable();
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setSsl(true)
+      .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions
+      .getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
-      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get()));
+      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
       assertTrue(req.isSSL());
-      req.response().end("mtls-hybrid-ok");
+      req.response().end("mtls-strict-ok");
     });
     startServer(server);
 
-    client = vertx.createHttpClient(new HttpClientOptions()
+    HttpClientOptions clientOptions = new HttpClientOptions()
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
-      .setTrustAll(true));
-    HttpClient client2 = vertx.createHttpClient(new HttpClientOptions()
-      .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(false)
-      .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
-      .setTrustAll(true));
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    clientOptions
+      .getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get());
+    client = vertx.createHttpClient(clientOptions);
 
-    CompletableFuture<Boolean> cf1 = new CompletableFuture<>();
-    CompletableFuture<Boolean> cf2 = new CompletableFuture<>();
+    Buffer buffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
 
-    Future<HttpClientRequest> reqSuccess = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
-        resp.body().onComplete(onSuccess(body -> {
-          assertEquals("mtls-hybrid-ok", body.toString());
-          cf1.complete(true);
-        }));
-      }));
-    }));
-
-    Future<HttpClientRequest> reqFail = client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(req -> {
-        assertTrue(req instanceof javax.net.ssl.SSLHandshakeException);
-        cf2.complete(true);
-      })
-    );
-
-    CompletableFuture.allOf(cf1, cf2).thenAccept((v) -> testComplete()).get();
+    assertEquals("mtls-strict-ok", buffer.toString());
   }
 
   @Test
-  public void testHybridFailsServerSideWhenPqcNotAvailable() throws Exception {
+  public void testStrictPolicyMTLSRejectsNonPqcClient() throws Exception {
     assumeMlKemAvailable();
-    server.close();
-    server = vertx.createHttpServer(new HttpServerOptions()
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setKeyCertOptions(Cert.SERVER_PEM.get()));
+      .setClientAuth(ClientAuth.REQUIRED)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
+      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> req.response().end("should-not-reach"));
     startServer(server);
 
-    client = vertx.createHttpClient(new HttpClientOptions()
+    HttpClientOptions clientOptions = new HttpClientOptions()
       .setSsl(true)
-      .setTrustAll(true));
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get());
+    HttpClient client2 = vertx.createHttpClient(clientOptions);
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
+    client2.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .onComplete(ar -> {
+        assertTrue(ar.failed());
+        assertTrue(ar.cause() instanceof SSLHandshakeException);
         testComplete();
-      })
-    );
+      });
     await();
   }
 
   @Test
-  public void testHybridFailsClientSideWhenPqcNotAvailable() throws Exception {
-    assumeMlKemAvailable();
-    server.close();
-    server = vertx.createHttpServer(new HttpServerOptions()
+  public void testStrictPolicyFailsServerStartWhenJdkPqcNotAvailable() throws Exception {
+    Assume.assumeFalse("JDK PQC is available, skipping", JdkSSLEngineOptions.isPqcAvailable());
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setKeyCertOptions(Cert.SERVER_PEM.get()));
+      .setSslEngineOptions(new JdkSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> req.response().end("should-not-reach"));
-    startServer(server);
-
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setTrustAll(true));
-
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        testComplete();
-      })
-    );
+    server.listen().onComplete(ar -> {
+      assertTrue(ar.failed());
+      assertTrue(ar.cause().getMessage().contains("X25519MLKEM768"));
+      assertTrue(ar.cause().getMessage().contains("does not support it"));
+      testComplete();
+    });
     await();
   }
 
   @Test
-  public void testHybridKeyExchangeWithSNI() throws Exception {
+  public void testStrictPolicyFailsClientStartWhenJdkPqcNotAvailable() throws Exception {
+    Assume.assumeFalse("JDK PQC is available, skipping", JdkSSLEngineOptions.isPqcAvailable());
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true)
+      .setSslEngineOptions(new JdkSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT);
+
+    RequestOptions request = new RequestOptions()
+      .setPort(8080)
+      .setHost("localhost");
+
+    try {
+      client = vertx.createHttpClient(clientOptions);
+      client.request(request)
+        .toCompletionStage()
+        .toCompletableFuture()
+        .get(20, TimeUnit.SECONDS);
+      fail("Client should have failed to build");
+    } catch (ExecutionException e) {
+      Throwable root = e.getCause();
+      assertTrue(root.getMessage().contains("X25519MLKEM768"));
+      assertTrue(root.getMessage().contains("does not support it"));
+    }
+  }
+
+  @Test
+  public void testStrictPolicyWithSNI() throws Exception {
     assumeMlKemAvailable();
-    server.close();
-    server = vertx.createHttpServer(new HttpServerOptions()
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
       .setSni(true)
-      .setKeyCertOptions(Cert.SERVER_PEM.get()));
-    server.requestHandler(req -> req.response().end("sni-hybrid-ok"));
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("sni-strict-ok"));
     startServer(server);
 
-    client = vertx.createHttpClient(new HttpClientOptions()
+    HttpClientOptions clientOptions = new HttpClientOptions()
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setTrustAll(true));
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT);
+    client = vertx.createHttpClient(clientOptions);
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(onSuccess(req -> {
-      req.send().onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("TLSv1.3", req.connection().sslSession().getProtocol());
-        resp.body().onComplete(onSuccess(body -> {
-          assertEquals("sni-hybrid-ok", body.toString());
-          testComplete();
-        }));
-      }));
-    }));
-    await();
+    Buffer body = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("sni-strict-ok", body.toString());
   }
 
   @Test
-  public void testHybridFailsWithSNIWhenPqcNotAvailable() throws Exception {
+  public void testRelaxedPolicyWithCustomGroups() throws Exception {
     assumeMlKemAvailable();
-    server.close();
-    server = vertx.createHttpServer(new HttpServerOptions()
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setSni(true)
-      .setKeyCertOptions(Cert.SERVER_PEM.get()));
-    server.requestHandler(req -> req.response().end("should-not-reach"));
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.RELAXED)
+      .setKeyExchangeGroups(Collections.singletonList("X25519MLKEM768"))
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("relaxed-custom-ok"));
     startServer(server);
 
-    client = vertx.createHttpClient(new HttpClientOptions()
+    HttpClientOptions clientOptions = new HttpClientOptions()
       .setSsl(true)
-      .setTrustAll(true));
+      .setTrustAll(true)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.RELAXED)
+      .setKeyExchangeGroups(Collections.singletonList("X25519MLKEM768"));
+    client = vertx.createHttpClient(clientOptions);
 
-    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/").onComplete(
-      onFailure(err -> {
-        assertTrue(err instanceof javax.net.ssl.SSLHandshakeException);
-        testComplete();
-      })
-    );
-    await();
+    Buffer body = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("relaxed-custom-ok", body.toString());
   }
 
   @Test
-  public void testHybridWithRawNettySocket() throws Exception {
+  public void testRelaxedPolicyDefaultGroups() throws Exception {
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setSsl(true);
+    serverOptions.getSslOptions()
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("relaxed-default-ok"));
+    startServer(server);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true);
+    client = vertx.createHttpClient(clientOptions);
+
+    Buffer body = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("relaxed-default-ok", body.toString());
+  }
+
+  @Test
+  public void testStrictPolicyWithRawNettySocket() throws Exception {
     assumeMlKemAvailable();
-    // Start Vert.x server with hybrid
-    server.close();
-    server = vertx.createHttpServer(new HttpServerOptions()
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
-      .setKeyCertOptions(Cert.SERVER_PEM.get()));
-    server.requestHandler(req -> req.response().end("hybrid-ok"));
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("strict-ok"));
     startServer(server);
 
-    // Raw Netty client
     SslContext sslContext = SslContextBuilder.forClient()
       .sslProvider(SslProvider.OPENSSL)
       .trustManager(InsecureTrustManagerFactory.INSTANCE)
       .build();
 
-    // Will hold the negotiated group from key_share extension
     CompletableFuture<Integer> negotiatedGroup = new CompletableFuture<>();
 
     EventLoopGroup group = new NioEventLoopGroup();
@@ -325,12 +481,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
             SslHandler sslHandler = sslContext.newHandler(ch.alloc(),
               DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
 
-            // Set hybrid curves on the OpenSSL engine
             ReferenceCountedOpenSslEngine engine =
               (ReferenceCountedOpenSslEngine) sslHandler.engine();
             SSL.setCurvesList(engine.sslPointer(), "X25519MLKEM768");
 
-            // Interceptor BEFORE SslHandler sees raw TLS records
             ch.pipeline().addLast("server-hello-interceptor",
               new ServerHelloGroupExtractor(negotiatedGroup));
             ch.pipeline().addLast("ssl", sslHandler);
@@ -357,26 +511,26 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   }
 
   @Test
-  public void testHybridMTLSWithRawNettySocket() throws Exception {
+  public void testStrictPolicyMTLSWithRawNettySocket() throws Exception {
     assumeMlKemAvailable();
-    // Start Vert.x server with hybrid + mTLS
-    server.close();
-    server = vertx.createHttpServer(new HttpServerOptions()
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
       .setPort(DEFAULT_HTTPS_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
       .setSsl(true)
-      .setSslEngineOptions(new OpenSSLEngineOptions())
-      .setUseHybridKeyExchangeProtocol(true)
       .setClientAuth(ClientAuth.REQUIRED)
+      .setSslEngineOptions(new OpenSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
       .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
-      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get()));
+      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
+    server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
       assertTrue(req.isSSL());
-      req.response().end("mtls-hybrid-ok");
+      req.response().end("mtls-strict-ok");
     });
     startServer(server);
 
-    // Raw Netty client with client cert
     SslContext sslContext = SslContextBuilder.forClient()
       .sslProvider(SslProvider.OPENSSL)
       .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -385,7 +539,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
         getClass().getClassLoader().getResourceAsStream("tls/client-key.pem"))
       .build();
 
-    // Will hold the negotiated group from key_share extension
     CompletableFuture<Integer> negotiatedGroup = new CompletableFuture<>();
 
     EventLoopGroup group = new NioEventLoopGroup();
@@ -399,12 +552,10 @@ public class HybridKeyExchangeTest extends HttpTestBase {
             SslHandler sslHandler = sslContext.newHandler(ch.alloc(),
               DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT);
 
-            // Set hybrid curves on the OpenSSL engine
             ReferenceCountedOpenSslEngine engine =
               (ReferenceCountedOpenSslEngine) sslHandler.engine();
             SSL.setCurvesList(engine.sslPointer(), "X25519MLKEM768");
 
-            // Interceptor BEFORE SslHandler sees raw TLS records
             ch.pipeline().addLast("server-hello-interceptor",
               new ServerHelloGroupExtractor(negotiatedGroup));
             ch.pipeline().addLast("ssl", sslHandler);
@@ -427,6 +578,7 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       ch.close().sync();
     } finally {
       group.shutdownGracefully();
+      testComplete();
     }
   }
 
@@ -456,7 +608,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
           buf.readerIndex(readerIndex);
         }
       }
-      // Always forward to SslHandler
       super.channelRead(ctx, msg);
     }
 
@@ -486,7 +637,6 @@ public class HybridKeyExchangeTest extends HttpTestBase {
       if (buf.readableBytes() < 2) return;
       int extensionsLength = buf.readUnsignedShort();
 
-      // Walk extensions
       int extensionsEnd = buf.readerIndex() + extensionsLength;
       while (buf.readerIndex() < extensionsEnd && buf.readableBytes() >= 4) {
         int extType = buf.readUnsignedShort();

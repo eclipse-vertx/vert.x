@@ -54,6 +54,21 @@ public class SSLOptionsConverter {
             obj.setEnabledSecureTransportProtocols(list);
           }
           break;
+        case "keyExchangeGroups":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setKeyExchangeGroups(list);
+          }
+          break;
+        case "pqcEnforcementPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setPqcEnforcementPolicy(io.vertx.core.net.PqcEnforcementPolicy.valueOf((String)member.getValue()));
+          }
+          break;
         case "sslHandshakeTimeout":
           if (member.getValue() instanceof Number) {
             obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
@@ -67,11 +82,6 @@ public class SSLOptionsConverter {
         case "useAlpn":
           if (member.getValue() instanceof Boolean) {
             obj.setUseAlpn((Boolean)member.getValue());
-          }
-          break;
-        case "useHybridKeyExchangeProtocol":
-          if (member.getValue() instanceof Boolean) {
-            obj.setUseHybridKeyExchangeProtocol((Boolean)member.getValue());
           }
           break;
       }
@@ -103,11 +113,18 @@ public class SSLOptionsConverter {
       obj.getEnabledSecureTransportProtocols().forEach(item -> array.add(item));
       json.put("enabledSecureTransportProtocols", array);
     }
+    if (obj.getKeyExchangeGroups() != null) {
+      JsonArray array = new JsonArray();
+      obj.getKeyExchangeGroups().forEach(item -> array.add(item));
+      json.put("keyExchangeGroups", array);
+    }
+    if (obj.getPqcEnforcementPolicy() != null) {
+      json.put("pqcEnforcementPolicy", obj.getPqcEnforcementPolicy().name());
+    }
     json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
     if (obj.getSslHandshakeTimeoutUnit() != null) {
       json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());
     }
     json.put("useAlpn", obj.isUseAlpn());
-    json.put("useHybridKeyExchangeProtocol", obj.isUseHybridKeyExchangeProtocol());
   }
 }

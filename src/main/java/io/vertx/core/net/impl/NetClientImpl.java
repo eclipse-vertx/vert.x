@@ -46,6 +46,7 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -67,6 +68,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   private final VertxInternal vertx;
   private final NetClientOptions options;
+  private final List<String> resolvedKeyExchangeGroups;
   private final SSLHelper sslHelper;
   private Future<SslContextUpdate> sslChannelProvider;
   private final ChannelGroup channelGroup;
@@ -75,9 +77,16 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, CloseFuture closeFuture) {
+
+    List<String> resolvedKeyExchangeGroups = SslEngineUtils.resolveKeyExchangeGroups(
+      options.getSslOptions().getKeyExchangeGroups(),
+      options.getSslOptions().getPqcEnforcementPolicy()
+    );
+
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next(), true);
     this.options = new NetClientOptions(options);
+    this.resolvedKeyExchangeGroups = resolvedKeyExchangeGroups;
     this.sslHelper = new SSLHelper(options, options.getApplicationLayerProtocols());
     this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
@@ -225,7 +234,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         proxyOptions = null;
       }
     }
-    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), options.isUseHybridKeyExchangeProtocol(),  options.isRegisterWriteHandler(), connectHandler, ctx, options.getReconnectAttempts());
+    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), resolvedKeyExchangeGroups,  options.isRegisterWriteHandler(), connectHandler, ctx, options.getReconnectAttempts());
   }
 
   /**
@@ -237,7 +246,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
    * @param serverName the SNI server name (along with SSL)
    * @param ssl whether to use SSL
    * @param useAlpn wether to use ALPN (along with SSL)
-   * @param useHybridKeyExchangeProtocol wether to use Hybrid Key Exchange Protocol (along with SSL)
+   * @param resolvedKeyExchangeGroups the resolved key exchange groups
    * @param registerWriteHandlers whether to register event-bus write handlers
    * @param connectHandler the promise to resolve with the connect result
    * @param context the socket context
@@ -249,7 +258,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                                 String serverName,
                                 boolean ssl,
                                 boolean useAlpn,
-                                boolean useHybridKeyExchangeProtocol,
+                                List<String> resolvedKeyExchangeGroups,
                                 boolean registerWriteHandlers,
                                 Promise<NetSocket> connectHandler,
                                 ContextInternal context,
@@ -272,7 +281,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       }
       fut.onComplete(ar -> {
         if (ar.succeeded()) {
-          connectInternal2(proxyOptions, remoteAddress, peerAddress, ar.result().sslChannelProvider(), serverName, ssl, useAlpn, useHybridKeyExchangeProtocol, registerWriteHandlers, connectHandler, context, remainingAttempts);
+          connectInternal2(proxyOptions, remoteAddress, peerAddress, ar.result().sslChannelProvider(), serverName, ssl, useAlpn, resolvedKeyExchangeGroups, registerWriteHandlers, connectHandler, context, remainingAttempts);
         } else {
           connectHandler.fail(ar.cause());
         }
@@ -287,7 +296,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                               String serverName,
                               boolean ssl,
                               boolean useAlpn,
-                              boolean useHybridKeyExchangeProtocol,
+                              List<String> resolvedKeyExchangeGroups,
                               boolean registerWriteHandlers,
                               Promise<NetSocket> connectHandler,
                               ContextInternal context,
@@ -308,7 +317,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
       channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, sslChannelProvider, channelProvider.applicationProtocol(), registerWriteHandlers));
 
-      io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn, useHybridKeyExchangeProtocol);
+      io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn, resolvedKeyExchangeGroups);
       fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
         if (!future.isSuccess()) {
           Throwable cause = future.cause();
@@ -319,7 +328,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
               log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
               //Set a timer to retry connection
               vertx.setTimer(options.getReconnectInterval(), tid ->
-                connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, useHybridKeyExchangeProtocol, registerWriteHandlers, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+                connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, resolvedKeyExchangeGroups, registerWriteHandlers, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
               );
             });
           } else {
@@ -328,7 +337,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         }
       });
     } else {
-      eventLoop.execute(() -> connectInternal2(proxyOptions, remoteAddress, peerAddress, sslChannelProvider, serverName, ssl, useAlpn, useHybridKeyExchangeProtocol, registerWriteHandlers, connectHandler, context, remainingAttempts));
+      eventLoop.execute(() -> connectInternal2(proxyOptions, remoteAddress, peerAddress, sslChannelProvider, serverName, ssl, useAlpn, resolvedKeyExchangeGroups, registerWriteHandlers, connectHandler, context, remainingAttempts));
     }
   }
 
