@@ -36,6 +36,7 @@ import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetServerInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
+import io.vertx.core.net.impl.SslEngineUtils;
 import io.vertx.core.internal.net.SslHandshakeCompletionHandler;
 import io.vertx.core.internal.resolver.NameResolver;
 import io.vertx.core.internal.tls.ServerSslContextManager;
@@ -432,7 +433,7 @@ public class NetServerImpl implements NetServerInternal {
         ServerSslContextManager sslContextManager;
         try {
           sslContextManager = new ServerSslContextManager(SslContextManager.resolveEngineOptions(sslEngineOptions, sslOptions.isUseAlpn(), sslOptions.getPqcEnforcementPolicy()));
-          this.resolvedKeyExchangeGroups = SslContextManager.resolveKeyExchangeGroups(sslOptions.getKeyExchangeGroups(), sslOptions.getPqcEnforcementPolicy());
+          this.resolvedKeyExchangeGroups = SslEngineUtils.resolveKeyExchangeGroups(sslOptions.getKeyExchangeGroups(), sslOptions.getPqcEnforcementPolicy());
         } catch (Exception e) {
           return context.failedFuture(e);
         }
