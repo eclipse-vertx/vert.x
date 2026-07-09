@@ -7,7 +7,7 @@ import java.util.stream.IntStream;
 import com.fasterxml.jackson.core.util.BufferRecycler;
 import com.fasterxml.jackson.core.util.JsonRecyclerPools;
 import com.fasterxml.jackson.core.util.RecyclerPool;
-import io.vertx.core.impl.VirtualThreadSupport;
+import io.vertx.core.impl.JdkDependent;
 
 /**
  * This is a custom implementation of the Jackson's {@link RecyclerPool} intended to work equally well with both
@@ -49,7 +49,7 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
 
   @Override
   public BufferRecycler acquirePooled() {
-    return VirtualThreadSupport.isVirtual(Thread.currentThread()) ?
+    return JdkDependent.isVirtual(Thread.currentThread()) ?
       VirtualPoolHolder.virtualPool.acquirePooled() :
       nativePool.acquirePooled();
   }
@@ -57,7 +57,7 @@ public class HybridJacksonPool implements RecyclerPool<BufferRecycler> {
   @Override
   public BufferRecycler acquireAndLinkPooled() {
     // when using the ThreadLocal based pool it is not necessary to register the BufferRecycler on the pool
-    return VirtualThreadSupport.isVirtual(Thread.currentThread()) ?
+    return JdkDependent.isVirtual(Thread.currentThread()) ?
       VirtualPoolHolder.virtualPool.acquireAndLinkPooled() :
       nativePool.acquirePooled();
   }
