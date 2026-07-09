@@ -19,12 +19,11 @@ import java.util.List;
 /**
  * Pre Java 21 implementation: named groups not supported.
  */
-public class SslEngineHelper {
+class SslEngineHelper {
 
   private static final Logger log = LoggerFactory.getLogger(SslEngineHelper.class);
 
-  public static void applyNamedGroups(SSLEngine engine, List<String> groups) {
+  static void applyNamedGroups(SSLEngine engine, List<String> groups) {
     log.warn("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+");
   }
-
 }
