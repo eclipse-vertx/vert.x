@@ -44,17 +44,17 @@ public class SslEngineUtils {
       case STRICT:
         if (groups != null && !groups.isEmpty()) {
           if (!(PQ_COMPLIANT_GROUPS.containsAll(groups))) {
-            log.warn("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
+            log.debug("PQC enforcement policy is STRICT: overriding key exchange groups " + groups + " with " + PQ_COMPLIANT_GROUPS);
           }
         }
         return PQ_COMPLIANT_GROUPS;
       case CLIENT_NEGOTIATED:
         if (groups == null || groups.isEmpty()) {
-          log.warn("No key exchange groups list was specified, a default list containing X25519MLKEM768 is selected");
+          log.debug("No key exchange groups list was specified, a default list containing X25519MLKEM768 is selected");
           return DEFAULT_KEY_EXCHANGE_GROUPS;
         }
         if (groups.stream().noneMatch(PQ_COMPLIANT_GROUPS::contains)) {
-          log.warn("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
+          log.debug("PQC enforcement policy is CLIENT_NEGOTIATED: prepending " + PQ_COMPLIANT_GROUPS + " to key exchange groups " + groups);
           List<String> result = new ArrayList<>(groups.size() + 1);
           result.addAll(PQ_COMPLIANT_GROUPS);
           result.addAll(groups);
@@ -80,7 +80,7 @@ public class SslEngineUtils {
         JdkDependent.applyNamedGroups(engine, groups);
       }
     } catch (Exception e) {
-      log.error("Unable to apply key exchange groups: " + e.getMessage() + ", closing engine");
+      log.error("Unable to apply key exchange groups: " + e.getMessage() + ", closing engine", e);
       engine.closeOutbound();
     }
   }
