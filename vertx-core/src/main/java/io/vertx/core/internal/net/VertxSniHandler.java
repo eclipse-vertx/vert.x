@@ -16,6 +16,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsyncMapping;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.SslEngineUtils;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -50,7 +51,7 @@ class VertxSniHandler extends SniHandler {
       sslHandler = context.newHandler(allocator, delegatedTaskExec);
     }
     if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
-      SslChannelProvider.applyKeyExchangeGroups(sslHandler, keyExchangeGroups);
+      SslEngineUtils.applyKeyExchangeGroups(sslHandler.engine(), keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
     return sslHandler;
