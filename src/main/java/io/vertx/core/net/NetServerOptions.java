@@ -227,12 +227,6 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setUseHybridKeyExchangeProtocol(boolean useHybridKeyExchangeProtocol) {
-    super.setUseHybridKeyExchangeProtocol(useHybridKeyExchangeProtocol);
-    return this;
-  }
-
-  @Override
   public NetServerOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
     super.setSslEngineOptions(sslEngineOptions);
     return this;

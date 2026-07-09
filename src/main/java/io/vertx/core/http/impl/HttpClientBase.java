@@ -21,6 +21,7 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientBuilder;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ProxyFilter;
+import io.vertx.core.net.impl.SslEngineUtils;
 import io.vertx.core.net.impl.pool.*;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -43,6 +44,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   protected final VertxInternal vertx;
   protected final HttpClientOptions options;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
+  protected final List<String> resolvedKeyExchangeGroups;
   protected final NetClientImpl netClient;
   protected final HttpClientMetrics metrics;
   private final boolean keepAlive;
@@ -53,9 +55,16 @@ public class HttpClientBase implements MetricsProvider, Closeable {
   final boolean useH2UniformStreamByteDistributor;
 
   public HttpClientBase(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
+
+    List<String> resolvedKeyExchangeGroups = SslEngineUtils.resolveKeyExchangeGroups(
+      options.getSslOptions().getKeyExchangeGroups(),
+      options.getSslOptions().getPqcEnforcementPolicy()
+    );
+
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
+    this.resolvedKeyExchangeGroups = resolvedKeyExchangeGroups;
     this.closeFuture = closeFuture;
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
@@ -190,7 +199,7 @@ public class HttpClientBase implements MetricsProvider, Closeable {
       public Endpoint<HttpClientConnection> create(ContextInternal ctx, Runnable dispose) {
         int maxPoolSize = options.getMaxWebSockets();
         ClientMetrics metrics = HttpClientBase.this.metrics != null ? HttpClientBase.this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(HttpClientBase.this, netClient, proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, false, key.peerAddr, key.serverAddr);
+        HttpChannelConnector connector = new HttpChannelConnector(HttpClientBase.this, netClient, proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, null, key.peerAddr, key.serverAddr);
         return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
       }
     };

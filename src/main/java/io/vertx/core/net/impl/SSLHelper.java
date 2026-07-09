@@ -22,16 +22,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SSLOptions;
-import io.vertx.core.net.TCPSSLOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
@@ -85,6 +76,37 @@ public class SSLHelper {
    * Resolve the ssl engine options to use for properly running the configured options.
    */
   public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn) {
+    return resolveEngineOptions(engineOptions, useAlpn, PqcEnforcementPolicy.RELAXED);
+  }
+
+  /**
+   * Resolve the ssl engine options to use for properly running the configured options.
+   */
+  public static SSLEngineOptions resolveEngineOptions(SSLEngineOptions engineOptions, boolean useAlpn, PqcEnforcementPolicy pqcPolicy) {
+    if (pqcPolicy == null) {
+      pqcPolicy = PqcEnforcementPolicy.RELAXED;
+    }
+    if (pqcPolicy == PqcEnforcementPolicy.STRICT || pqcPolicy == PqcEnforcementPolicy.CLIENT_NEGOTIATED) {
+      if (engineOptions != null) {
+        boolean pqcSupported;
+        if (engineOptions instanceof JdkSSLEngineOptions) {
+          pqcSupported = JdkSSLEngineOptions.isPqcAvailable();
+        } else {
+          pqcSupported = OpenSSLEngineOptions.isPqcAvailable();
+        }
+        if (!pqcSupported) {
+          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but the configured SSL engine does not support it");
+        }
+      } else {
+        if (JdkSSLEngineOptions.isPqcAvailable()) {
+          engineOptions = new JdkSSLEngineOptions();
+        } else if (OpenSSLEngineOptions.isPqcAvailable()) {
+          engineOptions = new OpenSSLEngineOptions();
+        } else {
+          throw new VertxException("PQC enforcement policy " + pqcPolicy + " requires X25519MLKEM768 but neither JDK nor OpenSSL support it");
+        }
+      }
+    }
     if (engineOptions == null) {
       if (useAlpn) {
         if (JdkSSLEngineOptions.isAlpnAvailable()) {
@@ -128,7 +150,8 @@ public class SSLHelper {
   private final ClientAuth clientAuth;
   private final boolean client;
   private final boolean useAlpn;
-  private final boolean useHybridKeyExchangeProtocol;
+  private final List<String> resolvedKeyExchangeGroups;
+  private final PqcEnforcementPolicy pqcEnforcementPolicy;
   private final String endpointIdentificationAlgorithm;
   private final SSLEngineOptions sslEngineOptions;
   private final List<String> applicationProtocols;
@@ -140,10 +163,17 @@ public class SSLHelper {
   private Future<CachedProvider> cachedProvider;
 
   public SSLHelper(TCPSSLOptions options, List<String> applicationProtocols) {
+
+    List<String> resolvedKeyExchangeGroups = SslEngineUtils.resolveKeyExchangeGroups(
+      options.getSslOptions().getKeyExchangeGroups(),
+      options.getSslOptions().getPqcEnforcementPolicy()
+    );
+
     this.sslEngineOptions = options.getSslEngineOptions();
     this.ssl = options.isSsl();
     this.useAlpn = options.isUseAlpn();
-    this.useHybridKeyExchangeProtocol = options.isUseHybridKeyExchangeProtocol();
+    this.resolvedKeyExchangeGroups = resolvedKeyExchangeGroups;
+    this.pqcEnforcementPolicy = options.getSslOptions().getPqcEnforcementPolicy();
     this.client = options instanceof ClientOptionsBase;
     this.trustAll = options instanceof ClientOptionsBase && ((ClientOptionsBase)options).isTrustAll();
     this.clientAuth = options instanceof NetServerOptions ? ((NetServerOptions)options).getClientAuth() : ClientAuth.NONE;
@@ -265,7 +295,7 @@ public class SSLHelper {
       c.sslContextProvider(), c.sslOptions.getSslHandshakeTimeout(), c.sslOptions.getSslHandshakeTimeoutUnit(), sni,
       trustAll,
       useAlpn,
-      useHybridKeyExchangeProtocol,
+      resolvedKeyExchangeGroups,
       ctx.owner().getInternalWorkerPool().executor(),
       c.useWorkerPool
     ));
@@ -324,7 +354,7 @@ public class SSLHelper {
         boolean useWorkerPool;
         final boolean jdkSSLProvider;
         try {
-          SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn);
+          SSLEngineOptions resolvedEngineOptions = resolveEngineOptions(sslEngineOptions, useAlpn, pqcEnforcementPolicy);
           supplier = resolvedEngineOptions::sslContextFactory;
           useWorkerPool = resolvedEngineOptions.getUseWorkerThread();
           jdkSSLProvider = resolvedEngineOptions instanceof JdkSSLEngineOptions;

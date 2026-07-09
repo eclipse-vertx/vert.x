@@ -11,8 +11,10 @@
 
 package io.vertx.core.net;
 
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslProvider;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.*;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.netty.internal.tcnative.SSL;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
@@ -28,6 +30,8 @@ import io.vertx.core.spi.tls.SslContextFactory;
 @JsonGen(publicConverter = false)
 public class OpenSSLEngineOptions extends SSLEngineOptions {
 
+  private static Boolean opensslPqcAvailable;
+
   /**
    * @return when OpenSSL is available
    */
@@ -40,6 +44,33 @@ public class OpenSSLEngineOptions extends SSLEngineOptions {
    */
   public static boolean isAlpnAvailable() {
     return OpenSsl.isAlpnSupported();
+  }
+
+  /**
+   * @return if PQC key exchange (X25519MLKEM768) is available via the OpenSSL engine
+   */
+  public static synchronized boolean isPqcAvailable() {
+    if (opensslPqcAvailable == null) {
+      boolean available = false;
+      if (OpenSsl.isAvailable()) {
+        try {
+          SslContext ctx = SslContextBuilder.forClient()
+            .sslProvider(SslProvider.OPENSSL)
+            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            .build();
+          SslHandler handler = ctx.newHandler(ByteBufAllocator.DEFAULT);
+          try {
+            long sslPtr = ((ReferenceCountedOpenSslEngine) handler.engine()).sslPointer();
+            available = SSL.setCurvesList(sslPtr, "X25519MLKEM768");
+          } finally {
+            handler.engine().closeOutbound();
+          }
+        } catch (Exception ignore) {
+        }
+      }
+      opensslPqcAvailable = available;
+    }
+    return opensslPqcAvailable;
   }
 
   /**

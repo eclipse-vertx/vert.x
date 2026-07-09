@@ -49,7 +49,7 @@ public class SslChannelProvider {
   private final boolean useWorkerPool;
   private final boolean sni;
   private final boolean useAlpn;
-  private final boolean useHybridKeyExchangeProtocol;
+  private final List<String> keyExchangeGroups;
   private final boolean trustAll;
   private final SslContextProvider sslContextProvider;
   private final SslContext[] sslContexts = new SslContext[2];
@@ -65,13 +65,13 @@ public class SslChannelProvider {
                             boolean sni,
                             boolean trustAll,
                             boolean useAlpn,
-                            boolean useHybridKeyExchangeProtocol,
+                            List<String> keyExchangeGroups,
                             Executor workerPool,
                             boolean useWorkerPool) {
     this.workerPool = workerPool;
     this.useWorkerPool = useWorkerPool;
     this.useAlpn = useAlpn;
-    this.useHybridKeyExchangeProtocol = useHybridKeyExchangeProtocol;
+    this.keyExchangeGroups = keyExchangeGroups;
     this.sni = sni;
     this.trustAll = trustAll;
     this.sslHandshakeTimeout = sslHandshakeTimeout;
@@ -153,7 +153,7 @@ public class SslChannelProvider {
     };
   }
 
-  public SslHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn, boolean useHybridKeyExchangeProtocol) {
+  public SslHandler createClientSslHandler(SocketAddress remoteAddress, String serverName, boolean useAlpn, List<String> keyExchangeGroups) {
     SslContext sslContext = sslClientContext(serverName, useAlpn);
     SslHandler sslHandler;
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
@@ -162,8 +162,8 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, remoteAddress.host(), remoteAddress.port(), delegatedTaskExec);
     }
-    if (useHybridKeyExchangeProtocol) {
-      applyHybridCurves(sslHandler);
+    if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
+      SslEngineUtils.applyKeyExchangeGroups(sslHandler.engine(), keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
@@ -171,13 +171,13 @@ public class SslChannelProvider {
 
   public ChannelHandler createServerHandler(HostAndPort remoteAddress) {
     if (sni) {
-      return createSniHandler(remoteAddress, useHybridKeyExchangeProtocol);
+      return createSniHandler(remoteAddress, keyExchangeGroups);
     } else {
-      return createServerSslHandler(useAlpn, remoteAddress, useHybridKeyExchangeProtocol);
+      return createServerSslHandler(useAlpn, remoteAddress, keyExchangeGroups);
     }
   }
 
-  private SslHandler createServerSslHandler(boolean useAlpn, HostAndPort remoteAddress, boolean useHybridKeyExchangeProtocol) {
+  private SslHandler createServerSslHandler(boolean useAlpn, HostAndPort remoteAddress, List<String> keyExchangeGroups) {
     SslContext sslContext = sslServerContext(useAlpn);
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
     SslHandler sslHandler;
@@ -186,16 +186,16 @@ public class SslChannelProvider {
     } else {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
-    if (useHybridKeyExchangeProtocol) {
-      applyHybridCurves(sslHandler);
+    if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
+      SslEngineUtils.applyKeyExchangeGroups(sslHandler.engine(), keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
   }
 
-  private SniHandler createSniHandler(HostAndPort remoteAddress, boolean useHybridKeyExchangeProtocol) {
+  private SniHandler createSniHandler(HostAndPort remoteAddress, List<String> keyExchangeGroups) {
     Executor delegatedTaskExec = useWorkerPool ? workerPool : ImmediateExecutor.INSTANCE;
-    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, useHybridKeyExchangeProtocol, remoteAddress);
+    return new VertxSniHandler(serverNameMapping(), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec, keyExchangeGroups, remoteAddress);
   }
 
   private static int idx(boolean useAlpn) {
