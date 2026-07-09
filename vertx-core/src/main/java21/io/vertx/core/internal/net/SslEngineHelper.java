@@ -17,12 +17,11 @@ import java.util.List;
 /**
  * Java 21+ implementation: applies named groups via SSLParameters.
  */
-public class SslEngineHelper {
+class SslEngineHelper {
 
-  public static void applyNamedGroups(SSLEngine engine, List<String> groups) {
+  static void applyNamedGroups(SSLEngine engine, List<String> groups) {
     SSLParameters params = engine.getSSLParameters();
     params.setNamedGroups(groups.toArray(new String[0]));
     engine.setSSLParameters(params);
   }
-
 }
