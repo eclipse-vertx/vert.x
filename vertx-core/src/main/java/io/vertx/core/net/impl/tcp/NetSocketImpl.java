@@ -26,6 +26,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
+import io.vertx.core.net.impl.SslEngineUtils;
 import io.vertx.core.internal.tls.ClientSslContextManager;
 import io.vertx.core.internal.tls.ServerSslContextManager;
 import io.vertx.core.internal.tls.SslContextManager;
@@ -132,13 +133,13 @@ public class NetSocketImpl extends StreamChannelBase<NetSocketImpl> implements N
       if (sslOptions instanceof ClientSSLOptions) {
         ClientSSLOptions clientSSLOptions =  (ClientSSLOptions) sslOptions;
         ClientSslContextManager clientSslContextManager = (ClientSslContextManager)sslContextManager;
-        List<String> resolvedGroups = SslContextManager.resolveKeyExchangeGroups(clientSSLOptions.getKeyExchangeGroups(), clientSSLOptions.getPqcEnforcementPolicy());
+        List<String> resolvedGroups = SslEngineUtils.resolveKeyExchangeGroups(clientSSLOptions.getKeyExchangeGroups(), clientSSLOptions.getPqcEnforcementPolicy());
         f = clientSslContextManager.resolveSslContextProvider(clientSSLOptions, context)
           .map(p -> new SslChannelProvider(context.owner(), p, false, resolvedGroups));
       } else {
         ServerSSLOptions serverSSLOptions = (ServerSSLOptions) sslOptions;
         ServerSslContextManager serverSslContextManager = (ServerSslContextManager)sslContextManager;
-        List<String> resolvedGroups = SslContextManager.resolveKeyExchangeGroups(serverSSLOptions.getKeyExchangeGroups(), serverSSLOptions.getPqcEnforcementPolicy());
+        List<String> resolvedGroups = SslEngineUtils.resolveKeyExchangeGroups(serverSSLOptions.getKeyExchangeGroups(), serverSSLOptions.getPqcEnforcementPolicy());
         f = serverSslContextManager.resolveSslContextProvider(serverSSLOptions, context)
           .map(p -> new SslChannelProvider(context.owner(), p, serverSSLOptions.isSni(), resolvedGroups));
       }

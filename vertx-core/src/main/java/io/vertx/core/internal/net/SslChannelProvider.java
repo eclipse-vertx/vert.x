@@ -12,20 +12,16 @@ package io.vertx.core.internal.net;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
-import io.netty.handler.ssl.ReferenceCountedOpenSslEngine;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.internal.tcnative.SSL;
 import io.netty.util.concurrent.ImmediateExecutor;
-import io.vertx.core.impl.JdkDependent;
 import io.vertx.core.internal.VertxInternal;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.tls.ClientSslContextProvider;
 import io.vertx.core.internal.tls.ServerSslContextProvider;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.impl.SslEngineUtils;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -37,8 +33,6 @@ import java.util.concurrent.TimeUnit;
  * {@link SslContext} instances are cached and reused.
  */
 public class SslChannelProvider {
-
-  private static final Logger log = LoggerFactory.getLogger(SslChannelProvider.class);
 
   private final Executor workerPool;
   private final boolean sni;
@@ -79,7 +73,7 @@ public class SslChannelProvider {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
     if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
-      applyKeyExchangeGroups(sslHandler, keyExchangeGroups);
+      SslEngineUtils.applyKeyExchangeGroups(sslHandler.engine(), keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
@@ -103,7 +97,7 @@ public class SslChannelProvider {
       sslHandler = sslContext.newHandler(ByteBufAllocator.DEFAULT, delegatedTaskExec);
     }
     if (keyExchangeGroups != null && !keyExchangeGroups.isEmpty()) {
-      applyKeyExchangeGroups(sslHandler, keyExchangeGroups);
+      SslEngineUtils.applyKeyExchangeGroups(sslHandler.engine(), keyExchangeGroups);
     }
     sslHandler.setHandshakeTimeout(sslHandshakeTimeout, sslHandshakeTimeoutUnit);
     return sslHandler;
@@ -113,24 +107,5 @@ public class SslChannelProvider {
     Executor delegatedTaskExec = sslContextProvider.useWorkerPool() ? workerPool : ImmediateExecutor.INSTANCE;
     return new VertxSniHandler(((ServerSslContextProvider)sslContextProvider).serverNameAsyncMapping(delegatedTaskExec, applicationProtocols), sslHandshakeTimeoutUnit.toMillis(sslHandshakeTimeout), delegatedTaskExec,
       keyExchangeGroups, remoteAddress);
-  }
-
-  static void applyKeyExchangeGroups(SslHandler sslHandler, List<String> groups) {
-    javax.net.ssl.SSLEngine engine = sslHandler.engine();
-    try {
-      if (engine instanceof ReferenceCountedOpenSslEngine) {
-        long sslPtr = ((ReferenceCountedOpenSslEngine) engine).sslPointer();
-        boolean success = SSL.setCurvesList(sslPtr, String.join(":", groups));
-        if (!success) {
-          log.error("Failed to set key exchange groups " + groups + " on SSL instance, closing engine");
-          engine.closeOutbound();
-        }
-      } else {
-        JdkDependent.applyNamedGroups(engine, groups);
-      }
-    } catch (Exception e) {
-      log.error("Unable to apply key exchange groups: " + e.getMessage() + ", closing engine");
-      engine.closeOutbound();
-    }
   }
 }

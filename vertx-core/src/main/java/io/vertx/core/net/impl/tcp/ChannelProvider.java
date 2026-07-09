@@ -34,7 +34,7 @@ import io.netty.util.concurrent.Promise;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.net.SslChannelProvider;
-import io.vertx.core.internal.tls.SslContextManager;
+import io.vertx.core.net.impl.SslEngineUtils;
 import io.vertx.core.internal.tls.SslContextProvider;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.HostAndPort;
@@ -118,7 +118,7 @@ public final class ChannelProvider {
       } else {
         applicationProtocols = null;
       }
-      List<String> resolvedGroups = SslContextManager.resolveKeyExchangeGroups(sslOptions.getKeyExchangeGroups(), sslOptions.getPqcEnforcementPolicy());
+      List<String> resolvedGroups = SslEngineUtils.resolveKeyExchangeGroups(sslOptions.getKeyExchangeGroups(), sslOptions.getPqcEnforcementPolicy());
       SslChannelProvider sslChannelProvider = new SslChannelProvider(context.owner(), sslContextProvider, false, resolvedGroups);
       SslHandler sslHandler = sslChannelProvider.createClientSslHandler(peerAddress, serverName, applicationProtocols, sslOptions.getSslHandshakeTimeout(), sslOptions.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
