@@ -18,6 +18,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.internal.tcnative.SSL;
 import io.netty.util.concurrent.ImmediateExecutor;
+import io.vertx.core.impl.JdkDependent;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
@@ -125,12 +126,11 @@ public class SslChannelProvider {
           engine.closeOutbound();
         }
       } else {
-        SslEngineHelper.applyNamedGroups(engine, groups);
+        JdkDependent.applyNamedGroups(engine, groups);
       }
     } catch (Exception e) {
       log.error("Unable to apply key exchange groups: " + e.getMessage() + ", closing engine");
       engine.closeOutbound();
     }
   }
-
 }
