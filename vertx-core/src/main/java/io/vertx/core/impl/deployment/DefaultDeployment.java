@@ -148,17 +148,9 @@ public class DefaultDeployment implements Deployment {
           }
           break;
         case VIRTUAL_THREAD:
-          if (workerLoop == null) {
-            context = contextBuilder
-              .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
-              .build();
-            workerLoop = context.nettyEventLoop();
-          } else {
-            context = contextBuilder
-              .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
-              .withEventLoop(workerLoop)
-              .build();
-          }
+          context = contextBuilder
+            .withThreadingModel(ThreadingModel.VIRTUAL_THREAD)
+            .build();
           break;
         default:
           context = contextBuilder
