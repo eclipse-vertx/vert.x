@@ -3188,6 +3188,40 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   @Test
+  public void testDefaultFlowControlWindows() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> req.response().end());
+    startServer();
+    TestClient client = new TestClient();
+    client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
+      request.decoder.frameListener(new Http2EventAdapter() {
+        @Override
+        public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+          vertx.runOnContext(v -> {
+            Assert.assertEquals(
+              Integer.valueOf(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE),
+              settings.initialWindowSize());
+            complete();
+          });
+        }
+
+        @Override
+        public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) throws Http2Exception {
+          if (streamId == 0) {
+            vertx.runOnContext(v -> {
+              Assert.assertEquals(
+                HttpServerOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE - io.vertx.core.http.Http2Settings.DEFAULT_INITIAL_WINDOW_SIZE,
+                windowSizeIncrement);
+              complete();
+            });
+          }
+        }
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testConnectionWindowSize() throws Exception {
     server.close();
     server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setHttp2ConnectionWindowSize(65535 + 65535));
@@ -3212,6 +3246,8 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpdateConnectionWindowSize() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(new HttpServerOptions(serverOptions).setHttp2ConnectionWindowSize(-1));
     server.connectionHandler(conn -> {
       Assert.assertEquals(65535, conn.getWindowSize());
       conn.setWindowSize(65535 + 10000);
