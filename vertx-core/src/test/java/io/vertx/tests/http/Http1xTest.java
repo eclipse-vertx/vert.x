@@ -417,7 +417,9 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.getSslEngineOptions() instanceof JdkSSLEngineOptions);
 
     Http2Settings initialSettings = randomHttp2Settings();
-    assertEquals(new Http2Settings().setMaxConcurrentStreams(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS), options.getInitialSettings());
+    assertEquals(new Http2Settings()
+      .setMaxConcurrentStreams(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS)
+      .setInitialWindowSize(HttpServerOptions.DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE), options.getInitialSettings());
     assertEquals(options, options.setInitialSettings(initialSettings));
     assertEquals(initialSettings, options.getInitialSettings());
 
@@ -426,7 +428,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setAlpnVersions(alpnVersions));
     assertEquals(alpnVersions, options.getAlpnVersions());
 
-    assertEquals(HttpClientOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
+    assertEquals(HttpServerOptions.DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE, options.getHttp2ConnectionWindowSize());
     rand = TestUtils.randomPositiveInt();
     assertEquals(options, options.setHttp2ConnectionWindowSize(rand));
     assertEquals(rand, options.getHttp2ConnectionWindowSize());
