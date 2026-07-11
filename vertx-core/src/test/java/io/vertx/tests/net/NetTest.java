@@ -2196,7 +2196,10 @@ public class NetTest {
       NetServer server = vx
         .createNetServer()
         .connectHandler(so -> {
-          so.end(Buffer.buffer(sockAddress.path()));
+          so.handler(chunk -> {
+            so.handler(null);
+            so.end(Buffer.buffer(sockAddress.path()));
+          });
         });
       startServer(sockAddress, server);
       addresses.add(sockAddress);
@@ -2214,6 +2217,8 @@ public class NetTest {
               assertEquals(sockAddress.path(), received.toString());
               latch.countDown();
             });
+            so
+              .write("test");
           }));
       }
     }
