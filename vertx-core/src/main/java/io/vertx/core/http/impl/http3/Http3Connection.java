@@ -303,12 +303,12 @@ public abstract class Http3Connection implements HttpConnectionInternal {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <T> T get(Object key) {
+  public <T> T attachment(Object key) {
     return attachments != null ? (T) attachments.get(key) : null;
   }
 
   @Override
-  public void set(Object key, Object value) {
+  public void attach(Object key, Object value) {
     if (attachments == null) {
       attachments = new HashMap<>();
     }
