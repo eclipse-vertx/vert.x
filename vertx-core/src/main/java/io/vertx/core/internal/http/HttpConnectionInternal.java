@@ -18,7 +18,7 @@ import io.vertx.core.http.HttpConnection;
 public interface HttpConnectionInternal extends HttpConnection {
 
   /**
-   * Get an attachment previously stored with {@link #set(Object, Object)}.
+   * Get an attachment previously stored with {@link #attach(Object, Object)}.
    * <p/>
    * Attachments are scoped to the lifecycle of the connection: they are discarded when the
    * connection closes and do not need to be cleaned up manually.
@@ -26,7 +26,7 @@ public interface HttpConnectionInternal extends HttpConnection {
    * @param key the attachment key
    * @return the attachment value, or {@code null} if absent
    */
-  <T> T get(Object key);
+  <T> T attachment(Object key);
 
   /**
    * Store an attachment on this connection, associated with {@code key}.
@@ -34,6 +34,6 @@ public interface HttpConnectionInternal extends HttpConnection {
    * @param key the attachment key
    * @param value the attachment value
    */
-  void set(Object key, Object value);
+  void attach(Object key, Object value);
 
 }

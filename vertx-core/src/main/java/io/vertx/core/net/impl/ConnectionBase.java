@@ -159,17 +159,17 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * Get an attachment previously stored with {@link #set(Object, Object)}.
+   * Get an attachment previously stored with {@link #attach(Object, Object)}.
    */
   @SuppressWarnings("unchecked")
-  public final synchronized <T> T get(Object key) {
+  public final synchronized <T> T attachment(Object key) {
     return attachments != null ? (T) attachments.get(key) : null;
   }
 
   /**
    * Store an attachment on this connection, associated with {@code key}.
    */
-  public final synchronized void set(Object key, Object value) {
+  public final synchronized void attach(Object key, Object value) {
     if (attachments == null) {
       attachments = new HashMap<>();
     }
