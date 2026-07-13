@@ -35,6 +35,9 @@ public class SslEngineUtils {
   private static final List<String> DEFAULT_KEY_EXCHANGE_GROUPS = Collections.unmodifiableList(Arrays.asList("X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024", "X25519", "secp256r1", "x448",
     "secp384r1", "secp521r1"));
 
+  public static List<String> getPqCompliantGroups() {
+    return PQ_COMPLIANT_GROUPS;
+  }
   /**
    * Resolve the effective key exchange groups based on the PQC enforcement policy.
    * Called once at startup to avoid per-connection computation and logging.
@@ -92,7 +95,7 @@ public class SslEngineUtils {
     try {
       Method setNamedGroups = SSLParameters.class.getDeclaredMethod("setNamedGroups", String[].class);
       SSLParameters params = engine.getSSLParameters();
-      setNamedGroups.invoke(params, groups.toArray(new String[0]));
+      setNamedGroups.invoke(params, (Object) groups.toArray(new String[0]));
       engine.setSSLParameters(params);
     } catch (Exception e) {
       log.warn("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+", e);
