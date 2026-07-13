@@ -43,6 +43,10 @@ public class JdkDependent {
     return false;
   }
 
+  public static boolean isPqcAvailable() {
+    return false;
+  }
+
   public static void applyNamedGroups(SSLEngine engine, List<String> groups) {
     if (log.isDebugEnabled()) {
       log.warn("Cannot apply key exchange groups " + groups + " on JDK SSL engine: requires JDK 20+");
