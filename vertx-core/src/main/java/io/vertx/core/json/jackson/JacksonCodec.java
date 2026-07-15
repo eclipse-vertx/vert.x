@@ -131,6 +131,17 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
+  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+    try {
+      JsonParser parser = factory.createParser(in);
+      parser.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+      return fromParser(parser, clazz);
+    } catch (IOException e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  @Override
   public <T> T fromValue(Object json, Class<T> toValueType) {
     throw new DecodeException("Mapping " + toValueType.getName() + "  is not available without Jackson Databind on the classpath");
   }
@@ -164,6 +175,19 @@ public class JacksonCodec implements JsonCodec {
       throw new EncodeException(e.getMessage(), e);
     } finally {
       br.releaseToPool();
+    }
+  }
+
+  @Override
+  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+    try {
+      JsonGenerator generator = createGenerator(out, false);
+      generator.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+      generator.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
+      encodeJson(object, generator);
+      generator.close();
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
     }
   }
 

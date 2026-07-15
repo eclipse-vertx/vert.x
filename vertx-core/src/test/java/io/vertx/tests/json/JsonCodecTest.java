@@ -24,8 +24,16 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -561,5 +569,192 @@ public abstract class JsonCodecTest {
     // if other than EncodeException happens here, then
     // there is probably a leak closing the netty buffer output stream
     codec.toBuffer(new RuntimeException("Unsupported"));
+  }
+
+  @Test
+  public void testDecodeJsonObjectFromInputStream() {
+    String json = "{\"foo\":\"bar\",\"num\":123}";
+    InputStream in = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+    Map<?, ?> map = codec.fromInputStream(in, Map.class);
+    assertEquals("bar", map.get("foo"));
+    assertEquals(123, map.get("num"));
+  }
+
+  @Test
+  public void testDecodeJsonArrayFromInputStream() {
+    String json = "[\"foo\",123,true]";
+    InputStream in = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+    List<?> list = codec.fromInputStream(in, List.class);
+    assertEquals("foo", list.get(0));
+    assertEquals(123, list.get(1));
+    assertEquals(true, list.get(2));
+  }
+
+  @Test
+  public void testDecodeFromInputStreamUnknownContent() {
+    assertEquals(1, decodeFromInputStream("1"));
+    assertEquals(true, decodeFromInputStream("true"));
+    assertEquals("whatever", decodeFromInputStream("\"whatever\""));
+    assertNull(decodeFromInputStream("null"));
+
+    JsonObject obj = new JsonObject().put("foo", "bar");
+    assertEquals(obj, decodeFromInputStream(obj.toString()));
+
+    JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
+    assertEquals(arr, decodeFromInputStream(arr.toString()));
+  }
+
+  private Object decodeFromInputStream(String json) {
+    return codec.fromInputStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), Object.class);
+  }
+
+  @Test
+  public void testDecodeFromInputStreamEquivalence() {
+    byte[] bytes = TestUtils.randomByteArray(10);
+    String strBytes = TestUtils.toBase64String(bytes);
+    Instant now = Instant.now();
+    String strInstant = ISO_INSTANT.format(now);
+    String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+
+    Object fromString = codec.fromString(json, Object.class);
+    Object fromStream = codec.fromInputStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), Object.class);
+    assertEquals(fromString, fromStream);
+  }
+
+  @Test
+  public void testDecodeFromInputStreamInvalidJson() {
+    for (String test : new String[]{"\"3", "qiwjdoiqwjdiqwjd", "{\"foo\":1},{\"bar\":2}"}) {
+      try {
+        codec.fromInputStream(new ByteArrayInputStream(test.getBytes(StandardCharsets.UTF_8)), Map.class);
+        fail("Should have thrown DecodeException for: " + test);
+      } catch (DecodeException ignore) {
+      }
+    }
+  }
+
+  @Test
+  public void testDecodeFromInputStreamEmpty() {
+    try {
+      codec.fromInputStream(new ByteArrayInputStream(new byte[0]), Object.class);
+      fail();
+    } catch (DecodeException ignore) {
+    }
+  }
+
+  @Test
+  public void testDecodeFromInputStreamWithComments() {
+    String jsonWithComments =
+      "// comment\n" +
+        "{\"foo\": \"bar\" /* inline */}";
+    InputStream in = new ByteArrayInputStream(jsonWithComments.getBytes(StandardCharsets.UTF_8));
+    Map<?, ?> map = codec.fromInputStream(in, Map.class);
+    assertEquals("bar", map.get("foo"));
+  }
+
+  @Test
+  public void testDecodeFromInputStreamDoesNotCloseStream() throws IOException {
+    String json = "{\"key\":\"value\"}";
+    boolean[] closed = {false};
+    InputStream in = new FilterInputStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))) {
+      @Override
+      public void close() throws IOException {
+        closed[0] = true;
+        super.close();
+      }
+    };
+    codec.fromInputStream(in, Map.class);
+    assertFalse("Codec should not close the InputStream", closed[0]);
+  }
+
+  @Test
+  public void testEncodeJsonObjectToOutputStream() {
+    JsonObject jsonObject = new JsonObject().put("foo", "bar").put("num", 123);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    codec.toOutputStream(jsonObject, baos);
+    assertEquals(codec.toString(jsonObject), baos.toString(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  public void testEncodeJsonArrayToOutputStream() {
+    JsonArray jsonArray = new JsonArray().add("foo").add(123).add(true);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    codec.toOutputStream(jsonArray, baos);
+    assertEquals(codec.toString(jsonArray), baos.toString(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  public void testEncodeToOutputStreamEquivalence() {
+    JsonObject obj = new JsonObject()
+      .put("str", "hello")
+      .put("num", 42)
+      .put("bool", true)
+      .putNull("nil")
+      .put("nested", new JsonObject().put("a", 1))
+      .put("arr", new JsonArray().add("x").add(2));
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    codec.toOutputStream(obj, baos);
+    assertArrayEquals(codec.toBuffer(obj).getBytes(), baos.toByteArray());
+  }
+
+  @Test
+  public void testEncodeNullToOutputStream() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    codec.toOutputStream(null, baos);
+    assertEquals("null", baos.toString(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  public void testEncodeScalarToOutputStream() {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    codec.toOutputStream("hello", baos);
+    assertEquals("\"hello\"", baos.toString(StandardCharsets.UTF_8));
+
+    baos.reset();
+    codec.toOutputStream(42, baos);
+    assertEquals("42", baos.toString(StandardCharsets.UTF_8));
+
+    baos.reset();
+    codec.toOutputStream(true, baos);
+    assertEquals("true", baos.toString(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  public void testEncodeToOutputStreamDoesNotCloseOrFlushStream() {
+    JsonObject obj = new JsonObject().put("key", "value");
+    boolean[] closed = {false};
+    boolean[] flushed = {false};
+    OutputStream out = new FilterOutputStream(new ByteArrayOutputStream()) {
+      @Override
+      public void close() throws IOException {
+        closed[0] = true;
+        super.close();
+      }
+      @Override
+      public void flush() throws IOException {
+        flushed[0] = true;
+        super.flush();
+      }
+    };
+    codec.toOutputStream(obj, out);
+    assertFalse("Codec should not close the OutputStream", closed[0]);
+    assertFalse("Codec should not flush the OutputStream", flushed[0]);
+  }
+
+  @Test
+  public void testInputStreamOutputStreamRoundTrip() {
+    JsonObject original = new JsonObject()
+      .put("name", "test")
+      .put("value", 42)
+      .put("nested", new JsonObject().put("a", true))
+      .put("arr", new JsonArray().add(1).add("two").add(new JsonObject().put("three", 3)));
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    codec.toOutputStream(original, baos);
+
+    InputStream in = new ByteArrayInputStream(baos.toByteArray());
+    Object decoded = codec.fromInputStream(in, Object.class);
+    assertEquals(original, decoded);
   }
 }

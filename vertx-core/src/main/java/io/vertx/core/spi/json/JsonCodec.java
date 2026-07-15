@@ -14,6 +14,12 @@ package io.vertx.core.spi.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -67,5 +73,59 @@ public interface JsonCodec {
    */
   default Buffer toBuffer(Object object) throws EncodeException {
     return toBuffer(object, false);
+  }
+
+  /**
+   * Decode JSON from the given {@link InputStream} to an object of the specified type.
+   * <p>
+   * The input is expected to be UTF-8 encoded.
+   * <p>
+   * The codec does not close or flush the stream; the caller retains ownership.
+   *
+   * @param in    the input stream containing UTF-8 encoded JSON
+   * @param clazz the required object's class
+   * @return the decoded instance
+   * @throws DecodeException anything preventing the decoding
+   */
+  default <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+    try {
+      return fromBuffer(Buffer.buffer(in.readAllBytes()), clazz);
+    } catch (IOException e) {
+      throw new DecodeException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Decode JSON from the given {@link InputStream}.
+   * <p>
+   * The input is expected to be UTF-8 encoded.
+   * <p>
+   * The codec does not close or flush the stream; the caller retains ownership.
+   *
+   * @param in the input stream containing UTF-8 encoded JSON
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, etc.
+   * @throws DecodeException anything preventing the decoding
+   */
+  default Object fromInputStream(InputStream in) throws DecodeException {
+    return fromInputStream(in, Object.class);
+  }
+
+  /**
+   * Encode the specified object as JSON to the given {@link OutputStream}.
+   * <p>
+   * The output is UTF-8 encoded.
+   * <p>
+   * The codec does not close or flush the stream; the caller retains ownership.
+   *
+   * @param object the object to encode
+   * @param out    the output stream to write to
+   * @throws EncodeException anything preventing the encoding
+   */
+  default void toOutputStream(Object object, OutputStream out) throws EncodeException {
+    try {
+      out.write(toBuffer(object).getBytes());
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
+    }
   }
 }

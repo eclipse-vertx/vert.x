@@ -11,6 +11,7 @@
 
 package io.vertx.core.json.jackson;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -25,6 +26,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +89,17 @@ public class DatabindCodec extends JacksonCodec {
 
   public <T> T fromBuffer(Buffer buf, TypeReference<T> typeRef) throws DecodeException {
     return fromParser(createParser(buf), typeRef);
+  }
+
+  @Override
+  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+    try {
+      JsonParser parser = mapper.getFactory().createParser(in);
+      parser.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+      return fromParser(parser, clazz);
+    } catch (IOException e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
   }
 
   public static JsonParser createParser(BufferInternal buf) {
@@ -165,6 +178,18 @@ public class DatabindCodec extends JacksonCodec {
         result = mapper.writeValueAsBytes(object);
       }
       return Buffer.buffer(result);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+    try {
+      mapper.writer()
+        .without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+        .without(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM)
+        .writeValue(out, object);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }

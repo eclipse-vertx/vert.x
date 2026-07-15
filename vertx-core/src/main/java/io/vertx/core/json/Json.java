@@ -15,6 +15,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -115,5 +118,46 @@ public class Json {
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
     return CODEC.fromBuffer(buf, clazz);
+  }
+
+  /**
+   * Decode a given JSON input stream to a POJO of the given class type.
+   * <p>
+   * The input is expected to be UTF-8 encoded. The codec does not close or flush the stream.
+   *
+   * @param in the JSON input stream.
+   * @param clazz the class to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static <T> T decodeValue(InputStream in, Class<T> clazz) throws DecodeException {
+    return CODEC.fromInputStream(in, clazz);
+  }
+
+  /**
+   * Decode a given JSON input stream.
+   * <p>
+   * The input is expected to be UTF-8 encoded. The codec does not close or flush the stream.
+   *
+   * @param in the JSON input stream.
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, etc.
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static Object decodeValue(InputStream in) throws DecodeException {
+    return CODEC.fromInputStream(in);
+  }
+
+  /**
+   * Encode a POJO to JSON and write it to the given {@link OutputStream}.
+   * <p>
+   * The output is UTF-8 encoded. The codec does not close or flush the stream.
+   *
+   * @param obj a POJO
+   * @param out the output stream to write to
+   * @throws EncodeException if a property cannot be encoded.
+   */
+  public static void encodeTo(Object obj, OutputStream out) throws EncodeException {
+    CODEC.toOutputStream(obj, out);
   }
 }
