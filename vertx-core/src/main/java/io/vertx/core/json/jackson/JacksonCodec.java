@@ -32,6 +32,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -182,6 +183,30 @@ public class JacksonCodec implements JsonCodec {
   public void toOutputStream(Object object, OutputStream out) throws EncodeException {
     try {
       JsonGenerator generator = createGenerator(out, false);
+      generator.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+      generator.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
+      encodeJson(object, generator);
+      generator.close();
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public <T> T fromReader(Reader reader, Class<T> clazz) throws DecodeException {
+    try {
+      JsonParser parser = factory.createParser(reader);
+      parser.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+      return fromParser(parser, clazz);
+    } catch (IOException e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public void toWriter(Object object, Writer writer) throws EncodeException {
+    try {
+      JsonGenerator generator = createGenerator(writer, false);
       generator.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
       generator.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
       encodeJson(object, generator);

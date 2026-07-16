@@ -20,6 +20,8 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -124,6 +126,60 @@ public interface JsonCodec {
   default void toOutputStream(Object object, OutputStream out) throws EncodeException {
     try {
       out.write(toBuffer(object).getBytes());
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Decode JSON from the given {@link Reader} to an object of the specified type.
+   * <p>
+   * The codec does not close or flush the reader; the caller retains ownership.
+   *
+   * @param reader the reader containing JSON text
+   * @param clazz  the required object's class
+   * @return the decoded instance
+   * @throws DecodeException anything preventing the decoding
+   */
+  default <T> T fromReader(Reader reader, Class<T> clazz) throws DecodeException {
+    try {
+      StringBuilder sb = new StringBuilder();
+      char[] buf = new char[4096];
+      int n;
+      while ((n = reader.read(buf)) != -1) {
+        sb.append(buf, 0, n);
+      }
+      return fromString(sb.toString(), clazz);
+    } catch (IOException e) {
+      throw new DecodeException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Decode JSON from the given {@link Reader}.
+   * <p>
+   * The codec does not close or flush the reader; the caller retains ownership.
+   *
+   * @param reader the reader containing JSON text
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, etc.
+   * @throws DecodeException anything preventing the decoding
+   */
+  default Object fromReader(Reader reader) throws DecodeException {
+    return fromReader(reader, Object.class);
+  }
+
+  /**
+   * Encode the specified object as JSON to the given {@link Writer}.
+   * <p>
+   * The codec does not close or flush the writer; the caller retains ownership.
+   *
+   * @param object the object to encode
+   * @param writer the writer to write to
+   * @throws EncodeException anything preventing the encoding
+   */
+  default void toWriter(Object object, Writer writer) throws EncodeException {
+    try {
+      writer.write(toString(object));
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
     }

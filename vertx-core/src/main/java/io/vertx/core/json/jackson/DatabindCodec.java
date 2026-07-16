@@ -27,6 +27,8 @@ import io.vertx.core.json.JsonObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
@@ -190,6 +192,29 @@ public class DatabindCodec extends JacksonCodec {
         .without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
         .without(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM)
         .writeValue(out, object);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public <T> T fromReader(Reader reader, Class<T> clazz) throws DecodeException {
+    try {
+      JsonParser parser = mapper.getFactory().createParser(reader);
+      parser.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
+      return fromParser(parser, clazz);
+    } catch (IOException e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public void toWriter(Object object, Writer writer) throws EncodeException {
+    try {
+      mapper.writer()
+        .without(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
+        .without(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM)
+        .writeValue(writer, object);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }

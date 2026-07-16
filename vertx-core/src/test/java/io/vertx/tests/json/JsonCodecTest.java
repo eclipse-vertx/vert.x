@@ -28,9 +28,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
+import java.io.FilterReader;
+import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -740,6 +746,189 @@ public abstract class JsonCodecTest {
     codec.toOutputStream(obj, out);
     assertFalse("Codec should not close the OutputStream", closed[0]);
     assertFalse("Codec should not flush the OutputStream", flushed[0]);
+  }
+
+  @Test
+  public void testDecodeJsonObjectFromReader() {
+    String json = "{\"foo\":\"bar\",\"num\":123}";
+    Map<?, ?> map = codec.fromReader(new StringReader(json), Map.class);
+    assertEquals("bar", map.get("foo"));
+    assertEquals(123, map.get("num"));
+  }
+
+  @Test
+  public void testDecodeJsonArrayFromReader() {
+    String json = "[\"foo\",123,true]";
+    List<?> list = codec.fromReader(new StringReader(json), List.class);
+    assertEquals("foo", list.get(0));
+    assertEquals(123, list.get(1));
+    assertEquals(true, list.get(2));
+  }
+
+  @Test
+  public void testDecodeFromReaderUnknownContent() {
+    assertEquals(1, decodeFromReader("1"));
+    assertEquals(true, decodeFromReader("true"));
+    assertEquals("whatever", decodeFromReader("\"whatever\""));
+    assertNull(decodeFromReader("null"));
+
+    JsonObject obj = new JsonObject().put("foo", "bar");
+    assertEquals(obj, decodeFromReader(obj.toString()));
+
+    JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
+    assertEquals(arr, decodeFromReader(arr.toString()));
+  }
+
+  private Object decodeFromReader(String json) {
+    return codec.fromReader(new StringReader(json), Object.class);
+  }
+
+  @Test
+  public void testDecodeFromReaderEquivalence() {
+    byte[] bytes = TestUtils.randomByteArray(10);
+    String strBytes = TestUtils.toBase64String(bytes);
+    Instant now = Instant.now();
+    String strInstant = ISO_INSTANT.format(now);
+    String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+
+    Object fromString = codec.fromString(json, Object.class);
+    Object fromReader = codec.fromReader(new StringReader(json), Object.class);
+    assertEquals(fromString, fromReader);
+  }
+
+  @Test
+  public void testDecodeFromReaderInvalidJson() {
+    for (String test : new String[]{"\"3", "qiwjdoiqwjdiqwjd", "{\"foo\":1},{\"bar\":2}"}) {
+      try {
+        codec.fromReader(new StringReader(test), Map.class);
+        fail("Should have thrown DecodeException for: " + test);
+      } catch (DecodeException ignore) {
+      }
+    }
+  }
+
+  @Test
+  public void testDecodeFromReaderEmpty() {
+    try {
+      codec.fromReader(new StringReader(""), Object.class);
+      fail();
+    } catch (DecodeException ignore) {
+    }
+  }
+
+  @Test
+  public void testDecodeFromReaderWithComments() {
+    String jsonWithComments =
+      "// comment\n" +
+        "{\"foo\": \"bar\" /* inline */}";
+    Map<?, ?> map = codec.fromReader(new StringReader(jsonWithComments), Map.class);
+    assertEquals("bar", map.get("foo"));
+  }
+
+  @Test
+  public void testDecodeFromReaderDoesNotCloseReader() throws IOException {
+    String json = "{\"key\":\"value\"}";
+    boolean[] closed = {false};
+    Reader reader = new FilterReader(new StringReader(json)) {
+      @Override
+      public void close() throws IOException {
+        closed[0] = true;
+        super.close();
+      }
+    };
+    codec.fromReader(reader, Map.class);
+    assertFalse("Codec should not close the Reader", closed[0]);
+  }
+
+  @Test
+  public void testEncodeJsonObjectToWriter() {
+    JsonObject jsonObject = new JsonObject().put("foo", "bar").put("num", 123);
+    StringWriter sw = new StringWriter();
+    codec.toWriter(jsonObject, sw);
+    assertEquals(codec.toString(jsonObject), sw.toString());
+  }
+
+  @Test
+  public void testEncodeJsonArrayToWriter() {
+    JsonArray jsonArray = new JsonArray().add("foo").add(123).add(true);
+    StringWriter sw = new StringWriter();
+    codec.toWriter(jsonArray, sw);
+    assertEquals(codec.toString(jsonArray), sw.toString());
+  }
+
+  @Test
+  public void testEncodeToWriterEquivalence() {
+    JsonObject obj = new JsonObject()
+      .put("str", "hello")
+      .put("num", 42)
+      .put("bool", true)
+      .putNull("nil")
+      .put("nested", new JsonObject().put("a", 1))
+      .put("arr", new JsonArray().add("x").add(2));
+
+    StringWriter sw = new StringWriter();
+    codec.toWriter(obj, sw);
+    assertEquals(codec.toString(obj), sw.toString());
+  }
+
+  @Test
+  public void testEncodeNullToWriter() {
+    StringWriter sw = new StringWriter();
+    codec.toWriter(null, sw);
+    assertEquals("null", sw.toString());
+  }
+
+  @Test
+  public void testEncodeScalarToWriter() {
+    StringWriter sw = new StringWriter();
+    codec.toWriter("hello", sw);
+    assertEquals("\"hello\"", sw.toString());
+
+    sw = new StringWriter();
+    codec.toWriter(42, sw);
+    assertEquals("42", sw.toString());
+
+    sw = new StringWriter();
+    codec.toWriter(true, sw);
+    assertEquals("true", sw.toString());
+  }
+
+  @Test
+  public void testEncodeToWriterDoesNotCloseOrFlushWriter() {
+    JsonObject obj = new JsonObject().put("key", "value");
+    boolean[] closed = {false};
+    boolean[] flushed = {false};
+    Writer writer = new FilterWriter(new StringWriter()) {
+      @Override
+      public void close() throws IOException {
+        closed[0] = true;
+        super.close();
+      }
+      @Override
+      public void flush() throws IOException {
+        flushed[0] = true;
+        super.flush();
+      }
+    };
+    codec.toWriter(obj, writer);
+    assertFalse("Codec should not close the Writer", closed[0]);
+    assertFalse("Codec should not flush the Writer", flushed[0]);
+  }
+
+  @Test
+  public void testReaderWriterRoundTrip() {
+    JsonObject original = new JsonObject()
+      .put("name", "test")
+      .put("value", 42)
+      .put("nested", new JsonObject().put("a", true))
+      .put("arr", new JsonArray().add(1).add("two").add(new JsonObject().put("three", 3)));
+
+    StringWriter sw = new StringWriter();
+    codec.toWriter(original, sw);
+
+    Object decoded = codec.fromReader(new StringReader(sw.toString()), Object.class);
+    assertEquals(original, decoded);
   }
 
   @Test
