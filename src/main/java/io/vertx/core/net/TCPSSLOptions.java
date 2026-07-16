@@ -921,63 +921,6 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     return sslOptions.getSslHandshakeTimeoutUnit();
   }
 
-  /**
-   * @return the list of key exchange group names, or {@code null} if not set
-   */
-  public List<String> getKeyExchangeGroups() {
-    return sslOptions.getKeyExchangeGroups();
-  }
-
-  /**
-   * Set the list of key exchange group names to use for TLS connections.
-   * <p>
-   * The effective groups used during the TLS handshake depend on the {@link #getPqcEnforcementPolicy()}:
-   * <ul>
-   *   <li>{@link PqcEnforcementPolicy#RELAXED}: uses the specified groups as-is, or engine defaults if {@code null}</li>
-   *   <li>{@link PqcEnforcementPolicy#CLIENT_NEGOTIATED}: prepends {@code X25519MLKEM768} if not already present</li>
-   *   <li>{@link PqcEnforcementPolicy#STRICT}: replaces the list with only {@code X25519MLKEM768}</li>
-   * </ul>
-   *
-   * @param keyExchangeGroups the key exchange group names
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setKeyExchangeGroups(List<String> keyExchangeGroups) {
-    sslOptions.setKeyExchangeGroups(keyExchangeGroups);
-    return this;
-  }
-
-  /**
-   * Add a key exchange group name.
-   *
-   * @param group the group name to add
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions addKeyExchangeGroup(String group) {
-    sslOptions.addKeyExchangeGroup(group);
-    return this;
-  }
-
-  /**
-   * @return the PQC enforcement policy
-   */
-  public PqcEnforcementPolicy getPqcEnforcementPolicy() {
-    return sslOptions.getPqcEnforcementPolicy();
-  }
-
-  /**
-   * Set the post-quantum cryptography enforcement policy.
-   * <p>
-   * When set to {@link PqcEnforcementPolicy#STRICT} or {@link PqcEnforcementPolicy#CLIENT_NEGOTIATED},
-   * the SSL engine will be automatically switched to OpenSSL if not already configured.
-   *
-   * @param pqcEnforcementPolicy the enforcement policy
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TCPSSLOptions setPqcEnforcementPolicy(PqcEnforcementPolicy pqcEnforcementPolicy) {
-    sslOptions.setPqcEnforcementPolicy(pqcEnforcementPolicy);
-    return this;
-  }
-
   @Override
   public TCPSSLOptions setLogActivity(boolean logEnabled) {
     return (TCPSSLOptions) super.setLogActivity(logEnabled);

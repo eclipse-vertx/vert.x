@@ -69,16 +69,6 @@ public class TCPSSLOptionsConverter {
             obj.setJdkSslEngineOptions(new io.vertx.core.net.JdkSSLEngineOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
-        case "keyExchangeGroups":
-          if (member.getValue() instanceof JsonArray) {
-            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
-            ((Iterable<Object>)member.getValue()).forEach( item -> {
-              if (item instanceof String)
-                list.add((String)item);
-            });
-            obj.setKeyExchangeGroups(list);
-          }
-          break;
         case "keyStoreOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setKeyStoreOptions(new io.vertx.core.net.JksOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -107,11 +97,6 @@ public class TCPSSLOptionsConverter {
         case "pfxTrustOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((io.vertx.core.json.JsonObject)member.getValue()));
-          }
-          break;
-        case "pqcEnforcementPolicy":
-          if (member.getValue() instanceof String) {
-            obj.setPqcEnforcementPolicy(io.vertx.core.net.PqcEnforcementPolicy.valueOf((String)member.getValue()));
           }
           break;
         case "readIdleTimeout":
@@ -235,11 +220,6 @@ public class TCPSSLOptionsConverter {
     if (obj.getJdkSslEngineOptions() != null) {
       json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
     }
-    if (obj.getKeyExchangeGroups() != null) {
-      JsonArray array = new JsonArray();
-      obj.getKeyExchangeGroups().forEach(item -> array.add(item));
-      json.put("keyExchangeGroups", array);
-    }
     if (obj.getKeyStoreOptions() != null) {
       json.put("keyStoreOptions", obj.getKeyStoreOptions().toJson());
     }
@@ -257,9 +237,6 @@ public class TCPSSLOptionsConverter {
     }
     if (obj.getPfxTrustOptions() != null) {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
-    }
-    if (obj.getPqcEnforcementPolicy() != null) {
-      json.put("pqcEnforcementPolicy", obj.getPqcEnforcementPolicy().name());
     }
     json.put("readIdleTimeout", obj.getReadIdleTimeout());
     json.put("soLinger", obj.getSoLinger());
