@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -21,9 +22,11 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -173,6 +176,132 @@ public class LocalEventBusTest extends EventBusTestBase {
       assertTrue(ar.succeeded());
       eb.send(ADDRESS1, str);
     });
+    await();
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkSendSucceedsAtFirstAttempt() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(true, true, false, false);
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkSendSucceedsAfterHalfHandlerAttempts() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(true, false, false, false);
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkSendSucceedsAtLastAttempt() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(true, false, true, false);
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkSendAllAttemptsFails() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(false, false, false, false);
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkPublishSucceedsForAllHandlerAttempts() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(true, true, false, true);
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkPublishSucceedsForHalfHandlerAttempts() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(true, false, false, true);
+  }
+
+  @Test
+  public void testHandlerWithContextRejectingEnqueueingWorkPublishSucceedsForSingleHandlerAttempts() throws Throwable {
+    testHandlerWithContextRejectingEnqueueingWorkInternal(true, false, true, true);
+  }
+
+  private void testHandlerWithContextRejectingEnqueueingWorkInternal(boolean shouldSucceed, boolean succeedOnFirstAttempt, boolean succeedOnLastAttempt, boolean usePublish) throws Throwable {
+    final ContextInternal realContextInternal = (ContextInternal) this.vertx.getOrCreateContext();
+    ClassLoader classLoader = realContextInternal.classLoader();
+
+    final String str = TestUtils.randomUnicodeString(100);
+
+    final List<Future<Void>> handlersSetup = new ArrayList<>();
+    final AtomicInteger executorCalled = new AtomicInteger();
+    final int handlerCount = 10;
+    final int executorFailUntilCalls =
+      shouldSucceed
+        ? (
+          succeedOnFirstAttempt
+            ? 0
+            : (
+              succeedOnLastAttempt
+                ? handlerCount - 1
+                : handlerCount / 2))
+        : handlerCount;
+    final AtomicInteger handlerCalled = new AtomicInteger();
+
+    final int expectedPublishHandlerCalls = handlerCount - executorFailUntilCalls;
+
+    final CountDownLatch receivedMessageLatch = new CountDownLatch(expectedPublishHandlerCalls);
+
+    for(int i=0; i < handlerCount; i++) {
+
+      ContextInternal contextInternal = (ContextInternal) Proxy.newProxyInstance(classLoader, new Class<?>[]{ContextInternal.class}, new InvocationHandler() {
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+          if(method.getName().equals("executor")) {
+            final int executeCallCount = executorCalled.getAndIncrement();
+            if(executeCallCount < executorFailUntilCalls) {
+              throw new RejectedExecutionException();
+            }
+          }
+          return method.invoke(realContextInternal, args);
+        }
+      });
+
+      final Constructor<MessageConsumerImpl> messageConsumerImplConstructor = MessageConsumerImpl.class.getDeclaredConstructor(Vertx.class, ContextInternal.class, EventBusImpl.class, String.class, Boolean.TYPE);
+      messageConsumerImplConstructor.setAccessible(true);
+      MessageConsumerImpl<String> messageConsumerImpl = (MessageConsumerImpl<String>) messageConsumerImplConstructor.newInstance(this.vertx, contextInternal, (EventBusImpl) this.vertx.eventBus(), ADDRESS1, true);
+
+      final Promise<Void> handlerSetup = Promise.promise();
+      handlersSetup.add(handlerSetup.future());
+
+      messageConsumerImpl.handler((Message<String> msg) -> {
+        handlerCalled.incrementAndGet();
+        assertEquals(str, msg.body());
+        if(!usePublish) {
+          msg.reply("foo");
+        }
+        receivedMessageLatch.countDown();
+      }).completionHandler(ar -> {
+        assertTrue(ar.succeeded());
+        handlerSetup.complete();
+      });
+    }
+    Future.all(handlersSetup).onComplete(result -> {
+      assertTrue(result.succeeded());
+      if(usePublish) {
+        eb.publish(ADDRESS1, str);
+      }
+      else {
+        if (shouldSucceed) {
+          eb.request(ADDRESS1, str).onComplete(responseResult -> {
+            assertTrue(responseResult.succeeded());
+            assertEquals("Assuming that executor should have failed a certain number of times", executorFailUntilCalls, executorCalled.get() - 1);
+            assertEquals(1, handlerCalled.get());
+            testComplete();
+          });
+        } else {
+          eb.request(ADDRESS1, str).onComplete(responseResult -> {
+            assertFalse(responseResult.succeeded());
+            assertEquals(ReplyException.class, responseResult.cause().getClass());
+            assertEquals("Assuming that executor should have failed a certain number of times", handlerCount, executorCalled.get());
+            assertEquals(0, handlerCalled.get());
+            testComplete();
+          });
+        }
+      }
+    });
+    if(usePublish) {
+      receivedMessageLatch.await(2, TimeUnit.MINUTES);
+      assertEquals(expectedPublishHandlerCalls, handlerCalled.get());
+      testComplete();
+    }
     await();
   }
 
