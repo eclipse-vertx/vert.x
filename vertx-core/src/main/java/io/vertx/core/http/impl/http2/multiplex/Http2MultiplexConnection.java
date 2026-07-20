@@ -47,7 +47,6 @@ import io.vertx.core.impl.buffer.VertxByteBufAllocator;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
-import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.net.HostAndPort;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.NetworkMetrics;
@@ -56,9 +55,11 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
-public abstract class Http2MultiplexConnection<S extends Http2Stream> extends ConnectionBase implements HttpConnectionInternal {
+public abstract class Http2MultiplexConnection<S extends Http2Stream> extends ConnectionBase implements HttpConnection {
 
   protected final Http2MultiplexHandler handler;
   protected final TransportMetrics<?> transportMetrics;
@@ -70,6 +71,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   private Handler<Void> shutdownHandler;
   private Handler<GoAway> goAwayHandler;
   private Handler<Buffer> pingHandler;
+  private Map<Object, Object> attachments;
 
   public Http2MultiplexConnection(Http2MultiplexHandler handler, TransportMetrics<?> transportMetrics, ChannelHandlerContext chctx, ContextInternal context) {
     super(context, chctx);
@@ -417,6 +419,26 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   void onClose() {
     handleClosed();
+  }
+
+  @Override
+  protected void handleClosed() {
+    synchronized (this) {
+      attachments = null;
+    }
+    super.handleClosed();
+  }
+
+  @SuppressWarnings("unchecked")
+  public synchronized <T> T attachment(Object key) {
+    return attachments != null ? (T) attachments.get(key) : null;
+  }
+
+  public synchronized void attach(Object key, Object value) {
+    if (attachments == null) {
+      attachments = new HashMap<>();
+    }
+    attachments.put(key, value);
   }
 
   void onException(Throwable err) {

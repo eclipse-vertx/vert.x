@@ -26,7 +26,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.Http3Settings;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
-import io.vertx.core.internal.http.HttpConnectionInternal;
 import io.vertx.core.internal.quic.QuicConnectionInternal;
 import io.vertx.core.internal.quic.QuicStreamInternal;
 import io.vertx.core.net.SocketAddress;
@@ -42,7 +41,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class Http3Connection implements HttpConnectionInternal {
+public abstract class Http3Connection implements HttpConnection {
 
   private final LongObjectMap<Http3Stream<?, ?>> streams;
   private final Http3FrameLogger frameLogger;
@@ -294,7 +293,9 @@ public abstract class Http3Connection implements HttpConnectionInternal {
   }
 
   protected void handleClosed() {
-    attachments = null;
+    synchronized (this) {
+      attachments = null;
+    }
     Handler<Void> handler = closeHandler;
     if (handler != null) {
       context.emit(null, handler);
@@ -302,13 +303,11 @@ public abstract class Http3Connection implements HttpConnectionInternal {
   }
 
   @SuppressWarnings("unchecked")
-  @Override
-  public <T> T attachment(Object key) {
+  public synchronized <T> T attachment(Object key) {
     return attachments != null ? (T) attachments.get(key) : null;
   }
 
-  @Override
-  public void attach(Object key, Object value) {
+  public synchronized void attach(Object key, Object value) {
     if (attachments == null) {
       attachments = new HashMap<>();
     }
