@@ -3,8 +3,6 @@ package io.vertx.core.dns;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
 /**
@@ -105,6 +103,11 @@ public class AddressResolverOptionsConverter {
             obj.setServers(list);
           }
           break;
+        case "retryWithTcpOnTimeout":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRetryWithTcpOnTimeout((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -141,5 +144,6 @@ public class AddressResolverOptionsConverter {
       obj.getServers().forEach(item -> array.add(item));
       json.put("servers", array);
     }
+    json.put("retryWithTcpOnTimeout", obj.isRetryWithTcpOnTimeout());
   }
 }
