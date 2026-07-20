@@ -1231,29 +1231,50 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testUpdateDeliveryOptionsOnProducer() {
+    int times = 5;
+    waitFor(times);
     MessageProducer<String> producer = eb.sender(ADDRESS1);
     MessageConsumer<String> consumer = eb.<String>consumer(ADDRESS1);
-    consumer.completion().onComplete(v -> {
-      Assert.assertTrue(v.succeeded());
-      producer.write("no-header");
-    });
     consumer.handler(msg -> {
       String body = msg.body();
       Assert.assertNotNull(body);
-      switch (body) {
-        case "no-header":
-          Assert.assertNull(msg.headers().get("header-name"));
-          producer.deliveryOptions(new DeliveryOptions().addHeader("header-name", "header-value"));
-          producer.write("with-header");
-          break;
-        case "with-header":
-          Assert.assertEquals("header-value", msg.headers().get("header-name"));
+      Assert.assertEquals("header-value", msg.headers().get("header-name"));
+      complete();
+    }).completion()
+      .await();
+    producer.deliveryOptions(new DeliveryOptions().addHeader("header-name", "header-value"));
+    for (int i = 0;i < times;i++) {
+      producer.write("with-header");
+    }
+    await();
+  }
+
+  @Test
+  public void testUpdateDeliveryOptionsOnProducerWrite() {
+    int times = 5;
+    MessageProducer<String> producer = eb.sender(ADDRESS1);
+    MessageConsumer<String> consumer = eb.<String>consumer(ADDRESS1);
+    List<String> expectedHeaders = new ArrayList<>();
+    for (int i = 0;i < times;i++) {
+      expectedHeaders.add("header-value-" + i);
+    }
+    List<String> headers = new ArrayList<>();
+    consumer.handler(msg -> {
+        String body = msg.body();
+        Assert.assertNotNull(body);
+        String header = msg.headers().get("header-name");
+        Assert.assertNotNull(header);
+        headers.add(header);
+        if (headers.size() == times) {
+          Assert.assertEquals(expectedHeaders, headers);
           testComplete();
-          break;
-        default:
-          Assert.fail();
-      }
-    });
+        }
+      }).completion()
+      .await();
+    producer.deliveryOptions(new DeliveryOptions().addHeader("header-name", "header-value"));
+    for (String expectedHeader : expectedHeaders) {
+      producer.write("with-header", new DeliveryOptions().addHeader("header-name", expectedHeader));
+    }
     await();
   }
 

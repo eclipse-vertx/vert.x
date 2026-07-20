@@ -55,6 +55,15 @@ public interface MessageProducer<T> {
   Future<Void> write(T body);
 
   /**
+   * Like {@link #write(Object)} but with specific delivery {@code options}.
+   *
+   * @param body the message body
+   * @param options the message delivery options
+   * @return a future signaling the proper message write
+   */
+  Future<Void> write(T body, DeliveryOptions options);
+
+  /**
    * Closes the producer, this method should be called when the message producer is not used anymore.
    *
    * @return a future completed with the result
