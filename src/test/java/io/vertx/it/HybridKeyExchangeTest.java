@@ -583,6 +583,86 @@ public class HybridKeyExchangeTest extends HttpTestBase {
   }
 
 
+  private static void assumeJdkMlKemAvailable() {
+    Assume.assumeTrue("JDK PQC is not available", JdkSSLEngineOptions.isPqcAvailable());
+  }
+
+  @Test
+  public void testStrictPolicyHandshakeJdk() throws Exception {
+    assumeJdkMlKemAvailable();
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setSsl(true)
+      .setSslEngineOptions(new JdkSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> req.response().end("jdk-strict-ok"));
+    startServer(server);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true)
+      .setSslEngineOptions(new JdkSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT);
+    client = vertx.createHttpClient(clientOptions);
+
+    Buffer bodyBuffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("jdk-strict-ok", bodyBuffer.toString());
+  }
+
+  @Test
+  public void testStrictPolicyMTLSJdk() throws Exception {
+    assumeJdkMlKemAvailable();
+
+    HttpServerOptions serverOptions = new HttpServerOptions()
+      .setPort(DEFAULT_HTTPS_PORT)
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setSsl(true)
+      .setClientAuth(ClientAuth.REQUIRED)
+      .setSslEngineOptions(new JdkSSLEngineOptions());
+    serverOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
+      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
+    server = vertx.createHttpServer(serverOptions);
+    server.requestHandler(req -> {
+      assertTrue(req.isSSL());
+      req.response().end("jdk-mtls-strict-ok");
+    });
+    startServer(server);
+
+    HttpClientOptions clientOptions = new HttpClientOptions()
+      .setSsl(true)
+      .setTrustAll(true)
+      .setSslEngineOptions(new JdkSSLEngineOptions());
+    clientOptions.getSslOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get());
+    client = vertx.createHttpClient(clientOptions);
+
+    Buffer buffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    assertEquals("jdk-mtls-strict-ok", buffer.toString());
+  }
+
   static class ServerHelloGroupExtractor extends ChannelInboundHandlerAdapter {
 
     private static final int HANDSHAKE_CONTENT_TYPE = 0x16;

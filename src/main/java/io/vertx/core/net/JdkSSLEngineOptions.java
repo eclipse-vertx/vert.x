@@ -14,10 +14,15 @@ package io.vertx.core.net;
 import io.netty.handler.ssl.SslProvider;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.SslEngineUtils;
 import io.vertx.core.spi.tls.DefaultSslContextFactory;
 import io.vertx.core.spi.tls.SslContextFactory;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * Configures a {@link TCPSSLOptions} to use the JDK ssl engine implementation.
@@ -26,8 +31,8 @@ import javax.net.ssl.SSLEngine;
  */
 @DataObject
 public class JdkSSLEngineOptions extends SSLEngineOptions {
-
   private static Boolean jdkAlpnAvailable;
+  private static Boolean jdkPqcAvailable;
 
   /**
    * @return if alpn support is available via the JDK SSL engine
@@ -56,12 +61,23 @@ public class JdkSSLEngineOptions extends SSLEngineOptions {
   }
 
   /**
-   * @return if PQC key exchange (X25519MLKEM768) is available via the JDK SSL engine
-   * @implNote currently this returns {@code false} but implementation will change in the future when JDK support evolves
+   * @return if PQC key exchange is available via the JDK SSL engine, i.e. the JDK supports
+   * at least one of the PQ-compliant named groups (X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024)
    */
   public static synchronized boolean isPqcAvailable() {
-    // Todo: implement it when JDK add supports
-    return false;
+    if (jdkPqcAvailable == null) {
+      boolean available = false;
+      try {
+        SSLContext ctx = SSLContext.getDefault();
+        SSLParameters params = ctx.getDefaultSSLParameters();
+        Method getNamedGroups = SSLParameters.class.getDeclaredMethod("getNamedGroups");
+        String[] groups = (String[]) getNamedGroups.invoke(params);
+        available = groups != null && Arrays.stream(groups).anyMatch(SslEngineUtils.getPqCompliantGroups()::contains);
+      } catch (Exception ignore) {
+      }
+      jdkPqcAvailable = available;
+    }
+    return jdkPqcAvailable;
   }
 
   private boolean pooledHeapBuffers = false;
