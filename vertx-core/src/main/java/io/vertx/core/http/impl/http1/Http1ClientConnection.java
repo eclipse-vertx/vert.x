@@ -1112,7 +1112,7 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
 
           if (webSocketMetrics != null) {
             ws.setMetric(webSocketMetrics.connected(new ObservableRequest(new HttpRequestHead(
-              ssl ? "https" : "http", HttpMethod.GET, requestURI, headers, authority, "/", null
+              ssl ? "https" : "http", HttpMethod.GET, requestURI, null, headers, authority, "/", null
             ))));
           }
           ws.pause();
