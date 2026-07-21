@@ -130,7 +130,7 @@ When you are unsure of the string validity then you should use instead `{@link i
 
 === Jackson
 
-`JsonObject` / `JsonArray`encoding and decoding is backed by the Jackson library, {@link io.vertx.core.json.Json} static
+`JsonObject` / `JsonArray` encoding and decoding is backed by the Jackson library, {@link io.vertx.core.json.Json} static
 methods uses it as well.
 
 ==== Supported Jackson versions
