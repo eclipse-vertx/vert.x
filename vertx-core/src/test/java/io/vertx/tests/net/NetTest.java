@@ -163,6 +163,7 @@ public class NetTest {
 
   @Test
   public void testEndHandlerCalledAfterAllEmissions() {
+    Assume.assumeFalse("Intermittent failure with io_uring, see https://github.com/netty/netty/issues/17049", TRANSPORT == Transport.IO_URING);
     Buffer  buffer = TestUtils.randomBuffer(1024 * 1024);
     server = vertx.createNetServer().connectHandler(so -> {
       so.end(buffer);
