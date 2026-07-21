@@ -107,7 +107,8 @@ public class DnsAddressResolverProvider implements AddressResolverProvider, Host
     DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
     builder.hostsFileEntriesResolver(this);
     builder.datagramChannelFactory(vertx.transport().datagramChannelFactory());
-    builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
+    builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel(),
+      options.isUseTcpForFallbackDnsResolving());
     builder.nameServerProvider(nameServerAddressProvider);
     builder.queryServerAddressStream(new ThreadLocalNameServerAddressStream(nameServerAddressProvider, ""));
     builder.optResourceEnabled(options.isOptResourceEnabled());

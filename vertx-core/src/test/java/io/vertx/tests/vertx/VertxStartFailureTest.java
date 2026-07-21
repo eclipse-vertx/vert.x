@@ -40,7 +40,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
   @Test
   public void testEventBusStartFailure() throws Exception {
     Vertx vertx = Vertx.vertx();
-    MockDnsServer dnsServer = new MockDnsServer(vertx).testResolveASameServer("127.0.0.1");
+    MockDnsServer dnsServer = new MockDnsServer().testResolveASameServer("127.0.0.1");
     dnsServer.start();
     try {
       InetSocketAddress dnsServerAddress = dnsServer.localAddress();
