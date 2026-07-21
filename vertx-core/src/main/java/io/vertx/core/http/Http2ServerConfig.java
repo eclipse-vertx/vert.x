@@ -34,7 +34,9 @@ public class Http2ServerConfig {
   private Duration rstFloodWindowDuration;
 
   public Http2ServerConfig() {
-    initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
+    initialSettings = new Http2Settings()
+      .setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS)
+      .setInitialWindowSize(DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE);
     connectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
     rstFloodMaxRstFramePerWindow = DEFAULT_HTTP2_RST_FLOOD_MAX_RST_FRAME_PER_WINDOW;
     rstFloodWindowDuration = Duration.of(DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION, DEFAULT_HTTP2_RST_FLOOD_WINDOW_DURATION_TIME_UNIT.toChronoUnit());
@@ -120,11 +122,11 @@ public class Http2ServerConfig {
   }
 
   /**
-   * Set the default HTTP/2 connection window size. It overrides the initial window
-   * size set by {@link Http2Settings#getInitialWindowSize}, so the connection window size
-   * is greater than for its streams, in order the data throughput.
+   * Set the default HTTP/2 connection window size. This window is shared by all streams
+   * on the connection and is independent from the per-stream window configured by
+   * {@link Http2Settings#setInitialWindowSize(int)}.
    * <p/>
-   * A value of {@code -1} reuses the initial window size setting.
+   * A value of {@code -1} uses the HTTP/2 protocol default connection window size.
    *
    * @param connectionWindowSize the window size applied to the connection
    * @return a reference to this, so the API can be used fluently

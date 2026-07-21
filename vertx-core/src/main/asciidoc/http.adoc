@@ -92,7 +92,17 @@ WARNING: browsers do not support `h2c`, for serving websites you should use `h2`
 When a server accepts an HTTP/2 connection, it sends to the client its {@link io.vertx.core.http.Http2ServerConfig#getInitialSettings initial settings}. These settings define how the client can use the connection, the default initial settings for a server are:
 
 - {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: `100` as recommended by the HTTP/2 RFC
+- {@link io.vertx.core.http.Http2Settings#getInitialWindowSize}: `1 MiB`
 - the default HTTP/2 settings values for the remaining settings
+
+HTTP/2 flow control uses two independent receive windows. The initial window size in
+{@link io.vertx.core.http.Http2ServerConfig#getInitialSettings} applies to each stream, while
+{@link io.vertx.core.http.Http2ServerConfig#getConnectionWindowSize} applies to the combined data received by all
+streams on a connection. The connection window defaults to `16 MiB`.
+
+Applications receiving large request bodies, such as large gRPC messages, can tune both values. Larger windows improve
+throughput on connections with significant bandwidth or latency, at the cost of allowing more data to be buffered before
+back-pressure is applied.
 
 === Configuring an HTTP/3 server
 
