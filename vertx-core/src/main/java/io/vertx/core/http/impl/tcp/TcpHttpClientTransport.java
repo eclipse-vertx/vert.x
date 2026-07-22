@@ -143,26 +143,57 @@ public class TcpHttpClientTransport implements HttpClientTransport {
     }
   }
 
+  /**
+   * Whether this connection's transport TLS terminates at an HTTPS proxy (forward mode through an
+   * HTTPS proxy) — the only forward case that uses leg-1 TLS to the proxy.
+   */
+  private static boolean proxyHttps(HttpConnectParams params) {
+    return params.forwardProxy && params.proxyOptions != null && params.proxyOptions.getType() == ProxyType.HTTPS;
+  }
+
+  /** Whether the socket is encrypted: origin TLS, or leg-1 TLS to an HTTPS proxy (forward mode). */
+  private static boolean transportSsl(HttpConnectParams params) {
+    return params.ssl || proxyHttps(params);
+  }
+
   private void connect(ContextInternal context, HttpConnectParams params, HostAndPort authority, SocketAddress server, Promise<NetSocket> promise) {
+    boolean forward = params.forwardProxy;
+    boolean proxyHttps = proxyHttps(params);
+    boolean transportSsl = transportSsl(params);
+
     ConnectOptions connectOptions = new ConnectOptions();
     connectOptions.setRemoteAddress(server);
-    if (authority != null) {
+    if (proxyHttps) {
+      // Forward mode through an HTTPS proxy: the socket's TLS terminates at the proxy, so the peer /
+      // SNI is the proxy (the server), not the origin authority.
+      connectOptions.setHost(server.host());
+      connectOptions.setPort(server.port());
+      connectOptions.setSniServerName(server.host());
+    } else if (authority != null) {
       connectOptions.setHost(authority.host());
       connectOptions.setPort(authority.port());
-      if (params.ssl && forceSni) {
+      if (transportSsl && forceSni) {
         connectOptions.setSniServerName(authority.host());
       }
     }
-    connectOptions.setSsl(params.ssl);
-    if (params.ssl) {
+    connectOptions.setSsl(transportSsl);
+    if (transportSsl) {
+      // The TLS being configured terminates at the proxy (forward + HTTPS proxy) or at the origin
+      // (direct, or the leg-2 of a CONNECT tunnel); pick the matching options.
+      ClientSSLOptions transportSslOptions = proxyHttps ? params.proxyOptions.getSslOptions() : params.sslOptions;
       ClientSSLOptions copy;
-      if (params.sslOptions != null) {
-        copy = params.sslOptions.copy();
+      if (transportSslOptions != null) {
+        copy = transportSslOptions.copy();
       } else {
         // We might end up using javax.net.ssl.trustStore
         copy = new ClientSSLOptions().setHostnameVerificationAlgorithm("HTTPS");
       }
-      boolean useAlpn = params.protocols.contains(HttpVersion.HTTP_2);
+      if (proxyHttps && copy.getHostnameVerificationAlgorithm() == null) {
+        // Verify the proxy certificate against the proxy host by default (secure default).
+        copy.setHostnameVerificationAlgorithm("HTTPS");
+      }
+      // No ALPN on a leg-1 TLS connection to the proxy: ALPN belongs to the origin (leg 2).
+      boolean useAlpn = !proxyHttps && params.protocols.contains(HttpVersion.HTTP_2);
       copy.setUseAlpn(useAlpn);
       if (useAlpn) {
         List<String> list = params.protocols
@@ -174,7 +205,9 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       }
       connectOptions.setSslOptions(copy);
     }
-    connectOptions.setProxyOptions(params.proxyOptions);
+    // Only CONNECT/SOCKS-tunnel through the proxy when NOT forwarding; in forward mode the socket
+    // connects straight to the proxy (the server) and issues absolute-URI requests.
+    connectOptions.setProxyOptions(forward ? null : params.proxyOptions);
     client.connectInternal(connectOptions, promise, context);
   }
 
@@ -197,7 +230,11 @@ public class TcpHttpClientTransport implements HttpClientTransport {
 
     //
     Channel ch = so.channelHandlerContext().channel();
-    if (params.ssl) {
+    // Transport TLS may be on because the origin is HTTPS or because leg-1 TLS to an HTTPS proxy is
+    // in use (forward mode). The connection's ssl flag, however, must reflect the logical origin
+    // (params.ssl), not the transport.
+    boolean transportSsl = transportSsl(params);
+    if (transportSsl) {
       String protocol = so.applicationLayerProtocol();
       if (protocol == null) {
         protocol = "";
@@ -218,7 +255,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
           if (http1Config != null) {
             applyHttp1xConnectionOptions(ch.pipeline());
             HttpVersion version = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-            http1xConnected(version, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
+            http1xConnected(version, server, authority, params.ssl, context, transportMetrics, metric, ch, clientMetrics, promise);
           } else {
             so.close();
             promise.tryFail(new IllegalStateException("HTTP/1.1 not supported"));

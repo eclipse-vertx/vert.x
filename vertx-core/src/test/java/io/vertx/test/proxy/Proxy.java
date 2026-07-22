@@ -16,8 +16,11 @@ import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -63,12 +66,14 @@ public class Proxy implements TestRule {
 
     private final String username;
     private final ProxyKind kind;
+    private final boolean requireSslClientAuth;
     private final Statement statement;
     private final String hosts;
 
-    public ProxyLifecycle(String username, ProxyKind kind, String hosts, Statement statement) {
+    public ProxyLifecycle(String username, ProxyKind kind, boolean requireSslClientAuth, String hosts, Statement statement) {
       this.username = username;
       this.kind = kind;
+      this.requireSslClientAuth = requireSslClientAuth;
       this.statement = statement;
       this.hosts = hosts;
     }
@@ -83,9 +88,19 @@ public class Proxy implements TestRule {
       Vertx vertx = Vertx.vertx(vertxOptions);
       ProxyType type;
       ProxyBase<?> proxy;
+      ClientSSLOptions sslOptions = null;
       if (kind == ProxyKind.HTTP) {
         type = ProxyType.HTTP;
         proxy = new HttpProxy();
+      } else if (kind == ProxyKind.HTTPS) {
+        // TLS requires the proxy to present a certificate, so an HTTPS proxy always has a server cert.
+        type = ProxyType.HTTPS;
+        HttpProxy httpProxy = new HttpProxy().ssl(Cert.SERVER_JKS.get());
+        if (requireSslClientAuth) {
+          httpProxy.requireClientAuth(Trust.CLIENT_JKS.get());
+        }
+        proxy = httpProxy;
+        sslOptions = new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
       } else if (kind == ProxyKind.SOCKS5) {
         type = ProxyType.SOCKS5;
         proxy = new SocksProxy();
@@ -99,7 +114,8 @@ public class Proxy implements TestRule {
       ProxyOptions proxyOptions = new ProxyOptions()
         .setHost("localhost")
         .setPort(proxy.port())
-        .setType(type);
+        .setType(type)
+        .setSslOptions(sslOptions);
       proxy.start(vertx);
       Proxy.this.proxy = proxy;
       Proxy.this.options = proxyOptions;
@@ -124,7 +140,7 @@ public class Proxy implements TestRule {
         }
         hosts.append("127.0.0.1 ").append(host);
       }
-      result = new ProxyLifecycle(repeat.username(), repeat.kind(), hosts.toString(), statement);
+      result = new ProxyLifecycle(repeat.username(), repeat.kind(), repeat.requireSslClientAuth(), hosts.toString(), statement);
     }
     return result;
   }

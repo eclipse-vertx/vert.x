@@ -150,6 +150,13 @@ public class Http1ClientConnection extends Http1Connection implements io.vertx.c
   }
 
   @Override
+  public boolean isSsl() {
+    // Report the origin ssl, not the pipeline: in forward-proxy mode the TLS leg to an HTTPS proxy is
+    // itself the pipeline "ssl" handler.
+    return ssl;
+  }
+
+  @Override
   public io.vertx.core.http.impl.HttpClientConnection evictionHandler(Handler<Void> handler) {
     evictionHandler = handler;
     return this;

@@ -16,6 +16,7 @@ import io.netty.channel.*;
 import io.netty.channel.Channel;
 import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -106,7 +107,8 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
     if (logging != null) {
       pipeline.addLast("logging", new LoggingHandler(logging));
     }
-    if (ssl || !vertx.transport().supportFileRegion()) {
+    boolean sslChannel = pipeline.get(SslHandler.class) != null;
+    if (sslChannel || !vertx.transport().supportFileRegion()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
@@ -354,7 +356,7 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
         }
       }
 
-      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, context)
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslContextProvider, sslContextManager, context)
         .proxyOptions(proxyOptions);
 
       SocketAddress captured = remoteAddress;

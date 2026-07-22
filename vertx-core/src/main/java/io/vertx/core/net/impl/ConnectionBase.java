@@ -301,7 +301,18 @@ public abstract class ConnectionBase {
   }
 
   public boolean isSsl() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+    // Ignore a TLS leg to an HTTPS proxy ("proxy-ssl"): report whether the origin connection is encrypted.
+    ChannelHandler proxySsl = chctx.pipeline().get("proxy-ssl");
+    if (proxySsl == null) {
+      return chctx.pipeline().get(SslHandler.class) != null;
+    }
+    for (String name : chctx.pipeline().names()) {
+      ChannelHandler handler = chctx.pipeline().get(name);
+      if (handler != proxySsl && handler instanceof SslHandler) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public boolean isTrafficShaped() {
