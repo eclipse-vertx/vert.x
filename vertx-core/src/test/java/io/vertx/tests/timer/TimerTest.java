@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2026 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -105,13 +105,13 @@ public class TimerTest extends VertxTestBase2 {
 
   private void periodic(Checkpoint checkpoint, PeriodicArg delay, BiFunction<PeriodicArg, Handler<Long>, Long> abc) {
     final int numFires = 10;
-    final AtomicLong id = new AtomicLong(-1);
+    final AtomicLong firedId = new AtomicLong(-1);
     long now = System.nanoTime();
-    id.set(abc.apply(delay, new Handler<>() {
+    long returnedId = abc.apply(delay, new Handler<>() {
       int count;
       public void handle(Long timerID) {
         Assertions.assertThat(System.nanoTime() - now).isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(delay.initialDelay + count * delay.delay));
-        Assert.assertEquals(id.get(), timerID.longValue());
+        Assert.assertTrue(firedId.compareAndSet(count == 0 ? -1 : timerID, timerID));
         count++;
         if (count == numFires) {
           vertx.cancelTimer(timerID);
@@ -121,23 +121,24 @@ public class TimerTest extends VertxTestBase2 {
           Assert.fail("Fired too many times");
         }
       }
-    }));
+    });
+    checkpoint.awaitSuccess();
+    Assert.assertEquals(returnedId, firedId.get());
   }
 
   private void timer(Checkpoint checkpoint, long delay) {
-    final AtomicLong id = new AtomicLong(-1);
-    id.set(vertx.setTimer(delay, new Handler<Long>() {
-      int count;
+    final AtomicLong firedId = new AtomicLong(-1);
+    long returnedId = vertx.setTimer(delay, new Handler<>() {
       boolean fired;
       public void handle(Long timerID) {
         Assert.assertFalse(fired);
         fired = true;
-        Assert.assertEquals(id.get(), timerID.longValue());
-        Assert.assertEquals(0, count);
-        count++;
+        Assert.assertTrue(firedId.compareAndSet(-1, timerID));
         setEndTimer(checkpoint);
       }
-    }));
+    });
+    checkpoint.awaitSuccess();
+    Assert.assertEquals(returnedId, firedId.get());
   }
 
   private void setEndTimer(Checkpoint checkpoint) {
