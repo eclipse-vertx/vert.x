@@ -118,6 +118,13 @@ public class JacksonCodec implements JsonCodec {
 
   static final JsonFactory factory = buildFactory();
 
+  private static final ObjectReadContext ORC_NO_CLOSE = new ObjectReadContext.Base() {
+    @Override
+    public int getStreamReadFeatures(int defaults) {
+      return defaults & ~StreamReadFeature.AUTO_CLOSE_SOURCE.getMask();
+    }
+  };
+
   @Override
   public <T> T fromString(String json, Class<T> clazz) throws DecodeException {
     return fromParser(createParser(json), clazz);
@@ -126,6 +133,11 @@ public class JacksonCodec implements JsonCodec {
   @Override
   public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
     return fromParser(createParser(json), clazz);
+  }
+
+  @Override
+  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+    return fromParser(factory.createParser(ORC_NO_CLOSE, in), clazz);
   }
 
   @Override
@@ -162,6 +174,37 @@ public class JacksonCodec implements JsonCodec {
       throw new EncodeException(e.getMessage(), e);
     } finally {
       br.releaseToPool();
+    }
+  }
+
+  @Override
+  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+    try {
+      JsonGenerator generator = createGenerator(out, false);
+      generator.configure(StreamWriteFeature.AUTO_CLOSE_TARGET, false);
+      generator.configure(StreamWriteFeature.FLUSH_PASSED_TO_STREAM, false);
+      encodeJson(object, generator);
+      generator.close();
+    } catch (Exception e) {
+      throw new EncodeException(e.getMessage(), e);
+    }
+  }
+
+  @Override
+  public <T> T fromReader(java.io.Reader reader, Class<T> clazz) throws DecodeException {
+    return fromParser(factory.createParser(ORC_NO_CLOSE, reader), clazz);
+  }
+
+  @Override
+  public void toWriter(Object object, java.io.Writer writer) throws EncodeException {
+    try {
+      JsonGenerator generator = createGenerator(writer, false);
+      generator.configure(StreamWriteFeature.AUTO_CLOSE_TARGET, false);
+      generator.configure(StreamWriteFeature.FLUSH_PASSED_TO_STREAM, false);
+      encodeJson(object, generator);
+      generator.close();
+    } catch (Exception e) {
+      throw new EncodeException(e.getMessage(), e);
     }
   }
 

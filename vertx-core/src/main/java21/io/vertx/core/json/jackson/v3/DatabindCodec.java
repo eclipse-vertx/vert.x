@@ -13,6 +13,8 @@ package io.vertx.core.json.jackson.v3;
 
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.StreamWriteFeature;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -26,6 +28,9 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +84,11 @@ public class DatabindCodec extends JacksonCodec {
 
   public <T> T fromBuffer(Buffer buf, TypeReference<T> typeRef) throws DecodeException {
     return fromParser(createParser(buf), typeRef);
+  }
+
+  @Override
+  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+    return fromParser(mapper.reader().without(StreamReadFeature.AUTO_CLOSE_SOURCE).createParser(in), clazz);
   }
 
   public static JsonParser createParser(BufferInternal buf) {
@@ -149,6 +159,35 @@ public class DatabindCodec extends JacksonCodec {
         result = mapper.writeValueAsBytes(object);
       }
       return Buffer.buffer(result);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+    try {
+      mapper.writer()
+        .without(StreamWriteFeature.AUTO_CLOSE_TARGET)
+        .without(StreamWriteFeature.FLUSH_PASSED_TO_STREAM)
+        .writeValue(out, object);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
+  @Override
+  public <T> T fromReader(Reader reader, Class<T> clazz) throws DecodeException {
+    return fromParser(mapper.reader().without(StreamReadFeature.AUTO_CLOSE_SOURCE).createParser(reader), clazz);
+  }
+
+  @Override
+  public void toWriter(Object object, Writer writer) throws EncodeException {
+    try {
+      mapper.writer()
+        .without(StreamWriteFeature.AUTO_CLOSE_TARGET)
+        .without(StreamWriteFeature.FLUSH_PASSED_TO_STREAM)
+        .writeValue(writer, object);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
