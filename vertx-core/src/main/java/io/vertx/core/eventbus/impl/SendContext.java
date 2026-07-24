@@ -49,10 +49,10 @@ public class SendContext<T> implements Promise<Void> {
   void send() {
     Handler<DeliveryContext<?>>[] interceptors = message.bus.outboundInterceptors();
     if (interceptors.length > 0) {
-      DeliveryContextImpl<T> deliveryContext = new DeliveryContextImpl<>(message, interceptors, ctx,  message.sentBody, this::sendOrPub);
+      DeliveryContextImpl<T> deliveryContext = new DeliveryContextImpl<>(message, interceptors, ctx,  message.sentBody, this::sendOrPubOrFail);
       deliveryContext.next();
     } else {
-      sendOrPub();
+      sendOrPubOrFail(null);
     }
   }
 
@@ -113,23 +113,32 @@ public class SendContext<T> implements Promise<Void> {
     }
   }
 
-  private void sendOrPub() {
-    VertxTracer tracer = ctx.tracer();
-    if (tracer != null) {
-      if (message.trace == null) {
-        src = true;
-        BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
-        TracingPolicy tracingPolicy = options.getTracingPolicy();
-        if (tracingPolicy == null) {
-          tracingPolicy = TracingPolicy.PROPAGATE;
+  private void sendOrPubOrFail(ReplyException failure) {
+    if (failure == null) {
+      VertxTracer tracer = ctx.tracer();
+      if (tracer != null) {
+        if (message.trace == null) {
+          src = true;
+          BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
+          TracingPolicy tracingPolicy = options.getTracingPolicy();
+          if (tracingPolicy == null) {
+            tracingPolicy = TracingPolicy.PROPAGATE;
+          }
+          message.trace = tracer.sendRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
+        } else {
+          // Handle failure here
+          tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
         }
-        message.trace = tracer.sendRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
-      } else {
-        // Handle failure here
-        tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
+      }
+      bus.sendOrPub(this);
+    } else {
+      // Fail write promise
+      writePromise.fail(failure);
+
+      // Fail reply handler when it exists
+      if (replyHandler != null) {
+        replyHandler.fail(failure);
       }
     }
-    bus.sendOrPub(this);
   }
-
 }

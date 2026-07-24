@@ -13,6 +13,8 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.internal.ContextInternal;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -24,12 +26,12 @@ class DeliveryContextImpl<T> implements DeliveryContext<T> {
   private final MessageImpl<?, T> message;
   private final ContextInternal context;
   private final Object body;
-  private final Runnable dispatch;
+  private final Handler<ReplyException> dispatch;
   private final Handler<DeliveryContext<?>>[] interceptors;
   private volatile int interceptorIdx;
 
   protected DeliveryContextImpl(MessageImpl<?, T> message, Handler<DeliveryContext<?>>[] interceptors,
-                                ContextInternal context, Object body, Runnable dispatch) {
+                                ContextInternal context, Object body, Handler<ReplyException> dispatch) {
     this.message = message;
     this.interceptors = interceptors;
     this.context = context;
@@ -54,6 +56,26 @@ class DeliveryContextImpl<T> implements DeliveryContext<T> {
   }
 
   @Override
+  public boolean fail(int failureCode, String message) {
+    return fail(ReplyFailure.RECIPIENT_FAILURE, failureCode, message);
+  }
+
+  @Override
+  public boolean fail(ReplyFailure failure, int failureCode, String message) {
+    while (true) {
+      int idx = UPDATER.get(this);
+      if (idx > interceptors.length) {
+        return false;
+      }
+      if (UPDATER.compareAndSet(this, idx, interceptors.length + 1)) {
+        break;
+      }
+    }
+    dispatch.handle(new ReplyException(failure, failureCode, message));
+    return true;
+  }
+
+  @Override
   public void next() {
     int idx = UPDATER.getAndIncrement(this);
     if (idx < interceptors.length) {
@@ -68,7 +90,7 @@ class DeliveryContextImpl<T> implements DeliveryContext<T> {
         }
       }
     } else if (idx == interceptors.length) {
-      dispatch.run();
+      dispatch.handle(null);
     } else {
       throw new IllegalStateException();
     }

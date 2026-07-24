@@ -12,10 +12,10 @@
 package io.vertx.tests.eventbus;
 
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.DeliveryContext;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.*;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -423,6 +423,105 @@ public class EventBusInterceptorTest extends VertxTestBase {
     eb.send("some-address", "armadillo");
     waitUntil(() -> caught.get() != null);
     assertSame(expected, caught.get());
+  }
+
+  @Test
+  public void testOutboundReplySendFailure() {
+    eb.addOutboundInterceptor(sc -> {
+      assertTrue(sc.fail(3, "test"));
+      try {
+        sc.next();
+        fail();
+      } catch (IllegalStateException expected) {
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail();
+    });
+    MessageProducer<String> sender = eb.sender("some-address");
+    Future<Void> fut = sender.write("armadillo");
+    fut.onComplete(onFailure(expected -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testOutboundReplyRequestFailure() {
+    eb.addOutboundInterceptor(sc -> {
+      assertTrue(sc.fail(ReplyFailure.NO_HANDLERS, 3, "test"));
+      try {
+        sc.next();
+        fail();
+      } catch (IllegalStateException expected) {
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail();
+    });
+    Future<Message<Object>> fut = eb.request("some-address", "armadillo");
+    fut.onComplete(onFailure(expected -> {
+      ReplyException replyException = (ReplyException) expected;
+      assertEquals(3, replyException.failureCode());
+      assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testInboundReplySendFailure() {
+    eb.addInboundInterceptor(sc -> {
+      assertTrue(sc.fail(3, "test"));
+      try {
+        sc.next();
+        fail();
+      } catch (IllegalStateException expected) {
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail();
+    });
+    MessageProducer<String> sender = eb.sender("some-address");
+    Future<Void> fut = sender.write("armadillo");
+    fut.onComplete(onSuccess(expected -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testInboundReplyRequestFailure() {
+    eb.addInboundInterceptor(dc -> {
+      if (dc.message().address().equals("some-address")) {
+        assertTrue(dc.fail(3, "test"));
+        try {
+          dc.next();
+          fail();
+        } catch (IllegalStateException expected) {
+        }
+      } else {
+        dc.next();
+      }
+    });
+    eb.addInboundInterceptor(dc -> {
+      if (dc.message().address().equals("some-address")) {
+        fail();
+      } else {
+        dc.next();
+      }
+    });
+    eb.consumer("some-address", msg -> {
+      fail();
+    });
+    Future<Message<Object>> fut = eb.request("some-address", "armadillo");
+    fut.onComplete(onFailure(expected -> {
+      ReplyException replyException = (ReplyException) expected;
+      assertEquals(3, replyException.failureCode());
+      assertEquals(ReplyFailure.RECIPIENT_FAILURE, replyException.failureType());
+      testComplete();
+    }));
+    await();
   }
 
   @Override

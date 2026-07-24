@@ -95,7 +95,13 @@ public abstract class HandlerRegistration<T> implements Closeable {
   void dispatchMessage(Function<Message<T>, Future<?>> processor, MessageImpl<?, T> message, ContextInternal context) {
     Handler<DeliveryContext<?>>[] interceptors = message.bus.inboundInterceptors();
     if (interceptors.length > 0) {
-      Runnable dispatch = () -> dispatch(context, message, processor);
+      Handler<ReplyException> dispatch = failure -> {
+        if (failure == null) {
+          dispatch(context, message, processor);
+        } else {
+          message.reply(failure);
+        }
+      };
       DeliveryContextImpl<T> deliveryCtx = new DeliveryContextImpl<>(message, interceptors, context, message.receivedBody, dispatch);
       deliveryCtx.next();
     } else {

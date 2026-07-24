@@ -35,6 +35,21 @@ public interface DeliveryContext<T> {
   void next();
 
   /**
+   * {@link #fail(ReplyFailure, int, String)} with {@link ReplyFailure#RECIPIENT_FAILURE}
+   */
+  boolean fail(int failureCode, String message);
+
+  /**
+   * Terminate the interception chain immediately and fail the message.
+   *
+   * @param failure the failure
+   * @param failureCode the failure code
+   * @param message the message
+   * @return true if the operation succeeded
+   */
+  boolean fail(ReplyFailure failure,  int failureCode, String message);
+
+  /**
    * @return true if the message is being sent (point to point) or False if the message is being published
    */
   boolean send();
