@@ -33,6 +33,7 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ public abstract class Http3Connection implements HttpConnection {
   private Http3Settings localSettings;
   private Http3Settings remoteSettings;
   private Handler<HttpSettings> remoteSettingsHandler;
+  private Map<Object, Object> attachments;
 
   public Http3Connection(QuicConnectionInternal connection, Http3Settings localSettings, Http3FrameLogger frameLogger) {
     this.streams = new LongObjectHashMap<>();
@@ -291,10 +293,25 @@ public abstract class Http3Connection implements HttpConnection {
   }
 
   protected void handleClosed() {
+    synchronized (this) {
+      attachments = null;
+    }
     Handler<Void> handler = closeHandler;
     if (handler != null) {
       context.emit(null, handler);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  public synchronized <T> T attachment(Object key) {
+    return attachments != null ? (T) attachments.get(key) : null;
+  }
+
+  public synchronized void attach(Object key, Object value) {
+    if (attachments == null) {
+      attachments = new HashMap<>();
+    }
+    attachments.put(key, value);
   }
 
   private void sendGoAway(QuicStreamChannel controlStream, long streamId, PromiseInternal<Void> promise) {

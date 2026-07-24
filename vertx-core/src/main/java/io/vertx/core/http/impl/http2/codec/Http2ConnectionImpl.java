@@ -43,6 +43,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -74,6 +75,7 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
   private GoAway goAwayStatus;
   private int windowSize;
   private long maxConcurrentStreams;
+  private Map<Object, Object> attachments;
 
   public Http2ConnectionImpl(ContextInternal context, VertxHttp2ConnectionHandler handler) {
     super(context, handler.context());
@@ -87,7 +89,22 @@ abstract class Http2ConnectionImpl extends ConnectionBase implements Http2FrameL
 
   @Override
   public void handleClosed() {
+    synchronized (this) {
+      attachments = null;
+    }
     super.handleClosed();
+  }
+
+  @SuppressWarnings("unchecked")
+  public synchronized <T> T attachment(Object key) {
+    return attachments != null ? (T) attachments.get(key) : null;
+  }
+
+  public synchronized void attach(Object key, Object value) {
+    if (attachments == null) {
+      attachments = new HashMap<>();
+    }
+    attachments.put(key, value);
   }
 
   protected void handleIdle(IdleStateEvent event) {

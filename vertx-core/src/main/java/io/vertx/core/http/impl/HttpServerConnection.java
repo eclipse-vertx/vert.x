@@ -13,13 +13,13 @@ package io.vertx.core.http.impl;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.Headers;
 import io.vertx.core.Handler;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.internal.ContextInternal;
+import io.vertx.core.internal.http.HttpConnectionInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface HttpServerConnection extends HttpConnection {
+public interface HttpServerConnection extends HttpConnectionInternal {
 
   HttpServerConnection streamHandler(Handler<HttpServerStream> handler);
 
