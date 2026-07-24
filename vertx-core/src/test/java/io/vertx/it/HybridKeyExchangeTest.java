@@ -34,6 +34,8 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import io.vertx.core.VertxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.util.List;
@@ -44,6 +46,8 @@ import java.util.concurrent.TimeUnit;
  * Tests PQC key exchange with OpenSSL.
  */
 public class HybridKeyExchangeTest extends HttpTestBase {
+
+  private static final Logger log = LoggerFactory.getLogger(HybridKeyExchangeTest.class);
 
   private static void assumeMlKemAvailable() {
     boolean available = OpenSsl.isAvailable();
@@ -577,6 +581,86 @@ public class HybridKeyExchangeTest extends HttpTestBase {
     }
   }
 
+
+  private static void assumeJdkPqcAvailable() {
+    Assume.assumeTrue("JDK PQC is not available", JdkSSLEngineOptions.isPqcAvailable());
+  }
+
+  @Test
+  public void testStrictPolicyHandshakeJdk() throws Exception {
+    assumeJdkPqcAvailable();
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.SERVER_PEM.get());
+
+    server = vertx.httpServerBuilder()
+      .with(new HttpServerConfig(new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)))
+      .with(new JdkSSLEngineOptions())
+      .with(serverSslOptions)
+      .build();
+    server.requestHandler(req -> req.response().end("jdk-strict-ok"));
+    startServer(server);
+
+    ClientSSLOptions pqcClientSsl = new ClientSSLOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setTrustAll(true);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setSsl(true))
+      .with(new JdkSSLEngineOptions())
+      .with(pqcClientSsl)
+      .build();
+
+    var bodyBuffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .await();
+    assertEquals("jdk-strict-ok", bodyBuffer.toString());
+  }
+
+  @Test
+  public void testStrictPolicyMTLSJdk() throws Exception {
+    assumeJdkPqcAvailable();
+    ServerSSLOptions serverSslOptions = new ServerSSLOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setClientAuth(io.vertx.core.http.ClientAuth.REQUIRED)
+      .setKeyCertOptions(Cert.SERVER_PEM_ROOT_CA.get())
+      .setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
+
+    server = vertx.httpServerBuilder()
+      .with(new HttpServerConfig(new HttpServerOptions()
+        .setPort(DEFAULT_HTTPS_PORT)
+        .setHost(DEFAULT_HTTPS_HOST)))
+      .with(new JdkSSLEngineOptions())
+      .with(serverSslOptions)
+      .build();
+    server.requestHandler(req -> {
+      assertTrue(req.isSSL());
+      req.response().end("jdk-mtls-strict-ok");
+    });
+    startServer(server);
+
+    ClientSSLOptions pqcClientSsl = new ClientSSLOptions()
+      .setPqcEnforcementPolicy(PqcEnforcementPolicy.STRICT)
+      .setKeyCertOptions(Cert.CLIENT_PEM_ROOT_CA.get())
+      .setTrustAll(true);
+    client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setSsl(true))
+      .with(new JdkSSLEngineOptions())
+      .with(pqcClientSsl)
+      .build();
+
+    var buffer = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/")
+      .expecting(req -> req.connection().sslSession().getProtocol().equals("TLSv1.3"))
+      .compose(HttpClientRequest::send)
+      .expecting(HttpResponseExpectation.SC_OK)
+      .compose(HttpClientResponse::body)
+      .await();
+    assertEquals("jdk-mtls-strict-ok", buffer.toString());
+  }
 
   static class ServerHelloGroupExtractor extends ChannelInboundHandlerAdapter {
 
