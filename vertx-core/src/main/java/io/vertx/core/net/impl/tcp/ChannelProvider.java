@@ -229,71 +229,74 @@ public final class ChannelProvider {
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
         java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
-        final ClientSSLOptions proxySslOptions;
-        final io.vertx.core.Future<SslChannelProvider> proxySslProviderFuture;
         if (proxyType == ProxyType.HTTPS) {
-          proxySslOptions = resolveProxySslOptions();
+          ClientSSLOptions proxySslOptions = resolveProxySslOptions();
           List<String> resolvedGroups = SslEngineUtils.resolveKeyExchangeGroups(proxySslOptions.getKeyExchangeGroups(), proxySslOptions.getPqcEnforcementPolicy());
-          proxySslProviderFuture = sslContextManager.resolveSslContextProvider(proxySslOptions, context)
-            .map(p -> new SslChannelProvider(vertx, p, false, resolvedGroups));
-        } else {
-          proxySslOptions = null;
-          proxySslProviderFuture = context.succeededFuture(null);
-        }
-
-        proxySslProviderFuture.onComplete(ar -> {
-          if (ar.failed()) {
-            channelHandler.setFailure(ar.cause());
-            return;
-          }
-          SslChannelProvider proxySslChannelProvider = ar.result();
-          bootstrap.handler(new ChannelInitializer<Channel>() {
-            @Override
-            protected void initChannel(Channel ch) {
-              ChannelPipeline pipeline = ch.pipeline();
-              ChannelInboundHandlerAdapter proxyConnected = new ChannelInboundHandlerAdapter() {
-                @Override
-                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
-                  if (evt instanceof ProxyConnectionEvent) {
-                    pipeline.remove(proxy);
-                    pipeline.remove(this);
-                    initSSL(peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
-                    connected(ch, ssl, channelHandler);
-                  }
-                  ctx.fireUserEventTriggered(evt);
-                }
-
-                @Override
-                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                  channelHandler.setFailure(cause);
-                }
-              };
-              if (proxySslChannelProvider != null) {
-                SslHandler proxySslHandler = proxySslChannelProvider.createClientSslHandler(
-                  HostAndPort.create(proxyHost, proxyPort), proxyHost, null,
-                  proxySslOptions.getSslHandshakeTimeout(), proxySslOptions.getSslHandshakeTimeoutUnit());
-                pipeline.addFirst("proxy-ssl", proxySslHandler);
-                pipeline.addAfter("proxy-ssl", "proxy", proxy);
-              } else {
-                pipeline.addFirst("proxy", proxy);
+          sslContextManager.resolveSslContextProvider(proxySslOptions, context)
+            .map(p -> new SslChannelProvider(vertx, p, false, resolvedGroups))
+            .onComplete(ar -> {
+              if (ar.failed()) {
+                channelHandler.setFailure(ar.cause());
+                return;
               }
-              pipeline.addLast(proxyConnected);
-            }
-          });
-          ChannelFuture future = bootstrap.connect(targetAddress);
-
-          future.addListener(res -> {
-            if (!res.isSuccess()) {
-              channelHandler.setFailure(res.cause());
-            }
-          });
-        });
+              connectViaProxy(ar.result(), proxySslOptions, proxy, proxyHost, proxyPort, targetAddress,
+                peerAddress, serverName, ssl, sslOptions, channelHandler);
+            });
+        } else {
+          connectViaProxy(null, null, proxy, proxyHost, proxyPort, targetAddress,
+            peerAddress, serverName, ssl, sslOptions, channelHandler);
+        }
       } else {
         channelHandler.setFailure(dnsRes.cause());
       }
     });
   }
 
+  private void connectViaProxy(SslChannelProvider proxySslChannelProvider, ClientSSLOptions proxySslOptions,
+                               ProxyHandler proxy, String proxyHost, int proxyPort, java.net.SocketAddress targetAddress,
+                               HostAndPort peerAddress, String serverName, boolean ssl, ClientSSLOptions sslOptions,
+                               Promise<Channel> channelHandler) {
+    bootstrap.handler(new ChannelInitializer<Channel>() {
+      @Override
+      protected void initChannel(Channel ch) {
+        ChannelPipeline pipeline = ch.pipeline();
+        ChannelInboundHandlerAdapter proxyConnected = new ChannelInboundHandlerAdapter() {
+          @Override
+          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+            if (evt instanceof ProxyConnectionEvent) {
+              pipeline.remove(proxy);
+              pipeline.remove(this);
+              initSSL(peerAddress, serverName, ssl, sslOptions, ch, channelHandler);
+              connected(ch, ssl, channelHandler);
+            }
+            ctx.fireUserEventTriggered(evt);
+          }
+
+          @Override
+          public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            channelHandler.setFailure(cause);
+          }
+        };
+        if (proxySslChannelProvider != null) {
+          SslHandler proxySslHandler = proxySslChannelProvider.createClientSslHandler(
+            HostAndPort.create(proxyHost, proxyPort), proxyHost, null,
+            proxySslOptions.getSslHandshakeTimeout(), proxySslOptions.getSslHandshakeTimeoutUnit());
+          pipeline.addFirst("proxy-ssl", proxySslHandler);
+          pipeline.addAfter("proxy-ssl", "proxy", proxy);
+        } else {
+          pipeline.addFirst("proxy", proxy);
+        }
+        pipeline.addLast(proxyConnected);
+      }
+    });
+    ChannelFuture future = bootstrap.connect(targetAddress);
+
+    future.addListener(res -> {
+      if (!res.isSuccess()) {
+        channelHandler.setFailure(res.cause());
+      }
+    });
+  }
 
   private ClientSSLOptions resolveProxySslOptions() {
     ClientSSLOptions proxySslOptions = proxyOptions.getSslOptions();

@@ -34,16 +34,18 @@ import org.junit.Rule;
 import org.junit.Test;
 
 /**
- * The invariant: {@code connection.isSsl()} must be identical whether a connection is direct, via an
- * HTTP proxy, or via an HTTPS proxy. The proxy is a transport detail and must not change
- * {@code isSsl()} — it reports whether the ORIGIN connection is encrypted.
+ * The invariant: {@code connection.isSsl()} reports whether the ORIGIN connection is encrypted, so it
+ * must equal the origin's TLS setting whether the connection is direct, via an HTTP proxy, or via an
+ * HTTPS proxy. The proxy is a transport detail and must not change {@code isSsl()} — in particular the
+ * TLS leg to an HTTPS proxy must not make a plaintext origin look encrypted.
  *
  * <p>Each test starts one origin, then opens a connection direct and a connection through the proxy of
- * the method's {@link WithProxy} kind, and asserts the two {@code isSsl()} values are equal.
- * {@code @WithProxy} selects one proxy kind per method, so there are two tests per case (HTTP proxy and
- * HTTPS proxy). Origins are cleaned up by {@code tearDown} (vertx close), like other {@link HttpTestBase}
- * tests; the per-type client logic ({@link #connectNetSocket}, {@link #connectHttp},
- * {@link #connectWebSocket}) is reused across cases.
+ * the method's {@link WithProxy} kind, and asserts that both report the origin's TLS setting. The direct
+ * connection is the control: on failure it tells a proxy regression apart from one that was already
+ * broken without a proxy. {@code @WithProxy} selects one proxy kind per method, so there are two tests
+ * per case (HTTP proxy and HTTPS proxy). Origins are cleaned up by {@code tearDown} (vertx close), like
+ * other {@link HttpTestBase} tests; the per-type client logic ({@link #connectNetSocket},
+ * {@link #connectHttp}, {@link #connectWebSocket}) is reused across cases.
  *
  * <p>Covers the four main proxy-capable connection types (NetSocket, HTTP/1, HTTP/2, WebSocket)
  * against a plain and a TLS origin.
@@ -147,7 +149,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startNetOrigin(false);
     boolean isSslDirect = connectNetSocket(false, null);
     boolean isSslViaProxy = connectNetSocket(false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -156,7 +159,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startNetOrigin(false);
     boolean isSslDirect = connectNetSocket(false, null);
     boolean isSslViaProxy = connectNetSocket(false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -165,7 +169,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startNetOrigin(true);
     boolean isSslDirect = connectNetSocket(true, null);
     boolean isSslViaProxy = connectNetSocket(true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   @Test
@@ -174,7 +179,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startNetOrigin(true);
     boolean isSslDirect = connectNetSocket(true, null);
     boolean isSslViaProxy = connectNetSocket(true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   // --- HTTP/1 ---------------------------------------------------------------
@@ -185,7 +191,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_1_1, false);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_1_1, false, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_1_1, false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -194,7 +201,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_1_1, false);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_1_1, false, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_1_1, false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -203,7 +211,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_1_1, true);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_1_1, true, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_1_1, true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   @Test
@@ -212,7 +221,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_1_1, true);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_1_1, true, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_1_1, true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   // --- HTTP/2 ---------------------------------------------------------------
@@ -223,7 +233,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_2, false);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_2, false, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_2, false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -232,7 +243,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_2, false);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_2, false, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_2, false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -241,7 +253,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_2, true);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_2, true, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_2, true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   @Test
@@ -250,7 +263,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startHttpOrigin(HttpVersion.HTTP_2, true);
     boolean isSslDirect = connectHttp(HttpVersion.HTTP_2, true, null);
     boolean isSslViaProxy = connectHttp(HttpVersion.HTTP_2, true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   // --- WebSocket ------------------------------------------------------------
@@ -261,7 +275,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startWebSocketOrigin(false);
     boolean isSslDirect = connectWebSocket(false, null);
     boolean isSslViaProxy = connectWebSocket(false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -270,7 +285,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startWebSocketOrigin(false);
     boolean isSslDirect = connectWebSocket(false, null);
     boolean isSslViaProxy = connectWebSocket(false, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertFalse(isSslDirect);
+    assertFalse(isSslViaProxy);
   }
 
   @Test
@@ -279,7 +295,8 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startWebSocketOrigin(true);
     boolean isSslDirect = connectWebSocket(true, null);
     boolean isSslViaProxy = connectWebSocket(true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 
   @Test
@@ -288,6 +305,7 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     startWebSocketOrigin(true);
     boolean isSslDirect = connectWebSocket(true, null);
     boolean isSslViaProxy = connectWebSocket(true, proxy.options());
-    assertEquals(isSslDirect, isSslViaProxy);
+    assertTrue(isSslDirect);
+    assertTrue(isSslViaProxy);
   }
 }

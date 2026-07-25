@@ -52,8 +52,12 @@ public class HttpsProxyTest extends HttpTestBase {
   @Rule
   public Proxy proxy = new Proxy();
 
+  // The origin echoes the TLS status of its own (leg 2) connection, so that tests assert the origin view
+  // and not only the client one: leg 1 being TLS must not make a plain origin look encrypted, and a
+  // tunnelled TLS origin must still see its own TLS.
+
   private void startHttpOrigin() throws Exception {
-    server.requestHandler(req -> req.response().end("Hello from origin"));
+    server.requestHandler(req -> req.response().end("Hello from origin ssl=" + req.isSSL()));
     startServer();
   }
 
@@ -62,7 +66,7 @@ public class HttpsProxyTest extends HttpTestBase {
       .setSsl(true)
       .setUseAlpn(version == HttpVersion.HTTP_2)
       .setKeyCertOptions(Cert.SERVER_JKS.get()));
-    server.requestHandler(req -> req.response().end("Hello from origin"));
+    server.requestHandler(req -> req.response().end("Hello from origin ssl=" + req.isSSL()));
     startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
   }
 
@@ -87,7 +91,7 @@ public class HttpsProxyTest extends HttpTestBase {
       .compose(HttpClientResponse::body)
       .await();
 
-    assertEquals("Hello from origin", body.toString());
+    assertEquals("Hello from origin ssl=false", body.toString());
     // Plain origin: the proxy GET-forwards (it sees the absolute URI), it does not CONNECT.
     assertEquals(HttpMethod.GET, proxy.lastMethod());
     assertNotNull(proxy.lastUri());
@@ -110,7 +114,7 @@ public class HttpsProxyTest extends HttpTestBase {
       .compose(HttpClientResponse::body)
       .await();
 
-    assertEquals("Hello from origin", body.toString());
+    assertEquals("Hello from origin ssl=true", body.toString());
     // TLS origin: nested TLS through the CONNECT tunnel (the proxy never sees the encrypted request).
     assertEquals(HttpMethod.CONNECT, proxy.lastMethod());
   }
@@ -135,7 +139,7 @@ public class HttpsProxyTest extends HttpTestBase {
       .await();
 
     // h2 rides the CONNECT tunnel for free; ALPN negotiates h2 end-to-end with the origin.
-    assertEquals(HttpVersion.HTTP_2 + ":Hello from origin", result);
+    assertEquals(HttpVersion.HTTP_2 + ":Hello from origin ssl=true", result);
     assertEquals(HttpMethod.CONNECT, proxy.lastMethod());
   }
 
@@ -156,7 +160,7 @@ public class HttpsProxyTest extends HttpTestBase {
 
     // SC_OK proves the Basic Proxy-Authorization (sent inside the established leg-1 TLS) was accepted;
     // the proxy returns 407 on missing/incorrect credentials.
-    assertEquals("Hello from origin", body.toString());
+    assertEquals("Hello from origin ssl=false", body.toString());
   }
 
   @Test
@@ -177,7 +181,7 @@ public class HttpsProxyTest extends HttpTestBase {
       .compose(HttpClientResponse::body)
       .await();
 
-    assertEquals("Hello from origin", body.toString());
+    assertEquals("Hello from origin ssl=false", body.toString());
   }
 
   @Test

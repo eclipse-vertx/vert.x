@@ -103,10 +103,12 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
     this.protocol = protocol;
   }
 
-  protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
+  protected void initChannel(ChannelPipeline pipeline) {
     if (logging != null) {
       pipeline.addLast("logging", new LoggingHandler(logging));
     }
+    // The origin can be plaintext while the channel is still TLS wrapped, e.g. when tunnelling through an
+    // HTTPS proxy, so the file region support is decided from the pipeline rather than from the origin.
     boolean sslChannel = pipeline.get(SslHandler.class) != null;
     if (sslChannel || !vertx.transport().supportFileRegion()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
@@ -375,7 +377,6 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
             future.getNow(),
             connectHandler,
             captured,
-            connectOptions.isSsl(),
             registerWriteHandlers);
         } else {
           failed(context, null, future.cause(), connectHandler);
@@ -391,10 +392,9 @@ public class NetClientImpl implements NetClientInternal, CleanableResource<NetCl
                          Channel ch,
                          Promise<NetSocket> connectHandler,
                          SocketAddress remoteAddress,
-                         boolean ssl,
                          boolean registerWriteHandlers) {
     channelGroup.add(ch);
-    initChannel(ch.pipeline(), ssl);
+    initChannel(ch.pipeline());
     VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(
       context,
       ctx,
