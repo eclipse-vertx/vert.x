@@ -38,7 +38,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 
 import javax.net.ssl.SSLSession;
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +57,7 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   private final ClientMetrics<?, ?, ?> clientMetrics;
   private io.vertx.core.http.impl.HttpClientConnection current;
   private boolean upgradeProcessed;
-  private Map<Object, Object> attachments;
+  private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
 
   private Handler<Void> closeHandler;
   private Handler<Void> shutdownHandler;
@@ -785,9 +785,9 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
   }
 
   private void handleClosed(Void event) {
+    attachments.clear();
     Handler<Void> handler;
     synchronized (this) {
-      attachments = null;
       handler = closeHandler;
     }
     if (handler != null) {
@@ -927,15 +927,12 @@ public class Http2UpgradeClientConnection implements io.vertx.core.http.impl.Htt
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T> T attachment(Object key) {
-    return attachments != null ? (T) attachments.get(key) : null;
+  public <T> T attachment(Object key) {
+    return (T) attachments.get(key);
   }
 
   @Override
-  public synchronized void attach(Object key, Object value) {
-    if (attachments == null) {
-      attachments = new HashMap<>();
-    }
+  public void attach(Object key, Object value) {
     attachments.put(key, value);
   }
 

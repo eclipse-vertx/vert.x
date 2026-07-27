@@ -55,7 +55,7 @@ import io.vertx.core.spi.metrics.TransportMetrics;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -71,7 +71,7 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
   private Handler<Void> shutdownHandler;
   private Handler<GoAway> goAwayHandler;
   private Handler<Buffer> pingHandler;
-  private Map<Object, Object> attachments;
+  private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
 
   public Http2MultiplexConnection(Http2MultiplexHandler handler, TransportMetrics<?> transportMetrics, ChannelHandlerContext chctx, ContextInternal context) {
     super(context, chctx);
@@ -423,21 +423,16 @@ public abstract class Http2MultiplexConnection<S extends Http2Stream> extends Co
 
   @Override
   protected void handleClosed() {
-    synchronized (this) {
-      attachments = null;
-    }
+    attachments.clear();
     super.handleClosed();
   }
 
   @SuppressWarnings("unchecked")
-  public synchronized <T> T attachment(Object key) {
-    return attachments != null ? (T) attachments.get(key) : null;
+  public <T> T attachment(Object key) {
+    return (T) attachments.get(key);
   }
 
-  public synchronized void attach(Object key, Object value) {
-    if (attachments == null) {
-      attachments = new HashMap<>();
-    }
+  public void attach(Object key, Object value) {
     attachments.put(key, value);
   }
 
