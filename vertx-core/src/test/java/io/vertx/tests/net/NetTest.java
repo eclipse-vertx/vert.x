@@ -3728,43 +3728,38 @@ public class NetTest {
   }
 
   private void testIdleTimeoutSendChunkedFile(Checkpoint checkpoint, boolean idleOnServer) throws Exception {
-    int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
-    File sent = TestUtils.tmpFile(".dat", expected);
-    AtomicReference<AsyncResult<Void>> sendResult = new AtomicReference<>();
-    AtomicReference<Integer> remaining = new AtomicReference<>();
+    int expected = 2 * 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
+    File file = TestUtils.tmpFile(".dat", expected);
     AtomicLong now = new AtomicLong();
-    Runnable testChecker = () -> {
-      if (sendResult.get() != null && remaining.get() != null) {
-        if (remaining.get() > 0) {
-          // It might fail sometimes
-          assertTrue(sendResult.get().failed());
-        } else {
-          assertTrue(sendResult.get().succeeded());
-          assertTrue(System.currentTimeMillis() - now.get() > 200);
-        }
-        checkpoint.succeed();
-      }
-    };
     Consumer<NetSocket> sender = so -> {
-      so.sendFile(sent.getAbsolutePath()).onComplete(ar -> {
-        sendResult.set(ar);
-        testChecker.run();
+      ChannelPipeline pipeline = ((NetSocketInternal) so).channelHandlerContext().pipeline();
+      AtomicInteger sent = new AtomicInteger();
+      pipeline.addFirst(new ChannelOutboundHandlerAdapter() {
+        @Override
+        public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+          if (msg instanceof FileRegion) {
+            int len = (int)((FileRegion)msg).count();
+            promise.addListener((ChannelFutureListener) future -> {
+              if (future.isSuccess()) {
+                sent.addAndGet(len);
+              }
+            });
+          }
+          super.write(ctx, msg, promise);
+        }
       });
+      so
+        .sendFile(file.getAbsolutePath())
+        .onComplete(ar -> {
+          assertTrue(ar.failed());
+          assertTrue(sent.get() > 0);
+          checkpoint.succeed();
+        });
     };
     Consumer<NetSocket> receiver = so -> {
       now.set(System.currentTimeMillis());
-      int[] len = { 0 };
       so.handler(buff -> {
-        len[0] += buff.length();
         so.pause();
-        vertx.setTimer(1, id -> {
-          so.resume();
-        });
-      });
-      so.exceptionHandler(err -> fail(err.getMessage()));
-      so.endHandler(v -> {
-        remaining.set(expected - len[0]);
-        testChecker.run();
       });
     };
     server = vertx
