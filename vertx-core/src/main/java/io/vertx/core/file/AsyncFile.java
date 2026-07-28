@@ -16,7 +16,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -247,8 +246,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
         try {
           res = block.get();
         } catch (Exception e) {
-          lock.release();
-          throw new VertxException(e);
+          res = Future.failedFuture(e);
         }
         return res.eventually(() -> lock.release());
       });
