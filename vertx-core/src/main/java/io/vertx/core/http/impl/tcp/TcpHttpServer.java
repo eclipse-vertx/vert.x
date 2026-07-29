@@ -29,7 +29,9 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -223,6 +225,7 @@ public class TcpHttpServer implements HttpServerInternal {
     QueryParamDecoderConfig queryParamDecoderConfig = config.getQueryParamConfig() != null ? config.getQueryParamConfig() : new QueryParamDecoderConfig();
     Http1ServerConfig http1Config = config.getVersions().contains(HttpVersion.HTTP_1_0) || config.getVersions().contains(HttpVersion.HTTP_1_1) ? config.getHttp1Config() != null ? config.getHttp1Config() : new Http1ServerConfig() : null;
     Http2ServerConfig http2Config = config.getVersions().contains(HttpVersion.HTTP_2) ? config.getHttp2Config() != null ? config.getHttp2Config() : new Http2ServerConfig() : null;
+    Set<HttpVersion> versions = EnumSet.copyOf(config.getVersions());
     server.connectHandler(so -> {
       NetSocketImpl soi = (NetSocketImpl) so;
       Supplier<ContextInternal> streamContextSupplier = context::duplicate;
@@ -231,6 +234,7 @@ public class TcpHttpServer implements HttpServerInternal {
       String serverOrigin = (ssl ? "https" : "http") + "://" + host + ":" + port;
       HttpServerConnectionHandler handler = new HttpServerConnectionHandler(
         this,
+        versions,
         serverOrigin,
         requestHandler,
         invalidRequestHandler,

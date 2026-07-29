@@ -12,10 +12,13 @@ package io.vertx.core.http.impl.http1;
 
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.ServerWebSocketHandshake;
 import io.vertx.core.http.impl.tcp.HttpServerConnectionHandler;
 import io.vertx.core.http.impl.websocket.ServerWebSocketHandshaker;
+
+import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
@@ -32,9 +35,11 @@ import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
  */
 public class Http1ServerRequestHandler implements Handler<HttpServerRequest> {
 
+  private final Set<HttpVersion> versions;
   private final HttpServerConnectionHandler handlers;
 
-  public Http1ServerRequestHandler(HttpServerConnectionHandler handlers) {
+  public Http1ServerRequestHandler(Set<HttpVersion> versions, HttpServerConnectionHandler handlers) {
+    this.versions = versions;
     this.handlers = handlers;
   }
 
@@ -66,7 +71,7 @@ public class Http1ServerRequestHandler implements Handler<HttpServerRequest> {
           req.response().setStatusCode(400).end();
         }
       }
-    } else if (req.version() == null) {
+    } else if (req.version() == null || !versions.contains(req.version())) {
       // Invalid HTTP version, i.e not HTTP/1.1 or HTTP/1.0
       req.response().setStatusCode(501).end();
       req.connection().close();
