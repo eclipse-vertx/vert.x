@@ -28,7 +28,7 @@ public class HttpClientConfigTest {
     assertNull(config.getHttp2Config());
     assertNull(config.getHttp3Config());
     assertFalse(config.isSsl());
-    assertEquals(List.of(HTTP_1_1, HTTP_2), config.getVersions());
+    assertEquals(List.of(HTTP_1_1, HTTP_1_0, HTTP_2), config.getVersions());
   }
 
   @Test
@@ -38,7 +38,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
     assertFalse(config.isSsl());
-    assertEquals(List.of(HTTP_1_1), config.getVersions());
+    assertEquals(List.of(HTTP_1_1, HTTP_1_0), config.getVersions());
   }
 
   @Test
@@ -48,7 +48,7 @@ public class HttpClientConfigTest {
     assertNotNull(config.getHttp2Config());
     assertNotNull(config.getHttp3Config());
     assertFalse(config.isSsl());
-    assertEquals(List.of(HTTP_2, HTTP_1_1), config.getVersions());
+    assertEquals(List.of(HTTP_2, HTTP_1_1, HTTP_1_0), config.getVersions());
   }
 
   @Test

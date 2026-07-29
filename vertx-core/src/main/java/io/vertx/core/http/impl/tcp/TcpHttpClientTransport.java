@@ -215,10 +215,33 @@ public class TcpHttpClientTransport implements HttpClientTransport {
         case "http/1.1":
         case "http/1.0":
         case "":
+          HttpVersion version;
           if (http1Config != null) {
+            switch (protocol) {
+              case "http/1.1":
+                version = HttpVersion.HTTP_1_1;
+                break;
+              case "http/1.0":
+                version = HttpVersion.HTTP_1_0;
+                break;
+              default:
+                // Empty string - no ALPN
+                // pick the first compatible protocol
+                version = null;
+                for (HttpVersion p : params.protocols) {
+                  if (p == HttpVersion.HTTP_1_1 || p == HttpVersion.HTTP_1_0) {
+                    version = p;
+                    break;
+                  }
+                }
+                break;
+            }
+          } else {
+            version = null;
+          }
+          if (version != null) {
             applyHttp1xConnectionOptions(ch.pipeline());
-            HttpVersion version = "http/1.0".equals(protocol) ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-            http1xConnected(version, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
+            http1xConnected(version, false, server, authority, true, context, transportMetrics, metric, ch, clientMetrics, promise);
           } else {
             so.close();
             promise.tryFail(new IllegalStateException("HTTP/1.1 not supported"));
@@ -233,14 +256,14 @@ public class TcpHttpClientTransport implements HttpClientTransport {
       if (params.protocols.get(0) == HttpVersion.HTTP_2) {
         if (http2Config.isClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
-          http1xConnected(HttpVersion.HTTP_2, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
+          http1xConnected(HttpVersion.HTTP_2, true, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
         } else {
           applyHttp2ConnectionOptions(pipeline);
           http2Connected(context, authority, transportMetrics, metric, ch, clientMetrics, promise);
         }
       } else {
         applyHttp1xConnectionOptions(pipeline);
-        http1xConnected(params.protocols.get(0), server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
+        http1xConnected(params.protocols.get(0), false, server, authority, false, context, transportMetrics, metric, ch, clientMetrics, promise);
       }
     }
     return promise.future();
@@ -318,6 +341,7 @@ public class TcpHttpClientTransport implements HttpClientTransport {
   }
 
   private void http1xConnected(HttpVersion version,
+                               boolean upgrade,
                                SocketAddress server,
                                HostAndPort authority,
                                boolean ssl,
@@ -327,7 +351,6 @@ public class TcpHttpClientTransport implements HttpClientTransport {
                                Channel ch,
                                ClientMetrics clientMetrics,
                                Promise<HttpClientConnection> future) {
-    boolean upgrade = version == HttpVersion.HTTP_2 && http2Config.isClearTextUpgrade();
     VertxHandler<Http1ClientConnection> clientHandler = VertxHandler.create(chctx -> {
       Http1ClientConnection conn = new Http1ClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, webSocketMetrics, transportMetrics,
         http1Config, tracingPolicy, useDecompression, chctx, ssl, server, authority, context, clientMetrics);
