@@ -212,7 +212,12 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         if (transport instanceof TcpHttpClientTransport) {
           int http1MaxSize = poolOptions.getHttp1MaxSize();
           int http2MaxSize = poolOptions.getHttp2MaxSize();
-          int initialPoolKind = protocol == HttpVersion.HTTP_1_1 || protocol == HttpVersion.HTTP_1_0 ? 0 : 1;
+          int initialPoolKind;
+          if (protocol == null) {
+            initialPoolKind = versions.contains(HttpVersion.HTTP_2) ? 1 : 0;
+          } else {
+            initialPoolKind = protocol == HttpVersion.HTTP_1_1 || protocol == HttpVersion.HTTP_1_0 ? 0 : 1;
+          }
           return new SharedHttpClientConnectionGroup.Pool(group, transport, queueMaxSize, http1MaxSize, http2MaxSize, maxLifetime, initialPoolKind, params, contextProvider);
         } else {
           int http3MaxSize = poolOptions.getHttp3MaxSize();
@@ -382,6 +387,9 @@ public class HttpClientImpl extends HttpClientBase implements HttpClientInternal
         transport = quicTransport;
       }
     } else {
+      if (!versions.contains(version)) {
+        return vertx.failedFuture("Requested HTTP version " + version + " unsupported by this client " + versions);
+      }
       switch (version) {
         case HTTP_1_0:
         case HTTP_1_1:

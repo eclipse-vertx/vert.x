@@ -33,7 +33,7 @@ public class HttpServerConfig {
    */
   public static final int DEFAULT_HTTP3_PORT = 443;
 
-  public static final Set<HttpVersion> DEFAULT_VERSIONS = Collections.unmodifiableSet(EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2));
+  public static final Set<HttpVersion> DEFAULT_VERSIONS = Collections.unmodifiableSet(EnumSet.of(HttpVersion.HTTP_1_0, HttpVersion.HTTP_1_1, HttpVersion.HTTP_2));
 
   public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10_485_760L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 0L;
@@ -103,12 +103,12 @@ public class HttpServerConfig {
       if (options.isUseAlpn()) {
         versions = EnumSet.copyOf(options.getAlpnVersions());
       } else {
-        versions = EnumSet.of(HttpVersion.HTTP_1_1);
+        versions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_0);
       }
     } else if (options.isHttp2ClearTextEnabled()) {
       versions = EnumSet.copyOf(DEFAULT_VERSIONS);
     } else {
-      versions = EnumSet.of(HttpVersion.HTTP_1_1);
+      versions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_0);
     }
 
     ObservabilityConfig observabilityConfig = null;
@@ -146,10 +146,10 @@ public class HttpServerConfig {
   }
 
   /**
-   * Create a default configuration of a server accepting HTTP/1.1 and HTTP/2 protocols.
+   * Create a default configuration of a server accepting HTTP/1.0, HTTP/1.1 and HTTP/2 protocols.
    */
   public HttpServerConfig() {
-    this.versions = EnumSet.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+    this.versions = EnumSet.copyOf(DEFAULT_VERSIONS);
     this.formDecoderConfig = null;
     this.queryParamDecoderConfig = null;
     this.handle100ContinueAutomatically = HttpServerOptions.DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;

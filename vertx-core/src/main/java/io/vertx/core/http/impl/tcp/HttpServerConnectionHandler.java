@@ -28,6 +28,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.QueryParamDecoder;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * HTTP server connection handler.
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 public class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
 
   public final TcpHttpServer server;
+  public final Set<HttpVersion> versions;
   public final String serverOrigin;
   public final Handler<HttpServerRequest> requestHandler;
   public final Handler<HttpServerRequest> invalidRequestHandler;
@@ -49,6 +51,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
 
   public HttpServerConnectionHandler(
     TcpHttpServer server,
+    Set<HttpVersion> versions,
     String serverOrigin,
     Handler<HttpServerRequest> requestHandler,
     Handler<HttpServerRequest> invalidRequestHandler,
@@ -58,6 +61,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     Handler<Throwable> exceptionHandler,
     int connectionWindowSize) {
     this.server = server;
+    this.versions = versions;
     this.serverOrigin = serverOrigin;
     this.requestHandler = requestHandler;
     this.invalidRequestHandler = invalidRequestHandler == null ? HttpServerRequest.DEFAULT_INVALID_REQUEST_HANDLER : invalidRequestHandler;
@@ -77,7 +81,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
       // some casting and a header check
     } else {
       if (conn instanceof Http1ServerConnection) {
-        requestHandler =  new Http1ServerRequestHandler(this);
+        requestHandler =  new Http1ServerRequestHandler(versions, this);
         Http1ServerConnection c = (Http1ServerConnection) conn;
         initializeWebSocketExtensions(c.channelHandlerContext().pipeline());
       }

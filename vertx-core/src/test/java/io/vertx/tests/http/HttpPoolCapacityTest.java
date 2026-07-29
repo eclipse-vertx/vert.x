@@ -1,13 +1,6 @@
 package io.vertx.tests.http;
 
-import io.vertx.core.http.Http2Settings;
-import io.vertx.core.http.HttpClientAgent;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.PoolOptions;
+import io.vertx.core.http.*;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.http.HttpConfigurator;
 import org.junit.Test;
