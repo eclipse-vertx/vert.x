@@ -144,7 +144,7 @@ Since Vert.x 5.1, Jackson 3 is supported and utilized when Jackson 2 is not avai
 [IMPORTANT]
 ====
 Vert.x has a transitive dependency on `com.fasterxml.jackson.core:jackson-core` (Jackson 2).
-When using Jackson 3 (`tools.jackson.core`), you must explicitly exclude that transitive dependency from `vertx-core` to avoid having both Jackson 2 and Jackson 3 on the classpath simultaneously.
+When using Jackson 3 (`tools.jackson.core`), you must explicitly exclude that transitive dependency from `vertx-core` to avoid having both Jackson 2 and Jackson 3 on the classpath (or module path) simultaneously.
 
 * Maven (in your `pom.xml`):
 
