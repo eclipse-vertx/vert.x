@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Configuration of a {@link HttpClient}
@@ -39,9 +40,9 @@ public class HttpClientConfig {
       case HTTP_1_0:
         return List.of(HttpVersion.HTTP_1_0);
       case HTTP_1_1:
-        return List.of(HttpVersion.HTTP_1_1);
+        return List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_0);
       case HTTP_2:
-        return List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
+        return List.of(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_0);
       default:
         throw new IllegalArgumentException();
     }
@@ -58,7 +59,7 @@ public class HttpClientConfig {
     return config;
   }
 
-  public static final List<HttpVersion> DEFAULT_SUPPORTED_VERSIONS = List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_2);
+  public static final List<HttpVersion> DEFAULT_SUPPORTED_VERSIONS = List.of(HttpVersion.HTTP_1_1, HttpVersion.HTTP_1_0, HttpVersion.HTTP_2);
   public static final long DEFAULT_QUIC_INITIAL_MAX_DATA = 10_485_760L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL = 1_048_576L;
   public static final long DEFAULT_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE = 0L;
@@ -141,10 +142,25 @@ public class HttpClientConfig {
       redirectConfig.setSameOriginBlockedHeaders(options.getSameOriginRedirectBlockedHeaders());
     }
 
+    List<HttpVersion> versions;
+    ClientSSLOptions sslOptions = options.getSslOptions();
+    if (sslOptions == null || !sslOptions.isUseAlpn() || sslOptions.getApplicationLayerProtocols().isEmpty()) {
+      versions = new ArrayList<>(toSupportedVersion(options.getProtocolVersion()));
+    } else {
+      versions = sslOptions.getApplicationLayerProtocols()
+        .stream()
+        .map(HttpVersion::fromAlpnName)
+        .collect(Collectors.toList());
+      if (!versions.contains(options.getProtocolVersion())) {
+        throw new IllegalArgumentException("Default HTTP client version " + options.getProtocolVersion() +
+          " does not belong to the ALPN protocol version list " + versions);
+      }
+    }
+
     this.tcpConfig = new TcpClientConfig(options);
     this.quicConfig = defaultQuicConfig();
     this.ssl = options.isSsl();
-    this.versions = new ArrayList<>(toSupportedVersion(options.getProtocolVersion()));
+    this.versions = versions;
     this.http1Config = options.getHttp1Config();
     this.http2Config = options.getHttp2Config();
     this.http3Config = new Http3ClientConfig();
