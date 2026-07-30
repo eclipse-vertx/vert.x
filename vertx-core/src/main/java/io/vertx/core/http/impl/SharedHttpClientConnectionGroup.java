@@ -121,7 +121,7 @@ class SharedHttpClientConnectionGroup extends ManagedResource {
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
           pool.pool.cancel(waiter, (res, err) -> {
-            if (err == null & res)
+            if (err == null && res)
               promise.fail(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + server));
             });
         });
