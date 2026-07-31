@@ -19,6 +19,7 @@ import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
@@ -248,7 +249,36 @@ public class VertxTest extends VertxTestBase {
     } finally {
       vertx.close().await();
     }
+  }
 
+  @Test
+  public void testFinalizeHttpClientRegisteredWithCloseHook() {
+    Vertx vertx = Vertx.vertx();
+
+    try {
+
+      AtomicReference<HttpClientInternal> ref = new AtomicReference<>();
+
+      String id = vertx.deployVerticle(context -> {
+        HttpClientInternal client = (HttpClientInternal) vertx.createHttpClient();
+        ref.set(client);
+        return Future.succeededFuture();
+      }).await();
+
+      HttpClientInternal proxy = ref.getAndSet(null);
+      Assert.assertNotNull(proxy);
+      HttpClientInternal real = proxy.unwrap();
+      WeakReference<HttpClientInternal> realWeakRef = new WeakReference<>(real);
+      real = null;
+      proxy.close().await();
+      runGC();
+      Assert.assertNull(realWeakRef.get());
+      vertx.undeploy(id).await();
+      runGC();
+      Assert.assertNull(realWeakRef.get());
+    } finally {
+      vertx.close().await();
+    }
   }
 
   @Test
@@ -400,7 +430,7 @@ public class VertxTest extends VertxTestBase {
   }
 
   @Test
-  public void testStickContextFinalization() throws Exception {
+  public void testStickyContextFinalization() throws Exception {
     Vertx vertx = vertx();
     try {
       AtomicReference<WeakReference<Context>> ref = new AtomicReference<>();
