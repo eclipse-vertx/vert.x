@@ -22,7 +22,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.CleanableResource;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
@@ -54,7 +54,7 @@ import java.util.function.Supplier;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class NetClientImpl implements NetClientInternal, CleanableResource<NetClientInternal> {
+public class NetClientImpl implements NetClientInternal, CloseableResource<NetClientInternal> {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
   protected final Duration idleTimeout;

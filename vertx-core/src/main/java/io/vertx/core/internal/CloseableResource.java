@@ -8,18 +8,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.impl;
+package io.vertx.core.internal;
 
 import io.vertx.core.Future;
 
 import java.time.Duration;
 
 /**
- * Cleanable resource.
+ * Closeable resource.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface CleanableResource<T> {
+public interface CloseableResource<T> {
 
   /**
    * @return the actual resource

@@ -11,16 +11,17 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Completable;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.internal.CloseFuture;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.shareddata.Shareable;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 class SharedResourceHolder<C> implements Shareable {
@@ -29,66 +30,56 @@ class SharedResourceHolder<C> implements Shareable {
     LocalMap<String, SharedResourceHolder<C>> localMap = vertx.sharedData().getLocalMap(resourceKey);
     ArrayList<SharedResourceHolder<C>> values = new ArrayList<>(localMap.values());
     localMap.clear();
-    return values.stream().map(sc -> sc.resource).collect(Collectors.toList());
+    return values.stream().map(sc -> sc.resource.get()).collect(Collectors.toList());
   }
 
-  static <R> R createSharedResource(Vertx vertx, String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, R> supplier) {
+  static <R> CloseableResource<R> createSharedResource(Vertx vertx, String resourceKey, String resourceName, Supplier<CloseableResource<R>> supplier) {
     LocalMap<String, SharedResourceHolder<R>> localMap = vertx.sharedData().getLocalMap(resourceKey);
     SharedResourceHolder<R> v = localMap.compute(resourceName, (key, value) -> {
       if (value == null) {
-        Hook<R> hook = new Hook<>(vertx, resourceKey, resourceName);
-        R resource = supplier.apply(hook.closeFuture);
-        return new SharedResourceHolder<>(hook, 1, resource);
+        CloseableResource<R> resource = supplier.get();
+        return new SharedResourceHolder<>(1, resource);
       } else {
-        return new SharedResourceHolder<>(value.hook, value.count + 1, value.resource);
+        return new SharedResourceHolder<>(value.count + 1, value.resource);
       }
     });
-    R resource = v.resource;
-    closeFuture.add(v.hook);
-    return resource;
+    CloseableResource<R> resource = v.resource;
+    return new CloseableResource<>() {
+      final AtomicBoolean shutdown = new AtomicBoolean();
+      @Override
+      public R get() {
+        return resource.get();
+      }
+      @Override
+      public Future<Void> shutdown(Duration duration) {
+        if ( (shutdown.compareAndSet(false, true))) {
+          LocalMap<String, SharedResourceHolder<R>> localMap1 = vertx.sharedData().getLocalMap(resourceKey);
+          SharedResourceHolder<R> res = localMap1.compute(resourceName, (key, value) -> {
+            if (value == null) {
+              return null; // Should never happen unless bug
+            } else if (value.count == 1) {
+              return null;
+            } else {
+              return new SharedResourceHolder<>(value.count - 1, value.resource);
+            }
+          });
+          if (res == null) {
+            return resource.shutdown(duration);
+          } else {
+            return Future.succeededFuture();
+          }
+        } else {
+          return Future.succeededFuture();
+        }
+      }
+    };
   }
 
-  final Hook<C> hook;
   final int count;
-  final C resource;
+  final CloseableResource<C> resource;
 
-  SharedResourceHolder(Hook<C> hook, int count, C resource) {
-    this.hook = hook;
+  SharedResourceHolder(int count, CloseableResource<C> resource) {
     this.count = count;
     this.resource = resource;
-  }
-
-  private static class Hook<C> implements Closeable {
-
-    private final Vertx vertx;
-    private final CloseFuture closeFuture;
-    private final String resourceKey;
-    private final String resourceName;
-
-    private Hook(Vertx vertx, String resourceKey, String resourceName) {
-      this.vertx = vertx;
-      this.closeFuture = new CloseFuture();
-      this.resourceKey = resourceKey;
-      this.resourceName = resourceName;
-    }
-
-    @Override
-    public void close(Completable<Void> completion) {
-      LocalMap<String, SharedResourceHolder<C>> localMap1 = vertx.sharedData().getLocalMap(resourceKey);
-      SharedResourceHolder<C> res = localMap1.compute(resourceName, (key, value) -> {
-        if (value == null) {
-          return null; // Should never happen unless bug
-        } else if (value.count == 1) {
-          return null;
-        } else {
-          return new SharedResourceHolder<>(this, value.count - 1, value.resource);
-        }
-      });
-      if (res == null) {
-        closeFuture.close(completion);
-      } else {
-        completion.succeed();
-      }
-    }
   }
 }
