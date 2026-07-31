@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public abstract class HttpClientBase implements MetricsProvider, Closeable {
+public abstract class HttpClientBase implements MetricsProvider {
 
   protected final VertxInternal vertx;
   protected final ProxyOptions defaultProxyOptions;
@@ -55,10 +55,6 @@ public abstract class HttpClientBase implements MetricsProvider, Closeable {
 
   public Future<Void> closeFuture() {
     return closeSequence.future();
-  }
-
-  public void close(Completable<Void> completion) {
-    closeSequence.close(completion);
   }
 
   private ProxyOptions getProxyOptions(ProxyOptions proxyOptions) {

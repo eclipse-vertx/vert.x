@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -72,8 +71,8 @@ public abstract class VertxWrapper implements VertxInternal {
   }
 
   @Override
-  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return delegate.createSharedResource(resourceKey, resourceName, closeFuture, supplier);
+  public <C> CloseableResource<C> createSharedResource(String resourceKey, String resourceName, Supplier<CloseableResource<C>> supplier) {
+    return delegate.createSharedResource(resourceKey, resourceName, supplier);
   }
 
   @Override

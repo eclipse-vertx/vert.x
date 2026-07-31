@@ -13,7 +13,7 @@ package io.vertx.tests.vertx;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.CleanableObject;
-import io.vertx.core.impl.CleanableResource;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Before;
@@ -87,7 +87,7 @@ public class CleanableObjectTest extends VertxTestBase {
     runGC(() -> resourceRef.get() == null);
   }
 
-  private static class TestResource implements CleanableResource<TestResource> {
+  private static class TestResource implements CloseableResource<TestResource> {
 
     private volatile Duration shutdownDuration;
     private Promise<Void> shutdownCompletion = Promise.promise();
