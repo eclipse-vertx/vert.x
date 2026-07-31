@@ -132,7 +132,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+  public <T> T fromStream(InputStream in, Class<T> clazz) throws DecodeException {
     try {
       JsonParser parser = factory.createParser(in);
       parser.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
@@ -180,7 +180,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+  public void toStream(Object object, OutputStream out) throws EncodeException {
     try {
       JsonGenerator generator = createGenerator(out, false);
       generator.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);

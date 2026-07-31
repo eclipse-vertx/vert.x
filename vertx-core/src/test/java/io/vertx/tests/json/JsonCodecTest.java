@@ -623,7 +623,7 @@ public abstract class JsonCodecTest {
         super.close();
       }
     };
-    codec.fromInputStream(in, Map.class);
+    codec.fromStream(in, Map.class);
     assertFalse("Codec should not close the InputStream", closed[0]);
   }
 
@@ -682,7 +682,7 @@ public abstract class JsonCodecTest {
     if (useReader) {
       return codec.fromReader(new StringReader(json), clazz);
     } else {
-      return codec.fromInputStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), clazz);
+      return codec.fromStream(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), clazz);
     }
   }
 
@@ -796,7 +796,7 @@ public abstract class JsonCodecTest {
         super.flush();
       }
     };
-    codec.toOutputStream(obj, out);
+    codec.toStream(obj, out);
     assertFalse("Codec should not close the OutputStream", closed[0]);
     assertFalse("Codec should not flush the OutputStream", flushed[0]);
   }
@@ -855,7 +855,7 @@ public abstract class JsonCodecTest {
       return sw.toString();
     } else {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      codec.toOutputStream(object, baos);
+      codec.toStream(object, baos);
       return baos.toString(StandardCharsets.UTF_8);
     }
   }

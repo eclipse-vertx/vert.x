@@ -89,7 +89,7 @@ public interface JsonCodec {
    * @return the decoded instance
    * @throws DecodeException anything preventing the decoding
    */
-  default <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+  default <T> T fromStream(InputStream in, Class<T> clazz) throws DecodeException {
     try {
       return fromBuffer(Buffer.buffer(in.readAllBytes()), clazz);
     } catch (IOException e) {
@@ -108,8 +108,8 @@ public interface JsonCodec {
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, etc.
    * @throws DecodeException anything preventing the decoding
    */
-  default Object fromInputStream(InputStream in) throws DecodeException {
-    return fromInputStream(in, Object.class);
+  default Object fromStream(InputStream in) throws DecodeException {
+    return fromStream(in, Object.class);
   }
 
   /**
@@ -123,7 +123,7 @@ public interface JsonCodec {
    * @param out    the output stream to write to
    * @throws EncodeException anything preventing the encoding
    */
-  default void toOutputStream(Object object, OutputStream out) throws EncodeException {
+  default void toStream(Object object, OutputStream out) throws EncodeException {
     try {
       out.write(toBuffer(object).getBytes());
     } catch (IOException e) {

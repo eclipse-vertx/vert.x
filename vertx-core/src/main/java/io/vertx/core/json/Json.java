@@ -134,7 +134,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(InputStream in, Class<T> clazz) throws DecodeException {
-    return CODEC.fromInputStream(in, clazz);
+    return CODEC.fromStream(in, clazz);
   }
 
   /**
@@ -147,7 +147,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(InputStream in) throws DecodeException {
-    return CODEC.fromInputStream(in);
+    return CODEC.fromStream(in);
   }
 
   /**
@@ -160,7 +160,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static void encodeTo(Object obj, OutputStream out) throws EncodeException {
-    CODEC.toOutputStream(obj, out);
+    CODEC.toStream(obj, out);
   }
 
   /**

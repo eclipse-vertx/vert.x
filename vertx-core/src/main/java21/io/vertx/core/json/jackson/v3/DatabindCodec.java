@@ -87,7 +87,7 @@ public class DatabindCodec extends JacksonCodec {
   }
 
   @Override
-  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+  public <T> T fromStream(InputStream in, Class<T> clazz) throws DecodeException {
     return fromParser(mapper.reader().without(StreamReadFeature.AUTO_CLOSE_SOURCE).createParser(in), clazz);
   }
 
@@ -165,7 +165,7 @@ public class DatabindCodec extends JacksonCodec {
   }
 
   @Override
-  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+  public void toStream(Object object, OutputStream out) throws EncodeException {
     try {
       mapper.writer()
         .without(StreamWriteFeature.AUTO_CLOSE_TARGET)

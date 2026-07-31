@@ -136,7 +136,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public <T> T fromInputStream(InputStream in, Class<T> clazz) throws DecodeException {
+  public <T> T fromStream(InputStream in, Class<T> clazz) throws DecodeException {
     return fromParser(factory.createParser(ORC_NO_CLOSE, in), clazz);
   }
 
@@ -178,7 +178,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   @Override
-  public void toOutputStream(Object object, OutputStream out) throws EncodeException {
+  public void toStream(Object object, OutputStream out) throws EncodeException {
     try {
       JsonGenerator generator = createGenerator(out, false);
       generator.configure(StreamWriteFeature.AUTO_CLOSE_TARGET, false);
