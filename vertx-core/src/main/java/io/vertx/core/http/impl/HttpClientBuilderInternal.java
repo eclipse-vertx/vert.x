@@ -10,6 +10,7 @@ import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.quic.QuicHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -348,26 +349,21 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       shared = null;
     }
 
-
     HttpClientConfig co2 = co;
     CloseFuture cf = resolveCloseFuture();
-    HttpClientInternal client;
-    Closeable closeable;
+    CloseableResource<HttpClientInternal> resource;
     if (shared != null) {
-      CloseFuture closeFuture = new CloseFuture();
-      client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
-        cf_.add(completion -> impl.close().onComplete(completion));
-        return impl;
-      });
-      HttpClientImpl real = (HttpClientImpl)client;
-      client = new CleanableHttpClient(vertx.cleaner(), real);
-      closeable = closeFuture;
+      resource = vertx.createSharedResource(
+        "__vertx.shared.httpClients",
+        co.getName(),
+        () -> createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
     } else {
-      HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
-      closeable = impl;
-      client = new CleanableHttpClient(vertx.cleaner(), impl);
+      resource = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
     }
+    HttpClientInternal client = new CleanableHttpClient(vertx.cleaner(), resource);
+    Closeable closeable = completion -> resource
+      .shutdown(Duration.ZERO)
+      .onComplete(completion);
     cf.add(closeable);
     return client;
   }

@@ -30,12 +30,14 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.lang.ref.Cleaner;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * This interface provides services for vert.x core internal use only
@@ -138,7 +140,30 @@ public interface VertxInternal extends Vertx {
 
   Cleaner cleaner();
 
-  <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier);
+  /**
+   * @deprecated instead use {@link #createSharedResource(String, String, Supplier)}
+   */
+  @Deprecated
+  default <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    CloseableResource<C> shared = createSharedResource(resourceKey, resourceName, () -> new CloseableResource<>() {
+      final CloseFuture closeFuture = new CloseFuture();
+      final C resource = supplier.apply(closeFuture);
+      @Override
+      public C get() {
+        return resource;
+      }
+      @Override
+      public Future<Void> shutdown(Duration duration) {
+        return closeFuture.close();
+      }
+    });
+    closeFuture.add(completion -> shared
+      .shutdown(Duration.ZERO)
+      .onComplete(completion));
+    return shared.get();
+  }
+
+  <C> CloseableResource<C> createSharedResource(String resourceKey, String resourceName, Supplier<CloseableResource<C>> supplier);
 
   HttpClientBuilderInternal httpClientBuilder();
 

@@ -11,6 +11,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.internal.CloseableResource;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
@@ -23,18 +24,18 @@ public class CleanableObject<T> {
 
   public static final Duration DEFAULT_CLEAN_TIMEOUT = Duration.ofSeconds(30);
 
-  private static class Action<T> extends WeakReference<CleanableResource<T>> implements Runnable {
+  private static class Action<T> extends WeakReference<CloseableResource<T>> implements Runnable {
 
     private Duration timeout = DEFAULT_CLEAN_TIMEOUT;
     private Future<Void> closeFuture;
 
-    public Action(CleanableResource<T> resource) {
+    public Action(CloseableResource<T> resource) {
       super(resource);
     }
 
     @Override
     public void run() {
-      CleanableResource<T> d = get();
+      CloseableResource<T> d = get();
       if (d != null) {
         closeFuture = d.shutdown(timeout);
       }
@@ -44,14 +45,14 @@ public class CleanableObject<T> {
   private Cleaner.Cleanable cleanable;
   private Action<T> action;
 
-  public CleanableObject(Cleaner cleaner, CleanableResource<T> dispose) {
+  public CleanableObject(Cleaner cleaner, CloseableResource<T> dispose) {
     this.action = new Action<>(dispose);
     this.cleanable = cleaner.register(this, action);
   }
 
   protected final T get() {
     Action<T> action = this.action;
-    CleanableResource<T> resource;
+    CloseableResource<T> resource;
     return action != null && (resource = action.get()) != null ? resource.get() : null;
   }
 

@@ -11,7 +11,6 @@
 
 package io.vertx.core.internal.http;
 
-import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
@@ -24,7 +23,7 @@ import java.util.function.Function;
 /**
  * Http client internal API.
  */
-public interface HttpClientInternal extends HttpClientAgent, MetricsProvider, Closeable {
+public interface HttpClientInternal extends HttpClientAgent, MetricsProvider {
 
   /**
    * @return the vertx, for use in package related classes only.

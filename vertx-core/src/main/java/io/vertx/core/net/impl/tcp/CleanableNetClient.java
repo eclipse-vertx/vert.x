@@ -14,7 +14,7 @@ import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.CleanableObject;
-import io.vertx.core.impl.CleanableResource;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
@@ -30,7 +30,7 @@ import java.lang.ref.Cleaner;
  */
 public class CleanableNetClient extends CleanableObject<NetClientInternal> implements NetClientInternal {
 
-  public CleanableNetClient(Cleaner cleaner, CleanableResource<NetClientInternal> resource) {
+  public CleanableNetClient(Cleaner cleaner, CloseableResource<NetClientInternal> resource) {
     super(cleaner, resource);
   }
 
