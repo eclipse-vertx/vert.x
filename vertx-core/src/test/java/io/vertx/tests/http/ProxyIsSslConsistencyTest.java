@@ -11,20 +11,24 @@
 package io.vertx.tests.http;
 
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpClientConfig;
+import io.vertx.core.http.HttpServerConfig;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketClient;
 import io.vertx.core.http.WebSocketClientOptions;
 import io.vertx.core.http.WebSocketConnectOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.core.net.ServerSSLOptions;
+import io.vertx.core.net.TcpClientConfig;
+import io.vertx.core.net.TcpServerConfig;
+import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.proxy.ProxyKind;
 import io.vertx.test.proxy.WithProxy;
@@ -32,6 +36,9 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Rule;
 import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * The invariant: {@code connection.isSsl()} reports whether the ORIGIN connection is encrypted, so it
@@ -43,14 +50,14 @@ import org.junit.Test;
  * the method's {@link WithProxy} kind, and asserts that both report the origin's TLS setting. The direct
  * connection is the control: on failure it tells a proxy regression apart from one that was already
  * broken without a proxy. {@code @WithProxy} selects one proxy kind per method, so there are two tests
- * per case (HTTP proxy and HTTPS proxy). Origins are cleaned up by {@code tearDown} (vertx close), like
- * other {@link HttpTestBase} tests; the per-type client logic ({@link #connectNetSocket},
- * {@link #connectHttp}, {@link #connectWebSocket}) is reused across cases.
+ * per case (HTTP proxy and HTTPS proxy). Origins are cleaned up by {@code tearDown} (vertx close); the
+ * per-type client logic ({@link #connectNetSocket}, {@link #connectHttp}, {@link #connectWebSocket}) is
+ * reused across cases.
  *
  * <p>Covers the four main proxy-capable connection types (NetSocket, HTTP/1, HTTP/2, WebSocket)
  * against a plain and a TLS origin.
  */
-public class ProxyIsSslConsistencyTest extends HttpTestBase {
+public class ProxyIsSslConsistencyTest extends HttpTestBase2 {
 
   // CONNECT-safe origin port: >= 1024 and != DEFAULT_HTTP_PORT (8080), which HttpProxy denies for CONNECT.
   private static final int ORIGIN_PORT = DEFAULT_HTTPS_PORT;
@@ -59,44 +66,70 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
   @Rule
   public Proxy proxy = new Proxy();
 
+  private NetServer netOrigin;
+  private HttpServer httpOrigin;
+
+  @Override
+  protected void tearDown() throws Exception {
+    if (netOrigin != null) {
+      netOrigin.close().await();
+      netOrigin = null;
+    }
+    if (httpOrigin != null) {
+      httpOrigin.close().await();
+      httpOrigin = null;
+    }
+    super.tearDown();
+  }
+
   // --- Origins (one per test; closed by tearDown) ---------------------------
 
   private void startNetOrigin(boolean originTls) throws Exception {
-    NetServerOptions options = new NetServerOptions().setPort(ORIGIN_PORT).setHost(ORIGIN_HOST);
-    if (originTls) {
-      options.setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get());
-    }
-    vertx.createNetServer(options).connectHandler(so -> {}).listen().await();
+    TcpServerConfig config = new TcpServerConfig()
+      .setPort(ORIGIN_PORT)
+      .setHost(ORIGIN_HOST)
+      .setSsl(originTls);
+    ServerSSLOptions sslOptions = originTls
+      ? new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get())
+      : null;
+    netOrigin = vertx.createNetServer(config, sslOptions).connectHandler(so -> {});
+    netOrigin.listen().await();
   }
 
   private void startHttpOrigin(HttpVersion version, boolean originTls) throws Exception {
-    HttpServerOptions options = new HttpServerOptions().setPort(ORIGIN_PORT).setHost(ORIGIN_HOST);
-    if (originTls) {
-      options.setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get()).setUseAlpn(version == HttpVersion.HTTP_2);
-    }
-    createHttpServer(options).requestHandler(req -> req.response().end("ok")).listen().await();
+    HttpServerConfig config = new HttpServerConfig().setPort(ORIGIN_PORT).setHost(ORIGIN_HOST);
+    ServerSSLOptions sslOptions = originTls
+      ? new ServerSSLOptions()
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
+      .setUseAlpn(version == HttpVersion.HTTP_2)
+      : null;
+    httpOrigin = vertx.createHttpServer(config, sslOptions).requestHandler(req -> req.response().end("ok"));
+    httpOrigin.listen().await();
   }
 
   private void startWebSocketOrigin(boolean originTls) throws Exception {
-    HttpServerOptions options = new HttpServerOptions().setPort(ORIGIN_PORT).setHost(ORIGIN_HOST);
-    if (originTls) {
-      options.setSsl(true).setKeyCertOptions(Cert.SERVER_JKS.get());
-    }
-    createHttpServer(options).webSocketHandler(ws -> ws.handler(buff -> {})).listen().await();
+    HttpServerConfig config = new HttpServerConfig().setPort(ORIGIN_PORT).setHost(ORIGIN_HOST);
+    ServerSSLOptions sslOptions = originTls
+      ? new ServerSSLOptions().setKeyCertOptions(Cert.SERVER_JKS.get())
+      : null;
+    httpOrigin = vertx.createHttpServer(config, sslOptions).webSocketHandler(ws -> ws.handler(buff -> {}));
+    httpOrigin.listen().await();
   }
 
   // --- Reusable per-type client logic: connect (direct if proxyOptions is null, else through the
   //     proxy) and return connection.isSsl() ------------------------------------------------------
 
   private boolean connectNetSocket(boolean originTls, ProxyOptions proxyOptions) throws Exception {
-    NetClientOptions options = new NetClientOptions();
-    if (originTls) {
-      options.setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()).setHostnameVerificationAlgorithm("HTTPS");
-    }
+    TcpClientConfig config = new TcpClientConfig().setSsl(originTls);
     if (proxyOptions != null) {
-      options.setProxyOptions(proxyOptions);
+      config.setProxyOptions(proxyOptions);
     }
-    NetClient client = vertx.createNetClient(options);
+    ClientSSLOptions sslOptions = originTls
+      ? new ClientSSLOptions()
+      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setHostnameVerificationAlgorithm("HTTPS")
+      : null;
+    NetClient client = vertx.createNetClient(config, sslOptions);
     try {
       NetSocket so = client.connect(ORIGIN_PORT, ORIGIN_HOST).await();
       return so.isSsl();
@@ -106,14 +139,22 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
   }
 
   private boolean connectHttp(HttpVersion version, boolean originTls, ProxyOptions proxyOptions) throws Exception {
-    HttpClientOptions options = new HttpClientOptions().setProtocolVersion(version);
-    if (originTls) {
-      options.setSsl(true).setTrustOptions(Trust.SERVER_JKS.get()).setUseAlpn(version == HttpVersion.HTTP_2);
+    HttpClientConfig config = new HttpClientConfig().setSsl(originTls);
+    if (version == HttpVersion.HTTP_2 && !originTls) {
+      // h2c starts as an HTTP/1.1 upgrade, so the client must support HTTP/1.1 as well
+      config.setVersions(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1);
+    } else {
+      config.setVersions(version);
     }
     if (proxyOptions != null) {
-      options.setProxyOptions(proxyOptions);
+      config.getTcpConfig().setProxyOptions(proxyOptions);
     }
-    HttpClient client = createHttpClient(options);
+    ClientSSLOptions sslOptions = originTls
+      ? new ClientSSLOptions()
+      .setTrustOptions(Trust.SERVER_JKS.get())
+      .setUseAlpn(version == HttpVersion.HTTP_2)
+      : null;
+    HttpClient client = vertx.createHttpClient(config, sslOptions);
     try {
       return client.request(new RequestOptions().setHost(ORIGIN_HOST).setPort(ORIGIN_PORT).setURI("/"))
         .compose(req -> req.send().map(resp -> resp.request().connection().isSsl()))
@@ -123,6 +164,7 @@ public class ProxyIsSslConsistencyTest extends HttpTestBase {
     }
   }
 
+  // WebSocketClient has no config counterpart yet, so this one stays on the options class.
   private boolean connectWebSocket(boolean originTls, ProxyOptions proxyOptions) throws Exception {
     WebSocketClientOptions options = new WebSocketClientOptions();
     if (originTls) {

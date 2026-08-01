@@ -10,24 +10,27 @@
  */
 package io.vertx.tests.http;
 
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 
-import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpResponseExpectation;
+import io.vertx.core.http.HttpServerConfig;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
 import io.vertx.core.net.ClientSSLOptions;
 import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.ServerSSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TcpClientConfig;
 import io.vertx.test.core.TestUtils;
-import io.vertx.test.http.HttpTestBase;
+import io.vertx.test.http.HttpTestBase2;
 import io.vertx.test.proxy.Proxy;
 import io.vertx.test.proxy.ProxyKind;
 import io.vertx.test.proxy.WithProxy;
@@ -41,16 +44,32 @@ import java.io.File;
 import java.nio.file.Files;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests for {@link ProxyType#HTTPS}: the connection to the proxy itself (leg 1) is established over
  * TLS. The proxying semantics (absolute-URI {@code GET} forwarding for plain origins, {@code CONNECT}
  * tunnel for TLS origins) are unchanged from {@link ProxyType#HTTP}.
  */
-public class HttpsProxyTest extends HttpTestBase {
+public class HttpsProxyTest extends HttpTestBase2 {
 
   @Rule
   public Proxy proxy = new Proxy();
+
+  private NetServer netOrigin;
+
+  @Override
+  protected void tearDown() throws Exception {
+    if (netOrigin != null) {
+      netOrigin.close().await();
+      netOrigin = null;
+    }
+    if (server != null) {
+      server.close().await();
+    }
+    super.tearDown();
+  }
 
   // The origin echoes the TLS status of its own (leg 2) connection, so that tests assert the origin view
   // and not only the client one: leg 1 being TLS must not make a plain origin look encrypted, and a
@@ -62,10 +81,11 @@ public class HttpsProxyTest extends HttpTestBase {
   }
 
   private void startHttpsOrigin(HttpVersion version) throws Exception {
-    server = vertx.createHttpServer(createBaseServerOptions()
-      .setSsl(true)
-      .setUseAlpn(version == HttpVersion.HTTP_2)
-      .setKeyCertOptions(Cert.SERVER_JKS.get()));
+    server = vertx.createHttpServer(
+      new HttpServerConfig().setPort(DEFAULT_HTTPS_PORT).setHost(DEFAULT_HTTPS_HOST),
+      new ServerSSLOptions()
+        .setKeyCertOptions(Cert.SERVER_JKS.get())
+        .setUseAlpn(version == HttpVersion.HTTP_2));
     server.requestHandler(req -> req.response().end("Hello from origin ssl=" + req.isSSL()));
     startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST));
   }
@@ -73,6 +93,13 @@ public class HttpsProxyTest extends HttpTestBase {
   /** Default proxy SSL options trusting the proxy's (localhost) certificate. */
   private static ClientSSLOptions trustingProxySsl() {
     return new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get());
+  }
+
+  /** A client config whose transport routes through {@code proxyOptions}. */
+  private static HttpClientConfig proxiedConfig(ProxyOptions proxyOptions) {
+    HttpClientConfig config = new HttpClientConfig();
+    config.getTcpConfig().setProxyOptions(proxyOptions);
+    return config;
   }
 
   // --- Happy paths ----------------------------------------------------------
@@ -83,7 +110,7 @@ public class HttpsProxyTest extends HttpTestBase {
     startHttpOrigin();
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setProxyOptions(proxy.options()));
+    client = vertx.createHttpClient(proxiedConfig(proxy.options()));
 
     Buffer body = client.request(new RequestOptions().setMethod(HttpMethod.GET)
         .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
@@ -103,10 +130,9 @@ public class HttpsProxyTest extends HttpTestBase {
     startHttpsOrigin(HttpVersion.HTTP_1_1);
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setSsl(true)
-      .setTrustOptions(Trust.SERVER_JKS.get())
-      .setProxyOptions(proxy.options()));
+    client = vertx.createHttpClient(
+      proxiedConfig(proxy.options()).setSsl(true),
+      new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()));
 
     Buffer body = client.request(new RequestOptions().setMethod(HttpMethod.GET)
         .setHost(DEFAULT_HTTPS_HOST).setPort(DEFAULT_HTTPS_PORT).setURI("/"))
@@ -125,12 +151,9 @@ public class HttpsProxyTest extends HttpTestBase {
     startHttpsOrigin(HttpVersion.HTTP_2);
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setProtocolVersion(HttpVersion.HTTP_2)
-      .setSsl(true)
-      .setUseAlpn(true)
-      .setTrustOptions(Trust.SERVER_JKS.get())
-      .setProxyOptions(proxy.options()));
+    client = vertx.createHttpClient(
+      proxiedConfig(proxy.options()).setVersions(HttpVersion.HTTP_2).setSsl(true),
+      new ClientSSLOptions().setTrustOptions(Trust.SERVER_JKS.get()).setUseAlpn(true));
 
     String result = client.request(new RequestOptions().setMethod(HttpMethod.GET)
         .setHost(DEFAULT_HTTPS_HOST).setPort(DEFAULT_HTTPS_PORT).setURI("/"))
@@ -149,8 +172,7 @@ public class HttpsProxyTest extends HttpTestBase {
     startHttpOrigin();
 
     client.close();
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(proxy.options().setUsername("user1").setPassword("user1")));
+    client = vertx.createHttpClient(proxiedConfig(proxy.options().setUsername("user1").setPassword("user1")));
 
     Buffer body = client.request(new RequestOptions().setMethod(HttpMethod.GET)
         .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI("/"))
@@ -170,7 +192,7 @@ public class HttpsProxyTest extends HttpTestBase {
 
     client.close();
     // The proxy requires a client certificate (server-side); the client presents one here (client-side).
-    client = vertx.createHttpClient(new HttpClientOptions().setProxyOptions(proxy.options()
+    client = vertx.createHttpClient(proxiedConfig(proxy.options()
       .setSslOptions(new ClientSSLOptions()
         .setTrustOptions(Trust.SERVER_JKS.get())
         .setKeyCertOptions(Cert.CLIENT_JKS.get()))));
@@ -200,21 +222,22 @@ public class HttpsProxyTest extends HttpTestBase {
 
     // Plain origin. Not DEFAULT_HTTP_PORT: the proxy denies CONNECT to that port.
     Buffer received = Buffer.buffer();
-    NetServer origin = vertx.createNetServer();
-    origin.connectHandler(sock -> sock.handler(buff -> {
+    Promise<Void> allReceived = Promise.promise();
+    netOrigin = vertx.createNetServer();
+    netOrigin.connectHandler(sock -> sock.handler(buff -> {
       received.appendBuffer(buff);
       if (received.length() == expected.length()) {
-        assertEquals(expected, received);
-        testComplete();
+        allReceived.complete();
       }
     }));
-    origin.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).await();
+    netOrigin.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).await();
 
-    NetClient netClient = vertx.createNetClient(new NetClientOptions().setProxyOptions(proxy.options()));
+    NetClient netClient = vertx.createNetClient(new TcpClientConfig().setProxyOptions(proxy.options()));
     NetSocket sock = netClient.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST).await();
     sock.sendFile(file.getAbsolutePath()).await();
 
-    await();
+    allReceived.future().await();
+    assertEquals(expected, received);
     assertEquals(HttpMethod.CONNECT, proxy.lastMethod());
   }
 
@@ -228,8 +251,8 @@ public class HttpsProxyTest extends HttpTestBase {
     client.close();
     // No sslOptions => default trust source (no self-signed cert): the proxy cert is not trusted and
     // there is no plaintext fallback for an HTTPS proxy.
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(proxy.port())));
+    client = vertx.createHttpClient(proxiedConfig(
+      new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(proxy.port())));
 
     // connect must fail rather than hanging or silently downgrading
     assertThatThrownBy(() -> client.request(new RequestOptions().setMethod(HttpMethod.GET)
@@ -247,8 +270,8 @@ public class HttpsProxyTest extends HttpTestBase {
 
     client.close();
     // Proxy cert is CN=localhost; connecting via 127.0.0.1 must fail hostname verification (on by default).
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("127.0.0.1").setPort(proxy.port())
+    client = vertx.createHttpClient(proxiedConfig(
+      new ProxyOptions().setType(ProxyType.HTTPS).setHost("127.0.0.1").setPort(proxy.port())
         .setSslOptions(trustingProxySsl())));
 
     // verification must reject the mismatched proxy hostname
@@ -267,8 +290,8 @@ public class HttpsProxyTest extends HttpTestBase {
 
     client.close();
     // A HTTPS proxy type pointed at a plaintext proxy: no silent downgrade, the TLS handshake must fail.
-    client = vertx.createHttpClient(new HttpClientOptions()
-      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(proxy.port())
+    client = vertx.createHttpClient(proxiedConfig(
+      new ProxyOptions().setType(ProxyType.HTTPS).setHost("localhost").setPort(proxy.port())
         .setSslOptions(trustingProxySsl())));
 
     assertThatThrownBy(() -> client.request(new RequestOptions().setMethod(HttpMethod.GET)
