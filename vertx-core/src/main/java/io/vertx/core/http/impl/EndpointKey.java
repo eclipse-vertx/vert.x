@@ -23,21 +23,27 @@ public final class EndpointKey {
   // Todo : that should become a scheme ???
   final boolean ssl;
   final HttpVersion protocol;
-  final SocketAddress server;
+  private final SocketAddress server; // For now don't expose
+  private final ProxyOptions proxyOptions; // For now don't expose
   final HostAndPort authority;
-  final ProxyOptions proxyOptions;
   final ClientSSLOptions sslOptions;
 
-  public EndpointKey(boolean ssl, HttpVersion protocol, ClientSSLOptions sslOptions, ProxyOptions proxyOptions, SocketAddress server, HostAndPort authority) {
-    if (server == null) {
-      throw new NullPointerException("No null server address");
-    }
+  public EndpointKey(boolean ssl, HttpVersion protocol, ClientSSLOptions sslOptions, SocketAddress server, HostAndPort authority) {
+    this.ssl = ssl;
+    this.protocol = protocol;
+    this.sslOptions = sslOptions;
+    this.proxyOptions = null;
+    this.authority = authority;
+    this.server = server.hostAddress() != null ? SocketAddress.inetSocketAddress(server.port(), server.hostAddress()) : server;
+  }
+
+  public EndpointKey(boolean ssl, HttpVersion protocol, ClientSSLOptions sslOptions, ProxyOptions proxyOptions, HostAndPort authority) {
     this.ssl = ssl;
     this.protocol = protocol;
     this.sslOptions = sslOptions;
     this.proxyOptions = proxyOptions;
     this.authority = authority;
-    this.server = server;
+    this.server = null;
   }
 
   @Override
@@ -47,7 +53,7 @@ public final class EndpointKey {
     }
     if (o instanceof EndpointKey) {
       EndpointKey that = (EndpointKey) o;
-      return ssl == that.ssl && Objects.equals(protocol, that.protocol) && server.equals(that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
+      return ssl == that.ssl && Objects.equals(protocol, that.protocol) && Objects.equals(server, that.server) && Objects.equals(authority, that.authority) && Objects.equals(sslOptions, that.sslOptions) && equals(proxyOptions, that.proxyOptions);
     }
     return false;
   }
@@ -56,12 +62,14 @@ public final class EndpointKey {
   public int hashCode() {
     int result = ssl ? 1 : 0;
     result = 31 * result + (protocol == null ? 0 : protocol.hashCode());
-    result = 31 * result + server.hashCode();
     if (authority != null) {
       result = 31 * result + authority.hashCode();
     }
     if (sslOptions != null) {
       result = 31 * result + sslOptions.hashCode();
+    }
+    if (server != null) {
+      result = 31 * result + server.hashCode();
     }
     if (proxyOptions != null) {
       result = 31 * result + hashCode(proxyOptions);
@@ -92,6 +100,6 @@ public final class EndpointKey {
 
   @Override
   public String toString() {
-    return server.toString();
+    return server != null ? server.toString() : proxyOptions.toString();
   }
 }

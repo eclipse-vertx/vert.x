@@ -17,6 +17,9 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import org.junit.Test;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -26,32 +29,40 @@ import static org.junit.Assert.assertNotEquals;
 public class EndPointKeyTest {
 
   @Test
-  public void testEndPointKey() {
+  public void testEndPointKey() throws Exception {
     final SocketAddress addr = SocketAddress.inetSocketAddress(8080, "localhost");
     final HostAndPort peer = HostAndPort.create("localhost", 8080);
-    EndpointKey key1 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions(), addr, peer);
-    EndpointKey key2 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions(), addr, peer);
+    EndpointKey key1 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, addr, peer);
+    EndpointKey key2 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, addr, peer);
     assertEquals(key1, key2);
     assertEquals(key1.hashCode(), key2.hashCode());
-    EndpointKey key3 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setUsername("foo").setPassword("bar"), addr, peer);
-    EndpointKey key4 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setUsername("foo").setPassword("bar"), addr, peer);
+    EndpointKey key3 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setUsername("foo").setPassword("bar"), peer);
+    EndpointKey key4 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setUsername("foo").setPassword("bar"), peer);
     assertEquals(key3, key4);
     assertEquals(key3.hashCode(), key4.hashCode());
-    EndpointKey key5 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setHost("localhost"), addr, peer);
-    EndpointKey key6 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setHost("127.0.0.1"), addr, peer);
+    EndpointKey key5 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setHost("localhost"), peer);
+    EndpointKey key6 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, new ProxyOptions().setHost("127.0.0.1"), peer);
     assertNotEquals(key5, key6);
     assertNotEquals(key5.hashCode(), key6.hashCode());
     assertNotEquals(key1.hashCode(), key6.hashCode());
     EndpointKey key7 = new EndpointKey(false, HttpVersion.HTTP_1_1, null,
-      new ProxyOptions().setProxyAuthorization("Negotiate token-1"), addr, peer);
+      new ProxyOptions().setProxyAuthorization("Negotiate token-1"), peer);
     EndpointKey key8 = new EndpointKey(false, HttpVersion.HTTP_1_1, null,
-      new ProxyOptions().setProxyAuthorization("Negotiate token-1"), addr, peer);
+      new ProxyOptions().setProxyAuthorization("Negotiate token-1"), peer);
     EndpointKey key9 = new EndpointKey(false, HttpVersion.HTTP_1_1, null,
-      new ProxyOptions().setProxyAuthorization("Negotiate token-2"), addr, peer);
+      new ProxyOptions().setProxyAuthorization("Negotiate token-2"), peer);
     assertEquals(key7, key8);
     assertEquals(key7.hashCode(), key8.hashCode());
     assertNotEquals(key7, key9);
     assertNotEquals(key7.hashCode(), key9.hashCode());
+
+    SocketAddress addr1 = SocketAddress.inetSocketAddress(new InetSocketAddress(InetAddress.getByAddress("vertx.io", new byte[]{127, 0, 0, 1}), 8080));
+    SocketAddress addr2 = SocketAddress.inetSocketAddress(new InetSocketAddress(InetAddress.getByAddress("vertx.io", new byte[]{127, 0, 0, 2}), 8080));
+    EndpointKey key10 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, addr1, peer);
+    EndpointKey key11 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, addr2, peer);
+    EndpointKey key12 = new EndpointKey(false, HttpVersion.HTTP_1_1, null, SocketAddress.inetSocketAddress(8080, "127.0.0.1"), peer);
+    assertNotEquals(key10, key11);
+    assertEquals(key10, key12);
   }
 
 }

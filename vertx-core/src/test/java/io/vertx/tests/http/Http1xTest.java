@@ -38,6 +38,7 @@ import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.net.endpoint.LoadBalancer;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.*;
@@ -72,6 +73,32 @@ public class Http1xTest extends HttpTest {
 
   public Http1xTest() {
     super(HttpConfigurator.Http1x.DEFAULT);
+  }
+
+  @Test
+  @WithDnsServer(records = {@DnsRecord(name = "vertx.io", address = "127.0.0.1"), @DnsRecord(name = "vertx.io", address = "127.0.0.2")})
+  public void testDnsClientSideLoadBalancingUsesDistinctPools() throws Exception {
+    Set<String> expected = Set.of("127.0.0.1", "127.0.0.2");
+    for (String host : expected) {
+      vertx.createHttpServer()
+        .requestHandler(request -> request.response().end(host))
+        .listen(DEFAULT_HTTP_PORT, host)
+        .await();
+    }
+    HttpClient client = vertx.httpClientBuilder()
+      .with(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_1_1))
+      .withLoadBalancer(LoadBalancer.ROUND_ROBIN)
+      .build();
+    Set<String> actual = new HashSet<>();
+    for (int i = 0; i < expected.size(); i++) {
+      String host = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, "vertx.io", "/")
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body)
+        .map(Buffer::toString)
+        .await();
+      actual.add(host);
+    }
+    assertEquals(expected, actual);
   }
 
   @Test
