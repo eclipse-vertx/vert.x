@@ -19,6 +19,7 @@ import io.vertx.core.http.impl.CleanableHttpClient;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.NetClientInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.tcp.CleanableNetClient;
@@ -214,6 +215,15 @@ public class VertxTest extends VertxTestBase {
         .onComplete(TestUtils.onSuccess(v -> testComplete()));
     }
     await();
+  }
+
+  @Test
+  public void testCloseHttpClientRemovesCloseHook() {
+    VertxInternal vertx = (VertxInternal) vertx();
+    HttpClient client = vertx.httpClientBuilder().build();
+    HttpClientInternal delegate = ((CleanableHttpClient) client).unwrap();
+    client.close().await();
+    Assert.assertFalse(vertx.closeFuture().remove(delegate));
   }
 
   @Test

@@ -368,7 +368,9 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       closeable = impl;
       client = new CleanableHttpClient(vertx.cleaner(), impl);
     }
-    cf.add(closeable);
+    Closeable closeHook = closeable;
+    cf.add(closeHook);
+    client.closeFuture().onComplete(ar -> cf.remove(closeHook));
     return client;
   }
 }

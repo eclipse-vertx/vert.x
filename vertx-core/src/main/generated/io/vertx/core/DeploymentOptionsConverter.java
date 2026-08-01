@@ -12,21 +12,6 @@ public class DeploymentOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DeploymentOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "config":
-          if (member.getValue() instanceof JsonObject) {
-            obj.setConfig(((JsonObject)member.getValue()).copy());
-          }
-          break;
-        case "threadingModel":
-          if (member.getValue() instanceof String) {
-            obj.setThreadingModel(io.vertx.core.ThreadingModel.valueOf((String)member.getValue()));
-          }
-          break;
-        case "ha":
-          if (member.getValue() instanceof Boolean) {
-            obj.setHa((Boolean)member.getValue());
-          }
-          break;
         case "instances":
           if (member.getValue() instanceof Number) {
             obj.setInstances(((Number)member.getValue()).intValue());
@@ -42,14 +27,29 @@ public class DeploymentOptionsConverter {
             obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
           }
           break;
-        case "maxWorkerExecuteTime":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
+        case "config":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setConfig(((JsonObject)member.getValue()).copy());
+          }
+          break;
+        case "threadingModel":
+          if (member.getValue() instanceof String) {
+            obj.setThreadingModel(io.vertx.core.ThreadingModel.valueOf((String)member.getValue()));
           }
           break;
         case "maxWorkerExecuteTimeUnit":
           if (member.getValue() instanceof String) {
             obj.setMaxWorkerExecuteTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
+        case "maxWorkerExecuteTime":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "ha":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHa((Boolean)member.getValue());
           }
           break;
       }
@@ -61,21 +61,21 @@ public class DeploymentOptionsConverter {
   }
 
    static void toJson(DeploymentOptions obj, java.util.Map<String, Object> json) {
+    json.put("instances", obj.getInstances());
+    if (obj.getWorkerPoolName() != null) {
+      json.put("workerPoolName", obj.getWorkerPoolName());
+    }
+    json.put("workerPoolSize", obj.getWorkerPoolSize());
     if (obj.getConfig() != null) {
       json.put("config", obj.getConfig());
     }
     if (obj.getThreadingModel() != null) {
       json.put("threadingModel", obj.getThreadingModel().name());
     }
-    json.put("ha", obj.isHa());
-    json.put("instances", obj.getInstances());
-    if (obj.getWorkerPoolName() != null) {
-      json.put("workerPoolName", obj.getWorkerPoolName());
-    }
-    json.put("workerPoolSize", obj.getWorkerPoolSize());
-    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
     if (obj.getMaxWorkerExecuteTimeUnit() != null) {
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
     }
+    json.put("maxWorkerExecuteTime", obj.getMaxWorkerExecuteTime());
+    json.put("ha", obj.isHa());
   }
 }
