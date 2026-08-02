@@ -124,7 +124,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * The default HTTP/2 connection window size = -1
    */
-  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = -1;
+  public static final int DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE = 1024 * 1024;
 
   /**
    * Default value of whether decompression is supported = {@code false}
