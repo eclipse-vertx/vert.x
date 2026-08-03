@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.impl.future.PromiseImpl;
+import io.vertx.core.internal.ContextInternal;
 
 
 /**
@@ -32,11 +33,19 @@ public interface Promise<T> extends Completable<T> {
 
   /**
    * Create a promise that hasn't completed yet
+   * <p>
+   * When called from a Vert.x context, the promise is associated with that context and future handlers are
+   * dispatched on it.
+   * Otherwise, future handlers are called from the thread that completes the promise.
    *
    * @param <T>  the result type
    * @return  the promise
    */
   static <T> Promise<T> promise() {
+    Context context = Vertx.currentContext();
+    if (context instanceof ContextInternal) {
+      return ((ContextInternal) context).promise();
+    }
     return new PromiseImpl<>();
   }
 

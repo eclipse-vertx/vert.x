@@ -1653,6 +1653,51 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
+  public void testPromiseCapturesCurrentContext() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    CompletableFuture<Promise<String>> successPromise = new CompletableFuture<>();
+    CompletableFuture<Context> successContext = new CompletableFuture<>();
+    CompletableFuture<Promise<String>> failurePromise = new CompletableFuture<>();
+    CompletableFuture<Context> failureContext = new CompletableFuture<>();
+
+    context.runOnContext(ignored -> {
+      Promise<String> promise = Promise.promise();
+      promise.future().onSuccess(value -> successContext.complete(Vertx.currentContext()));
+      successPromise.complete(promise);
+
+      promise = Promise.promise();
+      promise.future().onFailure(err -> failureContext.complete(Vertx.currentContext()));
+      failurePromise.complete(promise);
+    });
+
+    ForkJoinPool.commonPool().execute(() -> successPromise.join().complete("ok"));
+    ForkJoinPool.commonPool().execute(() -> failurePromise.join().fail("boom"));
+
+    assertSame(context, successContext.get(10, TimeUnit.SECONDS));
+    assertSame(context, failureContext.get(10, TimeUnit.SECONDS));
+  }
+
+  @Test
+  public void testPromiseWithoutContextRunsOnCompletingThread() throws Exception {
+    assertNull(Vertx.currentContext());
+    Promise<String> promise = Promise.promise();
+    CompletableFuture<Thread> handlerThread = new CompletableFuture<>();
+    CompletableFuture<Context> handlerContext = new CompletableFuture<>();
+    promise.future().onSuccess(value -> {
+      handlerThread.complete(Thread.currentThread());
+      handlerContext.complete(Vertx.currentContext());
+    });
+
+    Thread completingThread = new Thread(() -> promise.complete("ok"));
+    completingThread.start();
+    completingThread.join(TimeUnit.SECONDS.toMillis(10));
+
+    assertFalse(completingThread.isAlive());
+    assertSame(completingThread, handlerThread.get(10, TimeUnit.SECONDS));
+    assertNull(handlerContext.get(10, TimeUnit.SECONDS));
+  }
+
+  @Test
   public void testToCompletionStageTrampolining() {
     waitFor(2);
     Thread mainThread = Thread.currentThread();
@@ -1738,6 +1783,29 @@ public class FutureTest extends FutureTestBase {
     });
 
     await();
+  }
+
+  @Test
+  public void testFromCompletionStageCapturesCurrentContext() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    CompletableFuture<String> completionStage = new CompletableFuture<>();
+    CompletableFuture<String> handlerValue = new CompletableFuture<>();
+    CompletableFuture<Context> handlerContext = new CompletableFuture<>();
+    CompletableFuture<Void> subscribed = new CompletableFuture<>();
+
+    context.runOnContext(ignored -> {
+      Future.fromCompletionStage(completionStage).onSuccess(value -> {
+        handlerValue.complete(value);
+        handlerContext.complete(Vertx.currentContext());
+      });
+      subscribed.complete(null);
+    });
+
+    subscribed.get(10, TimeUnit.SECONDS);
+    ForkJoinPool.commonPool().execute(() -> completionStage.complete("Ok"));
+
+    assertEquals("Ok", handlerValue.get(10, TimeUnit.SECONDS));
+    assertSame(context, handlerContext.get(10, TimeUnit.SECONDS));
   }
 
   @Test
@@ -2010,6 +2078,25 @@ public class FutureTest extends FutureTestBase {
     Promise<String> promise = Promise.promise();
     io.vertx.core.Future<String> fut = promise.future();
     futureTimeoutFires(null, fut);
+  }
+
+  @Test
+  public void contextFreeFutureTimeoutCalledFromContext() throws Exception {
+    Promise<String> promise = Promise.promise();
+    CompletableFuture<Throwable> failure = new CompletableFuture<>();
+    CompletableFuture<Context> handlerContext = new CompletableFuture<>();
+    CompletableFuture<Void> subscribed = new CompletableFuture<>();
+    vertx.runOnContext(ignored -> {
+      promise.future().timeout(100, TimeUnit.MILLISECONDS).onFailure(err -> {
+        failure.complete(err);
+        handlerContext.complete(Vertx.currentContext());
+      });
+      subscribed.complete(null);
+    });
+
+    subscribed.get(10, TimeUnit.SECONDS);
+    assertTrue(failure.get(10, TimeUnit.SECONDS) instanceof TimeoutException);
+    assertNull(handlerContext.get(10, TimeUnit.SECONDS));
   }
 
   private void futureTimeoutFires(Context ctx, io.vertx.core.Future<String> fut) {

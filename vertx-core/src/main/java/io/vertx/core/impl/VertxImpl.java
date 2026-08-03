@@ -37,6 +37,7 @@ import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
+import io.vertx.core.impl.future.PromiseImpl;
 import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
@@ -804,12 +805,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       .transform(ar -> Future.future(h -> eventBus.close((Promise) h)))
       .transform(ar -> closeClusterManager())
       .transform(ar -> {
-        Promise<Void> promise = Promise.promise();
+        Promise<Void> promise = new PromiseImpl<>();
         deleteCacheDirAndShutdown(promise);
         return promise.future();
       });
     Future<Void> val = fut;
-    Promise<Void> p = Promise.promise();
+    Promise<Void> p = new PromiseImpl<>();
     val.onComplete(ar -> {
       eventLoopThreadFactory.newThread(() -> {
         if (ar.succeeded()) {

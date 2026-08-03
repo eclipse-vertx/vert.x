@@ -494,14 +494,14 @@ public class VertxConnectionTest extends VertxTestBase {
     waitFor(2);
     disableThreadChecks();
     connectHandler = conn -> {
+      Context context = Vertx.currentContext();
       Promise<Void> promise = Promise.promise();
       ChannelPromise channelPromise = ((VertxConnection) conn).unsafeWrite(Unpooled.copiedBuffer("outbound-1", StandardCharsets.UTF_8), true, promise);
       Future<Void> future = promise.future();
       future.onComplete(onSuccess(v -> {
         new Thread(() -> {
-          Thread curr = Thread.currentThread();
           future.onComplete(ar -> {
-            assertSame(curr, Thread.currentThread());
+            assertSame(context, Vertx.currentContext());
             complete();
           });
           channelPromise.addListener((ChannelFutureListener) f -> {

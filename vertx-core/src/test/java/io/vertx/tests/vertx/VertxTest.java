@@ -37,6 +37,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -154,6 +155,20 @@ public class VertxTest extends VertxTestBase {
       testComplete();
     }));
     await();
+  }
+
+  @Test
+  public void testCloseFutureFromContext() throws Exception {
+    Vertx vertx = vertx();
+    CompletableFuture<Void> closed = new CompletableFuture<>();
+    vertx.runOnContext(ignored -> vertx.close().onComplete(ar -> {
+      if (ar.succeeded()) {
+        closed.complete(null);
+      } else {
+        closed.completeExceptionally(ar.cause());
+      }
+    }));
+    closed.get(10, TimeUnit.SECONDS);
   }
 
   @Test

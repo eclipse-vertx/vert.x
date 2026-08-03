@@ -666,7 +666,8 @@ public interface Future<T> extends AsyncResult<T> {
   /**
    * Bridges a {@link CompletionStage} object to a Vert.x future instance.
    * <p>
-   * The Vert.x future handling methods will be called from the thread that completes {@code completionStage}.
+   * When called from a Vert.x context, the Vert.x future handling methods will be called on that context.
+   * Otherwise, they will be called from the thread that completes {@code completionStage}.
    *
    * @param completionStage a completion stage
    * @param <T>             the result type

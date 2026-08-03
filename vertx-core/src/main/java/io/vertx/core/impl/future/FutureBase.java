@@ -205,7 +205,7 @@ public abstract class FutureBase<T> implements FutureInternal<T> {
       promise = context.promise();
     } else {
       instance = GlobalEventExecutor.INSTANCE;
-      promise = Promise.promise();
+      promise = new PromiseImpl<>();
     }
     ScheduledFuture<?> task = instance.schedule(() -> {
       String msg = "Timeout " + unit.toMillis(delay) + " (ms) fired";
