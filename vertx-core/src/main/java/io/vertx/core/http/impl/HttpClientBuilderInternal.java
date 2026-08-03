@@ -2,6 +2,7 @@ package io.vertx.core.http.impl;
 
 
 import io.vertx.core.Closeable;
+import io.vertx.core.Completable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.*;
@@ -10,6 +11,7 @@ import io.vertx.core.http.Http2ClientConfig;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.http.impl.quic.QuicHttpClientTransport;
 import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.CloseFuture;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.VertxInternal;
@@ -346,27 +348,51 @@ public final class HttpClientBuilderInternal implements HttpClientBuilder {
       shared = null;
     }
 
-
     HttpClientConfig co2 = co;
     CloseFuture cf = resolveCloseFuture();
-    HttpClientInternal client;
-    Closeable closeable;
+    CloseableResource<HttpClientInternal> resource;
     if (shared != null) {
-      CloseFuture closeFuture = new CloseFuture();
-      client = vertx.createSharedResource("__vertx.shared.httpClients", co.getName(), closeFuture, cf_ -> {
-        HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
-        cf_.add(completion -> impl.close().onComplete(completion));
-        return impl;
-      });
-      HttpClientImpl real = (HttpClientImpl)client;
-      client = new CleanableHttpClient(vertx.cleaner(), real);
-      closeable = closeFuture;
+      resource = vertx.createSharedResource(
+        "__vertx.shared.httpClients",
+        co.getName(),
+        () -> createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport));
     } else {
-      HttpClientImpl impl = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
-      closeable = impl;
-      client = new CleanableHttpClient(vertx.cleaner(), impl);
+      resource = createHttpClientImpl(co2, ssl, httpMetrics, resolver, redirectHandler, transport, quicTransport);
     }
-    cf.add(closeable);
-    return client;
+    ClientCloseableResource ccr = new ClientCloseableResource(cf, resource);
+    cf.add(ccr);
+    return new CleanableHttpClient(vertx.cleaner(), ccr);
+  }
+
+  // This should somehow get unified and reused
+  // at the moment this is required to unregister the resource from the owner when the client closes
+  // either explicitly or is collected
+  private static class ClientCloseableResource implements CloseableResource<HttpClientInternal>, Closeable {
+
+    private final CloseFuture owner;
+    private final CloseableResource<HttpClientInternal> resource;
+
+    public ClientCloseableResource(CloseFuture owner, CloseableResource<HttpClientInternal> resource) {
+      this.owner = owner;
+      this.resource = resource;
+    }
+
+    @Override
+    public void close(Completable<Void> completion) {
+      resource
+        .shutdown(Duration.ZERO)
+        .onComplete(completion);
+    }
+
+    @Override
+    public HttpClientInternal get() {
+      return resource.get();
+    }
+
+    @Override
+    public Future<Void> shutdown(Duration duration) {
+      owner.remove(this);
+      return resource.shutdown(duration);
+    }
   }
 }

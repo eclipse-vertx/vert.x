@@ -15,6 +15,7 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.VertxInternal;
+import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -29,6 +30,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static io.vertx.core.http.HttpMethod.GET;
+import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTP_HOST;
+import static io.vertx.test.http.AbstractHttpTest.DEFAULT_HTTP_PORT;
 
 public class SharedHttpClientTest extends VertxTestBase {
 
@@ -36,6 +39,30 @@ public class SharedHttpClientTest extends VertxTestBase {
   private static final int CLIENT_VERTICLE_INSTANCES = 8;
   private static final int NUM_REQUESTS_PER_VERTICLE = 50 * SHARED_POOL_SIZE;
   private static final int TOTAL_REQUESTS = CLIENT_VERTICLE_INSTANCES * NUM_REQUESTS_PER_VERTICLE;
+
+  @Test
+  public void testShared() {
+    HttpServer server = vertx.createHttpServer().requestHandler(request -> {
+      request.response().end();
+    });
+    server
+      .listen(DEFAULT_HTTP_PORT)
+      .await();
+    HttpClientInternal client1 = (HttpClientInternal)vertx.createHttpClient(new HttpClientOptions().setShared(true));
+    HttpClientInternal client2 = (HttpClientInternal)vertx.createHttpClient(new HttpClientOptions().setShared(true));
+    HttpClientInternal real = client2.unwrap();
+    assertSame(client1.unwrap(), real);
+    client1.close().await();
+    assertFalse(real.closeFuture().isComplete());
+    client2
+      .request(GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .compose(request -> request
+        .send()
+        .compose(HttpClientResponse::end))
+      .await();
+    client2.close().await();
+    assertTrue(real.closeFuture().isComplete());
+  }
 
   @Test
   public void testVerticlesUseSamePool() throws Exception {

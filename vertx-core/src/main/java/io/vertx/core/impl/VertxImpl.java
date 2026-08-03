@@ -37,6 +37,7 @@ import io.vertx.core.http.impl.tcp.TcpHttpClientTransport;
 import io.vertx.core.http.HttpClientConfig;
 import io.vertx.core.impl.deployment.DefaultDeploymentManager;
 import io.vertx.core.impl.deployment.DefaultDeployment;
+import io.vertx.core.internal.CloseableResource;
 import io.vertx.core.internal.deployment.Deployment;
 import io.vertx.core.internal.deployment.DeploymentContext;
 import io.vertx.core.internal.deployment.DeploymentManager;
@@ -428,7 +429,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       closeable = closeFuture;
     } else {
       WebSocketClientImpl impl = createWebSocketClientImpl(options);
-      closeable = impl;
+      closeable = completion -> impl.close().onComplete(completion);
       client = new CleanableWebSocketClient(impl, CleanerProvider.INSTANCE.get(), impl::shutdown);
     }
     cf.add(closeable);
@@ -1337,8 +1338,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
-  public <C> C createSharedResource(String resourceKey, String resourceName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, closeFuture, supplier);
+  @Override
+  public <C> CloseableResource<C> createSharedResource(String resourceKey, String resourceName, Supplier<CloseableResource<C>> supplier) {
+    return SharedResourceHolder.createSharedResource(this, resourceKey, resourceName, supplier);
   }
 
   void duplicate(ContextBase src, ContextBase dst) {
