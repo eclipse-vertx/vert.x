@@ -12,15 +12,27 @@ public class HttpConnectParams {
                            ClientSSLOptions sslOptions,
                            ProxyOptions proxyOptions,
                            boolean ssl) {
+    this(protocols, sslOptions, proxyOptions, ssl, false);
+  }
+
+  public HttpConnectParams(List<HttpVersion> protocols,
+                           ClientSSLOptions sslOptions,
+                           ProxyOptions proxyOptions,
+                           boolean ssl,
+                           boolean forwardProxy) {
     this.protocols = protocols;
     this.sslOptions = sslOptions;
     this.proxyOptions = proxyOptions;
     this.ssl = ssl;
+    this.forwardProxy = forwardProxy;
   }
 
   public final List<HttpVersion> protocols;
   public final ClientSSLOptions sslOptions;
   public final ProxyOptions proxyOptions;
+
   public final boolean ssl;
+
+  public final boolean forwardProxy;
 
 }

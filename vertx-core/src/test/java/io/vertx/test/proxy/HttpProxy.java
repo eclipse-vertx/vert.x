@@ -17,8 +17,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.test.http.HttpTestBase;
 
 import java.net.UnknownHostException;
@@ -60,9 +62,34 @@ public class HttpProxy extends ProxyBase<HttpProxy> {
   private MultiMap lastRequestHeaders = null;
   private HttpMethod lastMethod;
 
+  private KeyCertOptions serverCert = null;
+  private TrustOptions clientAuthTrust = null;
+
   @Override
   public int defaultPort() {
     return DEFAULT_PORT;
+  }
+
+  /**
+   * Make the proxy itself listen over TLS, so the client establishes an HTTPS connection to the
+   * proxy (leg 1). This is used to test {@link io.vertx.core.net.ProxyType#HTTPS}.
+   *
+   * @param serverCert the key/cert the proxy presents to the client
+   */
+  public HttpProxy ssl(KeyCertOptions serverCert) {
+    this.serverCert = serverCert;
+    return this;
+  }
+
+  /**
+   * Additionally require and validate a client certificate (mutual TLS on leg 1). Implies
+   * {@link #ssl(KeyCertOptions)} having been set.
+   *
+   * @param clientAuthTrust trust used to validate the client certificate
+   */
+  public HttpProxy requireClientAuth(TrustOptions clientAuthTrust) {
+    this.clientAuthTrust = clientAuthTrust;
+    return this;
   }
 
   /**
@@ -75,6 +102,12 @@ public class HttpProxy extends ProxyBase<HttpProxy> {
   public HttpProxy start(Vertx vertx) throws Exception {
     HttpServerOptions options = new HttpServerOptions();
     options.setHost("localhost").setPort(port);
+    if (serverCert != null) {
+      options.setSsl(true).setKeyCertOptions(serverCert);
+      if (clientAuthTrust != null) {
+        options.setClientAuth(ClientAuth.REQUIRED).setTrustOptions(clientAuthTrust);
+      }
+    }
     client = vertx.createNetClient();
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {

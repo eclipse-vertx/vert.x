@@ -22,6 +22,13 @@ public @interface WithProxy {
 
   ProxyKind kind();
 
+  /**
+   * Only meaningful for {@link ProxyKind#HTTPS}: when {@code true} the proxy requires and validates a
+   * client certificate (mutual TLS on leg 1). This is a server-side knob only; the client presenting a
+   * certificate remains the responsibility of the test's own {@code ProxyOptions.sslOptions}.
+   */
+  boolean requireSslClientAuth() default false;
+
   String[] localhosts() default {};
 
 }

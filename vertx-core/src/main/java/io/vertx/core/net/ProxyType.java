@@ -25,6 +25,16 @@ public enum ProxyType {
    */
   HTTP,
   /**
+   * HTTP proxy reached over SSL/TLS, i.e. the client opens an {@code https} connection to the proxy
+   * itself before issuing {@code CONNECT} or absolute-URI requests. The proxying semantics are
+   * identical to {@link #HTTP}; only the connection to the proxy is encrypted, configured via
+   * {@link ProxyOptions#setSslOptions(ClientSSLOptions)}.
+   * <p>
+   * Note this is distinct from the {@code https_proxy} environment-variable convention, which
+   * denotes the proxy used <em>for</em> {@code https} traffic rather than a proxy reached over SSL/TLS.
+   */
+  HTTPS,
+  /**
    * SOCKS4/4a tcp proxy
    */
   SOCKS4,

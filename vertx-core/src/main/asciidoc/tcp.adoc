@@ -506,10 +506,18 @@ the update.
 
 === Using a proxy for client connections
 
-The {@link io.vertx.core.net.NetClient} supports either an HTTP/1.x _CONNECT_, _SOCKS4a_ or _SOCKS5_ proxy.
+The {@link io.vertx.core.net.NetClient} supports either an HTTP/1.x _CONNECT_, an HTTPS (HTTP _CONNECT_ over SSL/TLS),
+_SOCKS4a_ or _SOCKS5_ proxy.
 
 The proxy can be configured in the {@link io.vertx.core.net.TcpClientConfig} by setting a
 {@link io.vertx.core.net.ProxyOptions} object containing proxy type, hostname, port and optionally username and password.
+
+To reach the proxy itself over SSL/TLS, use the {@link io.vertx.core.net.ProxyType#HTTPS} proxy type and configure the
+SSL options for the proxy connection with {@link io.vertx.core.net.ProxyOptions#setSslOptions(io.vertx.core.net.ClientSSLOptions)}.
+These options (trust store, optional client certificate, hostname verification) apply to the connection to the proxy and
+are independent of the options used for the target server. Hostname verification of the proxy certificate is enabled by
+default. Note that {@link io.vertx.core.net.ProxyType#HTTPS} denotes a proxy that is itself reached over SSL/TLS, which is
+distinct from the `https_proxy` environment-variable convention of a proxy used for `https` traffic.
 
 Here's an example:
 
