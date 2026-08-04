@@ -38,7 +38,7 @@ import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ServerSSLOptions;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.WritePromise;
 import io.vertx.core.net.impl.tcp.NetSocketImpl;
 import io.vertx.core.internal.tls.SslContextManager;
 import io.vertx.core.net.impl.VertxHandler;
@@ -263,20 +263,18 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     }
   }
 
-  void write(VertxHttpObject msg, Promise<Void> promise) {
-    writeToChannel(new MessageWrite() {
+  Future<Void> write(VertxHttpObject msg) {
+    WritePromise write = new WritePromise(context) {
       @Override
       public void write() {
-        Http1ServerConnection.this.unsafeWrite(msg, false, promise);
+        Http1ServerConnection.this.unsafeWrite(msg, false, this);
         if (msg.isEnded()) {
           responseComplete();
         }
       }
-      @Override
-      public void cancel(Throwable cause) {
-        promise.fail(cause);
-      }
-    });
+    };
+    writeToChannel(write);
+    return write;
   }
 
   void responseComplete() {
@@ -487,25 +485,25 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     }
   }
 
-  void write100Continue(Promise<Void> promise) {
-    write(new VertxFullHttpResponse(
+  Future<Void> write100Continue() {
+    return write(new VertxFullHttpResponse(
       false,
       HTTP_1_1,
       CONTINUE,
       Unpooled.buffer(0),
       DefaultHttpHeadersFactory.headersFactory().newHeaders(),
       DefaultHttpHeadersFactory.trailersFactory().newHeaders(),
-      false), promise);
+      false));
   }
 
-  void write103EarlyHints(HttpHeaders headers, Promise<Void> promise) {
-    write(new VertxFullHttpResponse(false,
+  Future<Void> write103EarlyHints(HttpHeaders headers) {
+    return write(new VertxFullHttpResponse(false,
       HTTP_1_1,
       HttpResponseStatus.EARLY_HINTS,
       Unpooled.buffer(0),
       headers,
       EmptyHttpHeaders.INSTANCE,
-      false), promise);
+      false));
   }
 
   protected void handleClosed() {

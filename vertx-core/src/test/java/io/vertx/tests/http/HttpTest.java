@@ -34,6 +34,7 @@ import io.vertx.core.internal.http.HttpClientInternal;
 import io.vertx.core.internal.net.endpoint.EndpointResolverInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.MessageWrite;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
 import io.vertx.test.fakedns.DnsRecord;
@@ -6661,5 +6662,28 @@ public abstract class HttpTest extends SimpleHttpTest2 {
           .compose(HttpClientResponse::body);
       })
       .await();
+  }
+
+  @Test
+  public void testServerMessageWrite() throws Exception {
+    AtomicReference<Future<Void>> ref1 = new AtomicReference<>();
+    AtomicReference<Future<Void>> ref2 = new AtomicReference<>();
+    server.requestHandler(request -> {
+      HttpServerResponse response = request
+        .response()
+        .setChunked(true);
+      ref1.set(response.write("chunk"));
+      ref2.set(response.end("last"));
+    });
+    startServer();
+    client.request(new RequestOptions(requestOptions).setPort(server.actualPort()))
+      .compose(req -> req
+        .send()
+        .expecting(HttpResponseExpectation.SC_OK)
+        .compose(HttpClientResponse::body));
+    TestUtils.assertWaitUntil(() -> ref1.get() != null);
+    TestUtils.assertWaitUntil(() -> ref2.get() != null);
+    assertTrue(ref1.get() instanceof MessageWrite);
+    assertTrue(ref2.get() instanceof MessageWrite);
   }
 }
