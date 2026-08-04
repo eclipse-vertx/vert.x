@@ -34,7 +34,7 @@ import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.PromiseInternal;
 import io.vertx.core.internal.buffer.BufferInternal;
 import io.vertx.core.net.HostAndPort;
-import io.vertx.core.net.impl.MessageWrite;
+import io.vertx.core.net.impl.WritePromise;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -115,7 +115,7 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     PromiseInternal<Void> promise = context.promise();
     scheme = request.scheme;
     authority = request.authority;
-    write(new HeadersWrite(request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
+    write(new HeadersWrite(context, request, buf != null ? ((BufferInternal)buf).getByteBuf() : null, end, promise));
     return promise.future();
   }
 
@@ -124,14 +124,15 @@ class DefaultHttp2ClientStream extends DefaultHttp2Stream<DefaultHttp2ClientStre
     return this;
   }
 
-  private class HeadersWrite implements MessageWrite {
+  private class HeadersWrite extends WritePromise {
 
     private final HttpRequestHead request;
     private final ByteBuf buf;
     private final boolean end;
     private final Promise<Void> promise;
 
-    public HeadersWrite(HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> promise) {
+    public HeadersWrite(ContextInternal context,  HttpRequestHead request, ByteBuf buf, boolean end, Promise<Void> promise) {
+      super(context);
       this.request = request;
       this.buf = buf;
       this.end = end;
