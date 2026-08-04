@@ -164,16 +164,14 @@ class DefaultHttp2ServerStream extends DefaultHttp2Stream<DefaultHttp2ServerStre
   }
 
   public final Future<Void> writeHead(HttpResponseHead head, Buffer chunk, boolean end) {
-    Promise<Void> promise = context.promise();
     HttpResponseHeaders headers = (HttpResponseHeaders)head.headers();
     headers.status(head.statusCode);
     if (chunk != null) {
-      writeHeaders(headers, false, false, null);
-      writeData(((BufferInternal)chunk).getByteBuf(), end, promise);
+      writeHeaders(headers, false, false);
+      return writeData(((BufferInternal)chunk).getByteBuf(), end);
     } else {
-      writeHeaders(headers, end, true, promise);
+      return writeHeaders(headers, end, true);
     }
-    return promise.future();
   }
 
   public void routed(String route) {
