@@ -256,7 +256,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(100, options.getMaxHeaderSize());
 
     Http2Settings initialSettings = randomHttp2Settings();
-    assertEquals(new Http2Settings(), options.getInitialSettings());
+    assertEquals(new Http2Settings()
+      .setInitialWindowSize(HttpClientOptions.DEFAULT_INITIAL_SETTINGS_INITIAL_WINDOW_SIZE), options.getInitialSettings());
     assertEquals(options, options.setInitialSettings(initialSettings));
     assertEquals(initialSettings, options.getInitialSettings());
 
