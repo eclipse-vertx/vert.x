@@ -246,18 +246,21 @@ public class Http1ServerConnection extends Http1Connection implements HttpServer
     Buffer buffer = BufferInternal.safeBuffer(content.content());
     Http1ServerRequest request = requestInProgress;
     request.handleContent(buffer);
-    //TODO chunk trailers
     if (content instanceof LastHttpContent) {
-      onEnd();
+      onEnd(((LastHttpContent) content).trailingHeaders());
     }
   }
 
   private void onEnd() {
+    onEnd(null);
+  }
+
+  private void onEnd(HttpHeaders trailers) {
     boolean tryClose;
     Http1ServerRequest request = requestInProgress;
     requestInProgress = null;
     tryClose = (wantClose || shutdownInitiated != null) && responseInProgress == null;
-    request.handleEnd();
+    request.handleEnd(trailers);
     if (tryClose) {
       closeInternal();
     }
