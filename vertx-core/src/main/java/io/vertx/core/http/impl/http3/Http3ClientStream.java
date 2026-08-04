@@ -123,6 +123,11 @@ public class Http3ClientStream extends Http3Stream<Http3ClientStream, Http3Clien
   }
 
   @Override
+  public Future<Void> writeHeaders(MultiMap headers, boolean end) {
+    return writeHeaders((HttpHeaders) headers, null, end);
+  }
+
+  @Override
   public Future<Void> writeHead(HttpRequestHead request, boolean chunked, Buffer chunk, boolean end, StreamPriority priority, boolean connect) {
     HttpRequestHeaders headers = ((HttpRequestHeaders)request.headers());
     headers.authority(request.authority);
