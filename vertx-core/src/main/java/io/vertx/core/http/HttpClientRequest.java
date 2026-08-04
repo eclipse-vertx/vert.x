@@ -235,6 +235,46 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
+   * @return The HTTP trailers
+   */
+  @CacheReturn
+  MultiMap trailers();
+
+  /**
+   * Put an HTTP trailer
+   * <p>
+   * Trailers are sent after the request body, so the request is always sent chunked when any
+   * trailer is set.
+   *
+   * @param name  the trailer name
+   * @param value  the trailer value
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest putTrailer(String name, String value);
+
+  /**
+   * Like {@link #putTrailer(String, String)} but using CharSequence
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  HttpClientRequest putTrailer(CharSequence name, CharSequence value);
+
+  /**
+   * Like {@link #putTrailer(String, String)} but providing multiple values via a String Iterable
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  HttpClientRequest putTrailer(String name, Iterable<String> values);
+
+  /**
+   * Like {@link #putTrailer(String, Iterable)} but with CharSequence Iterable
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> value);
+
+  /**
    * Set the trace operation of this request.
    *
    * @param op the operation

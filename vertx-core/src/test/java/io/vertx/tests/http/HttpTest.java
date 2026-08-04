@@ -1682,6 +1682,70 @@ public abstract class HttpTest extends SimpleHttpTest2 {
   }
 
   @Test
+  public void testRequestTrailers() throws Exception {
+    AtomicReference<String> trailer = new AtomicReference<>();
+    AtomicReference<String> other = new AtomicReference<>();
+    AtomicInteger size = new AtomicInteger(-1);
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        trailer.set(req.getTrailer("X-Trailer"));
+        other.set(req.getTrailer("X-Other"));
+        size.set(req.trailers().size());
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> {
+        req.putTrailer("X-Trailer", "chunky");
+        req.putTrailer("X-Other", "other");
+        return req.send(Buffer.buffer("some-content")).compose(HttpClientResponse::end);
+      })
+      .await();
+    assertEquals("chunky", trailer.get());
+    assertEquals("other", other.get());
+    assertEquals(2, size.get());
+  }
+
+  @Test
+  public void testRequestTrailersWithoutBody() throws Exception {
+    AtomicReference<String> trailer = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        trailer.set(req.getTrailer("X-Trailer"));
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> {
+        req.putTrailer("X-Trailer", "chunky");
+        return req.send().compose(HttpClientResponse::end);
+      })
+      .await();
+    assertEquals("chunky", trailer.get());
+  }
+
+  @Test
+  public void testRequestNoTrailers() throws Exception {
+    AtomicInteger size = new AtomicInteger(-1);
+    AtomicReference<String> trailer = new AtomicReference<>();
+    server.requestHandler(req -> {
+      req.endHandler(v -> {
+        size.set(req.trailers().size());
+        trailer.set(req.getTrailer("X-Trailer"));
+        req.response().end();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(req -> req.send(Buffer.buffer("some-content")).compose(HttpClientResponse::end))
+      .await();
+    assertEquals(0, size.get());
+    assertNull(trailer.get());
+  }
+
+  @Test
   public void testResponseNoTrailers() throws Exception {
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -4012,6 +4076,11 @@ public abstract class HttpTest extends SimpleHttpTest2 {
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
+      public MultiMap trailers() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(String name, String value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest putTrailer(CharSequence name, Iterable<CharSequence> value) { throw new UnsupportedOperationException(); }
       public Future<Void> write(String chunk) { throw new UnsupportedOperationException(); }
       public Future<Void> write(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public HttpClientRequest traceOperation(String op) { throw new UnsupportedOperationException(); }

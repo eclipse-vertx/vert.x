@@ -29,6 +29,7 @@ import io.vertx.core.net.HostAndPort;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.TransportMetrics;
 import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.core.http.impl.headers.HttpHeaders;
 
 import java.time.Duration;
 
@@ -76,6 +77,11 @@ public class Http2ClientConnectionImpl extends Http2ConnectionImpl implements Ht
   @Override
   public MultiMap newHttpRequestHeaders() {
     return new HttpResponseHeaders(new DefaultHttp2Headers());
+  }
+
+  @Override
+  public MultiMap newHttpTrailers() {
+    return new HttpHeaders(new DefaultHttp2Headers());
   }
 
   @Override
