@@ -27,6 +27,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.internal.ContextInternal;
 import io.vertx.core.internal.http.QueryParamDecoder;
 import io.vertx.core.net.HostAndPort;
@@ -60,6 +61,7 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   private HostAndPort realAuthority;
   private String absoluteURI;
   private MultiMap attributes;
+  private MultiMap trailers;
   private HttpEventHandler eventHandler;
   private boolean ended;
   private Handler<HttpServerFileUpload> uploadHandler;
@@ -188,6 +190,13 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   public void handleTrailers(MultiMap trailers) {
     HttpEventHandler handler;
     synchronized (connection) {
+      // Setting the trailers must not race with trailers(), where the field can escape:
+      // if the user already obtained the empty map, update it in place instead.
+      if (this.trailers == null) {
+        this.trailers = trailers;
+      } else if (this.trailers != trailers) {
+        this.trailers.setAll(trailers);
+      }
       ended = true;
       if (postRequestDecoder != null) {
         try {
@@ -372,6 +381,25 @@ public class HttpServerRequestImpl extends HttpServerRequestBase {
   @Override
   public MultiMap headers() {
     return headersMap;
+  }
+
+  @Override
+  public MultiMap trailers() {
+    synchronized (connection) {
+      if (trailers == null) {
+        trailers = new HeadersAdaptor(new DefaultHttpHeaders());
+      }
+      return trailers;
+    }
+  }
+
+  @Override
+  public String getTrailer(String trailerName) {
+    MultiMap trailers;
+    synchronized (connection) {
+      trailers = this.trailers;
+    }
+    return trailers != null ? trailers.get(trailerName) : null;
   }
 
   @Override
